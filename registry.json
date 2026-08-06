@@ -4,11 +4,29 @@
   "homepage": "https://tfl-components.vercel.app",
   "items": [
     {
+      "name": "tfl-roundel",
+      "type": "registry:ui",
+      "title": "TfL Roundel",
+      "description": "Env-gated TfL roundel with filled/rounded placeholder when trademark flag is off.",
+      "registryDependencies": [
+        "tooltip"
+      ],
+      "files": [
+        {
+          "path": "registry/tfl/tfl-roundel.tsx",
+          "type": "registry:ui",
+          "target": "components/tfl/tfl-roundel.tsx"
+        }
+      ]
+    },
+    {
       "name": "line-badge",
       "type": "registry:component",
       "title": "Line Badge",
       "description": "Official TfL line colour badge with dark-mode hard outlines.",
-      "dependencies": ["tfl-ts"],
+      "dependencies": [
+        "tfl-ts"
+      ],
       "files": [
         {
           "path": "registry/tfl/line-badge.tsx",
@@ -22,8 +40,14 @@
       "type": "registry:block",
       "title": "Tube Status Board",
       "description": "Live tube/rail status board with severity sorting and official line colours.",
-      "dependencies": ["tfl-ts", "lucide-react"],
-      "registryDependencies": ["line-badge"],
+      "dependencies": [
+        "tfl-ts",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "line-badge",
+        "tfl-roundel"
+      ],
       "files": [
         {
           "path": "registry/tfl/tube-status-board.tsx",
@@ -42,8 +66,15 @@
       "type": "registry:block",
       "title": "Bus Arrivals Board",
       "description": "Nearby bus stops and live arrivals with route-number chips.",
-      "dependencies": ["tfl-ts", "lucide-react"],
-      "registryDependencies": ["button", "input", "label"],
+      "dependencies": [
+        "tfl-ts",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "button",
+        "input",
+        "label"
+      ],
       "files": [
         {
           "path": "registry/tfl/bus-arrivals.tsx",

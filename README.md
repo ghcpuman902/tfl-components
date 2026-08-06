@@ -6,13 +6,14 @@ This is **not** an npm component package. You copy the source into your app:
 
 ```bash
 pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tube-status-board.json
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tfl-roundel.json
 ```
 
 The registry item declares `tfl-ts` as a dependency. Copied code reads `TFL_APP_ID` / `TFL_APP_KEY` from **your** environment.
 
 ## Live demo
 
-Demo: https://tfl-components.vercel.app
+Home page is the live status board: https://tfl-components.vercel.app
 
 Intended custom domain (needs GoDaddy DNS): `tfl.manglekuo.com`
 
@@ -20,8 +21,7 @@ Intended custom domain (needs GoDaddy DNS): `tfl.manglekuo.com`
 CNAME  tfl  cname.vercel-dns.com
 ```
 
-Vercel project already has the domain attached. Once the CNAME propagates, switch install URLs in README / marketing from `tfl-components.vercel.app` to `tfl.manglekuo.com`.
-
+## Local setup
 
 ```bash
 pnpm install
@@ -36,18 +36,31 @@ Press `d` to toggle dark mode.
 
 | Path | What it shows |
 |------|----------------|
-| `/status` | Tube/rail status (disruptions + good service) |
+| `/` | Live tube/rail status (home) |
+| `/status` | Same status board |
 | `/arrivals` | Bus arrivals via geolocation or search |
 | `/batch-status` | Status for a fixed set of line IDs |
 | `/explore` | Lines grouped by mode |
 | `/route` | Route sequence for one line |
 | `/arrivals/live` | Polling tube arrivals |
 | `/line-badge` | Line colour primitive |
+| `/roundel` | Env-gated TfL roundel demo |
 
-## Branding
+## Caching
+
+Status and explore data use Next.js Cache Components (`cacheComponents: true`) with `use cache` and ~60s / ~300s revalidate — not the old `export const revalidate` route segment config.
+
+## Branding and the roundel
 
 - Official **line colours** are fine.
-- Do **not** ship the TfL roundel logo or Johnston / Underground typeface (trademarked).
+- The **TfL roundel** is trademarked. `TfLRoundel` ships a filled, rounded placeholder by default (same footprint as the real mark so layouts do not jump).
+- To show the official SVG in **your** app:
+
+```env
+NEXT_PUBLIC_ALLOW_TFL_ROUNDEL=true
+```
+
+(Also accepts `VITE_ALLOW_TFL_ROUNDEL` or `ALLOW_TFL_ROUNDEL`.) Setting the flag shifts trademark responsibility to your application layer — this package only delivers the code.
 
 ## Rules
 

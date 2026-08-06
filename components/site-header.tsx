@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { TrainFrontTunnel } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TfLRoundel } from "@/components/tfl/tfl-roundel";
 
 const NAV = [
   { href: "/", label: "Home" },
@@ -11,13 +11,14 @@ const NAV = [
   { href: "/route", label: "Route" },
   { href: "/arrivals/live", label: "Live arrivals" },
   { href: "/line-badge", label: "Line badge" },
+  { href: "/roundel", label: "Roundel" },
 ] as const;
 
 export const SiteHeader = ({ pathname }: { pathname?: string }) => (
   <header className="border-b border-border bg-background/80 backdrop-blur">
     <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
       <Link href="/" className="flex items-center gap-2 font-semibold">
-        <TrainFrontTunnel className="size-5" aria-hidden />
+        <TfLRoundel className="size-5" />
         <span>tfl-components</span>
       </Link>
       <nav className="flex flex-wrap gap-1" aria-label="Main">

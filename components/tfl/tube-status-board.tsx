@@ -1,5 +1,6 @@
-import { type ReactNode } from "react";
+import { type ReactNode, Suspense } from "react";
 import Link from "next/link";
+import { cacheLife, cacheTag } from "next/cache";
 import {
   sortLinesBySeverityAndOrder,
   getSeverityClasses,
@@ -11,7 +12,9 @@ import {
 import { ExternalLink, Package, TrainFrontTunnel } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LineColorBar } from "@/components/tfl/line-badge";
+import { TfLRoundel } from "@/components/tfl/tfl-roundel";
 import { getTflClient } from "@/lib/tfl/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Props {
   children?: ReactNode;
@@ -29,12 +32,23 @@ const stripStatusReason = (reason: string, lineName?: string) =>
       "",
     );
 
-export async function TubeStatusBoard({ children, hideHeader = false }: Props) {
+async function getCachedLineStatuses() {
+  "use cache";
+  cacheLife({ revalidate: 60 });
+  cacheTag("tfl-line-status");
+
   const client = getTflClient();
   const lineStatuses = await client.line.getStatus({
     modes: ["tube", "elizabeth-line", "dlr", "tram", "overground"],
   });
-  const sortedLineStatuses = sortLinesBySeverityAndOrder(lineStatuses);
+  return sortLinesBySeverityAndOrder(lineStatuses);
+}
+
+async function TubeStatusBoardBody({
+  children,
+  hideHeader = false,
+}: Props) {
+  const sortedLineStatuses = await getCachedLineStatuses();
   const disruptedLines = sortedLineStatuses.filter(
     (line) => !isNormalService(line.lineStatuses ?? []),
   );
@@ -47,10 +61,7 @@ export async function TubeStatusBoard({ children, hideHeader = false }: Props) {
       {!hideHeader && (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-3">
-            <TrainFrontTunnel
-              className="size-10 text-foreground lg:size-12"
-              aria-hidden
-            />
+            <TfLRoundel className="size-10 lg:size-12" />
             <div>
               <h1 className="scroll-m-20 text-balance text-4xl font-extrabold tracking-tight lg:text-5xl">
                 Live TfL Status
@@ -213,11 +224,37 @@ export async function TubeStatusBoard({ children, hideHeader = false }: Props) {
           >
             tfl-ts
           </Link>
-          . Refreshes with each request (~60s cache recommended).
+          . Cached ~60s via Next.js Cache Components.
         </p>
       </div>
 
       {children}
     </div>
+  );
+}
+
+const TubeStatusBoardFallback = () => (
+  <div className="mt-4 space-y-6" aria-busy aria-label="Loading line status">
+    <div className="flex items-center gap-3">
+      <Skeleton className="size-10 rounded-full lg:size-12" />
+      <div className="space-y-2">
+        <Skeleton className="h-9 w-64" />
+        <Skeleton className="h-4 w-48" />
+      </div>
+    </div>
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+      {Array.from({ length: 10 }).map((_, i) => (
+        <Skeleton key={i} className="h-16 w-full" />
+      ))}
+    </div>
+  </div>
+);
+
+/** Live tube/rail status board. Status fetch is cached ~60s (`use cache`). */
+export function TubeStatusBoard(props: Props) {
+  return (
+    <Suspense fallback={<TubeStatusBoardFallback />}>
+      <TubeStatusBoardBody {...props} />
+    </Suspense>
   );
 }
