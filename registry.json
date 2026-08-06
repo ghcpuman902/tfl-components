@@ -1,7 +1,7 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "tfl-components",
-  "homepage": "https://tfl.manglekuo.com",
+  "homepage": "https://tfl-components.vercel.app",
   "items": [
     {
       "name": "line-badge",

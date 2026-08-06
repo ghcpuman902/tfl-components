@@ -115,7 +115,7 @@ export default function HomePage() {
         <section className="rounded-lg border border-border bg-muted/30 p-4 text-sm">
           <h2 className="mb-2 font-semibold">Install (once the registry is live)</h2>
           <pre className="overflow-x-auto rounded bg-background p-3 text-xs">
-            {`pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/tube-status-board.json`}
+            {`pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tube-status-board.json`}
           </pre>
           <p className="mt-2 text-muted-foreground">
             Press <kbd className="rounded border px-1">d</kbd> to toggle dark

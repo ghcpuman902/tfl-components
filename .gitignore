@@ -46,3 +46,4 @@ LOCAL_NOTES.md
 PUSH_NOTES.md
 VERCEL_PRIVATE_NOTES.md
 scratch/
+.env*

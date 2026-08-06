@@ -71,7 +71,7 @@ export default function LineBadgePage() {
         <aside className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
           <p className="mb-2 font-medium text-foreground">Install into your app</p>
           <pre className="overflow-x-auto rounded bg-muted p-3 text-xs text-foreground">
-            {`pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/line-badge.json`}
+            {`pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/line-badge.json`}
           </pre>
         </aside>
       </main>

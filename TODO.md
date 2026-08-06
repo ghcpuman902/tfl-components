@@ -12,7 +12,7 @@ Self-contained handoff. No prior chat context required.
 ### Consumption model
 
 1. User sees the live board.
-2. Runs `pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/<item>.json`.
+2. Runs `pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/<item>.json`.
 3. CLI copies source into their app and installs `tfl-ts`.
 4. Copied `getTflClient()` reads `TFL_APP_ID` / `TFL_APP_KEY` from **their** env.
 
@@ -88,5 +88,5 @@ Vercel later needs the same two vars (server-only; do not prefix `NEXT_PUBLIC_`)
 1. `gh repo create ghcpuman902/tfl-components --public` and push `main`
 2. `vercel` link + deploy; set `TFL_APP_ID` / `TFL_APP_KEY`
 3. Assign subdomain `tfl.manglekuo.com`
-4. Verify `https://tfl.manglekuo.com/r/tube-status-board.json` resolves
+4. Verify `https://tfl-components.vercel.app/r/tube-status-board.json` resolves
 5. Screenshot boards (light + dark) for tfl-ts README

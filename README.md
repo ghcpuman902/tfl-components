@@ -5,12 +5,23 @@ React UI components and a shadcn registry for London transport boards, built on 
 This is **not** an npm component package. You copy the source into your app:
 
 ```bash
-pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/tube-status-board.json
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tube-status-board.json
 ```
 
 The registry item declares `tfl-ts` as a dependency. Copied code reads `TFL_APP_ID` / `TFL_APP_KEY` from **your** environment.
 
-## Local setup
+## Live demo
+
+Demo: https://tfl-components.vercel.app
+
+Intended custom domain (needs GoDaddy DNS): `tfl.manglekuo.com`
+
+```
+CNAME  tfl  cname.vercel-dns.com
+```
+
+Vercel project already has the domain attached. Once the CNAME propagates, switch install URLs in README / marketing from `tfl-components.vercel.app` to `tfl.manglekuo.com`.
+
 
 ```bash
 pnpm install
