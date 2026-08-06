@@ -83,10 +83,15 @@ Vercel later needs the same two vars (server-only; do not prefix `NEXT_PUBLIC_`)
 - Disruption alerts / push-style notifications
 - Status map
 
-## Deploy checklist (when asked)
+## Deploy checklist
 
-1. `gh repo create ghcpuman902/tfl-components --public` and push `main`
-2. `vercel` link + deploy; set `TFL_APP_ID` / `TFL_APP_KEY`
-3. Assign subdomain `tfl.manglekuo.com`
-4. Verify `https://tfl-components.vercel.app/r/tube-status-board.json` resolves
-5. Screenshot boards (light + dark) for tfl-ts README
+1. [x] `gh repo create ghcpuman902/tfl-components --public` and push `main`
+2. [x] Vercel project linked; `TFL_APP_ID` / `TFL_APP_KEY` set for production + preview
+3. [x] Domain `tfl.manglekuo.com` attached to the Vercel project
+4. [ ] GoDaddy DNS: `CNAME tfl → cname.vercel-dns.com` (nameservers are still domaincontrol.com)
+5. [x] Registry resolves: https://tfl-components.vercel.app/r/tube-status-board.json
+6. [x] Screenshots in `docs/assets/` (light + dark)
+7. [x] Marketing drafts in `marketing/`
+
+Until DNS propagates, use **https://tfl-components.vercel.app** in posts and install URLs.
+
