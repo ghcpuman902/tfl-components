@@ -1,0 +1,33 @@
+---
+alwaysApply: true
+---
+
+# Project stack
+
+Use **pnpm** for all package and script commands (`pnpm install`, `pnpm dev`, `pnpm build`, `pnpm lint`).
+
+Stack: **Next.js 16** (App Router) + **TypeScript** + **Tailwind CSS 4** + **shadcn/ui** (base-nova).
+
+## Styling
+
+- Prefer semantic Tailwind tokens (`bg-background`, `text-foreground`, `text-primary`) over hardcoded hex values.
+- Design mobile-first; verify layouts at narrow widths before desktop polish.
+- Match default font sizes used elsewhere in the project for consistency.
+
+## Next.js
+
+Before changing routing, data fetching, caching, or server/client boundaries, read the relevant guide in `node_modules/next/dist/docs/`. Training data is often outdated for Next.js 16.
+
+## Dev server
+
+Do **not** start the dev server unless the user explicitly asks. The user may already have one running.
+
+## Git
+
+Before git operations (stash, pull, merge, rebase), check branch state and warn about consequences. Prefer `git stash` → sync → `git stash pop` when avoiding merge conflicts on parallel work.
+
+## Scope
+
+- Keep changes small and focused.
+- Avoid large refactors unless explicitly requested.
+- Do not add product-specific copy or landing-page marketing content unless asked.

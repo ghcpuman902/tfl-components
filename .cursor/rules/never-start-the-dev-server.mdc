@@ -1,0 +1,9 @@
+---
+alwaysApply: true
+---
+
+YOU MUST NEVER START THE DEV SERVER UNLESS THE USER HAS TOLD YOU TO.
+
+Never run `pnpm dev`, `pnpm start`, or equivalent start/build commands unless explicitly requested.
+
+The user may be running the dev server locally; starting another instance can cause port conflicts or confusion.

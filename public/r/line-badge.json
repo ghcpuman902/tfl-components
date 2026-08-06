@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "line-badge",
+  "title": "Line Badge",
+  "description": "Official TfL line colour badge with dark-mode hard outlines.",
+  "dependencies": [
+    "tfl-ts"
+  ],
+  "files": [
+    {
+      "path": "registry/tfl/line-badge.tsx",
+      "content": "import {\n  getLineAriaLabel,\n  getLineCssProps,\n  getLineDarkReadableStyles,\n  getLineInlineStyles,\n} from \"tfl-ts\";\nimport { cn } from \"@/lib/utils\";\n\ntype LineStatusLike = {\n  statusSeverity?: number;\n  statusSeverityDescription?: string;\n};\n\ntype LineBadgeProps = {\n  lineId: string;\n  name?: string;\n  lineStatuses?: LineStatusLike[];\n  className?: string;\n  /** Show a filled colour chip (default) or text-only with brand colour. */\n  variant?: \"chip\" | \"text\";\n};\n\n/**\n * Official TfL line colour badge.\n * Northern stays black in dark mode — contrast comes from the hard outline ring,\n * not a white fill invert.\n */\nexport const LineBadge = ({\n  lineId,\n  name,\n  lineStatuses,\n  className,\n  variant = \"chip\",\n}: LineBadgeProps) => {\n  const styles = getLineInlineStyles(lineId);\n  const cssProps = getLineCssProps(lineId);\n  const darkReadable = getLineDarkReadableStyles(lineId);\n  const label = name ?? lineId;\n  const ariaLabel =\n    lineStatuses && lineStatuses.length > 0\n      ? getLineAriaLabel(label, lineStatuses)\n      : `${label} line`;\n\n  if (variant === \"text\") {\n    return (\n      <span\n        className={cn(\n          \"font-semibold dark:[text-shadow:var(--line-dark-text-shadow)]\",\n          className,\n        )}\n        style={{ color: styles.color, ...cssProps }}\n        aria-label={ariaLabel}\n      >\n        {label}\n      </span>\n    );\n  }\n\n  return (\n    <span\n      className={cn(\n        \"inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold tabular-nums text-white\",\n        className,\n      )}\n      style={{\n        backgroundColor: styles.backgroundColor,\n        color: \"#ffffff\",\n        ...cssProps,\n        ...(darkReadable?.boxShadow ? { boxShadow: darkReadable.boxShadow } : {}),\n      }}\n      aria-label={ariaLabel}\n      role=\"img\"\n    >\n      {label}\n    </span>\n  );\n};\n\n/** Horizontal brand colour bar; Overground / Elizabeth get a white centre stripe. */\nexport const LineColorBar = ({\n  lineId,\n  modeName,\n  heightClass = \"h-[4px]\",\n}: {\n  lineId?: string;\n  modeName?: string;\n  heightClass?: string;\n}) => {\n  const stripeOffset = heightClass.includes(\"6px\") ? \"top-[2px]\" : \"top-[1px]\";\n  const hasStripe = modeName === \"overground\" || modeName === \"elizabeth-line\";\n\n  return (\n    <div\n      className={cn(\"relative w-full\", heightClass)}\n      style={getLineCssProps(lineId ?? \"\")}\n    >\n      <div className=\"h-full w-full bg-[var(--line-color)] dark:[box-shadow:var(--line-dark-box-shadow)]\" />\n      {hasStripe && (\n        <div\n          className={cn(\"absolute left-0 h-[2px] w-full bg-white\", stripeOffset)}\n        />\n      )}\n    </div>\n  );\n};\n",
+      "type": "registry:component",
+      "target": "components/tfl/line-badge.tsx"
+    }
+  ],
+  "type": "registry:component"
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "tfl-components",
+  "homepage": "https://tfl.manglekuo.com",
+  "items": [
+    {
+      "name": "line-badge",
+      "type": "registry:component",
+      "title": "Line Badge",
+      "description": "Official TfL line colour badge with dark-mode hard outlines.",
+      "dependencies": ["tfl-ts"],
+      "files": [
+        {
+          "path": "registry/tfl/line-badge.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/line-badge.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tube-status-board",
+      "type": "registry:block",
+      "title": "Tube Status Board",
+      "description": "Live tube/rail status board with severity sorting and official line colours.",
+      "dependencies": ["tfl-ts", "lucide-react"],
+      "registryDependencies": ["line-badge"],
+      "files": [
+        {
+          "path": "registry/tfl/tube-status-board.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/tube-status-board.tsx"
+        },
+        {
+          "path": "registry/tfl/client.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/client.ts"
+        }
+      ]
+    },
+    {
+      "name": "bus-arrivals-board",
+      "type": "registry:block",
+      "title": "Bus Arrivals Board",
+      "description": "Nearby bus stops and live arrivals with route-number chips.",
+      "dependencies": ["tfl-ts", "lucide-react"],
+      "registryDependencies": ["button", "input", "label"],
+      "files": [
+        {
+          "path": "registry/tfl/bus-arrivals.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/bus-arrivals.tsx"
+        },
+        {
+          "path": "registry/tfl/actions.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/actions.ts"
+        },
+        {
+          "path": "registry/tfl/geo.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/geo.ts"
+        },
+        {
+          "path": "registry/tfl/client.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/client.ts"
+        }
+      ]
+    }
+  ]
+}

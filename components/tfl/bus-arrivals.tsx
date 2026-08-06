@@ -1,0 +1,454 @@
+"use client";
+
+import { useCallback, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  getBusArrivals,
+  getNearbyBusStops,
+  searchBusStops,
+  type BusArrival,
+  type GetBusArrivalsResult,
+  type NearbyBusStop,
+} from "@/lib/tfl/actions";
+import { truncateLatLon } from "@/lib/tfl/geo";
+import { Bus, Loader2, LocateFixed, MapPin, Search } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const formatTimeToStation = (seconds?: number): string => {
+  if (seconds === undefined || seconds < 0) return "-";
+  if (seconds < 60) return "Due";
+  const mins = Math.floor(seconds / 60);
+  return `${mins} min`;
+};
+
+const formatClockTime = (iso?: string): string | null => {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+};
+
+const formatDistance = (meters?: number): string => {
+  if (meters === undefined) return "";
+  if (meters < 1000) return `${Math.round(meters)}m`;
+  return `${(meters / 1000).toFixed(1)}km`;
+};
+
+const formatDirection = (direction?: string): string | null => {
+  if (!direction) return null;
+  return direction.charAt(0).toUpperCase() + direction.slice(1).toLowerCase();
+};
+
+/** Compact TfL-style stop letter; sits inline after the stop name. */
+const StopLetterBadge = ({ letter }: { letter?: string }) => {
+  if (!letter) return null;
+  return (
+    <span
+      className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold leading-none text-white tabular-nums align-middle"
+      aria-hidden
+    >
+      {letter}
+    </span>
+  );
+};
+
+/** Shared line chip for stop picker + arrivals list. */
+const LineBadge = ({ line }: { line: string }) => (
+  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-foreground px-1.5 text-[11px] font-bold leading-none tabular-nums text-background">
+    {line}
+  </span>
+);
+
+/** Numeric codes; avoid relying on the GeolocationPositionError global. */
+const GEO_PERMISSION_DENIED = 1;
+const GEO_POSITION_UNAVAILABLE = 2;
+const GEO_TIMEOUT = 3;
+
+const geolocationErrorMessage = (code: number): string => {
+  switch (code) {
+    case GEO_PERMISSION_DENIED:
+      return "Location is blocked for this site. Use the lock icon in the address bar → Site settings → Location → Allow, then try again.";
+    case GEO_POSITION_UNAVAILABLE:
+      return "Location unavailable. Try again or search by stop name.";
+    case GEO_TIMEOUT:
+      return "Location request timed out. Try again.";
+    default:
+      return "Could not read your location.";
+  }
+};
+
+export const BusArrivals = () => {
+  const [stops, setStops] = useState<NearbyBusStop[]>([]);
+  const [selectedStop, setSelectedStop] = useState<NearbyBusStop | null>(null);
+  const [locationLabel, setLocationLabel] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [arrivalsResult, setArrivalsResult] = useState<GetBusArrivalsResult | null>(null);
+  const [stopsError, setStopsError] = useState<string | null>(null);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [loadingSearch, setLoadingSearch] = useState(false);
+  const [loadingArrivals, setLoadingArrivals] = useState(false);
+
+  const loadArrivals = useCallback(async (stop: NearbyBusStop) => {
+    setSelectedStop(stop);
+    setLoadingArrivals(true);
+    setArrivalsResult(null);
+    try {
+      const data = await getBusArrivals(stop.id, stop.name);
+      setArrivalsResult(data);
+    } catch {
+      setArrivalsResult({
+        ok: false,
+        error: "Failed to load arrivals. Try another stop.",
+      });
+    } finally {
+      setLoadingArrivals(false);
+    }
+  }, []);
+
+  const handleNearbyFromCoords = useCallback(
+    async (lat: number, lon: number, label: string) => {
+      setStopsError(null);
+      setStops([]);
+      setSelectedStop(null);
+      setArrivalsResult(null);
+      setLocationLabel(label);
+
+      try {
+        const data = await getNearbyBusStops(lat, lon);
+        if (data.ok === false) {
+          setStopsError(data.error);
+          return;
+        }
+
+        setStops(data.stops);
+        await loadArrivals(data.stops[0]!);
+      } catch {
+        setStopsError("Failed to find nearby stops. Try searching by name.");
+      }
+    },
+    [loadArrivals],
+  );
+
+  const handleUseLocation = async () => {
+    if (loadingLocation || loadingSearch) return;
+
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      setStopsError(
+        "Location needs a secure origin. Open via http://localhost:3001 (not a LAN IP like 192.168.x.x).",
+      );
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setStopsError("Geolocation is not supported in this browser.");
+      return;
+    }
+
+    // If already blocked, Chrome will not show the permission prompt again.
+    try {
+      const permission = await navigator.permissions?.query({
+        name: "geolocation",
+      });
+      if (permission?.state === "denied") {
+        setStopsError(
+          "Location is blocked for this site. Use the lock icon in the address bar → Site settings → Location → Allow, then try again.",
+        );
+        return;
+      }
+    } catch {
+      // permissions.query is optional; continue to getCurrentPosition.
+    }
+
+    setLoadingLocation(true);
+    setStopsError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { lat, lon } = truncateLatLon(
+          position.coords.latitude,
+          position.coords.longitude,
+        );
+        void handleNearbyFromCoords(
+          lat,
+          lon,
+          `${lat.toFixed(3)}, ${lon.toFixed(3)}`,
+        ).finally(() => {
+          setLoadingLocation(false);
+        });
+      },
+      (error) => {
+        setLoadingLocation(false);
+        setStopsError(geolocationErrorMessage(error.code));
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 12_000,
+        maximumAge: 60_000,
+      },
+    );
+  };
+
+  const handleSearchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loadingLocation || loadingSearch) return;
+    if (searchQuery.trim().length < 2) return;
+
+    setLoadingSearch(true);
+    setStopsError(null);
+    setStops([]);
+    setSelectedStop(null);
+    setArrivalsResult(null);
+    setLocationLabel(null);
+
+    try {
+      const data = await searchBusStops(searchQuery);
+      if (data.ok === false) {
+        setStopsError(data.error);
+        return;
+      }
+
+      setStops(data.stops);
+      await loadArrivals(data.stops[0]!);
+    } catch {
+      setStopsError("Failed to search stops. Try again.");
+    } finally {
+      setLoadingSearch(false);
+    }
+  };
+
+  const handleSearchQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleStopSelect = (stop: NearbyBusStop) => {
+    void loadArrivals(stop);
+  };
+
+  const handleStopKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, stop: NearbyBusStop) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleStopSelect(stop);
+    }
+  };
+
+  const findingStops = loadingLocation || loadingSearch;
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-1 flex items-center gap-2">
+        <Bus className="size-5" aria-hidden />
+        Bus arrivals near you
+      </h2>
+      <p className="text-sm text-muted-foreground mb-4 text-pretty">
+        Uses{" "}
+        <code className="bg-background/60 px-1 py-0.5 text-xs">stopPoint.getByGeoPoint</code>,{" "}
+        <code className="bg-background/60 px-1 py-0.5 text-xs">stopPoint.search</code>, and{" "}
+        <code className="bg-background/60 px-1 py-0.5 text-xs">stopPoint.getArrivals</code>.
+      </p>
+
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
+        <Button
+          type="button"
+          onClick={handleUseLocation}
+          disabled={findingStops}
+          className="sm:w-auto"
+          aria-busy={loadingLocation}
+        >
+          {loadingLocation ? (
+            <>
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+              Finding nearby stops…
+            </>
+          ) : (
+            <>
+              <LocateFixed className="size-4" aria-hidden />
+              Use my location
+            </>
+          )}
+        </Button>
+
+        <form onSubmit={handleSearchSubmit} className="flex flex-1 gap-2">
+          <div className="flex-1">
+            <Label htmlFor="tfl-bus-search" className="sr-only">
+              Search bus stops
+            </Label>
+            <Input
+              id="tfl-bus-search"
+              type="search"
+              value={searchQuery}
+              onChange={handleSearchQueryChange}
+              placeholder="Or search by street or stop name"
+              className="w-full bg-background"
+              aria-label="Search bus stops"
+              disabled={findingStops}
+            />
+          </div>
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={findingStops || searchQuery.trim().length < 2}
+            aria-busy={loadingSearch}
+          >
+            {loadingSearch ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+                <span className="sr-only sm:not-sr-only">Searching…</span>
+              </>
+            ) : (
+              <>
+                <Search className="size-4 sm:mr-0" aria-hidden />
+                <span className="sr-only sm:not-sr-only">Search</span>
+              </>
+            )}
+          </Button>
+        </form>
+      </div>
+
+      {stopsError && (
+        <p className="text-destructive text-sm mb-4" role="alert">
+          {stopsError}
+        </p>
+      )}
+
+      {locationLabel && stops.length > 0 && (
+        <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
+          <MapPin className="size-3.5 shrink-0" aria-hidden />
+          Stops within 400m of {locationLabel} (GPS rounded to ~100m to avoid constant refreshes)
+        </p>
+      )}
+
+      {stops.length > 0 && (
+        <div className="mb-4">
+          <p className="text-sm font-medium mb-2">Select a stop</p>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 list-none p-0" role="list">
+            {stops.map((stop) => {
+              const isSelected = selectedStop?.id === stop.id;
+              const meta = [
+                stop.towards ? `towards ${stop.towards}` : null,
+                stop.distance !== undefined ? `${formatDistance(stop.distance)} away` : null,
+              ].filter(Boolean);
+
+              return (
+                <li key={stop.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleStopSelect(stop)}
+                    onKeyDown={(e) => handleStopKeyDown(e, stop)}
+                    aria-pressed={isSelected}
+                    aria-label={`Show arrivals for ${stop.name}${stop.stopLetter ? ` stop ${stop.stopLetter}` : ""}${stop.towards ? `, towards ${stop.towards}` : ""}`}
+                    disabled={loadingArrivals}
+                    className={cn(
+                      "w-full text-left p-3 border border-border transition-colors",
+                      "bg-background/60 dark:bg-background/20 hover:bg-background/80",
+                      isSelected && "ring-1 ring-primary border-primary",
+                    )}
+                  >
+                    <span className="flex items-center gap-1.5 text-sm font-medium">
+                      <span className="truncate">{stop.name}</span>
+                      <StopLetterBadge letter={stop.stopLetter} />
+                    </span>
+                    {meta.length > 0 && (
+                      <span className="mt-1 block text-xs text-muted-foreground text-pretty">
+                        {meta.join(" · ")}
+                      </span>
+                    )}
+                    {stop.lines && stop.lines.length > 0 && (
+                      <span className="mt-1.5 flex flex-wrap gap-1">
+                        {stop.lines.slice(0, 6).map((line) => (
+                          <LineBadge key={line} line={line} />
+                        ))}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {(loadingArrivals || arrivalsResult !== null) && selectedStop && (
+        <div className="border-t border-border pt-4">
+          <h3 className="mb-3 text-sm font-semibold">
+            <span className="inline-flex items-center gap-1.5">
+              Arrivals: {selectedStop.name}
+              <StopLetterBadge letter={selectedStop.stopLetter} />
+              {loadingArrivals && (
+                <Loader2 className="size-3.5 animate-spin shrink-0" aria-hidden />
+              )}
+            </span>
+            {selectedStop.towards && (
+              <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                towards {selectedStop.towards}
+              </span>
+            )}
+          </h3>
+
+          {arrivalsResult?.ok === false && (
+            <p className="text-destructive text-sm" role="alert">
+              {arrivalsResult.error}
+            </p>
+          )}
+
+          {arrivalsResult?.ok === true && (
+            <>
+              {arrivalsResult.arrivals.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No buses due at this stop right now.</p>
+              ) : (
+                <ul className="space-y-0 list-none p-0" role="list">
+                  {arrivalsResult.arrivals.slice(0, 12).map((a: BusArrival, i: number) => {
+                    const clock = formatClockTime(a.expectedArrival);
+                    const direction = formatDirection(a.direction);
+                    const detailParts = [
+                      direction,
+                      a.towards && a.towards !== a.destinationName
+                        ? `towards ${a.towards}`
+                        : null,
+                      a.vehicleId ? `veh ${a.vehicleId}` : null,
+                    ].filter(Boolean);
+
+                    return (
+                      <li
+                        key={`${a.lineName}-${a.destinationName}-${a.timeToStation}-${i}`}
+                        className="grid grid-cols-[auto_1fr_auto] items-center gap-1.5 py-2.5 border-b border-border last:border-0 text-sm"
+                      >
+                        <LineBadge line={a.lineName ?? "-"} />
+                        <span className="flex min-w-0 items-center gap-1.5 font-medium">
+                          <span className="truncate">
+                            <span className="font-normal text-muted-foreground">to</span>{" "}
+                            {a.destinationName ?? "-"}
+                          </span>
+                          {detailParts.length > 0 && (
+                            <span className="min-w-0 truncate text-xs font-normal text-muted-foreground">
+                              {detailParts.join(" · ")}
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-right">
+                          <span className="block tabular-nums font-semibold">
+                            {formatTimeToStation(a.timeToStation)}
+                          </span>
+                          {clock && (
+                            <span className="block text-xs text-muted-foreground tabular-nums">
+                              {clock}
+                            </span>
+                          )}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
