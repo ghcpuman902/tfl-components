@@ -20,9 +20,26 @@ interface Props {
   children?: ReactNode;
   /** When true, omit the page header (useful inside a layout that already has one). */
   hideHeader?: boolean;
+  /**
+   * Fetch status for these line IDs in one request.
+   * When omitted, loads all tube / Elizabeth / DLR / tram / Overground modes.
+   */
+  lineIds?: readonly string[];
 }
 
-const darkReadableTextClass = "dark:[text-shadow:var(--line-dark-text-shadow)]";
+/** Curated set used by apps that only care about core Underground + Elizabeth. */
+export const DEFAULT_STATUS_LINE_IDS = [
+  "central",
+  "northern",
+  "victoria",
+  "jubilee",
+  "elizabeth",
+  "bakerloo",
+  "piccadilly",
+  "district",
+] as const;
+
+const darkReadableTextClass = "tfl-dark-line-text";
 
 const stripStatusReason = (reason: string, lineName?: string) =>
   reason
@@ -32,23 +49,28 @@ const stripStatusReason = (reason: string, lineName?: string) =>
       "",
     );
 
-async function getCachedLineStatuses() {
+async function getCachedLineStatuses(lineIds?: readonly string[]) {
   "use cache";
   cacheLife({ revalidate: 60 });
   cacheTag("tfl-line-status");
 
   const client = getTflClient();
-  const lineStatuses = await client.line.getStatus({
-    modes: ["tube", "elizabeth-line", "dlr", "tram", "overground"],
-  });
+  const lineStatuses = await client.line.getStatus(
+    lineIds && lineIds.length > 0
+      ? { lineIds: [...lineIds] }
+      : {
+          modes: ["tube", "elizabeth-line", "dlr", "tram", "overground"],
+        },
+  );
   return sortLinesBySeverityAndOrder(lineStatuses);
 }
 
 async function TubeStatusBoardBody({
   children,
   hideHeader = false,
+  lineIds,
 }: Props) {
-  const sortedLineStatuses = await getCachedLineStatuses();
+  const sortedLineStatuses = await getCachedLineStatuses(lineIds);
   const disruptedLines = sortedLineStatuses.filter(
     (line) => !isNormalService(line.lineStatuses ?? []),
   );
@@ -206,7 +228,7 @@ async function TubeStatusBoardBody({
                   <LineColorBar
                     lineId={line.id}
                     modeName={line.modeName}
-                    heightClass="h-[4px]"
+                    heightClass="h-[6px]"
                   />
                 </div>
               </div>
@@ -233,13 +255,14 @@ async function TubeStatusBoardBody({
   );
 }
 
-const TubeStatusBoardFallback = () => (
-  <div className="mt-4 space-y-6" aria-busy aria-label="Loading line status">
+/** Skeleton for the tube status board — use in `loading.tsx` or Suspense. */
+export const TubeStatusBoardSkeleton = () => (
+  <div className="mt-4 w-full space-y-6" aria-busy aria-label="Loading line status">
     <div className="flex items-center gap-3">
       <Skeleton className="size-10 rounded-full lg:size-12" />
       <div className="space-y-2">
-        <Skeleton className="h-9 w-64" />
-        <Skeleton className="h-4 w-48" />
+        <Skeleton className="h-9 w-64 max-w-full" />
+        <Skeleton className="h-4 w-48 max-w-full" />
       </div>
     </div>
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
@@ -253,7 +276,7 @@ const TubeStatusBoardFallback = () => (
 /** Live tube/rail status board. Status fetch is cached ~60s (`use cache`). */
 export function TubeStatusBoard(props: Props) {
   return (
-    <Suspense fallback={<TubeStatusBoardFallback />}>
+    <Suspense fallback={<TubeStatusBoardSkeleton />}>
       <TubeStatusBoardBody {...props} />
     </Suspense>
   );

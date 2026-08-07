@@ -7,15 +7,68 @@
       "name": "tfl-roundel",
       "type": "registry:ui",
       "title": "TfL Roundel",
-      "description": "Env-gated TfL roundel with filled/rounded placeholder when trademark flag is off.",
+      "description": "Env-gated TfL roundel with colour/text customisation, mode presets, and Wikimedia logo assets.",
       "registryDependencies": [
-        "tooltip"
+        "tooltip",
+        "dialog",
+        "button",
+        "skeleton"
       ],
       "files": [
         {
           "path": "registry/tfl/tfl-roundel.tsx",
           "type": "registry:ui",
           "target": "components/tfl/tfl-roundel.tsx"
+        },
+        {
+          "path": "lib/tfl/roundel-presets.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/roundel-presets.ts"
+        },
+        {
+          "path": "lib/tfl/brand-colours.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/brand-colours.ts"
+        },
+        {
+          "path": "lib/tfl/brand-rules.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/brand-rules.ts"
+        },
+        {
+          "path": "lib/tfl/brand.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/brand.ts"
+        },
+        {
+          "path": "public/transit-logos/underground.svg",
+          "type": "registry:file",
+          "target": "public/transit-logos/underground.svg"
+        },
+        {
+          "path": "public/transit-logos/elizabeth-line-roundel.svg",
+          "type": "registry:file",
+          "target": "public/transit-logos/elizabeth-line-roundel.svg"
+        },
+        {
+          "path": "public/transit-logos/overground-roundel.svg",
+          "type": "registry:file",
+          "target": "public/transit-logos/overground-roundel.svg"
+        },
+        {
+          "path": "public/transit-logos/dlr-roundel.svg",
+          "type": "registry:file",
+          "target": "public/transit-logos/dlr-roundel.svg"
+        },
+        {
+          "path": "public/transit-logos/tram-roundel.svg",
+          "type": "registry:file",
+          "target": "public/transit-logos/tram-roundel.svg"
+        },
+        {
+          "path": "public/transit-logos/national-rail.svg",
+          "type": "registry:file",
+          "target": "public/transit-logos/national-rail.svg"
         }
       ]
     },
@@ -26,6 +79,9 @@
       "description": "Official TfL line colour badge with dark-mode hard outlines.",
       "dependencies": [
         "tfl-ts"
+      ],
+      "registryDependencies": [
+        "skeleton"
       ],
       "files": [
         {
@@ -46,7 +102,8 @@
       ],
       "registryDependencies": [
         "line-badge",
-        "tfl-roundel"
+        "tfl-roundel",
+        "skeleton"
       ],
       "files": [
         {
@@ -73,7 +130,8 @@
       "registryDependencies": [
         "button",
         "input",
-        "label"
+        "label",
+        "skeleton"
       ],
       "files": [
         {

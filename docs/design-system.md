@@ -18,8 +18,52 @@ Theme variables are defined in `app/globals.css`. Dark mode is class-based via `
 
 ## Typography
 
-- Default body text uses the project sans font (Geist). Keep component body copy at default size unless hierarchy requires otherwise.
+- Default body text uses **Hammersmith One** (Google Fonts) via `next/font` — a Johnston-like stand-in for demos. It is **not** Johnston.
+- **Do not** download or redistribute TfL’s Johnston typeface. Prefer your own product font. To licence Johnston, use [TfL font requests](https://tfl.gov.uk/info-for/business-and-advertisers/font-requests?intcmp=5840). Alternatives: [Hammersmith One](https://fonts.google.com/specimen/Hammersmith+One) or [P22 Underground](https://fonts.adobe.com/fonts/p22-underground) (Adobe Fonts).
 - Use `text-sm` / `text-xs` for secondary metadata, not as the default for main content.
+
+## Brand tooling
+
+Import from `@/lib/tfl/brand`:
+
+- `TFL_MODAL_COLOURS` / `UNDERGROUND_LINE_COLOURS` / `OVERGROUND_LINE_COLOURS` — Issue 4 RGB tokens
+- `ROUNDEL_PRESETS` — mode roundel colours + bar text (incl. outline / cycles styles)
+- `getRoundelExclusion(barWidth)` — 0.25× clear space helper
+- `ROUNDEL_DO_NOT` / `ROUNDEL_FONT_POLICY` — published rules as constants
+- `LINE_DIAGRAM` + `@/components/tfl/line-diagram-shapes` — low-level map geometry
+- `LineRouteDiagram` / `JourneyDiagram` / `HorizontalLineDiagram` — route strips and A→B journeys (`/line-diagram`)
+
+Reference crops: `public/brand/line-diagram/`.
+
+### Line diagram scale (for agents and consumers)
+
+Diagrams share **one** responsive scale knob. Published geometry ratios (tick 0.66x, ring 3x, …) stay in `LINE_DIAGRAM` and are **not** theme tokens.
+
+| Token / API | Role |
+|-------------|------|
+| `--tfl-diagram-scale` (`DIAGRAM_SCALE_VAR`) | Unitless multiplier set on a shared ancestor |
+| `DIAGRAM_SCALE_CLASS` | Mobile / tablet / desktop values (`0.7` / `0.85` / `1`) |
+| `DIAGRAM_BASELINE.horizontal` / `.vertical` | Orientation px at scale `1` (`10` / `4` — horizontal = Victoria strip; vertical sized for laptop body text) |
+| `--tfl-diagram-x` | Resolved line thickness inside each diagram root |
+| `x` prop | Absolute px override (skips the inherited scale) |
+
+Vertical / journey UI names use **§11** sizing (cap height ≈ ring Ø = 3×) so labels read taller than interchange rings. Mid-route map ticks protrude **right only**; terminals use a full crossbar. Journey A→B markers are **always circles**, never dashes.
+
+**Do:** set `--tfl-diagram-scale` once so every diagram on the page shares breakpoints.
+
+```tsx
+import { DIAGRAM_SCALE_CLASS } from "@/lib/tfl/brand";
+
+<div className={DIAGRAM_SCALE_CLASS}>
+  <HorizontalLineDiagram lineColor="…" stations={…} />
+  <JourneyDiagram lineColor="…" from={…} to={…} />
+</div>
+```
+
+**Do not:** apply separate `text-xs sm:text-sm` / width utilities to ticks, rings, and labels. That desyncs TfL proportions.
+
+Pass `x={10}` (or any px) only when you need a fixed size that ignores the page scale.
+
 
 ## Components
 

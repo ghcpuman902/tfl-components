@@ -33,6 +33,6 @@ Agents: open the files below on GitHub (or in `node_modules/tfl-ts/examples/` af
 
 1. **Fetch once, then style.** Call `line.getStatus` / `stopPoint.getArrivals`, then apply helpers to the returned objects.
 2. **Disruptions first.** `sortLinesBySeverityAndOrder` then `isNormalService` to split boards; denser cards for disruptions, compact grid for good service.
-3. **Brand as CSS variables.** `getLineCssProps(lineId)` → `--line-color`, dark outline vars. Keep Northern black; outline for contrast (do not invert fill to white).
+3. **Brand as CSS variables.** `getLineCssProps(lineId)` → `--line-color` plus dark vars. Default Northern contrast is outline (stroke + hard rings); pass `{ darkContrastMode: 'white' }` to opt into white fill/text on dark surfaces.
 4. **Bus ≠ tube.** Route chips are generic; stop letter is a small badge; countdown is `Due` / `N min` from `timeToStation`.
 5. **Prefer boardable bus stops.** IDs matching `/^490/` support live arrivals; hubs often do not.

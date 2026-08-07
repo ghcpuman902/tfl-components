@@ -3,10 +3,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { cacheLife, cacheTag } from "next/cache";
 import { getLineCssProps, getLineInlineStyles } from "tfl-ts";
-import { SiteHeader } from "@/components/site-header";
 import { LineColorBar } from "@/components/tfl/line-badge";
+import { ExploreBodySkeleton } from "@/components/tfl/page-skeletons";
 import { getTflClient } from "@/lib/tfl/client";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
   title: "Explore modes — tfl-components",
@@ -54,7 +53,7 @@ async function ExploreBody() {
                     className="block rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/50"
                   >
                     <span
-                      className="font-semibold dark:[text-shadow:var(--line-dark-text-shadow)]"
+                      className="tfl-dark-line-text font-semibold"
                       style={{ color: styles.color, ...cssProps }}
                     >
                       {line.name}
@@ -78,30 +77,19 @@ async function ExploreBody() {
 
 export default function ExplorePage() {
   return (
-    <div className="min-h-svh">
-      <SiteHeader pathname="/explore" />
-      <main className="mx-auto max-w-5xl space-y-8 px-4 py-6">
-        <div>
-          <h1 className="text-3xl font-bold">Explore by mode</h1>
-          <p className="mt-2 text-muted-foreground">
-            Lines returned by{" "}
-            <code className="rounded bg-muted px-1 text-xs">{`line.get({ modes })`}</code>.
-            Open a line for route detail.
-          </p>
-        </div>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold">Explore by mode</h1>
+        <p className="mt-2 text-muted-foreground">
+          Lines returned by{" "}
+          <code className="rounded bg-muted px-1 text-xs">{`line.get({ modes })`}</code>.
+          Open a line for route detail.
+        </p>
+      </div>
 
-        <Suspense
-          fallback={
-            <div className="space-y-6">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-40 w-full" />
-              ))}
-            </div>
-          }
-        >
-          <ExploreBody />
-        </Suspense>
-      </main>
+      <Suspense fallback={<ExploreBodySkeleton />}>
+        <ExploreBody />
+      </Suspense>
     </div>
   );
 }

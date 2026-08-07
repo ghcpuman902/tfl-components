@@ -3,10 +3,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { cacheLife, cacheTag } from "next/cache";
 import { getLineCssProps, getLineInlineStyles } from "tfl-ts";
-import { SiteHeader } from "@/components/site-header";
 import { LineColorBar } from "@/components/tfl/line-badge";
+import { RoutePageSkeleton } from "@/components/tfl/page-skeletons";
 import { getTflClient } from "@/lib/tfl/client";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
   title: "Route detail — tfl-components",
@@ -49,7 +48,7 @@ async function RouteFromParams({ searchParams }: PageProps) {
     <>
       <div>
         <h1
-          className="text-3xl font-bold dark:[text-shadow:var(--line-dark-text-shadow)]"
+          className="tfl-dark-line-text text-3xl font-bold"
           style={{ color: styles.color, ...cssProps }}
         >
           {line?.name ?? lineId} route
@@ -117,13 +116,10 @@ async function RouteFromParams({ searchParams }: PageProps) {
 
 export default function RoutePage({ searchParams }: PageProps) {
   return (
-    <div className="min-h-svh">
-      <SiteHeader pathname="/route" />
-      <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
-        <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-          <RouteFromParams searchParams={searchParams} />
-        </Suspense>
-      </main>
+    <div className="space-y-6">
+      <Suspense fallback={<RoutePageSkeleton />}>
+        <RouteFromParams searchParams={searchParams} />
+      </Suspense>
     </div>
   );
 }

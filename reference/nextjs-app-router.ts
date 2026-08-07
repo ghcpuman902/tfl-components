@@ -75,7 +75,7 @@ export default async function StatusPage() {
                   style={cssProps}
                 >
                   <h3
-                    className="text-lg font-semibold dark:[text-shadow:var(--line-dark-text-shadow)]"
+                    className="tfl-dark-line-text text-lg font-semibold"
                     style={{ color: styles.color }}
                   >
                     {line.name}
@@ -83,7 +83,7 @@ export default async function StatusPage() {
                   {/* Color bar: brand hex via --line-color; Overground/Elizabeth get a white stripe */}
                   <div className="relative h-[6px] w-full">
                     <div
-                      className="h-full w-full dark:[box-shadow:var(--line-dark-box-shadow)]"
+                      className="h-full w-full dark:bg-[var(--line-dark-fill)] dark:[box-shadow:var(--line-dark-box-shadow)]"
                       style={{ backgroundColor: 'var(--line-color)' }}
                     />
                     {hasOvergroundStripe(line.modeName) && (
@@ -129,7 +129,7 @@ export default async function StatusPage() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <h3
-                    className="text-sm font-semibold leading-tight dark:[text-shadow:var(--line-dark-text-shadow)]"
+                    className="tfl-dark-line-text text-sm font-semibold leading-tight"
                     style={{ color: styles.color }}
                   >
                     {line.name}
@@ -145,7 +145,7 @@ export default async function StatusPage() {
                 </div>
                 <div className="relative h-[4px] w-full">
                   <div
-                    className="h-full w-full dark:[box-shadow:var(--line-dark-box-shadow)]"
+                    className="h-full w-full dark:bg-[var(--line-dark-fill)] dark:[box-shadow:var(--line-dark-box-shadow)]"
                     style={{ backgroundColor: 'var(--line-color)' }}
                   />
                   {hasOvergroundStripe(line.modeName) && (

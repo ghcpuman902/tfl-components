@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   getBusArrivals,
   getNearbyBusStops,
@@ -12,9 +13,76 @@ import {
   type GetBusArrivalsResult,
   type NearbyBusStop,
 } from "@/lib/tfl/actions";
-import { truncateLatLon } from "@/lib/tfl/geo";
+import {
+  isValidLatLon,
+  TRAFALGAR_SQUARE,
+  truncateLatLon,
+  type LatLonLabel,
+} from "@/lib/tfl/geo";
 import { Bus, Loader2, LocateFixed, MapPin, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const LOCATION_CACHE_KEY = "tfl-bus-arrivals-location";
+
+const readCachedLocation = (): LatLonLabel | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(LOCATION_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<LatLonLabel>;
+    if (
+      typeof parsed.lat !== "number" ||
+      typeof parsed.lon !== "number" ||
+      typeof parsed.label !== "string" ||
+      !isValidLatLon(parsed.lat, parsed.lon) ||
+      parsed.label.trim().length === 0
+    ) {
+      return null;
+    }
+    const { lat, lon } = truncateLatLon(parsed.lat, parsed.lon);
+    return { lat, lon, label: parsed.label.trim() };
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedLocation = (location: LatLonLabel): void => {
+  if (typeof window === "undefined") return;
+  try {
+    const { lat, lon } = truncateLatLon(location.lat, location.lon);
+    window.localStorage.setItem(
+      LOCATION_CACHE_KEY,
+      JSON.stringify({ lat, lon, label: location.label }),
+    );
+  } catch {
+    // Quota / private mode — continue without persistence.
+  }
+};
+
+/** Skeleton for the bus arrivals board — use in `loading.tsx` or Suspense. */
+export const BusArrivalsSkeleton = () => (
+  <div className="w-full space-y-4" aria-busy aria-label="Loading bus arrivals">
+    <div className="space-y-2">
+      <Skeleton className="h-7 w-56 max-w-full" />
+      <Skeleton className="h-4 w-full max-w-md" />
+    </div>
+    <div className="flex flex-col gap-2 sm:flex-row">
+      <Skeleton className="h-9 w-full sm:w-44" />
+      <Skeleton className="h-9 flex-1" />
+      <Skeleton className="h-9 w-full sm:w-24" />
+    </div>
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Skeleton key={i} className="h-20 w-full" />
+      ))}
+    </div>
+    <div className="space-y-0 border-t border-border pt-4">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Skeleton key={i} className="my-2 h-10 w-full" />
+      ))}
+    </div>
+  </div>
+);
 
 const formatTimeToStation = (seconds?: number): string => {
   if (seconds === undefined || seconds < 0) return "-";
@@ -90,9 +158,10 @@ export const BusArrivals = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [arrivalsResult, setArrivalsResult] = useState<GetBusArrivalsResult | null>(null);
   const [stopsError, setStopsError] = useState<string | null>(null);
-  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(true);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [loadingArrivals, setLoadingArrivals] = useState(false);
+  const hasBootstrapped = useRef(false);
 
   const loadArrivals = useCallback(async (stop: NearbyBusStop) => {
     setSelectedStop(stop);
@@ -135,6 +204,26 @@ export const BusArrivals = () => {
     [loadArrivals],
   );
 
+  useEffect(() => {
+    if (hasBootstrapped.current) return;
+    hasBootstrapped.current = true;
+
+    const cached = readCachedLocation();
+    const location: LatLonLabel = cached ?? {
+      lat: TRAFALGAR_SQUARE.lat,
+      lon: TRAFALGAR_SQUARE.lon,
+      label: TRAFALGAR_SQUARE.label,
+    };
+    if (!cached) {
+      writeCachedLocation(location);
+    }
+
+    setLoadingLocation(true);
+    void handleNearbyFromCoords(location.lat, location.lon, location.label).finally(() => {
+      setLoadingLocation(false);
+    });
+  }, [handleNearbyFromCoords]);
+
   const handleUseLocation = async () => {
     if (loadingLocation || loadingSearch) return;
 
@@ -174,11 +263,9 @@ export const BusArrivals = () => {
           position.coords.latitude,
           position.coords.longitude,
         );
-        void handleNearbyFromCoords(
-          lat,
-          lon,
-          `${lat.toFixed(3)}, ${lon.toFixed(3)}`,
-        ).finally(() => {
+        const label = `${lat.toFixed(3)}, ${lon.toFixed(3)}`;
+        writeCachedLocation({ lat, lon, label });
+        void handleNearbyFromCoords(lat, lon, label).finally(() => {
           setLoadingLocation(false);
         });
       },
@@ -246,7 +333,8 @@ export const BusArrivals = () => {
         Bus arrivals near you
       </h2>
       <p className="text-sm text-muted-foreground mb-4 text-pretty">
-        Uses{" "}
+        Defaults to Trafalgar Square (cached in this browser). Use my location to overwrite, or
+        search by stop name. Powered by{" "}
         <code className="bg-background/60 px-1 py-0.5 text-xs">stopPoint.getByGeoPoint</code>,{" "}
         <code className="bg-background/60 px-1 py-0.5 text-xs">stopPoint.search</code>, and{" "}
         <code className="bg-background/60 px-1 py-0.5 text-xs">stopPoint.getArrivals</code>.

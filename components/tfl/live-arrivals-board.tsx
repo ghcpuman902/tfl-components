@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  getLineCssProps,
-  getLineInlineStyles,
-} from "tfl-ts";
+import { getLineCssProps } from "tfl-ts";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   getStopArrivalsAction,
   type LiveArrival,
@@ -20,6 +18,26 @@ const formatCountdown = (seconds?: number): string => {
   if (seconds < 60) return "Due";
   return `${Math.floor(seconds / 60)} min`;
 };
+
+/** Skeleton for the live arrivals board — use in `loading.tsx` or Suspense. */
+export const LiveArrivalsBoardSkeleton = () => (
+  <div className="w-full space-y-4" aria-busy aria-label="Loading live arrivals">
+    <div className="flex flex-wrap items-end justify-between gap-2">
+      <div className="space-y-2">
+        <Skeleton className="h-9 w-48 max-w-full" />
+        <Skeleton className="h-4 w-64 max-w-full" />
+      </div>
+      <Skeleton className="h-4 w-28" />
+    </div>
+    <ul className="list-none space-y-0 p-0" role="presentation">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <li key={i} className="border-b border-border py-2.5 last:border-0">
+          <Skeleton className="h-8 w-full" />
+        </li>
+      ))}
+    </ul>
+  </div>
+);
 
 export const LiveArrivalsBoard = ({
   stopPointId = DEFAULT_STOP_ID,
@@ -66,8 +84,12 @@ export const LiveArrivalsBoard = ({
     };
   }, [stopPointId]);
 
+  if (loading && arrivals.length === 0 && !error) {
+    return <LiveArrivalsBoardSkeleton />;
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="w-full space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h1 className="text-3xl font-bold">Live arrivals</h1>
@@ -83,7 +105,9 @@ export const LiveArrivalsBoard = ({
               Loading…
             </>
           ) : (
-            <>Poll #{tick} · every {POLL_MS / 1000}s</>
+            <>
+              Poll #{tick} · every {POLL_MS / 1000}s
+            </>
           )}
         </p>
       </div>
@@ -101,7 +125,6 @@ export const LiveArrivalsBoard = ({
       <ul className="list-none space-y-0 p-0" role="list">
         {arrivals.slice(0, 16).map((arrival, index) => {
           const lineId = arrival.lineId ?? "";
-          const styles = getLineInlineStyles(lineId);
           const cssProps = getLineCssProps(lineId);
 
           return (
@@ -111,13 +134,10 @@ export const LiveArrivalsBoard = ({
             >
               <span
                 className={cn(
-                  "inline-flex min-w-16 items-center justify-center rounded-md px-2 py-0.5 text-xs font-bold text-white",
-                  "dark:[box-shadow:var(--line-dark-box-shadow)]",
+                  "inline-flex min-w-16 items-center justify-center rounded-md bg-[var(--line-color)] px-2 py-0.5 text-xs font-bold text-white",
+                  "dark:bg-[var(--line-dark-fill)] dark:text-[var(--line-dark-on-fill)] dark:[box-shadow:var(--line-dark-box-shadow)]",
                 )}
-                style={{
-                  backgroundColor: styles.backgroundColor,
-                  ...cssProps,
-                }}
+                style={cssProps}
               >
                 {arrival.lineName ?? lineId}
               </span>
@@ -131,7 +151,7 @@ export const LiveArrivalsBoard = ({
                   </span>
                 )}
               </span>
-              <span className="tabular-nums font-semibold">
+              <span className="font-semibold tabular-nums">
                 {formatCountdown(arrival.timeToStation)}
               </span>
             </li>

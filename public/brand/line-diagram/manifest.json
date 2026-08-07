@@ -1,0 +1,332 @@
+{
+  "source": "TfL Line diagram standard \u2014 Issue 4 (January 2025)",
+  "sourceFile": "tfl-line-diagram-standard.pdf",
+  "dpi": 200,
+  "note": "Extracted/cropped reference figures for visual matching. \u00a9 Transport for London \u2014 for standards adherence in licensed work only.",
+  "pages": [
+    {
+      "file": "02-mode-colours.png",
+      "path": "/brand/line-diagram/pages/02-mode-colours.png",
+      "size": [
+        1999,
+        1460
+      ]
+    },
+    {
+      "file": "03-underground-line-colours.png",
+      "path": "/brand/line-diagram/pages/03-underground-line-colours.png",
+      "size": [
+        1999,
+        1459
+      ]
+    },
+    {
+      "file": "04-overground-line-colours.png",
+      "path": "/brand/line-diagram/pages/04-overground-line-colours.png",
+      "size": [
+        2001,
+        1459
+      ]
+    },
+    {
+      "file": "05-1-out-of-use.png",
+      "path": "/brand/line-diagram/pages/05-1-out-of-use.png",
+      "size": [
+        2000,
+        1459
+      ]
+    },
+    {
+      "file": "05-station-names-line-thickness.png",
+      "path": "/brand/line-diagram/pages/05-station-names-line-thickness.png",
+      "size": [
+        2000,
+        1460
+      ]
+    },
+    {
+      "file": "06-radii-and-angles.png",
+      "path": "/brand/line-diagram/pages/06-radii-and-angles.png",
+      "size": [
+        1997,
+        1459
+      ]
+    },
+    {
+      "file": "07-arrow-heads.png",
+      "path": "/brand/line-diagram/pages/07-arrow-heads.png",
+      "size": [
+        1998,
+        1458
+      ]
+    },
+    {
+      "file": "08-interchange-circles.png",
+      "path": "/brand/line-diagram/pages/08-interchange-circles.png",
+      "size": [
+        1999,
+        1459
+      ]
+    },
+    {
+      "file": "09-1-flag-boxes-continued.png",
+      "path": "/brand/line-diagram/pages/09-1-flag-boxes-continued.png",
+      "size": [
+        1999,
+        1459
+      ]
+    },
+    {
+      "file": "09-2-flag-boxes-on-diagram.png",
+      "path": "/brand/line-diagram/pages/09-2-flag-boxes-on-diagram.png",
+      "size": [
+        1999,
+        1460
+      ]
+    },
+    {
+      "file": "09-3-flag-box-construction.png",
+      "path": "/brand/line-diagram/pages/09-3-flag-box-construction.png",
+      "size": [
+        1999,
+        1460
+      ]
+    },
+    {
+      "file": "09-4-national-rail-pictograms.png",
+      "path": "/brand/line-diagram/pages/09-4-national-rail-pictograms.png",
+      "size": [
+        2001,
+        1459
+      ]
+    },
+    {
+      "file": "09-flag-boxes.png",
+      "path": "/brand/line-diagram/pages/09-flag-boxes.png",
+      "size": [
+        1999,
+        1460
+      ]
+    },
+    {
+      "file": "10-1-diagram-elements.png",
+      "path": "/brand/line-diagram/pages/10-1-diagram-elements.png",
+      "size": [
+        1999,
+        1459
+      ]
+    },
+    {
+      "file": "10-constructing-line-diagram.png",
+      "path": "/brand/line-diagram/pages/10-constructing-line-diagram.png",
+      "size": [
+        2095,
+        1460
+      ]
+    },
+    {
+      "file": "11-1-vertical-branches.png",
+      "path": "/brand/line-diagram/pages/11-1-vertical-branches.png",
+      "size": [
+        1998,
+        1459
+      ]
+    },
+    {
+      "file": "11-vertical-platform.png",
+      "path": "/brand/line-diagram/pages/11-vertical-platform.png",
+      "size": [
+        2026,
+        1460
+      ]
+    }
+  ],
+  "figures": [
+    {
+      "file": "arrow-head.png",
+      "path": "/brand/line-diagram/figures/arrow-head.png",
+      "size": [
+        687,
+        633
+      ]
+    },
+    {
+      "file": "element-legend.png",
+      "path": "/brand/line-diagram/figures/element-legend.png",
+      "size": [
+        1251,
+        1454
+      ]
+    },
+    {
+      "file": "horizontal-construction.png",
+      "path": "/brand/line-diagram/figures/horizontal-construction.png",
+      "size": [
+        2091,
+        1050
+      ]
+    },
+    {
+      "file": "interchange-bridge.png",
+      "path": "/brand/line-diagram/figures/interchange-bridge.png",
+      "size": [
+        433,
+        347
+      ]
+    },
+    {
+      "file": "interchange-dumbbell.png",
+      "path": "/brand/line-diagram/figures/interchange-dumbbell.png",
+      "size": [
+        183,
+        393
+      ]
+    },
+    {
+      "file": "interchange-shared.png",
+      "path": "/brand/line-diagram/figures/interchange-shared.png",
+      "size": [
+        499,
+        234
+      ]
+    },
+    {
+      "file": "interchange-single.png",
+      "path": "/brand/line-diagram/figures/interchange-single.png",
+      "size": [
+        499,
+        223
+      ]
+    },
+    {
+      "file": "line-thickness-x.png",
+      "path": "/brand/line-diagram/figures/line-thickness-x.png",
+      "size": [
+        400,
+        224
+      ]
+    },
+    {
+      "file": "parallel-lines-033x.png",
+      "path": "/brand/line-diagram/figures/parallel-lines-033x.png",
+      "size": [
+        162,
+        68
+      ]
+    },
+    {
+      "file": "radii-45.png",
+      "path": "/brand/line-diagram/figures/radii-45.png",
+      "size": [
+        460,
+        411
+      ]
+    },
+    {
+      "file": "radii-90-r3x.png",
+      "path": "/brand/line-diagram/figures/radii-90-r3x.png",
+      "size": [
+        394,
+        553
+      ]
+    },
+    {
+      "file": "station-name-spacing.png",
+      "path": "/brand/line-diagram/figures/station-name-spacing.png",
+      "size": [
+        253,
+        193
+      ]
+    },
+    {
+      "file": "station-tick-066x.png",
+      "path": "/brand/line-diagram/figures/station-tick-066x.png",
+      "size": [
+        19,
+        64
+      ]
+    }
+  ],
+  "sheets": [
+    {
+      "file": "05-1-out-of-use-sheet.png",
+      "path": "/brand/line-diagram/figures/05-1-out-of-use-sheet.png",
+      "size": [
+        454,
+        325
+      ]
+    },
+    {
+      "file": "05-line-thickness-sheet.png",
+      "path": "/brand/line-diagram/figures/05-line-thickness-sheet.png",
+      "size": [
+        502,
+        910
+      ]
+    },
+    {
+      "file": "06-radii-angles-sheet.png",
+      "path": "/brand/line-diagram/figures/06-radii-angles-sheet.png",
+      "size": [
+        515,
+        955
+      ]
+    },
+    {
+      "file": "07-arrow-head-sheet.png",
+      "path": "/brand/line-diagram/figures/07-arrow-head-sheet.png",
+      "size": [
+        715,
+        645
+      ]
+    },
+    {
+      "file": "08-interchange-circles-sheet.png",
+      "path": "/brand/line-diagram/figures/08-interchange-circles-sheet.png",
+      "size": [
+        1037,
+        900
+      ]
+    },
+    {
+      "file": "09-3-flag-construction-sheet.png",
+      "path": "/brand/line-diagram/figures/09-3-flag-construction-sheet.png",
+      "size": [
+        774,
+        1340
+      ]
+    },
+    {
+      "file": "10-1-elements-sheet.png",
+      "path": "/brand/line-diagram/figures/10-1-elements-sheet.png",
+      "size": [
+        607,
+        885
+      ]
+    },
+    {
+      "file": "10-construction-sheet.png",
+      "path": "/brand/line-diagram/figures/10-construction-sheet.png",
+      "size": [
+        2091,
+        950
+      ]
+    },
+    {
+      "file": "11-1-vertical-branches-sheet.png",
+      "path": "/brand/line-diagram/figures/11-1-vertical-branches-sheet.png",
+      "size": [
+        1287,
+        1159
+      ]
+    },
+    {
+      "file": "11-vertical-sheet.png",
+      "path": "/brand/line-diagram/figures/11-vertical-sheet.png",
+      "size": [
+        1474,
+        1191
+      ]
+    }
+  ]
+}
