@@ -72,14 +72,24 @@
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  /* sugar-high tokens */
+  --sh-class: oklch(0.45 0.12 250);
+  --sh-identifier: oklch(0.35 0.02 260);
+  --sh-sign: oklch(0.45 0 0);
+  --sh-property: oklch(0.5 0.14 30);
+  --sh-entity: oklch(0.5 0.12 150);
+  --sh-jsxliterals: oklch(0.5 0.12 300);
+  --sh-string: oklch(0.5 0.12 150);
+  --sh-keyword: oklch(0.5 0.18 25);
+  --sh-comment: oklch(0.55 0 0);
 }
 
 .dark {
@@ -114,6 +124,15 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+    --sh-class: oklch(0.75 0.1 250);
+    --sh-identifier: oklch(0.88 0.02 260);
+    --sh-sign: oklch(0.7 0 0);
+    --sh-property: oklch(0.78 0.12 30);
+    --sh-entity: oklch(0.78 0.1 150);
+    --sh-jsxliterals: oklch(0.78 0.1 300);
+    --sh-string: oklch(0.78 0.1 150);
+    --sh-keyword: oklch(0.78 0.14 25);
+    --sh-comment: oklch(0.6 0 0);
 }
 
 @layer base {

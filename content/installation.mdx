@@ -1,0 +1,49 @@
+## Installation
+
+Copy a component into your Next.js app with the shadcn CLI. The registry item declares `tfl-ts` and any UI dependencies.
+
+### Add a board
+
+```bash
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tube-status-board.json
+```
+
+Other items:
+
+| Item | Command |
+|------|---------|
+| Roundel | `pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tfl-roundel.json` |
+| Line badge | `pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/line-badge.json` |
+| Bus arrivals | `pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/bus-arrivals-board.json` |
+| Live arrivals | `pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/live-arrivals-board.json` |
+| Line diagram | `pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/line-diagram.json` |
+
+### API keys
+
+Register at the [TfL API portal](https://api-portal.tfl.gov.uk/) and set:
+
+```env
+TFL_APP_ID=your-app-id
+TFL_APP_KEY=your-app-key
+```
+
+Keys stay on the server. Boards that fetch data use Server Components or Server Actions — never expose keys to the browser.
+
+### Project layout after install
+
+Components land under nested paths that match this library:
+
+```
+components/tfl/brand/tfl-roundel.tsx
+components/tfl/brand/line-badge.tsx
+components/tfl/status/tube-status-board.tsx
+components/tfl/arrivals/bus-arrivals.tsx
+components/tfl/diagram/...
+lib/tfl/client.ts
+```
+
+Import from those paths:
+
+```tsx
+import { TubeStatusBoard } from "@/components/tfl/status/tube-status-board"
+```

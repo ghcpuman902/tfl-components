@@ -13,7 +13,7 @@ The registry item declares `tfl-ts` as a dependency. Copied code reads `TFL_APP_
 
 ## Live demo
 
-Home page is the live status board: https://tfl-components.vercel.app
+Home page is the live status board plus docs catalog: https://tfl-components.vercel.app
 
 Intended custom domain (needs GoDaddy DNS): `tfl.manglekuo.com`
 
@@ -30,23 +30,43 @@ cp .env.example .env.local   # or copy from tfl-ts if you already have keys
 pnpm dev
 ```
 
-Press `d` to toggle dark mode.
+Press `d` to toggle dark mode. Use the left sidebar (or `b`) to browse components.
 
-## Boards
+## Docs layout
 
-| Path | What it shows |
-|------|----------------|
-| `/` | Live tube/rail status (batch by line IDs by default) |
-| `/arrivals` | Bus arrivals via geolocation or search |
-| `/explore` | Lines grouped by mode |
-| `/route` | Route sequence for one line |
-| `/arrivals/live` | Polling tube arrivals |
-| `/line-badge` | Line colour primitive |
-| `/roundel` | Env-gated TfL roundel demo |
+Grouped the way Londoners think about transport — not by TfL API mode IDs:
+
+| Group | Contents |
+|-------|----------|
+| Foundations | Roundel, line colours & badges, line diagram |
+| Tube & rail | Status board, live arrivals |
+| Bus | Bus arrivals |
+| Tools | Browse lines, route stations |
+
+Paths are flat under `/components/[slug]` and `/tools/[slug]`. Old URLs redirect.
+
+## Install targets (pre-1.0)
+
+Components install into nested folders:
+
+```
+components/tfl/brand/…
+components/tfl/status/…
+components/tfl/arrivals/…
+components/tfl/diagram/…
+lib/tfl/…
+```
+
+Import example:
+
+```tsx
+import { TubeStatusBoard } from "@/components/tfl/status/tube-status-board"
+import { LineBadge } from "@/components/tfl/brand/line-badge"
+```
 
 ## Caching
 
-Status and explore data use Next.js Cache Components (`cacheComponents: true`) with `use cache` and ~60s / ~300s revalidate — not the old `export const revalidate` route segment config.
+Status and browse data use Next.js Cache Components (`cacheComponents: true`) with `use cache` and ~60s / ~300s revalidate — not the old `export const revalidate` route segment config.
 
 ## Branding and the roundel
 
@@ -73,14 +93,10 @@ Mode presets and Wikimedia paths are exported as `ROUNDEL_PRESETS`, `ROUNDEL_LOG
 
 Brand helpers live in `@/lib/tfl/brand`: modal colours, Underground / Overground line colours, `getRoundelExclusion()`, font/do-not constants, and **line-diagram geometry** (`LINE_DIAGRAM`, SVG shape components).
 
-Cropped references from *Line diagram standard* Issue 4 are in `public/brand/line-diagram/`; source PDF in `reference/brand/`. Demo: `/line-diagram` — **`LineRouteDiagram`** (full stop list) and **`JourneyDiagram`** (A→B with expandable intermediates).
+Cropped references from *Line diagram standard* Issue 4 are in `public/brand/line-diagram/`; source PDF in `reference/brand/`. Demo: `/components/line-diagram`.
 
 **Fonts:** this demo app uses [Hammersmith One](https://fonts.google.com/specimen/Hammersmith+One) as a Johnston-like stand-in. Do **not** download Johnston without a licence — [apply via TfL](https://tfl.gov.uk/info-for/business-and-advertisers/font-requests?intcmp=5840), or use Hammersmith One / [P22 Underground](https://fonts.adobe.com/fonts/p22-underground) (Adobe Fonts). Prefer your own product typeface in shipping apps.
 
 ## Rules
 
-- Tube/rail: use `getLineInlineStyles` / `getLineCssProps`.
-- Bus: route-number chips only — never tube line colours.
-- Cache status ~60s; poll arrivals no faster than every 10–15s per stop.
-
-See [TODO.md](./TODO.md) for the handoff checklist.
+See [AGENTS.md](./AGENTS.md) and [docs/](./docs/) for agent workflow, design system, and product principles.

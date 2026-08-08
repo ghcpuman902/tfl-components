@@ -1,0 +1,30 @@
+## Usage
+
+```tsx
+import { LineBadge, LineColorBar } from "@/components/tfl/brand/line-badge"
+
+export default function Page() {
+  return (
+    <>
+      <LineBadge lineId="central" name="Central" />
+      <LineBadge lineId="northern" name="Northern" variant="text" />
+      <LineColorBar lineId="elizabeth" modeName="elizabeth-line" />
+    </>
+  )
+}
+```
+
+### Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `lineId` | `string` | TfL line ID (`central`, `northern`, `elizabeth`, …). |
+| `name` | `string` | Display label; defaults to `lineId`. |
+| `variant` | `"chip" \| "text"` | Filled chip (default) or coloured text. |
+| `lineStatuses` | `array` | Optional statuses for a richer ARIA label. |
+
+`LineColorBar` takes `lineId`, optional `modeName` (for Overground / Elizabeth parallel rails), and `heightClass`.
+
+### Dark contrast
+
+Poor-contrast lines (Northern) keep brand fill on dark surfaces. A hard white outline comes from `--line-dark-box-shadow` / `--line-dark-text-shadow` via `getLineCssProps`.

@@ -1,0 +1,30 @@
+## Introduction
+
+**tfl-components** is how you build London transport UI into your own app — not a locked npm package. You copy the source with the shadcn CLI, own the files, and call the TfL API through [`tfl-ts`](https://www.npmjs.com/package/tfl-ts).
+
+### Open code
+
+Every board lands in your repo as React source. Change layout, copy, and data fetching freely. Agents can read the same files humans edit.
+
+### Composition
+
+Boards share small primitives — line colours, the roundel, diagram markers — so status, arrivals, and route diagrams stay visually consistent.
+
+### Distribution
+
+Install one item at a time from the registry:
+
+```bash
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tube-status-board.json
+```
+
+Put `TFL_APP_ID` and `TFL_APP_KEY` in your server environment. See [Installation](/installation) for the full checklist.
+
+### How this site is organised
+
+- **Foundations** — brand primitives (roundel, line colours) and the line diagram standard
+- **Tube & rail** — Underground, Overground, Elizabeth line, DLR, Tram
+- **Bus** — route-number arrivals
+- **Tools** — browse helpers that are not installable blocks
+
+Press `d` to toggle dark mode.

@@ -1,45 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { TfLRoundel } from "@/components/tfl/tfl-roundel";
-
-const NAV = [
-  { href: "/", label: "Status" },
-  { href: "/arrivals", label: "Bus arrivals" },
-  { href: "/explore", label: "Explore" },
-  { href: "/route", label: "Route" },
-  { href: "/arrivals/live", label: "Live arrivals" },
-  { href: "/line-badge", label: "Line badge" },
-  { href: "/roundel", label: "Roundel" },
-  { href: "/line-diagram", label: "Line diagram" },
-] as const;
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export const SiteHeader = () => {
-  const pathname = usePathname();
-
   return (
-    <header className="border-b border-border bg-background/80 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <TfLRoundel className="size-5" />
-          <span>tfl-components</span>
-        </Link>
-        <nav className="flex flex-wrap gap-1" aria-label="Main">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "rounded-md px-2.5 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground",
-                pathname === item.href &&
-                  "bg-muted font-medium text-foreground",
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
+    <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur md:px-4">
+      <SidebarTrigger className="-ml-1" aria-label="Toggle sidebar" />
+      <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
+        <p className="truncate text-sm text-muted-foreground md:hidden">
+          <Link href="/" className="font-medium text-foreground">
+            tfl-components
+          </Link>
+        </p>
+        <p className="hidden text-sm text-muted-foreground md:block">
+          Open React components for London transport · press{" "}
+          <kbd className="rounded border px-1 text-xs">d</kbd> for dark mode
+        </p>
+        <nav className="flex shrink-0 gap-2 text-sm" aria-label="Secondary">
+          <Link
+            href="/installation"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            Install
+          </Link>
+          <a
+            href="https://github.com/ghcpuman902/tfl-components"
+            className="text-muted-foreground hover:text-foreground"
+            target="_blank"
+            rel="noreferrer"
+          >
+            GitHub
+          </a>
         </nav>
       </div>
     </header>

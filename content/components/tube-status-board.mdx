@@ -1,0 +1,64 @@
+## Usage
+
+```tsx
+import { TubeStatusBoard } from "@/components/tfl/status/tube-status-board"
+
+export default function Page() {
+  return <TubeStatusBoard />
+}
+```
+
+Omit `lineIds` to load all tube / Elizabeth / DLR / tram / Overground modes.
+
+### Recipes
+
+#### Batch by line IDs
+
+One request for the lines you care about:
+
+```tsx
+import {
+  DEFAULT_STATUS_LINE_IDS,
+  TubeStatusBoard,
+} from "@/components/tfl/status/tube-status-board"
+
+export default function Page() {
+  return <TubeStatusBoard lineIds={DEFAULT_STATUS_LINE_IDS} />
+}
+```
+
+#### Custom Underground set
+
+```tsx
+const MY_LINES = [
+  "bakerloo",
+  "central",
+  "circle",
+  "district",
+  "hammersmith-city",
+  "jubilee",
+  "metropolitan",
+  "northern",
+  "piccadilly",
+  "victoria",
+  "waterloo-city",
+] as const
+
+export default function Page() {
+  return <TubeStatusBoard lineIds={MY_LINES} />
+}
+```
+
+### Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `lineIds` | `readonly string[]` | Optional. When set, one batched status request for these IDs. |
+| `hideHeader` | `boolean` | Omit the board header when a parent layout already has one. |
+| `children` | `ReactNode` | Optional slot below the status list. |
+
+### Notes
+
+- Severity sorting and official colours come from `tfl-ts`.
+- Status is cached for ~60s via Next.js Cache Components.
+- Covers Underground, Overground, Elizabeth line, DLR, and Tram — the tube & rail family.

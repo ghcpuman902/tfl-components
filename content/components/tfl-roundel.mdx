@@ -1,0 +1,36 @@
+## Usage
+
+```tsx
+import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
+
+export default function Page() {
+  return (
+    <>
+      <TfLRoundel />
+      <TfLRoundel variant="elizabeth" />
+      <TfLRoundel text="MY APP" ringColor="#E32017" barColor="#0019A8" />
+    </>
+  )
+}
+```
+
+### Trademark
+
+The TfL roundel is trademarked. By default the component renders a filled placeholder with the same footprint so layouts do not jump. Enable the official SVG in **your** app:
+
+```env
+NEXT_PUBLIC_ALLOW_TFL_ROUNDEL=true
+```
+
+Setting the flag shifts trademark responsibility to your application layer.
+
+### Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `variant` | mode preset | `underground`, `elizabeth`, `overground`, `dlr`, `tram`, … |
+| `text` | `string` | Bar label. |
+| `ringColor` / `barColor` / `textColor` | `string` | Custom colours. |
+| `artwork` | `boolean` | Use Wikimedia / local SVG artwork when allowed. |
+
+Mode presets and logo paths are exported as `ROUNDEL_PRESETS`, `ROUNDEL_LOGO_PATHS`, and `ROUNDEL_LOGO_SOURCES`.

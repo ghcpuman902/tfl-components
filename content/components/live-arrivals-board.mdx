@@ -1,0 +1,29 @@
+## Usage
+
+```tsx
+import { LiveArrivalsBoard } from "@/components/tfl/arrivals/live-arrivals-board"
+
+export default function Page() {
+  return (
+    <LiveArrivalsBoard
+      stopPointId="940GZZLUOXC"
+      stopName="Oxford Circus"
+    />
+  )
+}
+```
+
+Polls stop arrivals every 15 seconds. Default stop is Oxford Circus when props are omitted.
+
+### Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `stopPointId` | `string` | TfL stop point ID. |
+| `stopName` | `string` | Display name for the header. |
+
+### Notes
+
+- Prefer Server Actions for the fetch; keys stay on the server.
+- Line colours come from `tfl-ts` `getLineCssProps`.
+- Respect TfL rate limits — 15s is a sensible default for demos.

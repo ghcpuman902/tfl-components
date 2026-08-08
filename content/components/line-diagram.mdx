@@ -1,0 +1,28 @@
+## Usage
+
+```tsx
+import { HorizontalLineDiagram } from "@/components/tfl/diagram/horizontal-line-diagram"
+import { JourneyDiagram } from "@/components/tfl/diagram/journey-diagram"
+import { LineRouteDiagram } from "@/components/tfl/diagram/line-route-diagram"
+
+// stations: DiagramStation[] from toDiagramStation / curated data
+```
+
+### Components
+
+| Component | Role |
+|-----------|------|
+| `HorizontalLineDiagram` | Compact strip with interchange flags (§10) |
+| `LineRouteDiagram` | Full vertical route with station names (§11) |
+| `JourneyDiagram` | A→B journey with expandable intermediates |
+
+Map TfL stop points with `toDiagramStation` and slice a trip with `sliceJourney` from `@/lib/tfl/diagram-mappers`.
+
+### Standards
+
+Geometry ratios live in `@/lib/tfl/line-diagram` (`LINE_DIAGRAM`, scale CSS vars). They follow *Line diagram standard* Issue 4. Reference crops are in `public/brand/line-diagram/`.
+
+### Brand notes
+
+- Official line colours are fine.
+- Do not redistribute Johnston without a licence — this demo uses Hammersmith One as a stand-in.

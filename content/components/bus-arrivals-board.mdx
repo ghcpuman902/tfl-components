@@ -1,0 +1,17 @@
+## Usage
+
+```tsx
+import { BusArrivals } from "@/components/tfl/arrivals/bus-arrivals"
+
+export default function Page() {
+  return <BusArrivals />
+}
+```
+
+The board uses geolocation or search to find nearby stops, then loads live arrivals via Server Actions.
+
+### Notes
+
+- Depends on `TFL_APP_ID` / `TFL_APP_KEY` on the server.
+- Route numbers use bus styling (not branded line colours).
+- Ships with `lib/tfl/actions.ts`, `geo.ts`, and `client.ts`.

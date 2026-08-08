@@ -19,6 +19,7 @@
       }
     ],
     "paths": {
+      "@/components/tfl/*": ["./registry/tfl/*", "./components/tfl/*"],
       "@/*": ["./*"]
     }
   },

@@ -1,11 +1,4 @@
-import type { Metadata } from "next";
 import { LineBadge, LineColorBar } from "@/components/tfl/brand/line-badge";
-
-export const metadata: Metadata = {
-  title: "Line badge — tfl-components",
-  description:
-    "Official TfL line colour badges with dark-mode hard outlines.",
-};
 
 const DEMO_LINES = [
   { id: "central", name: "Central" },
@@ -18,23 +11,10 @@ const DEMO_LINES = [
   { id: "district", name: "District" },
 ] as const;
 
-export default function LineBadgePage() {
+/** Presentational — no API keys required. */
+export default function LineBadgeDemo() {
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Line badge</h1>
-        <p className="mt-2 text-muted-foreground">
-          Primitive chip using{" "}
-          <code className="rounded bg-muted px-1 text-xs">getLineCssProps</code>.
-          Poor-contrast lines (Northern) keep brand fill on dark surfaces with a
-          hard white outline via{" "}
-          <code className="rounded bg-muted px-1 text-xs">
-            --line-dark-box-shadow
-          </code>
-          .
-        </p>
-      </div>
-
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Chip variant</h2>
         <div className="flex flex-wrap gap-2">
@@ -76,7 +56,7 @@ export default function LineBadgePage() {
           Brand black fill with a hard white outline — switch to dark theme to
           see the outline.
         </p>
-        <div className="rounded-lg border border-border bg-card p-3 space-y-3">
+        <div className="space-y-3 rounded-lg border border-border bg-card p-3">
           <div className="flex flex-wrap items-center gap-2">
             <LineBadge lineId="northern" name="Northern" />
             <LineBadge
@@ -93,13 +73,6 @@ export default function LineBadgePage() {
           />
         </div>
       </section>
-
-      <aside className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-        <p className="mb-2 font-medium text-foreground">Install into your app</p>
-        <pre className="overflow-x-auto rounded bg-muted p-3 text-xs text-foreground">
-          {`pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/line-badge.json`}
-        </pre>
-      </aside>
     </div>
   );
 }

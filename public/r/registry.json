@@ -16,9 +16,9 @@
       ],
       "files": [
         {
-          "path": "registry/tfl/tfl-roundel.tsx",
+          "path": "registry/tfl/brand/tfl-roundel.tsx",
           "type": "registry:ui",
-          "target": "components/tfl/tfl-roundel.tsx"
+          "target": "components/tfl/brand/tfl-roundel.tsx"
         },
         {
           "path": "lib/tfl/roundel-presets.ts",
@@ -85,9 +85,9 @@
       ],
       "files": [
         {
-          "path": "registry/tfl/line-badge.tsx",
+          "path": "registry/tfl/brand/line-badge.tsx",
           "type": "registry:component",
-          "target": "components/tfl/line-badge.tsx"
+          "target": "components/tfl/brand/line-badge.tsx"
         }
       ]
     },
@@ -107,12 +107,12 @@
       ],
       "files": [
         {
-          "path": "registry/tfl/tube-status-board.tsx",
+          "path": "registry/tfl/status/tube-status-board.tsx",
           "type": "registry:component",
-          "target": "components/tfl/tube-status-board.tsx"
+          "target": "components/tfl/status/tube-status-board.tsx"
         },
         {
-          "path": "registry/tfl/client.ts",
+          "path": "lib/tfl/client.ts",
           "type": "registry:lib",
           "target": "lib/tfl/client.ts"
         }
@@ -135,24 +135,108 @@
       ],
       "files": [
         {
-          "path": "registry/tfl/bus-arrivals.tsx",
+          "path": "registry/tfl/arrivals/bus-arrivals.tsx",
           "type": "registry:component",
-          "target": "components/tfl/bus-arrivals.tsx"
+          "target": "components/tfl/arrivals/bus-arrivals.tsx"
         },
         {
-          "path": "registry/tfl/actions.ts",
+          "path": "lib/tfl/actions.ts",
           "type": "registry:lib",
           "target": "lib/tfl/actions.ts"
         },
         {
-          "path": "registry/tfl/geo.ts",
+          "path": "lib/tfl/geo.ts",
           "type": "registry:lib",
           "target": "lib/tfl/geo.ts"
         },
         {
-          "path": "registry/tfl/client.ts",
+          "path": "lib/tfl/client.ts",
           "type": "registry:lib",
           "target": "lib/tfl/client.ts"
+        }
+      ]
+    },
+    {
+      "name": "live-arrivals-board",
+      "type": "registry:block",
+      "title": "Live Arrivals Board",
+      "description": "Polling tube/rail stop arrivals board with official line colours.",
+      "dependencies": [
+        "tfl-ts",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "skeleton"
+      ],
+      "files": [
+        {
+          "path": "registry/tfl/arrivals/live-arrivals-board.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/live-arrivals-board.tsx"
+        },
+        {
+          "path": "lib/tfl/live-arrivals-action.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/live-arrivals-action.ts"
+        },
+        {
+          "path": "lib/tfl/client.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/client.ts"
+        }
+      ]
+    },
+    {
+      "name": "line-diagram",
+      "type": "registry:block",
+      "title": "Line Diagram",
+      "description": "TfL Line diagram standard components — horizontal strip, full route, and journey A→B.",
+      "dependencies": [
+        "tfl-ts"
+      ],
+      "registryDependencies": [
+        "button"
+      ],
+      "files": [
+        {
+          "path": "registry/tfl/diagram/horizontal-line-diagram.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/diagram/horizontal-line-diagram.tsx"
+        },
+        {
+          "path": "registry/tfl/diagram/line-route-diagram.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/diagram/line-route-diagram.tsx"
+        },
+        {
+          "path": "registry/tfl/diagram/journey-diagram.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/diagram/journey-diagram.tsx"
+        },
+        {
+          "path": "registry/tfl/diagram/diagram-markers.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/diagram/diagram-markers.tsx"
+        },
+        {
+          "path": "registry/tfl/diagram/line-diagram-shapes.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/diagram/line-diagram-shapes.tsx"
+        },
+        {
+          "path": "lib/tfl/line-diagram.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/line-diagram.ts"
+        },
+        {
+          "path": "lib/tfl/diagram-station.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/diagram-station.ts"
+        },
+        {
+          "path": "lib/tfl/diagram-mappers.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/diagram-mappers.ts"
         }
       ]
     }
