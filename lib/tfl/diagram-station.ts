@@ -16,6 +16,15 @@ export type DiagramStation = {
   connections?: DiagramConnection[];
 };
 
+/** Adjacent route segment state for horizontal diagrams. */
+export type DiagramSegmentState = "normal" | "out-of-use";
+
+export type DiagramSegment = {
+  fromStationId: string;
+  toStationId: string;
+  state: DiagramSegmentState;
+};
+
 /** Short display name for diagrams (drop common TfL suffixes). */
 export const formatStationName = (name: string): string =>
   name

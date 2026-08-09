@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
 import { getComponentEntries, getDocsEntry } from "@/lib/docs-catalog";
 import { loadComponentDemo } from "@/lib/load-component-demo";
 
@@ -41,23 +43,27 @@ export default async function ComponentDocsPage({ params }: PageProps) {
   }
 
   return (
-    <article className="space-y-10">
-      <DocsPageHeader entry={entry} />
+    <DocsReadableWidth>
+      <article className="space-y-10">
+        <DocsPageHeader entry={entry} />
 
-      {Demo ? (
-        <section className="space-y-3" aria-labelledby="preview-heading">
-          <h2 id="preview-heading" className="text-lg font-semibold">
-            Preview
-          </h2>
-          <Demo />
-        </section>
-      ) : null}
+        {Demo ? (
+          <section className="space-y-3" aria-labelledby="preview-heading">
+            <h2 id="preview-heading" className="text-lg font-semibold">
+              Preview
+            </h2>
+            <Demo />
+          </section>
+        ) : null}
 
-      {MDXPage ? (
-        <section className="border-t border-border pt-8">
-          <MDXPage />
-        </section>
-      ) : null}
-    </article>
+        {MDXPage ? (
+          <section className="border-t border-border pt-8">
+            <Suspense fallback={null}>
+              <MDXPage />
+            </Suspense>
+          </section>
+        ) : null}
+      </article>
+    </DocsReadableWidth>
   );
 }

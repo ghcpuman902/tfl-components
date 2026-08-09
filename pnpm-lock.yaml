@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  tfl-ts@2.3.3: 8c56de6be01639672953e5084396225f94375c9afdc49750aa1aaf994bcf8af0
+
 importers:
 
   .:
@@ -88,7 +91,7 @@ importers:
         version: 3.6.0
       tfl-ts:
         specifier: ^2.3.3
-        version: 2.3.3(typescript@5.9.3)
+        version: 2.3.3(patch_hash=8c56de6be01639672953e5084396225f94375c9afdc49750aa1aaf994bcf8af0)(typescript@5.9.3)
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
@@ -7937,7 +7940,7 @@ snapshots:
 
   tapable@2.3.3: {}
 
-  tfl-ts@2.3.3(typescript@5.9.3):
+  tfl-ts@2.3.3(patch_hash=8c56de6be01639672953e5084396225f94375c9afdc49750aa1aaf994bcf8af0)(typescript@5.9.3):
     dependencies:
       typescript: 5.9.3
 

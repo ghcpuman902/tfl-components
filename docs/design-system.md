@@ -22,6 +22,20 @@ Theme variables are defined in `app/globals.css`. Dark mode is class-based via `
 - **Do not** download or redistribute TfL’s Johnston typeface. Prefer your own product font. To licence Johnston, use [TfL font requests](https://tfl.gov.uk/info-for/business-and-advertisers/font-requests?intcmp=5840). Alternatives: [Hammersmith One](https://fonts.google.com/specimen/Hammersmith+One) or [P22 Underground](https://fonts.adobe.com/fonts/p22-underground) (Adobe Fonts).
 - Use `text-sm` / `text-xs` for secondary metadata, not as the default for main content.
 
+### Station label breaks (for agents and consumers)
+
+Use `StationNameLabel` / `formatStationLabel` — never ad-hoc `<br>` or CSS wrapping for diagram names.
+
+| API | Role |
+|-----|------|
+| `StationNameLabel` | Client label that measures live `--font-sans` (Hammersmith One) |
+| `formatStationLabel` | Pure scorer: prefer 1 line → balanced 2-line word split → optional abbr → scale ≥ 0.75 |
+| `STATION_ABBREVIATIONS` | Conservative map (`Street`→`St`, `Road`→`Rd`, …) — only when allowed |
+| `/tools/typography` | A–Z lab to inspect every Tube / Elizabeth / DLR / Overground / Tram name |
+
+Rules: break only between words; prefer the full name; never split a token; optional abbreviations only to fit; scale-down is last resort (`STATION_LABEL_MIN_SCALE = 0.75`).
+
+
 ## Brand tooling
 
 Import from `@/lib/tfl/brand`:

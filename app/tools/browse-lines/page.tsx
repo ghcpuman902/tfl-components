@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { cacheLife, cacheTag } from "next/cache";
 import { getLineCssProps, getLineInlineStyles } from "tfl-ts";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
 import { LineColorBar } from "@/components/tfl/brand/line-badge";
 import { ExploreBodySkeleton } from "@/components/tfl/page-skeletons";
 import { getDocsEntry } from "@/lib/docs-catalog";
@@ -84,14 +85,16 @@ export default async function BrowseLinesPage() {
   );
 
   return (
-    <article className="space-y-8">
-      <DocsPageHeader entry={entry} />
-      <Suspense fallback={<ExploreBodySkeleton />}>
-        <BrowseLinesBody />
-      </Suspense>
-      <section className="border-t border-border pt-8">
-        <MDXPage />
-      </section>
-    </article>
+    <DocsReadableWidth>
+      <article className="space-y-8">
+        <DocsPageHeader entry={entry} />
+        <Suspense fallback={<ExploreBodySkeleton />}>
+          <BrowseLinesBody />
+        </Suspense>
+        <section className="border-t border-border pt-8">
+          <MDXPage />
+        </section>
+      </article>
+    </DocsReadableWidth>
   );
 }

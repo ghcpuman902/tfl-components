@@ -1,8 +1,6 @@
-"use client";
-
 import * as React from "react";
 import { Check, Copy } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { highlight } from "sugar-high";
 import { cn } from "@/lib/utils";
 
 type SyntaxHighlightedCodeProps = {
@@ -26,9 +24,18 @@ const normalizeLanguage = (language?: string): string | undefined => {
   return lang;
 };
 
+const highlightCode = (code: string): string | null => {
+  try {
+    return highlight(code);
+  } catch {
+    return null;
+  }
+};
+
 /**
- * Renders plain code on the server, then applies sugar-high after mount
- * (avoids hydration mismatch).
+ * Fully server-rendered code block. Copy uses `data-mdx-copy` + the layout
+ * `CodeCopyDelegator` so MDX stays outside client boundaries (stable instant
+ * validation / hydration under Cache Components).
  */
 export const SyntaxHighlightedCode = ({
   code,
@@ -38,91 +45,35 @@ export const SyntaxHighlightedCode = ({
   wrapperClassName,
   showCopy = true,
 }: SyntaxHighlightedCodeProps) => {
-  const [highlightedHtml, setHighlightedHtml] = React.useState<string | null>(
-    null,
-  );
-  const [copied, setCopied] = React.useState(false);
-  const copyResetRef = React.useRef<number | null>(null);
-
-  React.useEffect(() => {
-    let cancelled = false;
-
-    const highlightCode = async () => {
-      try {
-        const { highlight } = await import("sugar-high");
-        const html = highlight(code);
-        if (!cancelled) setHighlightedHtml(html);
-      } catch {
-        if (!cancelled) setHighlightedHtml(null);
-      }
-    };
-
-    void highlightCode();
-    return () => {
-      cancelled = true;
-    };
-  }, [code]);
-
-  React.useEffect(() => {
-    return () => {
-      if (copyResetRef.current != null) {
-        window.clearTimeout(copyResetRef.current);
-      }
-    };
-  }, []);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      if (copyResetRef.current != null) {
-        window.clearTimeout(copyResetRef.current);
-      }
-      copyResetRef.current = window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  };
-
+  const highlightedHtml = highlightCode(code);
   const normalized = normalizeLanguage(language);
 
   return (
     <div className={cn("group/code relative mb-4 mt-6 w-full", wrapperClassName)}>
       {showCopy ? (
-        <Button
+        <button
           type="button"
-          variant="outline"
-          size="sm"
+          data-mdx-copy
+          data-copied="false"
+          aria-label="Copy code"
           className={cn(
-            "absolute top-2 right-2 z-10 h-8 gap-1.5",
-            "border-border/60 bg-background text-foreground shadow-xs",
+            "group/copy absolute top-2 right-2 z-10 inline-flex h-8 items-center gap-1.5 rounded-lg border border-border/60 bg-background px-2.5 text-sm font-medium text-foreground shadow-xs",
             "opacity-100 sm:opacity-0 sm:transition-opacity",
             "sm:group-hover/code:opacity-100 sm:focus-visible:opacity-100",
+            "hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           )}
-          onClick={handleCopy}
-          aria-label={copied ? "Copied" : "Copy code"}
         >
           <span className="relative size-3.5 shrink-0" aria-hidden>
-            <Copy
-              className={cn(
-                "absolute inset-0 size-3.5 transition-opacity",
-                copied ? "opacity-0" : "opacity-100",
-              )}
-            />
-            <Check
-              className={cn(
-                "absolute inset-0 size-3.5 transition-opacity",
-                copied ? "opacity-100" : "opacity-0",
-              )}
-            />
+            <Copy className="absolute inset-0 size-3.5 transition-opacity group-data-[copied=true]/copy:opacity-0" />
+            <Check className="absolute inset-0 size-3.5 opacity-0 transition-opacity group-data-[copied=true]/copy:opacity-100" />
           </span>
-          Copy
-        </Button>
+          <span data-mdx-copy-label>Copy</span>
+        </button>
       ) : null}
 
       <pre
         className={cn(
-          "block w-full overflow-x-auto rounded-lg bg-muted py-3 pr-14 pl-4 text-sm leading-[1.5]",
+          "block w-full overflow-x-auto rounded-lg bg-muted py-3 pr-14 pl-4 text-sm leading-normal",
           preClassName,
         )}
         data-language={normalized || undefined}
@@ -130,7 +81,7 @@ export const SyntaxHighlightedCode = ({
         {highlightedHtml ? (
           <code
             className={cn(
-              "font-mono text-[0.925em] leading-[1.5] text-foreground bg-transparent p-0",
+              "font-mono text-[0.925em] leading-normal text-foreground bg-transparent p-0",
               className,
             )}
             dangerouslySetInnerHTML={{ __html: highlightedHtml }}
@@ -138,7 +89,7 @@ export const SyntaxHighlightedCode = ({
         ) : (
           <code
             className={cn(
-              "font-mono text-[0.925em] leading-[1.5] text-foreground",
+              "font-mono text-[0.925em] leading-normal text-foreground",
               className,
             )}
           >

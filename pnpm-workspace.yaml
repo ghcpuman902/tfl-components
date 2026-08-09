@@ -4,3 +4,5 @@
 allowBuilds:
   sharp: true
   unrs-resolver: true
+patchedDependencies:
+  tfl-ts@2.3.3: patches/tfl-ts@2.3.3.patch

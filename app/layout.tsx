@@ -1,4 +1,6 @@
 import { ThemeProvider } from "@/components/theme-provider";
+import { CodeCopyDelegator } from "@/components/docs/code-copy-delegator";
+import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs/docs-sidebar";
 import { Toaster } from "@/components/ui/sonner";
@@ -48,14 +50,16 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider>
+          <CodeCopyDelegator />
           <TooltipProvider>
-            <SidebarProvider>
+            <SidebarProvider open>
               <DocsSidebar />
               <SidebarInset>
                 <SiteHeader />
-                <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
+                <main className="mx-auto w-full min-w-0 max-w-full flex-1 px-4 py-6">
                   {children}
                 </main>
+                <SiteFooter />
               </SidebarInset>
             </SidebarProvider>
             <Toaster />

@@ -204,6 +204,16 @@
           "target": "components/tfl/diagram/horizontal-line-diagram.tsx"
         },
         {
+          "path": "registry/tfl/diagram/horizontal-line-diagram-parts.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/diagram/horizontal-line-diagram-parts.tsx"
+        },
+        {
+          "path": "registry/tfl/diagram/horizontal-line-diagram-fitted.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/diagram/horizontal-line-diagram-fitted.tsx"
+        },
+        {
           "path": "registry/tfl/diagram/line-route-diagram.tsx",
           "type": "registry:component",
           "target": "components/tfl/diagram/line-route-diagram.tsx"

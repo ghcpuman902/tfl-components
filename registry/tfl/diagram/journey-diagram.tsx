@@ -7,10 +7,7 @@ import {
   diagramUnitStyle,
   verticalDiagramMetrics,
 } from "@/lib/tfl/line-diagram";
-import {
-  formatStationName,
-  type DiagramStation,
-} from "@/lib/tfl/diagram-station";
+import { type DiagramStation } from "@/lib/tfl/diagram-station";
 import { Button } from "@/components/ui/button";
 import {
   DiagramConnectionFlags,
@@ -18,6 +15,7 @@ import {
   resolveJourneyMarkerKind,
   VerticalRouteLine,
 } from "@/components/tfl/diagram/diagram-markers";
+import { StationNameLabel } from "@/components/tfl/station-name-label";
 
 export type JourneyDiagramProps = {
   from: DiagramStation;
@@ -43,7 +41,6 @@ const StationRow = ({
   lineColor: string;
 }) => {
   const m = verticalDiagramMetrics();
-  const label = formatStationName(station.name);
   const kind = resolveJourneyMarkerKind();
 
   return (
@@ -61,12 +58,13 @@ const StationRow = ({
         slotHeight={m.markerSlot}
       />
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        <p
-          className="min-w-0 font-medium leading-none text-foreground"
+        <StationNameLabel
+          name={station.name}
+          maxLines={2}
+          align="left"
+          className="min-w-0 flex-1 font-medium text-foreground"
           style={{ fontSize: m.nameSize }}
-        >
-          {label}
-        </p>
+        />
         {station.connections && station.connections.length > 0 ? (
           <DiagramConnectionFlags
             stationId={station.id}

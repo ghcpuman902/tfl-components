@@ -12,8 +12,7 @@ const ARTWORK_KEYS = PRESET_KEYS.filter((key) => getRoundelLogoPath(key));
 export default function TflRoundelDemo() {
   const allowed =
     process.env.NEXT_PUBLIC_ALLOW_TFL_ROUNDEL === "true" ||
-    process.env.VITE_ALLOW_TFL_ROUNDEL === "true" ||
-    process.env.ALLOW_TFL_ROUNDEL === "true";
+    process.env.VITE_ALLOW_TFL_ROUNDEL === "true";
 
   return (
     <div className="space-y-8">

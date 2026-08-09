@@ -7,9 +7,11 @@ import {
   getPopulatedGroups,
   type DocsEntry,
 } from "@/lib/docs-catalog";
+import { APP_VERSION_LABEL } from "@/lib/version";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -17,7 +19,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
 } from "@/components/ui/sidebar";
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
 
@@ -31,16 +32,14 @@ export const DocsSidebar = () => {
   const groups = getPopulatedGroups();
 
   return (
-    <Sidebar collapsible="icon" variant="sidebar">
-      <SidebarHeader className="border-b border-sidebar-border px-2 py-3">
+    <Sidebar collapsible="offcanvas" variant="sidebar">
+      <SidebarHeader className="flex h-12 shrink-0 justify-center border-b border-sidebar-border px-2 py-0">
         <Link
           href="/"
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 font-semibold text-sidebar-foreground hover:bg-sidebar-accent"
+          className="flex h-8 items-center gap-2 rounded-md px-2 font-semibold text-sidebar-foreground hover:bg-sidebar-accent"
         >
           <TfLRoundel className="size-5 shrink-0" />
-          <span className="truncate group-data-[collapsible=icon]:hidden">
-            tfl-components
-          </span>
+          <span className="truncate">tfl-components</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>
@@ -70,7 +69,16 @@ export const DocsSidebar = () => {
           );
         })}
       </SidebarContent>
-      <SidebarRail />
+      <SidebarFooter className="border-t border-sidebar-border px-2 py-3">
+        <a
+          href={`https://github.com/ghcpuman902/tfl-components/releases/tag/${APP_VERSION_LABEL}`}
+          className="rounded-md px-2 py-1.5 text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {APP_VERSION_LABEL}
+        </a>
+      </SidebarFooter>
     </Sidebar>
   );
 };

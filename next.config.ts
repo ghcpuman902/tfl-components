@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
       { source: "/line-diagram", destination: "/components/line-diagram", permanent: true },
       { source: "/explore", destination: "/tools/browse-lines", permanent: true },
       { source: "/route", destination: "/tools/route-stations", permanent: true },
+      { source: "/typography", destination: "/tools/typography", permanent: true },
     ];
   },
 };

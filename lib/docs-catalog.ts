@@ -162,6 +162,15 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     kind: "tool",
     href: "/tools/route-stations",
   },
+  {
+    slug: "typography",
+    title: "Station typography",
+    description:
+      "A–Z destination labels with deterministic two-line word breaks, measured in Hammersmith One.",
+    group: "tools",
+    kind: "tool",
+    href: "/tools/typography",
+  },
 ] as const;
 
 export const getDocsEntry = (slug: string): DocsEntry | undefined =>

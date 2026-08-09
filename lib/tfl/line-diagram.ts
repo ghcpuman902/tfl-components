@@ -95,10 +95,10 @@ export const LINE_DIAGRAM = {
     /** Total stack ≈ x */
     total: 0.99,
   },
-  /** Engineering works / out of use (§5.1). m = 0.33x; colour black 30%. */
+  /** Engineering works / out of use (§5.1). Solid uses theme `--muted` (~zinc-100). */
   outOfUse: {
     m: 0.33,
-    /** Dash segment length in units of m */
+    /** Dash segment length in units of m (legacy dashed style). */
     dashM: 0.5,
     colorOpacity: 0.3,
   },

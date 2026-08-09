@@ -79,7 +79,7 @@ Status and browse data use Next.js Cache Components (`cacheComponents: true`) wi
 NEXT_PUBLIC_ALLOW_TFL_ROUNDEL=true
 ```
 
-(Also accepts `VITE_ALLOW_TFL_ROUNDEL` or `ALLOW_TFL_ROUNDEL`.) Setting the flag shifts trademark responsibility to your application layer — this package only delivers the code.
+(Also accepts `VITE_ALLOW_TFL_ROUNDEL`.) Use a public-prefixed env var so SSR and the client agree — a bare `ALLOW_TFL_ROUNDEL` is server-only in Next.js and will hydrate incorrectly. Setting the flag shifts trademark responsibility to your application layer — this package only delivers the code.
 
 Once enabled, customise freely:
 

@@ -254,7 +254,11 @@ export default function LineDiagramDemo() {
           Simplified §10 strip — Victoria southbound with horizontal names and
           interchange flag blocks under each stop. Desktop scale matches the
           reference baseline ({DIAGRAM_BASELINE.horizontal}px line). Scroll
-          sideways on narrow viewports.
+          sideways on narrow viewports. Pass{" "}
+          <code className="rounded bg-muted px-1 text-xs">fit</code> to fill the
+          container without scrolling, and{" "}
+          <code className="rounded bg-muted px-1 text-xs">segments</code> for
+          §5.1 out-of-use stretches.
         </p>
         <div
           className="overflow-x-auto overscroll-x-contain pb-2 [-webkit-overflow-scrolling:touch]"

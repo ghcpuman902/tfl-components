@@ -1,0 +1,27 @@
+## Station typography
+
+Deterministic word-boundary line breaks for diagram and destination labels, measured against the live **Hammersmith One** font (`next/font` → `--font-sans`).
+
+### Break rules
+
+1. Prefer a single line when it fits the available width.
+2. Otherwise try every split **between words** (never mid-token) and pick the most balanced pair that fits.
+3. Optional abbreviations (`Street` → `St`, `Road` → `Rd`, `and` → `&`, …) only when enabled and still needed.
+4. Optional scale-down (floor **0.75**) as the last resort.
+
+### Usage
+
+```tsx
+import { StationNameLabel } from "@/components/tfl/station-name-label";
+import { formatStationLabel } from "@/lib/tfl/station-typography";
+
+<StationNameLabel
+  name="King's Cross St. Pancras"
+  maxLines={2}
+  allowAbbreviation={false}
+/>
+```
+
+Johnston is licensed by TfL — this lab uses Hammersmith One as a stand-in. Prefer your product typeface in production, or request Johnston via TfL font requests.
+
+This is a site tool — not an installable registry item.

@@ -131,10 +131,11 @@ export type TfLRoundelProps = Omit<
 
 const isRoundelAllowed = (): boolean => {
   if (typeof process === "undefined") return false;
+  // Only public/prefixed vars — plain ALLOW_TFL_ROUNDEL is server-only in
+  // Next.js and causes a span (SSR) vs button (client) hydration mismatch.
   return (
     process.env.NEXT_PUBLIC_ALLOW_TFL_ROUNDEL === "true" ||
-    process.env.VITE_ALLOW_TFL_ROUNDEL === "true" ||
-    process.env.ALLOW_TFL_ROUNDEL === "true"
+    process.env.VITE_ALLOW_TFL_ROUNDEL === "true"
   );
 };
 
@@ -441,14 +442,26 @@ const RoundelTrademarkModal = ({
           <TooltipTrigger
             className={cn(
               ROUNDEL_FRAME_CLASS,
-              "cursor-help appearance-none border-0 bg-transparent p-0 opacity-70 transition-opacity hover:opacity-100",
+              "cursor-help opacity-70 transition-opacity hover:opacity-100",
               className,
             )}
+            // span (not button) so this stays valid inside links / other controls
             render={
-              <button
-                type="button"
+              <span
+                role="button"
+                tabIndex={0}
                 aria-label="TfL roundel placeholder — trademark notice"
-                onClick={() => setOpen(true)}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setOpen(true);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setOpen(true);
+                }}
               />
             }
           >
@@ -514,10 +527,10 @@ const RoundelTrademarkModal = ({
 /**
  * Env-gated TfL roundel.
  *
- * Set `NEXT_PUBLIC_ALLOW_TFL_ROUNDEL=true` (or `VITE_ALLOW_TFL_ROUNDEL` /
- * `ALLOW_TFL_ROUNDEL`) in your app to render the official mark. Doing so
- * shifts trademark responsibility to your application — this component is
- * only a delivery vehicle.
+ * Set `NEXT_PUBLIC_ALLOW_TFL_ROUNDEL=true` (or `VITE_ALLOW_TFL_ROUNDEL` in
+ * Vite) in your app to render the official mark. Doing so shifts trademark
+ * responsibility to your application — this component is only a delivery
+ * vehicle. Use a public-prefixed env var so SSR and the client agree.
  *
  * Without the flag, a filled-disc + rounded-bar placeholder of the same size
  * is shown (still respects `text` / colours / variants). In development only,

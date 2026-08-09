@@ -1,0 +1,17 @@
+diff --git a/dist/generated/raw.js b/dist/generated/raw.js
+index f2de20a13eaaa60938ee3c3a45dafaa22ae6f3bc..1f24942b8820a40628ba97ecca12a0073dce07e0 100644
+--- a/dist/generated/raw.js
++++ b/dist/generated/raw.js
+@@ -467,10 +467,8 @@ class RawClient {
+                 const query = {};
+                 if (args.detail !== undefined)
+                     query["detail"] = args.detail;
+-                if (args.startDate !== undefined)
+-                    query["startDate"] = args.startDate;
+-                if (args.endDate !== undefined)
+-                    query["endDate"] = args.endDate;
++                // Path already carries startDate/endDate. Duplicating them as query
++                // params makes TfL return 404 for this dated status endpoint.
+                 if (args["dateRange.startDate"] !== undefined)
+                     query["dateRange.startDate"] = args["dateRange.startDate"];
+                 if (args["dateRange.endDate"] !== undefined)

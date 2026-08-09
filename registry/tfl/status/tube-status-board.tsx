@@ -27,17 +27,27 @@ interface Props {
   lineIds?: readonly string[];
 }
 
-/** Curated set used by apps that only care about core Underground + Elizabeth. */
+/**
+ * Full Underground + Elizabeth — the default board set.
+ * Omit `lineIds` on the board to also include DLR, tram, and Overground.
+ */
 export const DEFAULT_STATUS_LINE_IDS = [
-  "central",
-  "northern",
-  "victoria",
-  "jubilee",
-  "elizabeth",
   "bakerloo",
-  "piccadilly",
+  "central",
+  "circle",
   "district",
+  "elizabeth",
+  "hammersmith-city",
+  "jubilee",
+  "metropolitan",
+  "northern",
+  "piccadilly",
+  "victoria",
+  "waterloo-city",
 ] as const;
+
+/** Approximate tile count when fetching all tube/rail modes (no `lineIds`). */
+const ALL_MODES_SKELETON_COUNT = 20;
 
 const darkReadableTextClass = "tfl-dark-line-text";
 
@@ -65,11 +75,50 @@ async function getCachedLineStatuses(lineIds?: readonly string[]) {
   return sortLinesBySeverityAndOrder(lineStatuses);
 }
 
+/** Static board chrome — no status data required. */
+export const TubeStatusBoardHeader = () => (
+  <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="flex items-center gap-3">
+      <TfLRoundel className="size-10 lg:size-12" />
+      <div>
+        <h1 className="scroll-m-20 text-balance text-4xl font-extrabold tracking-tight lg:text-5xl">
+          Live TfL Status
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Built with{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">tfl-ts</code> +
+          open React components
+        </p>
+      </div>
+    </div>
+    <div className="flex flex-wrap items-center gap-2">
+      <Link
+        href="https://www.npmjs.com/package/tfl-ts"
+        className="flex items-center gap-1 text-blue-500 hover:underline"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <Package className="size-4" aria-hidden />
+        npm package
+        <ExternalLink className="size-4" aria-hidden />
+      </Link>
+      <Link
+        href="https://github.com/ghcpuman902/tfl-ts"
+        className="flex items-center gap-1 text-blue-500 hover:underline"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        GitHub
+        <ExternalLink className="size-4" aria-hidden />
+      </Link>
+    </div>
+  </div>
+);
+
 async function TubeStatusBoardBody({
   children,
-  hideHeader = false,
   lineIds,
-}: Props) {
+}: Omit<Props, "hideHeader">) {
   const sortedLineStatuses = await getCachedLineStatuses(lineIds);
   const disruptedLines = sortedLineStatuses.filter(
     (line) => !isNormalService(line.lineStatuses ?? []),
@@ -79,48 +128,7 @@ async function TubeStatusBoardBody({
   );
 
   return (
-    <div className="mt-4 flex w-full flex-col gap-6">
-      {!hideHeader && (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
-            <TfLRoundel className="size-10 lg:size-12" />
-            <div>
-              <h1 className="scroll-m-20 text-balance text-4xl font-extrabold tracking-tight lg:text-5xl">
-                Live TfL Status
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Built with{" "}
-                <code className="rounded bg-muted px-1 py-0.5 text-xs">
-                  tfl-ts
-                </code>{" "}
-                + open React components
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="https://www.npmjs.com/package/tfl-ts"
-              className="flex items-center gap-1 text-blue-500 hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Package className="size-4" aria-hidden />
-              npm package
-              <ExternalLink className="size-4" aria-hidden />
-            </Link>
-            <Link
-              href="https://github.com/ghcpuman902/tfl-ts"
-              className="flex items-center gap-1 text-blue-500 hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              GitHub
-              <ExternalLink className="size-4" aria-hidden />
-            </Link>
-          </div>
-        </div>
-      )}
-
+    <>
       {disruptedLines.length > 0 && (
         <div>
           <h2 className="mb-4 text-xl font-semibold">Service Disruptions</h2>
@@ -251,33 +259,79 @@ async function TubeStatusBoardBody({
       </div>
 
       {children}
-    </div>
+    </>
   );
 }
 
-/** Skeleton for the tube status board — use in `loading.tsx` or Suspense. */
-export const TubeStatusBoardSkeleton = () => (
-  <div className="mt-4 w-full space-y-6" aria-busy aria-label="Loading line status">
-    <div className="flex items-center gap-3">
-      <Skeleton className="size-10 rounded-full lg:size-12" />
-      <div className="space-y-2">
-        <Skeleton className="h-9 w-64 max-w-full" />
-        <Skeleton className="h-4 w-48 max-w-full" />
+type SkeletonProps = {
+  /** Number of good-service tile placeholders (match `lineIds.length` when set). */
+  lineCount?: number;
+};
+
+/**
+ * Body-only skeleton for Suspense / `loading.tsx`.
+ * Header/subheader stay outside — they need no status data.
+ */
+export const TubeStatusBoardSkeleton = ({
+  lineCount = DEFAULT_STATUS_LINE_IDS.length,
+}: SkeletonProps) => (
+  <div className="flex w-full flex-col gap-6" aria-busy aria-label="Loading line status">
+    <div>
+      <h2 className="mb-4 text-xl font-semibold">Service Disruptions</h2>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-col gap-3 border border-border bg-muted p-4 dark:bg-card">
+          <Skeleton className="h-6 w-28" />
+          <Skeleton className="h-[6px] w-full" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-16 w-full" />
+        </div>
       </div>
     </div>
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-      {Array.from({ length: 10 }).map((_, i) => (
-        <Skeleton key={i} className="h-16 w-full" />
-      ))}
+
+    <div>
+      <h2 className="mb-4 text-xl font-semibold">Good Service</h2>
+      <div className="grid grid-cols-2 justify-items-stretch gap-4 md:grid-cols-3 lg:grid-cols-5">
+        {Array.from({ length: lineCount }).map((_, i) => (
+          <div
+            key={i}
+            className="flex flex-col border border-border bg-muted p-3 dark:bg-card"
+          >
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="mt-2 h-[6px] w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div className="border-t pt-4 text-center text-sm text-muted-foreground">
+      <p className="text-balance">
+        Data from Transport for London via{" "}
+        <span className="text-blue-500">tfl-ts</span>. Cached ~60s via Next.js
+        Cache Components.
+      </p>
     </div>
   </div>
 );
 
 /** Live tube/rail status board. Status fetch is cached ~60s (`use cache`). */
-export function TubeStatusBoard(props: Props) {
+export function TubeStatusBoard({
+  hideHeader = false,
+  lineIds,
+  children,
+}: Props) {
+  const skeletonCount =
+    lineIds && lineIds.length > 0
+      ? lineIds.length
+      : ALL_MODES_SKELETON_COUNT;
+
   return (
-    <Suspense fallback={<TubeStatusBoardSkeleton />}>
-      <TubeStatusBoardBody {...props} />
-    </Suspense>
+    <div className="mt-4 flex w-full flex-col gap-6">
+      {!hideHeader && <TubeStatusBoardHeader />}
+      <Suspense
+        fallback={<TubeStatusBoardSkeleton lineCount={skeletonCount} />}
+      >
+        <TubeStatusBoardBody lineIds={lineIds}>{children}</TubeStatusBoardBody>
+      </Suspense>
+    </div>
   );
 }

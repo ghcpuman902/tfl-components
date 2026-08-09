@@ -67,6 +67,19 @@ export {
 } from "@/lib/tfl/diagram-station";
 
 export {
+  STATION_ABBREVIATIONS,
+  STATION_LABEL_MIN_SCALE,
+  approximateStationMeasure,
+  createCanvasStationMeasure,
+  formatStationLabel,
+  resolveSansFontFamily,
+  stationLabelCandidates,
+  type StationLabelFormatOptions,
+  type StationLabelFormatResult,
+  type StationTextMeasure,
+} from "@/lib/tfl/station-typography";
+
+export {
   sliceJourney,
   toDiagramStation,
 } from "@/lib/tfl/diagram-mappers";

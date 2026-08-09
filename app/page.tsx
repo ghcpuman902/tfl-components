@@ -1,55 +1,47 @@
 import type { Metadata } from "next";
-import {
-  DEFAULT_STATUS_LINE_IDS,
-  TubeStatusBoard,
-} from "@/components/tfl/status/tube-status-board";
+import { Suspense } from "react";
 import { DocsCatalogGrid } from "@/components/docs/docs-catalog-grid";
-import { InstallCommand } from "@/components/docs/install-command";
+import { WeekAheadSection } from "@/components/tfl/week-ahead/week-ahead-section";
+import { WeekAheadSkeleton } from "@/components/tfl/week-ahead/week-ahead-skeleton";
 
 export const metadata: Metadata = {
-  title: "tfl-components — Live TfL Status",
+  title: "tfl-components — This week ahead",
   description:
-    "Live London tube and rail status boards you can copy into Next.js via the shadcn registry.",
+    "This week’s Tube and Elizabeth line service on horizontal diagrams, plus open React components for London transport boards.",
 };
 
-const REGISTRY_URL =
-  "https://tfl-components.vercel.app/r/tube-status-board.json";
-
-export default async function HomePage() {
+async function IntroContent() {
   const { default: IntroMDX } = await import("@/content/introduction.mdx");
+  return <IntroMDX />;
+}
 
+export default function HomePage() {
   return (
-    <div className="space-y-12">
-      <TubeStatusBoard lineIds={DEFAULT_STATUS_LINE_IDS} />
+    <div className="@container/main w-full min-w-0 max-w-full space-y-12">
+      <div className="w-full min-w-0 max-w-full overflow-x-clip">
+        <Suspense fallback={<WeekAheadSkeleton />}>
+          <WeekAheadSection />
+        </Suspense>
+      </div>
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          Install this board
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Copies the component source and installs{" "}
-          <code className="rounded bg-muted px-1 text-xs">tfl-ts</code>. Put{" "}
-          <code className="rounded bg-muted px-1 text-xs">TFL_APP_ID</code> /{" "}
-          <code className="rounded bg-muted px-1 text-xs">TFL_APP_KEY</code> in
-          your server env.
-        </p>
-        <InstallCommand registryUrl={REGISTRY_URL} />
-      </section>
+      <div className="mx-auto w-full max-w-5xl space-y-12">
+        <section className="border-t border-border pt-8">
+          <Suspense fallback={null}>
+            <IntroContent />
+          </Suspense>
+        </section>
 
-      <section className="border-t border-border pt-8">
-        <IntroMDX />
-      </section>
-
-      <section className="space-y-4 border-t border-border pt-8">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Components</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Grouped the way Londoners think about transport — not by API mode
-            IDs.
-          </p>
-        </div>
-        <DocsCatalogGrid />
-      </section>
+        <section className="space-y-4 border-t border-border pt-8">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight">Components</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Grouped the way Londoners think about transport — not by API mode
+              IDs.
+            </p>
+          </div>
+          <DocsCatalogGrid />
+        </section>
+      </div>
     </div>
   );
 }

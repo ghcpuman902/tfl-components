@@ -38,3 +38,14 @@ export const RouteBodySkeleton = () => (
     ))}
   </div>
 );
+
+export const TypographyBodySkeleton = () => (
+  <div className="space-y-6" aria-busy aria-label="Loading station typography">
+    <Skeleton className="h-40 w-full" />
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 9 }).map((_, i) => (
+        <Skeleton key={i} className="h-28 w-full" />
+      ))}
+    </div>
+  </div>
+);

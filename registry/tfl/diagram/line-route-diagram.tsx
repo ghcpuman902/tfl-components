@@ -3,16 +3,14 @@ import {
   diagramUnitStyle,
   verticalDiagramMetrics,
 } from "@/lib/tfl/line-diagram";
-import {
-  formatStationName,
-  type DiagramStation,
-} from "@/lib/tfl/diagram-station";
+import { type DiagramStation } from "@/lib/tfl/diagram-station";
 import {
   DiagramConnectionFlags,
   DiagramStationMarker,
   resolveMapMarkerKind,
   VerticalRouteLine,
 } from "@/components/tfl/diagram/diagram-markers";
+import { StationNameLabel } from "@/components/tfl/station-name-label";
 
 export type LineRouteDiagramProps = {
   stations: DiagramStation[];
@@ -83,7 +81,6 @@ export const LineRouteDiagram = ({
         />
 
         {stations.map((station, index) => {
-          const label = formatStationName(station.name);
           const kind = resolveMapMarkerKind({
             interchange: station.interchange,
             isEndpoint: index === 0 || index === lastIndex,
@@ -107,12 +104,13 @@ export const LineRouteDiagram = ({
               />
 
               <div className="flex min-w-0 flex-1 items-center gap-2">
-                <p
-                  className="min-w-0 leading-none font-medium text-foreground"
+                <StationNameLabel
+                  name={station.name}
+                  maxLines={2}
+                  align="left"
+                  className="min-w-0 flex-1 font-medium text-foreground"
                   style={{ fontSize: m.nameSize }}
-                >
-                  {label}
-                </p>
+                />
                 {connections && connections.length > 0 ? (
                   <DiagramConnectionFlags
                     stationId={station.id}

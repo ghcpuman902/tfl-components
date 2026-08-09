@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
 import { LineBadge, LineColorBar } from "@/components/tfl/brand/line-badge";
 
 export const metadata: Metadata = {
@@ -20,86 +21,88 @@ const DEMO_LINES = [
 
 export default function LineBadgePage() {
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Line badge</h1>
-        <p className="mt-2 text-muted-foreground">
-          Primitive chip using{" "}
-          <code className="rounded bg-muted px-1 text-xs">getLineCssProps</code>.
-          Poor-contrast lines (Northern) keep brand fill on dark surfaces with a
-          hard white outline via{" "}
-          <code className="rounded bg-muted px-1 text-xs">
-            --line-dark-box-shadow
-          </code>
-          .
-        </p>
-      </div>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Chip variant</h2>
-        <div className="flex flex-wrap gap-2">
-          {DEMO_LINES.map((line) => (
-            <LineBadge key={line.id} lineId={line.id} name={line.name} />
-          ))}
+    <DocsReadableWidth>
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold">Line badge</h1>
+          <p className="mt-2 text-muted-foreground">
+            Primitive chip using{" "}
+            <code className="rounded bg-muted px-1 text-xs">getLineCssProps</code>.
+            Poor-contrast lines (Northern) keep brand fill on dark surfaces with a
+            hard white outline via{" "}
+            <code className="rounded bg-muted px-1 text-xs">
+              --line-dark-box-shadow
+            </code>
+            .
+          </p>
         </div>
-      </section>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Text variant + colour bars</h2>
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {DEMO_LINES.map((line) => (
-            <li
-              key={line.id}
-              className="rounded-lg border border-border bg-card p-3"
-            >
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Chip variant</h2>
+          <div className="flex flex-wrap gap-2">
+            {DEMO_LINES.map((line) => (
+              <LineBadge key={line.id} lineId={line.id} name={line.name} />
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Text variant + colour bars</h2>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {DEMO_LINES.map((line) => (
+              <li
+                key={line.id}
+                className="rounded-lg border border-border bg-card p-3"
+              >
+                <LineBadge
+                  lineId={line.id}
+                  name={line.name}
+                  variant="text"
+                  className="text-base"
+                />
+                <div className="mt-2">
+                  <LineColorBar
+                    lineId={line.id}
+                    modeName={line.id === "elizabeth" ? "elizabeth-line" : "tube"}
+                    heightClass="h-[6px]"
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Northern dark contrast</h2>
+          <p className="text-sm text-muted-foreground">
+            Brand black fill with a hard white outline — switch to dark theme to
+            see the outline.
+          </p>
+          <div className="rounded-lg border border-border bg-card p-3 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <LineBadge lineId="northern" name="Northern" />
               <LineBadge
-                lineId={line.id}
-                name={line.name}
+                lineId="northern"
+                name="Northern"
                 variant="text"
                 className="text-base"
               />
-              <div className="mt-2">
-                <LineColorBar
-                  lineId={line.id}
-                  modeName={line.id === "elizabeth" ? "elizabeth-line" : "tube"}
-                  heightClass="h-[6px]"
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Northern dark contrast</h2>
-        <p className="text-sm text-muted-foreground">
-          Brand black fill with a hard white outline — switch to dark theme to
-          see the outline.
-        </p>
-        <div className="rounded-lg border border-border bg-card p-3 space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <LineBadge lineId="northern" name="Northern" />
-            <LineBadge
+            </div>
+            <LineColorBar
               lineId="northern"
-              name="Northern"
-              variant="text"
-              className="text-base"
+              modeName="tube"
+              heightClass="h-[6px]"
             />
           </div>
-          <LineColorBar
-            lineId="northern"
-            modeName="tube"
-            heightClass="h-[6px]"
-          />
-        </div>
-      </section>
+        </section>
 
-      <aside className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-        <p className="mb-2 font-medium text-foreground">Install into your app</p>
-        <pre className="overflow-x-auto rounded bg-muted p-3 text-xs text-foreground">
-          {`pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/line-badge.json`}
-        </pre>
-      </aside>
-    </div>
+        <aside className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+          <p className="mb-2 font-medium text-foreground">Install into your app</p>
+          <pre className="overflow-x-auto rounded bg-muted p-3 text-xs text-foreground">
+            {`pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/line-badge.json`}
+          </pre>
+        </aside>
+      </div>
+    </DocsReadableWidth>
   );
 }

@@ -3,12 +3,26 @@ import {
   diagramUnitStyle,
   horizontalDiagramMetrics,
 } from "@/lib/tfl/line-diagram";
+import { type DiagramSegment } from "@/lib/tfl/diagram-station";
 import {
-  formatStationName,
-  type DiagramStation,
-} from "@/lib/tfl/diagram-station";
+  buildSegmentStateMap,
+  HorizontalRouteStrip,
+  HorizontalStationColumn,
+  isStationOutOfUse,
+  type HorizontalDiagramStation,
+} from "@/components/tfl/diagram/horizontal-line-diagram-parts";
+import { HorizontalLineDiagramFitted } from "@/components/tfl/diagram/horizontal-line-diagram-fitted";
 
-export type HorizontalDiagramStation = DiagramStation;
+export type { HorizontalDiagramStation } from "@/components/tfl/diagram/horizontal-line-diagram-parts";
+export type { DiagramSegment, DiagramSegmentState } from "@/lib/tfl/diagram-station";
+export {
+  buildSegmentStateMap,
+  isStationOutOfUse,
+  selectFittedLabelIndexes,
+  HorizontalRouteStrip,
+  HorizontalStationColumn,
+  OUT_OF_USE_LINE_COLOR,
+} from "@/components/tfl/diagram/horizontal-line-diagram-parts";
 
 export type HorizontalLineDiagramProps = {
   stations: HorizontalDiagramStation[];
@@ -22,12 +36,32 @@ export type HorizontalLineDiagramProps = {
    */
   x?: number;
   className?: string;
+  /**
+   * Per-adjacent-pair segment state. Missing pairs default to `"normal"`.
+   * Out-of-use is a full-thickness muted solid (not dashed).
+   */
+  segments?: readonly DiagramSegment[];
+  /**
+   * Fit the full route into the container width with no horizontal scroll.
+   * Left-aligned fixed pitch; scales the strip uniformly. Opt-in.
+   */
+  fit?: boolean;
+  /** Station IDs that must keep a visible label when `fit` is on (e.g. closure ends). */
+  forceLabelIds?: readonly string[];
+  /**
+   * Shared fit scale for a group of fitted diagrams so pitch and type match
+   * across lines (homepage week-ahead). Ignored unless `fit` is true.
+   */
+  sharedFitScale?: number;
 };
 
 /**
  * Horizontal line diagram: horizontal station names above markers,
- * generous spacing between stops, §9 connection flag blocks stacked under
- * each station (square corners, line name inside). Wrap in overflow-x-auto.
+ * generous spacing between stops, §9 connection flag boxes stacked under
+ * each station (square corners, line name inside).
+ *
+ * Default: wrap in overflow-x-auto for long routes.
+ * Opt-in `fit`: no horizontal scroll; left-aligned fixed pitch + uniform scale.
  */
 export const HorizontalLineDiagram = ({
   stations,
@@ -35,10 +69,29 @@ export const HorizontalLineDiagram = ({
   lineName,
   x,
   className,
+  segments,
+  fit = false,
+  forceLabelIds,
+  sharedFitScale,
 }: HorizontalLineDiagramProps) => {
   if (stations.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">No stations to display.</p>
+    );
+  }
+
+  if (fit) {
+    return (
+      <HorizontalLineDiagramFitted
+        stations={stations}
+        lineColor={lineColor}
+        lineName={lineName}
+        x={x}
+        className={className}
+        segments={segments}
+        forceLabelIds={forceLabelIds}
+        sharedFitScale={sharedFitScale}
+      />
     );
   }
 
@@ -52,10 +105,11 @@ export const HorizontalLineDiagram = ({
       ? `calc(${m.flagHeight} * ${maxConnections})`
       : undefined;
   const totalWidth = `calc(${m.colWidth} * ${stations.length})`;
+  const segmentStates = buildSegmentStateMap(stations, segments);
 
   return (
     <div
-      className={cn("w-max min-w-full", className)}
+      className={cn("w-max min-w-0", className)}
       style={diagramUnitStyle("horizontal", x)}
     >
       {lineName ? (
@@ -70,119 +124,28 @@ export const HorizontalLineDiagram = ({
       ) : null}
 
       <div className="relative" style={{ width: totalWidth }}>
-        {/* Continuous route line through marker centres */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute"
-          style={{
-            top: m.lineTop,
-            left: `calc(${m.colWidth} / 2)`,
-            right: `calc(${m.colWidth} / 2)`,
-            height: m.lineWidth,
-            backgroundColor: lineColor,
-          }}
+        <HorizontalRouteStrip
+          stationCount={stations.length}
+          segmentStates={segmentStates}
+          lineColor={lineColor}
+          lineTop={m.lineTop}
+          lineWidth={m.lineWidth}
+          colWidthUnits={m.colWidthUnits}
         />
 
         <ol className="relative m-0 flex list-none items-start p-0">
-          {stations.map((station, index) => {
-            const label = formatStationName(station.name);
-            const isInterchange = Boolean(station.interchange);
-            const connections = station.connections;
-
-            return (
-              <li
-                key={`${station.id}-${index}`}
-                className="relative flex shrink-0 flex-col items-center"
-                style={{ width: m.colWidth }}
-              >
-                {/* Horizontal station name */}
-                <div
-                  className="flex items-end justify-center px-1.5 text-center"
-                  style={{ height: m.nameBand }}
-                >
-                  <span
-                    className="font-medium text-foreground"
-                    style={{
-                      fontSize: m.nameSize,
-                      lineHeight: 1.15,
-                    }}
-                  >
-                    {label}
-                  </span>
-                </div>
-
-                {/* Marker on the route */}
-                <div
-                  className="relative z-10 flex items-center justify-center"
-                  style={{
-                    marginTop: m.nameGap,
-                    width: m.colWidth,
-                    height: m.markerBand,
-                  }}
-                >
-                  {isInterchange ? (
-                    <span
-                      className="box-border block rounded-full bg-white"
-                      style={{
-                        width: m.ringOuter,
-                        height: m.ringOuter,
-                        borderWidth: m.ringStroke,
-                        borderStyle: "solid",
-                        borderColor: "#000",
-                      }}
-                      aria-hidden
-                    />
-                  ) : (
-                    <span
-                      className="block"
-                      style={{
-                        width: m.tickWidth,
-                        height: m.tickHeight,
-                        backgroundColor: lineColor,
-                      }}
-                      aria-hidden
-                    />
-                  )}
-                </div>
-
-                {/* §9 flag blocks — 1 CH tall, square, under the stop */}
-                {connections && connections.length > 0 ? (
-                  <div
-                    className="inline-flex flex-col"
-                    style={{
-                      marginTop: m.flagClearance,
-                      minHeight: connectionBand,
-                    }}
-                    aria-label={`Connections: ${connections.map((c) => c.name).join(", ")}`}
-                  >
-                    {connections.map((c) => (
-                      <span
-                        key={`${station.id}-${c.id}`}
-                        className="flex w-full items-center justify-center px-1.5 leading-none font-medium whitespace-nowrap"
-                        style={{
-                          backgroundColor: c.color ?? "#64748b",
-                          color: c.darkText ? "#0019A8" : "#fff",
-                          height: m.flagHeight,
-                          minWidth: m.flagMinWidth,
-                          fontSize: m.flagFont,
-                        }}
-                      >
-                        {c.name}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div
-                    aria-hidden
-                    style={{
-                      marginTop: m.flagClearance,
-                      minHeight: connectionBand,
-                    }}
-                  />
-                )}
-              </li>
-            );
-          })}
+          {stations.map((station, index) => (
+            <HorizontalStationColumn
+              key={`${station.id}-${index}`}
+              station={station}
+              index={index}
+              lineColor={lineColor}
+              showLabel
+              connectionBand={connectionBand}
+              colWidth={m.colWidth}
+              outOfUse={isStationOutOfUse(index, segmentStates)}
+            />
+          ))}
         </ol>
       </div>
     </div>

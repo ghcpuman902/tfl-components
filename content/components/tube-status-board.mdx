@@ -14,7 +14,7 @@ Omit `lineIds` to load all tube / Elizabeth / DLR / tram / Overground modes.
 
 #### Batch by line IDs
 
-One request for the lines you care about:
+`DEFAULT_STATUS_LINE_IDS` is all 11 Underground lines plus Elizabeth (12 total):
 
 ```tsx
 import {
@@ -27,22 +27,10 @@ export default function Page() {
 }
 ```
 
-#### Custom Underground set
+#### Custom subset
 
 ```tsx
-const MY_LINES = [
-  "bakerloo",
-  "central",
-  "circle",
-  "district",
-  "hammersmith-city",
-  "jubilee",
-  "metropolitan",
-  "northern",
-  "piccadilly",
-  "victoria",
-  "waterloo-city",
-] as const
+const MY_LINES = ["central", "northern", "victoria", "jubilee"] as const
 
 export default function Page() {
   return <TubeStatusBoard lineIds={MY_LINES} />
