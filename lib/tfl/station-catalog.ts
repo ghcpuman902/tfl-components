@@ -1,6 +1,11 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { formatStationName } from "@/lib/tfl/diagram-station";
 import { getTflClient } from "@/lib/tfl/client";
+import {
+  stationLabelKey,
+  upsertStationRecord,
+  type StationRecord,
+} from "@/lib/tfl/station-index";
 
 export const STATION_CATALOG_MODES = [
   { id: "tube", label: "Tube" },
@@ -14,6 +19,8 @@ export type StationCatalogModeId = (typeof STATION_CATALOG_MODES)[number]["id"];
 
 export type CatalogStation = {
   id: string;
+  /** Additional Naptan / hub IDs that refer to the same stop. */
+  aliasIds: string[];
   name: string;
   displayName: string;
   modes: StationCatalogModeId[];
@@ -31,24 +38,28 @@ const chunk = <T,>(items: T[], size: number): T[][] => {
   return out;
 };
 
-type Accumulator = {
-  id: string;
-  name: string;
-  modes: Set<StationCatalogModeId>;
-  lines: Set<string>;
-};
+const toCatalogStation = (record: StationRecord): CatalogStation => ({
+  id: record.id,
+  aliasIds: record.aliasIds,
+  name: record.name,
+  displayName: record.displayName,
+  modes: [...record.modeIds].sort() as StationCatalogModeId[],
+  lines: [...record.lineIds].sort(),
+});
 
 /**
  * Deduplicated A–Z station catalogue for Tube, Elizabeth line, DLR,
  * Overground, and Tram — union of published route sequences.
+ * Indexed by Naptan; homonyms merge via aliasIds on the first-seen record.
  */
 export async function getStationCatalog(): Promise<CatalogStation[]> {
   "use cache";
   cacheLife("days");
-  cacheTag("tfl-station-catalog-v3");
+  cacheTag("tfl-station-catalog-v4");
 
   const client = getTflClient();
-  const byKey = new Map<string, Accumulator>();
+  const byId = new Map<string, StationRecord>();
+  const byDisplayKey = new Map<string, string>();
 
   const modeLinePairs = (
     await Promise.all(
@@ -72,9 +83,6 @@ export async function getStationCatalog(): Promise<CatalogStation[]> {
               direction,
             });
 
-            // Prefer stopPointSequences: complete naptan stops with Underground/
-            // Rail suffixes. The `stations` hub list uses different IDs/names and
-            // duplicates entries (e.g. King's Cross hub vs St. Pancras).
             const fromSequences =
               sequence.stopPointSequences?.flatMap(
                 (seq) => seq.stopPoint ?? [],
@@ -88,21 +96,16 @@ export async function getStationCatalog(): Promise<CatalogStation[]> {
               const rawName = stop.name?.trim();
               if (!rawName) continue;
               const id = stop.id?.trim() || rawName;
-              const displayKey = formatStationName(rawName)
-                .toLowerCase()
-                .replace(/[\u2018\u2019\u02BC]/g, "'");
-              const existing = byKey.get(displayKey);
-              if (existing) {
-                existing.modes.add(modeId);
-                existing.lines.add(lineId);
-                continue;
-              }
-              byKey.set(displayKey, {
-                id,
-                name: rawName,
-                modes: new Set([modeId]),
-                lines: new Set([lineId]),
-              });
+              upsertStationRecord(
+                { byId, byDisplayKey },
+                {
+                  id,
+                  name: rawName,
+                  lineId,
+                  modeId,
+                },
+                { mergeHomonyms: true },
+              );
             }
           } catch {
             // Skip failed line/direction pairs; catalogue stays partial but usable.
@@ -112,17 +115,21 @@ export async function getStationCatalog(): Promise<CatalogStation[]> {
     );
   }
 
-  return [...byKey.values()]
-    .map((entry) => ({
-      id: entry.id,
-      name: entry.name,
-      displayName: formatStationName(entry.name),
-      modes: [...entry.modes].sort(),
-      lines: [...entry.lines].sort(),
-    }))
-    .sort((a, b) =>
-      a.displayName.localeCompare(b.displayName, "en-GB", {
-        sensitivity: "base",
-      }),
-    );
+  const seen = new Set<string>();
+  const stations: CatalogStation[] = [];
+  for (const record of byId.values()) {
+    if (seen.has(record.id)) continue;
+    seen.add(record.id);
+    stations.push(toCatalogStation(record));
+  }
+
+  return stations.sort((a, b) =>
+    a.displayName.localeCompare(b.displayName, "en-GB", {
+      sensitivity: "base",
+    }),
+  );
 }
+
+/** Build a display-key lookup for tests / tools. */
+export const catalogDisplayKey = (name: string): string =>
+  stationLabelKey(formatStationName(name));

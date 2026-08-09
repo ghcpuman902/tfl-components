@@ -1,4 +1,10 @@
 import { formatStationName } from "@/lib/tfl/diagram-station";
+import { applyStationAbbreviations } from "@/lib/tfl/station-abbreviations";
+
+export {
+  STATION_ABBREVIATIONS,
+  applyStationAbbreviations,
+} from "@/lib/tfl/station-abbreviations";
 
 /** Measure text width in CSS px for a given font size. */
 export type StationTextMeasure = (text: string, fontSizePx: number) => number;
@@ -16,6 +22,11 @@ export type StationLabelFormatOptions = {
   allowScaleDown?: boolean;
   /** Floor for scale-down (default 0.75). */
   minScale?: number;
+  /**
+   * Hardwired lines (e.g. horizontal diagram crowding fixes).
+   * Skips auto word-break selection when provided.
+   */
+  forcedLines?: readonly string[];
 };
 
 export type StationLabelFormatResult = {
@@ -34,19 +45,9 @@ export type StationLabelFormatResult = {
 /**
  * Conservative abbreviations used only when enabled and required to fit.
  * Prefer official short forms already common on TfL diagrams.
+ * @deprecated Import from `@/lib/tfl/station-abbreviations` — re-exported here.
  */
-export const STATION_ABBREVIATIONS: ReadonlyArray<readonly [RegExp, string]> = [
-  [/\bStreet\b/gi, "St"],
-  [/\bRoad\b/gi, "Rd"],
-  [/\bAvenue\b/gi, "Ave"],
-  [/\bSquare\b/gi, "Sq"],
-  [/\bLane\b/gi, "Ln"],
-  [/\bPark\b/gi, "Pk"],
-  [/\bJunction\b/gi, "Jct"],
-  [/\bBridge\b/gi, "Br"],
-  [/\bCentral\b/gi, "Ctrl"],
-  [/\band\b/gi, "&"],
-] as const;
+// STATION_ABBREVIATIONS re-exported above from station-abbreviations.
 
 /** Minimum type scale before giving up on fit (documented contract). */
 export const STATION_LABEL_MIN_SCALE = 0.75;
@@ -57,13 +58,7 @@ const tokenize = (name: string): string[] =>
     .split(/\s+/)
     .filter(Boolean);
 
-const applyAbbreviations = (name: string): string => {
-  let next = name;
-  for (const [pattern, replacement] of STATION_ABBREVIATIONS) {
-    next = next.replace(pattern, replacement);
-  }
-  return next.replace(/\s+/g, " ").trim();
-};
+const applyAbbreviations = applyStationAbbreviations;
 
 const lineWidth = (
   text: string,
@@ -160,6 +155,23 @@ export const formatStationLabel = (
   const displayName = formatStationName(rawName);
   const maxWidth = Math.max(1, options.maxWidth);
   const fontSize = Math.max(1, options.fontSize);
+
+  if (options.forcedLines && options.forcedLines.length > 0) {
+    const lines = [...options.forcedLines];
+    const sized = fontSize;
+    const widest = Math.max(
+      ...lines.map((line) => lineWidth(line, sized, measure)),
+    );
+    return {
+      lines,
+      scale: 1,
+      abbreviated: lines.join(" ") !== displayName,
+      fits: widest <= maxWidth + 0.5,
+      // Always the canonical single-line name — not the joined (possibly
+      // abbreviated) visual lines. Copy / aria use this via formatStationName.
+      displayName,
+    };
+  }
 
   const tryName = (
     name: string,

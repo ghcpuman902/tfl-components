@@ -20,14 +20,14 @@ export const LINE_DIAGRAM_SOURCE = {
 } as const;
 
 /**
- * Inherited CSS scale for all diagram components on a page.
- * Set once on a parent (e.g. the `/line-diagram` region) with Tailwind
+ * Inherited CSS scale for all strip components on a page.
+ * Set once on a parent (e.g. the `/components/line-strip` region) with Tailwind
  * breakpoints; do not theme tick/ring/type ratios independently.
  *
  * @example
  * ```tsx
  * <div className="[--tfl-diagram-scale:0.7] sm:[--tfl-diagram-scale:0.85] lg:[--tfl-diagram-scale:1]">
- *   <HorizontalLineDiagram … />
+ *   <LineStrip … />
  *   <JourneyDiagram … />
  * </div>
  * ```
@@ -254,8 +254,11 @@ export const verticalDiagramMetrics = () => {
 
 /**
  * Shared CSS lengths for horizontal strip diagrams.
+ * `labelPlacement` shifts the route centreline when names sit below / alternate.
  */
-export const horizontalDiagramMetrics = () => {
+export const horizontalDiagramMetrics = (
+  labelPlacement: "above" | "below" | "alternate" = "above",
+) => {
   const tickProtrude = LINE_DIAGRAM.stationTick;
   const tickHeightUnits = 1 + tickProtrude * 2;
   const ringOuter = LINE_DIAGRAM.interchange.outerDiameter;
@@ -273,7 +276,9 @@ export const horizontalDiagramMetrics = () => {
   const nameBand = nameSize * 2.35;
   const markerBand = Math.max(ringOuter, tickHeightUnits);
   const colWidth = Math.max(ringOuter + 10, flagMinWidth + 4, 12);
-  const lineTop = nameBand + nameGap + markerBand / 2 - 0.5;
+  const aboveBand =
+    labelPlacement === "below" ? 0 : nameBand + nameGap;
+  const lineTop = aboveBand + markerBand / 2 - 0.5;
   const flagClearance = LINE_DIAGRAM.layout.nameBelowLine;
 
   return {

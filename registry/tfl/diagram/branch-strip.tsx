@@ -1,0 +1,382 @@
+"use client";
+
+import { StationName } from "@/components/tfl/station-name";
+import { OUT_OF_USE_LINE_COLOR } from "@/components/tfl/diagram/straight-strip-parts";
+import {
+  placeBranchStripLabels,
+  verticalLabelOnLeft,
+} from "@/lib/tfl/branch-strip-layout";
+import {
+  DIAGRAM_BASELINE,
+  LINE_DIAGRAM,
+  horizontalStationFontSize,
+  scale,
+  verticalStationFontSize,
+} from "@/lib/tfl/line-diagram";
+import type { LineSchematic } from "@/lib/tfl/line-schematic";
+import {
+  layoutLineSchematic,
+  type SchematicLayoutPoint,
+  type SchematicOrientation,
+} from "@/lib/tfl/schematic-layout";
+import {
+  branchSegmentKey,
+  type BranchStripLabelMap,
+  type StripSegmentState,
+} from "@/lib/tfl/strip-model";
+import { cn } from "@/lib/utils";
+
+/**
+ * Atomic branched strip: SVG paths + markers, HTML StationName overlay.
+ *
+ * ## Visual regression checklist (run after every edit)
+ * Open http://localhost:3999/components/branch-strip and confirm:
+ * 1. **Mill Hill East** curves into Finchley with a Bezier — never a flat 90° stub
+ *    (same `pos` as Finchley is forbidden; see `schematic-layout.test.ts`)
+ * 2. **Camden → Mornington Crescent** is a smooth S-curve — never a staircase / elbow
+ * 3. **No station labels overlap** each other; prefer labels clear of the track
+ * 4. **Every tick/dash is ⊥ to the local track** — never parallel (esp. Mill Hill)
+ *
+ * Automated guards: `pnpm test` → `lib/tfl/schematic-layout.test.ts`
+ */
+export type BranchStripProps = {
+  schematic: LineSchematic;
+  lineColor: string;
+  orientation?: SchematicOrientation;
+  /**
+   * Absolute diagram unit (= route line thickness).
+   * Defaults to `DIAGRAM_BASELINE` for the orientation — same as straight strips.
+   */
+  x?: number;
+  className?: string;
+  /**
+   * Editorial visual lines keyed by schematic node id.
+   * Prepared by `LineStrip` / `prepareBranchStrip` — never looked up here.
+   */
+  nodeLabelLines?: BranchStripLabelMap;
+  /**
+   * Optional segment overrides keyed `"fromId→toId"`.
+   * Lets closures paint without redesigning the schematic.
+   */
+  segmentStates?: Readonly<Record<string, StripSegmentState>>;
+};
+
+export const BranchStrip = ({
+  schematic,
+  lineColor,
+  orientation: orientationProp,
+  x: xProp,
+  className,
+  nodeLabelLines,
+  segmentStates,
+}: BranchStripProps) => {
+  const orientation = orientationProp ?? schematic.orientation;
+  const isHorizontal = orientation === "horizontal";
+  const x = xProp ?? DIAGRAM_BASELINE[orientation];
+  const strokeWidth = scale(x, LINE_DIAGRAM.lineThickness);
+  const tickProtrude = scale(x, LINE_DIAGRAM.stationTick);
+  const ringOuter = scale(x, LINE_DIAGRAM.interchange.outerDiameter / 2);
+  const ringStroke = scale(x, LINE_DIAGRAM.interchange.stroke);
+  // Clear interchange rings; keep text off the stroke where possible.
+  const labelClearance = ringOuter + scale(x, 1.1);
+  const nameFont = isHorizontal
+    ? horizontalStationFontSize(x)
+    : verticalStationFontSize(x);
+
+  const mainPitch = scale(x, isHorizontal ? 12 : 14);
+  // Wider vertical lanes so CX / Bank labels sit on opposite sides without clash.
+  const lanePitch = scale(x, isHorizontal ? 10 : 20);
+
+  const labelBand = Math.max(
+    scale(x, LINE_DIAGRAM.layout.nameBelowLine) + nameFont * 1.15,
+    nameFont * 2.2,
+  );
+  const labelBandTop = isHorizontal
+    ? labelBand + labelClearance
+    : nameFont * 2.4 + labelClearance;
+  const labelBandBottom = isHorizontal ? labelBand + labelClearance : scale(x, 4);
+  const verticalLabelWidth = Math.round(
+    Math.min(scale(x, 16), lanePitch * 0.65),
+  );
+  const labelSideLeft = isHorizontal ? 0 : verticalLabelWidth + scale(x, 4);
+  const labelSideRight = isHorizontal ? 0 : verticalLabelWidth + scale(x, 4);
+
+  const layout = layoutLineSchematic(schematic, {
+    orientation,
+    x,
+    mainPitch,
+    lanePitch,
+    padding: scale(x, isHorizontal ? 4 : 6),
+  });
+
+  // Narrower than station pitch so neighbours on the same corridor don’t collide.
+  const labelMaxWidth = Math.max(scale(x, 7), layout.mainPitch * 0.7);
+  const endPad = isHorizontal ? labelMaxWidth / 2 + scale(x, 1) : 0;
+  const labelGap = ringOuter + scale(x, 2.5);
+
+  const placements = placeBranchStripLabels(layout, {
+    orientation,
+    nameFont,
+    labelMaxWidth,
+    verticalLabelWidth,
+    labelClearance,
+    labelGap,
+  });
+  const placementById = new Map(placements.map((p) => [p.id, p]));
+
+  const canvasWidth = layout.width + labelSideLeft + labelSideRight + endPad * 2;
+  const canvasHeight = layout.height + labelBandTop + labelBandBottom;
+  const svgOffsetX = labelSideLeft + endPad;
+  const svgOffsetY = labelBandTop;
+
+  return (
+    <div
+      className={cn("relative w-full min-w-0 overflow-auto", className)}
+      role="region"
+      aria-label={`${schematic.lineName} branch strip`}
+      tabIndex={0}
+    >
+      <div
+        className="relative"
+        style={{ width: canvasWidth, height: canvasHeight }}
+      >
+        <svg
+          width={canvasWidth}
+          height={canvasHeight}
+          className="absolute inset-0"
+          aria-hidden
+        >
+          <g transform={`translate(${svgOffsetX} ${svgOffsetY})`}>
+            {layout.edges.map((edge) => {
+              const override =
+                segmentStates?.[branchSegmentKey(edge.from, edge.to)] ??
+                segmentStates?.[branchSegmentKey(edge.to, edge.from)];
+              const state = override ?? edge.state;
+              const stroke =
+                state === "out-of-use" ? OUT_OF_USE_LINE_COLOR : lineColor;
+              return (
+                <path
+                  key={`${edge.branchId ?? "edge"}:${edge.from}→${edge.to}`}
+                  d={edge.path}
+                  fill="none"
+                  stroke={stroke}
+                  strokeWidth={strokeWidth}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              );
+            })}
+
+            {layout.points.map((point) => (
+              <BranchStripMarker
+                key={`m-${point.id}`}
+                point={point}
+                lineColor={lineColor}
+                strokeWidth={strokeWidth}
+                tickProtrude={tickProtrude}
+                ringOuter={ringOuter}
+                ringStroke={ringStroke}
+                routeAlongMain={point.trackAxis === "x"}
+              />
+            ))}
+          </g>
+        </svg>
+
+        {layout.points.map((point) => {
+          const nodeX = point.x + svgOffsetX;
+          const nodeY = point.y + svgOffsetY;
+          const labelLines = nodeLabelLines?.[point.id];
+          const placement = placementById.get(point.id);
+          const labelStyle = {
+            fontSize: nameFont,
+            lineHeight: 1.15,
+            textShadow:
+              "0 0 3px var(--background), 0 0 3px var(--background), 0 0 6px var(--background)",
+          } as const;
+
+          if (isHorizontal) {
+            const labelAbove = (placement?.side ?? "above") === "above";
+
+            return (
+              <div
+                key={`label-${point.id}`}
+                className="pointer-events-auto absolute z-10"
+                style={{
+                  left: nodeX,
+                  top: labelAbove
+                    ? nodeY - labelClearance
+                    : nodeY + labelClearance,
+                  width: labelMaxWidth,
+                  transform: labelAbove
+                    ? "translate(-50%, -100%)"
+                    : "translate(-50%, 0)",
+                }}
+              >
+                <StationName
+                  name={point.name}
+                  lines={labelLines}
+                  layout="auto"
+                  maxWidth={labelMaxWidth}
+                  maxLines={2}
+                  allowScaleDown={false}
+                  align="center"
+                  className="font-medium text-foreground"
+                  style={labelStyle}
+                />
+              </div>
+            );
+          }
+
+          if (placement?.side === "stub-above") {
+            return (
+              <div
+                key={`label-${point.id}`}
+                className="pointer-events-auto absolute z-10"
+                style={{
+                  left: nodeX,
+                  top: nodeY - labelClearance,
+                  width: verticalLabelWidth,
+                  transform: "translate(-50%, -100%)",
+                }}
+              >
+                <StationName
+                  name={point.name}
+                  lines={labelLines}
+                  layout="auto"
+                  maxWidth={verticalLabelWidth}
+                  maxLines={2}
+                  allowScaleDown={false}
+                  allowAbbreviation={false}
+                  align="center"
+                  className="font-medium text-foreground"
+                  style={labelStyle}
+                />
+              </div>
+            );
+          }
+
+          const labelOnLeft =
+            placement?.side === "left" ||
+            (placement?.side !== "right" &&
+              verticalLabelOnLeft(point, layout));
+
+          return (
+            <div
+              key={`label-${point.id}`}
+              className="pointer-events-auto absolute z-10"
+              style={{
+                left: labelOnLeft
+                  ? nodeX - labelGap - verticalLabelWidth
+                  : nodeX + labelGap,
+                top: nodeY,
+                width: verticalLabelWidth,
+                transform: "translateY(-50%)",
+              }}
+            >
+              <StationName
+                name={point.name}
+                lines={labelLines}
+                layout="auto"
+                maxWidth={verticalLabelWidth}
+                maxLines={2}
+                allowScaleDown={false}
+                allowAbbreviation={false}
+                align={labelOnLeft ? "right" : "left"}
+                className="font-medium text-foreground"
+                style={labelStyle}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+type BranchStripMarkerProps = {
+  point: SchematicLayoutPoint;
+  lineColor: string;
+  strokeWidth: number;
+  tickProtrude: number;
+  ringOuter: number;
+  ringStroke: number;
+  /** True when local track runs along the main (horizontal) axis. */
+  routeAlongMain: boolean;
+};
+
+/**
+ * Markers match StraightStrip / DiagramStationMarker:
+ * - interchange → white ring (Ø 3x)
+ * - terminus → filled end bar (perpendicular to local track)
+ * - stop → cross-tick or tick-right
+ */
+const BranchStripMarker = ({
+  point,
+  lineColor,
+  strokeWidth,
+  tickProtrude,
+  ringOuter,
+  ringStroke,
+  routeAlongMain,
+}: BranchStripMarkerProps) => {
+  if (point.kind === "interchange") {
+    return (
+      <circle
+        cx={point.x}
+        cy={point.y}
+        r={ringOuter}
+        fill="#fff"
+        stroke="#000"
+        strokeWidth={ringStroke}
+      />
+    );
+  }
+
+  const halfLen = strokeWidth / 2 + tickProtrude;
+
+  if (point.kind === "terminus") {
+    const half = strokeWidth / 2 + tickProtrude * 3.5;
+    if (routeAlongMain) {
+      return (
+        <rect
+          x={point.x - strokeWidth / 2}
+          y={point.y - half}
+          width={strokeWidth}
+          height={half * 2}
+          fill={lineColor}
+        />
+      );
+    }
+    return (
+      <rect
+        x={point.x - half}
+        y={point.y - strokeWidth / 2}
+        width={half * 2}
+        height={strokeWidth}
+        fill={lineColor}
+      />
+    );
+  }
+
+  if (routeAlongMain) {
+    return (
+      <rect
+        x={point.x - strokeWidth / 2}
+        y={point.y - halfLen}
+        width={strokeWidth}
+        height={strokeWidth + tickProtrude * 2}
+        fill={lineColor}
+      />
+    );
+  }
+
+  return (
+    <rect
+      x={point.x - strokeWidth / 2}
+      y={point.y - strokeWidth / 2}
+      width={strokeWidth + tickProtrude}
+      height={strokeWidth}
+      fill={lineColor}
+    />
+  );
+};

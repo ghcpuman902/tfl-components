@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { StationNameLabel } from "@/components/tfl/station-name-label";
+import { StationName } from "@/components/tfl/station-name";
 import { TFL_BLUE } from "@/lib/tfl/brand-colours";
 import type { CatalogStation } from "@/lib/tfl/station-catalog";
 import type { StationLabelFormatResult } from "@/lib/tfl/station-typography";
@@ -210,8 +210,9 @@ export const StationTypographyLab = ({ stations }: StationTypographyLabProps) =>
                         minHeight: fontSize * (maxLines === 2 ? 2.5 : 1.5),
                       }}
                     >
-                      <StationNameLabel
+                      <StationName
                         name={station.displayName}
+                        layout="auto"
                         maxWidth={boxWidth - 20}
                         fontSize={fontSize}
                         maxLines={maxLines}

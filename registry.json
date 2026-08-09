@@ -187,10 +187,10 @@
       ]
     },
     {
-      "name": "line-diagram",
+      "name": "line-strip",
       "type": "registry:block",
-      "title": "Line Diagram",
-      "description": "TfL Line diagram standard components — horizontal strip, full route, and journey A→B.",
+      "title": "Line Strip",
+      "description": "TfL strip components — StraightStrip, BranchStrip, LineStrip molecule, full route, and journey A→B.",
       "dependencies": [
         "tfl-ts"
       ],
@@ -199,19 +199,29 @@
       ],
       "files": [
         {
-          "path": "registry/tfl/diagram/horizontal-line-diagram.tsx",
+          "path": "registry/tfl/diagram/straight-strip.tsx",
           "type": "registry:component",
-          "target": "components/tfl/diagram/horizontal-line-diagram.tsx"
+          "target": "components/tfl/diagram/straight-strip.tsx"
         },
         {
-          "path": "registry/tfl/diagram/horizontal-line-diagram-parts.tsx",
+          "path": "registry/tfl/diagram/straight-strip-parts.tsx",
           "type": "registry:component",
-          "target": "components/tfl/diagram/horizontal-line-diagram-parts.tsx"
+          "target": "components/tfl/diagram/straight-strip-parts.tsx"
         },
         {
-          "path": "registry/tfl/diagram/horizontal-line-diagram-fitted.tsx",
+          "path": "registry/tfl/diagram/straight-strip-fitted.tsx",
           "type": "registry:component",
-          "target": "components/tfl/diagram/horizontal-line-diagram-fitted.tsx"
+          "target": "components/tfl/diagram/straight-strip-fitted.tsx"
+        },
+        {
+          "path": "registry/tfl/diagram/branch-strip.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/diagram/branch-strip.tsx"
+        },
+        {
+          "path": "registry/tfl/diagram/line-strip.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/diagram/line-strip.tsx"
         },
         {
           "path": "registry/tfl/diagram/line-route-diagram.tsx",
@@ -244,9 +254,29 @@
           "target": "lib/tfl/diagram-station.ts"
         },
         {
+          "path": "lib/tfl/horizontal-station-labels.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/horizontal-station-labels.ts"
+        },
+        {
+          "path": "lib/tfl/strip-model.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/strip-model.ts"
+        },
+        {
           "path": "lib/tfl/diagram-mappers.ts",
           "type": "registry:lib",
           "target": "lib/tfl/diagram-mappers.ts"
+        },
+        {
+          "path": "lib/tfl/line-schematic.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/line-schematic.ts"
+        },
+        {
+          "path": "lib/tfl/schematic-layout.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/schematic-layout.ts"
         }
       ]
     }

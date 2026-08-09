@@ -20,6 +20,14 @@ export const WEEK_AHEAD_LINE_IDS = [
   "hammersmith-city",
   "metropolitan",
   "elizabeth",
+  "dlr",
+  "liberty",
+  "lioness",
+  "mildmay",
+  "suffragette",
+  "weaver",
+  "windrush",
+  "tram",
 ] as const;
 
 export type WeekAheadLineId = (typeof WEEK_AHEAD_LINE_IDS)[number];
@@ -202,7 +210,9 @@ export type SpineMappingResult = {
 
 /**
  * Map affected stop IDs onto an ordered spine.
- * IDs that do not appear on the spine are ignored for geometry (branch absent).
+ * IDs that do not appear on the spine are ignored for geometry (branch absent
+ * from this compact view). Prefer passing `topologyStationIds` when checking
+ * whether a closure is “known” on any branch — see `closureMapsToTopology`.
  * If none map, `unmappedClosure` is true — keep colour, show a status note.
  */
 export const mapAffectedIdsToSpine = (
@@ -254,6 +264,15 @@ export const mapAffectedIdsToSpine = (
   };
 };
 
+/**
+ * True when any affected stop id appears anywhere in the line topology
+ * (including non-primary branches). Use before marking a closure unmapped.
+ */
+export const closureMapsToTopology = (
+  topologyStationIdSet: ReadonlySet<string>,
+  affectedIds: readonly string[],
+): boolean => affectedIds.some((id) => topologyStationIdSet.has(id));
+
 /** Merge half-open station-index ranges into diagram segment states. */
 export const rangesToSegments = (
   spineIds: readonly string[],
@@ -275,15 +294,70 @@ export const rangesToSegments = (
   }));
 };
 
+/**
+ * Station IDs to grey for closed segment ranges.
+ * Uses the all-adjacent-closed rule (far terminals of a part closure grey;
+ * boundary stations that still have an open side stay coloured).
+ */
+export const rangesToStationOutOfUseIds = (
+  spineIds: readonly string[],
+  ranges: readonly { fromIndex: number; toIndex: number }[],
+): string[] => {
+  if (spineIds.length === 0 || ranges.length === 0) return [];
+
+  const segments = rangesToSegments(spineIds, ranges);
+  const segmentStates = segments.map((segment) => segment.state);
+  const flags = stationOutOfUseFlags(spineIds.length, segmentStates);
+  return spineIds.filter((_, index) => flags[index]);
+};
+
+/** Pure station flags from segment states (shared with diagram helpers). */
+const stationOutOfUseFlags = (
+  stationCount: number,
+  segmentStates: readonly ("normal" | "out-of-use")[],
+): boolean[] => {
+  const out = new Array(stationCount).fill(false);
+  if (stationCount === 0) return out;
+
+  for (let i = 0; i < stationCount; i += 1) {
+    const hasLeft = i > 0;
+    const hasRight = i < segmentStates.length;
+    if (!hasLeft && !hasRight) continue;
+
+    const leftClosed = hasLeft && segmentStates[i - 1] === "out-of-use";
+    const rightClosed = hasRight && segmentStates[i] === "out-of-use";
+
+    if (hasLeft && hasRight) {
+      out[i] = leftClosed && rightClosed;
+    } else if (hasLeft) {
+      out[i] = leftClosed;
+    } else {
+      out[i] = rightClosed;
+    }
+  }
+
+  return out;
+};
+
 export type DayLineServiceState = {
   kind: ServiceRenderKind;
   /** Status labels to show (structured descriptions only) */
   labels: string[];
   segments: DiagramSegment[];
   forceLabelIds: string[];
+  /** Stations whose markers should use the out-of-use colour */
+  stationOutOfUseIds: string[];
   /** Concise note when a closure could not be mapped onto the spine */
   note?: string;
 };
+
+const emptyGoodState = (spineIds: readonly string[]): DayLineServiceState => ({
+  kind: "good",
+  labels: [],
+  segments: rangesToSegments(spineIds, []),
+  forceLabelIds: [],
+  stationOutOfUseIds: [],
+});
 
 const statusesForDay = (
   statuses: LineStatusLike[],
@@ -314,12 +388,12 @@ export const buildDayLineServiceState = (
   dayEndMs: number,
 ): DayLineServiceState => {
   if (!statuses?.length) {
-    return { kind: "good", labels: [], segments: rangesToSegments(spineIds, []), forceLabelIds: [] };
+    return emptyGoodState(spineIds);
   }
 
   const active = statusesForDay(statuses, dayStartMs, dayEndMs);
   if (active.length === 0) {
-    return { kind: "good", labels: [], segments: rangesToSegments(spineIds, []), forceLabelIds: [] };
+    return emptyGoodState(spineIds);
   }
 
   const labels = [
@@ -347,6 +421,10 @@ export const buildDayLineServiceState = (
       labels,
       segments: rangesToSegments(spineIds, mapping.outOfUseRanges),
       forceLabelIds: mapping.closureEndpointIds,
+      stationOutOfUseIds: rangesToStationOutOfUseIds(
+        spineIds,
+        mapping.outOfUseRanges,
+      ),
     };
   }
 
@@ -381,6 +459,7 @@ export const buildDayLineServiceState = (
         labels,
         segments: rangesToSegments(spineIds, []),
         forceLabelIds: [],
+        stationOutOfUseIds: [],
         note: "Closure not on displayed route",
       };
     }
@@ -390,6 +469,7 @@ export const buildDayLineServiceState = (
       labels,
       segments: rangesToSegments(spineIds, ranges),
       forceLabelIds: [...new Set(forceLabelIds)],
+      stationOutOfUseIds: rangesToStationOutOfUseIds(spineIds, ranges),
       note: unmapped ? "Some closures not on displayed route" : undefined,
     };
   }
@@ -400,8 +480,9 @@ export const buildDayLineServiceState = (
       labels,
       segments: rangesToSegments(spineIds, []),
       forceLabelIds: [],
+      stationOutOfUseIds: [],
     };
   }
 
-  return { kind: "good", labels: [], segments: rangesToSegments(spineIds, []), forceLabelIds: [] };
+  return emptyGoodState(spineIds);
 };

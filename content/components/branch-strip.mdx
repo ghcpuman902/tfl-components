@@ -1,0 +1,22 @@
+## Usage
+
+```tsx
+import { BranchStrip } from "@/components/tfl/diagram/branch-strip"
+import { LineStrip } from "@/components/tfl/diagram/line-strip"
+import { prepareBranchStrip } from "@/lib/tfl/strip-model"
+
+// Prefer LineStrip when you want TfL label recipes + colour resolution.
+// Use BranchStrip directly only with a prepared render model.
+```
+
+### Role
+
+`BranchStrip` is the **atomic** branched strip. It takes a `LineSchematic` (lane × pos nodes and edges), an explicit `lineColor`, and optional prepared `nodeLabelLines` / `segmentStates`. It does not fetch TfL data or look up label recipes.
+
+`LineStrip` is the **molecular** wrapper that applies recipes and colour, then renders `BranchStrip`.
+
+See also [Line strip](/components/line-strip) for straight corridors and journey helpers.
+
+### Geometry
+
+Author separate horizontal and vertical schematics — do not rotate one graph. Shared stations that diverge and converge (Camden Town, Kennington) are single nodes; parallel corridors that share a name (Euston) use duplicate nodes with a shared `stationKey`.

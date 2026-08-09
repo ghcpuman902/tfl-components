@@ -24,14 +24,15 @@ Theme variables are defined in `app/globals.css`. Dark mode is class-based via `
 
 ### Station label breaks (for agents and consumers)
 
-Use `StationNameLabel` / `formatStationLabel` — never ad-hoc `<br>` or CSS wrapping for diagram names.
+Use `StationName` / `formatStationLabel` — never ad-hoc `<br>` or CSS wrapping for diagram names.
 
 | API | Role |
 |-----|------|
-| `StationNameLabel` | Client label that measures live `--font-sans` (Hammersmith One) |
+| `StationName` | Client label with find/copy/aria; pass `lines` or `layout="auto"`. Any strip that renders it must be `"use client"` (Cache Components). |
 | `formatStationLabel` | Pure scorer: prefer 1 line → balanced 2-line word split → optional abbr → scale ≥ 0.75 |
-| `STATION_ABBREVIATIONS` | Conservative map (`Street`→`St`, `Road`→`Rd`, …) — only when allowed |
+| `STATION_ABBREVIATIONS` | Conservative map (`Street`→`St`, `Road`→`Rd`, …) from `station-abbreviations` — only when allowed |
 | `/tools/typography` | A–Z lab to inspect every Tube / Elizabeth / DLR / Overground / Tram name |
+| `/components/branch-strip` | Northern schematics — separate horizontal/vertical `lane × pos` layouts |
 
 Rules: break only between words; prefer the full name; never split a token; optional abbreviations only to fit; scale-down is last resort (`STATION_LABEL_MIN_SCALE = 0.75`).
 
@@ -44,32 +45,33 @@ Import from `@/lib/tfl/brand`:
 - `ROUNDEL_PRESETS` — mode roundel colours + bar text (incl. outline / cycles styles)
 - `getRoundelExclusion(barWidth)` — 0.25× clear space helper
 - `ROUNDEL_DO_NOT` / `ROUNDEL_FONT_POLICY` — published rules as constants
-- `LINE_DIAGRAM` + `@/components/tfl/line-diagram-shapes` — low-level map geometry
-- `LineRouteDiagram` / `JourneyDiagram` / `HorizontalLineDiagram` — route strips and A→B journeys (`/line-diagram`)
+- `LINE_DIAGRAM` + `@/components/tfl/diagram/line-diagram-shapes` — low-level map geometry
+- `LineStrip` / `StraightStrip` / `BranchStrip` / `JourneyDiagram` — route strips and A→B journeys (`/components/line-strip`)
 
 Reference crops: `public/brand/line-diagram/`.
 
-### Line diagram scale (for agents and consumers)
+### Line strip scale (for agents and consumers)
 
-Diagrams share **one** responsive scale knob. Published geometry ratios (tick 0.66x, ring 3x, …) stay in `LINE_DIAGRAM` and are **not** theme tokens.
+Strips share **one** responsive scale knob. Published geometry ratios (tick 0.66x, ring 3x, …) stay in `LINE_DIAGRAM` and are **not** theme tokens.
 
 | Token / API | Role |
 |-------------|------|
 | `--tfl-diagram-scale` (`DIAGRAM_SCALE_VAR`) | Unitless multiplier set on a shared ancestor |
 | `DIAGRAM_SCALE_CLASS` | Mobile / tablet / desktop values (`0.7` / `0.85` / `1`) |
 | `DIAGRAM_BASELINE.horizontal` / `.vertical` | Orientation px at scale `1` (`10` / `4` — horizontal = Victoria strip; vertical sized for laptop body text) |
-| `--tfl-diagram-x` | Resolved line thickness inside each diagram root |
+| `--tfl-diagram-x` | Resolved line thickness inside each strip root |
 | `x` prop | Absolute px override (skips the inherited scale) |
 
 Vertical / journey UI names use **§11** sizing (cap height ≈ ring Ø = 3×) so labels read taller than interchange rings. Mid-route map ticks protrude **right only**; terminals use a full crossbar. Journey A→B markers are **always circles**, never dashes.
 
-**Do:** set `--tfl-diagram-scale` once so every diagram on the page shares breakpoints.
+**Do:** set `--tfl-diagram-scale` once so every strip on the page shares breakpoints.
 
 ```tsx
 import { DIAGRAM_SCALE_CLASS } from "@/lib/tfl/brand";
+import { LineStrip } from "@/components/tfl/diagram/line-strip";
 
 <div className={DIAGRAM_SCALE_CLASS}>
-  <HorizontalLineDiagram lineColor="…" stations={…} />
+  <LineStrip lineId="victoria" lineColor="…" stations={…} />
   <JourneyDiagram lineColor="…" from={…} to={…} />
 </div>
 ```

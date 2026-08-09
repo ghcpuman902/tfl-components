@@ -12,16 +12,16 @@ Deterministic word-boundary line breaks for diagram and destination labels, meas
 ### Usage
 
 ```tsx
-import { StationNameLabel } from "@/components/tfl/station-name-label";
+import { StationName } from "@/components/tfl/station-name";
 import { formatStationLabel } from "@/lib/tfl/station-typography";
 
-<StationNameLabel
+<StationName
   name="King's Cross St. Pancras"
+  layout="auto"
   maxLines={2}
   allowAbbreviation={false}
 />
 ```
-
 Johnston is licensed by TfL — this lab uses Hammersmith One as a stand-in. Prefer your product typeface in production, or request Johnston via TfL font requests.
 
 This is a site tool — not an installable registry item.

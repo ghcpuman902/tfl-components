@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { getLineCssProps, getLineInlineStyles } from "tfl-ts";
-import { HorizontalLineDiagram } from "@/components/tfl/diagram/horizontal-line-diagram";
+import { LineStrip } from "@/components/tfl/diagram/line-strip";
 import type { LondonDay } from "@/lib/tfl/london-dates";
 import type {
   WeekAheadLineRoute,
@@ -82,8 +82,8 @@ export const WeekAheadShell = ({ days, children }: ShellProps) => {
             This week ahead
           </h1>
           <p className="max-w-prose text-sm text-muted-foreground">
-            Planned and live service for Tube and Elizabeth line routes. Routes
-            load first; live status overlays when ready.
+            Planned and live service for Tube, Elizabeth line, DLR, Overground,
+            and Tram routes. Routes load first; live status overlays when ready.
           </p>
         </div>
 
@@ -136,6 +136,7 @@ export const WeekAheadLineRow = ({ route }: { route: WeekAheadLineRoute }) => {
           labels: [] as string[],
           segments: [],
           forceLabelIds: [] as string[],
+          stationOutOfUseIds: [] as string[],
         };
 
   const statusLabel = service.labels[0];
@@ -164,19 +165,17 @@ export const WeekAheadLineRow = ({ route }: { route: WeekAheadLineRoute }) => {
       </div>
 
       {route.stations.length > 0 ? (
-        <div
-          className="overflow-x-auto overscroll-x-contain pb-2 [-webkit-overflow-scrolling:touch]"
-          tabIndex={0}
-          role="region"
-          aria-label={`${route.lineName} route diagram`}
-        >
-          <HorizontalLineDiagram
-            stations={route.stations}
-            lineColor={route.lineColor}
-            segments={service.segments}
-            x={HOMEPAGE_DIAGRAM_X}
-          />
-        </div>
+        <LineStrip
+          lineId={route.lineId}
+          lineName={route.lineName}
+          lineColor={route.lineColor}
+          stations={route.stations}
+          segments={service.segments}
+          stationOutOfUseIds={service.stationOutOfUseIds}
+          forceLabelIds={service.forceLabelIds}
+          orientation="horizontal"
+          x={HOMEPAGE_DIAGRAM_X}
+        />
       ) : (
         <p className="text-sm text-muted-foreground">
           No outbound spine available for this line.

@@ -38,7 +38,7 @@ Grouped the way Londoners think about transport — not by TfL API mode IDs:
 
 | Group | Contents |
 |-------|----------|
-| Foundations | Roundel, line colours & badges, line diagram |
+| Foundations | Roundel, line colours & badges, line strip |
 | Tube & rail | Status board, live arrivals |
 | Bus | Bus arrivals |
 | Tools | Browse lines, route stations |
@@ -91,9 +91,9 @@ Once enabled, customise freely:
 
 Mode presets and Wikimedia paths are exported as `ROUNDEL_PRESETS`, `ROUNDEL_LOGO_PATHS`, and `ROUNDEL_LOGO_SOURCES`. SVG files ship in `public/transit-logos/`.
 
-Brand helpers live in `@/lib/tfl/brand`: modal colours, Underground / Overground line colours, `getRoundelExclusion()`, font/do-not constants, and **line-diagram geometry** (`LINE_DIAGRAM`, SVG shape components).
+Brand helpers live in `@/lib/tfl/brand`: modal colours, Underground / Overground line colours, `getRoundelExclusion()`, font/do-not constants, and **line-strip geometry** (`LINE_DIAGRAM`, SVG shape components).
 
-Cropped references from *Line diagram standard* Issue 4 are in `public/brand/line-diagram/`; source PDF in `reference/brand/`. Demo: `/components/line-diagram`.
+Cropped references from *Line diagram standard* Issue 4 are in `public/brand/line-diagram/`; source PDF in `reference/brand/`. Demo: `/components/line-strip`.
 
 **Fonts:** this demo app uses [Hammersmith One](https://fonts.google.com/specimen/Hammersmith+One) as a Johnston-like stand-in. Do **not** download Johnston without a licence — [apply via TfL](https://tfl.gov.uk/info-for/business-and-advertisers/font-requests?intcmp=5840), or use Hammersmith One / [P22 Underground](https://fonts.adobe.com/fonts/p22-underground) (Adobe Fonts). Prefer your own product typeface in shipping apps.
 

@@ -8,45 +8,50 @@ import {
   DIAGRAM_X_VAR,
   horizontalDiagramMetrics,
 } from "@/lib/tfl/line-diagram";
-import type { DiagramSegment } from "@/lib/tfl/diagram-station";
 import {
-  buildSegmentStateMap,
-  HorizontalRouteStrip,
-  HorizontalStationColumn,
-  isStationOutOfUse,
+  StraightRouteTrack,
+  StraightStripStationColumn,
   selectFittedLabelIndexes,
-  type HorizontalDiagramStation,
-} from "@/components/tfl/diagram/horizontal-line-diagram-parts";
+  type StraightStripStation,
+  type StripLabelPlacement,
+  type StripSegmentState,
+} from "@/components/tfl/diagram/straight-strip-parts";
 
 type FittedProps = {
-  stations: HorizontalDiagramStation[];
+  stations: readonly StraightStripStation[];
   lineColor: string;
   lineName?: string;
   x?: number;
   className?: string;
-  segments?: readonly DiagramSegment[];
+  /** Prepared adjacent segment states (length = stations.length - 1). */
+  segmentStates: readonly StripSegmentState[];
+  /** Prepared per-station out-of-use flags. */
+  stationOutOfUse: readonly boolean[];
   forceLabelIds?: readonly string[];
   /**
-   * Shared fit scale for a group of diagrams (e.g. homepage week-ahead).
+   * Shared fit scale for a group of strips (e.g. homepage week-ahead).
    * When set, every line uses the same pitch and type size, left-aligned.
-   * When omitted, this diagram scales itself to its container.
+   * When omitted, this strip scales itself to its container.
    */
   sharedFitScale?: number;
+  labelPlacement?: StripLabelPlacement;
 };
 
 /**
- * Fitted horizontal diagram — left-aligned fixed pitch, no horizontal scroll.
+ * Fitted straight strip — left-aligned fixed pitch, no horizontal scroll.
  * Scales diagram unit `x` uniformly so station spacing and type stay consistent.
  */
-export const HorizontalLineDiagramFitted = ({
+export const StraightStripFitted = ({
   stations,
   lineColor,
   lineName,
   x,
   className,
-  segments,
+  segmentStates,
+  stationOutOfUse,
   forceLabelIds,
   sharedFitScale,
+  labelPlacement = "above",
 }: FittedProps) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -63,8 +68,7 @@ export const HorizontalLineDiagramFitted = ({
     return () => observer.disconnect();
   }, []);
 
-  // Approximate px pitch at the page's mid breakpoint scale (label budget only).
-  const colWidthUnits = horizontalDiagramMetrics().colWidthUnits;
+  const colWidthUnits = horizontalDiagramMetrics(labelPlacement).colWidthUnits;
   const colWidthPxApprox = DIAGRAM_BASELINE.horizontal * 0.85 * colWidthUnits;
 
   const selfScale =
@@ -81,16 +85,19 @@ export const HorizontalLineDiagramFitted = ({
         }
   ) as CSSProperties;
 
-  const m = horizontalDiagramMetrics();
+  const m = horizontalDiagramMetrics(labelPlacement);
   const maxConnections = stations.reduce(
-    (n, s) => Math.max(n, s.connections?.length ?? 0),
+    (n, s) =>
+      Math.max(
+        n,
+        (s.connections ?? []).filter((c) => c.id !== "national-rail").length,
+      ),
     0,
   );
   const connectionBand =
     maxConnections > 0
       ? `calc(${m.flagHeight} * ${maxConnections})`
       : undefined;
-  const segmentStates = buildSegmentStateMap(stations, segments);
   const totalWidth = `calc(${m.colWidth} * ${stations.length})`;
 
   const labelIndexes =
@@ -129,7 +136,7 @@ export const HorizontalLineDiagramFitted = ({
       ) : null}
 
       <div className="relative" style={{ width: totalWidth }}>
-        <HorizontalRouteStrip
+        <StraightRouteTrack
           stationCount={stations.length}
           segmentStates={segmentStates}
           lineColor={lineColor}
@@ -140,7 +147,7 @@ export const HorizontalLineDiagramFitted = ({
 
         <ol className="relative m-0 flex list-none items-start p-0">
           {stations.map((station, index) => (
-            <HorizontalStationColumn
+            <StraightStripStationColumn
               key={`${station.id}-${index}`}
               station={station}
               index={index}
@@ -148,7 +155,8 @@ export const HorizontalLineDiagramFitted = ({
               showLabel={labelIndexes.has(index)}
               connectionBand={connectionBand}
               colWidth={m.colWidth}
-              outOfUse={isStationOutOfUse(index, segmentStates)}
+              outOfUse={stationOutOfUse[index] ?? false}
+              labelPlacement={labelPlacement}
             />
           ))}
         </ol>

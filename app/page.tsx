@@ -7,7 +7,7 @@ import { WeekAheadSkeleton } from "@/components/tfl/week-ahead/week-ahead-skelet
 export const metadata: Metadata = {
   title: "tfl-components — This week ahead",
   description:
-    "This week’s Tube and Elizabeth line service on horizontal diagrams, plus open React components for London transport boards.",
+    "This week’s Tube, Elizabeth line, DLR, Overground, and Tram service on horizontal diagrams, plus open React components for London transport boards.",
 };
 
 async function IntroContent() {

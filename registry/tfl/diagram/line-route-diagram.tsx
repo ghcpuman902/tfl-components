@@ -1,3 +1,5 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import {
   diagramUnitStyle,
@@ -10,7 +12,8 @@ import {
   resolveMapMarkerKind,
   VerticalRouteLine,
 } from "@/components/tfl/diagram/diagram-markers";
-import { StationNameLabel } from "@/components/tfl/station-name-label";
+import { StationName } from "@/components/tfl/station-name";
+import { NationalRailPictogram } from "@/components/tfl/national-rail-pictogram";
 
 export type LineRouteDiagramProps = {
   stations: DiagramStation[];
@@ -104,17 +107,30 @@ export const LineRouteDiagram = ({
               />
 
               <div className="flex min-w-0 flex-1 items-center gap-2">
-                <StationNameLabel
-                  name={station.name}
-                  maxLines={2}
-                  align="left"
-                  className="min-w-0 flex-1 font-medium text-foreground"
-                  style={{ fontSize: m.nameSize }}
-                />
-                {connections && connections.length > 0 ? (
+                <div className="relative inline-flex min-w-0 max-w-full items-center">
+                  <StationName
+                    name={station.name}
+                    layout="auto"
+                    maxLines={2}
+                    align="left"
+                    className="min-w-0 font-medium text-foreground"
+                    style={{ fontSize: m.nameSize }}
+                  />
+                  {station.nationalRail ? (
+                    <span className="ml-1 inline-flex shrink-0 items-center self-end pb-0.5">
+                      <NationalRailPictogram height="0.75em" />
+                      <span className="sr-only">National Rail</span>
+                    </span>
+                  ) : null}
+                </div>
+                {connections &&
+                connections.filter((c) => c.id !== "national-rail").length >
+                  0 ? (
                   <DiagramConnectionFlags
                     stationId={station.id}
-                    connections={connections}
+                    connections={connections.filter(
+                      (c) => c.id !== "national-rail",
+                    )}
                   />
                 ) : null}
               </div>

@@ -1,5 +1,5 @@
 /**
- * TfL brand tooling — colours, roundel presets, line-diagram geometry,
+ * TfL brand tooling — colours, roundel presets, line-strip geometry,
  * and Basic Elements helpers.
  */
 
@@ -67,7 +67,48 @@ export {
 } from "@/lib/tfl/diagram-station";
 
 export {
+  getHorizontalForcedLineBreak,
+  getHorizontalStationLabelOverride,
+  getStationLabelRecipe,
+  stationLabelKey,
+  STATION_LABEL_RECIPES,
+  type HorizontalStationLabelOverride,
+} from "@/lib/tfl/horizontal-station-labels";
+
+export {
+  applyStripLabelRecipes,
+  buildSegmentStateMap,
+  isStationOutOfUse,
+  prepareBranchStrip,
+  prepareBranchStripLabels,
+  prepareStraightStrip,
+  stationOutOfUseFromSegments,
+  type BranchStripLabelMap,
+  type PreparedBranchStrip,
+  type PreparedStraightStrip,
+  type StraightStripStation,
+  type StripLabelPlacement,
+  type StripSegmentState,
+} from "@/lib/tfl/strip-model";
+
+export {
+  emptyStationIndex,
+  resolveStationRecord,
+  stationRecordIdentityIds,
+  upsertStationRecord,
+  type StationIndex,
+  type StationLabelRecipe,
+  type StationRecord,
+} from "@/lib/tfl/station-index";
+
+export {
   STATION_ABBREVIATIONS,
+  STATION_ABBREVIATION_ENTRIES,
+  STATION_ABBR_FIND_COMPLETIONS,
+  applyStationAbbreviations,
+} from "@/lib/tfl/station-abbreviations";
+
+export {
   STATION_LABEL_MIN_SCALE,
   approximateStationMeasure,
   createCanvasStationMeasure,
@@ -78,6 +119,54 @@ export {
   type StationLabelFormatResult,
   type StationTextMeasure,
 } from "@/lib/tfl/station-typography";
+
+export {
+  buildLineTopologyFromOrderedRoutes,
+  branchStationIds,
+  primarySpineIds,
+  topologyStationIds,
+  type LineBranchMeta,
+  type LineEdge,
+  type LineNode,
+  type LineTopology,
+} from "@/lib/tfl/line-topology";
+
+export {
+  assertValidSchematic,
+  schematicBounds,
+  schematicNodeMap,
+  schematicStationKey,
+  validateSchematic,
+  type LineSchematic,
+  type SchematicBranchMeta,
+  type SchematicEdge,
+  type SchematicNode,
+  type SchematicNodeKind,
+  type SchematicOrientationHint,
+} from "@/lib/tfl/line-schematic";
+
+export {
+  layoutLineSchematic,
+  bezierLanePath,
+  orthogonalRoundedPath,
+  type SchematicLayout,
+  type SchematicLayoutEdge,
+  type SchematicLayoutOptions,
+  type SchematicLayoutPoint,
+  type SchematicOrientation,
+} from "@/lib/tfl/schematic-layout";
+
+export {
+  NORTHERN_LINE_SCHEMATIC,
+  NORTHERN_LINE_SCHEMATIC_HORIZONTAL,
+  NORTHERN_LINE_SCHEMATIC_VERTICAL,
+} from "@/lib/tfl/fixtures/northern-line-schematic";
+
+export {
+  getLineSpine,
+  sliceLineSpineStations,
+  type LineSpine,
+} from "@/lib/tfl/line-spine";
 
 export {
   sliceJourney,

@@ -1,103 +1,129 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import {
   diagramUnitStyle,
   horizontalDiagramMetrics,
 } from "@/lib/tfl/line-diagram";
-import { type DiagramSegment } from "@/lib/tfl/diagram-station";
 import {
-  buildSegmentStateMap,
-  HorizontalRouteStrip,
-  HorizontalStationColumn,
-  isStationOutOfUse,
-  type HorizontalDiagramStation,
-} from "@/components/tfl/diagram/horizontal-line-diagram-parts";
-import { HorizontalLineDiagramFitted } from "@/components/tfl/diagram/horizontal-line-diagram-fitted";
+  StraightRouteTrack,
+  StraightStripStationColumn,
+  type StraightStripStation,
+  type StripLabelPlacement,
+  type StripSegmentState,
+} from "@/components/tfl/diagram/straight-strip-parts";
+import { StraightStripFitted } from "@/components/tfl/diagram/straight-strip-fitted";
 
-export type { HorizontalDiagramStation } from "@/components/tfl/diagram/horizontal-line-diagram-parts";
+export type { StraightStripStation, StripLabelPlacement, StripSegmentState };
 export type { DiagramSegment, DiagramSegmentState } from "@/lib/tfl/diagram-station";
+
 export {
   buildSegmentStateMap,
   isStationOutOfUse,
+  stationOutOfUseFromSegments,
   selectFittedLabelIndexes,
+  StraightRouteTrack,
+  StraightStripStationColumn,
   HorizontalRouteStrip,
   HorizontalStationColumn,
   OUT_OF_USE_LINE_COLOR,
-} from "@/components/tfl/diagram/horizontal-line-diagram-parts";
+  resolveLabelSide,
+} from "@/components/tfl/diagram/straight-strip-parts";
 
-export type HorizontalLineDiagramProps = {
-  stations: HorizontalDiagramStation[];
+/** @deprecated Prefer `StraightStripStation`. */
+export type { HorizontalDiagramStation } from "@/components/tfl/diagram/straight-strip-parts";
+/** @deprecated Prefer `StripLabelPlacement`. */
+export type { HorizontalLabelPlacement } from "@/components/tfl/diagram/straight-strip-parts";
+
+export type StraightStripProps = {
+  stations: readonly StraightStripStation[];
   /** Hex route colour. */
   lineColor: string;
   lineName?: string;
   /**
    * Absolute route line thickness in px (= unit x).
    * When omitted, uses `DIAGRAM_BASELINE.horizontal` × inherited
-   * `--tfl-diagram-scale` (desktop scale 1 ≈ the Victoria strip reference).
+   * `--tfl-diagram-scale`.
    */
   x?: number;
   className?: string;
-  /**
-   * Per-adjacent-pair segment state. Missing pairs default to `"normal"`.
-   * Out-of-use is a full-thickness muted solid (not dashed).
-   */
-  segments?: readonly DiagramSegment[];
+  /** Prepared adjacent segment states (length = stations.length - 1). */
+  segmentStates?: readonly StripSegmentState[];
+  /** Prepared per-station out-of-use flags. */
+  stationOutOfUse?: readonly boolean[];
   /**
    * Fit the full route into the container width with no horizontal scroll.
    * Left-aligned fixed pitch; scales the strip uniformly. Opt-in.
    */
   fit?: boolean;
-  /** Station IDs that must keep a visible label when `fit` is on (e.g. closure ends). */
+  /** Station IDs that must keep a visible label when `fit` is on. */
   forceLabelIds?: readonly string[];
   /**
-   * Shared fit scale for a group of fitted diagrams so pitch and type match
+   * Shared fit scale for a group of fitted strips so pitch and type match
    * across lines (homepage week-ahead). Ignored unless `fit` is true.
    */
   sharedFitScale?: number;
+  /**
+   * Station name position relative to the route.
+   * `alternate` reserves both bands so markers stay aligned.
+   */
+  labelPlacement?: StripLabelPlacement;
 };
 
 /**
- * Horizontal line diagram: horizontal station names above markers,
- * generous spacing between stops, §9 connection flag boxes stacked under
- * each station (square corners, line name inside).
- *
- * Default: wrap in overflow-x-auto for long routes.
- * Opt-in `fit`: no horizontal scroll; left-aligned fixed pitch + uniform scale.
+ * Atomic straight strip: render prepared stations / segment states only.
+ * No TfL colour lookup, adjacency inference, or label recipes —
+ * pass a prepared model from `LineStrip` / `prepareStraightStrip`.
  */
-export const HorizontalLineDiagram = ({
+export const StraightStrip = ({
   stations,
   lineColor,
   lineName,
   x,
   className,
-  segments,
+  segmentStates: segmentStatesProp,
+  stationOutOfUse: stationOutOfUseProp,
   fit = false,
   forceLabelIds,
   sharedFitScale,
-}: HorizontalLineDiagramProps) => {
+  labelPlacement = "above",
+}: StraightStripProps) => {
   if (stations.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">No stations to display.</p>
     );
   }
 
+  const segmentStates =
+    segmentStatesProp ??
+    Array.from({ length: Math.max(0, stations.length - 1) }, () => "normal" as const);
+  const stationOutOfUse =
+    stationOutOfUseProp ?? stations.map(() => false);
+
   if (fit) {
     return (
-      <HorizontalLineDiagramFitted
+      <StraightStripFitted
         stations={stations}
         lineColor={lineColor}
         lineName={lineName}
         x={x}
         className={className}
-        segments={segments}
+        segmentStates={segmentStates}
+        stationOutOfUse={stationOutOfUse}
         forceLabelIds={forceLabelIds}
         sharedFitScale={sharedFitScale}
+        labelPlacement={labelPlacement}
       />
     );
   }
 
-  const m = horizontalDiagramMetrics();
+  const m = horizontalDiagramMetrics(labelPlacement);
   const maxConnections = stations.reduce(
-    (n, s) => Math.max(n, s.connections?.length ?? 0),
+    (n, s) =>
+      Math.max(
+        n,
+        (s.connections ?? []).filter((c) => c.id !== "national-rail").length,
+      ),
     0,
   );
   const connectionBand =
@@ -105,7 +131,6 @@ export const HorizontalLineDiagram = ({
       ? `calc(${m.flagHeight} * ${maxConnections})`
       : undefined;
   const totalWidth = `calc(${m.colWidth} * ${stations.length})`;
-  const segmentStates = buildSegmentStateMap(stations, segments);
 
   return (
     <div
@@ -124,7 +149,7 @@ export const HorizontalLineDiagram = ({
       ) : null}
 
       <div className="relative" style={{ width: totalWidth }}>
-        <HorizontalRouteStrip
+        <StraightRouteTrack
           stationCount={stations.length}
           segmentStates={segmentStates}
           lineColor={lineColor}
@@ -135,7 +160,7 @@ export const HorizontalLineDiagram = ({
 
         <ol className="relative m-0 flex list-none items-start p-0">
           {stations.map((station, index) => (
-            <HorizontalStationColumn
+            <StraightStripStationColumn
               key={`${station.id}-${index}`}
               station={station}
               index={index}
@@ -143,7 +168,8 @@ export const HorizontalLineDiagram = ({
               showLabel
               connectionBand={connectionBand}
               colWidth={m.colWidth}
-              outOfUse={isStationOutOfUse(index, segmentStates)}
+              outOfUse={stationOutOfUse[index] ?? false}
+              labelPlacement={labelPlacement}
             />
           ))}
         </ol>

@@ -52,7 +52,21 @@ export default async function ComponentDocsPage({ params }: PageProps) {
             <h2 id="preview-heading" className="text-lg font-semibold">
               Preview
             </h2>
-            <Demo />
+            {/*
+              Cache Components (`instant` shell): dynamically imported demos pull
+              client modules (StationName, interactive controls). Keep them out of
+              the static shell so client reference factories resolve under Suspense.
+            */}
+            <Suspense
+              fallback={
+                <div
+                  className="h-40 animate-pulse rounded-lg bg-muted"
+                  aria-hidden
+                />
+              }
+            >
+              <Demo />
+            </Suspense>
           </section>
         ) : null}
 

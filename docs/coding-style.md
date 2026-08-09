@@ -17,8 +17,16 @@ Conventions for TypeScript, React, and Next.js in this repo.
 ## Server vs client
 
 - Default to **Server Components** in the App Router.
-- Add `"use client"` only when you need browser APIs, hooks, or event handlers.
+- Add `"use client"` when you need browser APIs, hooks, event handlers, **or** when the module renders a client leaf such as `StationName` (see below).
 - Read `node_modules/next/dist/docs/` before choosing data-fetching or caching patterns.
+
+### Cache Components + strip / `StationName`
+
+This app enables `cacheComponents: true` (PPR). Routes validate an `instant` static shell.
+
+- Any UI that **renders** `StationName` (or other `"use client"` leaves) must itself be a **Client Component** (`"use client"` at the top of the file). Do not leave strip atoms as RSC parents of `StationName` — that triggers `Could not validate instant` / `client reference proxy … module factory is not available` during prerender.
+- Pure prep (`prepareStraightStrip`, `prepareBranchStrip`, layout maths) stays in `lib/tfl/*` with **no** `"use client"`.
+- Docs pages that **dynamically import** demos must wrap `<Demo />` in `<Suspense>` so client module graphs are not part of the static shell.
 
 ## File structure
 

@@ -36,8 +36,8 @@ const UNDERGROUND_LINE_IDS = new Set([
 
 /**
  * National Rail / TOC identifiers that TfL attaches as connecting "lines".
- * Default diagram behaviour collapses these to a single "National Rail" flag
- * (§9 — humans expect the NR brand, not Greater Anglia / c2c / …).
+ * Default diagram behaviour sets `nationalRail: true` (pictogram beside the
+ * name) rather than a §9 text flag.
  */
 export const NATIONAL_RAIL_LINE_IDS = new Set([
   "national-rail",
@@ -82,9 +82,10 @@ export type NationalRailFlagMode = "collapse" | "operators";
 
 export type DiagramStationMapOptions = {
   /**
-   * How to render National Rail / TOC connections on §9 flags.
-   * - `collapse` (default): Greater Anglia, c2c, … → one "National Rail" flag
-   * - `operators`: keep each TOC name as returned by TfL
+   * How to treat National Rail / TOC connections.
+   * - `collapse` (default): set `nationalRail: true` on the station (pictogram);
+   *   do not emit a §9 text flag
+   * - `operators`: keep each TOC name as a connection flag (still drops bus IDs)
    */
   nationalRailFlags?: NationalRailFlagMode;
 };
@@ -125,34 +126,39 @@ export const sortDiagramConnections = (
   });
 
 /**
- * Collapse TOC connections into a single National Rail flag when requested.
+ * Collapse TOC connections into National Rail metadata + Tube/TfL flags.
+ * Drops unknown / bus IDs (`other`). National Rail is never a text flag —
+ * callers use `nationalRail` for the pictogram beside the name.
  */
 export const normalizeDiagramConnections = (
   connections: DiagramConnection[],
   mode: NationalRailFlagMode = "collapse",
-): DiagramConnection[] => {
-  if (mode === "operators") return sortDiagramConnections(connections);
-
+): { connections: DiagramConnection[]; nationalRail: boolean } => {
+  let nationalRail = false;
   const kept: DiagramConnection[] = [];
-  let nationalRail: DiagramConnection | null = null;
 
   for (const connection of connections) {
-    if (isNationalRailId(connection.id)) {
-      if (!nationalRail) {
-        nationalRail = {
-          id: "national-rail",
-          name: "National Rail",
-          color: "#FFFFFF",
-          darkText: true,
-        };
-      }
+    const group = connectionGroup(connection.id);
+    if (group === "other") continue;
+    if (group === "national-rail") {
+      nationalRail = true;
+      if (mode === "operators") kept.push(connection);
       continue;
     }
     kept.push(connection);
   }
 
-  if (nationalRail) kept.push(nationalRail);
-  return sortDiagramConnections(kept);
+  if (mode === "operators") {
+    return {
+      connections: sortDiagramConnections(kept),
+      nationalRail,
+    };
+  }
+
+  return {
+    connections: sortDiagramConnections(kept),
+    nationalRail,
+  };
 };
 
 /** Map a TfL MatchedStop / StopPoint into diagram station props. */
@@ -179,7 +185,7 @@ export const toDiagramStation = (
         };
       }) ?? [];
 
-  const connections = normalizeDiagramConnections(
+  const { connections, nationalRail } = normalizeDiagramConnections(
     rawConnections,
     nationalRailFlags,
   );
@@ -189,6 +195,7 @@ export const toDiagramStation = (
     name: stop.name ?? id,
     interchange: isLikelyInterchange(stop),
     connections: connections.length > 0 ? connections : undefined,
+    nationalRail: nationalRail || undefined,
   };
 };
 

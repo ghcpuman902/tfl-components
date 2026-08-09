@@ -104,15 +104,26 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryUrl: `${REGISTRY_BASE}/line-badge.json`,
   },
   {
-    slug: "line-diagram",
-    title: "Line diagram",
+    slug: "line-strip",
+    title: "Line strip",
     description:
-      "Horizontal strip, full route, and journey A→B following the Line diagram standard.",
+      "Molecular TfL strip — StraightStrip / BranchStrip with label recipes, closures, and journey helpers.",
     group: "foundations",
     kind: "component",
-    href: "/components/line-diagram",
-    registryName: "line-diagram",
-    registryUrl: `${REGISTRY_BASE}/line-diagram.json`,
+    href: "/components/line-strip",
+    registryName: "line-strip",
+    registryUrl: `${REGISTRY_BASE}/line-strip.json`,
+  },
+  {
+    slug: "branch-strip",
+    title: "Branch strip",
+    description:
+      "Atomic branched strip — lane×pos schematics with SVG geometry and StationName labels.",
+    group: "foundations",
+    kind: "component",
+    href: "/components/branch-strip",
+    registryName: "line-strip",
+    registryUrl: `${REGISTRY_BASE}/line-strip.json`,
   },
   {
     slug: "tube-status-board",
