@@ -1,4 +1,9 @@
 import {
+  bendCenterlineRadius,
+  LINE_DIAGRAM,
+  scale,
+} from "@/lib/tfl/line-diagram";
+import {
   schematicBounds,
   schematicNodeMap,
   schematicStationKey,
@@ -24,7 +29,7 @@ export type SchematicLayoutPoint = {
   branchIds?: readonly string[];
   /**
    * Local track tangent at this node (tick/terminus must be ⊥ to this).
-   * Bezier ends use the diagram main axis — not the chord’s dominant axis.
+   * Line-diagram lane joins end tangent to the corridor main axis.
    */
   trackAxis: SchematicTrackAxis;
 };
@@ -59,23 +64,27 @@ export type SchematicLayoutOptions = {
   padding?: number;
   /** Absolute diagram unit x for curve radii. */
   x?: number;
+  /** Override centreline corner radius (skips LINE_DIAGRAM scaling). */
   cornerRadius?: number;
 };
 
 const DEFAULT_MAIN_PITCH = 72;
 const DEFAULT_LANE_PITCH = 64;
 const DEFAULT_PADDING = 48;
+const DEFAULT_X = 10;
+
+const SQRT2 = Math.SQRT2;
+const SIN45 = SQRT2 / 2;
+/** 1 − cos(45°) — cross-axis travel of a 45° arc. */
+const ONE_MINUS_COS45 = 1 - SIN45;
+/** Extra main-axis length a 45° S needs beyond |Δcross| when s0=s1=0. */
+const S45_MAIN_EXTRA = 2 * (SQRT2 - 1);
+/** Minimum |Δcross| for a 45° S of radius R: 2R(1 − cos45). */
+const S45_CROSS_MIN = 2 * ONE_MINUS_COS45;
 
 /**
- * Smooth lane-change connector: cubic Bezier with end tangents along the
- * diagram main axis (corridor flow).
- *
- * Handle length targets ~¾ of `mainPitch`, capped by both the main-axis run
- * and the cross-axis jump so multi-lane joins (e.g. Edgware → Camden) stay
- * round without overshooting.
- *
- * Spurs need ≈ ≥ 1 station of main-axis span or they collapse to a straight
- * stub; fixtures should offset spur `pos` accordingly.
+ * @deprecated Prefer `octilinearLanePath` / `orthogonalRoundedPath` (Line
+ * Diagram §6 circular arcs). Kept for callers that still import the old helper.
  */
 export const bezierLanePath = (
   x0: number,
@@ -83,7 +92,6 @@ export const bezierLanePath = (
   x1: number,
   y1: number,
   mainAxis: "x" | "y" = "x",
-  /** Station gap along the main axis — preferred handle length scales from this. */
   mainPitch = DEFAULT_MAIN_PITCH,
 ): string => {
   const dx = x1 - x0;
@@ -93,26 +101,13 @@ export const bezierLanePath = (
   if (absDx < 0.5 && absDy < 0.5) {
     return `M ${x0} ${y0}`;
   }
-  // Pure main-axis (same lane) — straight.
   const mainDelta = mainAxis === "x" ? absDx : absDy;
   const crossDelta = mainAxis === "x" ? absDy : absDx;
-  if (crossDelta < 0.5) {
-    return `M ${x0} ${y0} L ${x1} ${y1}`;
-  }
-  // Pure cross-axis (same pos) — no room for a Bezier; keep a straight stub.
-  // Prefer offsetting spur `pos` in fixtures instead of inventing a bulge.
-  if (mainDelta < 0.5) {
+  if (crossDelta < 0.5 || mainDelta < 0.5) {
     return `M ${x0} ${y0} L ${x1} ${y1}`;
   }
 
-  const handleTarget = mainPitch * 0.75;
-  // Keep handles under half the main run so control points never cross
-  // (crossed handles make Camden/Mornington joins look kinked).
-  const handle = Math.min(
-    handleTarget,
-    mainDelta * 0.4,
-    crossDelta * 0.85,
-  );
+  const handle = Math.min(mainPitch * 0.75, mainDelta * 0.4, crossDelta * 0.85);
 
   if (mainAxis === "x") {
     const sx = Math.sign(dx);
@@ -123,9 +118,8 @@ export const bezierLanePath = (
 };
 
 /**
- * Orthogonal connector with a quarter-circle corner when lanes differ.
- * Travels main-axis first, then cross-axis. Prefer `bezierLanePath` for
- * flowing corridor diagrams.
+ * Orthogonal connector with a quarter-circle corner (§6 90° / §11 branch).
+ * Travels main-axis first, then cross-axis.
  */
 export const orthogonalRoundedPath = (
   x0: number,
@@ -143,7 +137,6 @@ export const orthogonalRoundedPath = (
 
   const absDx = Math.abs(dx);
   const absDy = Math.abs(dy);
-  // Keep a true quarter turn — leave a straight run into the bend.
   const r = Math.min(radius, absDx * 0.5, absDy * 0.5);
   if (r < 0.5) {
     return mainAxis === "x"
@@ -155,10 +148,8 @@ export const orthogonalRoundedPath = (
   const sy = Math.sign(dy);
 
   if (mainAxis === "x") {
-    // Run along x to the bend, arc onto the target x, finish along y.
     const bendX = x1 - sx * r;
     const bendY = y0 + sy * r;
-    // SVG sweep: 1 = clockwise. Right-then-down / left-then-up → clockwise.
     const sweep = sx * sy > 0 ? 1 : 0;
     return [
       `M ${x0} ${y0}`,
@@ -168,7 +159,6 @@ export const orthogonalRoundedPath = (
     ].join(" ");
   }
 
-  // Run along y to the bend, arc onto the target y, finish along x.
   const bendY = y1 - sy * r;
   const bendX = x0 + sx * r;
   const sweep = sx * sy < 0 ? 1 : 0;
@@ -181,16 +171,118 @@ export const orthogonalRoundedPath = (
 };
 
 /**
+ * Largest centreline R that still fits a 45° S between the two deltas.
+ * Returns 0 when a 45° S is impossible.
+ */
+export const maxOctilinearRadius = (
+  mainDelta: number,
+  crossDelta: number,
+): number => {
+  if (mainDelta < 0.5 || crossDelta < 0.5) return 0;
+  const fromCross = crossDelta / S45_CROSS_MIN;
+  const mainExtra = mainDelta - crossDelta;
+  if (mainExtra < 0) return 0;
+  const fromMain = mainExtra / S45_MAIN_EXTRA;
+  return Math.min(fromCross, fromMain);
+};
+
+/**
+ * In-carriage §6 lane join: 45° S with circular fillets when space allows,
+ * otherwise a 90° R-corner (`orthogonalRoundedPath`).
+ *
+ * End tangents stay on the diagram main axis so ticks stay ⊥ at both nodes.
+ */
+export const octilinearLanePath = (
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  radius: number,
+  mainAxis: "x" | "y" = "x",
+): string => {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
+  if (absDx < 0.5 && absDy < 0.5) {
+    return `M ${x0} ${y0}`;
+  }
+
+  const mainDelta = mainAxis === "x" ? absDx : absDy;
+  const crossDelta = mainAxis === "x" ? absDy : absDx;
+  if (crossDelta < 0.5 || mainDelta < 0.5) {
+    return `M ${x0} ${y0} L ${x1} ${y1}`;
+  }
+
+  const maxR = maxOctilinearRadius(mainDelta, crossDelta);
+  const r = Math.min(radius, maxR);
+  if (r < 0.5) {
+    return orthogonalRoundedPath(x0, y0, x1, y1, radius, mainAxis);
+  }
+
+  const sx = Math.sign(dx) || 1;
+  const sy = Math.sign(dy) || 1;
+  const leftover = mainDelta - crossDelta - r * S45_MAIN_EXTRA;
+  const s0 = leftover * 0.5;
+  const s1 = leftover - s0;
+  const arcMain = r * SIN45;
+  const arcCross = r * ONE_MINUS_COS45;
+
+  if (mainAxis === "x") {
+    const a0x = x0 + sx * s0;
+    const a0y = y0;
+    const a1x = a0x + sx * arcMain;
+    const a1y = a0y + sy * arcCross;
+    const b0x = x1 - sx * s1 - sx * arcMain;
+    const b0y = y1 - sy * arcCross;
+    const b1x = x1 - sx * s1;
+    const b1y = y1;
+    // First arc turns toward the cross axis; second reverses onto the corridor.
+    const sweep1 = sx * sy > 0 ? 1 : 0;
+    const sweep2 = sweep1 === 1 ? 0 : 1;
+    const parts = [`M ${x0} ${y0}`];
+    if (s0 > 0.5) parts.push(`L ${a0x} ${a0y}`);
+    parts.push(`A ${r} ${r} 0 0 ${sweep1} ${a1x} ${a1y}`);
+    parts.push(`L ${b0x} ${b0y}`);
+    parts.push(`A ${r} ${r} 0 0 ${sweep2} ${b1x} ${b1y}`);
+    if (s1 > 0.5) parts.push(`L ${x1} ${y1}`);
+    else if (Math.abs(b1x - x1) > 0.5 || Math.abs(b1y - y1) > 0.5) {
+      parts.push(`L ${x1} ${y1}`);
+    }
+    return parts.join(" ");
+  }
+
+  // mainAxis === "y": corridor runs along y; lane is x.
+  const a0x = x0;
+  const a0y = y0 + sy * s0;
+  const a1x = a0x + sx * arcCross;
+  const a1y = a0y + sy * arcMain;
+  const b0x = x1 - sx * arcCross;
+  const b0y = y1 - sy * s1 - sy * arcMain;
+  const b1x = x1;
+  const b1y = y1 - sy * s1;
+  const sweep1 = sx * sy < 0 ? 1 : 0;
+  const sweep2 = sweep1 === 1 ? 0 : 1;
+  const parts = [`M ${x0} ${y0}`];
+  if (s0 > 0.5) parts.push(`L ${a0x} ${a0y}`);
+  parts.push(`A ${r} ${r} 0 0 ${sweep1} ${a1x} ${a1y}`);
+  parts.push(`L ${b0x} ${b0y}`);
+  parts.push(`A ${r} ${r} 0 0 ${sweep2} ${b1x} ${b1y}`);
+  if (s1 > 0.5 || Math.abs(b1x - x1) > 0.5 || Math.abs(b1y - y1) > 0.5) {
+    parts.push(`L ${x1} ${y1}`);
+  }
+  return parts.join(" ");
+};
+
+/**
  * Local track tangent at a node — used so ticks stay ⊥ to the line.
  *
- * `bezierLanePath` ends are always tangent to the diagram main axis, so a
- * Mill Hill Bezier spur still leaves the terminus along the corridor, not
- * along the cross-axis chord. Scoring by total |dx|/|dy| wrongly flipped
- * that spur to a parallel dash.
+ * Line-diagram lane joins (45° S / 90° R) end tangent to the corridor main
+ * axis, so a Mill Hill spur still leaves the terminus along the corridor.
  *
  * Rules:
  * - same-lane edge → main axis
- * - lane-change with main-axis span (Bezier) → main axis (end tangents)
+ * - lane-change with main-axis span → main axis (end tangents)
  * - pure cross stub (same pos) → cross axis only
  */
 const localTrackTangent = (
@@ -220,7 +312,6 @@ const localTrackTangent = (
     const crossDelta = mainAxis === "x" ? dy : dx;
 
     if (sameLane || mainDelta >= 0.5) {
-      // Corridor run or Bezier lane-change — tangent at the node is main-axis.
       mainTangent += 1;
     } else if (crossDelta >= 0.5) {
       crossOnly += 1;
@@ -232,9 +323,34 @@ const localTrackTangent = (
   return mainAxis;
 };
 
+const isSpurJoin = (
+  from: SchematicNode,
+  to: SchematicNode,
+): boolean => from.kind === "terminus" || to.kind === "terminus";
+
+const resolveCornerRadius = (
+  options: SchematicLayoutOptions,
+  orientation: SchematicOrientation,
+  spur: boolean,
+): number => {
+  if (options.cornerRadius != null) return options.cornerRadius;
+  const x = options.x ?? DEFAULT_X;
+  if (orientation === "vertical") {
+    const inner = spur
+      ? LINE_DIAGRAM.vertical.curveRadiusBranch
+      : LINE_DIAGRAM.vertical.curveRadiusMain;
+    return scale(x, inner + LINE_DIAGRAM.lineThickness / 2);
+  }
+  return bendCenterlineRadius(x);
+};
+
 /**
  * Place schematic nodes on a grid and build edge paths.
  * Horizontal: pos → x, lane → y. Vertical swaps axes.
+ *
+ * Lane joins use Line Diagram Standard circular arcs:
+ * - horizontal (in-carriage): 45° S when space allows, else 90° R
+ * - vertical (platform): 90° branch curves (§11)
  */
 export const layoutLineSchematic = (
   schematic: LineSchematic,
@@ -295,11 +411,18 @@ export const layoutLineSchematic = (
     const a = xyById.get(from.id)!;
     const b = xyById.get(to.id)!;
     const sameLane = from.lane === to.lane;
-    // Always Bezier for lane changes — orthogonal "staircase" corners read as
-    // broken joins at Camden / Mornington / Kennington.
-    const path = sameLane
-      ? `M ${a.x} ${a.y} L ${b.x} ${b.y}`
-      : bezierLanePath(a.x, a.y, b.x, b.y, mainAxis, mainPitch);
+
+    let path: string;
+    if (sameLane) {
+      path = `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+    } else {
+      const spur = isSpurJoin(from, to);
+      const radius = resolveCornerRadius(options, orientation, spur);
+      path =
+        orientation === "horizontal"
+          ? octilinearLanePath(a.x, a.y, b.x, b.y, radius, mainAxis)
+          : orthogonalRoundedPath(a.x, a.y, b.x, b.y, radius, mainAxis);
+    }
 
     edges.push({
       from: edge.from,

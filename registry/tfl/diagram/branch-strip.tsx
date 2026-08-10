@@ -3,16 +3,10 @@
 import { StationName } from "@/components/tfl/station-name";
 import { OUT_OF_USE_LINE_COLOR } from "@/components/tfl/diagram/straight-strip-parts";
 import {
+  branchStripMetrics,
   placeBranchStripLabels,
   verticalLabelOnLeft,
 } from "@/lib/tfl/branch-strip-layout";
-import {
-  DIAGRAM_BASELINE,
-  LINE_DIAGRAM,
-  horizontalStationFontSize,
-  scale,
-  verticalStationFontSize,
-} from "@/lib/tfl/line-diagram";
 import type { LineSchematic } from "@/lib/tfl/line-schematic";
 import {
   layoutLineSchematic,
@@ -30,10 +24,10 @@ import { cn } from "@/lib/utils";
  * Atomic branched strip: SVG paths + markers, HTML StationName overlay.
  *
  * ## Visual regression checklist (run after every edit)
- * Open http://localhost:3999/primitives/branch-strip and confirm:
- * 1. **Mill Hill East** curves into Finchley with a Bezier — never a flat 90° stub
+ * Open http://localhost:3999/docs/branch-strip and confirm:
+ * 1. **Mill Hill East** joins Finchley with a Line Diagram circular arc — never a flat 90° stub
  *    (same `pos` as Finchley is forbidden; see `schematic-layout.test.ts`)
- * 2. **Camden → Mornington Crescent** is a smooth S-curve — never a staircase / elbow
+ * 2. **Camden → Mornington Crescent** is a §6 join (45° S or 90° R) — never a freeform Bezier
  * 3. **No station labels overlap** each other; prefer labels clear of the track
  * 4. **Every tick/dash is ⊥ to the local track** — never parallel (esp. Mill Hill)
  *
@@ -46,6 +40,8 @@ export type BranchStripProps = {
   /**
    * Absolute diagram unit (= route line thickness).
    * Defaults to `DIAGRAM_BASELINE` for the orientation — same as straight strips.
+   * Station font, pitches, and label widths all derive from this via
+   * `branchStripMetrics` (em multiples of the station-name size).
    */
   x?: number;
   className?: string;
@@ -72,47 +68,32 @@ export const BranchStrip = ({
 }: BranchStripProps) => {
   const orientation = orientationProp ?? schematic.orientation;
   const isHorizontal = orientation === "horizontal";
-  const x = xProp ?? DIAGRAM_BASELINE[orientation];
-  const strokeWidth = scale(x, LINE_DIAGRAM.lineThickness);
-  const tickProtrude = scale(x, LINE_DIAGRAM.stationTick);
-  const ringOuter = scale(x, LINE_DIAGRAM.interchange.outerDiameter / 2);
-  const ringStroke = scale(x, LINE_DIAGRAM.interchange.stroke);
-  // Clear interchange rings; keep text off the stroke where possible.
-  const labelClearance = ringOuter + scale(x, 1.1);
-  const nameFont = isHorizontal
-    ? horizontalStationFontSize(x)
-    : verticalStationFontSize(x);
-
-  const mainPitch = scale(x, isHorizontal ? 12 : 14);
-  // Wider vertical lanes so CX / Bank labels sit on opposite sides without clash.
-  const lanePitch = scale(x, isHorizontal ? 10 : 20);
-
-  const labelBand = Math.max(
-    scale(x, LINE_DIAGRAM.layout.nameBelowLine) + nameFont * 1.15,
-    nameFont * 2.2,
-  );
-  const labelBandTop = isHorizontal
-    ? labelBand + labelClearance
-    : nameFont * 2.4 + labelClearance;
-  const labelBandBottom = isHorizontal ? labelBand + labelClearance : scale(x, 4);
-  const verticalLabelWidth = Math.round(
-    Math.min(scale(x, 16), lanePitch * 0.65),
-  );
-  const labelSideLeft = isHorizontal ? 0 : verticalLabelWidth + scale(x, 4);
-  const labelSideRight = isHorizontal ? 0 : verticalLabelWidth + scale(x, 4);
+  const m = branchStripMetrics(orientation, xProp);
+  const {
+    nameFont,
+    labelLineHeight,
+    strokeWidth,
+    tickProtrude,
+    ringOuter,
+    ringStroke,
+    labelClearance,
+    verticalLabelWidth,
+    labelMaxWidth,
+    labelGap,
+    labelBandTop,
+    labelBandBottom,
+    labelSideLeft,
+    labelSideRight,
+    endPad,
+  } = m;
 
   const layout = layoutLineSchematic(schematic, {
     orientation,
-    x,
-    mainPitch,
-    lanePitch,
-    padding: scale(x, isHorizontal ? 4 : 6),
+    x: m.x,
+    mainPitch: m.mainPitch,
+    lanePitch: m.lanePitch,
+    padding: m.padding,
   });
-
-  // Narrower than station pitch so neighbours on the same corridor don’t collide.
-  const labelMaxWidth = Math.max(scale(x, 7), layout.mainPitch * 0.7);
-  const endPad = isHorizontal ? labelMaxWidth / 2 + scale(x, 1) : 0;
-  const labelGap = ringOuter + scale(x, 2.5);
 
   const placements = placeBranchStripLabels(layout, {
     orientation,
@@ -121,6 +102,7 @@ export const BranchStrip = ({
     verticalLabelWidth,
     labelClearance,
     labelGap,
+    labelLineHeight,
   });
   const placementById = new Map(placements.map((p) => [p.id, p]));
 
@@ -189,7 +171,7 @@ export const BranchStrip = ({
           const placement = placementById.get(point.id);
           const labelStyle = {
             fontSize: nameFont,
-            lineHeight: 1.15,
+            lineHeight: labelLineHeight,
             textShadow:
               "0 0 3px var(--background), 0 0 3px var(--background), 0 0 6px var(--background)",
           } as const;

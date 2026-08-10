@@ -557,6 +557,7 @@
         "line-badge",
         "platform-chip",
         "bus-number-chip",
+        "tfl-roundel",
         "skeleton"
       ],
       "files": [

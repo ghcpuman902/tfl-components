@@ -49,7 +49,7 @@ const BRANCHES = [
  *
  * Lanes (left → right):
  *  -1 Edgware → Chalk Farm → Camden
- *   0 Mill Hill East spur (Bezier into Finchley — never same pos / 90°)
+ *   0 Mill Hill East spur (circular arc into Finchley — never same pos / 90° stub)
  *   1 Main spine: High Barnet → Camden → Mornington → Euston(CX) → Waterloo → Kennington → Morden
  *   2 Bank: Euston(Bank) → King’s Cross → … → Kennington; Battersea south of Kennington
  */
@@ -78,7 +78,7 @@ export const NORTHERN_LINE_SCHEMATIC_VERTICAL: LineSchematic = {
 
     // —— Mill Hill East spur (lane 0, between Edgware and HB) ——
     // MUST stay off Finchley’s pos. Same pos → pure 90° stub (forbidden).
-    // Half-station before Finchley → Bezier with real main-axis span.
+    // Half-station before Finchley → room for a Line Diagram arc join.
     n("mill-hill-east", "Mill Hill East", 0, 3.5, "terminus", [
       "mill-hill-east",
     ]),

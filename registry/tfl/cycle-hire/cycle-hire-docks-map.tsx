@@ -17,17 +17,31 @@ const FALLBACK_ZOOM = 13;
 const LABEL_WIDTH_PX = 112;
 const LABEL_FONT_SIZE_PX = 11;
 
+type MapPadding = number | { top: number; bottom: number; left: number; right: number };
+
 type MapProps = {
   /** Normalised bike points. Omit when rendered under `CycleHireDocks` / Provider. */
   data?: readonly CycleHireDock[];
   className?: string;
   /** Marker diameter in px. */
   markerSize?: number;
+  /** Zoom controls (default true). Hide on compact proof surfaces. */
+  showNavigation?: boolean;
+  /** `fitBounds` padding in px (default 72). Use less / asymmetric on mini maps. */
+  fitPadding?: MapPadding;
 };
 
 type MarkerEntry = {
   marker: maplibregl.Marker;
   root: Root;
+};
+
+/** Defer createRoot unmount — sync unmount during React render/cleanup races. */
+const disposeMarkerEntry = (entry: MarkerEntry) => {
+  entry.marker.remove();
+  queueMicrotask(() => {
+    entry.root.unmount();
+  });
 };
 
 const hasCoordinates = (
@@ -74,6 +88,8 @@ export const CycleHireDocksMap = ({
   data,
   className,
   markerSize = 48,
+  showNavigation = true,
+  fitPadding = 72,
 }: MapProps) => {
   const docks = useCycleHireDocksData(data);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -113,22 +129,23 @@ export const CycleHireDocksMap = ({
       attributionControl: { compact: true },
     });
 
-    map.addControl(
-      new maplibregl.NavigationControl({ showCompass: false }),
-      "top-right",
-    );
+    if (showNavigation) {
+      map.addControl(
+        new maplibregl.NavigationControl({ showCompass: false }),
+        "top-right",
+      );
+    }
     mapRef.current = map;
 
     return () => {
       for (const entry of markersRef.current) {
-        entry.root.unmount();
-        entry.marker.remove();
+        disposeMarkerEntry(entry);
       }
       markersRef.current = [];
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [showNavigation]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -138,8 +155,7 @@ export const CycleHireDocksMap = ({
 
     const clearMarkers = () => {
       for (const entry of markersRef.current) {
-        entry.root.unmount();
-        entry.marker.remove();
+        disposeMarkerEntry(entry);
       }
       markersRef.current = [];
     };
@@ -176,7 +192,7 @@ export const CycleHireDocksMap = ({
       }
 
       map.fitBounds(bounds, {
-        padding: 72,
+        padding: fitPadding,
         maxZoom: 16,
         duration: 0,
       });
@@ -193,7 +209,7 @@ export const CycleHireDocksMap = ({
       map.off("load", syncMarkers);
       clearMarkers();
     };
-  }, [docks, markerSize]);
+  }, [docks, markerSize, fitPadding]);
 
   const locatedCount = docks.filter(hasCoordinates).length;
 

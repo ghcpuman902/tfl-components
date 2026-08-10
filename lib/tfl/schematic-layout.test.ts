@@ -1,14 +1,17 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  branchStripMetrics,
   findOverlappingLabelPairs,
   placeBranchStripLabels,
 } from "./branch-strip-layout.ts";
 import { NORTHERN_LINE_SCHEMATIC_HORIZONTAL } from "./fixtures/northern-line-schematic-horizontal.ts";
 import { NORTHERN_LINE_SCHEMATIC_VERTICAL } from "./fixtures/northern-line-schematic-vertical.ts";
 import {
-  bezierLanePath,
   layoutLineSchematic,
+  maxOctilinearRadius,
+  octilinearLanePath,
+  orthogonalRoundedPath,
   type SchematicLayout,
 } from "./schematic-layout.ts";
 import type { LineSchematic } from "./line-schematic.ts";
@@ -16,9 +19,9 @@ import type { LineSchematic } from "./line-schematic.ts";
 /**
  * Geometry + label invariants for BranchStrip / Northern fixtures.
  *
- * Visual check after any edit: http://localhost:3999/primitives/branch-strip
- * 1. Mill Hill curves into Finchley (Bezier) — never a flat 90° stub
- * 2. Camden → Mornington is a smooth S-curve — never staircase / arc-L
+ * Visual check after any edit: http://localhost:3999/docs/branch-strip
+ * 1. Mill Hill curves into Finchley with a circular arc — never a flat 90° stub
+ * 2. Camden → Mornington is a Line Diagram join (45° S or 90° R) — never Bezier
  * 3. Station labels do not overlap each other
  * 4. Every tick/dash is ⊥ to the local track (never parallel — esp. Mill Hill)
  */
@@ -43,38 +46,60 @@ const layoutNorthern = (orientation: "horizontal" | "vertical") => {
     orientation === "horizontal"
       ? NORTHERN_LINE_SCHEMATIC_HORIZONTAL
       : NORTHERN_LINE_SCHEMATIC_VERTICAL;
-  // Match BranchStrip pitch ratios (absolute scale cancels for invariants).
+  // Same font-derived pitches as BranchStrip (not hardwired px).
+  const m = branchStripMetrics(orientation);
   return layoutLineSchematic(schematic, {
     orientation,
-    mainPitch: orientation === "horizontal" ? 72 : 84,
-    lanePitch: orientation === "horizontal" ? 56 : 108,
-    padding: 36,
+    x: m.x,
+    mainPitch: m.mainPitch,
+    lanePitch: m.lanePitch,
+    padding: m.padding,
   });
 };
 
-describe("bezierLanePath", () => {
-  it("returns a cubic when both axes move (not a 90° L)", () => {
-    const path = bezierLanePath(0, 0, 80, 60, "y", 80);
-    assert.match(path, / C /);
-    assert.doesNotMatch(path, / A /);
+describe("branchStripMetrics", () => {
+  it("scales pitches with station-name em (not a fixed px grid)", () => {
+    const a = branchStripMetrics("horizontal", 10);
+    const b = branchStripMetrics("horizontal", 20);
+    assert.equal(b.nameFont / a.nameFont, 2);
+    assert.equal(b.mainPitch / a.mainPitch, 2);
+    assert.equal(b.lanePitch / a.lanePitch, 2);
+    assert.equal(a.mainPitch, a.nameFont * 6);
+    assert.equal(a.lanePitch, a.nameFont * 5);
+    assert.equal(a.lineBox, a.nameFont * a.labelLineHeight);
   });
+});
 
-  it("collapses to a straight stub when main-axis span is zero (the 90° case)", () => {
-    // Same pos / pure cross-axis — fixtures must never author this for Mill Hill.
-    const path = bezierLanePath(0, 40, 80, 40, "y", 80);
-    assert.equal(path, "M 0 40 L 80 40");
+describe("octilinearLanePath", () => {
+  it("uses circular arcs for a 45° S when main span allows", () => {
+    // Δmain=120, Δcross=56 → room for 45° S at R=20
+    const path = octilinearLanePath(0, 0, 120, 56, 20, "x");
+    assert.match(path, / A /);
     assert.doesNotMatch(path, / C /);
+    // Two fillets + diagonal.
+    assert.equal((path.match(/ A /g) ?? []).length, 2);
   });
 
-  it("keeps control points ordered along the main axis (no kinked join)", () => {
-    const path = bezierLanePath(0, 0, 120, 80, "x", 80);
-    const m = path.match(
-      /M ([\d.]+) ([\d.]+) C ([\d.]+) ([\d.]+), ([\d.]+) ([\d.]+), ([\d.]+) ([\d.]+)/,
-    );
-    assert.ok(m);
-    const cx1 = Number(m![3]);
-    const cx2 = Number(m![5]);
-    assert.ok(cx1 < cx2, `crossed handles: ${path}`);
+  it("falls back to 90° R when cross > main (no 45° S)", () => {
+    const path = octilinearLanePath(0, 0, 40, 80, 20, "x");
+    assert.equal(maxOctilinearRadius(40, 80), 0);
+    assert.match(path, / A /);
+    assert.doesNotMatch(path, / C /);
+    // Single quarter-circle like orthogonalRoundedPath.
+    assert.equal((path.match(/ A /g) ?? []).length, 1);
+  });
+
+  it("collapses to a straight stub when main-axis span is zero", () => {
+    const path = octilinearLanePath(0, 40, 80, 40, 20, "y");
+    assert.equal(path, "M 0 40 L 80 40");
+  });
+});
+
+describe("orthogonalRoundedPath", () => {
+  it("draws a quarter-circle, not a Bezier", () => {
+    const path = orthogonalRoundedPath(0, 0, 80, 60, 20, "x");
+    assert.match(path, / A /);
+    assert.doesNotMatch(path, / C /);
   });
 });
 
@@ -97,37 +122,35 @@ describe("Northern BranchStrip geometry", () => {
         );
       });
 
-      it("Mill Hill → Finchley is a Bezier curve, not a 90° L or staircase", () => {
+      it("Mill Hill → Finchley is a circular arc bend, not a Bezier", () => {
         const path = edgePath(layout, "mill-hill-east", "finchley-central");
-        assert.match(path, / C /, `expected Bezier, got: ${path}`);
-        assert.doesNotMatch(path, / A /, `staircase arc forbidden: ${path}`);
+        assert.match(path, / A /, `expected circular arc, got: ${path}`);
+        assert.doesNotMatch(path, / C /, `Bezier forbidden: ${path}`);
         // Both coordinates must change along a true lane-change curve.
         const m = path.match(
-          /M ([\d.]+) ([\d.]+) C [\d.]+ [\d.]+, [\d.]+ [\d.]+, ([\d.]+) ([\d.]+)/,
+          /M ([\d.]+) ([\d.]+).*?([\d.]+) ([\d.]+)$/,
         );
-        assert.ok(m, `unparsed Bezier: ${path}`);
+        assert.ok(m, `unparsed path: ${path}`);
         assert.notEqual(Number(m![1]), Number(m![3]), "x must change");
         assert.notEqual(Number(m![2]), Number(m![4]), "y must change");
       });
 
-      it("Camden → Mornington: Bezier when lanes differ (no staircase)", () => {
+      it("Camden → Mornington: arc join when lanes differ (no Bezier)", () => {
         const camden = schematic.nodes.find((n) => n.id === "camden-town")!;
         const mornington = schematic.nodes.find(
           (n) => n.id === "mornington-crescent",
         )!;
         const path = edgePath(layout, "camden-town", "mornington-crescent");
-        assert.doesNotMatch(path, / A /, `staircase arc forbidden: ${path}`);
+        assert.doesNotMatch(path, / C /, `Bezier forbidden: ${path}`);
         if (camden.lane !== mornington.lane) {
-          // Horizontal: CX drops a lane — must be a smooth S, not an elbow.
-          assert.match(path, / C /, `expected Bezier, got: ${path}`);
+          assert.match(path, / A /, `expected circular arc, got: ${path}`);
         } else {
-          // Vertical: Mornington stays on the spine — straight is correct.
           assert.match(path, / L /);
-          assert.doesNotMatch(path, / C /);
+          assert.doesNotMatch(path, / A /);
         }
       });
 
-      it("every lane-change edge is a Bezier (never staircase / 90° L)", () => {
+      it("every lane-change edge uses circular arcs (never Bezier)", () => {
         const byId = new Map(schematic.nodes.map((n) => [n.id, n]));
         for (const edge of layout.edges) {
           const from = byId.get(edge.from);
@@ -135,13 +158,13 @@ describe("Northern BranchStrip geometry", () => {
           if (!from || !to || from.lane === to.lane) continue;
           assert.match(
             edge.path,
-            / C /,
-            `lane-change ${edge.from}→${edge.to} must be Bezier, got: ${edge.path}`,
+            / A /,
+            `lane-change ${edge.from}→${edge.to} must use arcs, got: ${edge.path}`,
           );
           assert.doesNotMatch(
             edge.path,
-            / A /,
-            `staircase on ${edge.from}→${edge.to}: ${edge.path}`,
+            / C /,
+            `Bezier on ${edge.from}→${edge.to}: ${edge.path}`,
           );
         }
       });
@@ -151,11 +174,10 @@ describe("Northern BranchStrip geometry", () => {
         const mill = layout.points.find((p) => p.id === "mill-hill-east");
         const westFinchley = layout.points.find((p) => p.id === "west-finchley");
         assert.ok(mill && westFinchley);
-        // Bezier end tangent is main-axis — same as neighbouring corridor stops.
         assert.equal(
           mill.trackAxis,
           mainAxis,
-          "Mill Hill local tangent must follow Bezier end (main axis)",
+          "Mill Hill local tangent must follow corridor end (main axis)",
         );
         assert.equal(
           mill.trackAxis,
@@ -171,15 +193,15 @@ describe("Northern BranchStrip labels", () => {
   for (const orientation of ["horizontal", "vertical"] as const) {
     it(`${orientation}: estimated label boxes do not overlap`, () => {
       const layout = layoutNorthern(orientation);
-      const nameFont = 12;
+      const m = branchStripMetrics(orientation);
       const placements = placeBranchStripLabels(layout, {
         orientation,
-        nameFont,
-        // Keep labels narrower than station pitch so neighbours clear.
-        labelMaxWidth: layout.mainPitch * 0.7,
-        verticalLabelWidth: Math.min(72, layout.lanePitch * 0.65),
-        labelClearance: 14,
-        labelGap: 10,
+        nameFont: m.nameFont,
+        labelMaxWidth: m.labelMaxWidth,
+        verticalLabelWidth: m.verticalLabelWidth,
+        labelClearance: m.labelClearance,
+        labelGap: m.labelGap,
+        labelLineHeight: m.labelLineHeight,
         estimatedLines: 2,
       });
       const overlaps = findOverlappingLabelPairs(placements, 1);

@@ -48,7 +48,7 @@ const BRANCHES = [
  * Horizontal Northern layout (High Barnet / Edgware → Morden along `pos`).
  *
  * Lanes:
- *  -1 Mill Hill East spur (Bezier into Finchley — never same pos / 90°)
+ *  -1 Mill Hill East spur (circular arc into Finchley — never same pos / 90° stub)
  *   0 High Barnet → Bank → Morden (main)
  *   1 Edgware → Mornington/CX → Battersea
  *
@@ -79,7 +79,7 @@ export const NORTHERN_LINE_SCHEMATIC_HORIZONTAL: LineSchematic = {
 
     // —— Mill Hill East spur (lane -1, into Finchley) ——
     // MUST stay off Finchley’s pos. Same pos → pure 90° stub (forbidden).
-    // Half-station before Finchley → Bezier with real main-axis span.
+    // Half-station before Finchley → room for a Line Diagram arc join.
     n("mill-hill-east", "Mill Hill East", -1, 3.5, "terminus", [
       "mill-hill-east",
     ]),

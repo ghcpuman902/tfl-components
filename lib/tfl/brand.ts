@@ -166,7 +166,9 @@ export {
 export {
   layoutLineSchematic,
   bezierLanePath,
+  octilinearLanePath,
   orthogonalRoundedPath,
+  maxOctilinearRadius,
   type SchematicLayout,
   type SchematicLayoutEdge,
   type SchematicLayoutOptions,

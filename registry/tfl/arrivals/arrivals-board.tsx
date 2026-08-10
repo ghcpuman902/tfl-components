@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip";
 import { PlatformChip } from "@/components/tfl/arrivals/platform-chip";
 import { LineColorBar } from "@/components/tfl/brand/line-badge";
+import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
 import { StationName } from "@/components/tfl/station-name";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -414,10 +415,15 @@ export const ArrivalsBoard = ({
         )}
       >
         {/*
-          One fixed row for rail + bus alignment. Stop names fit via the same
-          StationName abbr/scale path as destinations — no wrap, no reserved gap.
+          One fixed row for rail + bus alignment. Mode roundel is decorative and
+          locked to the tile height so StationName still owns fit (abbr/scale).
           NaPTAN ids are intentionally not rendered (dev meta only).
         */}
+        <TfLRoundel
+          variant={busBoard ? "buses" : "underground"}
+          className="size-[var(--arrivals-row)] shrink-0"
+          aria-hidden
+        />
         <TitleTag
           className="min-w-0 flex-1 text-3xl font-bold"
           aria-label={stopName}

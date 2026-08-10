@@ -305,7 +305,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryUrl: `${REGISTRY_BASE}/arrivals-board.json`,
     layer: "data-aware",
     builtWith: ["platform-chip", "station-name-labels"],
-    usesFoundations: ["line-badge"],
+    usesFoundations: ["line-badge", "tfl-roundel"],
   },
   {
     slug: "tube-rail-status",
@@ -339,7 +339,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryUrl: `${REGISTRY_BASE}/arrivals-board.json`,
     layer: "data-aware",
     builtWith: ["bus-number-chip", "station-name-labels"],
-    usesFoundations: ["line-badge"],
+    usesFoundations: ["line-badge", "tfl-roundel"],
   },
   {
     slug: "river-bus-arrivals",

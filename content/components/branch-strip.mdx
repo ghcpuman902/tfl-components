@@ -44,6 +44,8 @@ import { prepareBranchStrip } from "@/lib/tfl/strip-model"
 
 Author separate horizontal and vertical schematics — do not rotate one graph. Shared stations that diverge and converge (Camden Town, Kennington) are single nodes; parallel corridors that share a name (Euston) use duplicate nodes with a shared `stationKey`.
 
+Lane joins follow the **Line Diagram Standard** (not the geographic Tube map): circular arcs at 45° / 90°, never freeform Beziers. Horizontal strips use in-carriage §6 joins (45° S when space allows, otherwise 90° R). Vertical strips use platform §11 branch curves (90° with R3n / R4n).
+
 ## Used by
 
 - [Line strip](/interfaces/line-strip) — molecular wrapper

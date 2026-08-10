@@ -146,7 +146,7 @@ export const StraightStrip = ({
       style={diagramUnitStyle("horizontal", x)}
     >
       {lineName ? (
-        <div className="mb-3">
+        <div className="sticky left-0 z-10 mb-3 w-fit bg-background pr-2">
           <span
             className="inline-block px-2.5 py-1 font-semibold text-white"
             style={{ backgroundColor: lineColor, fontSize: m.titleSize }}

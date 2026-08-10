@@ -28,10 +28,7 @@ const stationsFromOrderedIds = (
 ): DiagramStation[] =>
   orderedIds.map((id) => {
     const stop = byId.get(id);
-    if (stop) {
-      const station = toDiagramStation(stop, lineId);
-      return { ...station, connections: undefined };
-    }
+    if (stop) return toDiagramStation(stop, lineId);
     return { id, name: id, interchange: false };
   });
 
@@ -136,10 +133,7 @@ export const getLineSpine = async (lineId: string): Promise<LineSpine> => {
           seen.add(id);
           return true;
         })
-        .map((stop) => {
-          const station = toDiagramStation(stop, lineId);
-          return { ...station, connections: undefined };
-        });
+        .map((stop) => toDiagramStation(stop, lineId));
     }
 
     if (stations.length === 0) {

@@ -93,7 +93,8 @@ export const ROUNDEL_PRESETS = {
   },
   buses: {
     ringColor: TFL_MODAL_COLOURS.buses.hex,
-    barColor: TFL_BLUE,
+    /** Buses is monochrome red (ring + bar); not the Underground blue bar. */
+    barColor: TFL_MODAL_COLOURS.buses.hex,
     textColor: "#FFFFFF",
     text: "BUSES",
     label: "London Buses",

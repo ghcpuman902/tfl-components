@@ -1,3 +1,12 @@
+import {
+  DIAGRAM_BASELINE,
+  HORIZONTAL_NAME_SIZE_UNITS,
+  LINE_DIAGRAM,
+  VERTICAL_NAME_SIZE_UNITS,
+  horizontalStationFontSize,
+  scale,
+  verticalStationFontSize,
+} from "@/lib/tfl/line-diagram";
 import type {
   SchematicLayout,
   SchematicLayoutPoint,
@@ -7,9 +16,137 @@ import type {
 /**
  * Pure label placement for BranchStrip — shared by the UI and regression tests.
  *
- * After edits, verify visually at http://localhost:3999/primitives/branch-strip
+ * After edits, verify visually at http://localhost:3999/docs/branch-strip
  * (see checklist on `BranchStrip`).
  */
+
+/** Station-name line-height used for label boxes and pitch multiples. */
+export const BRANCH_STRIP_LABEL_LINE_HEIGHT = 1.15;
+
+/**
+ * Station pitch / lane pitch as multiples of the station-name em.
+ * Chosen so default `DIAGRAM_BASELINE` matches the previous `scale(x, N)` look:
+ * horizontal 12x/10x with font 2x → 6em/5em; vertical 14x/20x with font ≈4.286x.
+ */
+const PITCH_EM = {
+  horizontal: { main: 6, lane: 5, padding: 2 },
+  vertical: {
+    main: 14 / VERTICAL_NAME_SIZE_UNITS,
+    lane: 20 / VERTICAL_NAME_SIZE_UNITS,
+    padding: 6 / VERTICAL_NAME_SIZE_UNITS,
+    /** Was `scale(x, 16)` — same em at vertical name size. */
+    labelWidth: 16 / VERTICAL_NAME_SIZE_UNITS,
+  },
+} as const;
+
+export type BranchStripMetrics = {
+  x: number;
+  orientation: SchematicOrientation;
+  nameFont: number;
+  labelLineHeight: number;
+  /** One line of station text: `nameFont × labelLineHeight`. */
+  lineBox: number;
+  mainPitch: number;
+  lanePitch: number;
+  padding: number;
+  verticalLabelWidth: number;
+  labelClearance: number;
+  labelMaxWidth: number;
+  labelGap: number;
+  labelBandTop: number;
+  labelBandBottom: number;
+  labelSideLeft: number;
+  labelSideRight: number;
+  endPad: number;
+  strokeWidth: number;
+  tickProtrude: number;
+  ringOuter: number;
+  ringStroke: number;
+};
+
+/**
+ * BranchStrip layout lengths derived from diagram `x` → station font → em pitches.
+ * Tests and the component must share this so geometry tracks base type size.
+ */
+export const branchStripMetrics = (
+  orientation: SchematicOrientation,
+  xProp?: number,
+): BranchStripMetrics => {
+  const isHorizontal = orientation === "horizontal";
+  const x = xProp ?? DIAGRAM_BASELINE[orientation];
+  const nameFont = isHorizontal
+    ? horizontalStationFontSize(x)
+    : verticalStationFontSize(x);
+  const labelLineHeight = BRANCH_STRIP_LABEL_LINE_HEIGHT;
+  const lineBox = nameFont * labelLineHeight;
+
+  const pitch = isHorizontal ? PITCH_EM.horizontal : PITCH_EM.vertical;
+  const mainPitch = nameFont * pitch.main;
+  const lanePitch = nameFont * pitch.lane;
+  const padding = nameFont * pitch.padding;
+
+  const strokeWidth = scale(x, LINE_DIAGRAM.lineThickness);
+  const tickProtrude = scale(x, LINE_DIAGRAM.stationTick);
+  const ringOuter = scale(x, LINE_DIAGRAM.interchange.outerDiameter / 2);
+  const ringStroke = scale(x, LINE_DIAGRAM.interchange.stroke);
+  const labelClearance = ringOuter + scale(x, 1.1);
+
+  const verticalLabelWidth = Math.round(
+    Math.min(
+      isHorizontal
+        ? nameFont * (16 / HORIZONTAL_NAME_SIZE_UNITS)
+        : nameFont * PITCH_EM.vertical.labelWidth,
+      lanePitch * 0.65,
+    ),
+  );
+
+  const labelBand = Math.max(
+    scale(x, LINE_DIAGRAM.layout.nameBelowLine) + lineBox,
+    lineBox * 2,
+  );
+  const labelBandTop = isHorizontal
+    ? labelBand + labelClearance
+    : lineBox * 2 + nameFont * 0.1 + labelClearance;
+  const labelBandBottom = isHorizontal
+    ? labelBand + labelClearance
+    : nameFont * (4 / VERTICAL_NAME_SIZE_UNITS);
+
+  const labelSide = isHorizontal ? 0 : verticalLabelWidth + padding;
+  // Narrower than station pitch so neighbours on the same corridor don’t collide.
+  const labelMaxWidth = Math.max(
+    isHorizontal ? nameFont * 3.5 : nameFont * 2,
+    mainPitch * 0.7,
+  );
+  const endPad = isHorizontal ? labelMaxWidth / 2 + nameFont * 0.5 : 0;
+  const labelGap =
+    ringOuter +
+    nameFont *
+      (isHorizontal ? 1.25 : 2.5 / VERTICAL_NAME_SIZE_UNITS);
+
+  return {
+    x,
+    orientation,
+    nameFont,
+    labelLineHeight,
+    lineBox,
+    mainPitch,
+    lanePitch,
+    padding,
+    verticalLabelWidth,
+    labelClearance,
+    labelMaxWidth,
+    labelGap,
+    labelBandTop,
+    labelBandBottom,
+    labelSideLeft: labelSide,
+    labelSideRight: labelSide,
+    endPad,
+    strokeWidth,
+    tickProtrude,
+    ringOuter,
+    ringStroke,
+  };
+};
 
 export type BranchStripLabelSide =
   | "above"
@@ -34,6 +171,8 @@ export type BranchStripLabelOptions = {
   labelGap: number;
   /** Estimated lines of wrapped station text (1–2). */
   estimatedLines?: number;
+  /** Defaults to `BRANCH_STRIP_LABEL_LINE_HEIGHT`. */
+  labelLineHeight?: number;
 };
 
 const boxesOverlap = (
@@ -79,7 +218,7 @@ export const verticalLabelOnLeft = (
 };
 
 /**
- * Place every station label. Cross-axis stubs (short Bezier spurs that still
+ * Place every station label. Cross-axis stubs (short arc spurs that still
  * read as mostly cross-track) sit above the stub tip.
  */
 export const placeBranchStripLabels = (
@@ -94,10 +233,11 @@ export const placeBranchStripLabels = (
     labelClearance,
     labelGap,
     estimatedLines = 2,
+    labelLineHeight = BRANCH_STRIP_LABEL_LINE_HEIGHT,
   } = options;
   const isHorizontal = orientation === "horizontal";
   const laneMid = (layout.minLane + layout.maxLane) / 2;
-  const textH = nameFont * 1.15 * estimatedLines;
+  const textH = nameFont * labelLineHeight * estimatedLines;
 
   return layout.points.map((point) => {
     if (isHorizontal) {
