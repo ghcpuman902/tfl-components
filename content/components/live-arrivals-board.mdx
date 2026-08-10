@@ -1,4 +1,10 @@
-## Usage
+## Getting the data
+
+Arrivals come from `tfl-ts` stop-point arrivals. Prefer Server Actions so `TFL_APP_ID` / `TFL_APP_KEY` stay on the server.
+
+The board can also load arrivals for a stop ID for you (recommended path today).
+
+## Render
 
 ```tsx
 import { LiveArrivalsBoard } from "@/components/tfl/arrivals/live-arrivals-board"
@@ -15,15 +21,20 @@ export default function Page() {
 
 Polls stop arrivals every 15 seconds. Default stop is Oxford Circus when props are omitted.
 
-### Props
+## Variations
+
+Pass any boardable stop point ID and display name. Keep the poll interval ≥10–15s to respect TfL rate limits.
+
+## Behaviour
 
 | Prop | Type | Description |
 |------|------|-------------|
 | `stopPointId` | `string` | TfL stop point ID. |
 | `stopName` | `string` | Display name for the header. |
 
-### Notes
-
 - Prefer Server Actions for the fetch; keys stay on the server.
 - Line colours come from `tfl-ts` `getLineCssProps`.
-- Respect TfL rate limits — 15s is a sensible default for demos.
+
+## Underlying primitives
+
+Line colour treatments reuse [Line colours & badges](/components/line-badge) helpers via `tfl-ts` CSS props. Use those primitives when building a custom arrivals layout.

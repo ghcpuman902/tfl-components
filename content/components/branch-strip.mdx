@@ -9,6 +9,15 @@ import { prepareBranchStrip } from "@/lib/tfl/strip-model"
 // Use BranchStrip directly only with a prepared render model.
 ```
 
+### When to use which
+
+| Need | Use |
+|------|-----|
+| TfL colour, label recipes, prepared schematic | `LineStrip` with `schematic={…}` |
+| Full control over a prepared lane×pos model | `BranchStrip` |
+
+`BranchStrip` is a **rendering primitive**. Prefer `LineStrip` for data-driven callers; drop to this atom when you already have a render model.
+
 ### Role
 
 `BranchStrip` is the **atomic** branched strip. It takes a `LineSchematic` (lane × pos nodes and edges), an explicit `lineColor`, and optional prepared `nodeLabelLines` / `segmentStates`. It does not fetch TfL data or look up label recipes.

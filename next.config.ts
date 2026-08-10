@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
       { source: "/components/line-diagram", destination: "/components/line-strip", permanent: true },
       { source: "/tools/branch-diagram", destination: "/components/branch-strip", permanent: true },
       { source: "/branch-diagram", destination: "/components/branch-strip", permanent: true },
-      { source: "/explore", destination: "/tools/browse-lines", permanent: true },
+      // /explore is now the Explore IA section (was redirected to browse-lines).
       { source: "/route", destination: "/tools/route-stations", permanent: true },
       { source: "/typography", destination: "/tools/typography", permanent: true },
     ];

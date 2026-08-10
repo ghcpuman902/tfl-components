@@ -39,6 +39,15 @@ hooks/         # client hooks
 public/        # static assets
 ```
 
+### TfL component layers
+
+Under `components/tfl/`:
+
+- `brand/` and `diagram/` — **rendering primitives** (explicit values; little or no TfL API shape knowledge)
+- `status/` and `arrivals/` — **data-aware** boards (interpret `tfl-ts` domain; compose primitives)
+
+Prep helpers stay in `lib/tfl/*`. See [architecture.md](./architecture.md).
+
 ## Imports
 
 - Use `@/` path alias (maps to project root).

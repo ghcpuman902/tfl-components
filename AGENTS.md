@@ -23,3 +23,11 @@ See [docs/coding-style.md](./docs/coding-style.md) for TypeScript and React patt
 # Product principles
 
 See [docs/product-principles.md](./docs/product-principles.md) for how to scope work and ship incrementally.
+
+# Product architecture (frozen Stage 1)
+
+- [docs/product-architecture.md](./docs/product-architecture.md) — product model, layers, classification rules
+- [docs/TARGET_ARCHITECTURE.md](./docs/TARGET_ARCHITECTURE.md) — top-level and second-level IA
+- [docs/page-anatomy.md](./docs/page-anatomy.md) — page-type anatomies
+
+Do not reshape these to match current file placement. See `.cursor/rules/tfl-ia.mdc`.

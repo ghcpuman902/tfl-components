@@ -1,4 +1,8 @@
-## Usage
+## Getting the data
+
+The board uses geolocation or search to find nearby stops, then loads live arrivals via Server Actions (`lib/tfl/actions.ts`, `geo.ts`, and `client.ts`). Keys stay on the server (`TFL_APP_ID` / `TFL_APP_KEY`).
+
+## Render
 
 ```tsx
 import { BusArrivals } from "@/components/tfl/arrivals/bus-arrivals"
@@ -8,10 +12,12 @@ export default function Page() {
 }
 ```
 
-The board uses geolocation or search to find nearby stops, then loads live arrivals via Server Actions.
-
-### Notes
+## Behaviour
 
 - Depends on `TFL_APP_ID` / `TFL_APP_KEY` on the server.
-- Route numbers use bus styling (not branded line colours).
-- Ships with `lib/tfl/actions.ts`, `geo.ts`, and `client.ts`.
+- Route numbers use bus styling (not branded tube line colours).
+- Nearby discovery and arrivals are handled inside the board — you do not assemble stop search and countdown rows yourself.
+
+## Underlying primitives
+
+Route-number chips are presentational; when you need a custom board, keep bus styling separate from [Line colours & badges](/components/line-badge) (tube/rail brand fills).

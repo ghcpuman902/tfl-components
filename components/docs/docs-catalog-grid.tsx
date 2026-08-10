@@ -2,7 +2,8 @@ import Link from "next/link";
 import {
   DOCS_ENTRIES,
   getPopulatedGroups,
-  type DocsGroupId,
+  HOME_CATALOG_GROUPS,
+  layerBadgeLabel,
 } from "@/lib/docs-catalog";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,16 +13,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const CATALOG_GROUPS: DocsGroupId[] = [
-  "foundations",
-  "tube-rail",
-  "bus",
-  "tools",
-];
-
 export const DocsCatalogGrid = () => {
   const groups = getPopulatedGroups().filter((group) =>
-    CATALOG_GROUPS.includes(group.id),
+    HOME_CATALOG_GROUPS.includes(group.id),
   );
 
   return (
@@ -53,6 +47,14 @@ export const DocsCatalogGrid = () => {
                           <CardTitle className="text-base">
                             {entry.title}
                           </CardTitle>
+                          {entry.kind === "placeholder" ? (
+                            <Badge variant="outline">Placeholder</Badge>
+                          ) : null}
+                          {entry.layer ? (
+                            <Badge variant="outline">
+                              {layerBadgeLabel(entry.layer)}
+                            </Badge>
+                          ) : null}
                           {entry.registryUrl ? (
                             <Badge variant="secondary">Installable</Badge>
                           ) : null}

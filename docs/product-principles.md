@@ -26,6 +26,16 @@ When Vercel is connected:
 2. Test on real devices or responsive mode.
 3. Share screenshots in PRs for visual review.
 
+## TfL product architecture
+
+IA, component layers, and page classification are defined in the frozen Stage 1 specs:
+
+- [product-architecture.md](./product-architecture.md)
+- [TARGET_ARCHITECTURE.md](./TARGET_ARCHITECTURE.md)
+- [page-anatomy.md](./page-anatomy.md)
+
+This file stays limited to shipping hygiene (small PRs, mobile-first, secrets). Do not add competing navigation or layer rules here.
+
 ## Scope discipline
 
 - No landing-page marketing copy in the starter — replace with product content when you know the product.

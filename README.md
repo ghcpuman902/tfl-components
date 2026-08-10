@@ -34,16 +34,20 @@ Press `d` to toggle dark mode. Use the left sidebar (or `b`) to browse component
 
 ## Docs layout
 
-Grouped the way Londoners think about transport — not by TfL API mode IDs:
+Frozen Stage 1 IA ([docs/TARGET_ARCHITECTURE.md](./docs/TARGET_ARCHITECTURE.md)):
 
-| Group | Contents |
-|-------|----------|
-| Foundations | Roundel, line colours & badges, line strip |
-| Tube & rail | Status board, live arrivals |
-| Bus | Bus arrivals |
-| Tools | Browse lines, route stations |
+| Group | Role |
+|-------|------|
+| Start | Introduction, installation |
+| Explore | What TfL knows / relationships |
+| Interfaces | Data-aware embeddable boards |
+| Primitives | Lower-level visual control |
+| Foundations | Colours, identity, licensing |
+| Maps | Geographic vs schematic/network |
+| Tools | Playgrounds (inspect / tune / debug) |
+| Drafts | Incubation |
 
-Paths are flat under `/components/[slug]` and `/tools/[slug]`. Old URLs redirect.
+Existing component docs still live under `/components/[slug]` and `/tools/[slug]` until bulk migration. New section indexes: `/explore`, `/interfaces`, `/primitives`, `/foundations`, `/maps`, `/maps/geographic`, `/maps/schematic`, `/tools`, `/drafts`.
 
 ## Install targets (pre-1.0)
 

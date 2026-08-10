@@ -1,30 +1,37 @@
 ## Introduction
 
-**tfl-components** is how you build London transport UI into your own app — not a locked npm package. You copy the source with the shadcn CLI, own the files, and call the TfL API through [`tfl-ts`](https://www.npmjs.com/package/tfl-ts).
+**tfl-components** is the visual layer of a TfL developer environment. Together with [`tfl-ts`](https://www.npmjs.com/package/tfl-ts) (data) and this site, the goal is to discover London transport information, retrieve it cleanly, inspect normalised shapes, and render useful interfaces.
 
-### Open code
+You copy component source with the shadcn CLI — not a locked npm UI package.
 
-Every board lands in your repo as React source. Change layout, copy, and data fetching freely. Agents can read the same files humans edit.
+### Two layers in `tfl-components`
 
-### Composition
+1. **Data-aware interfaces** — accept (or responsibly obtain) normalised `tfl-ts` data and render useful transport UI.  
+2. **Rendering primitives** — presentational building blocks from explicit values; discoverable when you need control.
 
-Boards share small primitives — line colours, the roundel, diagram markers — so status, arrivals, and route diagrams stay visually consistent.
+Highest-value path: **get data → render**.
+
+Shared brand language lives in **Foundations**. **Maps** split geographic vs schematic. **Explore** explains what TfL knows. **Tools** are playgrounds; **Drafts** incubate experiments.
+
+See `docs/TARGET_ARCHITECTURE.md` (frozen Stage 1).
 
 ### Distribution
-
-Install one item at a time from the registry:
 
 ```bash
 pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tube-status-board.json
 ```
 
-Put `TFL_APP_ID` and `TFL_APP_KEY` in your server environment. See [Installation](/installation) for the full checklist.
+Put `TFL_APP_ID` and `TFL_APP_KEY` in your server environment. See [Installation](/installation).
 
 ### How this site is organised
 
-- **Foundations** — brand primitives (roundel, line colours) and the line diagram standard
-- **Tube & rail** — Underground, Overground, Elizabeth line, DLR, Tram
-- **Bus** — route-number arrivals
-- **Tools** — browse helpers that are not installable blocks
+- **Start** — introduction and install  
+- **Explore** — information model and relationships  
+- **Interfaces** — data-aware embeddable boards  
+- **Primitives** — lower-level visual control  
+- **Foundations** — colours, identity, licensing  
+- **Maps** — geographic vs schematic/network  
+- **Tools** — inspect / tune / debug playgrounds  
+- **Drafts** — incubation  
 
 Press `d` to toggle dark mode.

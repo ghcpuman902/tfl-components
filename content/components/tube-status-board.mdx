@@ -1,4 +1,23 @@
-## Usage
+## Getting the data
+
+Status comes from `tfl-ts` via `line.getStatus`. You can fetch yourself:
+
+```ts
+import TflClient from "tfl-ts"
+
+const tfl = new TflClient({
+  appId: process.env.TFL_APP_ID!,
+  appKey: process.env.TFL_APP_KEY!,
+})
+
+const lineStatuses = await tfl.line.getStatus({
+  modes: ["tube", "elizabeth-line", "dlr", "tram", "overground"],
+})
+```
+
+Or let the board fetch for you through `getTflClient()` (recommended path today). Prefetch-as-props APIs may land later; the board remains the same concept either way.
+
+## Render
 
 ```tsx
 import { TubeStatusBoard } from "@/components/tfl/status/tube-status-board"
@@ -10,9 +29,9 @@ export default function Page() {
 
 Omit `lineIds` to load all tube / Elizabeth / DLR / tram / Overground modes.
 
-### Recipes
+## Variations
 
-#### Batch by line IDs
+### Batch by line IDs
 
 `DEFAULT_STATUS_LINE_IDS` is all 11 Underground lines plus Elizabeth (12 total):
 
@@ -27,7 +46,7 @@ export default function Page() {
 }
 ```
 
-#### Custom subset
+### Custom subset
 
 ```tsx
 const MY_LINES = ["central", "northern", "victoria", "jubilee"] as const
@@ -37,7 +56,11 @@ export default function Page() {
 }
 ```
 
-### Props
+### Hide header
+
+Pass `hideHeader` when a parent layout already provides a title.
+
+## Behaviour
 
 | Prop | Type | Description |
 |------|------|-------------|
@@ -45,8 +68,15 @@ export default function Page() {
 | `hideHeader` | `boolean` | Omit the board header when a parent layout already has one. |
 | `children` | `ReactNode` | Optional slot below the status list. |
 
-### Notes
-
 - Severity sorting and official colours come from `tfl-ts`.
 - Status is cached for ~60s via Next.js Cache Components.
 - Covers Underground, Overground, Elizabeth line, DLR, and Tram — the tube & rail family.
+
+## Underlying primitives
+
+This board composes:
+
+- [Line colours & badges](/components/line-badge) — chips and colour bars
+- [Roundel](/components/tfl-roundel) — header mark
+
+Use those primitives directly when you need a custom layout but the same TfL look.

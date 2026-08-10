@@ -10,6 +10,16 @@ import { LineRouteDiagram } from "@/components/tfl/diagram/line-route-diagram"
 // Prefer LineStrip for TfL line data — it prepares labels, closures, and colour.
 ```
 
+### When to use which
+
+| Need | Use |
+|------|-----|
+| TfL line data, label recipes, closures, colour | `LineStrip` (molecular) |
+| Linear corridor with already-prepared stations | `StraightStrip` (atomic) |
+| Branched schematic with prepared nodes / labels | `BranchStrip` (atomic) |
+
+Start with `LineStrip`. Drop to atoms only when you need full control over the render model. See [Branch strip](/components/branch-strip) for branched geometry details.
+
 ### Layers
 
 | Component | Layer | Role |

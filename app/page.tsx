@@ -33,10 +33,10 @@ export default function HomePage() {
 
         <section className="space-y-4 border-t border-border pt-8">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight">Components</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">Catalog</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Grouped the way Londoners think about transport — not by API mode
-              IDs.
+              Organised by developer intent (frozen Stage 1 IA): Explore,
+              Interfaces, Primitives, Foundations, Maps, Tools, and Drafts.
             </p>
           </div>
           <DocsCatalogGrid />

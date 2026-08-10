@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { DocsEntry } from "@/lib/docs-catalog";
-import { DOCS_GROUPS } from "@/lib/docs-catalog";
+import { DOCS_GROUPS, layerBadgeLabel } from "@/lib/docs-catalog";
 import { Badge } from "@/components/ui/badge";
 import { InstallCommand } from "@/components/docs/install-command";
 
@@ -17,10 +17,17 @@ export const DocsPageHeader = ({ entry }: DocsPageHeaderProps) => {
         {group ? (
           <Badge variant="outline">{group.title}</Badge>
         ) : null}
+        {entry.layer ? (
+          <Badge variant="outline">{layerBadgeLabel(entry.layer)}</Badge>
+        ) : null}
         {entry.registryUrl ? (
           <Badge variant="secondary">Installable</Badge>
         ) : entry.kind === "tool" ? (
           <Badge variant="outline">Tool</Badge>
+        ) : entry.kind === "placeholder" ? (
+          <Badge variant="outline">Placeholder</Badge>
+        ) : entry.kind === "draft" ? (
+          <Badge variant="outline">Draft</Badge>
         ) : null}
       </div>
       <div>
