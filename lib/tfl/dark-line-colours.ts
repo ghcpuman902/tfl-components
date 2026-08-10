@@ -21,8 +21,8 @@ import {
 export const GO_NIGHT_PAPER = "#2C2C32";
 
 /**
- * Median day→night OKLCH delta from TfL Go screenshot research
- * (`app/temp/tfl-go-colours`). Prefer this over raw night hex samples.
+ * Median day→night OKLCH delta from TfL Go map colour research.
+ * Prefer this over raw night hex samples (capture-resistant).
  */
 export const GO_NIGHT_OKLCH_DELTA = {
   dL: 0.03325,

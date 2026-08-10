@@ -27,6 +27,7 @@ const MODE_ROUNDEL_VARIANT: Record<DocsModeMarker, RoundelPreset> = {
   bus: "buses",
   river: "river",
   cycle: "cycles",
+  cable: "cableCar",
   map: "tfl",
 };
 

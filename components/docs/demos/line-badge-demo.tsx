@@ -225,14 +225,7 @@ export default function LineBadgeDemo() {
           Forced <code className="text-xs">.dark</code> panel on charcoal{" "}
           <code className="text-xs">#2C2C32</code>. Tokens use brand + Go
           night OKLCH method; Northern defaults to{" "}
-          <code className="text-xs">#FCFCFC</code>. Research scratch:{" "}
-          <a
-            href="/temp/tfl-go-colours"
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            /temp/tfl-go-colours
-          </a>
-          .
+          <code className="text-xs">#FCFCFC</code>.
         </p>
         <div
           className="dark space-y-3 p-4 text-foreground"

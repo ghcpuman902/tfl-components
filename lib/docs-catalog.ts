@@ -38,6 +38,7 @@ export type DocsModeMarker =
   | "bus"
   | "river"
   | "cycle"
+  | "cable"
   | "map";
 
 export type DocsEntry = {

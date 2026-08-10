@@ -522,6 +522,7 @@ const PlaceholderRoundelSvg = ({
           rx: barRx,
         })
       : {
+          x: 0,
           y: BAR_Y,
           width: VIEW_W,
           height: BAR_H,

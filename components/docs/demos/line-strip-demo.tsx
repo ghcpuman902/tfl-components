@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { JourneyDiagram } from "@/components/tfl/diagram/journey-diagram";
 import { LineRouteDiagram } from "@/components/tfl/diagram/line-route-diagram";
 import { LineStrip } from "@/components/tfl/diagram/line-strip";
@@ -44,6 +45,9 @@ const SIMPLE_ORDER = new Map(
 );
 
 async function LiveStripSection() {
+  // Live TfL client reads the clock; keep this under Suspense + request time.
+  await connection();
+
   const [{ routes }, cableCar] = await Promise.all([
     getCachedWeekAheadRoutes(),
     getLineSpine("london-cable-car"),
