@@ -9,7 +9,7 @@
 | Scaffold + inventory + plan | **Done** | commit `05c25a2` |
 | Human decisions (C1–C6, J1–J5) | **Done** | [DECISIONS.md](./DECISIONS.md) |
 | Bulk MOVE / rename / data-props / Blocks | **Done** | See [VERIFY.md](./VERIFY.md) · release `890e8b1` (v0.3.0) |
-| Post-IA polish (hubs, Coming soon, MDX anatomy, docs tidy) | **This pass** | Section hubs; board data guards; shipped MDX aligned |
+| Post-IA polish (hubs, Coming soon, MDX anatomy, docs tidy) | **Done** | Section hubs; board data guards; shipped MDX aligned · release v0.4.0 |
 
 ## Source of truth for live routes
 
