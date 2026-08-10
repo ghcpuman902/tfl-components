@@ -1,0 +1,64 @@
+---
+description: Docs page header / first-fold contract for component and docs pages
+globs: components/docs/**/*.tsx, app/docs/**/*.tsx, content/components/**/*.mdx, lib/docs-catalog.ts
+alwaysApply: false
+---
+
+# Docs page header
+
+Shared chrome for every docs entry. Do **not** invent a bespoke page header.
+
+Canonical implementation:
+
+- [`components/docs/docs-page-header.tsx`](components/docs/docs-page-header.tsx) — breadcrumb, Copy page, Prev/Next, title, one-line intro, single layer/kind badge
+- [`components/docs/render-component-docs.tsx`](components/docs/render-component-docs.tsx) — Preview (demo only) + separate Usage peek + compact install; no shared border frame
+- [`components/docs/docs-table-of-contents.tsx`](components/docs/docs-table-of-contents.tsx) — right-rail “On this page”
+- Frozen anatomy still applies: [`docs/page-anatomy.md`](docs/page-anatomy.md)
+
+## First fold (required order)
+
+1. Breadcrumb (`Home / {group}`) + Copy page + Prev/Next (sidebar order)
+2. Title + one-sentence `entry.description` + **one** badge (`Data-aware` | `Primitive` | `Map` | `Tool` | `Block` | `Draft` | `Coming soon`)
+3. Optional reserved slot for a variant switcher — **do not build until a page needs it**
+4. **Preview** — live demo only. No outer border/card from `renderComponentDocs`. Demos may use their own single border if needed; never wrap again.
+5. **Usage** — code peek (3 lines + View code) as its **own** section under Preview, not nested inside a Preview frame
+6. Compact “Copy install command”, then full Installation tabs below the fold when `registryUrl` is set
+7. MDX / body sections per page-anatomy
+8. Composition (`builtWith` / `usesFoundations` / `usedBy`) **exactly once** in the body — never in the hero
+
+## Borders
+
+- Prefer **no** chrome border around Preview.
+- At most **one** border on a demo surface (owned by the demo, e.g. line-strip cards).
+- Never wrap demo + code in a shared bordered frame (double wrapping).
+- Code uses the syntax block’s own muted surface only.
+
+## Rules for new components
+
+1. Every new docs entry goes through `DocsPageHeader` (or `renderComponentDocs` / `ComingSoonDocsPage` / `SectionHub` which already use it). Never a custom `<h1>` stack.
+2. Keep `description` to **one sentence**. Detail belongs in MDX.
+3. Data-aware / primitive pages should register a short usage snippet in `PREVIEW_SNIPPETS` (or pass `getDataExample`) so the Preview peek has content. If omitted, the peek panel is skipped.
+4. Do **not** put get-data boxes, install tabs, or relationship badges in the hero.
+5. Do **not** stack group + layer + “Installable” badges — `entryBadgeLabel` is the only badge.
+6. Layers stay distinct: shared chrome does not collapse Interface / Primitive / Foundation / Map / Block / Tool into one shadcn-style template. Body sections still follow [`docs/page-anatomy.md`](docs/page-anatomy.md).
+7. Headings that should appear in the TOC must have stable `id`s (MDX headings already do via `mdx-components.tsx`; hand-coded `h2`/`h3` must set `id` too).
+
+## Anti-patterns
+
+```tsx
+// ❌ BAD — custom header with badge pile + get-data in hero
+<header>
+  <Badge>Data-aware</Badge>
+  <Badge>Data-aware</Badge>
+  <Badge>Installable</Badge>
+  <h1>…</h1>
+  <RelationshipBadges … />
+  <pre>{/* full get-data snippet */}</pre>
+</header>
+
+// ✅ GOOD — DocsPageHeader; Preview and Usage are separate, no outer frame
+<>
+  <DocsPageHeader entry={entry} />
+  {/* Preview = demo only; Usage = code peek; no shared border wrapper */}
+</>
+```

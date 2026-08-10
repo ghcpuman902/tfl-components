@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrivalsBoard } from "@/components/tfl/arrivals/arrivals-board";
+import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -108,12 +109,7 @@ const StopLetterBadge = ({ letter }: { letter?: string }) => {
 
 /** Shared line chip for the stop picker only. */
 const LineBadge = ({ line }: { line: string }) => (
-  <span
-    className="inline-flex h-5 w-[5ch] items-center justify-center px-0 text-center text-[11px] font-bold leading-none tabular-nums text-white"
-    style={{ backgroundColor: TFL_MODAL_COLOURS.buses.hex }}
-  >
-    {line}
-  </span>
+  <BusNumberChip label={line} className="text-[11px]" />
 );
 
 /** Map action rows into the shared board shape (route chip + destination). */

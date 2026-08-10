@@ -41,8 +41,9 @@ When two boards share a homepage/grid row, their stop titles and first content r
 
 ## Rail vs bus rows
 
-- Rail: platform chip before destination (`Platform N` → `Plat N` → `PN` → `N` via container query). Solid muted fill, no border. Aria always “Platform N”.
-- Bus: route-number chip per row (bus red); stop letter on the header only.
+- Rail: `PlatformChip` before destination (`Platform N` → `Plat N` → `PN` → `N` via container query). Solid muted fill, no border. Aria always “Platform N”.
+- Bus: `BusNumberChip` per row (bus red); stop letter on the header only.
+- Both chips: keep normal casing (`Platform 4`, route codes as given). Center with `[text-box:trim-both_cap_alphabetic]` (`CHIP_CAP_TEXT_BOX_CLASS`) — uppercase/cap metrics for the box, not `ex` trim. Do not force `uppercase` paint.
 - Bound labels (Northbound…) match line-name size; same hairline weight as arrival rows inside a line group.
 
 ## Anti-patterns

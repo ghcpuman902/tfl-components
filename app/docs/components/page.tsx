@@ -26,7 +26,9 @@ export default function DocsComponentsCataloguePage() {
         <DocsPageHeader entry={entry} />
 
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">How to choose</h2>
+          <h2 id="how-to-choose" className="scroll-m-20 text-lg font-semibold">
+            How to choose
+          </h2>
           <p className="max-w-prose text-muted-foreground">
             Start with preferred boards (marked in the sidebar). They accept
             normalised data as props. Lower rows are rendering parts for finer
@@ -82,7 +84,9 @@ export default function DocsComponentsCataloguePage() {
         </section>
 
         <section className="space-y-2 border-t border-border pt-8">
-          <h2 className="text-lg font-semibold">Related Blocks</h2>
+          <h2 id="related-blocks" className="scroll-m-20 text-lg font-semibold">
+            Related Blocks
+          </h2>
           <p className="text-sm text-muted-foreground">
             Composed mini-apps live under{" "}
             <Link

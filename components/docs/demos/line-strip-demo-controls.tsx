@@ -2,26 +2,32 @@
 
 import { useMemo, useState, type ChangeEvent } from "react";
 import { LineStrip } from "@/components/tfl/diagram/line-strip";
-import type { WeekAheadLineRoute } from "@/lib/tfl/week-ahead-data";
 import type { StripLabelPlacement } from "@/lib/tfl/strip-model";
 import type { DiagramSegment, DiagramStation } from "@/lib/tfl/diagram-station";
-import type { WeekAheadLineId } from "@/lib/tfl/week-ahead-status";
 import { cn } from "@/lib/utils";
 
+export type LiveStripRoute = {
+  lineId: string;
+  lineName: string;
+  lineColor: string;
+  stations: DiagramStation[];
+  routeError?: string;
+};
+
 type LiveProps = {
-  routes: WeekAheadLineRoute[];
-  defaultLineId?: WeekAheadLineId;
+  routes: LiveStripRoute[];
+  defaultLineId?: string;
 };
 
 export const LiveLineStripPicker = ({
   routes,
-  defaultLineId = "bakerloo",
+  defaultLineId = "victoria",
 }: LiveProps) => {
-  const initial: WeekAheadLineId =
+  const initial =
     routes.find((r) => r.lineId === defaultLineId)?.lineId ??
     routes[0]?.lineId ??
     defaultLineId;
-  const [lineId, setLineId] = useState<WeekAheadLineId>(initial);
+  const [lineId, setLineId] = useState(initial);
 
   const route = useMemo(
     () => routes.find((r) => r.lineId === lineId) ?? routes[0],
@@ -35,7 +41,7 @@ export const LiveLineStripPicker = ({
   }
 
   const handleLineChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setLineId(event.target.value as WeekAheadLineId);
+    setLineId(event.target.value);
   };
 
   return (
@@ -44,6 +50,8 @@ export const LiveLineStripPicker = ({
         <label className="grid gap-1 text-sm">
           <span className="text-muted-foreground">Line</span>
           <select
+            id="live-line-strip-picker"
+            name="live-line"
             className="min-h-10 rounded-md border border-border bg-background px-3 py-2"
             value={route.lineId}
             onChange={handleLineChange}

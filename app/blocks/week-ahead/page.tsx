@@ -21,55 +21,57 @@ export default function WeekAheadBlockPage() {
   return (
     <div className="w-full min-w-0 space-y-8">
       <DocsReadableWidth>
-        <DocsPageHeader entry={entry} />
-        <RelationshipBadges
-          builtWith={entry.builtWith}
-          usesFoundations={entry.usesFoundations}
-        />
-        <div className="mt-6 space-y-4 text-sm text-muted-foreground">
-          <p>
-            A <strong className="font-medium text-foreground">Block</strong> —
-            not a single registry component. Composition boundary:
-          </p>
-          <ul className="list-inside list-disc space-y-1">
-            <li>
-              This Block owns the week and day-selection experience.
-            </li>
-            <li>
-              Data-aware status interpretation consumes normalised service
-              information (same family as{" "}
-              <Link
-                href="/docs/tube-rail-status"
-                className="text-primary underline-offset-4 hover:underline"
-              >
-                Status board
-              </Link>
-              ).
-            </li>
-            <li>
-              <Link
-                href="/docs/line-strip"
-                className="text-primary underline-offset-4 hover:underline"
-              >
-                Line strip
-              </Link>{" "}
-              and{" "}
-              <Link
-                href="/docs/branch-strip"
-                className="text-primary underline-offset-4 hover:underline"
-              >
-                Branch strip
-              </Link>{" "}
-              render schematic routes.
-            </li>
-            <li>
-              Disabled stations and segment states remain reusable rendering
-              capabilities on the strip primitives — install those
-              independently if you only need diagrams.
-            </li>
-          </ul>
-          <DataSourceLabel source="cached" />
-        </div>
+        <article className="space-y-6">
+          <DocsPageHeader entry={entry} />
+          <RelationshipBadges
+            builtWith={entry.builtWith}
+            usesFoundations={entry.usesFoundations}
+          />
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              A <strong className="font-medium text-foreground">Block</strong> —
+              not a single registry component. Composition boundary:
+            </p>
+            <ul className="list-inside list-disc space-y-1">
+              <li>
+                This Block owns the week and day-selection experience.
+              </li>
+              <li>
+                Data-aware status interpretation consumes normalised service
+                information (same family as{" "}
+                <Link
+                  href="/docs/tube-rail-status"
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  Status board
+                </Link>
+                ).
+              </li>
+              <li>
+                <Link
+                  href="/docs/line-strip"
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  Line strip
+                </Link>{" "}
+                and{" "}
+                <Link
+                  href="/docs/branch-strip"
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  Branch strip
+                </Link>{" "}
+                render schematic routes.
+              </li>
+              <li>
+                Disabled stations and segment states remain reusable rendering
+                capabilities on the strip primitives — install those
+                independently if you only need diagrams.
+              </li>
+            </ul>
+            <DataSourceLabel source="cached" />
+          </div>
+        </article>
       </DocsReadableWidth>
 
       <div className="w-full min-w-0 max-w-full overflow-x-clip px-0">

@@ -23,7 +23,9 @@ export default function FoundationsTypographyPage() {
         <RelationshipBadges usedBy={getUsedBySlugs(entry.slug)} />
 
         <section className="space-y-2">
-          <h2 className="text-lg font-semibold">Purpose</h2>
+          <h2 id="purpose" className="scroll-m-20 text-lg font-semibold">
+            Purpose
+          </h2>
           <p className="max-w-prose text-muted-foreground">
             Guidance for station names, diagram labels, and board headings.
             Installing a component does <strong className="font-medium text-foreground">not</strong>{" "}
@@ -32,7 +34,9 @@ export default function FoundationsTypographyPage() {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-lg font-semibold">Safe default</h2>
+          <h2 id="safe-default" className="scroll-m-20 text-lg font-semibold">
+            Safe default
+          </h2>
           <p className="max-w-prose text-muted-foreground">
             This site demos with <strong className="font-medium text-foreground">Hammersmith One</strong>{" "}
             (open Google Font) as a Johnston-like stand-in via{" "}
@@ -43,7 +47,9 @@ export default function FoundationsTypographyPage() {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-lg font-semibold">Station labels</h2>
+          <h2 id="station-labels" className="scroll-m-20 text-lg font-semibold">
+            Station labels
+          </h2>
           <p className="max-w-prose text-muted-foreground">
             How names shrink, abbreviate, and stay copyable is covered in{" "}
             <Link
@@ -71,7 +77,9 @@ export default function FoundationsTypographyPage() {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-lg font-semibold">Licensing</h2>
+          <h2 id="licensing" className="scroll-m-20 text-lg font-semibold">
+            Licensing
+          </h2>
           <p className="max-w-prose text-muted-foreground">
             See{" "}
             <Link

@@ -169,6 +169,18 @@ export {
 } from "@/lib/tfl/line-spine";
 
 export {
+  CABLE_CAR_DIAGRAM_COLOR,
+  SIMPLE_LINE_STRIP_IDS,
+  isSimpleLineStripId,
+  resolveDiagramLineColor,
+  resolveRouteTrackStyle,
+  routeTrackHeightUnits,
+  routeTrackRailCount,
+  type RouteTrackStyle,
+  type SimpleLineStripId,
+} from "@/lib/tfl/route-track";
+
+export {
   sliceJourney,
   toDiagramStation,
 } from "@/lib/tfl/diagram-mappers";

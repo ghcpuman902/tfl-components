@@ -38,7 +38,6 @@ export type DocsModeMarker =
   | "bus"
   | "river"
   | "cycle"
-  | "cable"
   | "map";
 
 export type DocsEntry = {
@@ -304,6 +303,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryName: "arrivals-board",
     registryUrl: `${REGISTRY_BASE}/arrivals-board.json`,
     layer: "data-aware",
+    builtWith: ["platform-chip", "station-name-labels"],
     usesFoundations: ["line-badge"],
   },
   {
@@ -337,6 +337,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryName: "arrivals-board",
     registryUrl: `${REGISTRY_BASE}/arrivals-board.json`,
     layer: "data-aware",
+    builtWith: ["bus-number-chip", "station-name-labels"],
     usesFoundations: ["line-badge"],
   },
   {
@@ -368,19 +369,6 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryUrl: `${REGISTRY_BASE}/cycle-hire-docks.json`,
     layer: "data-aware",
     usesFoundations: ["tfl-roundel"],
-  },
-  {
-    slug: "cable-car-arrivals",
-    title: "Cable car arrivals",
-    description: "Cable car departures — coming soon.",
-    group: "interfaces",
-    kind: "placeholder",
-    href: "/docs/cable-car-arrivals",
-    sidebarSection: "components",
-    sidebarOrder: 60,
-    preferred: true,
-    modeMarker: "cable",
-    comingSoon: true,
   },
   {
     slug: "maps-geographic",
@@ -452,6 +440,34 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     href: "/docs/station-name-labels",
     sidebarSection: "components",
     sidebarOrder: 110,
+    layer: "primitive",
+  },
+  {
+    slug: "platform-chip",
+    title: "Platform chip",
+    description:
+      "Rail platform label in a muted rectangle — title case with cap text-box trim for centering.",
+    group: "primitives",
+    kind: "component",
+    href: "/docs/platform-chip",
+    sidebarSection: "components",
+    sidebarOrder: 120,
+    registryName: "platform-chip",
+    registryUrl: `${REGISTRY_BASE}/platform-chip.json`,
+    layer: "primitive",
+  },
+  {
+    slug: "bus-number-chip",
+    title: "Bus number chip",
+    description:
+      "Bus route-number rectangle — bus red, fixed width, cap text-box trim for centering.",
+    group: "primitives",
+    kind: "component",
+    href: "/docs/bus-number-chip",
+    sidebarSection: "components",
+    sidebarOrder: 130,
+    registryName: "bus-number-chip",
+    registryUrl: `${REGISTRY_BASE}/bus-number-chip.json`,
     layer: "primitive",
   },
 
@@ -617,6 +633,38 @@ export const getSidebarEntries = (
     (a, b) => a.sidebarOrder - b.sidebarOrder,
   );
 
+/** Matches DocsSidebar: get-started top → components → get-started bottom → primitives & foundations. */
+const GET_STARTED_BOTTOM_FROM = 200;
+
+export const getFlatSidebarOrder = (): DocsEntry[] => {
+  const getStarted = getSidebarEntries("get-started");
+  const getStartedTop = getStarted.filter(
+    (entry) => entry.sidebarOrder < GET_STARTED_BOTTOM_FROM,
+  );
+  const getStartedBottom = getStarted.filter(
+    (entry) => entry.sidebarOrder >= GET_STARTED_BOTTOM_FROM,
+  );
+  return [
+    ...getStartedTop,
+    ...getSidebarEntries("components"),
+    ...getStartedBottom,
+    ...getSidebarEntries("primitives-foundations"),
+  ];
+};
+
+export const getAdjacentEntries = (
+  slug: string,
+): { prev: DocsEntry | null; next: DocsEntry | null } => {
+  const order = getFlatSidebarOrder();
+  const resolved = resolveDocsSlug(slug);
+  const index = order.findIndex((entry) => entry.slug === resolved);
+  if (index < 0) return { prev: null, next: null };
+  return {
+    prev: index > 0 ? order[index - 1]! : null,
+    next: index < order.length - 1 ? order[index + 1]! : null,
+  };
+};
+
 /** Groups that currently have at least one entry (skips empty reserved slots). */
 export const getPopulatedGroups = (): DocsGroup[] =>
   DOCS_GROUPS.filter((group) => getEntriesByGroup(group.id).length > 0);
@@ -630,6 +678,16 @@ export const layerBadgeLabel = (
   if (layer === "primitive") return "Primitive";
   if (layer === "map") return "Map";
   return "Data-aware";
+};
+
+/** Single hero badge — layer when present, otherwise kind. */
+export const entryBadgeLabel = (entry: DocsEntry): string | null => {
+  if (entry.layer) return layerBadgeLabel(entry.layer);
+  if (entry.kind === "tool") return "Tool";
+  if (entry.kind === "block") return "Block";
+  if (entry.kind === "draft") return "Draft";
+  if (entry.kind === "placeholder") return "Coming soon";
+  return null;
 };
 
 /** Reverse relationships: which public surfaces list this slug in builtWith / usesFoundations. */

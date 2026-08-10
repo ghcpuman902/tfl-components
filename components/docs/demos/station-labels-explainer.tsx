@@ -7,10 +7,17 @@ import {
   type ClipboardEvent,
   type CSSProperties,
 } from "react";
+import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text";
+import { PlatformChip } from "@/components/tfl/arrivals/platform-chip";
 import { StationName } from "@/components/tfl/station-name";
 import { TFL_BLUE } from "@/lib/tfl/brand";
 import { STATION_ABBREVIATION_TABLE } from "@/lib/tfl/station-abbreviations";
 import { cn } from "@/lib/utils";
+
+const platformFormChipClassName = cn(
+  "inline-flex h-5 shrink-0 items-center justify-center bg-muted-foreground px-1.5 text-xs font-semibold tabular-nums text-background",
+  CHIP_CAP_TEXT_BOX_CLASS,
+);
 
 const WIDTH_DEMO_NAME = "London Liverpool Street";
 const COPY_NAME = "London Liverpool Street";
@@ -38,32 +45,6 @@ const ARRIVALS_TILE =
 
 const ARRIVALS_ROW_RULE =
   "relative after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60";
-
-const chipClassName =
-  "inline-flex h-5 shrink-0 items-center justify-center bg-muted-foreground px-1.5 text-xs font-semibold tabular-nums leading-none text-background";
-
-const PlatformChip = ({ number }: { number: string }) => (
-  <span className={chipClassName} aria-label={`Platform ${number}`}>
-    <span className="@min-[18rem]/arrivals:hidden" aria-hidden>
-      {number}
-    </span>
-    <span
-      className="hidden @min-[18rem]/arrivals:inline @min-[26rem]/arrivals:hidden"
-      aria-hidden
-    >
-      P{number}
-    </span>
-    <span
-      className="hidden @min-[26rem]/arrivals:inline @min-[34rem]/arrivals:hidden"
-      aria-hidden
-    >
-      Plat {number}
-    </span>
-    <span className="hidden @min-[34rem]/arrivals:inline" aria-hidden>
-      Platform {number}
-    </span>
-  </span>
-);
 
 export const StationWidthDemo = () => (
   <ul className="flex flex-col gap-6">
@@ -96,7 +77,11 @@ export const StationWidthDemo = () => (
 export const PlatformWidthDemo = () => (
   <div className="flex flex-wrap items-center gap-2">
     {PLATFORM_FORMS.map((form) => (
-      <span key={form} className={chipClassName} aria-label="Platform 4">
+      <span
+        key={form}
+        className={platformFormChipClassName}
+        aria-label="Platform 4"
+      >
         <span aria-hidden>{form}</span>
       </span>
     ))}

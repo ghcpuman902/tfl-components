@@ -13,6 +13,7 @@ import {
   type StripSegmentState,
 } from "@/components/tfl/diagram/straight-strip-parts";
 import { StraightStripFitted } from "@/components/tfl/diagram/straight-strip-fitted";
+import type { RouteTrackStyle } from "@/lib/tfl/route-track";
 
 export type { StraightStripStation, StripLabelPlacement, StripSegmentState };
 export type { DiagramSegment, DiagramSegmentState } from "@/lib/tfl/diagram-station";
@@ -68,6 +69,11 @@ export type StraightStripProps = {
    * `alternate` reserves both bands so markers stay aligned.
    */
   labelPlacement?: StripLabelPlacement;
+  /**
+   * Route paint: solid (default), Overground/Elizabeth parallel, or cable-car
+   * triple. Pass explicitly — this atom does not look up TfL ids.
+   */
+  trackStyle?: RouteTrackStyle;
 };
 
 /**
@@ -87,6 +93,7 @@ export const StraightStrip = ({
   forceLabelIds,
   sharedFitScale,
   labelPlacement = "above",
+  trackStyle = "solid",
 }: StraightStripProps) => {
   if (stations.length === 0) {
     return (
@@ -113,6 +120,7 @@ export const StraightStrip = ({
         forceLabelIds={forceLabelIds}
         sharedFitScale={sharedFitScale}
         labelPlacement={labelPlacement}
+        trackStyle={trackStyle}
       />
     );
   }
@@ -156,6 +164,7 @@ export const StraightStrip = ({
           lineTop={m.lineTop}
           lineWidth={m.lineWidth}
           colWidthUnits={m.colWidthUnits}
+          trackStyle={trackStyle}
         />
 
         <ol className="relative m-0 flex list-none items-start p-0">

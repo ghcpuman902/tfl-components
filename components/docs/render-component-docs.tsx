@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
 import { InstallCommand } from "@/components/docs/install-command";
+import { CompactInstallButton } from "@/components/docs/compact-install-button";
 import { RelationshipBadges } from "@/components/docs/relationship-badges";
 import {
   getContentAssetSlug,
@@ -13,7 +14,6 @@ import {
 } from "@/lib/docs-catalog";
 import { loadComponentDemo } from "@/lib/load-component-demo";
 import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code";
-import { TubeStatusBoardSkeleton } from "@/components/tfl/status/tube-status-board";
 
 type RelatedLink = { href: string; label: string };
 
@@ -26,11 +26,9 @@ type RenderComponentDocsOptions = {
   getDataExample?: string;
 };
 
-const DATA_AWARE_GET_DATA: Record<string, string> = {
+const PREVIEW_SNIPPETS: Record<string, string> = {
   "tube-status-board": `const data = sortLinesBySeverityAndOrder(
-  await tfl.line.getStatus({
-    modes: ["tube", "elizabeth-line", "dlr", "tram", "overground"],
-  }),
+  await tfl.line.getStatus({ modes: ["tube", "elizabeth-line"] }),
 )
 
 <TubeStatusBoard data={data} />`,
@@ -46,10 +44,7 @@ const DATA_AWARE_GET_DATA: Record<string, string> = {
   tfl.bikePoint.getById("BikePoints_46"),
 ])
 
-<CycleHireDocks data={data}>
-  <CycleHireDocks.Map />
-  <CycleHireDocks.Detail hideHeader />
-</CycleHireDocks>`,
+<CycleHireDocksBoard data={data} />`,
   "line-strip": `const spine = await getLineSpine("victoria")
 
 <LineStrip lineId="victoria" spine={spine} fit />`,
@@ -78,12 +73,10 @@ export const renderComponentDocs = async ({
 
   const contentSlug = getContentAssetSlug(slug);
   const Demo = await loadComponentDemo(contentSlug);
-  const isDataAware = entry.layer === "data-aware";
   const snippet =
     getDataExample ??
-    (isDataAware
-      ? (DATA_AWARE_GET_DATA[contentSlug] ?? DATA_AWARE_GET_DATA[slug])
-      : undefined);
+    PREVIEW_SNIPPETS[contentSlug] ??
+    PREVIEW_SNIPPETS[slug];
   const usedBy = getUsedBySlugs(entry.slug);
 
   let MDXPage: React.ComponentType<{ className?: string }> | null = null;
@@ -107,40 +100,54 @@ export const renderComponentDocs = async ({
   return (
     <DocsReadableWidth>
       <article className="space-y-10">
-        <DocsPageHeader
-          entry={entry as DocsEntry}
-          preferPreview={isDataAware}
-          getDataSnippet={
-            snippet ? (
-              <SyntaxHighlightedCode code={snippet} language="tsx" />
-            ) : undefined
-          }
-        />
+        <DocsPageHeader entry={entry as DocsEntry} />
 
-        {Demo ? (
-          <section className="space-y-3" aria-labelledby="preview-heading">
-            <h2 id="preview-heading" className="text-lg font-semibold">
-              Preview
-            </h2>
-            <Suspense
-              fallback={
-                contentSlug === "tube-status-board" ||
-                slug === "tube-rail-status" ? (
-                  <TubeStatusBoardSkeleton />
-                ) : (
-                  <div
-                    className="h-40 animate-pulse rounded-lg bg-muted"
-                    aria-hidden
-                  />
-                )
-              }
-            >
-              <Demo />
-            </Suspense>
+        {Demo || snippet ? (
+          <section className="space-y-6" aria-labelledby="preview-heading">
+            {Demo ? (
+              <div className="space-y-3">
+                <h2 id="preview-heading" className="text-lg font-semibold">
+                  Preview
+                </h2>
+                <Suspense
+                  fallback={
+                    <div
+                      className="h-40 animate-pulse rounded-lg bg-muted"
+                      aria-hidden
+                    />
+                  }
+                >
+                  <Demo />
+                </Suspense>
+              </div>
+            ) : (
+              <h2 id="preview-heading" className="text-lg font-semibold">
+                Preview
+              </h2>
+            )}
+
+            {snippet ? (
+              <div className="space-y-2">
+                {Demo ? (
+                  <h2 id="usage-heading" className="text-lg font-semibold">
+                    Usage
+                  </h2>
+                ) : null}
+                <SyntaxHighlightedCode
+                  code={snippet}
+                  language="tsx"
+                  peekLines={3}
+                />
+              </div>
+            ) : null}
+
+            {entry.registryUrl ? (
+              <CompactInstallButton registryUrl={entry.registryUrl} />
+            ) : null}
           </section>
         ) : null}
 
-        {isDataAware && entry.registryUrl ? (
+        {entry.registryUrl ? (
           <section className="space-y-2" aria-labelledby="install-heading">
             <h2 id="install-heading" className="text-lg font-semibold">
               Installation

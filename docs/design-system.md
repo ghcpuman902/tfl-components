@@ -87,7 +87,8 @@ Every tile uses a locked box (`box-border`, fixed `min`/`max`/`height` = `--arri
 
 - Stop title = human name only (+ optional bus stop letter). Never show NaPTAN / stop-point ids.
 - Fit stop and destination names with `StationName` (`layout="auto"`, abbr then scale). Destination rows stay one tile tall.
-- Rail: platform chip before destination. Bus: route chip per row; stop letter on the header only.
+- Rail: [`PlatformChip`](/docs/platform-chip) before destination. Bus: [`BusNumberChip`](/docs/bus-number-chip) per row; stop letter on the header only.
+- Both chips keep normal casing. Center with uppercase/cap text-box trim: `text-box: trim-both cap alphabetic` (`CHIP_CAP_TEXT_BOX_CLASS`) — not x-height (`ex`) trim. Do not force `uppercase` paint.
 
 **Side-by-side boards**
 

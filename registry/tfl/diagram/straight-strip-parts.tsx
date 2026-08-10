@@ -6,6 +6,11 @@ import { formatStationName } from "@/lib/tfl/diagram-station";
 import { StationName } from "@/components/tfl/station-name";
 import { NationalRailPictogram } from "@/components/tfl/national-rail-pictogram";
 import {
+  routeTrackHeightUnits,
+  routeTrackRailCount,
+  type RouteTrackStyle,
+} from "@/lib/tfl/route-track";
+import {
   buildSegmentStateMap,
   isStationOutOfUse,
   stationOutOfUseFromSegments,
@@ -50,12 +55,50 @@ type RouteStripProps = {
   stationCount: number;
   segmentStates: readonly StripSegmentState[];
   lineColor: string;
+  /** Top of a 1× solid route (centreline − 0.5×). Multi-rail stacks re-centre. */
   lineTop: string;
+  /** Solid-route height (1×). Ignored for parallel / cable-car stacks. */
   lineWidth: string;
   colWidthUnits: number;
+  /** Explicit paint style — primitives never infer from TfL ids. */
+  trackStyle?: RouteTrackStyle;
 };
 
-/** Solid / out-of-use adjacent segments along the route centreline. */
+const SegmentPaint = ({
+  color,
+  trackStyle,
+}: {
+  color: string;
+  trackStyle: RouteTrackStyle;
+}) => {
+  if (trackStyle === "solid") {
+    return <div className="h-full w-full" style={{ backgroundColor: color }} />;
+  }
+
+  const rails = routeTrackRailCount(trackStyle);
+  // stroke === gap === 0.33× — equal flex bands keep §5 proportions.
+  const bands: { key: string; fill?: string }[] = [];
+  for (let i = 0; i < rails; i += 1) {
+    bands.push({ key: `rail-${i}`, fill: color });
+    if (i < rails - 1) {
+      bands.push({ key: `gap-${i}` });
+    }
+  }
+
+  return (
+    <div className="flex h-full w-full flex-col">
+      {bands.map((band) => (
+        <div
+          key={band.key}
+          className="min-h-0 w-full flex-1"
+          style={{ backgroundColor: band.fill }}
+        />
+      ))}
+    </div>
+  );
+};
+
+/** Solid / parallel / cable-car / out-of-use segments on the route centreline. */
 export const StraightRouteTrack = ({
   stationCount,
   segmentStates,
@@ -63,31 +106,38 @@ export const StraightRouteTrack = ({
   lineTop,
   lineWidth,
   colWidthUnits,
+  trackStyle = "solid",
 }: RouteStripProps) => {
   if (stationCount < 2) return null;
+
+  const heightUnits = routeTrackHeightUnits(trackStyle);
+  // Solid metrics pass top = centre − 0.5×; re-centre taller / shorter stacks.
+  const top =
+    trackStyle === "solid"
+      ? lineTop
+      : `calc(${lineTop} + ${ux(0.5)} - ${ux(heightUnits / 2)})`;
+  const height = trackStyle === "solid" ? lineWidth : ux(heightUnits);
 
   return (
     <div
       aria-hidden
       className="pointer-events-none absolute inset-x-0"
-      style={{ top: lineTop, height: lineWidth }}
+      style={{ top, height }}
     >
       {segmentStates.map((state, index) => {
         const left = `calc(${ux(colWidthUnits)} * ${index + 0.5})`;
         const width = ux(colWidthUnits);
+        const color =
+          state === "out-of-use" ? OUT_OF_USE_LINE_COLOR : lineColor;
 
         return (
           <div
             key={`seg-${index}`}
             className="absolute top-0"
-            style={{
-              left,
-              width,
-              height: lineWidth,
-              backgroundColor:
-                state === "out-of-use" ? OUT_OF_USE_LINE_COLOR : lineColor,
-            }}
-          />
+            style={{ left, width, height }}
+          >
+            <SegmentPaint color={color} trackStyle={trackStyle} />
+          </div>
         );
       })}
     </div>

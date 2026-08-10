@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { DocsSidebar } from "@/components/docs/docs-sidebar";
+import { DocsTableOfContents } from "@/components/docs/docs-table-of-contents";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSearch } from "@/components/docs/docs-search";
@@ -55,8 +56,9 @@ const AppChromeShell = ({
           <div className="border-b border-border px-4 py-2 md:hidden">
             <DocsSearch variant="mobile" />
           </div>
-          <div className="mx-auto w-full min-w-0 max-w-full flex-1 px-4 py-6">
-            {children}
+          <div className="mx-auto flex w-full min-w-0 max-w-full flex-1 gap-8 px-4 py-6 xl:pr-6">
+            <div className="min-w-0 flex-1">{children}</div>
+            <DocsTableOfContents />
           </div>
           <SiteFooter />
         </SidebarInset>

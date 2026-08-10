@@ -1,6 +1,5 @@
 "use client";
 
-import { getLineColor } from "tfl-ts";
 import { BranchStrip } from "@/components/tfl/diagram/branch-strip";
 import { StraightStrip } from "@/components/tfl/diagram/straight-strip";
 import { LineRouteDiagram } from "@/components/tfl/diagram/line-route-diagram";
@@ -10,6 +9,11 @@ import {
 } from "@/lib/tfl/line-spine";
 import type { DiagramSegment, DiagramStation } from "@/lib/tfl/diagram-station";
 import type { LineSchematic } from "@/lib/tfl/line-schematic";
+import {
+  resolveDiagramLineColor,
+  resolveRouteTrackStyle,
+  type RouteTrackStyle,
+} from "@/lib/tfl/route-track";
 import {
   prepareBranchStrip,
   prepareStraightStrip,
@@ -56,6 +60,11 @@ export type LineStripProps = {
    * Set false when stations already carry `labelLines`.
    */
   applyLabelRecipes?: boolean;
+  /**
+   * Override route paint. Default resolves from `lineId`
+   * (solid / Overground·Elizabeth parallel / cable-car triple).
+   */
+  trackStyle?: RouteTrackStyle;
 };
 
 /**
@@ -85,9 +94,12 @@ export const LineStrip = ({
   scroll = true,
   labelPlacement = "above",
   applyLabelRecipes = true,
+  trackStyle: trackStyleProp,
 }: LineStripProps) => {
-  const color = lineColorProp ?? spine?.lineColor ?? getLineColor(lineId).hex;
+  const color =
+    lineColorProp ?? spine?.lineColor ?? resolveDiagramLineColor(lineId);
   const name = lineNameProp ?? spine?.lineName ?? lineId;
+  const trackStyle = trackStyleProp ?? resolveRouteTrackStyle(lineId);
   const orientation: LineStripOrientation =
     orientationProp ?? schematic?.orientation ?? "horizontal";
 
@@ -152,6 +164,7 @@ export const LineStrip = ({
       forceLabelIds={forceLabelIds}
       sharedFitScale={sharedFitScale}
       labelPlacement={labelPlacement}
+      trackStyle={trackStyle}
       x={x}
       className={scroll ? undefined : className}
     />

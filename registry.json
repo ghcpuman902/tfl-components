@@ -180,6 +180,47 @@
       ]
     },
     {
+      "name": "platform-chip",
+      "type": "registry:component",
+      "title": "Platform Chip",
+      "description": "Rail platform label chip with width steps and uppercase text-box trim.",
+      "files": [
+        {
+          "path": "registry/tfl/arrivals/platform-chip.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/platform-chip.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/chip-text.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/arrivals/chip-text.ts"
+        }
+      ]
+    },
+    {
+      "name": "bus-number-chip",
+      "type": "registry:component",
+      "title": "Bus Number Chip",
+      "description": "Bus route-number chip — bus red, fixed width, uppercase text-box trim.",
+      "files": [
+        {
+          "path": "registry/tfl/arrivals/bus-number-chip.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/bus-number-chip.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/chip-text.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/arrivals/chip-text.ts"
+        },
+        {
+          "path": "lib/tfl/brand-colours.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/brand-colours.ts"
+        }
+      ]
+    },
+    {
       "name": "arrivals-board",
       "type": "registry:component",
       "title": "Arrivals Board",
@@ -190,6 +231,8 @@
       ],
       "registryDependencies": [
         "line-badge",
+        "platform-chip",
+        "bus-number-chip",
         "skeleton"
       ],
       "files": [

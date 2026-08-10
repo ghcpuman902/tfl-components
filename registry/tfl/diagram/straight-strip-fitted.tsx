@@ -16,6 +16,7 @@ import {
   type StripLabelPlacement,
   type StripSegmentState,
 } from "@/components/tfl/diagram/straight-strip-parts";
+import type { RouteTrackStyle } from "@/lib/tfl/route-track";
 
 type FittedProps = {
   stations: readonly StraightStripStation[];
@@ -35,6 +36,7 @@ type FittedProps = {
    */
   sharedFitScale?: number;
   labelPlacement?: StripLabelPlacement;
+  trackStyle?: RouteTrackStyle;
 };
 
 /**
@@ -52,6 +54,7 @@ export const StraightStripFitted = ({
   forceLabelIds,
   sharedFitScale,
   labelPlacement = "above",
+  trackStyle = "solid",
 }: FittedProps) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -143,6 +146,7 @@ export const StraightStripFitted = ({
           lineTop={m.lineTop}
           lineWidth={m.lineWidth}
           colWidthUnits={m.colWidthUnits}
+          trackStyle={trackStyle}
         />
 
         <ol className="relative m-0 flex list-none items-start p-0">

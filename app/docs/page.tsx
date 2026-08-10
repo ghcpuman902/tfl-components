@@ -19,7 +19,9 @@ export default function DocsIntroductionPage() {
         <DocsPageHeader entry={entry} />
 
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">What this is</h2>
+          <h2 id="what-this-is" className="scroll-m-20 text-lg font-semibold">
+            What this is
+          </h2>
           <p className="max-w-prose text-muted-foreground">
             A developer environment for turning TfL information into useful
             React UI. Pair{" "}
@@ -37,7 +39,9 @@ export default function DocsIntroductionPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Fast path</h2>
+          <h2 id="fast-path" className="scroll-m-20 text-lg font-semibold">
+            Fast path
+          </h2>
           <ol className="list-inside list-decimal space-y-2 text-muted-foreground">
             <li>
               <Link
@@ -64,7 +68,9 @@ export default function DocsIntroductionPage() {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-lg font-semibold">Layers</h2>
+          <h2 id="layers" className="scroll-m-20 text-lg font-semibold">
+            Layers
+          </h2>
           <p className="max-w-prose text-muted-foreground">
             Prefer high-level boards first (arrivals, status, maps). Rendering
             parts and foundations sit underneath for control. Modes are

@@ -14,6 +14,11 @@ import {
   VICTORIA_PART_CLOSURE_SEGMENTS,
   VICTORIA_STRIP,
 } from "@/lib/tfl/fixtures/victoria-line-strip";
+import { getLineSpine } from "@/lib/tfl/line-spine";
+import {
+  SIMPLE_LINE_STRIP_IDS,
+  type SimpleLineStripId,
+} from "@/lib/tfl/route-track";
 import { getCachedWeekAheadRoutes } from "@/lib/tfl/week-ahead-data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -21,6 +26,7 @@ import {
   LabelPlacementDemo,
   LiveLineStripPicker,
   PartClosureDemo,
+  type LiveStripRoute,
 } from "@/components/docs/demos/line-strip-demo-controls";
 
 /** Plain Victoria spine for journey-slice demos (no connection flags). */
@@ -33,9 +39,48 @@ const VICTORIA_SAMPLE: DiagramStation[] = VICTORIA_STRIP.map(
   }),
 );
 
+const SIMPLE_ORDER = new Map(
+  SIMPLE_LINE_STRIP_IDS.map((id, index) => [id, index]),
+);
+
 async function LiveStripSection() {
-  const { routes } = await getCachedWeekAheadRoutes();
-  return <LiveLineStripPicker routes={routes} defaultLineId="bakerloo" />;
+  const [{ routes }, cableCar] = await Promise.all([
+    getCachedWeekAheadRoutes(),
+    getLineSpine("london-cable-car"),
+  ]);
+
+  const fromWeekAhead = routes
+    .filter((route): route is typeof route & { lineId: SimpleLineStripId } =>
+      SIMPLE_ORDER.has(route.lineId as SimpleLineStripId),
+    )
+    .map(
+      (route): LiveStripRoute => ({
+        lineId: route.lineId,
+        lineName: route.lineName,
+        lineColor: route.lineColor,
+        stations: route.stations,
+        routeError: route.routeError,
+      }),
+    );
+
+  const simpleRoutes: LiveStripRoute[] = [
+    ...fromWeekAhead,
+    {
+      lineId: cableCar.lineId,
+      lineName: cableCar.lineName,
+      lineColor: cableCar.lineColor,
+      stations: cableCar.stations,
+      routeError: cableCar.routeError,
+    },
+  ].sort(
+    (a, b) =>
+      (SIMPLE_ORDER.get(a.lineId as SimpleLineStripId) ?? 99) -
+      (SIMPLE_ORDER.get(b.lineId as SimpleLineStripId) ?? 99),
+  );
+
+  return (
+    <LiveLineStripPicker routes={simpleRoutes} defaultLineId="victoria" />
+  );
 }
 
 const LiveSkeleton = () => (
@@ -53,9 +98,14 @@ export default function LineStripDemo() {
       <section className="rounded-lg border border-border bg-card p-4 sm:p-6">
         <h2 className="text-lg font-semibold">Live strip</h2>
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
-          One live strip with a line picker (Tube, Elizabeth, DLR, Overground,
-          Tram). Connections drop bus/unknown IDs; National Rail is a pictogram
-          beside the name. Desktop scale matches the reference baseline (
+          Simple (non-branch) corridors only: Waterloo &amp; City, Jubilee,
+          Piccadilly, Victoria, Liberty (Overground), and London Cable Car.
+          Overground paints as parallel rails; cable car is three red rails with
+          white gaps. Branched lines live under{" "}
+          <Link href="/docs/branch-strip" className="underline">
+            Branch strip
+          </Link>
+          . Desktop scale matches the reference baseline (
           {DIAGRAM_BASELINE.horizontal}px line).
         </p>
         <Suspense fallback={<LiveSkeleton />}>

@@ -9,6 +9,11 @@ type SyntaxHighlightedCodeProps = {
   preClassName?: string;
   wrapperClassName?: string;
   showCopy?: boolean;
+  /**
+   * When set, collapse to this many lines with a fade + "View code" toggle
+   * (expanded via `[data-code-peek-toggle]` in CodeCopyDelegator).
+   */
+  peekLines?: number;
 };
 
 /** Inline SVGs — lucide-react is a client module and breaks RSC instant validation. */
@@ -43,6 +48,21 @@ const CheckIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const ChevronIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
+
 const normalizeLanguage = (language?: string): string | undefined => {
   if (!language) return undefined;
   const lang = language.toLowerCase().replace(/^\./, "");
@@ -64,9 +84,9 @@ const highlightCode = (code: string): string | null => {
 };
 
 /**
- * Fully server-rendered code block. Copy uses `data-mdx-copy` + the layout
- * `CodeCopyDelegator` so MDX stays outside client boundaries (stable instant
- * validation / hydration under Cache Components).
+ * Fully server-rendered code block. Copy / peek expand use `data-*` attrs +
+ * the layout `CodeCopyDelegator` so MDX stays outside client boundaries
+ * (stable instant validation / hydration under Cache Components).
  */
 export const SyntaxHighlightedCode = ({
   code,
@@ -75,12 +95,52 @@ export const SyntaxHighlightedCode = ({
   preClassName,
   wrapperClassName,
   showCopy = true,
+  peekLines,
 }: SyntaxHighlightedCodeProps) => {
   const highlightedHtml = highlightCode(code);
   const normalized = normalizeLanguage(language);
+  const lineCount = code.split("\n").length;
+  const isPeek =
+    typeof peekLines === "number" && peekLines > 0 && lineCount > peekLines;
+  // text-sm leading-normal ≈ 1.25rem per line + py-3 (1.5rem)
+  const peekMaxHeight = isPeek
+    ? `${peekLines * 1.25 + 1.5}rem`
+    : undefined;
+
+  const codeInner = highlightedHtml ? (
+    <code
+      className={cn(
+        "font-mono text-[0.925em] leading-normal text-foreground bg-transparent p-0",
+        className,
+      )}
+      dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+    />
+  ) : (
+    <code
+      className={cn(
+        "font-mono text-[0.925em] leading-normal text-foreground",
+        className,
+      )}
+    >
+      {code}
+    </code>
+  );
 
   return (
-    <div className={cn("group/code relative mb-4 mt-6 w-full", wrapperClassName)}>
+    <div
+      className={cn(
+        "group/code relative mb-4 mt-6 w-full",
+        isPeek && "mb-0 mt-0 overflow-hidden rounded-lg bg-muted",
+        wrapperClassName,
+      )}
+      {...(isPeek
+        ? {
+            "data-code-peek": "",
+            "data-expanded": "false",
+            "data-peek-max": peekMaxHeight,
+          }
+        : {})}
+    >
       {showCopy ? (
         <button
           type="button"
@@ -103,32 +163,49 @@ export const SyntaxHighlightedCode = ({
         </button>
       ) : null}
 
-      <pre
+      <div
+        data-peek-body={isPeek ? "" : undefined}
         className={cn(
-          "block w-full overflow-x-auto rounded-lg bg-muted py-3 pr-14 pl-4 text-sm leading-normal",
-          preClassName,
+          isPeek &&
+            "relative overflow-hidden [[data-code-peek][data-expanded=true]_&]:max-h-none!",
         )}
-        data-language={normalized || undefined}
+        style={
+          isPeek && peekMaxHeight
+            ? ({ maxHeight: peekMaxHeight } as React.CSSProperties)
+            : undefined
+        }
       >
-        {highlightedHtml ? (
-          <code
-            className={cn(
-              "font-mono text-[0.925em] leading-normal text-foreground bg-transparent p-0",
-              className,
-            )}
-            dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+        <pre
+          className={cn(
+            "block w-full overflow-x-auto rounded-lg bg-muted py-3 pr-14 pl-4 text-sm leading-normal",
+            isPeek && "rounded-none bg-transparent",
+            preClassName,
+          )}
+          data-language={normalized || undefined}
+        >
+          {codeInner}
+        </pre>
+        {isPeek ? (
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-muted to-transparent [[data-code-peek][data-expanded=true]_&]:hidden"
+            aria-hidden
           />
-        ) : (
-          <code
-            className={cn(
-              "font-mono text-[0.925em] leading-normal text-foreground",
-              className,
-            )}
+        ) : null}
+      </div>
+
+      {isPeek ? (
+        <div className="relative z-10 -mt-3 flex justify-center pb-2">
+          <button
+            type="button"
+            data-code-peek-toggle
+            aria-expanded="false"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground shadow-xs hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {code}
-          </code>
-        )}
-      </pre>
+            <span data-code-peek-label>View code</span>
+            <ChevronIcon className="size-3.5 transition-transform [[data-code-peek][data-expanded=true]_&]:rotate-180" />
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 };
