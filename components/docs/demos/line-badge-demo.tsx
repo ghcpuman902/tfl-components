@@ -1,5 +1,6 @@
 import { ColourFormatsTable } from "@/components/docs/colour-formats-table";
 import { BwLineStylesCompare } from "@/components/docs/demos/bw-line-styles-compare";
+import { ColourTokenPins } from "@/components/docs/demos/colour-token-pins";
 import { LineBadge, LineColorBar } from "@/components/tfl/brand/line-badge";
 import {
   CABLE_CAR_MAP_COLOUR,
@@ -15,7 +16,10 @@ type DemoMode =
   | "overground"
   | "dlr"
   | "tram"
-  | "cable-car";
+  | "cable-car"
+  | "buses"
+  | "river"
+  | "cycles";
 
 type DemoLine = {
   id: string;
@@ -26,7 +30,7 @@ type DemoLine = {
   mapColor?: string;
 };
 
-/** Full suite with published Colour standard / Issue 4 tokens. */
+/** Full suite — every published line/mode token (plus Cable Car map red). */
 const DEMO_LINES: DemoLine[] = [
   {
     id: "bakerloo",
@@ -101,6 +105,12 @@ const DEMO_LINES: DemoLine[] = [
     spec: TFL_MODAL_COLOURS.elizabeth,
   },
   {
+    id: "elizabeth-line",
+    name: "Elizabeth line",
+    modeName: "elizabeth-line",
+    spec: TFL_MODAL_COLOURS.elizabeth,
+  },
+  {
     id: "dlr",
     name: "DLR",
     modeName: "dlr",
@@ -109,6 +119,12 @@ const DEMO_LINES: DemoLine[] = [
   {
     id: "tram",
     name: "Tram",
+    modeName: "tram",
+    spec: TFL_MODAL_COLOURS.trams,
+  },
+  {
+    id: "trams",
+    name: "Trams",
     modeName: "tram",
     spec: TFL_MODAL_COLOURS.trams,
   },
@@ -161,12 +177,69 @@ const DEMO_LINES: DemoLine[] = [
     spec: CABLE_CAR_MAP_COLOUR,
     mapColor: CABLE_CAR_MAP_COLOUR.hex,
   },
+  {
+    id: "london-cable-car",
+    name: "London Cable Car",
+    modeName: "cable-car",
+    spec: TFL_MODAL_COLOURS.cableCar,
+  },
+  {
+    id: "tfl",
+    name: "TfL",
+    modeName: "tube",
+    spec: TFL_MODAL_COLOURS.tfl,
+  },
+  {
+    id: "buses",
+    name: "Buses",
+    modeName: "buses",
+    spec: TFL_MODAL_COLOURS.buses,
+  },
+  {
+    id: "coaches",
+    name: "Coaches",
+    modeName: "buses",
+    spec: TFL_MODAL_COLOURS.coaches,
+  },
+  {
+    id: "dial-a-ride",
+    name: "Dial-a-Ride",
+    modeName: "buses",
+    spec: TFL_MODAL_COLOURS.dialARide,
+  },
+  {
+    id: "river",
+    name: "River",
+    modeName: "river",
+    spec: TFL_MODAL_COLOURS.river,
+  },
+  {
+    id: "underground",
+    name: "Underground",
+    modeName: "tube",
+    spec: TFL_MODAL_COLOURS.underground,
+  },
+  {
+    id: "cycles",
+    name: "Cycles",
+    modeName: "cycles",
+    spec: TFL_MODAL_COLOURS.cycles,
+  },
 ];
+
+/** Formats table — one row per token (aliases only appear as chips above). */
+const FORMAT_LINES = DEMO_LINES.filter(
+  (line) =>
+    line.id !== "elizabeth-line" &&
+    line.id !== "trams" &&
+    line.id !== "london-cable-car",
+);
 
 /** Presentational — no API keys required. */
 export default function LineBadgeDemo() {
   return (
     <div className="space-y-8">
+      <ColourTokenPins />
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Chip variant</h2>
         <p className="max-w-prose text-sm text-muted-foreground">
@@ -196,7 +269,7 @@ export default function LineBadgeDemo() {
           (<code className="text-xs">device-cmyk()</code> when available). Click
           a cell to copy. Scroll sideways on narrow widths.
         </p>
-        <ColourFormatsTable lines={DEMO_LINES} />
+        <ColourFormatsTable lines={FORMAT_LINES} />
       </section>
 
       <section className="space-y-3">

@@ -244,11 +244,22 @@ const renderCssFile = (
     lines.push(`  --${key}: ${value};`);
   }
 
-  lines.push("}", "", "@theme inline {");
+  // `static` keeps every --color-tfl-* utility var in production CSS even when
+  // consumers only bind via data-line (dynamic attrs are invisible to scanning).
+  lines.push("}", "", "@theme static {");
   for (const [key, value] of Object.entries(theme)) {
     lines.push(`  --${key}: ${value};`);
   }
   lines.push("}", "");
+
+  const utilityPins = tokens
+    .flatMap((token) => [`bg-${token.varName}`, `text-${token.varName}`])
+    .join(" ");
+  lines.push(
+    "/* Pin utilities so class scanners keep them when demos use data-line only. */",
+  );
+  lines.push(`@source inline("${utilityPins}");`);
+  lines.push("");
 
   lines.push("@layer base {");
   for (const token of tokens) {

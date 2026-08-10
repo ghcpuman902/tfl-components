@@ -128,7 +128,7 @@
   --tfl-ink-mode-cycles: oklch(100% 0 0);
 }
 
-@theme inline {
+@theme static {
   --color-tfl-line-bakerloo: var(--tfl-line-bakerloo);
   --color-tfl-line-central: var(--tfl-line-central);
   --color-tfl-line-circle: var(--tfl-line-circle);
@@ -159,6 +159,9 @@
   --color-tfl-mode-underground: var(--tfl-mode-underground);
   --color-tfl-mode-cycles: var(--tfl-mode-cycles);
 }
+
+/* Pin utilities so class scanners keep them when demos use data-line only. */
+@source inline("bg-tfl-line-bakerloo text-tfl-line-bakerloo bg-tfl-line-central text-tfl-line-central bg-tfl-line-circle text-tfl-line-circle bg-tfl-line-district text-tfl-line-district bg-tfl-line-hammersmith-city text-tfl-line-hammersmith-city bg-tfl-line-jubilee text-tfl-line-jubilee bg-tfl-line-metropolitan text-tfl-line-metropolitan bg-tfl-line-northern text-tfl-line-northern bg-tfl-line-piccadilly text-tfl-line-piccadilly bg-tfl-line-victoria text-tfl-line-victoria bg-tfl-line-waterloo-city text-tfl-line-waterloo-city bg-tfl-line-liberty text-tfl-line-liberty bg-tfl-line-lioness text-tfl-line-lioness bg-tfl-line-mildmay text-tfl-line-mildmay bg-tfl-line-suffragette text-tfl-line-suffragette bg-tfl-line-weaver text-tfl-line-weaver bg-tfl-line-windrush text-tfl-line-windrush bg-tfl-mode-tfl text-tfl-mode-tfl bg-tfl-mode-dlr text-tfl-mode-dlr bg-tfl-mode-elizabeth text-tfl-mode-elizabeth bg-tfl-mode-buses text-tfl-mode-buses bg-tfl-mode-cable-car text-tfl-mode-cable-car bg-tfl-mode-coaches text-tfl-mode-coaches bg-tfl-mode-dial-a-ride text-tfl-mode-dial-a-ride bg-tfl-mode-overground text-tfl-mode-overground bg-tfl-mode-river text-tfl-mode-river bg-tfl-mode-trams text-tfl-mode-trams bg-tfl-mode-underground text-tfl-mode-underground bg-tfl-mode-cycles text-tfl-mode-cycles");
 
 @layer base {
   [data-line='bakerloo'] {
