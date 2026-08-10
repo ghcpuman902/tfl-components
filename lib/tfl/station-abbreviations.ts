@@ -40,6 +40,96 @@ export const STATION_AND_ABBREVIATION: StationAbbreviationEntry = {
   findCompletion: "",
 };
 
+export type StationAbbreviationTableRow = {
+  full: string;
+  short: string;
+  /**
+   * Unique display names containing this token across Tube, Elizabeth line,
+   * DLR, Overground, and Tram (deduped across lines and modes).
+   */
+  count: number;
+  /** Up to three examples; names already used earlier in the table are skipped. */
+  examples: readonly string[];
+};
+
+/**
+ * Hardwired station counts for the station-labels abbreviations table.
+ * Regenerated via `pnpm exec tsx scripts/station-abbreviation-stats.ts`
+ * against tfl-ts `LINE_STATION_SEQUENCES` (generated 2026-08-09, 461 unique
+ * Tube / Elizabeth / DLR / Overground / Tram names).
+ */
+export const STATION_ABBREVIATION_TABLE: readonly StationAbbreviationTableRow[] =
+  [
+    {
+      full: "Street",
+      short: "St",
+      count: 20,
+      examples: ["Baker Street", "Bond Street", "Cannon Street"],
+    },
+    {
+      full: "Road",
+      short: "Rd",
+      count: 31,
+      examples: ["Abbey Road", "Avenue Road", "Beckenham Road"],
+    },
+    {
+      full: "Avenue",
+      short: "Ave",
+      count: 2,
+      examples: ["Warwick Avenue"],
+    },
+    {
+      full: "Square",
+      short: "Sq",
+      count: 4,
+      examples: ["Euston Square", "Leicester Square", "Russell Square"],
+    },
+    {
+      full: "Lane",
+      short: "Ln",
+      count: 13,
+      examples: ["Beddington Lane", "Blackhorse Lane", "Chancery Lane"],
+    },
+    {
+      full: "Park",
+      short: "Pk",
+      count: 40,
+      examples: ["Beckton Park", "Belsize Park", "Brondesbury Park"],
+    },
+    {
+      full: "Junction",
+      short: "Jct",
+      count: 7,
+      examples: [
+        "Beckenham Junction",
+        "Clapham Junction",
+        "Dalston Junction",
+      ],
+    },
+    {
+      full: "Bridge",
+      short: "Br",
+      count: 5,
+      examples: ["Deptford Bridge", "London Bridge", "Phipps Bridge"],
+    },
+    {
+      full: "Central",
+      short: "Ctrl",
+      count: 7,
+      examples: ["Acton Central", "Finchley Central", "Hackney Central"],
+    },
+    {
+      full: "and",
+      short: "&",
+      count: 8,
+      examples: [
+        "Caledonian Road & Barnsbury",
+        "Chalfont & Latimer",
+        "Elephant & Castle",
+      ],
+    },
+  ] as const;
+
 /** RegExp pairs for applying abbreviations to a full name. */
 export const STATION_ABBREVIATIONS: ReadonlyArray<readonly [RegExp, string]> = [
   ...STATION_ABBREVIATION_ENTRIES.map(

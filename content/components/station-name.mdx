@@ -31,7 +31,7 @@ import { StationName } from "@/components/tfl/station-name"
 
 Two-line results use a unitless line-height so wrap and scale-down stay clustered and vertically centered in the parent. Prefer not to override with rem `leading-*` on multiline labels.
 
-When paint wraps or abbreviates, the canonical name is exposed with `hidden="until-found"` so Cmd/Ctrl+F can match the full single-line form and reveal it under the label.
+When paint wraps or abbreviates, the canonical name is exposed with `hidden="until-found"` so Cmd/Ctrl+F can match the full single-line form and reveal it under the label. This is composed from the shared `FindableText` primitive (`@/components/tfl/findable-text`) — reach for it directly if you're building a new component with the same abbreviated/`<br>`-split paint problem; see [`.cursor/rules/findable-identity-text.mdc`](../../.cursor/rules/findable-identity-text.mdc).
 
 ## Composition
 

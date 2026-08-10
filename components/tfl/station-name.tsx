@@ -6,11 +6,11 @@ import {
   useMemo,
   useRef,
   useState,
-  type ClipboardEvent,
   type CSSProperties,
   type ReactNode,
 } from "react";
 import { cn } from "@/lib/utils";
+import { FindableText } from "@/components/tfl/findable-text";
 import {
   approximateStationMeasure,
   createCanvasStationMeasure,
@@ -94,52 +94,6 @@ const FindExpand = ({ text }: { text: string }) => (
     {text}
   </span>
 );
-
-const FIND_PHRASE_WRAPPER_CLASS =
-  "absolute left-1/2 top-full z-20 mt-1 -translate-x-1/2 whitespace-nowrap";
-const FIND_PHRASE_CHIP_CLASS =
-  "inline-block bg-foreground px-1.5 py-0.5 text-[11px] font-medium leading-none text-background";
-
-const escapeFindText = (value: string): string =>
-  value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-
-/**
- * Canonical name for Cmd/Ctrl+F when paint wraps (`<br>`) or abbreviates —
- * find-in-page cannot match a phrase across the `<br>` between visual lines.
- *
- * Three constraints shape this:
- * 1. React serialises `hidden` as a boolean (`hidden=""` → `display: none`,
- *    unsearchable), so `until-found` has to be written as raw markup.
- * 2. `until-found` is ignored on `display: inline` / `none`, hence `absolute`.
- * 3. Reveal walks a match's *ancestors*, so the text sits in a child.
- *
- * Firefox / Safari have no `until-found`; they do match `opacity: 0` text.
- */
-const FindPhrase = ({ text }: { text: string }) => {
-  const ref = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    if ("onbeforematch" in document.body) return;
-    const target = ref.current?.firstElementChild;
-    if (!(target instanceof HTMLElement)) return;
-    target.removeAttribute("hidden");
-    target.style.opacity = "0";
-  }, [text]);
-
-  return (
-    <span
-      ref={ref}
-      className="contents"
-      dangerouslySetInnerHTML={{
-        __html: `<span hidden="until-found" class="${FIND_PHRASE_WRAPPER_CLASS}"><span class="${FIND_PHRASE_CHIP_CLASS}">${escapeFindText(text)}</span></span>`,
-      }}
-    />
-  );
-};
 
 const renderFindableLine = (line: string): ReactNode[] =>
   line.split(/(\s+|&)/).map((part, index) => {
@@ -342,11 +296,6 @@ export const StationName = ({
     [copyName, result.lines],
   );
 
-  const handleCopy = (event: ClipboardEvent<HTMLSpanElement>) => {
-    event.preventDefault();
-    event.clipboardData.setData("text/plain", copyName);
-  };
-
   const textAlign =
     align === "center" ? "center" : align === "right" ? "right" : "left";
   const multiline = result.lines.length > 1;
@@ -360,8 +309,11 @@ export const StationName = ({
   );
 
   return (
-    <span
+    <FindableText
       ref={ref}
+      text={copyName}
+      aliases={extraFindAliases}
+      paintMatchesText={!paintDiffersFromCopy}
       className={cn(
         "relative inline-flex h-full min-h-0 w-full min-w-0 flex-col justify-center",
         !multiline && "leading-none",
@@ -375,13 +327,7 @@ export const StationName = ({
         fontSize: fontSizeProp != null ? `${fontSizeProp}px` : style?.fontSize,
         textAlign,
       }}
-      aria-label={copyName}
-      onCopy={handleCopy}
     >
-      {paintDiffersFromCopy ? <FindPhrase text={copyName} /> : null}
-      {extraFindAliases.map((alias) => (
-        <FindPhrase key={alias} text={alias} />
-      ))}
       <span
         className="inline-block w-full min-w-0"
         style={{
@@ -405,7 +351,7 @@ export const StationName = ({
           </Fragment>
         ))}
       </span>
-    </span>
+    </FindableText>
   );
 };
 

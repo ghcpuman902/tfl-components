@@ -36,6 +36,10 @@ Use `StationName` / `formatStationLabel` — never ad-hoc `<br>` or CSS wrapping
 
 Rules: break only between words; prefer the full name; never split a token; optional abbreviations only to fit; scale-down is last resort (`STATION_LABEL_MIN_SCALE = 0.75`).
 
+### Findable identity text
+
+When visible paint differs from the canonical name (abbreviation, `<br>`-split lines), wrap it in `FindableText` (`components/tfl/findable-text.tsx`) so Cmd/Ctrl+F and copy still resolve the full name — `StationName` already composes it. Plain CSS truncation doesn't need this; see [`.cursor/rules/findable-identity-text.mdc`](../.cursor/rules/findable-identity-text.mdc) for the full rule and anti-patterns.
+
 ### Arrivals board rhythm
 
 Shared rail/bus board: `registry/tfl/arrivals/arrivals-board.tsx`.  

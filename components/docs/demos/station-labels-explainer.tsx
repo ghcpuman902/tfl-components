@@ -9,7 +9,7 @@ import {
 } from "react";
 import { StationName } from "@/components/tfl/station-name";
 import { TFL_BLUE } from "@/lib/tfl/brand";
-import { STATION_ABBREVIATION_ENTRIES } from "@/lib/tfl/station-abbreviations";
+import { STATION_ABBREVIATION_TABLE } from "@/lib/tfl/station-abbreviations";
 import { cn } from "@/lib/utils";
 
 const WIDTH_DEMO_NAME = "London Liverpool Street";
@@ -125,20 +125,26 @@ export const AbbreviationDemo = () => {
         <thead>
           <tr className="border-b border-border text-muted-foreground">
             <th className="py-1.5 pr-6 font-medium">Full</th>
-            <th className="py-1.5 font-medium">Short</th>
+            <th className="py-1.5 pr-6 font-medium">Short</th>
+            <th className="py-1.5 pr-6 font-medium tabular-nums">Stations</th>
+            <th className="py-1.5 font-medium">Examples</th>
           </tr>
         </thead>
         <tbody>
-          {STATION_ABBREVIATION_ENTRIES.map((entry) => (
-            <tr key={entry.short} className="border-b border-border/60">
-              <td className="py-1.5 pr-6 text-foreground">{entry.full}</td>
-              <td className="py-1.5 font-medium text-foreground">{entry.short}</td>
+          {STATION_ABBREVIATION_TABLE.map((row) => (
+            <tr key={row.short} className="border-b border-border/60">
+              <td className="py-1.5 pr-6 text-foreground">{row.full}</td>
+              <td className="py-1.5 pr-6 font-medium text-foreground">
+                {row.short}
+              </td>
+              <td className="py-1.5 pr-6 tabular-nums text-foreground">
+                {row.count}
+              </td>
+              <td className="py-1.5 text-muted-foreground">
+                {row.examples.join(" · ")}
+              </td>
             </tr>
           ))}
-          <tr>
-            <td className="py-1.5 pr-6 text-foreground">and</td>
-            <td className="py-1.5 font-medium text-foreground">&amp;</td>
-          </tr>
         </tbody>
       </table>
 

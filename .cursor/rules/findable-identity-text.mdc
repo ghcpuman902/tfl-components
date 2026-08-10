@@ -1,0 +1,49 @@
+---
+description: When identity text (station/line/stop names) needs the find/copy primitive vs plain text
+globs: registry/tfl/**/*.tsx,components/tfl/**/*.tsx,lib/tfl/station-*.ts
+alwaysApply: false
+---
+
+# Findable identity text
+
+Shared primitive: [components/tfl/findable-text.tsx](../../components/tfl/findable-text.tsx). Canonical consumer: [components/tfl/station-name.tsx](../../components/tfl/station-name.tsx).
+
+## The rule
+
+If a component ever paints **characters that differ from the canonical name** — real abbreviation (`St` for `Street`), or a name split across a `<br>` — wrap the visible node in `FindableText`, or compose `StationName`, which already does this for station names.
+
+```tsx
+// ✅ GOOD — visible paint differs from canonical text (abbreviated / <br>-split)
+<FindableText text={fullLineName} paintMatchesText={false}>
+  <span>{abbreviatedLineName}</span>
+</FindableText>
+```
+
+`enableFind` defaults to **on**. If a caller disables it, say why in a comment — don't disable it to "simplify" a diff.
+
+## When you do *not* need this
+
+Plain CSS clipping — `truncate`, `line-clamp-*`, `overflow-hidden` + `text-overflow: ellipsis`, `whitespace-nowrap` — never touches the underlying DOM text. The browser already finds and copies the full string through the visual clip; `Ctrl+F` and `Ctrl+C` work correctly without any wrapper.
+
+```tsx
+// ✅ GOOD — CSS-only clipping, nothing to wrap
+<span className="truncate">{stop.name}</span>
+
+// ❌ BAD — defensive wrapping that fixes nothing and adds markup
+<FindableText text={stop.name}>
+  <span className="truncate">{stop.name}</span>
+</FindableText>
+```
+
+Do not retrofit `FindableText` onto surfaces using only CSS clipping — it's dead weight and conflicts with this repo's "keep changes small" convention (see [project.mdc](project.mdc)).
+
+## Why this exists
+
+Chrome's find-in-page cannot match a phrase across a `<br>`, and abbreviated characters are gone from the DOM outright — no CSS trick fixes either. `FindableText` exposes the canonical string via `hidden="until-found"`, re-hiding it a beat after a match (there's no native "find closed" event, so it restarts the countdown if the browser matches it again). See the component's own comments for the underlying constraints (React's boolean `hidden` typing, `until-found` requiring non-inline `display`, Firefox/Safari fallback).
+
+## Anti-patterns
+
+- Wrapping a plain `truncate`/`nowrap` label in `FindableText` "for consistency" when the DOM text is already the full string
+- Rolling a second `hidden="until-found"` implementation per component instead of composing the shared primitive
+- Disabling `enableFind` without a comment explaining why
+- Splitting a name across `<br>` or substituting abbreviated characters without wrapping in `FindableText`

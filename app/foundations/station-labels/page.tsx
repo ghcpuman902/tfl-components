@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  AccessibilityIcon,
+  ClipboardCopyIcon,
+  SearchIcon,
+  type LucideIcon,
+} from "lucide-react";
+import {
   AbbreviationDemo,
   CopyFindDemo,
   PlatformWidthDemo,
@@ -18,6 +24,28 @@ export const metadata: Metadata = {
     "How station names and platform chips shrink with width while copy, find, and screen readers keep the full name.",
 };
 
+const IDENTITY_CARDS: readonly {
+  icon: LucideIcon;
+  title: string;
+  body: string;
+}[] = [
+  {
+    icon: SearchIcon,
+    title: "Find",
+    body: "Browser find still matches the full station name when the on-screen label is abbreviated or wrapped.",
+  },
+  {
+    icon: ClipboardCopyIcon,
+    title: "Copy",
+    body: "Paste gets the complete name. No abbreviations, soft breaks, or leftover line splits.",
+  },
+  {
+    icon: AccessibilityIcon,
+    title: "Screen readers",
+    body: "Assistive tech always hears the full name in context, never a shortened or cryptic version.",
+  },
+];
+
 export default function StationLabelsFoundationPage() {
   const entry = getDocsEntry("station-labels");
   if (!entry) notFound();
@@ -31,27 +59,45 @@ export default function StationLabelsFoundationPage() {
           usedBy={getUsedBySlugs(entry.slug)}
         />
 
-        <section className="max-w-prose space-y-3">
+        <section className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
             No-compromise station name display
           </h2>
-          <p className="text-muted-foreground">
-            Station names are rendered to always remain accessible, understandable, and discoverable,
-            even when space is tight. Familiar patterns, such as abbreviations or double-line breaks,
-            let names fit into constrained layouts, but never at the cost of usability.
-            <br />
-            The intent: <br />
-            (1) Users should always be able to search station names by their full text in the browser.<br />
-            (2) Copying a station name returns the complete, unbroken name—never abbreviations or extra line breaks.<br />
-            (3) Screen readers always receive the full name in context, not a shortened or cryptic version.<br />
+          <p className="max-w-prose text-muted-foreground">
+            Labels can abbreviate or break across two lines when width is tight.
+            Find, copy, and screen readers still get the real name.
+          </p>
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {IDENTITY_CARDS.map(({ icon: Icon, title, body }) => (
+              <li
+                key={title}
+                className="relative overflow-hidden rounded-xl border border-border bg-card p-4"
+              >
+                <Icon
+                  className="pointer-events-none absolute -right-4 top-1/2 size-36 -translate-y-1/2 text-foreground opacity-[0.1]"
+                  strokeWidth={2.75}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                />
+                <div className="relative space-y-1 pr-10">
+                  <h3 className="font-medium text-foreground">{title}</h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {body}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <p className="max-w-prose text-sm text-muted-foreground">
             See{" "}
             <Link
               href="/primitives/station-name"
               className="text-foreground underline-offset-4 hover:underline"
             >
               StationName
-            </Link>
-            {" "}for implementation details.
+            </Link>{" "}
+            for implementation details.
           </p>
         </section>
    
