@@ -1,8 +1,6 @@
 /**
  * Single source for docs navigation, home catalog, and static params.
  * Groups follow frozen Stage 1 IA — docs/TARGET_ARCHITECTURE.md.
- * Existing page routes stay put until bulk migration; catalog group ids
- * already reflect target homes where classification is clear.
  */
 
 export type DocsGroupId =
@@ -12,6 +10,7 @@ export type DocsGroupId =
   | "primitives"
   | "foundations"
   | "maps"
+  | "blocks"
   | "tools"
   | "drafts";
 
@@ -20,7 +19,8 @@ export type DocsEntryKind =
   | "component"
   | "tool"
   | "placeholder"
-  | "draft";
+  | "draft"
+  | "block";
 
 /** Component layer for catalog badges — omit for start / tools / drafts indexes. */
 export type DocsEntryLayer = "primitive" | "data-aware";
@@ -65,7 +65,7 @@ export const DOCS_GROUPS: readonly DocsGroup[] = [
     id: "interfaces",
     title: "Interfaces",
     description:
-      "Data-aware components: get normalised data, render a useful transport UI.",
+      "Data-aware components: pass normalised data as props, render a useful transport UI.",
   },
   {
     id: "primitives",
@@ -86,6 +86,12 @@ export const DOCS_GROUPS: readonly DocsGroup[] = [
       "Geographic (real coordinates) and schematic/network (topology) — kept distinct.",
   },
   {
+    id: "blocks",
+    title: "Blocks",
+    description:
+      "Composed mini-apps (shadcn-style blocks) that demonstrate Interfaces + Primitives together.",
+  },
+  {
     id: "tools",
     title: "Tools",
     description:
@@ -100,7 +106,6 @@ export const DOCS_GROUPS: readonly DocsGroup[] = [
 ] as const;
 
 export const DOCS_ENTRIES: readonly DocsEntry[] = [
-  // —— Start ——
   {
     slug: "introduction",
     title: "Introduction",
@@ -119,15 +124,13 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     kind: "page",
     href: "/installation",
   },
-
-  // —— Explore ——
   {
     slug: "explore-index",
     title: "Explore overview",
     description:
-      "Placeholder: developer-facing TfL information model and relationships.",
+      "Developer-facing TfL information model and relationships.",
     group: "explore",
-    kind: "placeholder",
+    kind: "page",
     href: "/explore",
   },
   {
@@ -135,72 +138,57 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     title: "Browse lines",
     description: "Lines grouped by mode with links to route stations.",
     group: "explore",
-    kind: "tool",
-    href: "/tools/browse-lines",
+    kind: "page",
+    href: "/explore/lines",
   },
   {
     slug: "route-stations",
     title: "Route stations",
     description: "Stop sequence for one line and direction.",
     group: "explore",
-    kind: "tool",
-    href: "/tools/route-stations",
+    kind: "page",
+    href: "/explore/routes",
   },
-
-  // —— Interfaces (data-aware; routes unchanged until migration) ——
   {
     slug: "interfaces-index",
     title: "Interfaces overview",
     description:
-      "Placeholder: data-aware embeddable UIs organised by developer intent.",
+      "Data-aware embeddable UIs organised by developer intent.",
     group: "interfaces",
-    kind: "placeholder",
+    kind: "page",
     href: "/interfaces",
   },
   {
     slug: "tube-status-board",
     title: "Status board",
     description:
-      "Live tube and rail status with severity sorting and official line colours.",
+      "Tube and rail status from normalised line status data (data as props).",
     group: "interfaces",
     kind: "component",
-    href: "/components/tube-status-board",
+    href: "/interfaces/tube-status-board",
     registryName: "tube-status-board",
     registryUrl: `${REGISTRY_BASE}/tube-status-board.json`,
     layer: "data-aware",
   },
   {
-    slug: "live-arrivals-board",
-    title: "Live arrivals",
-    description: "Polling stop arrivals board for tube and rail stations.",
-    group: "interfaces",
-    kind: "component",
-    href: "/components/live-arrivals-board",
-    registryName: "live-arrivals-board",
-    registryUrl: `${REGISTRY_BASE}/live-arrivals-board.json`,
-    layer: "data-aware",
-  },
-  {
-    slug: "bus-arrivals-board",
-    title: "Bus arrivals",
+    slug: "arrivals-board",
+    title: "Arrivals",
     description:
-      "Nearby bus stops and live arrivals with route-number chips.",
+      "Unified arrivals board — rail or bus presentation from the same list model.",
     group: "interfaces",
     kind: "component",
-    href: "/components/bus-arrivals-board",
-    registryName: "bus-arrivals-board",
-    registryUrl: `${REGISTRY_BASE}/bus-arrivals-board.json`,
+    href: "/interfaces/arrivals-board",
+    registryName: "arrivals-board",
+    registryUrl: `${REGISTRY_BASE}/arrivals-board.json`,
     layer: "data-aware",
   },
-
-  // —— Primitives ——
   {
     slug: "primitives-index",
     title: "Primitives overview",
     description:
-      "Placeholder: discoverable rendering primitives for fine-grained control.",
+      "Discoverable rendering primitives for fine-grained control.",
     group: "primitives",
-    kind: "placeholder",
+    kind: "page",
     href: "/primitives",
   },
   {
@@ -210,7 +198,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
       "Molecular TfL strip — StraightStrip / BranchStrip with label recipes, closures, and journey helpers.",
     group: "primitives",
     kind: "component",
-    href: "/components/line-strip",
+    href: "/primitives/line-strip",
     registryName: "line-strip",
     registryUrl: `${REGISTRY_BASE}/line-strip.json`,
     layer: "primitive",
@@ -222,20 +210,18 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
       "Atomic branched strip — lane×pos schematics with SVG geometry and StationName labels.",
     group: "primitives",
     kind: "component",
-    href: "/components/branch-strip",
+    href: "/primitives/branch-strip",
     registryName: "line-strip",
     registryUrl: `${REGISTRY_BASE}/line-strip.json`,
     layer: "primitive",
   },
-
-  // —— Foundations ——
   {
     slug: "foundations-index",
     title: "Foundations overview",
     description:
-      "Placeholder: colours, typography, identity, roundel, and licensing.",
+      "Colours, typography, identity, roundel, and licensing.",
     group: "foundations",
-    kind: "placeholder",
+    kind: "page",
     href: "/foundations",
   },
   {
@@ -245,7 +231,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
       "Env-gated TfL roundel with mode presets and colour customisation.",
     group: "foundations",
     kind: "component",
-    href: "/components/tfl-roundel",
+    href: "/foundations/tfl-roundel",
     registryName: "tfl-roundel",
     registryUrl: `${REGISTRY_BASE}/tfl-roundel.json`,
     layer: "primitive",
@@ -257,49 +243,63 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
       "Official TfL line colour badges and colour bars with dark-mode outlines.",
     group: "foundations",
     kind: "component",
-    href: "/components/line-badge",
+    href: "/foundations/line-badge",
     registryName: "line-badge",
     registryUrl: `${REGISTRY_BASE}/line-badge.json`,
     layer: "primitive",
   },
-
-  // —— Maps ——
   {
     slug: "maps-index",
     title: "Maps overview",
     description:
-      "Placeholder: geographic vs schematic/network — two different map concepts.",
+      "Geographic vs schematic/network — two different map concepts.",
     group: "maps",
-    kind: "placeholder",
+    kind: "page",
     href: "/maps",
   },
   {
     slug: "maps-geographic",
     title: "Geographic maps",
     description:
-      "Placeholder: real coordinates, GeoJSON, provider-independent geography.",
+      "MapLibre placeholder over vendored OSM transit geometry — Tube, Elizabeth, Overground, DLR, Tram.",
     group: "maps",
-    kind: "placeholder",
+    kind: "page",
     href: "/maps/geographic",
   },
   {
     slug: "maps-schematic",
     title: "Schematic & network",
     description:
-      "Placeholder: topology, line diagrams, branches, interchanges.",
+      "Topology overview — links to line/branch strip primitives.",
     group: "maps",
-    kind: "placeholder",
+    kind: "page",
     href: "/maps/schematic",
   },
-
-  // —— Tools ——
+  {
+    slug: "blocks-index",
+    title: "Blocks overview",
+    description:
+      "Composed mini-apps outside the component catalog.",
+    group: "blocks",
+    kind: "page",
+    href: "/blocks",
+  },
+  {
+    slug: "week-ahead",
+    title: "Week ahead",
+    description:
+      "Block composing status interpretation with schematic line strips.",
+    group: "blocks",
+    kind: "block",
+    href: "/blocks/week-ahead",
+  },
   {
     slug: "tools-index",
     title: "Tools overview",
     description:
-      "Placeholder: playgrounds that meet the inspect/test/tune/debug criterion.",
+      "Playgrounds that meet the inspect/test/tune/debug criterion.",
     group: "tools",
-    kind: "placeholder",
+    kind: "page",
     href: "/tools",
   },
   {
@@ -311,15 +311,13 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     kind: "tool",
     href: "/tools/typography",
   },
-
-  // —— Drafts ——
   {
     slug: "drafts-index",
     title: "Drafts overview",
     description:
-      "Placeholder: incubation area — experimental work until promotion criteria are met.",
+      "Incubation area — experimental work until promotion criteria are met.",
     group: "drafts",
-    kind: "placeholder",
+    kind: "page",
     href: "/drafts",
   },
 ] as const;
@@ -351,13 +349,13 @@ export const layerBadgeLabel = (
 ): "Primitive" | "Data-aware" =>
   layer === "primitive" ? "Primitive" : "Data-aware";
 
-/** Home catalog: skip Start (covered by intro) and pure placeholder-only noise if desired. */
 export const HOME_CATALOG_GROUPS: readonly DocsGroupId[] = [
   "explore",
   "interfaces",
   "primitives",
   "foundations",
   "maps",
+  "blocks",
   "tools",
   "drafts",
 ] as const;

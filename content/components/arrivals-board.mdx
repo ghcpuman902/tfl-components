@@ -1,0 +1,51 @@
+## Getting the data
+
+Arrivals come from `tfl-ts` stop-point arrivals (rail) or bus stop arrivals. Prefer Server Actions so keys stay on the server. Map results into `ArrivalRow[]` and pass them as `data`.
+
+Rail and bus share one board — domain differences are data shape + `busStyle` chip treatment, not two products.
+
+## Render
+
+```tsx
+import { ArrivalsBoard } from "@/components/tfl/arrivals/arrivals-board"
+
+export default function Page({ rows }) {
+  return (
+    <ArrivalsBoard
+      data={rows}
+      stopName="Oxford Circus"
+      stopPointId="940GZZLUOXC"
+    />
+  )
+}
+```
+
+## Variations
+
+### Rail line colours
+
+Omit `busStyle` (or set `false`) so chips use `getLineCssProps`.
+
+### Bus route numbers
+
+Set `busStyle: true` on each row for high-contrast route-number chips.
+
+### Polling
+
+Keep polling outside the board (timer + Server Action), then update `data`. The optional `statusLabel` prop can show poll metadata.
+
+Stop discovery / geolocation for buses is composition chrome — treat it as a Block or app shell, not a second arrivals component.
+
+## Behaviour
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `data` | `readonly ArrivalRow[]` | **Required.** Normalised arrival rows. |
+| `stopName` | `string` | Header stop name. |
+| `stopPointId` | `string` | Optional ID shown in the header. |
+| `loading` / `error` | … | Loading and error presentation. |
+| `statusLabel` | `string` | Optional poll / refresh caption. |
+
+## Underlying primitives
+
+Line colour chips reuse Foundations colour helpers via `tfl-ts` when not `busStyle`.

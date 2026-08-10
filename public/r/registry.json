@@ -95,7 +95,7 @@
       "name": "tube-status-board",
       "type": "registry:block",
       "title": "Tube Status Board",
-      "description": "Live tube/rail status board with severity sorting and official line colours.",
+      "description": "Tube/rail status board — pass normalised tfl-ts line status rows as data.",
       "dependencies": [
         "tfl-ts",
         "lucide-react"
@@ -112,9 +112,29 @@
           "target": "components/tfl/status/tube-status-board.tsx"
         },
         {
-          "path": "lib/tfl/client.ts",
+          "path": "lib/tfl/status-types.ts",
           "type": "registry:lib",
-          "target": "lib/tfl/client.ts"
+          "target": "lib/tfl/status-types.ts"
+        }
+      ]
+    },
+    {
+      "name": "arrivals-board",
+      "type": "registry:component",
+      "title": "Arrivals Board",
+      "description": "Unified arrivals list — pass ArrivalRow[] as data (rail or busStyle chips).",
+      "dependencies": [
+        "tfl-ts",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "skeleton"
+      ],
+      "files": [
+        {
+          "path": "registry/tfl/arrivals/arrivals-board.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/arrivals-board.tsx"
         }
       ]
     },
@@ -160,19 +180,25 @@
       "name": "live-arrivals-board",
       "type": "registry:block",
       "title": "Live Arrivals Board",
-      "description": "Polling tube/rail stop arrivals board with official line colours.",
+      "description": "Polling helper that feeds ArrivalsBoard with stop arrivals data.",
       "dependencies": [
         "tfl-ts",
         "lucide-react"
       ],
       "registryDependencies": [
-        "skeleton"
+        "skeleton",
+        "arrivals-board"
       ],
       "files": [
         {
           "path": "registry/tfl/arrivals/live-arrivals-board.tsx",
           "type": "registry:component",
           "target": "components/tfl/arrivals/live-arrivals-board.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/arrivals-board.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/arrivals-board.tsx"
         },
         {
           "path": "lib/tfl/live-arrivals-action.ts",

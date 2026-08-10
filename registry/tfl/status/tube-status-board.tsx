@@ -1,8 +1,6 @@
-import { type ReactNode, Suspense } from "react";
+import { type ReactNode } from "react";
 import Link from "next/link";
-import { cacheLife, cacheTag } from "next/cache";
 import {
-  sortLinesBySeverityAndOrder,
   getSeverityClasses,
   getLineCssProps,
   getLineInlineStyles,
@@ -13,23 +11,22 @@ import { ExternalLink, Package, TrainFrontTunnel } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LineColorBar } from "@/components/tfl/brand/line-badge";
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
-import { getTflClient } from "@/lib/tfl/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { StatusLine } from "@/lib/tfl/status-types";
 
-interface Props {
+export type { StatusLine } from "@/lib/tfl/status-types";
+
+type Props = {
+  /** Normalised line status rows from `tfl-ts` (or fixtures). Required. */
+  data: readonly StatusLine[];
   children?: ReactNode;
   /** When true, omit the page header (useful inside a layout that already has one). */
   hideHeader?: boolean;
-  /**
-   * Fetch status for these line IDs in one request.
-   * When omitted, loads all tube / Elizabeth / DLR / tram / Overground modes.
-   */
-  lineIds?: readonly string[];
-}
+};
 
 /**
- * Full Underground + Elizabeth — the default board set.
- * Omit `lineIds` on the board to also include DLR, tram, and Overground.
+ * Full Underground + Elizabeth — common curated subset for demos / Blocks.
+ * Fetch with `getCachedLineStatuses(DEFAULT_STATUS_LINE_IDS)` in the app layer.
  */
 export const DEFAULT_STATUS_LINE_IDS = [
   "bakerloo",
@@ -46,9 +43,6 @@ export const DEFAULT_STATUS_LINE_IDS = [
   "waterloo-city",
 ] as const;
 
-/** Approximate tile count when fetching all tube/rail modes (no `lineIds`). */
-const ALL_MODES_SKELETON_COUNT = 20;
-
 const darkReadableTextClass = "tfl-dark-line-text";
 
 const stripStatusReason = (reason: string, lineName?: string) =>
@@ -58,22 +52,6 @@ const stripStatusReason = (reason: string, lineName?: string) =>
       /^(Hammersmith and City Line: )|(London Overground: )|(Docklands Light Railway: )\s*/,
       "",
     );
-
-async function getCachedLineStatuses(lineIds?: readonly string[]) {
-  "use cache";
-  cacheLife({ revalidate: 60 });
-  cacheTag("tfl-line-status");
-
-  const client = getTflClient();
-  const lineStatuses = await client.line.getStatus(
-    lineIds && lineIds.length > 0
-      ? { lineIds: [...lineIds] }
-      : {
-          modes: ["tube", "elizabeth-line", "dlr", "tram", "overground"],
-        },
-  );
-  return sortLinesBySeverityAndOrder(lineStatuses);
-}
 
 /** Static board chrome — no status data required. */
 export const TubeStatusBoardHeader = () => (
@@ -115,20 +93,71 @@ export const TubeStatusBoardHeader = () => (
   </div>
 );
 
-async function TubeStatusBoardBody({
+type SkeletonProps = {
+  lineCount?: number;
+};
+
+export const TubeStatusBoardSkeleton = ({
+  lineCount = DEFAULT_STATUS_LINE_IDS.length,
+}: SkeletonProps) => (
+  <div className="flex w-full flex-col gap-6" aria-busy aria-label="Loading line status">
+    <div>
+      <h2 className="mb-4 text-xl font-semibold">Service Disruptions</h2>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-col gap-3 border border-border bg-muted p-4 dark:bg-card">
+          <Skeleton className="h-6 w-28" />
+          <Skeleton className="h-[6px] w-full" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-16 w-full" />
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h2 className="mb-4 text-xl font-semibold">Good Service</h2>
+      <div className="grid grid-cols-2 justify-items-stretch gap-4 md:grid-cols-3 lg:grid-cols-5">
+        {Array.from({ length: lineCount }).map((_, i) => (
+          <div
+            key={i}
+            className="flex flex-col border border-border bg-muted p-3 dark:bg-card"
+          >
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="mt-2 h-[6px] w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div className="border-t pt-4 text-center text-sm text-muted-foreground">
+      <p className="text-balance">
+        Data from Transport for London via{" "}
+        <span className="text-blue-500">tfl-ts</span>. Pass normalised rows as{" "}
+        <code className="text-xs">data</code>.
+      </p>
+    </div>
+  </div>
+);
+
+/**
+ * Data-aware status board — pass normalised `tfl-ts` line status rows as `data`.
+ * Fetching belongs in the app / docs / Block layer (see `getCachedLineStatuses`).
+ */
+export const TubeStatusBoard = ({
+  data,
+  hideHeader = false,
   children,
-  lineIds,
-}: Omit<Props, "hideHeader">) {
-  const sortedLineStatuses = await getCachedLineStatuses(lineIds);
-  const disruptedLines = sortedLineStatuses.filter(
+}: Props) => {
+  const disruptedLines = data.filter(
     (line) => !isNormalService(line.lineStatuses ?? []),
   );
-  const goodServiceLines = sortedLineStatuses.filter((line) =>
+  const goodServiceLines = data.filter((line) =>
     isNormalService(line.lineStatuses ?? []),
   );
 
   return (
-    <>
+    <div className="mt-4 flex w-full flex-col gap-6">
+      {!hideHeader && <TubeStatusBoardHeader />}
+
       {disruptedLines.length > 0 && (
         <div>
           <h2 className="mb-4 text-xl font-semibold">Service Disruptions</h2>
@@ -139,7 +168,7 @@ async function TubeStatusBoardBody({
 
               return (
                 <div
-                  key={line.id}
+                  key={line.id ?? line.name}
                   className="flex flex-col gap-0 border border-border bg-muted p-4 dark:bg-card"
                 >
                   <h3
@@ -202,7 +231,7 @@ async function TubeStatusBoardBody({
 
             return (
               <div
-                key={line.id}
+                key={line.id ?? line.name}
                 className="flex flex-col border border-border bg-muted p-3 transition-colors hover:bg-muted/80 dark:bg-card dark:hover:bg-accent/50"
               >
                 <div className="flex items-start justify-between">
@@ -254,84 +283,11 @@ async function TubeStatusBoardBody({
           >
             tfl-ts
           </Link>
-          . Cached ~60s via Next.js Cache Components.
+          . Pass normalised rows as <code className="text-xs">data</code>.
         </p>
       </div>
 
       {children}
-    </>
+    </div>
   );
-}
-
-type SkeletonProps = {
-  /** Number of good-service tile placeholders (match `lineIds.length` when set). */
-  lineCount?: number;
 };
-
-/**
- * Body-only skeleton for Suspense / `loading.tsx`.
- * Header/subheader stay outside — they need no status data.
- */
-export const TubeStatusBoardSkeleton = ({
-  lineCount = DEFAULT_STATUS_LINE_IDS.length,
-}: SkeletonProps) => (
-  <div className="flex w-full flex-col gap-6" aria-busy aria-label="Loading line status">
-    <div>
-      <h2 className="mb-4 text-xl font-semibold">Service Disruptions</h2>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <div className="flex flex-col gap-3 border border-border bg-muted p-4 dark:bg-card">
-          <Skeleton className="h-6 w-28" />
-          <Skeleton className="h-[6px] w-full" />
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-16 w-full" />
-        </div>
-      </div>
-    </div>
-
-    <div>
-      <h2 className="mb-4 text-xl font-semibold">Good Service</h2>
-      <div className="grid grid-cols-2 justify-items-stretch gap-4 md:grid-cols-3 lg:grid-cols-5">
-        {Array.from({ length: lineCount }).map((_, i) => (
-          <div
-            key={i}
-            className="flex flex-col border border-border bg-muted p-3 dark:bg-card"
-          >
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="mt-2 h-[6px] w-full" />
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <div className="border-t pt-4 text-center text-sm text-muted-foreground">
-      <p className="text-balance">
-        Data from Transport for London via{" "}
-        <span className="text-blue-500">tfl-ts</span>. Cached ~60s via Next.js
-        Cache Components.
-      </p>
-    </div>
-  </div>
-);
-
-/** Live tube/rail status board. Status fetch is cached ~60s (`use cache`). */
-export function TubeStatusBoard({
-  hideHeader = false,
-  lineIds,
-  children,
-}: Props) {
-  const skeletonCount =
-    lineIds && lineIds.length > 0
-      ? lineIds.length
-      : ALL_MODES_SKELETON_COUNT;
-
-  return (
-    <div className="mt-4 flex w-full flex-col gap-6">
-      {!hideHeader && <TubeStatusBoardHeader />}
-      <Suspense
-        fallback={<TubeStatusBoardSkeleton lineCount={skeletonCount} />}
-      >
-        <TubeStatusBoardBody lineIds={lineIds}>{children}</TubeStatusBoardBody>
-      </Suspense>
-    </div>
-  );
-}

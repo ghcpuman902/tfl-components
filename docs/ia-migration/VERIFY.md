@@ -1,26 +1,30 @@
-# Post-scaffold verification
+# Post-migration verification (batches executed)
 
-Compared to [BASELINE.md](./BASELINE.md) after Stage 1 specs + IA scaffold (no bulk page migration).
+Compared to [BASELINE.md](./BASELINE.md) after mechanical IA moves + data-props / arrivals converge / Blocks.
 
-| Check | Baseline | After scaffold |
-|-------|----------|----------------|
+| Check | Baseline | After |
+|-------|----------|-------|
 | `pnpm typecheck` | 0 | 0 |
 | `pnpm lint` | 0 | 0 |
-| `pnpm test` | 0 | 0 (21 pass) |
-| `pnpm build` | 0 (17 paths) | 0 (**26** paths) |
+| `pnpm test` | 0 (21) | 0 (21) |
+| `pnpm build` | 0 | 0 |
 
-## New routes (expected)
+## New / moved routes
 
-`/explore`, `/interfaces`, `/primitives`, `/foundations`, `/maps`, `/maps/geographic`, `/maps/schematic`, `/tools`, `/drafts`
+- `/explore/lines`, `/explore/routes`
+- `/interfaces/tube-status-board`, `/interfaces/arrivals-board`
+- `/primitives/line-strip`, `/primitives/branch-strip`
+- `/foundations/tfl-roundel`, `/foundations/line-badge`
+- `/blocks`, `/blocks/week-ahead`
+- `/maps/geographic` (MapLibre + OSM data), `/maps/schematic` (cross-links)
 
-## Existing routes retained
+## Intentional behaviour
 
-`/`, `/installation`, `/components/[slug]` (all prior items), `/tools/browse-lines`, `/tools/route-stations`, `/tools/typography`, `/line-badge`
-
-## Intentional route behaviour change
-
-- `/explore` no longer redirects to `/tools/browse-lines` (serves Explore placeholder). See [CONFLICTS.md](./CONFLICTS.md) C1.
+- `TubeStatusBoard` requires `data` (fetch via `getCachedLineStatuses` in app/docs)
+- Arrivals converged on `ArrivalsBoard` + `data` props
+- J4: Primitives primary; Maps/Schematic separate with links
+- Old `/components/*` and `/tools/browse-lines|route-stations` redirect to new homes
 
 ## Registry
 
-No changes to `public/r/*.json` or registry item names in this pass.
+Public install names kept (`tube-status-board`, `live-arrivals-board`, `bus-arrivals-board`). New `arrivals-board` item for the converged presentational board. `TubeStatusBoard` ships with `status-types` (data-as-props; no in-component fetch).

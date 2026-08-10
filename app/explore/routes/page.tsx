@@ -70,7 +70,7 @@ async function RouteFromParams({ searchParams }: PageProps) {
         <p className="mt-3 text-sm text-muted-foreground">
           Direction:{" "}
           <Link
-            href={`/tools/route-stations?lineId=${lineId}&direction=inbound`}
+            href={`/explore/routes?lineId=${lineId}&direction=inbound`}
             className={
               direction === "inbound"
                 ? "font-semibold text-foreground"
@@ -81,7 +81,7 @@ async function RouteFromParams({ searchParams }: PageProps) {
           </Link>
           {" · "}
           <Link
-            href={`/tools/route-stations?lineId=${lineId}&direction=outbound`}
+            href={`/explore/routes?lineId=${lineId}&direction=outbound`}
             className={
               direction === "outbound"
                 ? "font-semibold text-foreground"
@@ -91,7 +91,7 @@ async function RouteFromParams({ searchParams }: PageProps) {
             outbound
           </Link>
           {" · "}
-          <Link href="/tools/browse-lines" className="underline">
+          <Link href="/explore/lines" className="underline">
             all lines
           </Link>
         </p>
@@ -128,7 +128,7 @@ async function RouteFromParams({ searchParams }: PageProps) {
 export default async function RouteStationsPage({ searchParams }: PageProps) {
   const entry = getDocsEntry("route-stations")!;
   const { default: MDXPage } = await import(
-    "@/content/tools/route-stations.mdx"
+    "@/content/explore/route-stations.mdx"
   );
 
   return (

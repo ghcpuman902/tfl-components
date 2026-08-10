@@ -1,58 +1,51 @@
 ## Getting the data
 
-Status comes from `tfl-ts` via `line.getStatus`. You can fetch yourself:
+Status comes from `tfl-ts` via `line.getStatus`. Fetch in your app (or use the site helper), then pass rows in:
 
 ```ts
 import TflClient from "tfl-ts"
+import { sortLinesBySeverityAndOrder } from "tfl-ts"
 
 const tfl = new TflClient({
   appId: process.env.TFL_APP_ID!,
   appKey: process.env.TFL_APP_KEY!,
 })
 
-const lineStatuses = await tfl.line.getStatus({
-  modes: ["tube", "elizabeth-line", "dlr", "tram", "overground"],
-})
+const data = sortLinesBySeverityAndOrder(
+  await tfl.line.getStatus({
+    modes: ["tube", "elizabeth-line", "dlr", "tram", "overground"],
+  }),
+)
 ```
 
-Or let the board fetch for you through `getTflClient()` (recommended path today). Prefetch-as-props APIs may land later; the board remains the same concept either way.
+On this docs site, `getCachedLineStatuses` in `@/lib/tfl/status-data` wraps the same idea with Cache Components.
 
 ## Render
 
 ```tsx
 import { TubeStatusBoard } from "@/components/tfl/status/tube-status-board"
 
-export default function Page() {
-  return <TubeStatusBoard />
+export default function Page({ data }) {
+  return <TubeStatusBoard data={data} />
 }
 ```
 
-Omit `lineIds` to load all tube / Elizabeth / DLR / tram / Overground modes.
+The board does **not** fetch. Pass normalised line status rows as `data`.
 
 ## Variations
 
-### Batch by line IDs
-
-`DEFAULT_STATUS_LINE_IDS` is all 11 Underground lines plus Elizabeth (12 total):
+### Curated Underground + Elizabeth IDs
 
 ```tsx
 import {
   DEFAULT_STATUS_LINE_IDS,
   TubeStatusBoard,
 } from "@/components/tfl/status/tube-status-board"
+import { getCachedLineStatuses } from "@/lib/tfl/status-data"
 
-export default function Page() {
-  return <TubeStatusBoard lineIds={DEFAULT_STATUS_LINE_IDS} />
-}
-```
-
-### Custom subset
-
-```tsx
-const MY_LINES = ["central", "northern", "victoria", "jubilee"] as const
-
-export default function Page() {
-  return <TubeStatusBoard lineIds={MY_LINES} />
+export default async function Page() {
+  const data = await getCachedLineStatuses(DEFAULT_STATUS_LINE_IDS)
+  return <TubeStatusBoard data={data} />
 }
 ```
 
@@ -64,19 +57,14 @@ Pass `hideHeader` when a parent layout already provides a title.
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `lineIds` | `readonly string[]` | Optional. When set, one batched status request for these IDs. |
+| `data` | `readonly StatusLine[]` | **Required.** Normalised line status rows. |
 | `hideHeader` | `boolean` | Omit the board header when a parent layout already has one. |
 | `children` | `ReactNode` | Optional slot below the status list. |
 
-- Severity sorting and official colours come from `tfl-ts`.
-- Status is cached for ~60s via Next.js Cache Components.
-- Covers Underground, Overground, Elizabeth line, DLR, and Tram — the tube & rail family.
+- Severity sorting should happen before pass-in (e.g. `sortLinesBySeverityAndOrder`).
+- Official colours come from `tfl-ts` CSS helpers inside the board.
 
 ## Underlying primitives
 
-This board composes:
-
-- [Line colours & badges](/components/line-badge) — chips and colour bars
-- [Roundel](/components/tfl-roundel) — header mark
-
-Use those primitives directly when you need a custom layout but the same TfL look.
+- [Line colours & badges](/foundations/line-badge)
+- [Roundel](/foundations/tfl-roundel)

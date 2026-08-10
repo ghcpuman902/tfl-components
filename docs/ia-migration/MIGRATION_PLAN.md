@@ -100,17 +100,19 @@ Frozen IA: [../TARGET_ARCHITECTURE.md](../TARGET_ARCHITECTURE.md)
 
 ---
 
-## Batch 6 — Judgement-heavy (human review required — do not auto-execute)
+## Batch 6 — Judgement items (RESOLVED 2026-08-10)
 
-| Item | Decision needed | Options |
-|------|-----------------|---------|
-| J1 | Week-ahead on home | Promote Interface + keep on `/`; extract Tool; or **DRAFT** until API stable |
-| J2 | Bus arrivals vs live arrivals | Keep two Interfaces with shared Arrivals intent docs; or converge API later |
-| J3 | Prefetch-as-props on boards | New `data=` APIs vs document fetch-inside as primary |
-| J4 | Line-strip molecular vs atomic docs | Single page vs separate primitive pages for StraightStrip/BranchStrip |
-| J5 | `/components/*` URL permanence | Forever aliases vs migrate public docs URLs |
+See [DECISIONS.md](./DECISIONS.md). Summary:
 
-Each needs human approval before code.
+| Item | Decision | Implementation note |
+|------|----------|---------------------|
+| J1 Week-ahead | **Blocks** (shadcn-style composition) | Add Blocks group; move/compose week-ahead as a Block |
+| J2 Arrivals | **Converge** one Arrivals interface | Domain differences = data + rerender, not two products |
+| J3 Boards | **`data` props**; fetch outside component | Breaking API vs today’s fetch-inside boards |
+| J4 Line/branch strip | Open — recommend Primitives primary | Confirm before large moves |
+| J5 `/components/*` | **No forever aliases required** | Prefer clean IA URLs |
+
+Do not treat Batch 6 as blocked on review anymore except **J4 confirmation**.
 
 ---
 
@@ -120,29 +122,19 @@ Move unfinished experiments into `/drafts/...` with status banners. Do not inven
 
 ---
 
-## Per-batch verification template
+## Suggested execution order (updated)
 
-1. `pnpm typecheck`  
-2. `pnpm lint`  
-3. `pnpm test`  
-4. `pnpm build` — compare route list to baseline + expected new/changed routes  
-5. Manual: sidebar groups; one Interface; one Foundation; Explore; Maps split; Drafts  
-6. Confirm `public/r/*.json` and registry names unchanged unless batch says otherwise  
-
-Classify failures as: pre-existing (baseline) · expected route change · regression.
+1. Recorded decisions + geographic data/MapLibre placeholder (C3)  
+2. Mechanical batches `1 → 2 → 3 → 4 → 5` (URL renames allowed per J5)  
+3. Blocks group + week-ahead as Block (J1)  
+4. Arrivals convergence + `data` props (J2, J3, C6) — judgement-heavy code  
+5. J4 confirmation then Primitives ↔ Schematic linking  
+6. Batch 7 as needed  
 
 ---
 
-## Explicit non-goals until approved
+## Explicit non-goals until scheduled
 
-- Bulk rewrite of board components  
-- Changing shadcn registry item names or JSON URLs  
-- Implementing geographic map product  
-- Building full Explorer information model  
-- Editing frozen Stage 1 specs to match folders  
-
----
-
-## Suggested execution order after approval
-
-`1 → 2 → 3 → 4 → 5`, then schedule `6` as separate RFCs, then `7` as needed.
+- Full Explorer information model  
+- Full geographic product beyond placeholder + vendored geometry  
+- Silently editing frozen principles without recording amendments (Blocks is recorded)

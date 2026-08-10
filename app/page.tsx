@@ -25,6 +25,17 @@ export default function HomePage() {
       </div>
 
       <div className="mx-auto w-full max-w-5xl space-y-12">
+        <p className="text-sm text-muted-foreground">
+          Above: the{" "}
+          <a
+            href="/blocks/week-ahead"
+            className="text-primary underline-offset-4 hover:underline"
+          >
+            Week ahead
+          </a>{" "}
+          Block — status data composed with schematic line strips.
+        </p>
+
         <section className="border-t border-border pt-8">
           <Suspense fallback={null}>
             <IntroContent />
@@ -36,7 +47,8 @@ export default function HomePage() {
             <h2 className="text-2xl font-semibold tracking-tight">Catalog</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Organised by developer intent (frozen Stage 1 IA): Explore,
-              Interfaces, Primitives, Foundations, Maps, Tools, and Drafts.
+              Interfaces, Primitives, Foundations, Maps, Blocks, Tools, and
+              Drafts.
             </p>
           </div>
           <DocsCatalogGrid />

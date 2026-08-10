@@ -52,7 +52,7 @@ async function BrowseLinesBody() {
               return (
                 <li key={line.id}>
                   <Link
-                    href={`/tools/route-stations?lineId=${encodeURIComponent(line.id ?? "")}`}
+                    href={`/explore/routes?lineId=${encodeURIComponent(line.id ?? "")}`}
                     className="block rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/50"
                   >
                     <span
@@ -81,7 +81,7 @@ async function BrowseLinesBody() {
 export default async function BrowseLinesPage() {
   const entry = getDocsEntry("browse-lines")!;
   const { default: MDXPage } = await import(
-    "@/content/tools/browse-lines.mdx"
+    "@/content/explore/browse-lines.mdx"
   );
 
   return (

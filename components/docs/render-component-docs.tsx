@@ -3,20 +3,21 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { getComponentEntries, getDocsEntry } from "@/lib/docs-catalog";
+import { getDocsEntry, type DocsEntry } from "@/lib/docs-catalog";
 import { loadComponentDemo } from "@/lib/load-component-demo";
 
-type PageProps = {
-  params: Promise<{ slug: string }>;
+type RelatedLink = { href: string; label: string };
+
+type RenderComponentDocsOptions = {
+  /** Catalog slug (also MDX / demo filename). */
+  slug: string;
+  /** Extra related links under the MDX body. */
+  relatedLinks?: readonly RelatedLink[];
 };
 
-export const generateStaticParams = () =>
-  getComponentEntries().map((entry) => ({ slug: entry.slug }));
-
-export const generateMetadata = async ({
-  params,
-}: PageProps): Promise<Metadata> => {
-  const { slug } = await params;
+export const componentDocsMetadata = async (
+  slug: string,
+): Promise<Metadata> => {
   const entry = getDocsEntry(slug);
   if (!entry || entry.kind !== "component") {
     return { title: "Not found" };
@@ -27,8 +28,10 @@ export const generateMetadata = async ({
   };
 };
 
-export default async function ComponentDocsPage({ params }: PageProps) {
-  const { slug } = await params;
+export const renderComponentDocs = async ({
+  slug,
+  relatedLinks = [],
+}: RenderComponentDocsOptions) => {
   const entry = getDocsEntry(slug);
   if (!entry || entry.kind !== "component") notFound();
 
@@ -45,18 +48,13 @@ export default async function ComponentDocsPage({ params }: PageProps) {
   return (
     <DocsReadableWidth>
       <article className="space-y-10">
-        <DocsPageHeader entry={entry} />
+        <DocsPageHeader entry={entry as DocsEntry} />
 
         {Demo ? (
           <section className="space-y-3" aria-labelledby="preview-heading">
             <h2 id="preview-heading" className="text-lg font-semibold">
               Preview
             </h2>
-            {/*
-              Cache Components (`instant` shell): dynamically imported demos pull
-              client modules (StationName, interactive controls). Keep them out of
-              the static shell so client reference factories resolve under Suspense.
-            */}
             <Suspense
               fallback={
                 <div
@@ -77,7 +75,30 @@ export default async function ComponentDocsPage({ params }: PageProps) {
             </Suspense>
           </section>
         ) : null}
+
+        {relatedLinks.length > 0 ? (
+          <section
+            className="border-t border-border pt-8"
+            aria-labelledby="related-heading"
+          >
+            <h2 id="related-heading" className="text-lg font-semibold">
+              Related
+            </h2>
+            <ul className="mt-3 list-inside list-disc text-sm text-muted-foreground">
+              {relatedLinks.map((link) => (
+                <li key={link.href}>
+                  <a
+                    href={link.href}
+                    className="text-primary underline-offset-4 hover:underline"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
       </article>
     </DocsReadableWidth>
   );
-}
+};

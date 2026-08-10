@@ -5,33 +5,42 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   experimental: {
-    // Built-in GFM (tables, strikethrough). remark plugins ignored while mdxRs is on.
     mdxRs: {
       mdxType: "gfm",
     },
   },
   async redirects() {
     return [
-      { source: "/status", destination: "/components/tube-status-board", permanent: true },
-      { source: "/batch-status", destination: "/components/tube-status-board", permanent: true },
-      { source: "/arrivals", destination: "/components/bus-arrivals-board", permanent: true },
-      { source: "/arrivals/live", destination: "/components/live-arrivals-board", permanent: true },
-      { source: "/line-badge", destination: "/components/line-badge", permanent: true },
-      { source: "/roundel", destination: "/components/tfl-roundel", permanent: true },
-      { source: "/line-diagram", destination: "/components/line-strip", permanent: true },
-      { source: "/components/line-diagram", destination: "/components/line-strip", permanent: true },
-      { source: "/tools/branch-diagram", destination: "/components/branch-strip", permanent: true },
-      { source: "/branch-diagram", destination: "/components/branch-strip", permanent: true },
-      // /explore is now the Explore IA section (was redirected to browse-lines).
-      { source: "/route", destination: "/tools/route-stations", permanent: true },
+      // Legacy demos → IA routes
+      { source: "/status", destination: "/interfaces/tube-status-board", permanent: true },
+      { source: "/batch-status", destination: "/interfaces/tube-status-board", permanent: true },
+      { source: "/arrivals", destination: "/interfaces/arrivals-board", permanent: true },
+      { source: "/arrivals/live", destination: "/interfaces/arrivals-board", permanent: true },
+      { source: "/line-badge", destination: "/foundations/line-badge", permanent: true },
+      { source: "/roundel", destination: "/foundations/tfl-roundel", permanent: true },
+      { source: "/line-diagram", destination: "/primitives/line-strip", permanent: true },
+      { source: "/components/line-diagram", destination: "/primitives/line-strip", permanent: true },
+      { source: "/tools/branch-diagram", destination: "/primitives/branch-strip", permanent: true },
+      { source: "/branch-diagram", destination: "/primitives/branch-strip", permanent: true },
+      { source: "/route", destination: "/explore/routes", permanent: true },
       { source: "/typography", destination: "/tools/typography", permanent: true },
+      // Old tools paths → Explore
+      { source: "/tools/browse-lines", destination: "/explore/lines", permanent: true },
+      { source: "/tools/route-stations", destination: "/explore/routes", permanent: true },
+      // Old /components/* → group homes
+      { source: "/components/tube-status-board", destination: "/interfaces/tube-status-board", permanent: true },
+      { source: "/components/live-arrivals-board", destination: "/interfaces/arrivals-board", permanent: true },
+      { source: "/components/bus-arrivals-board", destination: "/interfaces/arrivals-board", permanent: true },
+      { source: "/components/line-strip", destination: "/primitives/line-strip", permanent: true },
+      { source: "/components/branch-strip", destination: "/primitives/branch-strip", permanent: true },
+      { source: "/components/tfl-roundel", destination: "/foundations/tfl-roundel", permanent: true },
+      { source: "/components/line-badge", destination: "/foundations/line-badge", permanent: true },
     ];
   },
 };
 
 const withMDX = createMDX({
   options: {
-    // Fallback when mdxRs is disabled; Turbopack needs string plugin names.
     remarkPlugins: ["remark-gfm"],
   },
 });

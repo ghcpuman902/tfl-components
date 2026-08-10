@@ -113,16 +113,31 @@ Never collapse these into one vague “Map” label in nav or docs.
 
 **Contains:** experimental or incomplete ideas with stated intent and promotion path (see product-architecture §12).
 
-**Second level:** flat or lightly tagged list; no fake stability. Promotion moves the work into Start / Explore / Interfaces / Primitives / Foundations / Maps / Tools as appropriate.
+**Second level:** flat or lightly tagged list; no fake stability. Promotion moves the work into Start / Explore / Interfaces / Primitives / Foundations / Maps / Tools / **Blocks** as appropriate.
+
+---
+
+## 9. Blocks (human amendment 2026-08-10)
+
+**Why:** Like shadcn **Blocks** — composed mini-app pages that sit outside the reusable component catalog and demonstrate how Interfaces + Primitives (+ Foundations) combine into a useful surface.
+
+**Contains:** composition demos / mini apps (e.g. homepage “week ahead”), not installable atomic registry items by default.
+
+**Not:** a dumping ground (that remains Drafts). A Block has a clear composition story and may become a documented pattern without becoming a single registry component.
+
+**Second level:** one page per composition (e.g. Week ahead).
+
+See [ia-migration/DECISIONS.md](./ia-migration/DECISIONS.md) J1.
 
 ---
 
 ## How primitives vs data-aware appear in nav
 
 ```text
-Interfaces  →  primary path for GET DATA → RENDER
+Interfaces  →  primary path for GET DATA → RENDER (data as props)
 Primitives  →  coherent discovery for control
 Foundations →  shared brand/visual language
+Blocks      →  composed mini-apps demonstrating merge of the above
 ```
 
 Cross-links on pages beat duplicated hierarchies.

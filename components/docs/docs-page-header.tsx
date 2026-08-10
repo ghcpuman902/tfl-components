@@ -24,6 +24,8 @@ export const DocsPageHeader = ({ entry }: DocsPageHeaderProps) => {
           <Badge variant="secondary">Installable</Badge>
         ) : entry.kind === "tool" ? (
           <Badge variant="outline">Tool</Badge>
+        ) : entry.kind === "block" ? (
+          <Badge variant="outline">Block</Badge>
         ) : entry.kind === "placeholder" ? (
           <Badge variant="outline">Placeholder</Badge>
         ) : entry.kind === "draft" ? (

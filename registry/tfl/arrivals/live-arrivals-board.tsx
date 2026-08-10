@@ -1,44 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getLineCssProps } from "tfl-ts";
-import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ArrivalsBoard,
+  type ArrivalRow,
+} from "@/components/tfl/arrivals/arrivals-board";
 import {
   getStopArrivalsAction,
   type LiveArrival,
 } from "@/lib/tfl/live-arrivals-action";
 
-const DEFAULT_STOP_ID = "940GZZLUOXC"; // Oxford Circus
+const DEFAULT_STOP_ID = "940GZZLUOXC";
 const POLL_MS = 15_000;
 
-const formatCountdown = (seconds?: number): string => {
-  if (seconds === undefined || seconds < 0) return "-";
-  if (seconds < 60) return "Due";
-  return `${Math.floor(seconds / 60)} min`;
-};
+const toRows = (arrivals: LiveArrival[]): ArrivalRow[] =>
+  arrivals.map((arrival) => ({
+    lineId: arrival.lineId,
+    lineName: arrival.lineName,
+    destinationName: arrival.destinationName,
+    towards: arrival.towards,
+    platformName: arrival.platformName,
+    timeToStation: arrival.timeToStation,
+    vehicleId: arrival.vehicleId,
+    busStyle: false,
+  }));
 
-/** Skeleton for the live arrivals board — use in `loading.tsx` or Suspense. */
-export const LiveArrivalsBoardSkeleton = () => (
-  <div className="w-full space-y-4" aria-busy aria-label="Loading live arrivals">
-    <div className="flex flex-wrap items-end justify-between gap-2">
-      <div className="space-y-2">
-        <Skeleton className="h-9 w-48 max-w-full" />
-        <Skeleton className="h-4 w-64 max-w-full" />
-      </div>
-      <Skeleton className="h-4 w-28" />
-    </div>
-    <ul className="list-none space-y-0 p-0" role="presentation">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <li key={i} className="border-b border-border py-2.5 last:border-0">
-          <Skeleton className="h-8 w-full" />
-        </li>
-      ))}
-    </ul>
-  </div>
-);
-
+/**
+ * Docs/demo helper: polls a stop and passes rows into {@link ArrivalsBoard}.
+ * Prefer using `ArrivalsBoard` with `data` directly in applications.
+ */
 export const LiveArrivalsBoard = ({
   stopPointId = DEFAULT_STOP_ID,
   stopName = "Oxford Circus",
@@ -46,7 +36,7 @@ export const LiveArrivalsBoard = ({
   stopPointId?: string;
   stopName?: string;
 }) => {
-  const [arrivals, setArrivals] = useState<LiveArrival[]>([]);
+  const [data, setData] = useState<ArrivalRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
@@ -61,10 +51,10 @@ export const LiveArrivalsBoard = ({
         if (cancelled) return;
         if (!result.ok) {
           setError(result.error);
-          setArrivals([]);
+          setData([]);
         } else {
           setError(null);
-          setArrivals(result.arrivals);
+          setData(toRows(result.arrivals));
           setTick((n) => n + 1);
         }
       } catch {
@@ -84,80 +74,22 @@ export const LiveArrivalsBoard = ({
     };
   }, [stopPointId]);
 
-  if (loading && arrivals.length === 0 && !error) {
-    return <LiveArrivalsBoardSkeleton />;
-  }
-
   return (
-    <div className="w-full space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-3xl font-bold">Live arrivals</h1>
-          <p className="mt-1 text-muted-foreground">
-            {stopName}{" "}
-            <code className="rounded bg-muted px-1 text-xs">{stopPointId}</code>
-          </p>
-        </div>
-        <p className="flex items-center gap-2 text-xs text-muted-foreground">
-          {loading ? (
-            <>
-              <Loader2 className="size-3.5 animate-spin" aria-hidden />
-              Loading…
-            </>
-          ) : (
-            <>
-              Poll #{tick} · every {POLL_MS / 1000}s
-            </>
-          )}
-        </p>
-      </div>
-
-      {error && (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      )}
-
-      {!error && arrivals.length === 0 && !loading && (
-        <p className="text-sm text-muted-foreground">No arrivals right now.</p>
-      )}
-
-      <ul className="list-none space-y-0 p-0" role="list">
-        {arrivals.slice(0, 16).map((arrival, index) => {
-          const lineId = arrival.lineId ?? "";
-          const cssProps = getLineCssProps(lineId);
-
-          return (
-            <li
-              key={`${arrival.vehicleId ?? arrival.lineId}-${arrival.timeToStation}-${index}`}
-              className="grid grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-border py-2.5 text-sm last:border-0"
-            >
-              <span
-                className={cn(
-                  "inline-flex min-w-16 items-center justify-center rounded-md bg-[var(--line-color)] px-2 py-0.5 text-xs font-bold text-white",
-                  "dark:bg-[var(--line-dark-fill)] dark:text-[var(--line-dark-on-fill)] dark:[box-shadow:var(--line-dark-box-shadow)]",
-                )}
-                style={cssProps}
-              >
-                {arrival.lineName ?? lineId}
-              </span>
-              <span className="min-w-0 truncate">
-                <span className="font-medium">
-                  {arrival.towards ?? arrival.destinationName ?? "Unknown"}
-                </span>
-                {arrival.platformName && (
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    {arrival.platformName}
-                  </span>
-                )}
-              </span>
-              <span className="font-semibold tabular-nums">
-                {formatCountdown(arrival.timeToStation)}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+    <ArrivalsBoard
+      data={data}
+      stopName={stopName}
+      stopPointId={stopPointId}
+      title="Live arrivals"
+      loading={loading}
+      error={error}
+      statusLabel={`Poll #${tick} · every ${POLL_MS / 1000}s`}
+    />
   );
 };
+
+export {
+  ArrivalsBoard,
+  ArrivalsBoardSkeleton,
+  type ArrivalRow,
+  type ArrivalsBoardProps,
+} from "@/components/tfl/arrivals/arrivals-board";

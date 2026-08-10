@@ -289,7 +289,7 @@ import { LineStrip } from "@/components/tfl/diagram/line-strip";
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
           Explore live sequences in{" "}
-          <Link href="/tools/browse-lines" className="underline">
+          <Link href="/explore/lines" className="underline">
             Browse lines
           </Link>
           . Branched schematics live under{" "}
