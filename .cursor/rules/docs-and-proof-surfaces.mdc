@@ -13,7 +13,7 @@ Canonical IA and page anatomies remain in:
 - [docs/page-anatomy.md](docs/page-anatomy.md)
 - [docs/product-architecture.md](docs/product-architecture.md)
 
-This rule covers **how pages prove and teach**. Do not reshape frozen IA here; if a change conflicts with frozen docs, record it for human review.
+This rule covers **how pages prove and teach**. Nav chrome follows **J6** in [docs/TARGET_ARCHITECTURE.md](docs/TARGET_ARCHITECTURE.md). If a change conflicts with frozen docs, record it for human review (or amend via an explicit decision).
 
 ## Homepage
 
@@ -23,7 +23,7 @@ Lead with **one short product thesis** (what this environment is: data → rende
 - Keep chrome quiet so TfL domain visuals carry the first viewport.
 - **Catalog / index grids are secondary.** Do not make a multi-section catalog the emotional centre of `/`. Sidebar + section hubs already discover content.
 - One primary CTA path is enough (hero-right **Browse components** / Installation). Proof demos on `/` are not clickable doc frames — do not wrap boards in overlay links.
-- Avoid “Build Your Own” style theme playgrounds until Start → Explore → Interfaces is solid.
+- Avoid “Build Your Own” style theme playgrounds until Docs → Components → Blocks is solid.
 - Arrivals proof boards follow fixed-tile rhythm: [docs/design-system.md](docs/design-system.md#arrivals-board-rhythm), [`.cursor/rules/arrivals-board-layout.mdc`](arrivals-board-layout.mdc).
 
 ```tsx
@@ -103,11 +103,14 @@ Docs are read by humans **and** coding agents.
 
 Navigation answers: *What is the developer trying to understand, render, or build?*
 
-- Primary path: **Start → Explore → Interfaces → Primitives → Foundations → Maps → Blocks → Tools → Drafts**
-- Transport domains are **filters/metadata**, not top-level duplicated feature trees
+- Persistent header: **Docs · Components · Blocks · Tools** (+ Search, GitHub); logo → `/`
+- Docs sidebar: **Get started** + flat **Components** (preferred mode markers) + **Primitives & Foundations** tail
+- Homepage full-width (no sidebar). Blocks/Tools: header only (no docs sidebar)
+- Transport domains are **filters/markers**, not top-level duplicated feature trees
 - Do **not** make shadcn UI atoms (Button, Dialog, Card) the product discovery path — they are chrome under `components/ui/`
 - **Tools** = inspect / test / tune / debug only; otherwise Drafts or a real group
-- **Maps**: Geographic vs Schematic/network — never one vague Map under Tools
+- **Maps**: Geographic vs Schematic/TubeMap as Components entries — never under Tools
+- **Drafts**: footer / contributor — not permanent sidebar
 
 ## Anti-patterns
 

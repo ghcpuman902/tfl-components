@@ -39,7 +39,7 @@ export default function WeekAheadBlockPage() {
               Data-aware status interpretation consumes normalised service
               information (same family as{" "}
               <Link
-                href="/interfaces/tube-status-board"
+                href="/docs/tube-rail-status"
                 className="text-primary underline-offset-4 hover:underline"
               >
                 Status board
@@ -48,14 +48,14 @@ export default function WeekAheadBlockPage() {
             </li>
             <li>
               <Link
-                href="/interfaces/line-strip"
+                href="/docs/line-strip"
                 className="text-primary underline-offset-4 hover:underline"
               >
                 Line strip
               </Link>{" "}
               and{" "}
               <Link
-                href="/primitives/branch-strip"
+                href="/docs/branch-strip"
                 className="text-primary underline-offset-4 hover:underline"
               >
                 Branch strip

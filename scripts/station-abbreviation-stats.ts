@@ -13,11 +13,11 @@ import {
   LINE_STATION_SEQUENCES,
   STATION_SEQUENCES_GENERATED_AT,
 } from "tfl-ts";
-import { formatStationName } from "../lib/tfl/diagram-station.ts";
+import { formatStationName } from "../lib/tfl/diagram-station";
 import {
   STATION_ABBREVIATION_ENTRIES,
   STATION_AND_ABBREVIATION,
-} from "../lib/tfl/station-abbreviations.ts";
+} from "../lib/tfl/station-abbreviations";
 
 const MODES = new Set([
   "tube",

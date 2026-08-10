@@ -114,6 +114,11 @@ export type TfLRoundelProps = Omit<
   ringColor?: string;
   /** Horizontal bar colour. */
   barColor?: string;
+  /**
+   * Stroke around the bar. Per TfL Basic Elements this is **Cycles only**
+   * (white fill + green border). Other modes omit it.
+   */
+  barBorderColor?: string;
   /** Bar text colour. */
   textColor?: string;
   /**
@@ -155,16 +160,28 @@ const resolveRoundelColors = ({
   lineColor,
   ringColor,
   barColor,
+  barBorderColor,
   textColor,
   text,
 }: Pick<
   TfLRoundelProps,
-  "variant" | "lineColor" | "ringColor" | "barColor" | "textColor" | "text"
+  | "variant"
+  | "lineColor"
+  | "ringColor"
+  | "barColor"
+  | "barBorderColor"
+  | "textColor"
+  | "text"
 >) => {
   const preset = variant ? ROUNDEL_PRESETS[variant] : undefined;
   return {
     ring: ringColor ?? lineColor ?? preset?.ringColor ?? DEFAULT_RING,
     bar: barColor ?? lineColor ?? preset?.barColor ?? DEFAULT_BAR,
+    barBorder:
+      barBorderColor ??
+      (preset && "barBorderColor" in preset
+        ? preset.barBorderColor
+        : undefined),
     ink: textColor ?? preset?.textColor ?? DEFAULT_TEXT,
     label:
       text !== undefined
@@ -221,6 +238,7 @@ const OfficialRoundelSvg = ({
   text,
   ringColor,
   barColor,
+  barBorderColor,
   textColor,
   lineColor,
   className,
@@ -231,6 +249,7 @@ const OfficialRoundelSvg = ({
     lineColor,
     ringColor,
     barColor,
+    barBorderColor,
     textColor,
     text,
   });
@@ -239,6 +258,8 @@ const OfficialRoundelSvg = ({
   const ringStroke = OUTER_R - INNER_R;
   const ringRadius = (OUTER_R + INNER_R) / 2;
   const outlineStroke = ringStroke * 0.35;
+  /** Cycles (and any explicit barBorderColor): stroke width for the bar edge. */
+  const barBorderStroke = outlineStroke * 0.75;
 
   return (
     <RoundelFrame className={className}>
@@ -284,8 +305,8 @@ const OfficialRoundelSvg = ({
               width={VIEW_W}
               height={BAR_H}
               fill={colors.bar}
-              stroke={colors.ring}
-              strokeWidth={outlineStroke * 0.75}
+              stroke={colors.barBorder ?? colors.ring}
+              strokeWidth={barBorderStroke}
             />
           </>
         ) : (
@@ -298,7 +319,14 @@ const OfficialRoundelSvg = ({
               stroke={colors.ring}
               strokeWidth={ringStroke}
             />
-            <rect y={BAR_Y} width={VIEW_W} height={BAR_H} fill={colors.bar} />
+            <rect
+              y={BAR_Y}
+              width={VIEW_W}
+              height={BAR_H}
+              fill={colors.bar}
+              stroke={colors.barBorder}
+              strokeWidth={colors.barBorder ? barBorderStroke : 0}
+            />
           </>
         )}
         {trimmed ? (
@@ -352,6 +380,7 @@ const PlaceholderRoundelSvg = ({
   text,
   ringColor,
   barColor,
+  barBorderColor,
   textColor,
   lineColor,
   className,
@@ -362,6 +391,11 @@ const PlaceholderRoundelSvg = ({
   const hasColour = Boolean(ringColor ?? barColor ?? lineColor ?? preset);
   const disc = ringColor ?? lineColor ?? preset?.ringColor;
   const bar = barColor ?? lineColor ?? preset?.barColor;
+  const barBorder =
+    barBorderColor ??
+    (preset && "barBorderColor" in preset
+      ? preset.barBorderColor
+      : undefined);
   const ink =
     textColor ??
     preset?.textColor ??
@@ -369,6 +403,11 @@ const PlaceholderRoundelSvg = ({
   const label = text !== undefined ? text : (preset?.text ?? "");
   const trimmed = label.trim();
   const fontSize = fontSizeForText(trimmed || "X");
+  const barX = VIEW_W * 0.04;
+  const barY = BAR_Y + 6;
+  const barW = VIEW_W * 0.92;
+  const barH = BAR_H - 12;
+  const barRx = BAR_H / 2;
 
   const svg = (
     <svg
@@ -394,15 +433,18 @@ const PlaceholderRoundelSvg = ({
         fill={disc ?? "currentColor"}
         opacity={hasColour ? 1 : 0.22}
       />
-      {/* Rounded bar — licensed mark uses a sharp full-width rect. */}
+      {/* Rounded bar — licensed mark uses a sharp full-width rect.
+          Cycles (and explicit barBorderColor): white fill + coloured border. */}
       <rect
-        x={VIEW_W * 0.04}
-        y={BAR_Y + 6}
-        width={VIEW_W * 0.92}
-        height={BAR_H - 12}
-        rx={BAR_H / 2}
-        ry={BAR_H / 2}
+        x={barX}
+        y={barY}
+        width={barW}
+        height={barH}
+        rx={barRx}
+        ry={barRx}
         fill={bar ?? "currentColor"}
+        stroke={barBorder}
+        strokeWidth={barBorder ? Math.max(4, BAR_H * 0.08) : 0}
         opacity={hasColour ? 1 : 0.75}
       />
       {trimmed ? (
@@ -549,6 +591,7 @@ export const TfLRoundel = ({
   text,
   ringColor,
   barColor,
+  barBorderColor,
   textColor,
   lineColor,
   artwork = false,
@@ -560,6 +603,7 @@ export const TfLRoundel = ({
     text,
     ringColor,
     barColor,
+    barBorderColor,
     textColor,
     lineColor,
     className,

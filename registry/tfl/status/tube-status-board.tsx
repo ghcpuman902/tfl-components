@@ -104,7 +104,7 @@ export const TubeStatusBoardSkeleton = ({
     <div>
       <h2 className="mb-4 text-xl font-semibold">Service Disruptions</h2>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <div className="flex flex-col gap-3 border border-border bg-muted p-4 dark:bg-card">
+        <div className="flex flex-col gap-3">
           <Skeleton className="h-6 w-28" />
           <Skeleton className="h-[6px] w-full" />
           <Skeleton className="h-4 w-24" />
@@ -119,7 +119,7 @@ export const TubeStatusBoardSkeleton = ({
         {Array.from({ length: lineCount }).map((_, i) => (
           <div
             key={i}
-            className="flex flex-col border border-border bg-muted p-3 dark:bg-card"
+            className="flex flex-col"
           >
             <Skeleton className="h-4 w-20" />
             <Skeleton className="mt-2 h-[6px] w-full" />
@@ -170,7 +170,7 @@ export const TubeStatusBoard = ({
               return (
                 <div
                   key={line.id ?? line.name}
-                  className="flex flex-col gap-0 border border-border bg-muted p-4 dark:bg-card"
+                  className="flex flex-col gap-0"
                 >
                   <h3
                     className={cn("text-lg font-semibold", darkReadableTextClass)}
@@ -233,7 +233,7 @@ export const TubeStatusBoard = ({
             return (
               <div
                 key={line.id ?? line.name}
-                className="flex flex-col border border-border bg-muted p-3 transition-colors hover:bg-muted/80 dark:bg-card dark:hover:bg-accent/50"
+                className="flex flex-col"
               >
                 <div className="flex items-start justify-between">
                   <h3

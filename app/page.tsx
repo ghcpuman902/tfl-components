@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRightIcon } from "lucide-react";
 import { HomeEditorial } from "@/components/docs/home-editorial";
+import { HomeHeroPhotos } from "@/components/docs/home-hero-photos";
 
 export const metadata: Metadata = {
   title: "tfl-components",
@@ -16,21 +17,7 @@ export default function HomePage() {
         intro={
           <div className="grid grid-cols-1 gap-8 pt-0 pb-16 md:grid-cols-12 md:items-stretch md:gap-10 md:py-20">
             <figure className="relative aspect-[3/2] min-w-0 overflow-hidden md:col-span-6 md:aspect-auto md:h-[min(66.6667svh,40rem)] lg:col-span-5">
-              {/* Native img keeps the Display P3 ICC; next/image can strip wide-gamut profiles. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/home/wapping-station.jpg"
-                alt="Rotherhithe station platform, viewed from inside the station"
-                width={1400}
-                height={2111}
-                className="size-full object-cover object-center"
-                decoding="async"
-                fetchPriority="high"
-              />
-              <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent px-3 pb-3 pt-10 text-center text-[0.65rem] leading-relaxed text-balance text-white/80">
-                Rotherhithe station. Photo © MangleKuo. TfL premises and marks ©
-                Transport for London.
-              </figcaption>
+              <HomeHeroPhotos />
             </figure>
 
             <div className="flex min-w-0 flex-col gap-8 md:col-span-6 md:h-[min(66.6667svh,40rem)] md:justify-between md:gap-10 lg:col-span-7">
@@ -41,14 +28,14 @@ export default function HomePage() {
                 <p className="max-w-xl text-lg text-foreground md:text-xl">
                   Web components for your TfL projects. Built for{" "}
                   <Link
-                    href="/foundations/station-labels#width"
+                    href="/docs/station-name-labels#width"
                     className="underline underline-offset-4"
                   >
                     every screen size
                   </Link>
                   , with{" "}
                   <Link
-                    href="/foundations/station-labels#accessibility"
+                    href="/docs/station-name-labels#accessibility"
                     className="underline underline-offset-4"
                   >
                     full accessibility
@@ -65,7 +52,7 @@ export default function HomePage() {
                   for a live dashboard, or drop them in alone for the look.
                 </p>
                 <Link
-                  href="/interfaces"
+                  href="/docs/components"
                   className="inline-flex w-fit items-center gap-1.5 text-lg text-foreground underline underline-offset-4 md:text-xl"
                 >
                   Start browsing

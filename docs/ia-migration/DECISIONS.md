@@ -10,7 +10,7 @@ Frozen IA remains the baseline; amendments below are explicit human overrides.
 | **C1** | Ignore. `/explore` as section index is fine; no need to restore redirect to browse-lines. |
 | **C2** | Prioritise frozen IA (Foundations vs Primitives split). |
 | **C3** | Build toward a real geographic product. Add a MapLibre-style placeholder; copy OSM transit geometry from `ssh.ldn` into this repo with a clear **data origin** declaration. |
-| **C4** | Keep **Interfaces** (developer intent) as primary nav. Transport domains stay filters/metadata — not Tube→Status / Bus→Status trees. |
+| **C4** | Keep **developer intent** as the primary organisation. Transport domains stay filters/metadata — not Tube→Status / Bus→Status *trees*. **J6** updates discovery chrome: flat Components list with mode markers (including preferred domain-labelled boards) instead of nested Interfaces sidebar groups. |
 | **C5** | Align Explore vs Tools with IA; maximise reuse of existing pages/code; grouping and naming may be overwritten. |
 | **C6** | Align: **separate data acquisition from components**. Boards should take **normalised data as props**; site/demo fetch stays outside the reusable component. |
 
@@ -21,8 +21,9 @@ Frozen IA remains the baseline; amendments below are explicit human overrides.
 | **J1 Week-ahead** | Treat like shadcn **Blocks**: a mini-app / composition page outside the component catalog that shows how Interfaces + Primitives combine. Add a **Blocks** top-level group (human amendment to Stage 1 IA). Home week-ahead becomes (or moves toward) a Block. |
 | **J2 Arrivals** | **Converge.** One Arrivals interface concept; different data types + re-render behaviour by domain — not two product components. |
 | **J3 Boards + data** | **`data` as props** (not fetch-inside as the library API). Fetching belongs in the app / docs / Block. |
-| **J4 Line / branch strip** | **Confirmed:** Primitives as primary docs home; Maps → Schematic stays a separate nav group with cross-links back to the primitives (no duplicate product trees). |
-| **J5 `/components/*` URLs** | **No backward-compat requirement** (not published yet). Prefer clean IA routes; redirects optional, not forever aliases. |
+| **J4 Line / branch strip** | **Superseded for nav by J6.** Composition still: Line strip / Branch strip as Components entries with cross-links; Geographic vs schematic remain **distinct pages**. No duplicate product trees. |
+| **J5 `/components/*` URLs** | **No forever-alias requirement.** Prefer clean `/docs/…` routes; redirects from prior `/interfaces`, `/primitives`, `/foundations`, `/maps`, `/explore`, `/installation` paths. |
+| **J6 Nav chrome (2026-08-10)** | After shipping Stage 1 sidebar taxonomy, discovery felt like a second site. **Amend chrome:** persistent header `Docs · Components · Blocks · Tools` everywhere; homepage full-width; docs sidebar = Get started + flat Components (preferred roundel markers, mode colours) + Primitives & Foundations tail; Maps as preferred Components entries; Blocks/Tools own shell (no docs sidebar); Drafts off primary sidebar; Introduction at `/docs` (not `/`); Installation thinned. Composition layers unchanged. |
 
 ## Follow-on work implied
 
@@ -31,7 +32,8 @@ Frozen IA remains the baseline; amendments below are explicit human overrides.
 | 1 | IA amendment: document **Blocks** in target architecture | **Done** |
 | 2 | Geographic: vendor OSM geometry + ORIGIN; MapLibre placeholder | **Done** (placeholder; full product later) |
 | 3 | Migration: Arrivals convergence + `data` props | **Done** |
-| 4 | Confirm J4, then Primitives ↔ Schematic linking / moves | **Done** |
+| 4 | Confirm J4, then Primitives ↔ Schematic linking / moves | **Done** (nav superseded by J6) |
 | 5 | Execute mechanical batches 1–5 with rename freedom (J5) | **Done** |
+| 6 | J6: persistent header + flat Components docs nav | **Done** |
 
-Remaining product work (Coming soon on section hubs): Explorer depth, StationName docs page, journeys / service Interfaces, deeper geographic product. See [STATUS.md](./STATUS.md).
+Remaining product work: Explorer redesign, coming-soon domain boards, TubeMap, deeper geographic product. See [STATUS.md](./STATUS.md).

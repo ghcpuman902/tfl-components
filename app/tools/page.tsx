@@ -23,8 +23,8 @@ export default function ToolsIndexPage() {
       ]}
       relatedHrefs={[
         { href: "/drafts", label: "Drafts — not yet tools" },
-        { href: "/interfaces", label: "Interfaces — embeddable UI" },
-        { href: "/primitives", label: "Primitives — StationName renderer" },
+        { href: "/docs/components", label: "Components — embeddable UI" },
+        { href: "/docs/station-name-labels", label: "Station name labels" },
       ]}
     />
   );

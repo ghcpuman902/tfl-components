@@ -1,23 +1,25 @@
 ---
-description: Frozen TfL product IA — architecture before archaeology; layers and nav groups
+description: Frozen TfL product IA — architecture before archaeology; layers and nav chrome (J6)
 alwaysApply: true
 ---
 
-# TfL information architecture (frozen Stage 1)
+# TfL information architecture (frozen Stage 1 + J1 / J6)
 
 Before changing docs IA, navigation, or page classification, read and follow:
 
 - [docs/product-architecture.md](docs/product-architecture.md)
 - [docs/TARGET_ARCHITECTURE.md](docs/TARGET_ARCHITECTURE.md)
 - [docs/page-anatomy.md](docs/page-anatomy.md)
+- [docs/ia-migration/DECISIONS.md](docs/ia-migration/DECISIONS.md) (esp. **J6**)
 
 ## Hard rules
 
-1. **Architecture before archaeology.** Do not reshape frozen Stage 1 docs to match existing routes, folders, or catalogs. Existing implementation is migration input only.
+1. **Architecture before archaeology.** Do not reshape frozen docs to match existing routes without a human decision. Existing implementation is migration input only.
 2. **Composition:** normalised `tfl-ts` data → data-aware component → domain interpretation → rendering primitives → UI.
-3. **No Unified API ontology as primary nav.** Transport domains are filters/metadata, not duplicated feature trees.
+3. **No Unified API ontology as primary nav.** Transport domains are filters/metadata/markers, not duplicated feature trees.
 4. **No static vs data-driven duplicate components** for the same concept.
-5. **Maps are first-class** with a mandatory split: Geographic vs Schematic/network—never one vague Map bucket under Tools.
-6. **Tools ≠ Components.** Tools must meet the inspect/test/tune/debug criterion; otherwise Drafts or nowhere.
-7. **Drafts** are incubation with a promotion path—not a permanent misc folder.
-8. If implementation conflicts with a frozen principle: **record the conflict for human review**; do not silently edit frozen docs.
+5. **Maps are first-class** with a mandatory Geographic vs Schematic/TubeMap split — as **Components** discovery entries, never under Tools, never one vague Map bucket.
+6. **Tools ≠ Components.** Tools must meet the inspect/test/tune/debug criterion; otherwise Drafts or nowhere. Blocks and Tools are top-nav / own shell.
+7. **Drafts** are incubation with a promotion path — not a permanent docs-sidebar section (footer / contributor path).
+8. **Discovery chrome (J6):** persistent header `Docs · Components · Blocks · Tools`; docs sidebar = Get started + flat Components (preferred markers) + Primitives & Foundations tail; homepage full-width without sidebar.
+9. If implementation conflicts with a frozen principle: **record the conflict for human review**; do not silently edit frozen docs (J6-style amendments are explicit decisions).

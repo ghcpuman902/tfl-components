@@ -1,6 +1,6 @@
 # Product architecture
 
-**Status: FROZEN (Stage 1).** Do not reshape this document to match current file placement. Record conflicts for human review instead.
+**Status: FROZEN (Stage 1) + human amendments J1 / J6.** Do not reshape to match file placement without a new decision. Record unresolved conflicts for human review.
 
 This is the durable product and information-architecture spec for the TfL developer environment (`tfl-ts` + `tfl-components` + this website). Optimised for humans and coding agents.
 
@@ -116,7 +116,7 @@ Conceptual separation every capable page must expose without overwhelming the de
 
 Where a high-level component and its primitives are the same conceptual feature, show their relationship on the same page or via obvious related docs. Do **not** maintain two fully duplicated documentation trees (primitive vs data-aware) for every concept.
 
-Primitives remain discoverable as a coherent group (see target architecture).
+Primitives remain discoverable (catalogue filters, page cross-links, and a sidebar tail for lower-level parts). Discovery chrome is a **flat Components list** with preferred markers — not nested Interfaces/Primitives sidebar groups (J6).
 
 Page section order is defined in [page-anatomy.md](./page-anatomy.md)—not immutable UI chrome, but a consistent anatomy.
 
@@ -173,7 +173,9 @@ A tool may expose controls that would never belong on a production component API
 
 ## 9. Maps are first-class
 
-Two different concepts—never one vague “Map”:
+Two different concepts—never one vague “Map”, and **never under Tools**.
+
+In **discovery chrome** (J6), Geographic and schematic/TubeMap appear as **preferred Components** entries (distinct pages), not a separate Maps sidebar group.
 
 ### Geographic maps
 
@@ -218,18 +220,18 @@ Deliberate place for experimental or incomplete work:
 - exists without pretending to be a stable public API  
 - does not pollute the main IA  
 - allows unfinished explorations to be evaluated  
-- has a path to Component, Primitive, Map, Foundation, Explorer, or Tool  
+- has a path into Components (preferred or lower-level), Get started foundations, Explorer, Blocks, or Tools  
 
 **Promotion criteria (all should be true before leaving Drafts):**
 
-1. Clear developer intent and stable conceptual name  
-2. Fits an existing top-level group without inventing a misc category  
+1. Clear developer intent and a stable conceptual name  
+2. Fits discovery chrome without inventing a misc category  
 3. Documented data contract (or explicit “primitive-only / no data”)  
 4. Safe branding/licensing behaviour where relevant  
 5. Not solely a one-off experiment; reusable or clearly a tool/explorer feature  
 6. Human review accepted promotion  
 
-Drafts must not become a permanent miscellaneous folder. Work that fails promotion is archived or deleted, not left indefinitely under a fake “stable” label.
+Drafts must not become a permanent miscellaneous folder or a permanent **docs sidebar** section. Link from the footer / contributor docs. Work that fails promotion is archived or deleted.
 
 ---
 

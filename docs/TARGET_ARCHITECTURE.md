@@ -1,154 +1,117 @@
 # Target information architecture
 
-**Status: FROZEN (Stage 1).** Derived from [product-architecture.md](./product-architecture.md). Do not reshape to match current routes or folders.
+**Status: FROZEN (Stage 1) + human amendments J1 / J6.** Derived from [product-architecture.md](./product-architecture.md). Do not reshape to match current file placement without a new decision.
 
-Transport domains (Tube & rail, Bus, River, Cycle, Roads / traffic, Cable car, …) are **filters / metadata**, not top-level nav nodes.
+Transport domains (Tube & rail, Bus, River, Cycle, Roads / traffic, Cable car, …) are **filters / metadata / markers**, not top-level nav trees.
 
----
-
-## Top-level groups
-
-### 1. Start
-
-**Why:** Orient developers before they pick a surface.
-
-**Contains:** what this environment is; relationship of `tfl-ts` and `tfl-components`; installation; credentials; quick “get data → render” path; links into Explore / Interfaces / Foundations.
-
-**Second level (examples):** Introduction · Installation · Credentials / env · How the libraries fit
+See [ia-migration/DECISIONS.md](./ia-migration/DECISIONS.md) **J6** for the nav-chrome amendment (2026-08-10).
 
 ---
 
-### 2. Explore
+## Site chrome (persistent header)
 
-**Why:** Answer *what does TfL know, and how is it related?* without mirroring Unified API endpoint lists.
-
-**Contains:** developer-facing information model, relationship browsers, normalised shape inspection, domain → line/route → stop → status/arrivals/disruption traversals as the model matures.
-
-**Second level (examples):** Overview · Domains · Lines & routes · Stations & stops · Status & disruptions · Arrivals · Relationships (as built)
-
-**Not:** a reusable shadcn registry item by default. Explorer is DX, not necessarily a component.
-
----
-
-### 3. Interfaces
-
-**Why:** Highest-value embeddable, **data-aware** UI organised by developer intent.
-
-**Contains:** components that accept (or responsibly obtain) normalised `tfl-ts` data and render useful transport interfaces.
-
-**Second level (by intent, not mode):**
-
-| Second-level | Intent |
-|--------------|--------|
-| Status & disruptions | Line/network service state |
-| Arrivals & departures | Stop/station boards |
-| Journeys | A→B presentation |
-| Routes & sequences | Ordered stops / route context |
-| Service information | Broader service messaging where distinct from status |
-| Identity surfaces | Composed identity UI that is still data-aware (if any)—prefer Foundations for pure brand marks |
-
-Each interface page links down to the **Primitives** (and Foundations) it uses. Do not fork “Tube status” / “Bus status” top-level trees; domains appear as supported filters or variants on the same intent.
-
----
-
-### 4. Primitives
-
-**Why:** Discoverable coherent group for lower-level visual control without forcing every developer through it first.
-
-**Contains:** rendering primitives that take explicit values; independent of `tfl-ts` where practical.
-
-**Second level (by visual concern):**
-
-| Second-level | Examples of concern |
-|--------------|---------------------|
-| Line & route geometry | Straight/branch strips, markers, segment treatments |
-| Stops & labels | Station/stop name rendering, label layout atoms |
-| Status treatments | Severity/status visual atoms (not full boards) |
-| Markers & interchange | Connection flags, interchange marks, pictograms |
-
-**Relationship to Interfaces:** same conceptual feature documents relationship (parent interface ↔ child primitives). No duplicate parallel tree of “PrimitiveStatus” vs “DataStatus” for every concept.
-
----
-
-### 5. Foundations
-
-**Why:** Shared visual language and licensing, separate from interface composition.
-
-**Contains:** line colours, badges, typography guidance, mode/line identity, roundel behaviour, icons, licensing / trademark safe defaults.
-
-**Second level (examples):** Colours & badges · Typography · Roundel & trademarks · Icons / pictograms · Licensing
-
-Consumed by Primitives, Interfaces, Maps, and Tools.
-
----
-
-### 6. Maps
-
-**Why:** First-class geographic and schematic work must not live under Tools or Misc.
-
-**Second level (mandatory split):**
-
-| Second-level | Meaning |
-|--------------|---------|
-| Geographic | Real coordinates/geometry; provider-independent core; GeoJSON and layers |
-| Schematic & network | Topology, line/network diagrams, branches, interchanges, journey highlighting |
-
-Never collapse these into one vague “Map” label in nav or docs.
-
----
-
-### 7. Tools
-
-**Why:** Playgrounds differ from embeddable components.
-
-**Membership criterion:** the page exists primarily to inspect, test, understand, tune, generate, compare, or debug—not to ship as the production component itself.
-
-**Second level:** group by what is being tuned (e.g. typography lab, schema inspectors)—only when the criterion holds. Reject dumping-ground entries.
-
----
-
-### 8. Drafts
-
-**Why:** Incubate without polluting stable IA.
-
-**Contains:** experimental or incomplete ideas with stated intent and promotion path (see product-architecture §12).
-
-**Second level:** flat or lightly tagged list; no fake stability. Promotion moves the work into Start / Explore / Interfaces / Primitives / Foundations / Maps / Tools / **Blocks** as appropriate.
-
----
-
-## 9. Blocks (human amendment 2026-08-10)
-
-**Why:** Like shadcn **Blocks** — composed mini-app pages that sit outside the reusable component catalog and demonstrate how Interfaces + Primitives (+ Foundations) combine into a useful surface.
-
-**Contains:** composition demos / mini apps (e.g. homepage “week ahead”), not installable atomic registry items by default.
-
-**Not:** a dumping ground (that remains Drafts). A Block has a clear composition story and may become a documented pattern without becoming a single registry component.
-
-**Second level:** one page per composition (e.g. Week ahead).
-
-See [ia-migration/DECISIONS.md](./ia-migration/DECISIONS.md) J1.
-
----
-
-## How primitives vs data-aware appear in nav
+Same header on homepage, docs, Blocks, and Tools:
 
 ```text
-Interfaces  →  primary path for GET DATA → RENDER (data as props)
-Primitives  →  coherent discovery for control
-Foundations →  shared brand/visual language
-Blocks      →  composed mini-apps demonstrating merge of the above
+[Logo → /]  Docs  Components  Blocks  Tools     [Search]  [GitHub]
 ```
 
-Cross-links on pages beat duplicated hierarchies.
+| Link | Lands on |
+|------|----------|
+| Logo | `/` (full-width homepage — no docs sidebar) |
+| Docs | `/docs/installation` |
+| Components | `/docs/components` (catalogue) |
+| Blocks | `/blocks` |
+| Tools | `/tools` |
+
+**Homepage** stays full-width proof (no sidebar). **Docs** routes use this header plus a compact docs sidebar. **Blocks** and **Tools** use the same header **without** the docs taxonomy sidebar (own section, like shadcn Blocks).
+
+---
+
+## Docs sidebar (discovery chrome)
+
+Two primary sections. Composition layers stay real; they are **not** nested sidebar group titles.
+
+### Get started
+
+Orient before picking a surface:
+
+- Introduction (`/docs`) — separate from the homepage
+- Components directory (`/docs/components`)
+- Installation
+- Explorer (single entry; WIP — owns its own sub-nav when opened)
+- Typography
+- Colours
+- Roundel
+- TfL brand licensing (and Skills for AI when present)
+
+### Components (flat list)
+
+Preferred high-level embeds first, marked with a **mode-coloured roundel** (or equivalent marker). Lower-level rendering parts omit the marker and sort below. No “Data-aware / Primitives / Maps” subheadings.
+
+Examples of preferred entries: Tube & rail arrivals, Tube & rail status, Bus arrivals, Geographic map, (coming-soon domain boards), then Simple line strip, Branch line strip, Station name labels.
+
+**Maps** appear here as distinct Geographic vs schematic/TubeMap **entries** — first-class embeddable surfaces, never under Tools, never one vague “Map” bucket.
+
+### Primitives & Foundations (sidebar tail)
+
+Super lower-level or guidance leftovers that do not fit Get started or the preferred Components list (e.g. icons). Prefer pure CSS/HTML primitives here as the library grows.
+
+**Blocks, Tools, Drafts** are not permanent docs-sidebar groups. Drafts: footer / contributor path. Tools and Blocks: top nav.
+
+---
+
+## Composition layers (not sidebar groups)
+
+These remain the product model for pages, APIs, and catalogue badges:
+
+```text
+normalised tfl-ts data
+ ↓
+data-aware component
+ ↓
+domain interpretation
+ ↓
+rendering primitives
+ ↓
+foundations (colour, type, roundel rules)
+ ↓
+finished UI
+```
+
+| Layer | Role |
+|-------|------|
+| **Data-aware** | Accept normalised data as props; strongest GET DATA → RENDER path |
+| **Rendering primitives** | Explicit values; useful without `tfl-ts` where practical |
+| **Foundations** | Shared brand/visual language and licensing |
+| **Maps** | Geographic (coordinates) vs schematic/network (topology) — distinct pages |
+| **Blocks** | Mini-app compositions outside the atomic registry |
+| **Tools** | Inspect / test / tune / debug only |
+| **Explorer** | DX for the information model — not a registry item by default |
+| **Drafts** | Incubation with a promotion path |
+
+Catalogue and page anatomy use layer metadata. Sidebar discovery is **flat + sort + markers**.
+
+---
+
+## Explorer
+
+Single docs-sidebar entry. Browse lines, route stations, stations, relationships live **inside** Explorer once opened — not as global sidebar peers.
+
+---
+
+## Blocks (J1)
+
+Like shadcn **Blocks**: composed mini-apps outside the reusable component catalog. Top-nav / own shell; not a docs-sidebar taxonomy section.
 
 ---
 
 ## What this architecture deliberately excludes
 
-- Primary nav by Unified API resource  
-- Primary nav by transport mode with duplicated feature trees  
-- Generic Misc / Other  
-- Separate static vs live component product lines  
-- Hiding maps inside Tools  
-- Treating Explorer as just another registry component by default  
+- Primary nav by Unified API resource
+- Primary nav by transport mode with duplicated feature trees (modes are markers/filters)
+- Generic Misc / Other
+- Separate static vs live component product lines
+- Hiding maps inside Tools
+- Treating Explorer as just another registry component by default
+- Nested Interfaces / Primitives / Maps **sidebar** group titles (superseded by J6 chrome)

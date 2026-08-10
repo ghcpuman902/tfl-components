@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  DOCS_ENTRIES,
-  getPopulatedGroups,
+  getSidebarEntries,
   type DocsEntry,
-  type DocsGroup,
+  type DocsModeMarker,
 } from "@/lib/docs-catalog";
 import { APP_VERSION_LABEL } from "@/lib/version";
-import { DocsSearch } from "@/components/docs/docs-search";
+import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
+import type { RoundelPreset } from "@/lib/tfl/roundel-presets";
 import {
   Sidebar,
   SidebarContent,
@@ -17,56 +17,23 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
 
-const isActive = (pathname: string, entry: DocsEntry) => {
-  if (entry.href === "/") return false;
-  return pathname === entry.href || pathname.startsWith(`${entry.href}/`);
+const MODE_ROUNDEL_VARIANT: Record<DocsModeMarker, RoundelPreset> = {
+  "tube-rail": "underground",
+  bus: "buses",
+  river: "river",
+  cycle: "cycles",
+  cable: "cableCar",
+  map: "tfl",
 };
 
-type NavBlock =
-  | { kind: "group"; group: DocsGroup; entries: DocsEntry[] }
-  | {
-      kind: "section";
-      title: string;
-      children: { group: DocsGroup; entries: DocsEntry[] }[];
-    };
-
-const buildNavBlocks = (): NavBlock[] => {
-  const groups = getPopulatedGroups().filter((group) => group.id !== "start");
-  const blocks: NavBlock[] = [];
-  let sectionBuffer: {
-    title: string;
-    children: { group: DocsGroup; entries: DocsEntry[] }[];
-  } | null = null;
-
-  const flushSection = () => {
-    if (sectionBuffer) {
-      blocks.push({ kind: "section", ...sectionBuffer });
-      sectionBuffer = null;
-    }
-  };
-
-  for (const group of groups) {
-    const entries = DOCS_ENTRIES.filter((entry) => entry.group === group.id);
-    if (group.navSection) {
-      if (!sectionBuffer || sectionBuffer.title !== group.navSection) {
-        flushSection();
-        sectionBuffer = { title: group.navSection, children: [] };
-      }
-      sectionBuffer.children.push({ group, entries });
-      continue;
-    }
-    flushSection();
-    blocks.push({ kind: "group", group, entries });
-  }
-  flushSection();
-  return blocks;
+const isActive = (pathname: string, entry: DocsEntry) => {
+  if (entry.href === "/docs") return pathname === "/docs";
+  return pathname === entry.href || pathname.startsWith(`${entry.href}/`);
 };
 
 const EntryList = ({
@@ -84,68 +51,79 @@ const EntryList = ({
           isActive={isActive(pathname, entry)}
           tooltip={entry.title}
         >
-          <span>{entry.title}</span>
+          {entry.preferred && entry.modeMarker ? (
+            <TfLRoundel
+              variant={MODE_ROUNDEL_VARIANT[entry.modeMarker]}
+              text=""
+              className="size-3.5 shrink-0"
+              aria-hidden
+            />
+          ) : null}
+          <span className="truncate">
+            {entry.title}
+            {entry.comingSoon ? (
+              <span className="text-sidebar-foreground/50"> · soon</span>
+            ) : null}
+          </span>
         </SidebarMenuButton>
       </SidebarMenuItem>
     ))}
   </SidebarMenu>
 );
 
+/** Split get-started into top (before Components) and bottom (licensing / skills). */
+const GET_STARTED_BOTTOM_FROM = 200;
+
 export const DocsSidebar = () => {
   const pathname = usePathname();
-  const blocks = buildNavBlocks();
-  const startEntries = DOCS_ENTRIES.filter((entry) => entry.group === "start");
+  const getStarted = getSidebarEntries("get-started");
+  const getStartedTop = getStarted.filter(
+    (entry) => entry.sidebarOrder < GET_STARTED_BOTTOM_FROM,
+  );
+  const getStartedBottom = getStarted.filter(
+    (entry) => entry.sidebarOrder >= GET_STARTED_BOTTOM_FROM,
+  );
+  const components = getSidebarEntries("components");
+  const primitivesFoundations = getSidebarEntries("primitives-foundations");
 
   return (
-    <Sidebar collapsible="offcanvas" variant="sidebar">
-      <SidebarHeader className="space-y-2 border-b border-sidebar-border px-2 py-2">
-        <Link
-          href="/"
-          className="flex h-8 items-center gap-2 rounded-md px-2 font-semibold text-sidebar-foreground hover:bg-sidebar-accent"
-        >
-          <TfLRoundel className="size-5 shrink-0" />
-          <span className="truncate">tfl-components</span>
-        </Link>
-        <div className="hidden px-1 md:block">
-          <DocsSearch variant="sidebar" />
-        </div>
-      </SidebarHeader>
+    <Sidebar
+      collapsible="offcanvas"
+      variant="sidebar"
+      className="top-12 h-[calc(100svh-3rem)]"
+    >
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Start</SidebarGroupLabel>
+          <SidebarGroupLabel>Get started</SidebarGroupLabel>
           <SidebarGroupContent>
-            <EntryList entries={startEntries} pathname={pathname} />
+            <EntryList entries={getStartedTop} pathname={pathname} />
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {blocks.map((block) => {
-          if (block.kind === "group") {
-            return (
-              <SidebarGroup key={block.group.id}>
-                <SidebarGroupLabel>{block.group.title}</SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <EntryList entries={block.entries} pathname={pathname} />
-                </SidebarGroupContent>
-              </SidebarGroup>
-            );
-          }
+        <SidebarGroup>
+          <SidebarGroupLabel>Components</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <EntryList entries={components} pathname={pathname} />
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-          return (
-            <SidebarGroup key={block.title}>
-              <SidebarGroupLabel>{block.title}</SidebarGroupLabel>
-              <SidebarGroupContent className="space-y-3">
-                {block.children.map(({ group, entries }) => (
-                  <div key={group.id} className="space-y-1">
-                    <p className="px-2 text-[11px] font-medium tracking-wide text-sidebar-foreground/60 uppercase">
-                      {group.title}
-                    </p>
-                    <EntryList entries={entries} pathname={pathname} />
-                  </div>
-                ))}
-              </SidebarGroupContent>
-            </SidebarGroup>
-          );
-        })}
+        {getStartedBottom.length > 0 ? (
+          <SidebarGroup>
+            <SidebarGroupLabel>Get started</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <EntryList entries={getStartedBottom} pathname={pathname} />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
+
+        {primitivesFoundations.length > 0 ? (
+          <SidebarGroup>
+            <SidebarGroupLabel>Primitives & Foundations</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <EntryList entries={primitivesFoundations} pathname={pathname} />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border px-2 py-3">
         <a

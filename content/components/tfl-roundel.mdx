@@ -42,9 +42,10 @@ export default function Page() {
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `variant` | mode preset | `underground`, `elizabeth`, `overground`, `dlr`, `tram`, … |
+| `variant` | mode preset | `underground`, `elizabeth`, `overground`, `dlr`, `tram`, `cycles`, … |
 | `text` | `string` | Bar label. |
 | `ringColor` / `barColor` / `textColor` | `string` | Custom colours. |
+| `barBorderColor` | `string` | Stroke around the bar. **Cycles only** per TfL Basic Elements (white bar + green border); omit for other modes. |
 | `artwork` | `boolean` | Use Wikimedia / local SVG artwork when allowed. |
 
 Mode presets and logo paths are exported as `ROUNDEL_PRESETS`, `ROUNDEL_LOGO_PATHS`, and `ROUNDEL_LOGO_SOURCES`.

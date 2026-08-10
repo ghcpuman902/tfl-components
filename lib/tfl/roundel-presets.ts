@@ -39,6 +39,11 @@ type RoundelPresetDef = {
   label: string;
   /** Visual variant from Basic Elements §3. */
   style: RoundelStyle;
+  /**
+   * Stroke around the bar. TfL Basic Elements: **Cycles only**
+   * (white bar with green border). Omit for every other mode.
+   */
+  barBorderColor?: string;
   logoPath?: string;
   logoSource?: string;
 };
@@ -154,6 +159,8 @@ export const ROUNDEL_PRESETS = {
     text: "CYCLES",
     label: "Santander Cycles",
     style: "cycles",
+    /** Basic Elements: Cycles bar is white with a green border. */
+    barBorderColor: TFL_MODAL_COLOURS.cycles.hex,
   },
 } as const satisfies Record<string, RoundelPresetDef>;
 

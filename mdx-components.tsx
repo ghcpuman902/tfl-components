@@ -1,18 +1,15 @@
 import type { MDXComponents } from "mdx/types";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { MdxSyntaxPre } from "@/components/docs/syntax-highlighted-code";
 import { compactMdxChildren } from "@/lib/mdx-children";
 import { getHeadingText, slugifyHeading } from "@/lib/heading-slug";
 
 const headingLinkClass = "no-underline hover:underline";
 
+/**
+ * MDX maps must stay RSC-only (no `"use client"` leaves). Client components
+ * break Cache Components `instant` validation with
+ * `client reference proxy … module factory is not available`.
+ */
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
     ...components,
@@ -61,30 +58,34 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     },
 
     table: ({ children }) => (
-      <div className="my-6 w-full overflow-y-auto">
-        <Table className="w-full">{compactMdxChildren(children)}</Table>
+      <div className="my-6 w-full overflow-x-auto">
+        <table className="w-full caption-bottom text-sm">
+          {compactMdxChildren(children)}
+        </table>
       </div>
     ),
     thead: ({ children }) => (
-      <TableHeader>{compactMdxChildren(children)}</TableHeader>
+      <thead className="[&_tr]:border-b">{compactMdxChildren(children)}</thead>
     ),
     tbody: ({ children }) => (
-      <TableBody>{compactMdxChildren(children)}</TableBody>
+      <tbody className="[&_tr:last-child]:border-0">
+        {compactMdxChildren(children)}
+      </tbody>
     ),
     tr: ({ children }) => (
-      <TableRow className="m-0 border-t p-0">
+      <tr className="m-0 border-t border-b p-0 transition-colors hover:bg-muted/50">
         {compactMdxChildren(children)}
-      </TableRow>
+      </tr>
     ),
     th: ({ children }) => (
-      <TableHead className="border px-4 py-2 text-left font-bold [&[align=center]]:text-center [&[align=right]]:text-right">
+      <th className="h-10 border px-4 py-2 text-left align-middle font-bold [&[align=center]]:text-center [&[align=right]]:text-right">
         {children}
-      </TableHead>
+      </th>
     ),
     td: ({ children }) => (
-      <TableCell className="border px-4 py-2 text-left [&[align=center]]:text-center [&[align=right]]:text-right">
+      <td className="border px-4 py-2 text-left align-middle [&[align=center]]:text-center [&[align=right]]:text-right">
         {children}
-      </TableCell>
+      </td>
     ),
 
     p: ({ children }) => (

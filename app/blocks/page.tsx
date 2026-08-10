@@ -18,9 +18,8 @@ export default function BlocksIndexPage() {
       entry={entry}
       purpose="Blocks are composition pages outside the reusable component catalog. They demonstrate how data-aware components and rendering primitives combine into a useful mini-app (similar to shadcn Blocks). A Block is not a single installable component API."
       relatedHrefs={[
-        { href: "/interfaces", label: "Data-aware components" },
-        { href: "/primitives", label: "Rendering primitives" },
-        { href: "/maps/schematic", label: "Schematic maps" },
+        { href: "/docs/components", label: "Components catalogue" },
+        { href: "/docs/map-schematic", label: "Schematic maps" },
         { href: "/blocks/week-ahead", label: "Week ahead" },
       ]}
     />

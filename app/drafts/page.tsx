@@ -23,7 +23,7 @@ export default function DraftsIndexPage() {
       ]}
       relatedHrefs={[
         { href: "/tools", label: "Tools — promoted playgrounds" },
-        { href: "/interfaces", label: "Data-aware — promoted components" },
+        { href: "/docs/components", label: "Components — promoted boards" },
         { href: "/blocks", label: "Blocks — composed patterns" },
       ]}
     />

@@ -5,7 +5,12 @@ import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
 import { InstallCommand } from "@/components/docs/install-command";
 import { RelationshipBadges } from "@/components/docs/relationship-badges";
-import { getDocsEntry, getUsedBySlugs, type DocsEntry } from "@/lib/docs-catalog";
+import {
+  getContentAssetSlug,
+  getDocsEntry,
+  getUsedBySlugs,
+  type DocsEntry,
+} from "@/lib/docs-catalog";
 import { loadComponentDemo } from "@/lib/load-component-demo";
 import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code";
 
@@ -58,18 +63,32 @@ export const renderComponentDocs = async ({
   const entry = getDocsEntry(slug);
   if (!entry || entry.kind !== "component") notFound();
 
-  const Demo = await loadComponentDemo(slug);
+  const contentSlug = getContentAssetSlug(slug);
+  const Demo = await loadComponentDemo(contentSlug);
   const isDataAware = entry.layer === "data-aware";
   const snippet =
-    getDataExample ?? (isDataAware ? DATA_AWARE_GET_DATA[slug] : undefined);
-  const usedBy = getUsedBySlugs(slug);
+    getDataExample ??
+    (isDataAware
+      ? (DATA_AWARE_GET_DATA[contentSlug] ?? DATA_AWARE_GET_DATA[slug])
+      : undefined);
+  const usedBy = getUsedBySlugs(entry.slug);
 
   let MDXPage: React.ComponentType<{ className?: string }> | null = null;
   try {
-    const mod = await import(`@/content/components/${slug}.mdx`);
+    const mod = await import(`@/content/components/${contentSlug}.mdx`);
     MDXPage = mod.default;
   } catch {
-    MDXPage = null;
+    // Bus arrivals reuses arrivals-board MDX when no bus-specific file.
+    if (contentSlug === "bus-arrivals-board") {
+      try {
+        const mod = await import(`@/content/components/arrivals-board.mdx`);
+        MDXPage = mod.default;
+      } catch {
+        MDXPage = null;
+      }
+    } else {
+      MDXPage = null;
+    }
   }
 
   return (

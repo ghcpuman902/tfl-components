@@ -176,7 +176,7 @@ import { LineStrip } from "@/components/tfl/diagram/line-strip";
             Browse lines
           </Link>
           . Branched schematics live under{" "}
-          <Link href="/primitives/branch-strip" className="underline">
+          <Link href="/docs/branch-strip" className="underline">
             Branch strip
           </Link>
           .
