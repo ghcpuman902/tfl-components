@@ -6,6 +6,7 @@
 
 import { getLineColor } from "tfl-ts";
 import {
+  CABLE_CAR_MAP_COLOUR,
   OVERGROUND_LINE_COLOURS,
   TFL_MODAL_COLOURS,
   UNDERGROUND_LINE_COLOURS,
@@ -16,7 +17,7 @@ import { LINE_DIAGRAM } from "@/lib/tfl/line-diagram";
 export type RouteTrackStyle = "solid" | "parallel" | "cable-car";
 
 /** Tube-map cable-car red (triple rails); mode roundel stays purple. */
-export const CABLE_CAR_DIAGRAM_COLOR = UNDERGROUND_LINE_COLOURS.central.hex;
+export const CABLE_CAR_DIAGRAM_COLOR = CABLE_CAR_MAP_COLOUR.hex;
 
 const OVERGROUND_LINE_IDS = new Set([
   "liberty",

@@ -1,24 +1,73 @@
 ## Purpose
 
-Shared TfL line colour chips and colour bars. Foundations identity — consumed by Interfaces and Primitives.
+Shared TfL line colour chips, colour bars, and the installable **tfl-colours** token layer. Foundations identity — consumed by Interfaces and Primitives.
 
 ## Licensing
 
-Official line colours are fine to use for accurate line identity. Do not treat this as a licence for Johnston typeface or the TfL roundel — see [Roundel](/foundations/tfl-roundel) for trademark behaviour.
+Official line colours are fine to use for accurate line identity. Do not treat this as a licence for Johnston typeface or the TfL roundel — see [Roundel](/docs/tfl-roundel) for trademark behaviour.
+
+## Sources
+
+Colours come from TfL’s [design standards](https://tfl.gov.uk/info-for/business-and-advertisers/design-standards) page, which links to the Colour standard PDF, Line diagram standard PDF, and other brand files. Values in `@/lib/tfl/brand-colours` follow those publications (Colour standard Issue 10; Line diagram Issue 4 for diagram paint notes such as Cable Car map red).
+
+Mono / colourless line identity follows the black-and-white Tube map key. Get the [large-print B&W Tube map](https://content.tfl.gov.uk/bw-large-print-tube-map.pdf) from TfL’s [Tube map](https://tfl.gov.uk/maps/track/tube) page. The preview lists colour vs mono stroke patterns; wiring those motifs into `data-tfl-colour="mono"` strips is still provisional.
 
 ## Installation
+
+Install the colour tokens first (or let a component pull them transitively):
+
+```bash
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tfl-colours.json
+```
+
+Then the badge / bar primitives:
 
 ```bash
 pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/line-badge.json
 ```
 
+`line-badge` lists `tfl-colours` as a registry dependency, so a single add of `line-badge` also merges the tokens into your CSS.
+
+## Token contract
+
+Three tiers — components only read the third:
+
+1. **Palette** — `--tfl-line-central`, `--tfl-mode-buses`, … (OKLCH in `:root` / `.dark`)
+2. **Binding** — `[data-line="central"] { --line-raw: var(--tfl-line-central); }`
+3. **Roles** — `--line-color`, `--line-ink`, `--line-stroke-style` (and `--line-border` under forced colours)
+
+```tsx
+<span data-line="central" className="bg-[var(--line-color)] text-[var(--line-ink)]">
+  Central
+</span>
+```
+
+Optional `color` on `LineBadge` / `LineColorBar` sets `--line-raw` inline for paints outside the token set (e.g. Cable Car map red).
+
+Tailwind utilities such as `bg-tfl-line-central` are available via `@theme inline` aliases.
+
+## Adaptive modes
+
+| Signal | Behaviour |
+|--------|-----------|
+| `.dark` | Brand + Go night OKLCH method (raise L ≈3%, slight chroma, hold hue). Northern → `#FCFCFC` fill / black ink |
+| `data-tfl-northern="halo"` | Opt-in: keep brand-black Northern. Add `.tfl-northern-halo-stroke` / `.tfl-northern-halo-bar` only when paint sits on an uncontrolled background (not filled chips — those already use `--line-ink`) |
+| `prefers-contrast: more` | Darken `--line-color` via relative OKLCH (skipped when forced-colors is active) |
+| `prefers-contrast` (any) | Strip decorative extras (`--line-decoration: none`) |
+| `forced-colors: active` | System colours; real border via `--line-border` (shadows are forced away) |
+| `data-tfl-colour="mono"` | App opt-in colourless mode — greys fills today; B&W map stroke patterns shown in the Mono line styles preview (not yet wired into role tokens) |
+
+There is no standard “colourless” media query; mono is an app attribute on `<html>`. Pattern reference: [B&W Tube map](https://content.tfl.gov.uk/bw-large-print-tube-map.pdf). Dark-map method research: `/temp/tfl-go-colours`.
+
 ## Preview
 
-See the preview above for chip and text variants.
+See the preview above for chips, formats, and colour vs mono line styles.
 
 ## API / values
 
 Rendering primitive for official TfL line colours. Data-aware boards compose these for chips and colour bars; use them directly when you already know the `lineId`.
+
+Published Pantone / CMYK / RGB / NCS live on `@/lib/tfl/brand-colours`. Screen tokens are **OKLCH** (and HEX) for light and dark — dark uses the Go night method; Northern dark fill is `#FCFCFC`. The formats table shows those four screen columns, then print.
 
 ```tsx
 import { LineBadge, LineColorBar } from "@/components/tfl/brand/line-badge"
@@ -27,8 +76,13 @@ export default function Page() {
   return (
     <>
       <LineBadge lineId="central" name="Central" />
-      <LineBadge lineId="northern" name="Northern" variant="text" />
       <LineColorBar lineId="elizabeth" modeName="elizabeth-line" />
+      {/* Cable Car on maps: triple red rails — pass map red as color */}
+      <LineColorBar
+        lineId="cable-car"
+        modeName="cable-car"
+        color="var(--tfl-line-central)"
+      />
     </>
   )
 }
@@ -36,19 +90,20 @@ export default function Page() {
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `lineId` | `string` | TfL line ID (`central`, `northern`, `elizabeth`, …). |
+| `lineId` | `string` | TfL line / mode id (`central`, `northern`, `elizabeth`, …). Sets `data-line`. |
 | `name` | `string` | Display label; defaults to `lineId`. |
 | `variant` | `"chip" \| "text"` | Filled chip (default) or coloured text. |
+| `color` | `string` | Optional `--line-raw` override when the paint is not the token colour. |
 | `lineStatuses` | `array` | Optional statuses for a richer ARIA label. |
 
-`LineColorBar` takes `lineId`, optional `modeName` (for Overground / Elizabeth parallel rails), and `heightClass`.
+`LineColorBar` takes `lineId`, optional `modeName` (`overground` / `elizabeth-line` parallel rails, `cable-car` = 3 red + 2 white), optional `color`, and `heightClass`.
 
 ## Used by
 
-- [Status board](/interfaces/tube-status-board)
-- [Arrivals](/interfaces/arrivals-board)
-- Line / branch strip primitives
+- [Tube & rail status](/docs/tube-rail-status)
+- [Tube & rail arrivals](/docs/tube-rail-arrivals)
+- [Line strip](/docs/line-strip)
 
 ## Dark contrast
 
-Poor-contrast lines (Northern) keep brand fill on dark surfaces. A hard white outline comes from `--line-dark-box-shadow` / `--line-dark-text-shadow` via `getLineCssProps`.
+Poor-contrast lines (Northern) use a dark-palette token swap (white fill, black ink) instead of a shadow outline — shadows disappear under `forced-colors`.

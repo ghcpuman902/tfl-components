@@ -1,0 +1,338 @@
+/*
+ * GENERATED FILE — do not edit by hand.
+ * Source: lib/tfl/brand-colours.ts via scripts/build-colour-tokens.ts
+ * Dark palette = brand + Go night OKLCH method (lib/tfl/dark-line-colours.ts).
+ * Northern dark default = #FCFCFC (Go light fill); halo opt-in keeps black.
+ */
+
+:root {
+  --tfl-line-bakerloo: oklch(57.843% 0.1352 60.31);
+  --tfl-ink-line-bakerloo: oklch(100% 0 0);
+  --tfl-line-central: oklch(57.537% 0.2169 28.39);
+  --tfl-ink-line-central: oklch(100% 0 0);
+  --tfl-line-circle: oklch(85.76% 0.1741 88.32);
+  --tfl-ink-line-circle: oklch(100% 0 0);
+  --tfl-line-district: oklch(51.462% 0.1468 148.58);
+  --tfl-ink-line-district: oklch(100% 0 0);
+  --tfl-line-hammersmith-city: oklch(75.439% 0.1343 3.62);
+  --tfl-ink-line-hammersmith-city: oklch(100% 0 0);
+  --tfl-line-jubilee: oklch(63.717% 0.0148 233.88);
+  --tfl-ink-line-jubilee: oklch(100% 0 0);
+  --tfl-line-metropolitan: oklch(44.936% 0.1839 356.16);
+  --tfl-ink-line-metropolitan: oklch(100% 0 0);
+  --tfl-line-northern: oklch(0% 0 0);
+  --tfl-ink-line-northern: oklch(100% 0 0);
+  --tfl-line-piccadilly: oklch(34.902% 0.2167 264.19);
+  --tfl-ink-line-piccadilly: oklch(100% 0 0);
+  --tfl-line-victoria: oklch(65.86% 0.1523 240.75);
+  --tfl-ink-line-victoria: oklch(100% 0 0);
+  --tfl-line-waterloo-city: oklch(79.587% 0.0915 178.61);
+  --tfl-ink-line-waterloo-city: oklch(100% 0 0);
+  --tfl-line-liberty: oklch(48.671% 0.0041 219.57);
+  --tfl-ink-line-liberty: oklch(100% 0 0);
+  --tfl-line-lioness: oklch(78.911% 0.1641 71.84);
+  --tfl-ink-line-lioness: oklch(100% 0 0);
+  --tfl-line-mildmay: oklch(54.119% 0.1213 238.66);
+  --tfl-ink-line-mildmay: oklch(100% 0 0);
+  --tfl-line-suffragette: oklch(72.021% 0.1426 149.29);
+  --tfl-ink-line-suffragette: oklch(100% 0 0);
+  --tfl-line-weaver: oklch(45.677% 0.1105 347.88);
+  --tfl-ink-line-weaver: oklch(100% 0 0);
+  --tfl-line-windrush: oklch(60.103% 0.2373 30.54);
+  --tfl-ink-line-windrush: oklch(100% 0 0);
+  --tfl-mode-tfl: oklch(34.902% 0.2167 264.19);
+  --tfl-ink-mode-tfl: oklch(100% 0 0);
+  --tfl-mode-dlr: oklch(68.197% 0.1167 193.32);
+  --tfl-ink-mode-dlr: oklch(100% 0 0);
+  --tfl-mode-elizabeth: oklch(44.58% 0.1568 297.41);
+  --tfl-ink-mode-elizabeth: oklch(100% 0 0);
+  --tfl-mode-buses: oklch(57.537% 0.2169 28.39);
+  --tfl-ink-mode-buses: oklch(100% 0 0);
+  --tfl-mode-cable-car: oklch(50.344% 0.1285 302.56);
+  --tfl-ink-mode-cable-car: oklch(100% 0 0);
+  --tfl-mode-coaches: oklch(79.446% 0.1709 71.19);
+  --tfl-ink-mode-coaches: oklch(34.902% 0.2167 264.19);
+  --tfl-mode-dial-a-ride: oklch(57.696% 0.2365 330.24);
+  --tfl-ink-mode-dial-a-ride: oklch(100% 0 0);
+  --tfl-mode-overground: oklch(71.754% 0.1841 51.74);
+  --tfl-ink-mode-overground: oklch(100% 0 0);
+  --tfl-mode-river: oklch(65.86% 0.1523 240.75);
+  --tfl-ink-mode-river: oklch(100% 0 0);
+  --tfl-mode-trams: oklch(69.246% 0.1906 136.17);
+  --tfl-ink-mode-trams: oklch(100% 0 0);
+  --tfl-mode-underground: oklch(34.902% 0.2167 264.19);
+  --tfl-ink-mode-underground: oklch(100% 0 0);
+  --tfl-mode-cycles: oklch(62.328% 0.2211 30.39);
+  --tfl-ink-mode-cycles: oklch(100% 0 0);
+}
+
+/* Dark map — brand + Go night OKLCH method; Northern light fill. */
+.dark {
+  --tfl-line-bakerloo: oklch(61.152% 0.1432 60.16);
+  --tfl-ink-line-bakerloo: oklch(100% 0 0);
+  --tfl-line-central: oklch(60.815% 0.2248 29.25);
+  --tfl-ink-line-central: oklch(100% 0 0);
+  --tfl-line-circle: oklch(87.888% 0.1801 93.58);
+  --tfl-ink-line-circle: oklch(100% 0 0);
+  --tfl-line-district: oklch(54.736% 0.1534 149.27);
+  --tfl-ink-line-district: oklch(100% 0 0);
+  --tfl-line-hammersmith-city: oklch(77.968% 0.137 3.43);
+  --tfl-ink-line-hammersmith-city: oklch(100% 0 0);
+  --tfl-line-jubilee: oklch(67.026% 0.0236 235.19);
+  --tfl-ink-line-jubilee: oklch(100% 0 0);
+  --tfl-line-metropolitan: oklch(48.352% 0.1925 357.03);
+  --tfl-ink-line-metropolitan: oklch(100% 0 0);
+  --tfl-line-northern: oklch(99.107% 0 0);
+  --tfl-ink-line-northern: oklch(0% 0 0);
+  --tfl-line-piccadilly: oklch(38.239% 0.2257 265.01);
+  --tfl-ink-line-piccadilly: oklch(100% 0 0);
+  --tfl-line-victoria: oklch(69.096% 0.1605 241.54);
+  --tfl-ink-line-victoria: oklch(100% 0 0);
+  --tfl-line-waterloo-city: oklch(83.007% 0.1005 179.42);
+  --tfl-ink-line-waterloo-city: oklch(100% 0 0);
+  --tfl-line-liberty: oklch(52.03% 0.0131 217.64);
+  --tfl-ink-line-liberty: oklch(100% 0 0);
+  --tfl-line-lioness: oklch(81.275% 0.1677 75.74);
+  --tfl-ink-line-lioness: oklch(100% 0 0);
+  --tfl-line-mildmay: oklch(57.426% 0.1292 239.24);
+  --tfl-ink-line-mildmay: oklch(100% 0 0);
+  --tfl-line-suffragette: oklch(75.291% 0.1506 149.96);
+  --tfl-ink-line-suffragette: oklch(100% 0 0);
+  --tfl-line-weaver: oklch(48.977% 0.1196 348.99);
+  --tfl-ink-line-weaver: oklch(100% 0 0);
+  --tfl-line-windrush: oklch(63.524% 0.2459 31.23);
+  --tfl-ink-line-windrush: oklch(100% 0 0);
+  --tfl-mode-tfl: oklch(38.239% 0.2257 265.01);
+  --tfl-ink-mode-tfl: oklch(100% 0 0);
+  --tfl-mode-dlr: oklch(71.679% 0.1225 194.09);
+  --tfl-ink-mode-dlr: oklch(100% 0 0);
+  --tfl-mode-elizabeth: oklch(47.862% 0.1654 298.22);
+  --tfl-ink-mode-elizabeth: oklch(100% 0 0);
+  --tfl-mode-buses: oklch(60.815% 0.2248 29.25);
+  --tfl-ink-mode-buses: oklch(100% 0 0);
+  --tfl-mode-cable-car: oklch(53.647% 0.1379 303.61);
+  --tfl-ink-mode-cable-car: oklch(100% 0 0);
+  --tfl-mode-coaches: oklch(81.242% 0.1704 76.39);
+  --tfl-ink-mode-coaches: oklch(34.902% 0.2167 264.19);
+  --tfl-mode-dial-a-ride: oklch(61.035% 0.2451 331.24);
+  --tfl-ink-mode-dial-a-ride: oklch(100% 0 0);
+  --tfl-mode-overground: oklch(73.798% 0.1834 54.69);
+  --tfl-ink-mode-overground: oklch(100% 0 0);
+  --tfl-mode-river: oklch(69.096% 0.1605 241.54);
+  --tfl-ink-mode-river: oklch(100% 0 0);
+  --tfl-mode-trams: oklch(72.543% 0.1989 136.92);
+  --tfl-ink-mode-trams: oklch(100% 0 0);
+  --tfl-mode-underground: oklch(38.239% 0.2257 265.01);
+  --tfl-ink-mode-underground: oklch(100% 0 0);
+  --tfl-mode-cycles: oklch(65.738% 0.2299 31.15);
+  --tfl-ink-mode-cycles: oklch(100% 0 0);
+}
+
+@theme inline {
+  --color-tfl-line-bakerloo: var(--tfl-line-bakerloo);
+  --color-tfl-line-central: var(--tfl-line-central);
+  --color-tfl-line-circle: var(--tfl-line-circle);
+  --color-tfl-line-district: var(--tfl-line-district);
+  --color-tfl-line-hammersmith-city: var(--tfl-line-hammersmith-city);
+  --color-tfl-line-jubilee: var(--tfl-line-jubilee);
+  --color-tfl-line-metropolitan: var(--tfl-line-metropolitan);
+  --color-tfl-line-northern: var(--tfl-line-northern);
+  --color-tfl-line-piccadilly: var(--tfl-line-piccadilly);
+  --color-tfl-line-victoria: var(--tfl-line-victoria);
+  --color-tfl-line-waterloo-city: var(--tfl-line-waterloo-city);
+  --color-tfl-line-liberty: var(--tfl-line-liberty);
+  --color-tfl-line-lioness: var(--tfl-line-lioness);
+  --color-tfl-line-mildmay: var(--tfl-line-mildmay);
+  --color-tfl-line-suffragette: var(--tfl-line-suffragette);
+  --color-tfl-line-weaver: var(--tfl-line-weaver);
+  --color-tfl-line-windrush: var(--tfl-line-windrush);
+  --color-tfl-mode-tfl: var(--tfl-mode-tfl);
+  --color-tfl-mode-dlr: var(--tfl-mode-dlr);
+  --color-tfl-mode-elizabeth: var(--tfl-mode-elizabeth);
+  --color-tfl-mode-buses: var(--tfl-mode-buses);
+  --color-tfl-mode-cable-car: var(--tfl-mode-cable-car);
+  --color-tfl-mode-coaches: var(--tfl-mode-coaches);
+  --color-tfl-mode-dial-a-ride: var(--tfl-mode-dial-a-ride);
+  --color-tfl-mode-overground: var(--tfl-mode-overground);
+  --color-tfl-mode-river: var(--tfl-mode-river);
+  --color-tfl-mode-trams: var(--tfl-mode-trams);
+  --color-tfl-mode-underground: var(--tfl-mode-underground);
+  --color-tfl-mode-cycles: var(--tfl-mode-cycles);
+}
+
+@layer base {
+  [data-line='bakerloo'] {
+    --line-raw: var(--tfl-line-bakerloo);
+    --line-ink-raw: var(--tfl-ink-line-bakerloo);
+  }
+  [data-line='central'] {
+    --line-raw: var(--tfl-line-central);
+    --line-ink-raw: var(--tfl-ink-line-central);
+  }
+  [data-line='circle'] {
+    --line-raw: var(--tfl-line-circle);
+    --line-ink-raw: var(--tfl-ink-line-circle);
+  }
+  [data-line='district'] {
+    --line-raw: var(--tfl-line-district);
+    --line-ink-raw: var(--tfl-ink-line-district);
+  }
+  [data-line='hammersmith-city'] {
+    --line-raw: var(--tfl-line-hammersmith-city);
+    --line-ink-raw: var(--tfl-ink-line-hammersmith-city);
+  }
+  [data-line='jubilee'] {
+    --line-raw: var(--tfl-line-jubilee);
+    --line-ink-raw: var(--tfl-ink-line-jubilee);
+  }
+  [data-line='metropolitan'] {
+    --line-raw: var(--tfl-line-metropolitan);
+    --line-ink-raw: var(--tfl-ink-line-metropolitan);
+  }
+  [data-line='northern'] {
+    --line-raw: var(--tfl-line-northern);
+    --line-ink-raw: var(--tfl-ink-line-northern);
+  }
+  [data-line='piccadilly'] {
+    --line-raw: var(--tfl-line-piccadilly);
+    --line-ink-raw: var(--tfl-ink-line-piccadilly);
+  }
+  [data-line='victoria'] {
+    --line-raw: var(--tfl-line-victoria);
+    --line-ink-raw: var(--tfl-ink-line-victoria);
+  }
+  [data-line='waterloo-city'] {
+    --line-raw: var(--tfl-line-waterloo-city);
+    --line-ink-raw: var(--tfl-ink-line-waterloo-city);
+  }
+  [data-line='liberty'] {
+    --line-raw: var(--tfl-line-liberty);
+    --line-ink-raw: var(--tfl-ink-line-liberty);
+  }
+  [data-line='lioness'] {
+    --line-raw: var(--tfl-line-lioness);
+    --line-ink-raw: var(--tfl-ink-line-lioness);
+  }
+  [data-line='mildmay'] {
+    --line-raw: var(--tfl-line-mildmay);
+    --line-ink-raw: var(--tfl-ink-line-mildmay);
+  }
+  [data-line='suffragette'] {
+    --line-raw: var(--tfl-line-suffragette);
+    --line-ink-raw: var(--tfl-ink-line-suffragette);
+  }
+  [data-line='weaver'] {
+    --line-raw: var(--tfl-line-weaver);
+    --line-ink-raw: var(--tfl-ink-line-weaver);
+  }
+  [data-line='windrush'] {
+    --line-raw: var(--tfl-line-windrush);
+    --line-ink-raw: var(--tfl-ink-line-windrush);
+  }
+  [data-line='tfl'] {
+    --line-raw: var(--tfl-mode-tfl);
+    --line-ink-raw: var(--tfl-ink-mode-tfl);
+  }
+  [data-line='dlr'] {
+    --line-raw: var(--tfl-mode-dlr);
+    --line-ink-raw: var(--tfl-ink-mode-dlr);
+  }
+  [data-line='elizabeth'] {
+    --line-raw: var(--tfl-mode-elizabeth);
+    --line-ink-raw: var(--tfl-ink-mode-elizabeth);
+  }
+  [data-line='elizabeth-line'] {
+    --line-raw: var(--tfl-mode-elizabeth);
+    --line-ink-raw: var(--tfl-ink-mode-elizabeth);
+  }
+  [data-line='buses'] {
+    --line-raw: var(--tfl-mode-buses);
+    --line-ink-raw: var(--tfl-ink-mode-buses);
+  }
+  [data-line='cable-car'] {
+    --line-raw: var(--tfl-mode-cable-car);
+    --line-ink-raw: var(--tfl-ink-mode-cable-car);
+  }
+  [data-line='london-cable-car'] {
+    --line-raw: var(--tfl-mode-cable-car);
+    --line-ink-raw: var(--tfl-ink-mode-cable-car);
+  }
+  [data-line='coaches'] {
+    --line-raw: var(--tfl-mode-coaches);
+    --line-ink-raw: var(--tfl-ink-mode-coaches);
+  }
+  [data-line='dial-a-ride'] {
+    --line-raw: var(--tfl-mode-dial-a-ride);
+    --line-ink-raw: var(--tfl-ink-mode-dial-a-ride);
+  }
+  [data-line='overground'] {
+    --line-raw: var(--tfl-mode-overground);
+    --line-ink-raw: var(--tfl-ink-mode-overground);
+  }
+  [data-line='river'] {
+    --line-raw: var(--tfl-mode-river);
+    --line-ink-raw: var(--tfl-ink-mode-river);
+  }
+  [data-line='trams'] {
+    --line-raw: var(--tfl-mode-trams);
+    --line-ink-raw: var(--tfl-ink-mode-trams);
+  }
+  [data-line='tram'] {
+    --line-raw: var(--tfl-mode-trams);
+    --line-ink-raw: var(--tfl-ink-mode-trams);
+  }
+  [data-line='underground'] {
+    --line-raw: var(--tfl-mode-underground);
+    --line-ink-raw: var(--tfl-ink-mode-underground);
+  }
+  [data-line='cycles'] {
+    --line-raw: var(--tfl-mode-cycles);
+    --line-ink-raw: var(--tfl-ink-mode-cycles);
+  }
+  [data-line] {
+    --line-color: var(--line-raw);
+    --line-ink: var(--line-ink-raw, oklch(100% 0 0));
+    --line-stroke-style: solid;
+  }
+}
+
+@media (prefers-contrast: more) and (not (forced-colors: active)) {
+  [data-line] {
+    --line-color: oklch(from var(--line-raw) calc(l * 0.82) c h);
+  }
+}
+
+@media (prefers-contrast) {
+  [data-line] {
+    --line-decoration: none;
+  }
+}
+
+@media (forced-colors: active) {
+  [data-line] {
+    --line-color: CanvasText;
+    --line-ink: Canvas;
+    --line-border: 1px solid CanvasText;
+  }
+}
+
+[data-tfl-colour="mono"] [data-line] {
+  --line-color: var(--foreground);
+  --line-ink: var(--background);
+}
+
+/* Opt-in: brand-black Northern + light halo (stroke / text-shadow). */
+[data-tfl-northern="halo"] [data-line="northern"],
+[data-line="northern"][data-tfl-northern="halo"] {
+  --line-raw: oklch(0% 0 0);
+  --line-ink-raw: oklch(100% 0 0);
+}
+
+.tfl-northern-halo-stroke {
+  text-shadow: -1px -1px 0 #FCFCFC, 1px -1px 0 #FCFCFC, -1px 1px 0 #FCFCFC, 1px 1px 0 #FCFCFC;
+}
+
+.tfl-northern-halo-bar {
+  box-shadow: 0 0 0 1px #FCFCFC;
+}
+

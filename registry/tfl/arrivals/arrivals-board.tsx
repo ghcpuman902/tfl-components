@@ -2,13 +2,11 @@
 
 import type { CSSProperties } from "react";
 import type { RealtimePrediction } from "tfl-ts";
-import { getLineCssProps, getLineInlineStyles } from "tfl-ts";
 import { Loader2 } from "lucide-react";
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip";
 import { PlatformChip } from "@/components/tfl/arrivals/platform-chip";
 import { LineColorBar } from "@/components/tfl/brand/line-badge";
 import { StationName } from "@/components/tfl/station-name";
-import { TFL_MODAL_COLOURS } from "@/lib/tfl/brand-colours";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -301,8 +299,8 @@ export const ArrivalsBoardSkeleton = () => (
 
 const StopLetterBadge = ({ letter }: { letter: string }) => (
   <span
-    className="relative -top-px inline-flex size-5 shrink-0 items-center justify-center rounded-full align-middle text-[11px] font-bold leading-none text-white"
-    style={{ backgroundColor: TFL_MODAL_COLOURS.buses.hex }}
+    data-line="buses"
+    className="relative -top-px inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--line-color)] align-middle text-[11px] font-bold leading-none text-[var(--line-ink)]"
     aria-label={`Stop ${letter}`}
   >
     {letter}
@@ -479,10 +477,7 @@ export const ArrivalsBoard = ({
 
       <div className="flex flex-col">
         {groups.map((line) => {
-          const styles = line.bus
-            ? { color: TFL_MODAL_COLOURS.buses.hex }
-            : getLineInlineStyles(line.lineId);
-          const cssProps = line.bus ? undefined : getLineCssProps(line.lineId);
+          const lineKey = line.bus ? "buses" : line.lineId;
           const stripedBar =
             !line.bus &&
             (line.modeName === "overground" ||
@@ -523,6 +518,7 @@ export const ArrivalsBoard = ({
                 box-border; striped modes paint an absolute bar so height stays fixed.
               */}
               <header
+                data-line={lineKey || undefined}
                 className={cn(
                   "relative flex items-end pb-2",
                   TILE_CLASS,
@@ -531,19 +527,16 @@ export const ArrivalsBoard = ({
                 style={
                   stripedBar
                     ? undefined
-                    : {
-                        borderBottomColor: line.bus
-                          ? TFL_MODAL_COLOURS.buses.hex
-                          : styles.color,
-                      }
+                    : ({
+                        borderBottomColor: "var(--line-color)",
+                      } as CSSProperties)
                 }
               >
                 <LineHeadingTag
                   className={cn(
-                    "min-w-0 truncate text-base font-semibold leading-6",
+                    "min-w-0 truncate text-base font-semibold leading-6 text-[var(--line-color)]",
                     !line.bus && "tfl-dark-line-text",
                   )}
-                  style={{ color: styles.color, ...cssProps }}
                 >
                   {line.lineName}
                 </LineHeadingTag>

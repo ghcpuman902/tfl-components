@@ -239,7 +239,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "line-badge",
     title: "Colours",
     description:
-      "Official TfL line colours and badges with dark-mode outlines.",
+      "Official TfL line colours, OKLCH tokens, and adaptive data-line roles.",
     group: "foundations",
     kind: "component",
     href: "/docs/colors",

@@ -2,8 +2,6 @@ import { type ReactNode } from "react";
 import Link from "next/link";
 import {
   getSeverityClasses,
-  getLineCssProps,
-  getLineInlineStyles,
   isNormalService,
   hasNightService,
   LINE_ORDER,
@@ -103,7 +101,8 @@ const statusLineModeName = (lineId: string) => {
   return "tube";
 };
 
-const darkReadableTextClass = "tfl-dark-line-text";
+/** Resolves via `data-line` → `--line-color` from tfl-colours tokens. */
+const lineTitleClass = "tfl-dark-line-text text-[var(--line-color)]";
 
 const stripStatusReason = (reason: string, lineName?: string) =>
   reason
@@ -174,18 +173,16 @@ export const TubeStatusBoardSkeleton = ({
       <h2 className="mb-4 text-xl font-semibold">Good Service</h2>
       <div className="grid grid-cols-2 justify-items-stretch gap-4 md:grid-cols-3 lg:grid-cols-5">
         {lineIds.map((lineId) => {
-          const lineStyles = getLineInlineStyles(lineId);
-          const cssProps = getLineCssProps(lineId);
           const label = STATUS_LINE_LABELS[lineId] ?? lineId;
 
           return (
             <div key={lineId} className="flex flex-col saturate-0">
               <h3
+                data-line={lineId}
                 className={cn(
                   "text-sm leading-tight font-semibold",
-                  darkReadableTextClass,
+                  lineTitleClass,
                 )}
-                style={{ color: lineStyles.color, ...cssProps }}
               >
                 {label}
               </h3>
@@ -238,17 +235,14 @@ export const TubeStatusBoard = ({
           <h2 className="mb-4 text-xl font-semibold">Service Disruptions</h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {disruptedLines.map((line) => {
-              const lineStyles = getLineInlineStyles(line.id ?? "");
-              const cssProps = getLineCssProps(line.id ?? "");
-
               return (
                 <div
                   key={line.id ?? line.name}
                   className="flex flex-col gap-0"
                 >
                   <h3
-                    className={cn("text-lg font-semibold", darkReadableTextClass)}
-                    style={{ color: lineStyles.color, ...cssProps }}
+                    data-line={line.id ?? undefined}
+                    className={cn("text-lg font-semibold", lineTitleClass)}
                   >
                     {line.name}
                   </h3>
@@ -301,9 +295,6 @@ export const TubeStatusBoard = ({
         </h2>
         <div className="grid grid-cols-2 justify-items-stretch gap-4 md:grid-cols-3 lg:grid-cols-5">
           {goodServiceLines.map((line) => {
-            const lineStyles = getLineInlineStyles(line.id ?? "");
-            const cssProps = getLineCssProps(line.id ?? "");
-
             return (
               <div
                 key={line.id ?? line.name}
@@ -311,19 +302,19 @@ export const TubeStatusBoard = ({
               >
                 <div className="flex items-start justify-between">
                   <h3
+                    data-line={line.id ?? undefined}
                     className={cn(
                       "text-sm leading-tight font-semibold",
-                      darkReadableTextClass,
+                      lineTitleClass,
                     )}
-                    style={{ color: lineStyles.color, ...cssProps }}
                   >
                     {line.name}
                   </h3>
                   {hasNightService(line.lineStatuses ?? []) && (
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <TrainFrontTunnel
-                        className={cn("h-3 w-3", darkReadableTextClass)}
-                        style={{ color: lineStyles.color, ...cssProps }}
+                        data-line={line.id ?? undefined}
+                        className={cn("h-3 w-3", lineTitleClass)}
                         aria-hidden
                       />
                       <span>

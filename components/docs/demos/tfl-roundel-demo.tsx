@@ -8,6 +8,33 @@ import {
 const PRESET_KEYS = Object.keys(ROUNDEL_PRESETS) as RoundelPreset[];
 const ARTWORK_KEYS = PRESET_KEYS.filter((key) => getRoundelLogoPath(key));
 
+const RoundelGrid = ({
+  keys,
+  artwork = false,
+}: {
+  keys: RoundelPreset[];
+  artwork?: boolean;
+}) => (
+  // Fixed tracks + auto-fill: wrap denser on wide screens, no stretched cells.
+  <ul className="grid grid-cols-[repeat(auto-fill,6.5rem)] justify-start">
+    {keys.map((key) => (
+      <li
+        key={key}
+        className="flex size-[6.5rem] flex-col items-center justify-center gap-1.5 px-1"
+      >
+        <TfLRoundel
+          variant={key}
+          artwork={artwork}
+          className={artwork ? "h-12 w-auto" : "size-14"}
+        />
+        <span className="max-w-full truncate text-center text-xs text-muted-foreground">
+          {key}
+        </span>
+      </li>
+    ))}
+  </ul>
+);
+
 /** Presentational — placeholder unless NEXT_PUBLIC_ALLOW_TFL_ROUNDEL=true. */
 export default function TflRoundelDemo() {
   const allowed =
@@ -31,33 +58,13 @@ export default function TflRoundelDemo() {
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Mode presets</h2>
-        <ul className="flex flex-wrap gap-4">
-          {PRESET_KEYS.slice(0, 8).map((key) => (
-            <li
-              key={key}
-              className="flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-3"
-            >
-              <TfLRoundel variant={key} className="size-14" />
-              <span className="text-xs text-muted-foreground">{key}</span>
-            </li>
-          ))}
-        </ul>
+        <RoundelGrid keys={PRESET_KEYS} />
       </section>
 
       {ARTWORK_KEYS.length > 0 ? (
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Artwork variants</h2>
-          <ul className="flex flex-wrap gap-4">
-            {ARTWORK_KEYS.map((key) => (
-              <li
-                key={key}
-                className="flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-3"
-              >
-                <TfLRoundel variant={key} artwork className="h-12 w-auto" />
-                <span className="text-xs text-muted-foreground">{key}</span>
-              </li>
-            ))}
-          </ul>
+          <RoundelGrid keys={ARTWORK_KEYS} artwork />
         </section>
       ) : null}
     </div>

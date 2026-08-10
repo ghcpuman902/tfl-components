@@ -39,7 +39,8 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
       className={cn(
-        "antialiased",
+        /* Page-level scroll + Baseline scrollbar-gutter:stable (needs overflow ≠ visible). */
+        "overflow-y-auto scrollbar-gutter-stable antialiased",
         fontMono.variable,
         "font-sans",
         hammersmith.variable,

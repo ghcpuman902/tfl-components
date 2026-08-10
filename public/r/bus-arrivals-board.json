@@ -8,6 +8,7 @@
     "lucide-react"
   ],
   "registryDependencies": [
+    "https://tfl-components.vercel.app/r/tfl-colours.json",
     "arrivals-board",
     "button",
     "input",

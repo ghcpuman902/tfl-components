@@ -52,7 +52,7 @@ export const InstallCommand = ({
 
   return (
     <div className={cn("rounded-lg border border-border", className)}>
-      <Tabs defaultValue="pnpm">
+      <Tabs defaultValue="pnpm" className="gap-0">
         <div className="flex items-center justify-between gap-2 border-b border-border px-2 py-1.5">
           <TabsList variant="line" className="h-8">
             {PACKAGE_MANAGERS.map((pm) => (

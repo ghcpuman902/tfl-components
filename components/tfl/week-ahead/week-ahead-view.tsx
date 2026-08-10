@@ -8,7 +8,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getLineCssProps, getLineInlineStyles } from "tfl-ts";
 import { LineStrip } from "@/components/tfl/diagram/line-strip";
 import type { LondonDay } from "@/lib/tfl/london-dates";
 import type {
@@ -120,8 +119,6 @@ export const WeekAheadStatusHydrator = ({
 /** One line row: stations always; status overlay when the hydrator has run. */
 export const WeekAheadLineRow = ({ route }: { route: WeekAheadLineRoute }) => {
   const { selectedDay, status } = useWeekAhead();
-  const styles = getLineInlineStyles(route.lineId);
-  const cssProps = getLineCssProps(route.lineId);
 
   const service =
     status && !status.statusError
@@ -148,8 +145,8 @@ export const WeekAheadLineRow = ({ route }: { route: WeekAheadLineRoute }) => {
     >
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2
-          className="tfl-dark-line-text text-base font-semibold"
-          style={{ color: styles.color, ...cssProps }}
+          data-line={route.lineId}
+          className="tfl-dark-line-text text-base font-semibold text-[var(--line-color)]"
         >
           {route.lineName}
         </h2>

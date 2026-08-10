@@ -1,0 +1,2313 @@
+{
+  "mode": "day",
+  "source_images": [
+    "IMG_3593.jpg",
+    "IMG_3592.jpg",
+    "IMG_3591.jpg"
+  ],
+  "method": "Per-token: mean of pixels within Lab \u0394E gate of published hex. Specials: HSV isolates + east crops for NR / inactive cable car.",
+  "notes": [
+    "Daytime TfL Go map calibration before night mode.",
+    "National Rail is pinkish/salmon \u2014 lighter and less magenta than H&C.",
+    "Cable car not running: light grey dashed stroke, not mode purple or Central red rails."
+  ],
+  "proposed_new_tokens": {
+    "nationalRailDayMap": "#D8A0AE",
+    "cableCarInactiveDayMap": "#D1D0D3",
+    "thamesDayFill": "#C2DEF0",
+    "accessibilityYellow": "#EFCE53",
+    "overgroundGoDayObserved": "#DA9840",
+    "elizabethGoDayObserved": "#68558F",
+    "dlrGoDayObserved": "#6AA8A9",
+    "centralGoDayObserved": "#BE3F36",
+    "circleGoDayObserved": "#F3CA50",
+    "overgroundGoDayBrightCore": "#F0A83C"
+  },
+  "token_matches": {
+    "bakerloo": {
+      "token": "bakerloo",
+      "our_hex": "#B26300",
+      "go_mean_hex": "#A56623",
+      "go_mode_hex": "#A86828",
+      "delta_e": 13.63,
+      "verdict": "near",
+      "sample_count": 2219,
+      "detail": {
+        "sample_count": 2219,
+        "mean_hex": "#A56623",
+        "mean_rgb": [
+          165,
+          102,
+          35
+        ],
+        "mode_hex": "#A86828",
+        "mode_rgb": [
+          168,
+          104,
+          40
+        ],
+        "delta_e_mean_vs_token": 13.63,
+        "delta_e_mode_vs_token": 14.48
+      }
+    },
+    "central": {
+      "token": "central",
+      "our_hex": "#DC241F",
+      "go_mean_hex": "#C6372C",
+      "go_mode_hex": "#C4382C",
+      "delta_e": 15.64,
+      "verdict": "drift",
+      "sample_count": 3246,
+      "detail": {
+        "sample_count": 3246,
+        "mean_hex": "#C6372C",
+        "mean_rgb": [
+          198,
+          55,
+          44
+        ],
+        "mode_hex": "#C4382C",
+        "mode_rgb": [
+          196,
+          56,
+          44
+        ],
+        "delta_e_mean_vs_token": 15.64,
+        "delta_e_mode_vs_token": 16.67
+      }
+    },
+    "circle": {
+      "token": "circle",
+      "our_hex": "#FFC80A",
+      "go_mean_hex": "#F4C846",
+      "go_mode_hex": "#F4C848",
+      "delta_e": 16.36,
+      "verdict": "drift",
+      "sample_count": 1796,
+      "detail": {
+        "sample_count": 1796,
+        "mean_hex": "#F4C846",
+        "mean_rgb": [
+          244,
+          200,
+          70
+        ],
+        "mode_hex": "#F4C848",
+        "mode_rgb": [
+          244,
+          200,
+          72
+        ],
+        "delta_e_mean_vs_token": 16.36,
+        "delta_e_mode_vs_token": 17.1
+      }
+    },
+    "district": {
+      "token": "district",
+      "our_hex": "#007D32",
+      "go_mean_hex": "#367638",
+      "go_mode_hex": "#387C3C",
+      "delta_e": 13.22,
+      "verdict": "near",
+      "sample_count": 5503,
+      "detail": {
+        "sample_count": 5503,
+        "mean_hex": "#367638",
+        "mean_rgb": [
+          54,
+          118,
+          56
+        ],
+        "mode_hex": "#387C3C",
+        "mode_rgb": [
+          56,
+          124,
+          60
+        ],
+        "delta_e_mean_vs_token": 13.22,
+        "delta_e_mode_vs_token": 11.68
+      }
+    },
+    "hammersmithCity": {
+      "token": "hammersmithCity",
+      "our_hex": "#F589A6",
+      "go_mean_hex": "#E18CA3",
+      "go_mode_hex": "#E48CA4",
+      "delta_e": 9.3,
+      "verdict": "near",
+      "sample_count": 7859,
+      "detail": {
+        "sample_count": 7859,
+        "mean_hex": "#E18CA3",
+        "mean_rgb": [
+          225,
+          140,
+          163
+        ],
+        "mode_hex": "#E48CA4",
+        "mode_rgb": [
+          228,
+          140,
+          164
+        ],
+        "delta_e_mean_vs_token": 9.3,
+        "delta_e_mode_vs_token": 8.05
+      }
+    },
+    "jubilee": {
+      "token": "jubilee",
+      "our_hex": "#838D93",
+      "go_mean_hex": "#8B8C92",
+      "go_mode_hex": "#A8A8AC",
+      "delta_e": 3.4,
+      "verdict": "close",
+      "sample_count": 37786,
+      "detail": {
+        "sample_count": 37786,
+        "mean_hex": "#8B8C92",
+        "mean_rgb": [
+          139,
+          140,
+          146
+        ],
+        "mode_hex": "#A8A8AC",
+        "mode_rgb": [
+          168,
+          168,
+          172
+        ],
+        "delta_e_mean_vs_token": 3.4,
+        "delta_e_mode_vs_token": 11.64
+      }
+    },
+    "metropolitan": {
+      "token": "metropolitan",
+      "our_hex": "#9B0058",
+      "go_mean_hex": "#861953",
+      "go_mode_hex": "#8C1C58",
+      "delta_e": 10.78,
+      "verdict": "near",
+      "sample_count": 5442,
+      "detail": {
+        "sample_count": 5442,
+        "mean_hex": "#861953",
+        "mean_rgb": [
+          134,
+          25,
+          83
+        ],
+        "mode_hex": "#8C1C58",
+        "mode_rgb": [
+          140,
+          28,
+          88
+        ],
+        "delta_e_mean_vs_token": 10.78,
+        "delta_e_mode_vs_token": 9.32
+      }
+    },
+    "northern": {
+      "token": "northern",
+      "our_hex": "#000000",
+      "go_mean_hex": "#030304",
+      "go_mode_hex": "#000000",
+      "delta_e": 0.93,
+      "verdict": "exact",
+      "sample_count": 20232,
+      "detail": {
+        "sample_count": 20232,
+        "mean_hex": "#030304",
+        "mean_rgb": [
+          3,
+          3,
+          4
+        ],
+        "mode_hex": "#000000",
+        "mode_rgb": [
+          0,
+          0,
+          0
+        ],
+        "delta_e_mean_vs_token": 0.93,
+        "delta_e_mode_vs_token": 0.0
+      }
+    },
+    "piccadilly": {
+      "token": "piccadilly",
+      "our_hex": "#0019A8",
+      "go_mean_hex": "#051696",
+      "go_mode_hex": "#081CA0",
+      "delta_e": 8.18,
+      "verdict": "near",
+      "sample_count": 6419,
+      "detail": {
+        "sample_count": 6419,
+        "mean_hex": "#051696",
+        "mean_rgb": [
+          5,
+          22,
+          150
+        ],
+        "mode_hex": "#081CA0",
+        "mode_rgb": [
+          8,
+          28,
+          160
+        ],
+        "delta_e_mean_vs_token": 8.18,
+        "delta_e_mode_vs_token": 5.76
+      }
+    },
+    "victoria": {
+      "token": "victoria",
+      "our_hex": "#039BE5",
+      "go_mean_hex": "#5193D2",
+      "go_mode_hex": "#4490D4",
+      "delta_e": 9.81,
+      "verdict": "near",
+      "sample_count": 4389,
+      "detail": {
+        "sample_count": 4389,
+        "mean_hex": "#5193D2",
+        "mean_rgb": [
+          81,
+          147,
+          210
+        ],
+        "mode_hex": "#4490D4",
+        "mode_rgb": [
+          68,
+          144,
+          212
+        ],
+        "delta_e_mean_vs_token": 9.81,
+        "delta_e_mode_vs_token": 7.94
+      }
+    },
+    "waterlooCity": {
+      "token": "waterlooCity",
+      "our_hex": "#76D0BD",
+      "go_mean_hex": "#8DC2B3",
+      "go_mode_hex": "#7CB8B8",
+      "delta_e": 11.52,
+      "verdict": "near",
+      "sample_count": 3145,
+      "detail": {
+        "sample_count": 3145,
+        "mean_hex": "#8DC2B3",
+        "mean_rgb": [
+          141,
+          194,
+          179
+        ],
+        "mode_hex": "#7CB8B8",
+        "mode_rgb": [
+          124,
+          184,
+          184
+        ],
+        "delta_e_mean_vs_token": 11.52,
+        "delta_e_mode_vs_token": 15.75
+      }
+    },
+    "dlr": {
+      "token": "dlr",
+      "our_hex": "#00AFAD",
+      "go_mean_hex": "#62A5A5",
+      "go_mode_hex": "#68A4A4",
+      "delta_e": 15.96,
+      "verdict": "drift",
+      "sample_count": 1214,
+      "detail": {
+        "sample_count": 1214,
+        "mean_hex": "#62A5A5",
+        "mean_rgb": [
+          98,
+          165,
+          165
+        ],
+        "mode_hex": "#68A4A4",
+        "mode_rgb": [
+          104,
+          164,
+          164
+        ],
+        "delta_e_mean_vs_token": 15.96,
+        "delta_e_mode_vs_token": 17.89
+      }
+    },
+    "elizabeth": {
+      "token": "elizabeth",
+      "our_hex": "#60399E",
+      "go_mean_hex": "#292C8F",
+      "go_mode_hex": "#102088",
+      "delta_e": 13.03,
+      "verdict": "near",
+      "sample_count": 1610,
+      "detail": {
+        "sample_count": 1610,
+        "mean_hex": "#292C8F",
+        "mean_rgb": [
+          41,
+          44,
+          143
+        ],
+        "mode_hex": "#102088",
+        "mode_rgb": [
+          16,
+          32,
+          136
+        ],
+        "delta_e_mean_vs_token": 13.03,
+        "delta_e_mode_vs_token": 17.5
+      }
+    },
+    "overground": {
+      "token": "overground",
+      "our_hex": "#FA7B05",
+      "go_mean_hex": "#E9993B",
+      "go_mode_hex": "#F4A840",
+      "delta_e": 25.1,
+      "verdict": "mismatch",
+      "sample_count": 11,
+      "detail": {
+        "sample_count": 11,
+        "mean_hex": "#E9993B",
+        "mean_rgb": [
+          233,
+          153,
+          59
+        ],
+        "mode_hex": "#F4A840",
+        "mode_rgb": [
+          244,
+          168,
+          64
+        ],
+        "delta_e_mean_vs_token": 25.1,
+        "delta_e_mode_vs_token": 27.69
+      }
+    },
+    "trams": {
+      "token": "trams",
+      "our_hex": "#5FB526",
+      "go_mean_hex": "#6CA83A",
+      "go_mode_hex": "#70A83C",
+      "delta_e": 15.69,
+      "verdict": "drift",
+      "sample_count": 21,
+      "detail": {
+        "sample_count": 21,
+        "mean_hex": "#6CA83A",
+        "mean_rgb": [
+          108,
+          168,
+          58
+        ],
+        "mode_hex": "#70A83C",
+        "mode_rgb": [
+          112,
+          168,
+          60
+        ],
+        "delta_e_mean_vs_token": 15.69,
+        "delta_e_mode_vs_token": 17.19
+      }
+    },
+    "cableCarMode": {
+      "token": "cableCarMode",
+      "our_hex": "#734FA0",
+      "go_mean_hex": "#5D4B8D",
+      "go_mode_hex": "#6C5898",
+      "delta_e": 10.86,
+      "verdict": "near",
+      "sample_count": 2624,
+      "detail": {
+        "sample_count": 2624,
+        "mean_hex": "#5D4B8D",
+        "mean_rgb": [
+          93,
+          75,
+          141
+        ],
+        "mode_hex": "#6C5898",
+        "mode_rgb": [
+          108,
+          88,
+          152
+        ],
+        "delta_e_mean_vs_token": 10.86,
+        "delta_e_mode_vs_token": 11.53
+      }
+    },
+    "cableCarMap": {
+      "token": "cableCarMap",
+      "our_hex": "#DC241F",
+      "go_mean_hex": "#C6372C",
+      "go_mode_hex": "#C4382C",
+      "delta_e": 15.64,
+      "verdict": "drift",
+      "sample_count": 3246,
+      "detail": {
+        "sample_count": 3246,
+        "mean_hex": "#C6372C",
+        "mean_rgb": [
+          198,
+          55,
+          44
+        ],
+        "mode_hex": "#C4382C",
+        "mode_rgb": [
+          196,
+          56,
+          44
+        ],
+        "delta_e_mean_vs_token": 15.64,
+        "delta_e_mode_vs_token": 16.67
+      }
+    }
+  },
+  "token_rows_sorted": [
+    {
+      "token": "northern",
+      "our_hex": "#000000",
+      "go_mean_hex": "#030304",
+      "go_mode_hex": "#000000",
+      "delta_e": 0.93,
+      "verdict": "exact",
+      "sample_count": 20232,
+      "detail": {
+        "sample_count": 20232,
+        "mean_hex": "#030304",
+        "mean_rgb": [
+          3,
+          3,
+          4
+        ],
+        "mode_hex": "#000000",
+        "mode_rgb": [
+          0,
+          0,
+          0
+        ],
+        "delta_e_mean_vs_token": 0.93,
+        "delta_e_mode_vs_token": 0.0
+      }
+    },
+    {
+      "token": "jubilee",
+      "our_hex": "#838D93",
+      "go_mean_hex": "#8B8C92",
+      "go_mode_hex": "#A8A8AC",
+      "delta_e": 3.4,
+      "verdict": "close",
+      "sample_count": 37786,
+      "detail": {
+        "sample_count": 37786,
+        "mean_hex": "#8B8C92",
+        "mean_rgb": [
+          139,
+          140,
+          146
+        ],
+        "mode_hex": "#A8A8AC",
+        "mode_rgb": [
+          168,
+          168,
+          172
+        ],
+        "delta_e_mean_vs_token": 3.4,
+        "delta_e_mode_vs_token": 11.64
+      }
+    },
+    {
+      "token": "piccadilly",
+      "our_hex": "#0019A8",
+      "go_mean_hex": "#051696",
+      "go_mode_hex": "#081CA0",
+      "delta_e": 8.18,
+      "verdict": "near",
+      "sample_count": 6419,
+      "detail": {
+        "sample_count": 6419,
+        "mean_hex": "#051696",
+        "mean_rgb": [
+          5,
+          22,
+          150
+        ],
+        "mode_hex": "#081CA0",
+        "mode_rgb": [
+          8,
+          28,
+          160
+        ],
+        "delta_e_mean_vs_token": 8.18,
+        "delta_e_mode_vs_token": 5.76
+      }
+    },
+    {
+      "token": "hammersmithCity",
+      "our_hex": "#F589A6",
+      "go_mean_hex": "#E18CA3",
+      "go_mode_hex": "#E48CA4",
+      "delta_e": 9.3,
+      "verdict": "near",
+      "sample_count": 7859,
+      "detail": {
+        "sample_count": 7859,
+        "mean_hex": "#E18CA3",
+        "mean_rgb": [
+          225,
+          140,
+          163
+        ],
+        "mode_hex": "#E48CA4",
+        "mode_rgb": [
+          228,
+          140,
+          164
+        ],
+        "delta_e_mean_vs_token": 9.3,
+        "delta_e_mode_vs_token": 8.05
+      }
+    },
+    {
+      "token": "victoria",
+      "our_hex": "#039BE5",
+      "go_mean_hex": "#5193D2",
+      "go_mode_hex": "#4490D4",
+      "delta_e": 9.81,
+      "verdict": "near",
+      "sample_count": 4389,
+      "detail": {
+        "sample_count": 4389,
+        "mean_hex": "#5193D2",
+        "mean_rgb": [
+          81,
+          147,
+          210
+        ],
+        "mode_hex": "#4490D4",
+        "mode_rgb": [
+          68,
+          144,
+          212
+        ],
+        "delta_e_mean_vs_token": 9.81,
+        "delta_e_mode_vs_token": 7.94
+      }
+    },
+    {
+      "token": "metropolitan",
+      "our_hex": "#9B0058",
+      "go_mean_hex": "#861953",
+      "go_mode_hex": "#8C1C58",
+      "delta_e": 10.78,
+      "verdict": "near",
+      "sample_count": 5442,
+      "detail": {
+        "sample_count": 5442,
+        "mean_hex": "#861953",
+        "mean_rgb": [
+          134,
+          25,
+          83
+        ],
+        "mode_hex": "#8C1C58",
+        "mode_rgb": [
+          140,
+          28,
+          88
+        ],
+        "delta_e_mean_vs_token": 10.78,
+        "delta_e_mode_vs_token": 9.32
+      }
+    },
+    {
+      "token": "cableCarMode",
+      "our_hex": "#734FA0",
+      "go_mean_hex": "#5D4B8D",
+      "go_mode_hex": "#6C5898",
+      "delta_e": 10.86,
+      "verdict": "near",
+      "sample_count": 2624,
+      "detail": {
+        "sample_count": 2624,
+        "mean_hex": "#5D4B8D",
+        "mean_rgb": [
+          93,
+          75,
+          141
+        ],
+        "mode_hex": "#6C5898",
+        "mode_rgb": [
+          108,
+          88,
+          152
+        ],
+        "delta_e_mean_vs_token": 10.86,
+        "delta_e_mode_vs_token": 11.53
+      }
+    },
+    {
+      "token": "waterlooCity",
+      "our_hex": "#76D0BD",
+      "go_mean_hex": "#8DC2B3",
+      "go_mode_hex": "#7CB8B8",
+      "delta_e": 11.52,
+      "verdict": "near",
+      "sample_count": 3145,
+      "detail": {
+        "sample_count": 3145,
+        "mean_hex": "#8DC2B3",
+        "mean_rgb": [
+          141,
+          194,
+          179
+        ],
+        "mode_hex": "#7CB8B8",
+        "mode_rgb": [
+          124,
+          184,
+          184
+        ],
+        "delta_e_mean_vs_token": 11.52,
+        "delta_e_mode_vs_token": 15.75
+      }
+    },
+    {
+      "token": "elizabeth",
+      "our_hex": "#60399E",
+      "go_mean_hex": "#292C8F",
+      "go_mode_hex": "#102088",
+      "delta_e": 13.03,
+      "verdict": "near",
+      "sample_count": 1610,
+      "detail": {
+        "sample_count": 1610,
+        "mean_hex": "#292C8F",
+        "mean_rgb": [
+          41,
+          44,
+          143
+        ],
+        "mode_hex": "#102088",
+        "mode_rgb": [
+          16,
+          32,
+          136
+        ],
+        "delta_e_mean_vs_token": 13.03,
+        "delta_e_mode_vs_token": 17.5
+      }
+    },
+    {
+      "token": "district",
+      "our_hex": "#007D32",
+      "go_mean_hex": "#367638",
+      "go_mode_hex": "#387C3C",
+      "delta_e": 13.22,
+      "verdict": "near",
+      "sample_count": 5503,
+      "detail": {
+        "sample_count": 5503,
+        "mean_hex": "#367638",
+        "mean_rgb": [
+          54,
+          118,
+          56
+        ],
+        "mode_hex": "#387C3C",
+        "mode_rgb": [
+          56,
+          124,
+          60
+        ],
+        "delta_e_mean_vs_token": 13.22,
+        "delta_e_mode_vs_token": 11.68
+      }
+    },
+    {
+      "token": "bakerloo",
+      "our_hex": "#B26300",
+      "go_mean_hex": "#A56623",
+      "go_mode_hex": "#A86828",
+      "delta_e": 13.63,
+      "verdict": "near",
+      "sample_count": 2219,
+      "detail": {
+        "sample_count": 2219,
+        "mean_hex": "#A56623",
+        "mean_rgb": [
+          165,
+          102,
+          35
+        ],
+        "mode_hex": "#A86828",
+        "mode_rgb": [
+          168,
+          104,
+          40
+        ],
+        "delta_e_mean_vs_token": 13.63,
+        "delta_e_mode_vs_token": 14.48
+      }
+    },
+    {
+      "token": "central",
+      "our_hex": "#DC241F",
+      "go_mean_hex": "#C6372C",
+      "go_mode_hex": "#C4382C",
+      "delta_e": 15.64,
+      "verdict": "drift",
+      "sample_count": 3246,
+      "detail": {
+        "sample_count": 3246,
+        "mean_hex": "#C6372C",
+        "mean_rgb": [
+          198,
+          55,
+          44
+        ],
+        "mode_hex": "#C4382C",
+        "mode_rgb": [
+          196,
+          56,
+          44
+        ],
+        "delta_e_mean_vs_token": 15.64,
+        "delta_e_mode_vs_token": 16.67
+      }
+    },
+    {
+      "token": "cableCarMap",
+      "our_hex": "#DC241F",
+      "go_mean_hex": "#C6372C",
+      "go_mode_hex": "#C4382C",
+      "delta_e": 15.64,
+      "verdict": "drift",
+      "sample_count": 3246,
+      "detail": {
+        "sample_count": 3246,
+        "mean_hex": "#C6372C",
+        "mean_rgb": [
+          198,
+          55,
+          44
+        ],
+        "mode_hex": "#C4382C",
+        "mode_rgb": [
+          196,
+          56,
+          44
+        ],
+        "delta_e_mean_vs_token": 15.64,
+        "delta_e_mode_vs_token": 16.67
+      }
+    },
+    {
+      "token": "trams",
+      "our_hex": "#5FB526",
+      "go_mean_hex": "#6CA83A",
+      "go_mode_hex": "#70A83C",
+      "delta_e": 15.69,
+      "verdict": "drift",
+      "sample_count": 21,
+      "detail": {
+        "sample_count": 21,
+        "mean_hex": "#6CA83A",
+        "mean_rgb": [
+          108,
+          168,
+          58
+        ],
+        "mode_hex": "#70A83C",
+        "mode_rgb": [
+          112,
+          168,
+          60
+        ],
+        "delta_e_mean_vs_token": 15.69,
+        "delta_e_mode_vs_token": 17.19
+      }
+    },
+    {
+      "token": "dlr",
+      "our_hex": "#00AFAD",
+      "go_mean_hex": "#62A5A5",
+      "go_mode_hex": "#68A4A4",
+      "delta_e": 15.96,
+      "verdict": "drift",
+      "sample_count": 1214,
+      "detail": {
+        "sample_count": 1214,
+        "mean_hex": "#62A5A5",
+        "mean_rgb": [
+          98,
+          165,
+          165
+        ],
+        "mode_hex": "#68A4A4",
+        "mode_rgb": [
+          104,
+          164,
+          164
+        ],
+        "delta_e_mean_vs_token": 15.96,
+        "delta_e_mode_vs_token": 17.89
+      }
+    },
+    {
+      "token": "circle",
+      "our_hex": "#FFC80A",
+      "go_mean_hex": "#F4C846",
+      "go_mode_hex": "#F4C848",
+      "delta_e": 16.36,
+      "verdict": "drift",
+      "sample_count": 1796,
+      "detail": {
+        "sample_count": 1796,
+        "mean_hex": "#F4C846",
+        "mean_rgb": [
+          244,
+          200,
+          70
+        ],
+        "mode_hex": "#F4C848",
+        "mode_rgb": [
+          244,
+          200,
+          72
+        ],
+        "delta_e_mean_vs_token": 16.36,
+        "delta_e_mode_vs_token": 17.1
+      }
+    },
+    {
+      "token": "overground",
+      "our_hex": "#FA7B05",
+      "go_mean_hex": "#E9993B",
+      "go_mode_hex": "#F4A840",
+      "delta_e": 25.1,
+      "verdict": "mismatch",
+      "sample_count": 11,
+      "detail": {
+        "sample_count": 11,
+        "mean_hex": "#E9993B",
+        "mean_rgb": [
+          233,
+          153,
+          59
+        ],
+        "mode_hex": "#F4A840",
+        "mode_rgb": [
+          244,
+          168,
+          64
+        ],
+        "delta_e_mean_vs_token": 25.1,
+        "delta_e_mode_vs_token": 27.69
+      }
+    }
+  ],
+  "specials": {
+    "national_rail": {
+      "buckets": [
+        {
+          "hex": "#DCA4B4",
+          "rgb": [
+            220,
+            164,
+            180
+          ],
+          "count": 102,
+          "hsv": [
+            342.9,
+            0.255,
+            0.863
+          ]
+        },
+        {
+          "hex": "#D8A0B0",
+          "rgb": [
+            216,
+            160,
+            176
+          ],
+          "count": 100,
+          "hsv": [
+            342.9,
+            0.259,
+            0.847
+          ]
+        },
+        {
+          "hex": "#DCA8B4",
+          "rgb": [
+            220,
+            168,
+            180
+          ],
+          "count": 76,
+          "hsv": [
+            346.2,
+            0.236,
+            0.863
+          ]
+        },
+        {
+          "hex": "#E0A8B8",
+          "rgb": [
+            224,
+            168,
+            184
+          ],
+          "count": 73,
+          "hsv": [
+            342.9,
+            0.25,
+            0.878
+          ]
+        },
+        {
+          "hex": "#DCA8B8",
+          "rgb": [
+            220,
+            168,
+            184
+          ],
+          "count": 63,
+          "hsv": [
+            341.5,
+            0.236,
+            0.863
+          ]
+        },
+        {
+          "hex": "#D898A8",
+          "rgb": [
+            216,
+            152,
+            168
+          ],
+          "count": 51,
+          "hsv": [
+            345.0,
+            0.296,
+            0.847
+          ]
+        },
+        {
+          "hex": "#DCACB8",
+          "rgb": [
+            220,
+            172,
+            184
+          ],
+          "count": 42,
+          "hsv": [
+            345.0,
+            0.218,
+            0.863
+          ]
+        },
+        {
+          "hex": "#CC94A4",
+          "rgb": [
+            204,
+            148,
+            164
+          ],
+          "count": 40,
+          "hsv": [
+            342.9,
+            0.275,
+            0.8
+          ]
+        },
+        {
+          "hex": "#D89CAC",
+          "rgb": [
+            216,
+            156,
+            172
+          ],
+          "count": 39,
+          "hsv": [
+            344.0,
+            0.278,
+            0.847
+          ]
+        },
+        {
+          "hex": "#D494A4",
+          "rgb": [
+            212,
+            148,
+            164
+          ],
+          "count": 33,
+          "hsv": [
+            345.0,
+            0.302,
+            0.831
+          ]
+        },
+        {
+          "hex": "#D4A4B4",
+          "rgb": [
+            212,
+            164,
+            180
+          ],
+          "count": 33,
+          "hsv": [
+            340.0,
+            0.226,
+            0.831
+          ]
+        },
+        {
+          "hex": "#DC9CAC",
+          "rgb": [
+            220,
+            156,
+            172
+          ],
+          "count": 31,
+          "hsv": [
+            345.0,
+            0.291,
+            0.863
+          ]
+        }
+      ],
+      "mean_hex": "#D8A0AE",
+      "mean_rgb": [
+        216,
+        160,
+        174
+      ],
+      "pixel_count": 1403,
+      "source": "IMG_3591 east NR region (fallback: all images)",
+      "fallback_mean_hex": "#D69AA0",
+      "buckets_all": [
+        {
+          "hex": "#E4B8C4",
+          "rgb": [
+            228,
+            184,
+            196
+          ],
+          "count": 217,
+          "hsv": [
+            343.6,
+            0.193,
+            0.894
+          ]
+        },
+        {
+          "hex": "#D498A8",
+          "rgb": [
+            212,
+            152,
+            168
+          ],
+          "count": 209,
+          "hsv": [
+            344.0,
+            0.283,
+            0.831
+          ]
+        },
+        {
+          "hex": "#DCA4A4",
+          "rgb": [
+            220,
+            164,
+            164
+          ],
+          "count": 206,
+          "hsv": [
+            0.0,
+            0.255,
+            0.863
+          ]
+        },
+        {
+          "hex": "#D49CAC",
+          "rgb": [
+            212,
+            156,
+            172
+          ],
+          "count": 202,
+          "hsv": [
+            342.9,
+            0.264,
+            0.831
+          ]
+        },
+        {
+          "hex": "#CC7C78",
+          "rgb": [
+            204,
+            124,
+            120
+          ],
+          "count": 182,
+          "hsv": [
+            2.9,
+            0.412,
+            0.8
+          ]
+        }
+      ]
+    },
+    "cable_car_inactive": {
+      "buckets": [
+        {
+          "hex": "#DCDCDC",
+          "rgb": [
+            220,
+            220,
+            220
+          ],
+          "count": 46,
+          "hsv": [
+            0.0,
+            0.0,
+            0.863
+          ]
+        },
+        {
+          "hex": "#D8D8D8",
+          "rgb": [
+            216,
+            216,
+            216
+          ],
+          "count": 31,
+          "hsv": [
+            0.0,
+            0.0,
+            0.847
+          ]
+        },
+        {
+          "hex": "#D0D0D0",
+          "rgb": [
+            208,
+            208,
+            208
+          ],
+          "count": 30,
+          "hsv": [
+            0.0,
+            0.0,
+            0.816
+          ]
+        },
+        {
+          "hex": "#D4D0D0",
+          "rgb": [
+            212,
+            208,
+            208
+          ],
+          "count": 29,
+          "hsv": [
+            0.0,
+            0.019,
+            0.831
+          ]
+        },
+        {
+          "hex": "#CCCCD0",
+          "rgb": [
+            204,
+            204,
+            208
+          ],
+          "count": 27,
+          "hsv": [
+            240.0,
+            0.019,
+            0.816
+          ]
+        },
+        {
+          "hex": "#DCDCE0",
+          "rgb": [
+            220,
+            220,
+            224
+          ],
+          "count": 27,
+          "hsv": [
+            240.0,
+            0.018,
+            0.878
+          ]
+        },
+        {
+          "hex": "#D0D0D4",
+          "rgb": [
+            208,
+            208,
+            212
+          ],
+          "count": 26,
+          "hsv": [
+            240.0,
+            0.019,
+            0.831
+          ]
+        },
+        {
+          "hex": "#D4D4D8",
+          "rgb": [
+            212,
+            212,
+            216
+          ],
+          "count": 23,
+          "hsv": [
+            240.0,
+            0.019,
+            0.847
+          ]
+        },
+        {
+          "hex": "#BCBCBC",
+          "rgb": [
+            188,
+            188,
+            188
+          ],
+          "count": 23,
+          "hsv": [
+            0.0,
+            0.0,
+            0.737
+          ]
+        },
+        {
+          "hex": "#C8C8CC",
+          "rgb": [
+            200,
+            200,
+            204
+          ],
+          "count": 21,
+          "hsv": [
+            240.0,
+            0.02,
+            0.8
+          ]
+        },
+        {
+          "hex": "#E0E0E0",
+          "rgb": [
+            224,
+            224,
+            224
+          ],
+          "count": 21,
+          "hsv": [
+            0.0,
+            0.0,
+            0.878
+          ]
+        },
+        {
+          "hex": "#BCBCC0",
+          "rgb": [
+            188,
+            188,
+            192
+          ],
+          "count": 19,
+          "hsv": [
+            240.0,
+            0.021,
+            0.753
+          ]
+        }
+      ],
+      "mean_hex": "#D1D0D3",
+      "mean_rgb": [
+        209,
+        208,
+        211
+      ],
+      "pixel_count": 844,
+      "source": "IMG_3591 cable-car corridor crop",
+      "fallback_mean_hex": "#CFCFD2",
+      "buckets_all": [
+        {
+          "hex": "#D4D4D8",
+          "rgb": [
+            212,
+            212,
+            216
+          ],
+          "count": 1318,
+          "hsv": [
+            240.0,
+            0.019,
+            0.847
+          ]
+        },
+        {
+          "hex": "#DCDCE0",
+          "rgb": [
+            220,
+            220,
+            224
+          ],
+          "count": 1292,
+          "hsv": [
+            240.0,
+            0.018,
+            0.878
+          ]
+        },
+        {
+          "hex": "#D8D8DC",
+          "rgb": [
+            216,
+            216,
+            220
+          ],
+          "count": 1228,
+          "hsv": [
+            240.0,
+            0.018,
+            0.863
+          ]
+        },
+        {
+          "hex": "#D0D0D4",
+          "rgb": [
+            208,
+            208,
+            212
+          ],
+          "count": 1189,
+          "hsv": [
+            240.0,
+            0.019,
+            0.831
+          ]
+        },
+        {
+          "hex": "#C8C8CC",
+          "rgb": [
+            200,
+            200,
+            204
+          ],
+          "count": 1187,
+          "hsv": [
+            240.0,
+            0.02,
+            0.8
+          ]
+        }
+      ]
+    },
+    "thames": {
+      "buckets": [
+        {
+          "hex": "#CCE8F8",
+          "rgb": [
+            204,
+            232,
+            248
+          ],
+          "count": 938,
+          "hsv": [
+            201.8,
+            0.177,
+            0.973
+          ]
+        },
+        {
+          "hex": "#CCE8F4",
+          "rgb": [
+            204,
+            232,
+            244
+          ],
+          "count": 694,
+          "hsv": [
+            198.0,
+            0.164,
+            0.957
+          ]
+        },
+        {
+          "hex": "#D0E8F4",
+          "rgb": [
+            208,
+            232,
+            244
+          ],
+          "count": 487,
+          "hsv": [
+            200.0,
+            0.148,
+            0.957
+          ]
+        },
+        {
+          "hex": "#ACD0E8",
+          "rgb": [
+            172,
+            208,
+            232
+          ],
+          "count": 477,
+          "hsv": [
+            204.0,
+            0.259,
+            0.91
+          ]
+        },
+        {
+          "hex": "#D0E8F8",
+          "rgb": [
+            208,
+            232,
+            248
+          ],
+          "count": 366,
+          "hsv": [
+            204.0,
+            0.161,
+            0.973
+          ]
+        },
+        {
+          "hex": "#C8DCE8",
+          "rgb": [
+            200,
+            220,
+            232
+          ],
+          "count": 297,
+          "hsv": [
+            202.5,
+            0.138,
+            0.91
+          ]
+        },
+        {
+          "hex": "#CCE4F4",
+          "rgb": [
+            204,
+            228,
+            244
+          ],
+          "count": 216,
+          "hsv": [
+            204.0,
+            0.164,
+            0.957
+          ]
+        },
+        {
+          "hex": "#B8E0F4",
+          "rgb": [
+            184,
+            224,
+            244
+          ],
+          "count": 208,
+          "hsv": [
+            200.0,
+            0.246,
+            0.957
+          ]
+        },
+        {
+          "hex": "#A4CCE4",
+          "rgb": [
+            164,
+            204,
+            228
+          ],
+          "count": 206,
+          "hsv": [
+            202.5,
+            0.281,
+            0.894
+          ]
+        },
+        {
+          "hex": "#A8D0E8",
+          "rgb": [
+            168,
+            208,
+            232
+          ],
+          "count": 199,
+          "hsv": [
+            202.5,
+            0.276,
+            0.91
+          ]
+        },
+        {
+          "hex": "#B8DCF4",
+          "rgb": [
+            184,
+            220,
+            244
+          ],
+          "count": 174,
+          "hsv": [
+            204.0,
+            0.246,
+            0.957
+          ]
+        },
+        {
+          "hex": "#D0E8F0",
+          "rgb": [
+            208,
+            232,
+            240
+          ],
+          "count": 168,
+          "hsv": [
+            195.0,
+            0.133,
+            0.941
+          ]
+        }
+      ],
+      "mean_hex": "#C2DEF0",
+      "mean_rgb": [
+        194,
+        222,
+        240
+      ],
+      "pixel_count": 10831
+    },
+    "accessibility_yellow": {
+      "buckets": [
+        {
+          "hex": "#F0C844",
+          "rgb": [
+            240,
+            200,
+            68
+          ],
+          "count": 204,
+          "hsv": [
+            46.0,
+            0.717,
+            0.941
+          ]
+        },
+        {
+          "hex": "#F4C844",
+          "rgb": [
+            244,
+            200,
+            68
+          ],
+          "count": 192,
+          "hsv": [
+            45.0,
+            0.721,
+            0.957
+          ]
+        },
+        {
+          "hex": "#ECD05C",
+          "rgb": [
+            236,
+            208,
+            92
+          ],
+          "count": 189,
+          "hsv": [
+            48.3,
+            0.61,
+            0.925
+          ]
+        },
+        {
+          "hex": "#F0D458",
+          "rgb": [
+            240,
+            212,
+            88
+          ],
+          "count": 154,
+          "hsv": [
+            48.9,
+            0.633,
+            0.941
+          ]
+        },
+        {
+          "hex": "#F0D05C",
+          "rgb": [
+            240,
+            208,
+            92
+          ],
+          "count": 131,
+          "hsv": [
+            47.0,
+            0.617,
+            0.941
+          ]
+        },
+        {
+          "hex": "#F0C848",
+          "rgb": [
+            240,
+            200,
+            72
+          ],
+          "count": 89,
+          "hsv": [
+            45.7,
+            0.7,
+            0.941
+          ]
+        },
+        {
+          "hex": "#F4C848",
+          "rgb": [
+            244,
+            200,
+            72
+          ],
+          "count": 80,
+          "hsv": [
+            44.7,
+            0.705,
+            0.957
+          ]
+        },
+        {
+          "hex": "#DCCC60",
+          "rgb": [
+            220,
+            204,
+            96
+          ],
+          "count": 51,
+          "hsv": [
+            52.3,
+            0.564,
+            0.863
+          ]
+        },
+        {
+          "hex": "#ECC850",
+          "rgb": [
+            236,
+            200,
+            80
+          ],
+          "count": 46,
+          "hsv": [
+            46.2,
+            0.661,
+            0.925
+          ]
+        },
+        {
+          "hex": "#F0C84C",
+          "rgb": [
+            240,
+            200,
+            76
+          ],
+          "count": 35,
+          "hsv": [
+            45.4,
+            0.683,
+            0.941
+          ]
+        },
+        {
+          "hex": "#F0D054",
+          "rgb": [
+            240,
+            208,
+            84
+          ],
+          "count": 32,
+          "hsv": [
+            47.7,
+            0.65,
+            0.941
+          ]
+        },
+        {
+          "hex": "#ECC84C",
+          "rgb": [
+            236,
+            200,
+            76
+          ],
+          "count": 30,
+          "hsv": [
+            46.5,
+            0.678,
+            0.925
+          ]
+        }
+      ],
+      "mean_hex": "#EFCE53",
+      "mean_rgb": [
+        239,
+        206,
+        83
+      ],
+      "pixel_count": 2013
+    },
+    "paper": {
+      "mean_hex": "#FFFFFF",
+      "note": "Map paper is near-pure white in day mode"
+    }
+  },
+  "gaps": [
+    {
+      "id": "national_rail",
+      "go_hex": "#D8A0AE",
+      "in_repo": null,
+      "action": "Add day-map National Rail pinkish token (not in brand-colours.ts)"
+    },
+    {
+      "id": "cable_car_inactive",
+      "go_hex": "#D1D0D3",
+      "in_repo": {
+        "mode_purple": "#734FA0",
+        "map_running": "#DC241F"
+      },
+      "action": "Add inactive/not-running map stroke (light grey)"
+    }
+  ],
+  "hue_family_overrides": {
+    "overground": {
+      "mean_hex": "#DA9840",
+      "bright_core_mode": "#CC8C3C",
+      "bright_near_brand": "#F0A83C",
+      "pixel_count_bright": 407,
+      "method": "hsv bright orange (v>=0.78, r>=200) excluding Bakerloo/Circle",
+      "note": "Screen capture + JPEG softens Overground; brand #FA7B05 still the authoring token. Go cores read ~#F0A83C / mean #DA9840."
+    },
+    "elizabeth": {
+      "mean_hex": "#68558F",
+      "mean_rgb": [
+        104,
+        85,
+        143
+      ],
+      "pixel_count": 5416,
+      "buckets": [
+        {
+          "hex": "#746098",
+          "rgb": [
+            116,
+            96,
+            152
+          ],
+          "count": 374,
+          "hsv": [
+            261.429,
+            0.368,
+            0.596
+          ]
+        },
+        {
+          "hex": "#6C5C94",
+          "rgb": [
+            108,
+            92,
+            148
+          ],
+          "count": 284,
+          "hsv": [
+            257.143,
+            0.378,
+            0.58
+          ]
+        },
+        {
+          "hex": "#6C5898",
+          "rgb": [
+            108,
+            88,
+            152
+          ],
+          "count": 272,
+          "hsv": [
+            258.75,
+            0.421,
+            0.596
+          ]
+        },
+        {
+          "hex": "#8874AC",
+          "rgb": [
+            136,
+            116,
+            172
+          ],
+          "count": 267,
+          "hsv": [
+            261.429,
+            0.326,
+            0.675
+          ]
+        },
+        {
+          "hex": "#5C4880",
+          "rgb": [
+            92,
+            72,
+            128
+          ],
+          "count": 208,
+          "hsv": [
+            261.429,
+            0.438,
+            0.502
+          ]
+        },
+        {
+          "hex": "#5C4484",
+          "rgb": [
+            92,
+            68,
+            132
+          ],
+          "count": 179,
+          "hsv": [
+            262.5,
+            0.485,
+            0.518
+          ]
+        },
+        {
+          "hex": "#8470A4",
+          "rgb": [
+            132,
+            112,
+            164
+          ],
+          "count": 177,
+          "hsv": [
+            263.077,
+            0.317,
+            0.643
+          ]
+        },
+        {
+          "hex": "#48386C",
+          "rgb": [
+            72,
+            56,
+            108
+          ],
+          "count": 152,
+          "hsv": [
+            258.462,
+            0.481,
+            0.424
+          ]
+        }
+      ],
+      "method": "hsv-family-isolate"
+    },
+    "dlr": {
+      "mean_hex": "#6AA8A9",
+      "mean_rgb": [
+        106,
+        168,
+        169
+      ],
+      "pixel_count": 2447,
+      "buckets": [
+        {
+          "hex": "#64A0A4",
+          "rgb": [
+            100,
+            160,
+            164
+          ],
+          "count": 178,
+          "hsv": [
+            183.75,
+            0.39,
+            0.643
+          ]
+        },
+        {
+          "hex": "#7CB8B8",
+          "rgb": [
+            124,
+            184,
+            184
+          ],
+          "count": 142,
+          "hsv": [
+            180.0,
+            0.326,
+            0.722
+          ]
+        },
+        {
+          "hex": "#68A4A4",
+          "rgb": [
+            104,
+            164,
+            164
+          ],
+          "count": 140,
+          "hsv": [
+            180.0,
+            0.366,
+            0.643
+          ]
+        },
+        {
+          "hex": "#64A4A0",
+          "rgb": [
+            100,
+            164,
+            160
+          ],
+          "count": 105,
+          "hsv": [
+            176.25,
+            0.39,
+            0.643
+          ]
+        },
+        {
+          "hex": "#68A8AC",
+          "rgb": [
+            104,
+            168,
+            172
+          ],
+          "count": 100,
+          "hsv": [
+            183.529,
+            0.395,
+            0.675
+          ]
+        },
+        {
+          "hex": "#70A8AC",
+          "rgb": [
+            112,
+            168,
+            172
+          ],
+          "count": 83,
+          "hsv": [
+            184.0,
+            0.349,
+            0.675
+          ]
+        },
+        {
+          "hex": "#6CA0A4",
+          "rgb": [
+            108,
+            160,
+            164
+          ],
+          "count": 50,
+          "hsv": [
+            184.286,
+            0.341,
+            0.643
+          ]
+        },
+        {
+          "hex": "#589C9C",
+          "rgb": [
+            88,
+            156,
+            156
+          ],
+          "count": 45,
+          "hsv": [
+            180.0,
+            0.436,
+            0.612
+          ]
+        }
+      ],
+      "method": "hsv-family-isolate"
+    },
+    "central": {
+      "mean_hex": "#BE3F36",
+      "mean_rgb": [
+        190,
+        63,
+        54
+      ],
+      "pixel_count": 9075,
+      "buckets": [
+        {
+          "hex": "#C4382C",
+          "rgb": [
+            196,
+            56,
+            44
+          ],
+          "count": 499,
+          "hsv": [
+            4.737,
+            0.776,
+            0.769
+          ]
+        },
+        {
+          "hex": "#B8342C",
+          "rgb": [
+            184,
+            52,
+            44
+          ],
+          "count": 339,
+          "hsv": [
+            3.429,
+            0.761,
+            0.722
+          ]
+        },
+        {
+          "hex": "#C83C30",
+          "rgb": [
+            200,
+            60,
+            48
+          ],
+          "count": 319,
+          "hsv": [
+            4.737,
+            0.76,
+            0.784
+          ]
+        },
+        {
+          "hex": "#C0382C",
+          "rgb": [
+            192,
+            56,
+            44
+          ],
+          "count": 302,
+          "hsv": [
+            4.865,
+            0.771,
+            0.753
+          ]
+        },
+        {
+          "hex": "#CC3830",
+          "rgb": [
+            204,
+            56,
+            48
+          ],
+          "count": 285,
+          "hsv": [
+            3.077,
+            0.765,
+            0.8
+          ]
+        },
+        {
+          "hex": "#C0342C",
+          "rgb": [
+            192,
+            52,
+            44
+          ],
+          "count": 281,
+          "hsv": [
+            3.243,
+            0.771,
+            0.753
+          ]
+        },
+        {
+          "hex": "#C8382C",
+          "rgb": [
+            200,
+            56,
+            44
+          ],
+          "count": 212,
+          "hsv": [
+            4.615,
+            0.78,
+            0.784
+          ]
+        },
+        {
+          "hex": "#C03028",
+          "rgb": [
+            192,
+            48,
+            40
+          ],
+          "count": 196,
+          "hsv": [
+            3.158,
+            0.792,
+            0.753
+          ]
+        }
+      ],
+      "method": "hsv-family-isolate"
+    },
+    "circle": {
+      "mean_hex": "#F3CA50",
+      "mean_rgb": [
+        243,
+        202,
+        80
+      ],
+      "pixel_count": 4840,
+      "buckets": [
+        {
+          "hex": "#F4C848",
+          "rgb": [
+            244,
+            200,
+            72
+          ],
+          "count": 482,
+          "hsv": [
+            44.651,
+            0.705,
+            0.957
+          ]
+        },
+        {
+          "hex": "#F4C844",
+          "rgb": [
+            244,
+            200,
+            68
+          ],
+          "count": 291,
+          "hsv": [
+            45.0,
+            0.721,
+            0.957
+          ]
+        },
+        {
+          "hex": "#F0C454",
+          "rgb": [
+            240,
+            196,
+            84
+          ],
+          "count": 284,
+          "hsv": [
+            43.077,
+            0.65,
+            0.941
+          ]
+        },
+        {
+          "hex": "#F0C844",
+          "rgb": [
+            240,
+            200,
+            68
+          ],
+          "count": 204,
+          "hsv": [
+            46.047,
+            0.717,
+            0.941
+          ]
+        },
+        {
+          "hex": "#F4C44C",
+          "rgb": [
+            244,
+            196,
+            76
+          ],
+          "count": 199,
+          "hsv": [
+            42.857,
+            0.689,
+            0.957
+          ]
+        },
+        {
+          "hex": "#F0C450",
+          "rgb": [
+            240,
+            196,
+            80
+          ],
+          "count": 196,
+          "hsv": [
+            43.5,
+            0.667,
+            0.941
+          ]
+        },
+        {
+          "hex": "#ECD05C",
+          "rgb": [
+            236,
+            208,
+            92
+          ],
+          "count": 189,
+          "hsv": [
+            48.333,
+            0.61,
+            0.925
+          ]
+        },
+        {
+          "hex": "#F4C448",
+          "rgb": [
+            244,
+            196,
+            72
+          ],
+          "count": 159,
+          "hsv": [
+            43.256,
+            0.705,
+            0.957
+          ]
+        }
+      ],
+      "method": "hsv-family-isolate"
+    }
+  },
+  "caveats": [
+    "Phone JPEG + display scaling inflate \u0394E vs published sRGB tokens; prefer mode/core colours over anti-aliased edges.",
+    "cableCarMode purple samples on these maps are mostly Elizabeth / interchange bleed \u2014 cable car is inactive grey here.",
+    "National Rail pinkish (#D8A0AE) is distinct from H&C (#F589A6 / Go ~#E18CA3).",
+    "Day calibration only \u2014 night mode next."
+  ]
+}

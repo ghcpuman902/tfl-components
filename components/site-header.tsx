@@ -46,7 +46,8 @@ export const SiteHeader = ({
 }: SiteHeaderProps) => {
   return (
     <header className="sticky top-0 z-30 box-border h-12 w-full border-b border-border bg-background/80 backdrop-blur">
-      <div className="flex h-full items-center gap-3 px-3 md:gap-4 md:px-6">
+      {/* Match sidebar content inset: group p-2 + label/button px-2 → 16px. */}
+      <div className="flex h-full items-center gap-3 px-4 md:gap-4">
         {showSidebarTrigger ? (
           <SidebarTrigger
             className="-ml-1 md:hidden"

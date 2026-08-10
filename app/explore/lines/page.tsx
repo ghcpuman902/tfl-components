@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cacheLife, cacheTag } from "next/cache";
-import { getLineCssProps, getLineInlineStyles } from "tfl-ts";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
 import { ExploreWipNotice } from "@/components/docs/explore-wip-notice";
@@ -48,8 +47,6 @@ async function BrowseLinesBody() {
           <h2 className="text-xl font-semibold">{mode.label}</h2>
           <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" role="list">
             {lines.map((line) => {
-              const styles = getLineInlineStyles(line.id ?? "");
-              const cssProps = getLineCssProps(line.id ?? "");
               return (
                 <li key={line.id}>
                   <Link
@@ -57,8 +54,8 @@ async function BrowseLinesBody() {
                     className="block rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/50"
                   >
                     <span
-                      className="tfl-dark-line-text font-semibold"
-                      style={{ color: styles.color, ...cssProps }}
+                      data-line={line.id ?? undefined}
+                      className="tfl-dark-line-text font-semibold text-[var(--line-color)]"
                     >
                       {line.name}
                     </span>

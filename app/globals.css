@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./tfl-colours.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -144,8 +145,7 @@
   }
   html {
     @apply font-sans;
-    /* Reserve scrollbar space so centered max-w layouts don't shift. */
-    scrollbar-gutter: stable;
+    /* Thin page scrollbar; gutter + overflow set on <html> className (layout). */
     scrollbar-width: thin;
     scrollbar-color: color-mix(in oklch, var(--foreground) 28%, transparent)
       transparent;
@@ -172,20 +172,9 @@
 }
 
 /*
- * Poor-dark-contrast line text (e.g. Northern).
- * Pair with getLineCssProps() vars. Default outline mode: hard text-shadow
- * fallback; when paint-order is supported, outside stroke and clear the shadow.
- * White mode clears stroke/shadow vars so this class stays safe.
+ * Line title / text colour from tfl-colours role tokens.
+ * Pair with `data-line="<id>"` so `--line-color` resolves (incl. dark Northern).
  */
-.dark .tfl-dark-line-text {
-  color: var(--line-dark-text, var(--line-color));
-  text-shadow: var(--line-dark-text-shadow);
-}
-
-@supports (paint-order: stroke fill) {
-  .dark .tfl-dark-line-text {
-    -webkit-text-stroke: var(--line-dark-text-stroke, 0);
-    paint-order: var(--line-dark-paint-order, normal);
-    text-shadow: none;
-  }
+.tfl-dark-line-text {
+  color: var(--line-color);
 }

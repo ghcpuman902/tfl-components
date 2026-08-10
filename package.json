@@ -11,8 +11,8 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test lib/tfl/**/*.test.ts",
-    "registry:build": "shadcn build"
+    "test": "tsx --test 'lib/tfl/**/*.test.ts'",
+    "registry:build": "tsx scripts/build-colour-tokens.ts && shadcn build"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

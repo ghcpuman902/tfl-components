@@ -147,12 +147,86 @@ const isRoundelAllowed = (): boolean => {
 const isDevelopment = (): boolean =>
   process.env.NODE_ENV === "development";
 
-/** Scale bar text to fit — longer strings get a smaller size. */
-const fontSizeForText = (value: string): number => {
+/**
+ * Target visual capital height as a fraction of bar height.
+ * Wikimedia Underground letter paths are ≈52 units in a 101.1 bar.
+ */
+const BAR_TEXT_CAP_RATIO = 0.52;
+
+/**
+ * Hammersmith One measured cap-height ≈ 66% of CSS/SVG font-size
+ * (`actualBoundingBoxAscent` / em). Do not treat font-size as letter height.
+ */
+const ROUNDEL_CAP_HEIGHT_RATIO = 0.66;
+
+/** Bar text size from cap-height — same for every mode label (e.g. ELIZABETH LINE = UNDERGROUND). */
+const fontSizeForBar = (barHeight = BAR_H): number =>
+  (barHeight * BAR_TEXT_CAP_RATIO) / ROUNDEL_CAP_HEIGHT_RATIO;
+
+/**
+ * Johnston-like tracking. Longer labels go slightly negative so end glyphs
+ * clear rounded placeholder bars (and stay dense on the sharp official bar).
+ */
+const letterSpacingForText = (value: string): number => {
+  const len = value.trim().length;
+  if (len <= 3) return 0.5;
+  if (len <= 6) return 0;
+  if (len <= 10) return -0.5;
+  return -1;
+};
+
+/**
+ * Natural width estimate; when over `maxWidth`, SVG `textLength` compresses
+ * horizontally so long labels keep the same font size.
+ */
+const barTextLength = (
+  value: string,
+  fontSize: number,
+  maxWidth: number,
+): number | undefined => {
   const len = Math.max(value.trim().length, 1);
-  const byWidth = (VIEW_W * 0.9) / (len * 0.62);
-  const byHeight = BAR_H * 0.52;
-  return Math.min(byHeight, Math.max(22, byWidth));
+  const ls = letterSpacingForText(value);
+  const natural = len * fontSize * 0.62 + ls * Math.max(len - 1, 0);
+  return natural > maxWidth ? maxWidth : undefined;
+};
+
+/**
+ * Alphabetic baseline so uppercase caps are optically centered on the bar.
+ * `dominantBaseline="central"` centers the em box (extra descender space),
+ * which leaves a larger gap under all-caps than above.
+ */
+const barTextBaselineY = (fontSize: number): number =>
+  CY + (fontSize * ROUNDEL_CAP_HEIGHT_RATIO) / 2;
+
+/**
+ * SVG strokes are centered on the path. Inset geometry so the full stroke
+ * stays inside the viewBox (border-box), instead of clipping at the edges.
+ */
+const insetStrokedRect = ({
+  x = 0,
+  y,
+  width,
+  height,
+  stroke,
+  rx = 0,
+}: {
+  x?: number;
+  y: number;
+  width: number;
+  height: number;
+  stroke: number;
+  rx?: number;
+}) => {
+  const inset = stroke / 2;
+  return {
+    x: x + inset,
+    y: y + inset,
+    width: width - stroke,
+    height: height - stroke,
+    rx: Math.max(0, rx - inset),
+    ry: Math.max(0, rx - inset),
+    strokeWidth: stroke,
+  };
 };
 
 const resolveRoundelColors = ({
@@ -208,25 +282,37 @@ const RoundelBarText = ({
   value,
   fill,
   fontSize,
+  maxWidth = VIEW_W * 0.9,
+  opacity,
 }: {
   value: string;
   fill: string;
   fontSize: number;
-}) => (
-  <text
-    x={CX}
-    y={CY}
-    fill={fill}
-    fontSize={fontSize}
-    fontWeight={400}
-    fontFamily={ROUNDEL_FONT_FAMILY}
-    letterSpacing={value.length > 10 ? 1 : value.length > 8 ? 1.5 : 3}
-    textAnchor="middle"
-    dominantBaseline="central"
-  >
-    {value.toUpperCase()}
-  </text>
-);
+  /** Compress with textLength when the label would overrun this width. */
+  maxWidth?: number;
+  opacity?: number;
+}) => {
+  const textLength = barTextLength(value, fontSize, maxWidth);
+  return (
+    <text
+      x={CX}
+      y={barTextBaselineY(fontSize)}
+      fill={fill}
+      fontSize={fontSize}
+      fontWeight={400}
+      fontFamily={ROUNDEL_FONT_FAMILY}
+      letterSpacing={letterSpacingForText(value)}
+      textAnchor="middle"
+      dominantBaseline="alphabetic"
+      opacity={opacity}
+      {...(textLength != null
+        ? { textLength, lengthAdjust: "spacingAndGlyphs" as const }
+        : {})}
+    >
+      {value.toUpperCase()}
+    </text>
+  );
+};
 
 /**
  * Customisable roundel using Wikimedia proportions (even-odd ring + full bar).
@@ -254,7 +340,7 @@ const OfficialRoundelSvg = ({
     text,
   });
   const trimmed = colors.label.trim();
-  const fontSize = fontSizeForText(trimmed);
+  const fontSize = fontSizeForBar();
   const ringStroke = OUTER_R - INNER_R;
   const ringRadius = (OUTER_R + INNER_R) / 2;
   const outlineStroke = ringStroke * 0.35;
@@ -285,7 +371,7 @@ const OfficialRoundelSvg = ({
               y={BAR_Y + outlineStroke / 2}
               width={VIEW_W - outlineStroke}
               height={BAR_H - outlineStroke}
-              fill="none"
+              fill="#FFFFFF"
               stroke={colors.bar}
               strokeWidth={outlineStroke}
             />
@@ -301,12 +387,14 @@ const OfficialRoundelSvg = ({
               strokeWidth={outlineStroke}
             />
             <rect
-              y={BAR_Y}
-              width={VIEW_W}
-              height={BAR_H}
+              {...insetStrokedRect({
+                y: BAR_Y,
+                width: VIEW_W,
+                height: BAR_H,
+                stroke: barBorderStroke,
+              })}
               fill={colors.bar}
               stroke={colors.barBorder ?? colors.ring}
-              strokeWidth={barBorderStroke}
             />
           </>
         ) : (
@@ -320,9 +408,14 @@ const OfficialRoundelSvg = ({
               strokeWidth={ringStroke}
             />
             <rect
-              y={BAR_Y}
-              width={VIEW_W}
-              height={BAR_H}
+              {...(colors.barBorder
+                ? insetStrokedRect({
+                    y: BAR_Y,
+                    width: VIEW_W,
+                    height: BAR_H,
+                    stroke: barBorderStroke,
+                  })
+                : { y: BAR_Y, width: VIEW_W, height: BAR_H })}
               fill={colors.bar}
               stroke={colors.barBorder}
               strokeWidth={colors.barBorder ? barBorderStroke : 0}
@@ -402,12 +495,40 @@ const PlaceholderRoundelSvg = ({
     (hasColour ? DEFAULT_TEXT : undefined);
   const label = text !== undefined ? text : (preset?.text ?? "");
   const trimmed = label.trim();
-  const fontSize = fontSizeForText(trimmed || "X");
-  const barX = VIEW_W * 0.04;
-  const barY = BAR_Y + 6;
-  const barW = VIEW_W * 0.92;
-  const barH = BAR_H - 12;
+  const style = preset?.style ?? "standard";
+  const isOutline = style === "outline";
+  const isCycles = style === "cycles";
+  const isStrokeMode = isOutline || isCycles;
+  // Same footprint as the licensed bar (full width × BAR_H); only the ends are rounded.
   const barRx = BAR_H / 2;
+  const ringStroke = (OUTER_R - INNER_R) * 0.35;
+  const barStroke = Math.max(4, BAR_H * 0.08);
+  const fontSize = fontSizeForBar();
+  const barTextMaxWidth = VIEW_W - BAR_H;
+  const barFill = isStrokeMode ? "#FFFFFF" : (bar ?? "currentColor");
+  const barStrokeColor = isCycles
+    ? (barBorder ?? disc ?? "currentColor")
+    : isOutline
+      ? (bar ?? disc ?? "currentColor")
+      : barBorder;
+  // Stroke is centered on the path — inset so sides aren't clipped by the viewBox.
+  const barRect =
+    barStrokeColor != null
+      ? insetStrokedRect({
+          y: BAR_Y,
+          width: VIEW_W,
+          height: BAR_H,
+          stroke: barStroke,
+          rx: barRx,
+        })
+      : {
+          y: BAR_Y,
+          width: VIEW_W,
+          height: BAR_H,
+          rx: barRx,
+          ry: barRx,
+          strokeWidth: 0,
+        };
 
   const svg = (
     <svg
@@ -425,43 +546,48 @@ const PlaceholderRoundelSvg = ({
       )}
       {...props}
     >
-      {/* Solid disc — not a hollow ring (licensed mark uses a ring). */}
-      <circle
-        cx={CX}
-        cy={CY}
-        r={OUTER_R}
-        fill={disc ?? "currentColor"}
-        opacity={hasColour ? 1 : 0.22}
-      />
-      {/* Rounded bar — licensed mark uses a sharp full-width rect.
-          Cycles (and explicit barBorderColor): white fill + coloured border. */}
+      {isStrokeMode ? (
+        // Outline / Cycles: stroked ring (not the solid placeholder disc).
+        <circle
+          cx={CX}
+          cy={CY}
+          r={OUTER_R - ringStroke / 2}
+          fill="none"
+          stroke={disc ?? "currentColor"}
+          strokeWidth={ringStroke}
+          opacity={hasColour ? undefined : 0.35}
+        />
+      ) : (
+        // Solid disc — not a hollow ring (licensed mark uses a ring).
+        <circle
+          cx={CX}
+          cy={CY}
+          r={OUTER_R}
+          fill={disc ?? "currentColor"}
+          opacity={hasColour ? undefined : 0.35}
+        />
+      )}
+      {/* Full-width bar + rounded ends (licensed mark is sharp).
+          Outline / Cycles: white fill + inset coloured border (border-box). */}
       <rect
-        x={barX}
-        y={barY}
-        width={barW}
-        height={barH}
-        rx={barRx}
-        ry={barRx}
-        fill={bar ?? "currentColor"}
-        stroke={barBorder}
-        strokeWidth={barBorder ? Math.max(4, BAR_H * 0.08) : 0}
-        opacity={hasColour ? 1 : 0.75}
+        x={barRect.x}
+        y={barRect.y}
+        width={barRect.width}
+        height={barRect.height}
+        rx={barRect.rx}
+        ry={barRect.ry}
+        fill={barFill}
+        stroke={barStrokeColor}
+        strokeWidth={barRect.strokeWidth}
+        opacity={hasColour ? undefined : 0.85}
       />
       {trimmed ? (
-        <text
-          x={CX}
-          y={CY}
+        <RoundelBarText
+          value={trimmed}
           fill={ink ?? "currentColor"}
           fontSize={fontSize}
-          fontWeight={400}
-          fontFamily={ROUNDEL_FONT_FAMILY}
-          letterSpacing={trimmed.length > 10 ? 1 : trimmed.length > 8 ? 1.5 : 3}
-          textAnchor="middle"
-          dominantBaseline="central"
-          opacity={hasColour ? 1 : 0.9}
-        >
-          {trimmed.toUpperCase()}
-        </text>
+          maxWidth={barTextMaxWidth}
+        />
       ) : null}
     </svg>
   );
@@ -484,7 +610,7 @@ const RoundelTrademarkModal = ({
           <TooltipTrigger
             className={cn(
               ROUNDEL_FRAME_CLASS,
-              "cursor-help opacity-70 transition-opacity hover:opacity-100",
+              "cursor-help",
               className,
             )}
             // span (not button) so this stays valid inside links / other controls
@@ -513,10 +639,7 @@ const RoundelTrademarkModal = ({
               className="size-full"
             />
           </TooltipTrigger>
-          <TooltipContent
-            side="bottom"
-            className="max-w-[14rem] border border-border bg-popover px-2.5 py-1.5 text-xs text-popover-foreground shadow-md"
-          >
+          <TooltipContent side="bottom" className="max-w-[14rem]">
             Trademark placeholder. Click for details.
           </TooltipContent>
         </Tooltip>

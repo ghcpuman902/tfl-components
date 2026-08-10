@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cacheLife, cacheTag } from "next/cache";
-import { getLineCssProps, getLineInlineStyles } from "tfl-ts";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
 import { ExploreWipNotice } from "@/components/docs/explore-wip-notice";
@@ -49,15 +48,13 @@ async function RouteFromParams({ searchParams }: PageProps) {
   ) as "inbound" | "outbound";
 
   const { line, stops } = await getCachedRoute(lineId, direction);
-  const styles = getLineInlineStyles(lineId);
-  const cssProps = getLineCssProps(lineId);
 
   return (
     <>
       <div>
         <h2
-          className="tfl-dark-line-text text-2xl font-bold"
-          style={{ color: styles.color, ...cssProps }}
+          data-line={lineId}
+          className="tfl-dark-line-text text-2xl font-bold text-[var(--line-color)]"
         >
           {line?.name ?? lineId} route
         </h2>

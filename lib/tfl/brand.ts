@@ -9,10 +9,28 @@ export {
   UNDERGROUND_LINE_COLOURS,
   OVERGROUND_LINE_COLOURS,
   UNDERGROUND_RING_RED,
+  CABLE_CAR_MAP_COLOUR,
+  type BrandColourSpec,
   type ModalColourKey,
   type UndergroundLineColourKey,
   type OvergroundLineColourKey,
 } from "@/lib/tfl/brand-colours";
+
+export {
+  brandColourFormats,
+  brandColourTableRow,
+  cmykToDeviceCmykCss,
+  formatHex,
+  formatRgbCss,
+  parseCmyk,
+  parseHex,
+  parseRgbChannels,
+  srgbToDisplayP3Css,
+  srgbToOklchCss,
+  type ColourFormatRow,
+  type ColourTableRow,
+  type Srgb,
+} from "@/lib/tfl/colour-formats";
 
 export {
   ROUNDEL_LOGO_PATHS,
