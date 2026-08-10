@@ -1,10 +1,11 @@
 # Ordered migration plan
 
-**Stop before executing MOVE / RENAME / DELETE / MERGE / SPLIT of existing content.**  
-This document is the plan for a later human-approved pass.
+**Status: COMPLETE** (executed 2026-08-10; see [STATUS.md](./STATUS.md) and [VERIFY.md](./VERIFY.md)).
+
+Historical plan for the IA move. Kept for audit — do not re-run Batch 0 or treat “stop before executing” as current guidance.
 
 Baseline: [BASELINE.md](./BASELINE.md)  
-Inventory: [INVENTORY.md](./INVENTORY.md)  
+Inventory: [INVENTORY.md](./INVENTORY.md) (historical)  
 Conflicts: [CONFLICTS.md](./CONFLICTS.md)  
 Frozen IA: [../TARGET_ARCHITECTURE.md](../TARGET_ARCHITECTURE.md)
 

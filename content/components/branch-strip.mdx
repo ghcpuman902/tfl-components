@@ -1,4 +1,20 @@
-## Usage
+## Purpose
+
+Atomic branched schematic strip — lane×pos nodes and edges with an explicit `lineColor`. Use when you already have a prepared render model.
+
+## Installation
+
+Ships with the [line-strip](/primitives/line-strip) registry item:
+
+```bash
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/line-strip.json
+```
+
+## Preview
+
+See the interactive preview above. Pass a prepared schematic — no TfL fetch inside this atom.
+
+## API / values
 
 ```tsx
 import { BranchStrip } from "@/components/tfl/diagram/branch-strip"
@@ -18,14 +34,22 @@ import { prepareBranchStrip } from "@/lib/tfl/strip-model"
 
 `BranchStrip` is a **rendering primitive**. Prefer `LineStrip` for data-driven callers; drop to this atom when you already have a render model.
 
-### Role
+## Composition
 
-`BranchStrip` is the **atomic** branched strip. It takes a `LineSchematic` (lane × pos nodes and edges), an explicit `lineColor`, and optional prepared `nodeLabelLines` / `segmentStates`. It does not fetch TfL data or look up label recipes.
+`BranchStrip` takes a `LineSchematic` (lane × pos nodes and edges), an explicit `lineColor`, and optional prepared `nodeLabelLines` / `segmentStates`. It does not fetch TfL data or look up label recipes.
 
 `LineStrip` is the **molecular** wrapper that applies recipes and colour, then renders `BranchStrip`.
-
-See also [Line strip](/primitives/line-strip) for straight corridors and journey helpers. Schematic discovery: [Maps → Schematic](/maps/schematic).
 
 ### Geometry
 
 Author separate horizontal and vertical schematics — do not rotate one graph. Shared stations that diverge and converge (Camden Town, Kennington) are single nodes; parallel corridors that share a name (Euston) use duplicate nodes with a shared `stationKey`.
+
+## Used by
+
+- [Line strip](/primitives/line-strip) — molecular wrapper
+- [Maps → Schematic](/maps/schematic) — topology discovery
+- [Week ahead](/blocks/week-ahead) — composed Block
+
+## Independence notes
+
+No `tfl-ts` fetch required. Colour and labels are caller-supplied (or prepared by `LineStrip`).

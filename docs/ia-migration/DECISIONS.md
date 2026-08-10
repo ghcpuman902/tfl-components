@@ -26,8 +26,12 @@ Frozen IA remains the baseline; amendments below are explicit human overrides.
 
 ## Follow-on work implied
 
-1. IA amendment: document **Blocks** in target architecture.  
-2. Geographic: vendor OSM geometry + ORIGIN; MapLibre placeholder on `/maps/geographic`.  
-3. Migration: Arrivals convergence + `data` props (API change — batch carefully).  
-4. Confirm J4, then Primitives ↔ Schematic linking / moves.  
-5. Execute mechanical batches 1–5 with rename freedom (J5).  
+| # | Item | Status |
+|---|------|--------|
+| 1 | IA amendment: document **Blocks** in target architecture | **Done** |
+| 2 | Geographic: vendor OSM geometry + ORIGIN; MapLibre placeholder | **Done** (placeholder; full product later) |
+| 3 | Migration: Arrivals convergence + `data` props | **Done** |
+| 4 | Confirm J4, then Primitives ↔ Schematic linking / moves | **Done** |
+| 5 | Execute mechanical batches 1–5 with rename freedom (J5) | **Done** |
+
+Remaining product work (Coming soon on section hubs): Explorer depth, StationName docs page, journeys / service Interfaces, deeper geographic product. See [STATUS.md](./STATUS.md).

@@ -31,5 +31,22 @@ export default async function InterfacesComponentPage({ params }: PageProps) {
   if (!entry || entry.group !== "interfaces" || !INTERFACE_SLUGS.has(slug)) {
     notFound();
   }
-  return renderComponentDocs({ slug });
+
+  const relatedBySlug: Record<string, { href: string; label: string }[]> = {
+    "tube-status-board": [
+      { href: "/foundations/line-badge", label: "Foundations — Line colours & badges" },
+      { href: "/foundations/tfl-roundel", label: "Foundations — Roundel" },
+      { href: "/blocks/week-ahead", label: "Blocks — Week ahead" },
+      { href: "/explore/lines", label: "Explore — Browse lines" },
+    ],
+    "arrivals-board": [
+      { href: "/foundations/line-badge", label: "Foundations — Line colours & badges" },
+      { href: "/explore/routes", label: "Explore — Route stations" },
+    ],
+  };
+
+  return renderComponentDocs({
+    slug,
+    relatedLinks: relatedBySlug[slug] ?? [],
+  });
 }

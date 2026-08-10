@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SectionPlaceholder } from "@/components/docs/section-placeholder";
+import { SectionHub } from "@/components/docs/section-hub";
 import { getDocsEntry } from "@/lib/docs-catalog";
 
 export const metadata: Metadata = {
@@ -14,17 +14,17 @@ export default function ToolsIndexPage() {
   if (!entry) notFound();
 
   return (
-    <SectionPlaceholder
+    <SectionHub
       entry={entry}
       purpose="A tool exists to inspect, test, understand, tune, generate, compare, or debug. It is not the production component API. Reject Misc dumping-ground entries; use Drafts for incubation."
-      futureSlots={[
-        "Typography / label labs",
+      comingSoon={[
         "Fixture and state inspectors",
         "Diagram tuning playgrounds",
       ]}
       relatedHrefs={[
         { href: "/drafts", label: "Drafts — not yet tools" },
         { href: "/interfaces", label: "Interfaces — embeddable UI" },
+        { href: "/primitives", label: "Primitives — StationName renderer" },
       ]}
     />
   );

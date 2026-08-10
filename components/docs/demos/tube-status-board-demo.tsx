@@ -6,7 +6,14 @@ import { getCachedLineStatuses } from "@/lib/tfl/status-data";
 
 /** Fetch in the docs layer; board only receives `data`. */
 export default async function TubeStatusBoardDemo() {
-  const data = await getCachedLineStatuses(DEFAULT_STATUS_LINE_IDS);
+  let data: Awaited<ReturnType<typeof getCachedLineStatuses>> = [];
+  let error: string | null = null;
+
+  try {
+    data = (await getCachedLineStatuses(DEFAULT_STATUS_LINE_IDS)) ?? [];
+  } catch {
+    error = "Could not load line status. Check TfL credentials and try again.";
+  }
 
   return (
     <div className="space-y-4">
@@ -16,6 +23,11 @@ export default async function TubeStatusBoardDemo() {
         <code className="text-xs">getCachedLineStatuses</code>, passed as{" "}
         <code className="text-xs">data</code>.
       </p>
+      {error ? (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
       <TubeStatusBoard data={data} hideHeader />
     </div>
   );

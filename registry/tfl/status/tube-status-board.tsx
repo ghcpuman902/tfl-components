@@ -17,8 +17,8 @@ import type { StatusLine } from "@/lib/tfl/status-types";
 export type { StatusLine } from "@/lib/tfl/status-types";
 
 type Props = {
-  /** Normalised line status rows from `tfl-ts` (or fixtures). Required. */
-  data: readonly StatusLine[];
+  /** Normalised line status rows from `tfl-ts` (or fixtures). Missing/`undefined` renders empty. */
+  data?: readonly StatusLine[];
   children?: ReactNode;
   /** When true, omit the page header (useful inside a layout that already has one). */
   hideHeader?: boolean;
@@ -147,10 +147,11 @@ export const TubeStatusBoard = ({
   hideHeader = false,
   children,
 }: Props) => {
-  const disruptedLines = data.filter(
+  const lines = data ?? [];
+  const disruptedLines = lines.filter(
     (line) => !isNormalService(line.lineStatuses ?? []),
   );
-  const goodServiceLines = data.filter((line) =>
+  const goodServiceLines = lines.filter((line) =>
     isNormalService(line.lineStatuses ?? []),
   );
 

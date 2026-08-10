@@ -1,3 +1,15 @@
+## Purpose
+
+Unified arrivals / departures board for rail and bus. One interface — domain differences are data shape and chip treatment, not separate products.
+
+## Installation
+
+```bash
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/arrivals-board.json
+```
+
+Legacy install names `live-arrivals-board` and `bus-arrivals-board` remain available for older docs; prefer `arrivals-board`.
+
 ## Getting the data
 
 Arrivals come from `tfl-ts` stop-point arrivals (rail) or bus stop arrivals. Prefer Server Actions so keys stay on the server. Map results into `ArrivalRow[]` and pass them as `data`.
@@ -40,12 +52,12 @@ Stop discovery / geolocation for buses is composition chrome — treat it as a B
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `data` | `readonly ArrivalRow[]` | **Required.** Normalised arrival rows. |
+| `data` | `readonly ArrivalRow[]` | Normalised arrival rows. Missing/`undefined` treated as empty. |
 | `stopName` | `string` | Header stop name. |
 | `stopPointId` | `string` | Optional ID shown in the header. |
 | `loading` / `error` | … | Loading and error presentation. |
 | `statusLabel` | `string` | Optional poll / refresh caption. |
 
-## Underlying primitives
+## Underlying foundations
 
-Line colour chips reuse Foundations colour helpers via `tfl-ts` when not `busStyle`.
+Line colour chips reuse [Foundations colour helpers](/foundations/line-badge) via `tfl-ts` when not `busStyle`.

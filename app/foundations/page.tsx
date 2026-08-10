@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SectionPlaceholder } from "@/components/docs/section-placeholder";
+import { SectionHub } from "@/components/docs/section-hub";
 import { getDocsEntry } from "@/lib/docs-catalog";
 
 export const metadata: Metadata = {
@@ -14,15 +14,13 @@ export default function FoundationsIndexPage() {
   if (!entry) notFound();
 
   return (
-    <SectionPlaceholder
+    <SectionHub
       entry={entry}
       purpose="Shared visual language and licensing guidance consumed by primitives, interfaces, maps, and tools. Safe defaults where TfL branding requires permission."
-      futureSlots={[
-        "Colours & badges",
-        "Typography",
-        "Roundel & trademarks",
+      comingSoon={[
+        "Typography guidance",
         "Icons / pictograms",
-        "Licensing",
+        "Licensing page",
       ]}
       relatedHrefs={[
         { href: "/primitives", label: "Primitives" },

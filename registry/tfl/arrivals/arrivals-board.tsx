@@ -23,7 +23,8 @@ export type ArrivalRow = {
 };
 
 export type ArrivalsBoardProps = {
-  data: readonly ArrivalRow[];
+  /** Missing/`undefined` treated as an empty list. */
+  data?: readonly ArrivalRow[];
   stopName: string;
   stopPointId?: string;
   title?: string;
@@ -75,7 +76,9 @@ export const ArrivalsBoard = ({
   emptyMessage = "No arrivals right now.",
   maxRows = 16,
 }: ArrivalsBoardProps) => {
-  if (loading && data.length === 0 && !error) {
+  const rows = data ?? [];
+
+  if (loading && rows.length === 0 && !error) {
     return <ArrivalsBoardSkeleton />;
   }
 
@@ -111,12 +114,12 @@ export const ArrivalsBoard = ({
         </p>
       ) : null}
 
-      {!error && data.length === 0 && !loading ? (
+      {!error && rows.length === 0 && !loading ? (
         <p className="text-sm text-muted-foreground">{emptyMessage}</p>
       ) : null}
 
       <ul className="list-none space-y-0 p-0" role="list">
-        {data.slice(0, maxRows).map((arrival, index) => {
+        {rows.slice(0, maxRows).map((arrival, index) => {
           const lineId = arrival.lineId ?? "";
           const label = (arrival.lineName ?? lineId) || "-";
           const cssProps = arrival.busStyle

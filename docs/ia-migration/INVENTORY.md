@@ -1,5 +1,9 @@
 # Migration inventory
 
+> **Historical.** Captured before bulk MOVE/RENAME. Live routes and nav live in
+> [`lib/docs-catalog.ts`](../../lib/docs-catalog.ts); migration outcome in
+> [VERIFY.md](./VERIFY.md) and [STATUS.md](./STATUS.md).
+
 Existing docs/showcase/tool surfaces evaluated against frozen Stage 1
 ([product-architecture.md](../product-architecture.md),
 [TARGET_ARCHITECTURE.md](../TARGET_ARCHITECTURE.md)).

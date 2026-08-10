@@ -28,5 +28,19 @@ export default async function FoundationsComponentPage({ params }: PageProps) {
   if (!entry || entry.group !== "foundations" || !FOUNDATION_SLUGS.has(slug)) {
     notFound();
   }
-  return renderComponentDocs({ slug });
+  return renderComponentDocs({
+    slug,
+    relatedLinks: [
+      { href: "/interfaces/tube-status-board", label: "Interfaces — Status board" },
+      { href: "/interfaces/arrivals-board", label: "Interfaces — Arrivals" },
+      ...(slug === "line-badge"
+        ? [{ href: "/foundations/tfl-roundel", label: "Foundations — Roundel" }]
+        : [
+            {
+              href: "/foundations/line-badge",
+              label: "Foundations — Line colours & badges",
+            },
+          ]),
+    ],
+  });
 }

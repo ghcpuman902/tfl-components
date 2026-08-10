@@ -1,4 +1,22 @@
-## Usage
+## Purpose
+
+Shared TfL line colour chips and colour bars. Foundations identity — consumed by Interfaces and Primitives.
+
+## Licensing
+
+Official line colours are fine to use for accurate line identity. Do not treat this as a licence for Johnston typeface or the TfL roundel — see [Roundel](/foundations/tfl-roundel) for trademark behaviour.
+
+## Installation
+
+```bash
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/line-badge.json
+```
+
+## Preview
+
+See the preview above for chip and text variants.
+
+## API / values
 
 Rendering primitive for official TfL line colours. Data-aware boards compose these for chips and colour bars; use them directly when you already know the `lineId`.
 
@@ -16,8 +34,6 @@ export default function Page() {
 }
 ```
 
-### Props
-
 | Prop | Type | Description |
 |------|------|-------------|
 | `lineId` | `string` | TfL line ID (`central`, `northern`, `elizabeth`, …). |
@@ -27,6 +43,12 @@ export default function Page() {
 
 `LineColorBar` takes `lineId`, optional `modeName` (for Overground / Elizabeth parallel rails), and `heightClass`.
 
-### Dark contrast
+## Used by
+
+- [Status board](/interfaces/tube-status-board)
+- [Arrivals](/interfaces/arrivals-board)
+- Line / branch strip primitives
+
+## Dark contrast
 
 Poor-contrast lines (Northern) keep brand fill on dark surfaces. A hard white outline comes from `--line-dark-box-shadow` / `--line-dark-text-shadow` via `getLineCssProps`.

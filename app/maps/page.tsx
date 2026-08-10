@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SectionPlaceholder } from "@/components/docs/section-placeholder";
+import { SectionHub } from "@/components/docs/section-hub";
 import { getDocsEntry } from "@/lib/docs-catalog";
 
 export const metadata: Metadata = {
@@ -14,14 +14,12 @@ export default function MapsIndexPage() {
   if (!entry) notFound();
 
   return (
-    <SectionPlaceholder
+    <SectionHub
       entry={entry}
       purpose="First-class mapping surface. Geographic maps use real coordinates; schematic/network maps represent topology. Do not blur them into one vague Map concept."
-      futureSlots={["Geographic maps", "Schematic & network maps"]}
       relatedHrefs={[
-        { href: "/maps/geographic", label: "Geographic maps" },
-        { href: "/maps/schematic", label: "Schematic & network" },
         { href: "/primitives", label: "Primitives (diagram atoms)" },
+        { href: "/blocks/week-ahead", label: "Week ahead block" },
       ]}
     />
   );

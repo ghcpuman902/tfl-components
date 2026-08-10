@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SectionPlaceholder } from "@/components/docs/section-placeholder";
+import { SectionHub } from "@/components/docs/section-hub";
 import { getDocsEntry } from "@/lib/docs-catalog";
 
 export const metadata: Metadata = {
@@ -14,14 +14,13 @@ export default function BlocksIndexPage() {
   if (!entry) notFound();
 
   return (
-    <SectionPlaceholder
+    <SectionHub
       entry={entry}
       purpose="Blocks are composition pages outside the reusable component catalog. They demonstrate how data-aware Interfaces and rendering Primitives combine into a useful mini-app (similar to shadcn Blocks)."
-      futureSlots={[]}
       relatedHrefs={[
-        { href: "/blocks/week-ahead", label: "Week ahead" },
         { href: "/interfaces", label: "Interfaces" },
         { href: "/primitives", label: "Primitives" },
+        { href: "/maps/schematic", label: "Schematic maps" },
       ]}
     />
   );

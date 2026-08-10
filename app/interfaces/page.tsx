@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SectionPlaceholder } from "@/components/docs/section-placeholder";
+import { SectionHub } from "@/components/docs/section-hub";
 import { getDocsEntry } from "@/lib/docs-catalog";
 
 export const metadata: Metadata = {
@@ -14,16 +14,10 @@ export default function InterfacesIndexPage() {
   if (!entry) notFound();
 
   return (
-    <SectionPlaceholder
+    <SectionHub
       entry={entry}
       purpose="Embeddable, data-aware components organised by developer intent (status, arrivals, journeys, routes). Highest-value path: get data → render."
-      futureSlots={[
-        "Status & disruptions",
-        "Arrivals & departures",
-        "Journeys",
-        "Routes & sequences",
-        "Service information",
-      ]}
+      comingSoon={["Journeys", "Service information"]}
       relatedHrefs={[
         { href: "/primitives", label: "Primitives — lower-level control" },
         { href: "/foundations", label: "Foundations — brand and colour" },

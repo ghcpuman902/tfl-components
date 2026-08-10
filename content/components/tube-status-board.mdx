@@ -1,3 +1,13 @@
+## Purpose
+
+Severity-sorted service status board for Tube, Elizabeth, and related modes. Embed when you already have normalised line status rows.
+
+## Installation
+
+```bash
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tube-status-board.json
+```
+
 ## Getting the data
 
 Status comes from `tfl-ts` via `line.getStatus`. Fetch in your app (or use the site helper), then pass rows in:
@@ -57,14 +67,16 @@ Pass `hideHeader` when a parent layout already provides a title.
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `data` | `readonly StatusLine[]` | **Required.** Normalised line status rows. |
+| `data` | `readonly StatusLine[]` | Normalised line status rows. Missing/`undefined` renders empty. |
 | `hideHeader` | `boolean` | Omit the board header when a parent layout already has one. |
 | `children` | `ReactNode` | Optional slot below the status list. |
 
 - Severity sorting should happen before pass-in (e.g. `sortLinesBySeverityAndOrder`).
 - Official colours come from `tfl-ts` CSS helpers inside the board.
 
-## Underlying primitives
+## Underlying foundations
 
 - [Line colours & badges](/foundations/line-badge)
 - [Roundel](/foundations/tfl-roundel)
+
+See also [Week ahead](/blocks/week-ahead) for a Block that composes status with schematic strips.

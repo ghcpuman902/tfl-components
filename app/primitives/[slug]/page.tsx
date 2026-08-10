@@ -35,6 +35,17 @@ export default async function PrimitivesComponentPage({ params }: PageProps) {
         href: "/maps/schematic",
         label: "Maps → Schematic & network (topology overview)",
       },
+      {
+        href: "/blocks/week-ahead",
+        label: "Blocks — Week ahead",
+      },
+      {
+        href: "/tools/typography",
+        label: "Tools — Station typography",
+      },
+      ...(slug === "line-strip"
+        ? [{ href: "/primitives/branch-strip", label: "Primitives — Branch strip" }]
+        : [{ href: "/primitives/line-strip", label: "Primitives — Line strip" }]),
     ],
   });
 }

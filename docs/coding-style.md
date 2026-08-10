@@ -46,7 +46,7 @@ Under `components/tfl/`:
 - `brand/` and `diagram/` — **rendering primitives** (explicit values; little or no TfL API shape knowledge)
 - `status/` and `arrivals/` — **data-aware** boards (interpret `tfl-ts` domain; compose primitives)
 
-Prep helpers stay in `lib/tfl/*`. See [architecture.md](./architecture.md).
+Prep helpers stay in `lib/tfl/*`. Product layers and IA: [product-architecture.md](./product-architecture.md) and [TARGET_ARCHITECTURE.md](./TARGET_ARCHITECTURE.md).
 
 ## Imports
 

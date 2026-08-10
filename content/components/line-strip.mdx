@@ -1,4 +1,18 @@
-## Usage
+## Purpose
+
+Molecular horizontal line strip for TfL-style schematic corridors — explicit station values, colour, closures, and label recipes. Primary docs home for this primitive; schematic discovery also lives under [Maps → Schematic](/maps/schematic).
+
+## Installation
+
+```bash
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/line-strip.json
+```
+
+## Preview
+
+See the interactive preview above. Pass prepared stations and optional segments — no TfL fetch inside the primitive.
+
+## API / values
 
 ```tsx
 import { LineStrip } from "@/components/tfl/diagram/line-strip"
@@ -20,8 +34,6 @@ import { LineRouteDiagram } from "@/components/tfl/diagram/line-route-diagram"
 
 Start with `LineStrip`. Drop to atoms only when you need full control over the render model. See also [Branch strip](/primitives/branch-strip).
 
-For the geographic vs schematic distinction, see [Maps → Schematic](/maps/schematic) (discovery) and [Geographic](/maps/geographic).
-
 ### Layers
 
 | Component | Layer | Role |
@@ -29,7 +41,7 @@ For the geographic vs schematic distinction, see [Maps → Schematic](/maps/sche
 | `StraightStrip` | Atomic | Linear strip — render prepared stations / segment states only |
 | `BranchStrip` | Atomic | Branched lane×pos schematic — render prepared nodes / labels only |
 | `LineStrip` | Molecular | TfL-aware: colour, adjacency, closures, label recipes → atom |
-| `LineRouteDiagram` | Vertical map | Full vertical route with station names (§11) |
+| `LineRouteDiagram` | Vertical map | Full vertical route with station names |
 | `JourneyDiagram` | Journey | A→B journey with expandable intermediates |
 
 ```tsx
@@ -67,11 +79,22 @@ For “no service between A and B”, mute the **track** with `segments`. `LineS
 
 `labelPlacement`: `"above"` (default) | `"below"` | `"alternate"`. Alternate reserves both name bands so markers stay aligned across the strip. Editorial two-line recipes are applied by `LineStrip`, not by the atoms.
 
-### Standards
+## Composition
 
 Geometry ratios live in `@/lib/tfl/line-diagram` (`LINE_DIAGRAM`, scale CSS vars). They follow *Line diagram standard* Issue 4. Reference crops are in `public/brand/line-diagram/`.
 
-### Brand notes
+## Used by
+
+- [Week ahead](/blocks/week-ahead) — status + schematic strips
+- [Maps → Schematic](/maps/schematic) — topology discovery home
+
+Tune station name fitting in the [Station typography](/tools/typography) tool (`StationName` primitive).
+
+## Independence notes
+
+`LineStrip` accepts explicit values (stations, colour, schematic). It does not call `tfl-ts` for network status. Helpers may use TfL colour IDs from Foundations / `tfl-ts` colour utilities.
+
+## Brand notes
 
 - Official line colours are fine.
 - Do not redistribute Johnston without a licence — this demo uses Hammersmith One as a stand-in.

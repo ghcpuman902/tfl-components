@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SectionPlaceholder } from "@/components/docs/section-placeholder";
+import { SectionHub } from "@/components/docs/section-hub";
 import { getDocsEntry } from "@/lib/docs-catalog";
 
 export const metadata: Metadata = {
@@ -14,14 +14,13 @@ export default function PrimitivesIndexPage() {
   if (!entry) notFound();
 
   return (
-    <SectionPlaceholder
+    <SectionHub
       entry={entry}
       purpose="Discoverable presentational building blocks that accept explicit values and remain useful independently of tfl-ts. Composed by Interfaces; usable directly when you need control."
-      futureSlots={[
-        "Line & route geometry",
-        "Stops & labels",
-        "Status treatments",
-        "Markers & interchange",
+      comingSoon={[
+        "StationName docs page",
+        "Status treatment atoms",
+        "Markers & interchange atoms",
       ]}
       relatedHrefs={[
         { href: "/interfaces", label: "Interfaces — data-aware compositions" },
