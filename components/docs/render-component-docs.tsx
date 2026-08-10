@@ -3,8 +3,11 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { getDocsEntry, type DocsEntry } from "@/lib/docs-catalog";
+import { InstallCommand } from "@/components/docs/install-command";
+import { RelationshipBadges } from "@/components/docs/relationship-badges";
+import { getDocsEntry, getUsedBySlugs, type DocsEntry } from "@/lib/docs-catalog";
 import { loadComponentDemo } from "@/lib/load-component-demo";
+import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code";
 
 type RelatedLink = { href: string; label: string };
 
@@ -13,6 +16,25 @@ type RenderComponentDocsOptions = {
   slug: string;
   /** Extra related links under the MDX body. */
   relatedLinks?: readonly RelatedLink[];
+  /** Compact get-data → render example for data-aware pages. */
+  getDataExample?: string;
+};
+
+const DATA_AWARE_GET_DATA: Record<string, string> = {
+  "tube-status-board": `const data = sortLinesBySeverityAndOrder(
+  await tfl.line.getStatus({ modes: ["tube", "elizabeth-line"] }),
+)
+
+<TubeStatusBoard data={data} />`,
+  "arrivals-board": `const data = await tfl.stopPoint.getArrivals({
+  stopPointIds: ["940GZZLUOXC"],
+  sortBy: "timeToStation",
+})
+
+<ArrivalsBoard data={data} stopName="Oxford Circus" />`,
+  "line-strip": `const spine = await getLineSpine("victoria")
+
+<LineStrip lineId="victoria" spine={spine} fit />`,
 };
 
 export const componentDocsMetadata = async (
@@ -31,11 +53,16 @@ export const componentDocsMetadata = async (
 export const renderComponentDocs = async ({
   slug,
   relatedLinks = [],
+  getDataExample,
 }: RenderComponentDocsOptions) => {
   const entry = getDocsEntry(slug);
   if (!entry || entry.kind !== "component") notFound();
 
   const Demo = await loadComponentDemo(slug);
+  const isDataAware = entry.layer === "data-aware";
+  const snippet =
+    getDataExample ?? (isDataAware ? DATA_AWARE_GET_DATA[slug] : undefined);
+  const usedBy = getUsedBySlugs(slug);
 
   let MDXPage: React.ComponentType<{ className?: string }> | null = null;
   try {
@@ -48,7 +75,15 @@ export const renderComponentDocs = async ({
   return (
     <DocsReadableWidth>
       <article className="space-y-10">
-        <DocsPageHeader entry={entry as DocsEntry} />
+        <DocsPageHeader
+          entry={entry as DocsEntry}
+          preferPreview={isDataAware}
+          getDataSnippet={
+            snippet ? (
+              <SyntaxHighlightedCode code={snippet} language="tsx" />
+            ) : undefined
+          }
+        />
 
         {Demo ? (
           <section className="space-y-3" aria-labelledby="preview-heading">
@@ -68,6 +103,15 @@ export const renderComponentDocs = async ({
           </section>
         ) : null}
 
+        {isDataAware && entry.registryUrl ? (
+          <section className="space-y-2" aria-labelledby="install-heading">
+            <h2 id="install-heading" className="text-lg font-semibold">
+              Installation
+            </h2>
+            <InstallCommand registryUrl={entry.registryUrl} />
+          </section>
+        ) : null}
+
         {MDXPage ? (
           <section className="border-t border-border pt-8">
             <Suspense fallback={null}>
@@ -75,6 +119,24 @@ export const renderComponentDocs = async ({
             </Suspense>
           </section>
         ) : null}
+
+        {(entry.builtWith?.length ||
+          entry.usesFoundations?.length ||
+          usedBy.length > 0) && (
+          <section
+            className="space-y-3 border-t border-border pt-8"
+            aria-labelledby="composition-heading"
+          >
+            <h2 id="composition-heading" className="text-lg font-semibold">
+              Composition
+            </h2>
+            <RelationshipBadges
+              builtWith={entry.builtWith}
+              usesFoundations={entry.usesFoundations}
+              usedBy={usedBy}
+            />
+          </section>
+        )}
 
         {relatedLinks.length > 0 ? (
           <section

@@ -1,5 +1,5 @@
 /**
- * Single source for docs navigation, home catalog, and static params.
+ * Single source for docs navigation, home catalog, search, and static params.
  * Groups follow frozen Stage 1 IA — docs/TARGET_ARCHITECTURE.md.
  */
 
@@ -39,12 +39,25 @@ export type DocsEntry = {
   registryUrl?: string;
   /** Rendering primitive vs data-aware board. */
   layer?: DocsEntryLayer;
+  /**
+   * Related catalogue slugs this surface composes (primitives / other boards).
+   * Rendered as “Built with” badges.
+   */
+  builtWith?: readonly string[];
+  /** Foundation slugs this surface uses. */
+  usesFoundations?: readonly string[];
+  /**
+   * When true, omit from standard install tables (Drafts / legacy helpers).
+   */
+  excludeFromInstallLists?: boolean;
 };
 
 export type DocsGroup = {
   id: DocsGroupId;
   title: string;
   description: string;
+  /** Optional sidebar section parent label (e.g. Components). */
+  navSection?: string;
 };
 
 const REGISTRY_BASE = "https://tfl-components.vercel.app/r";
@@ -57,21 +70,23 @@ export const DOCS_GROUPS: readonly DocsGroup[] = [
   },
   {
     id: "explore",
-    title: "Explore",
+    title: "Explorer",
     description:
       "What TfL knows and how that information relates — not a Unified API endpoint list.",
   },
   {
     id: "interfaces",
-    title: "Interfaces",
+    title: "Data-aware",
     description:
       "Data-aware components: pass normalised data as props, render a useful transport UI.",
+    navSection: "Components",
   },
   {
     id: "primitives",
-    title: "Primitives",
+    title: "Rendering primitives",
     description:
       "Presentational building blocks that take explicit, already-resolved values.",
+    navSection: "Components",
   },
   {
     id: "foundations",
@@ -126,7 +141,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   },
   {
     slug: "explore-index",
-    title: "Explore overview",
+    title: "Explorer overview",
     description:
       "Developer-facing TfL information model and relationships.",
     group: "explore",
@@ -151,7 +166,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   },
   {
     slug: "interfaces-index",
-    title: "Interfaces overview",
+    title: "Data-aware overview",
     description:
       "Data-aware embeddable UIs organised by developer intent.",
     group: "interfaces",
@@ -169,18 +184,34 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryName: "tube-status-board",
     registryUrl: `${REGISTRY_BASE}/tube-status-board.json`,
     layer: "data-aware",
+    usesFoundations: ["line-badge", "tfl-roundel"],
   },
   {
     slug: "arrivals-board",
     title: "Arrivals",
     description:
-      "Unified arrivals board — rail or bus presentation from the same list model.",
+      "Per-station departures grouped by line and compass bound from tfl-ts predictions.",
     group: "interfaces",
     kind: "component",
     href: "/interfaces/arrivals-board",
     registryName: "arrivals-board",
     registryUrl: `${REGISTRY_BASE}/arrivals-board.json`,
     layer: "data-aware",
+    usesFoundations: ["line-badge"],
+  },
+  {
+    slug: "line-strip",
+    title: "Line strip",
+    description:
+      "Data-aware molecular strip — colour, labels, closures → StraightStrip / BranchStrip.",
+    group: "interfaces",
+    kind: "component",
+    href: "/interfaces/line-strip",
+    registryName: "line-strip",
+    registryUrl: `${REGISTRY_BASE}/line-strip.json`,
+    layer: "data-aware",
+    builtWith: ["branch-strip", "station-name"],
+    usesFoundations: ["line-badge"],
   },
   {
     slug: "primitives-index",
@@ -192,18 +223,6 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     href: "/primitives",
   },
   {
-    slug: "line-strip",
-    title: "Line strip",
-    description:
-      "Molecular TfL strip — StraightStrip / BranchStrip with label recipes, closures, and journey helpers.",
-    group: "primitives",
-    kind: "component",
-    href: "/primitives/line-strip",
-    registryName: "line-strip",
-    registryUrl: `${REGISTRY_BASE}/line-strip.json`,
-    layer: "primitive",
-  },
-  {
     slug: "branch-strip",
     title: "Branch strip",
     description:
@@ -213,6 +232,18 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     href: "/primitives/branch-strip",
     registryName: "line-strip",
     registryUrl: `${REGISTRY_BASE}/line-strip.json`,
+    layer: "primitive",
+    builtWith: ["station-name"],
+    usesFoundations: ["line-badge"],
+  },
+  {
+    slug: "station-name",
+    title: "Station name",
+    description:
+      "TfL-aware station label rendering with deterministic line breaks and abbreviation.",
+    group: "primitives",
+    kind: "component",
+    href: "/primitives/station-name",
     layer: "primitive",
   },
   {
@@ -249,6 +280,43 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     layer: "primitive",
   },
   {
+    slug: "typography",
+    title: "Typography",
+    description:
+      "Safe defaults for type — licensed Johnston / TfL Go vs open alternatives.",
+    group: "foundations",
+    kind: "page",
+    href: "/foundations/typography",
+  },
+  {
+    slug: "station-labels",
+    title: "Station labels",
+    description:
+      "How names and platforms shrink with width while copy, find, and screen readers keep the full name.",
+    group: "foundations",
+    kind: "page",
+    href: "/foundations/station-labels",
+    builtWith: ["station-name"],
+  },
+  {
+    slug: "icons",
+    title: "Icons & pictograms",
+    description:
+      "Mode pictograms and diagram markers — what ships safely vs protected marks.",
+    group: "foundations",
+    kind: "page",
+    href: "/foundations/icons",
+  },
+  {
+    slug: "licensing",
+    title: "Licensing & brand use",
+    description:
+      "What installing a component does and does not grant for TfL brand assets.",
+    group: "foundations",
+    kind: "page",
+    href: "/foundations/licensing",
+  },
+  {
     slug: "maps-index",
     title: "Maps overview",
     description:
@@ -261,7 +329,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "maps-geographic",
     title: "Geographic maps",
     description:
-      "MapLibre placeholder over vendored OSM transit geometry — Tube, Elizabeth, Overground, DLR, Tram.",
+      "Provider-independent GeoJSON geometry with a MapLibre demo adapter.",
     group: "maps",
     kind: "page",
     href: "/maps/geographic",
@@ -270,7 +338,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "maps-schematic",
     title: "Schematic & network",
     description:
-      "Topology overview — links to line/branch strip primitives.",
+      "Topology: line diagrams, branches, journeys, and multi-line networks.",
     group: "maps",
     kind: "page",
     href: "/maps/schematic",
@@ -292,6 +360,8 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     group: "blocks",
     kind: "block",
     href: "/blocks/week-ahead",
+    builtWith: ["line-strip", "branch-strip", "station-name"],
+    usesFoundations: ["line-badge"],
   },
   {
     slug: "tools-index",
@@ -303,13 +373,14 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     href: "/tools",
   },
   {
-    slug: "typography",
+    slug: "station-typography",
     title: "Station typography",
     description:
-      "A–Z destination labels with deterministic two-line word breaks, measured in Hammersmith One.",
+      "Playground for A–Z destination labels — tunes StationName behaviour.",
     group: "tools",
     kind: "tool",
     href: "/tools/typography",
+    builtWith: ["station-name"],
   },
   {
     slug: "drafts-index",
@@ -319,6 +390,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     group: "drafts",
     kind: "page",
     href: "/drafts",
+    excludeFromInstallLists: true,
   },
 ] as const;
 
@@ -332,7 +404,10 @@ export const getToolEntries = (): DocsEntry[] =>
   DOCS_ENTRIES.filter((entry) => entry.kind === "tool");
 
 export const getInstallableEntries = (): DocsEntry[] =>
-  DOCS_ENTRIES.filter((entry) => Boolean(entry.registryUrl));
+  DOCS_ENTRIES.filter(
+    (entry) =>
+      Boolean(entry.registryUrl) && !entry.excludeFromInstallLists,
+  );
 
 export const getEntriesByGroup = (groupId: DocsGroupId): DocsEntry[] =>
   DOCS_ENTRIES.filter((entry) => entry.group === groupId);
@@ -349,13 +424,21 @@ export const layerBadgeLabel = (
 ): "Primitive" | "Data-aware" =>
   layer === "primitive" ? "Primitive" : "Data-aware";
 
+/** Reverse relationships: which public surfaces list this slug in builtWith / usesFoundations. */
+export const getUsedBySlugs = (slug: string): string[] =>
+  DOCS_ENTRIES.filter(
+    (entry) =>
+      entry.builtWith?.includes(slug) ||
+      entry.usesFoundations?.includes(slug),
+  ).map((entry) => entry.slug);
+
 export const HOME_CATALOG_GROUPS: readonly DocsGroupId[] = [
-  "explore",
   "interfaces",
   "primitives",
   "foundations",
   "maps",
   "blocks",
   "tools",
+  "explore",
   "drafts",
 ] as const;

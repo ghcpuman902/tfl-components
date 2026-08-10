@@ -2,21 +2,27 @@
 
 Copy a component into your Next.js app with the shadcn CLI. The registry item declares `tfl-ts` and any UI dependencies.
 
-### Add a board
+### Recommended
 
 ```bash
 pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tube-status-board.json
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/arrivals-board.json
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/line-strip.json
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tfl-roundel.json
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/line-badge.json
 ```
-
-Other items:
 
 | Item | Command |
 |------|---------|
-| Roundel | `pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tfl-roundel.json` |
-| Line badge | `pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/line-badge.json` |
-| Bus arrivals | `pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/bus-arrivals-board.json` |
-| Live arrivals | `pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/live-arrivals-board.json` |
-| Line strip | `pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/line-strip.json` |
+| Status board | `…/r/tube-status-board.json` |
+| Arrivals | `…/r/arrivals-board.json` |
+| Line strip | `…/r/line-strip.json` |
+| Roundel | `…/r/tfl-roundel.json` |
+| Line badge | `…/r/line-badge.json` |
+
+### Legacy compatibility names
+
+Older docs referred to `live-arrivals-board` and `bus-arrivals-board`. Those registry JSON files still exist for migration, but they are **not** recommended products. Prefer `arrivals-board` and keep fetch/polling in your app.
 
 ### API keys
 
@@ -27,22 +33,26 @@ TFL_APP_ID=your-app-id
 TFL_APP_KEY=your-app-key
 ```
 
-Keys stay on the server. Boards that fetch data use Server Components or Server Actions — never expose keys to the browser.
+Keys stay on the server. Do not place credentials inside reusable components.
+
+### Example data vocabulary
+
+| Source | Use |
+|--------|-----|
+| **Cached data** | Site / app cache for general demos |
+| **Fixture data** | Deterministic states (severe delays, empty boards) |
+| **Live data** | Developer credentials in the application layer |
 
 ### Project layout after install
-
-Components land under nested paths that match this library:
 
 ```
 components/tfl/brand/tfl-roundel.tsx
 components/tfl/brand/line-badge.tsx
 components/tfl/status/tube-status-board.tsx
-components/tfl/arrivals/bus-arrivals.tsx
+components/tfl/arrivals/arrivals-board.tsx
 components/tfl/diagram/...
 lib/tfl/client.ts
 ```
-
-Import from those paths:
 
 ```tsx
 import { TubeStatusBoard } from "@/components/tfl/status/tube-status-board"

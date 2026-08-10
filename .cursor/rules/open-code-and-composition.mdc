@@ -1,0 +1,102 @@
+---
+description: Open Code, registry distribution, composition contracts, data-as-props (shadcn-derived)
+alwaysApply: true
+---
+
+# Open Code and composition
+
+shadcn’s core product idea applies here: this is **how you build** a TfL component library (source in the consumer repo), not a sealed npm UI package. Pair with frozen layering in [docs/product-architecture.md](docs/product-architecture.md) and decisions J3/C6 in [docs/ia-migration/DECISIONS.md](docs/ia-migration/DECISIONS.md).
+
+## Open Code
+
+- Ship **component source** via the shadcn registry + CLI. Consumers own and edit files after install.
+- Document install with the real registry URL pattern used in this project:
+
+```bash
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/<name>.json
+```
+
+- Prefer extending owned source (or composing wrappers in the **app**) over fighting a black-box dependency.
+- Do **not** treat `components/ui/` lightly as a place for drive-by edits; extend via composition when possible. Domain components live under `components/tfl/` (and related), not as forks of every shadcn atom.
+
+## Distribution
+
+- The **registry schema + CLI path** is part of the product, not an afterthought to the docs site.
+- Every installable Interface / Primitive docs page should expose a working install command when the item is published to `/r`.
+- Keep registry payloads accurate: files, dependencies, and CSS/token assumptions the consumer needs.
+- Blocks are compositions: document which registry items to install, unless we explicitly publish a block package.
+
+## Composition contract (layers)
+
+```text
+normalised tfl-ts data
+        ↓
+data-aware Interface (props)
+        ↓
+domain interpretation (sorting, severity, labels)
+        ↓
+rendering Primitives (explicit values)
+        ↓
+Foundations (colour, type, roundel rules)
+        ↓
+finished UI
+```
+
+Rules:
+
+1. **Interfaces** accept (or document how to obtain) **normalised** data and render useful transport UI.  
+2. **Primitives** take **explicit, already-resolved** values; they must remain useful without `tfl-ts` where practical.  
+3. **Foundations** are shared brand/visual language and licensing — not a second component tree.  
+4. Do **not** fork “static vs live” product lines for the same concept.  
+5. Do **not** duplicate Tube-status / Bus-status trees; domains are variants or filters on one intent.
+
+## Data as props (hard rule)
+
+Reusable library boards and data-aware components take **normalised data as props**. Fetching belongs in the **app**, **docs demo**, or **Block** — not inside the published component API.
+
+```tsx
+// ✅ GOOD — board is presentational over normalised rows
+export function TubeStatusBoard({ data }: { data: NormalisedLineStatus[] }) {
+  return /* … */;
+}
+
+// App / docs / Block:
+const data = await getStatuses(); // or tfl-ts client
+return <TubeStatusBoard data={data} />;
+```
+
+```tsx
+// ❌ BAD — fetch-inside as the library API
+export function TubeStatusBoard() {
+  const data = useSWR("/api/status"); // hides contract; couples to site
+  return /* … */;
+}
+```
+
+Site helpers (e.g. `getCachedLineStatuses`) are fine for **this Next app** and demos. They are not the public component contract. Docs must show the props path first.
+
+## Shared, predictable APIs
+
+- Prefer one clear props shape per Interface; document variations (domains, layouts) as props or slots, not parallel components.  
+- Primitives should expose visual control (scale, orientation, colours as values) without hidden domain fetches.  
+- Diagram scale: one inherited `--tfl-diagram-scale` (see design-system docs); do not desync ticks/rings/labels with ad-hoc text utilities.  
+- Use `cn()` for class merging; semantic tokens for chrome (`bg-background`, `text-muted-foreground`, `border-border`).
+
+## AI / agent readiness
+
+Agents (and humans) succeed when:
+
+- Install command, data shape, and render snippet are adjacent and short  
+- Props and normalised types are named consistently with `tfl-ts`  
+- Page anatomy order matches frozen docs  
+- Conflicts with frozen IA are written to `docs/ia-migration/CONFLICTS.md` (or equivalent), not silently patched  
+
+When adding or changing a component, update: source, registry entry (if installable), demo loader, MDX, and catalog entry together when those surfaces exist.
+
+## Anti-patterns
+
+- Publishing a component that only works with site-local fetch caches  
+- “Convenient” `fetch` defaults inside `components/tfl/**` that become the documented API  
+- New APIs that ignore existing Interface/Primitive splits  
+- Registry entries that omit required files or peer dependencies  
+- Wrapping every TfL visual in an opaque npm package instead of Open Code  

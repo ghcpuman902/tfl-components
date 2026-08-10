@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrivalsBoard } from "@/components/tfl/arrivals/arrivals-board";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,7 @@ import {
   type GetBusArrivalsResult,
   type NearbyBusStop,
 } from "@/lib/tfl/actions";
+import { TFL_MODAL_COLOURS } from "@/lib/tfl/brand-colours";
 import {
   isValidLatLon,
   TRAFALGAR_SQUARE,
@@ -84,41 +86,19 @@ export const BusArrivalsSkeleton = () => (
   </div>
 );
 
-const formatTimeToStation = (seconds?: number): string => {
-  if (seconds === undefined || seconds < 0) return "-";
-  if (seconds < 60) return "Due";
-  const mins = Math.floor(seconds / 60);
-  return `${mins} min`;
-};
-
-const formatClockTime = (iso?: string): string | null => {
-  if (!iso) return null;
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-};
-
 const formatDistance = (meters?: number): string => {
   if (meters === undefined) return "";
   if (meters < 1000) return `${Math.round(meters)}m`;
   return `${(meters / 1000).toFixed(1)}km`;
 };
 
-const formatDirection = (direction?: string): string | null => {
-  if (!direction) return null;
-  return direction.charAt(0).toUpperCase() + direction.slice(1).toLowerCase();
-};
-
-/** Compact TfL-style stop letter; sits inline after the stop name. */
+/** Compact TfL-style stop letter; sits inline after the stop name in the picker. */
 const StopLetterBadge = ({ letter }: { letter?: string }) => {
   if (!letter) return null;
   return (
     <span
-      className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold leading-none text-white tabular-nums align-middle"
+      className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold leading-none text-white tabular-nums align-middle"
+      style={{ backgroundColor: TFL_MODAL_COLOURS.buses.hex }}
       aria-hidden
     >
       {letter}
@@ -126,12 +106,30 @@ const StopLetterBadge = ({ letter }: { letter?: string }) => {
   );
 };
 
-/** Shared line chip for stop picker + arrivals list. */
+/** Shared line chip for the stop picker only. */
 const LineBadge = ({ line }: { line: string }) => (
-  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-foreground px-1.5 text-[11px] font-bold leading-none tabular-nums text-background">
+  <span
+    className="inline-flex h-5 w-[5ch] items-center justify-center px-0 text-center text-[11px] font-bold leading-none tabular-nums text-white"
+    style={{ backgroundColor: TFL_MODAL_COLOURS.buses.hex }}
+  >
     {line}
   </span>
 );
+
+/** Map action rows into the shared board shape (route chip + destination). */
+const toBoardData = (arrivals: readonly BusArrival[]) =>
+  arrivals.map((arrival) => ({
+    lineId: arrival.lineName,
+    lineName: arrival.lineName,
+    destinationName: arrival.destinationName,
+    towards: arrival.towards,
+    platformName: arrival.platformName,
+    timeToStation: arrival.timeToStation,
+    expectedArrival: arrival.expectedArrival,
+    vehicleId: arrival.vehicleId,
+    direction: arrival.direction,
+    busStyle: true as const,
+  }));
 
 /** Numeric codes; avoid relying on the GeolocationPositionError global. */
 const GEO_PERMISSION_DENIED = 1;
@@ -463,78 +461,28 @@ export const BusArrivals = () => {
 
       {(loadingArrivals || arrivalsResult !== null) && selectedStop && (
         <div className="border-t border-border pt-4">
-          <h3 className="mb-3 text-sm font-semibold">
-            <span className="inline-flex items-center gap-1.5">
-              Arrivals: {selectedStop.name}
-              <StopLetterBadge letter={selectedStop.stopLetter} />
-              {loadingArrivals && (
-                <Loader2 className="size-3.5 animate-spin shrink-0" aria-hidden />
-              )}
-            </span>
-            {selectedStop.towards && (
-              <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                towards {selectedStop.towards}
-              </span>
-            )}
-          </h3>
-
-          {arrivalsResult?.ok === false && (
-            <p className="text-destructive text-sm" role="alert">
-              {arrivalsResult.error}
+          {selectedStop.towards ? (
+            <p className="mb-3 text-xs text-muted-foreground">
+              towards {selectedStop.towards}
             </p>
-          )}
-
-          {arrivalsResult?.ok === true && (
-            <>
-              {arrivalsResult.arrivals.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No buses due at this stop right now.</p>
-              ) : (
-                <ul className="space-y-0 list-none p-0" role="list">
-                  {arrivalsResult.arrivals.slice(0, 12).map((a: BusArrival, i: number) => {
-                    const clock = formatClockTime(a.expectedArrival);
-                    const direction = formatDirection(a.direction);
-                    const detailParts = [
-                      direction,
-                      a.towards && a.towards !== a.destinationName
-                        ? `towards ${a.towards}`
-                        : null,
-                      a.vehicleId ? `veh ${a.vehicleId}` : null,
-                    ].filter(Boolean);
-
-                    return (
-                      <li
-                        key={`${a.lineName}-${a.destinationName}-${a.timeToStation}-${i}`}
-                        className="grid grid-cols-[auto_1fr_auto] items-center gap-1.5 py-2.5 border-b border-border last:border-0 text-sm"
-                      >
-                        <LineBadge line={a.lineName ?? "-"} />
-                        <span className="flex min-w-0 items-center gap-1.5 font-medium">
-                          <span className="truncate">
-                            <span className="font-normal text-muted-foreground">to</span>{" "}
-                            {a.destinationName ?? "-"}
-                          </span>
-                          {detailParts.length > 0 && (
-                            <span className="min-w-0 truncate text-xs font-normal text-muted-foreground">
-                              {detailParts.join(" · ")}
-                            </span>
-                          )}
-                        </span>
-                        <span className="text-right">
-                          <span className="block tabular-nums font-semibold">
-                            {formatTimeToStation(a.timeToStation)}
-                          </span>
-                          {clock && (
-                            <span className="block text-xs text-muted-foreground tabular-nums">
-                              {clock}
-                            </span>
-                          )}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </>
-          )}
+          ) : null}
+          <ArrivalsBoard
+            data={
+              arrivalsResult?.ok === true
+                ? toBoardData(arrivalsResult.arrivals)
+                : undefined
+            }
+            stopName={selectedStop.name}
+            stopLetter={selectedStop.stopLetter}
+            headingLevel={2}
+            variant="bus"
+            loading={loadingArrivals}
+            error={
+              arrivalsResult?.ok === false ? arrivalsResult.error : null
+            }
+            emptyMessage="No buses due at this stop right now."
+            maxRows={12}
+          />
         </div>
       )}
     </div>

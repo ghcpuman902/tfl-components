@@ -1,0 +1,119 @@
+---
+description: Docs site as proof + distribution — homepage, Blocks, preview-first pages, agent-ready MDX (shadcn-derived)
+alwaysApply: true
+---
+
+# Docs and proof surfaces
+
+This site is a **developer environment** (discover → retrieve → inspect → render), not a generic component gallery and not a marketing landing page. Borrow shadcn’s *proof + distribution* model; do **not** clone the ui.shadcn.com SaaS mosaic or Geist/zinc look.
+
+Canonical IA and page anatomies remain in:
+
+- [docs/TARGET_ARCHITECTURE.md](docs/TARGET_ARCHITECTURE.md)
+- [docs/page-anatomy.md](docs/page-anatomy.md)
+- [docs/product-architecture.md](docs/product-architecture.md)
+
+This rule covers **how pages prove and teach**. Do not reshape frozen IA here; if a change conflicts with frozen docs, record it for human review.
+
+## Homepage
+
+Lead with **one short product thesis** (what this environment is: data → render → TfL visuals) and **one composed proof surface**.
+
+- Prefer a **Block** (e.g. Week ahead) as the living proof — status + schematic strips, not finance/chat/QR widgets.
+- Keep chrome quiet so TfL domain visuals carry the first viewport.
+- **Catalog / index grids are secondary.** Do not make a multi-section catalog the emotional centre of `/`. Sidebar + section hubs already discover content.
+- One primary CTA path is enough (hero-right **Browse components** / Installation). Proof demos on `/` are not clickable doc frames — do not wrap boards in overlay links.
+- Avoid “Build Your Own” style theme playgrounds until Start → Explore → Interfaces is solid.
+- Arrivals proof boards follow fixed-tile rhythm: [docs/design-system.md](docs/design-system.md#arrivals-board-rhythm), [`.cursor/rules/arrivals-board-layout.mdc`](arrivals-board-layout.mdc).
+
+```tsx
+// ✅ GOOD — thesis + Block proof, catalog demoted
+<>
+  <p>…one sentence thesis…</p>
+  <WeekAheadSection />
+  {/* optional short pointer; catalog not the hero */}
+</>
+
+// ❌ BAD — catalog-first or generic SaaS bento as brand
+<>
+  <DocsCatalogGrid />
+  <FinanceDemoMosaic />
+</>
+```
+
+## Blocks (compositions)
+
+**Blocks** are mini-app / composition demos (human amendment J1). They sit outside the reusable atomic registry by default.
+
+A Block page should teach composition, not pretend to be one installable atom:
+
+1. **Purpose** — what composition story this shows  
+2. **Preview** — full-bleed or wide live demo (primary)  
+3. **Composition recipe** — which **Interfaces** + **Primitives** (+ Foundations) it uses, with links  
+4. **Optional Code / file map** — how the composition is wired (Preview/Code pattern à la shadcn Blocks)  
+5. **Not a dumping ground** — incomplete ideas stay in **Drafts** with a promotion path  
+
+Do **not** invent a single registry JSON for an entire Block unless we deliberately ship a block package. Point consumers at the Interfaces/Primitives they should install instead.
+
+## Interface and primitive docs
+
+Follow [docs/page-anatomy.md](docs/page-anatomy.md). Page chrome may wrap sections; do not skip the conceptual order.
+
+**Preview before prose.** `renderComponentDocs` already mounts Preview first when a demo exists. MDX body should stay example-first:
+
+| Page type | Lead with | Then |
+|-----------|-----------|------|
+| Interface | Purpose → Preview → Install → **Getting the data** → **Render** | Variations, behaviour, underlying primitives |
+| Primitive | Purpose → Preview → Install → API / explicit values | Composition, used-by Interfaces, a11y |
+| Block | Purpose → Preview → composition recipe | Optional Code / file map |
+
+```md
+<!-- ✅ GOOD — Interface MDX shape -->
+## Purpose
+…
+## Installation
+`pnpm dlx shadcn@latest add https://…/r/….json`
+## Getting the data
+…tfl-ts + normalised shape…
+## Render
+`<TubeStatusBoard data={data} />`
+## Variations
+…labeled live states preferred over code-only…
+
+<!-- ❌ BAD -->
+## Implementation notes
+## History
+## Every prop in essay form before a working render path
+```
+
+### Variant galleries
+
+Prefer **labeled live previews** (domain filters, layouts, severity states) over walls of code-only variants. Match the spirit of shadcn Button variant sections: see it, then View Code if needed.
+
+## Agent-ready writing
+
+Docs are read by humans **and** coding agents.
+
+- Keep install command, normalised shape, and render snippet **short and copyable** near the top of the path.
+- Prefer concrete APIs (`line.getStatus`, `TubeStatusBoard`, `data` prop) over abstract essays.
+- Cross-link layers (Interface ↔ Primitive ↔ Foundations ↔ Maps) instead of duplicating trees.
+- State licensing / trademark constraints early on Foundations / identity pages.
+
+## Nav and discovery
+
+Navigation answers: *What is the developer trying to understand, render, or build?*
+
+- Primary path: **Start → Explore → Interfaces → Primitives → Foundations → Maps → Blocks → Tools → Drafts**
+- Transport domains are **filters/metadata**, not top-level duplicated feature trees
+- Do **not** make shadcn UI atoms (Button, Dialog, Card) the product discovery path — they are chrome under `components/ui/`
+- **Tools** = inspect / test / tune / debug only; otherwise Drafts or a real group
+- **Maps**: Geographic vs Schematic/network — never one vague Map under Tools
+
+## Anti-patterns
+
+- Homepage that could belong to any design-system SaaS after removing the roundel  
+- Catalog or “all components” grid as the first meaningful viewport  
+- Blocks that are just another component docs page with no composition story  
+- Leading Interface docs with primitive assembly before GET DATA → RENDER works  
+- Fetch-inside reusable boards as the documented library API (see open-code rule)  
+- Silently editing frozen IA docs to match current folders  

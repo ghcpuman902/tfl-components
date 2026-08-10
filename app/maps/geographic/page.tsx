@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
+import { DataSourceLabel } from "@/components/docs/data-source-label";
 import { GeographicMapPlaceholder } from "@/components/tfl/maps/geographic-map-placeholder";
 import { Badge } from "@/components/ui/badge";
 import { getDocsEntry } from "@/lib/docs-catalog";
@@ -11,7 +12,7 @@ import { getDocsEntry } from "@/lib/docs-catalog";
 export const metadata: Metadata = {
   title: "Geographic maps",
   description:
-    "Real London geography — MapLibre placeholder over vendored OSM transit geometry (Tube, Elizabeth, Overground, DLR, Tram).",
+    "Provider-independent GeoJSON geometry with a MapLibre demo adapter.",
 };
 
 export default function MapsGeographicPage() {
@@ -25,25 +26,22 @@ export default function MapsGeographicPage() {
 
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">Geographic</Badge>
-          <Badge variant="secondary">MapLibre adapter (placeholder)</Badge>
+          <Badge variant="secondary">MapLibre adapter (demo)</Badge>
         </div>
 
-        <section className="space-y-2" aria-labelledby="purpose-heading">
-          <h2 id="purpose-heading" className="text-lg font-semibold">
-            Purpose
-          </h2>
+        <section className="space-y-2">
+          <h2 className="text-lg font-semibold">Purpose</h2>
           <p className="max-w-prose text-muted-foreground">
-            Represent actual London geography with real coordinates. Core
-            geometry is provider-independent GeoJSON under{" "}
-            <code className="text-xs">data/geography/</code>; MapLibre is only a
-            renderer adapter for this placeholder.
+            Real London geography with coordinates. Core geometry is
+            provider-independent GeoJSON. Renderers (MapLibre, Leaflet, Google,
+            …) sit above as adapters — the shared geography API must not depend
+            on MapLibre.
           </p>
         </section>
 
-        <section className="space-y-3" aria-labelledby="preview-heading">
-          <h2 id="preview-heading" className="text-lg font-semibold">
-            Preview
-          </h2>
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Preview</h2>
+          <DataSourceLabel source="cached" />
           <Suspense
             fallback={
               <div
@@ -56,10 +54,8 @@ export default function MapsGeographicPage() {
           </Suspense>
         </section>
 
-        <section className="space-y-2" aria-labelledby="data-heading">
-          <h2 id="data-heading" className="text-lg font-semibold">
-            Data
-          </h2>
+        <section className="space-y-2">
+          <h2 className="text-lg font-semibold">Where data comes from</h2>
           <ul className="list-inside list-disc text-sm text-muted-foreground">
             <li>
               Demo bundles:{" "}
@@ -76,9 +72,29 @@ export default function MapsGeographicPage() {
             </li>
             <li>
               Origin / licence:{" "}
-              <code className="text-xs">data/geography/ORIGIN.md</code>
+              <code className="text-xs">data/geography/ORIGIN.md</code>{" "}
+              (OpenStreetMap attribution required)
             </li>
           </ul>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-lg font-semibold">How a developer obtains data</h2>
+          <p className="max-w-prose text-sm text-muted-foreground">
+            Consume the GeoJSON files (or regenerate caches from OSM extracts
+            documented in <code className="text-xs">ORIGIN.md</code>). Pass
+            FeatureCollections into your chosen renderer adapter. Do not import
+            MapLibre from shared geography helpers.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-lg font-semibold">Renderer adapters</h2>
+          <p className="max-w-prose text-sm text-muted-foreground">
+            This page’s demo uses MapLibre over the vendored GeoJSON. Swap the
+            adapter without changing the geometry source. Full interactive
+            geographic product work continues beyond this placeholder.
+          </p>
         </section>
 
         <p className="text-sm text-muted-foreground">

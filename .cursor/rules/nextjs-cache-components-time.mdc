@@ -1,0 +1,64 @@
+---
+description: Decide how to handle Date.now / new Date / Math.random under Next.js Cache Components prerender
+alwaysApply: true
+---
+
+# Cache Components: time and randomness
+
+This app sets `cacheComponents: true` in `next.config.ts` (Next.js 16). During prerender, **unstable values cannot run in the static shell**.
+
+Forbidden in Server Components / Suspense fallbacks / `loading.js` without a chosen boundary:
+
+- `Date.now()`, `new Date()`, `Date()` (no args)
+- `Math.random()`, `crypto.randomUUID()`
+
+Default params are a footgun — `fn(now = Date.now())` still evaluates during prerender.
+
+Canonical error: [blocking-prerender-current-time](https://nextjs.org/docs/messages/blocking-prerender-current-time). Prefer `node_modules/next/dist/docs/` over training data.
+
+## Decision tree (pick one)
+
+| Need | Fix | Pattern in this repo |
+|------|-----|----------------------|
+| True “now” / relative age (“3 min ago”) on the server | `[dynamic]` `await connection()` then read time; keep the component under a close `<Suspense>` | `components/tfl/week-ahead/week-ahead-section.tsx`, homepage panels in `home-editorial.tsx` |
+| Timestamp tied to cached data (“as of” / `fetchedAt`) | `[cache]` call `Date.now()` **inside** the same `"use cache"` function that produces the data; pass the number down; format without a second “now” when possible | `lib/tfl/home-arrivals-data.ts` (`fetchedAt`) |
+| Ticking / locale-relative label | `[client]` `"use client"` + set time in `useEffect` / `startTransition` (not during SSR render) | Prefer for live “ago” that updates |
+| Timing / telemetry only | `[measure]` `performance.now()` — do not render it | — |
+
+`new Date(knownMs)` / formatting a stored ISO string is fine — the instant is already fixed.
+
+## Do
+
+```tsx
+// Request-time "today" or relative age (shell stays static via Suspense)
+async function Panel() {
+  await connection();
+  const label = formatCacheAgeLabel(fetchedAt, Date.now());
+  return …;
+}
+```
+
+```ts
+// Stamp when the cache entry was produced — OK inside "use cache"
+async function getCached() {
+  "use cache";
+  cacheLife({ revalidate: 120 });
+  return { data, fetchedAt: Date.now() };
+}
+```
+
+## Don’t
+
+```ts
+// ❌ Default arg runs during prerender
+export const formatAge = (fetchedAt: number, now = Date.now()) => …;
+
+// ❌ Relative "ago" in a Server Component with no connection() / cache / client
+formatAge(payload.fetchedAt);
+
+// ❌ Date.now() in loading.js / Suspense fallback
+```
+
+## Related unstable APIs
+
+Same class of fix for `Math.random()` and `crypto.randomUUID()` — cache, defer with `connection()` behind Suspense, or move to the client. See Next.js messages `blocking-prerender-random` and `blocking-prerender-crypto`.

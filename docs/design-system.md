@@ -36,6 +36,59 @@ Use `StationName` / `formatStationLabel` — never ad-hoc `<br>` or CSS wrapping
 
 Rules: break only between words; prefer the full name; never split a token; optional abbreviations only to fit; scale-down is last resort (`STATION_LABEL_MIN_SCALE = 0.75`).
 
+### Arrivals board rhythm
+
+Shared rail/bus board: `registry/tfl/arrivals/arrivals-board.tsx`.  
+Agent rule (globs the board + demos): [`.cursor/rules/arrivals-board-layout.mdc`](../.cursor/rules/arrivals-board-layout.mdc).
+
+**Baseline grid**
+
+| Token | Value | Role |
+|-------|--------|------|
+| `--arrivals-unit` | `0.5rem` | Smallest vertical step |
+| `--arrivals-row` | `6 × unit` (`3rem` / 48px) | One tile: stop title, line header, bound label, or arrival row |
+
+Every tile uses a locked box (`box-border`, fixed `min`/`max`/`height` = `--arrivals-row`, `overflow-hidden`, `shrink-0`). Content may clip; it must **never** grow the tile.
+
+**Gaps**
+
+- Title → first line group: tight (`space-y-2` = one unit).
+- Between line sections: **none** — arrival rows and the next line header form one continuous tile stack (no `gap-y` / `space-y` between `<section>`s).
+- Do not reserve a double-height title band “in case the name wraps”.
+
+**Borders and bars (must not contribute extra height)**
+
+| Element | How | Why |
+|---------|-----|-----|
+| Row / bound hairlines | Absolute `after:` at the bottom of the tile | Separators stay out of flow |
+| Solid line/route brand bar | `border-b-4` + `box-border` on the line-header tile | Bar is painted **inside** the 48px box |
+| Striped Overground / Elizabeth | Absolute `LineColorBar` pinned to the tile bottom | Dual rails cannot be a single border |
+
+```tsx
+// ✅ Solid brand bar inside the tile
+<header className="box-border h-[var(--arrivals-row)] border-b-4 …"
+  style={{ borderBottomColor: lineColor }} />
+
+// ✅ Hairline separator — absolute, zero layout cost
+<li className="relative h-[var(--arrivals-row)] after:absolute after:inset-x-0 after:bottom-0 after:h-px …" />
+
+// ❌ In-flow bar under the name — shifts baselines vs the other board
+<header className="flex flex-col h-[var(--arrivals-row)]">
+  <h3>Victoria</h3>
+  <div className="mt-1 h-1 bg-[line]" />
+</header>
+```
+
+**Copy and chips**
+
+- Stop title = human name only (+ optional bus stop letter). Never show NaPTAN / stop-point ids.
+- Fit stop and destination names with `StationName` (`layout="auto"`, abbr then scale). Destination rows stay one tile tall.
+- Rail: platform chip before destination. Bus: route chip per row; stop letter on the header only.
+
+**Side-by-side boards**
+
+Share the same title height, title→body gap, and row unit so the first line headers align. Mid-board drift from extra rail bound rows (Northbound / Southbound) is **content structure**, not a chrome-height bug.
+
 
 ## Brand tooling
 

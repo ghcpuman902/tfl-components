@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
  * Atomic branched strip: SVG paths + markers, HTML StationName overlay.
  *
  * ## Visual regression checklist (run after every edit)
- * Open http://localhost:3999/components/branch-strip and confirm:
+ * Open http://localhost:3999/primitives/branch-strip and confirm:
  * 1. **Mill Hill East** curves into Finchley with a Bezier — never a flat 90° stub
  *    (same `pos` as Finchley is forbidden; see `schematic-layout.test.ts`)
  * 2. **Camden → Mornington Crescent** is a smooth S-curve — never a staircase / elbow

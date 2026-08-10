@@ -6,7 +6,7 @@ import { getDocsEntry } from "@/lib/docs-catalog";
 export const metadata: Metadata = {
   title: "Blocks",
   description:
-    "Composed mini-apps — like shadcn Blocks — showing how Interfaces and Primitives merge.",
+    "Composed mini-apps — like shadcn Blocks — showing how data-aware components and primitives merge.",
 };
 
 export default function BlocksIndexPage() {
@@ -16,11 +16,12 @@ export default function BlocksIndexPage() {
   return (
     <SectionHub
       entry={entry}
-      purpose="Blocks are composition pages outside the reusable component catalog. They demonstrate how data-aware Interfaces and rendering Primitives combine into a useful mini-app (similar to shadcn Blocks)."
+      purpose="Blocks are composition pages outside the reusable component catalog. They demonstrate how data-aware components and rendering primitives combine into a useful mini-app (similar to shadcn Blocks). A Block is not a single installable component API."
       relatedHrefs={[
-        { href: "/interfaces", label: "Interfaces" },
-        { href: "/primitives", label: "Primitives" },
+        { href: "/interfaces", label: "Data-aware components" },
+        { href: "/primitives", label: "Rendering primitives" },
         { href: "/maps/schematic", label: "Schematic maps" },
+        { href: "/blocks/week-ahead", label: "Week ahead" },
       ]}
     />
   );

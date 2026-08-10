@@ -1,6 +1,6 @@
 # Backlog
 
-IA Stage 1 is frozen; migration executed. See [docs/ia-migration/STATUS.md](./docs/ia-migration/STATUS.md).
+IA Stage 1 is frozen; migration executed; homepage catalogue + docs search + direct `tfl-ts` contracts polished (2026-08-10).
 
 ## This version — polish existing
 
@@ -10,11 +10,11 @@ IA Stage 1 is frozen; migration executed. See [docs/ia-migration/STATUS.md](./do
 
 ## Coming soon (do not invent yet)
 
-- Full Explorer information model
-- StationName primitives docs page
+- Full Explorer information model (WIP notice in place)
 - Journeys / service-information Interfaces
 - Full geographic map product beyond MapLibre + vendored OSM preview
 - Formal Drafts population (only with real experiments)
+- Dedicated StraightStrip docs page (atom currently documented via Line strip)
 
 ## Architecture source of truth
 

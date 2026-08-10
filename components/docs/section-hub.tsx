@@ -10,6 +10,8 @@ type SectionHubProps = {
   /** Unfinished second-level ideas — shown as Coming soon. */
   comingSoon?: readonly string[];
   relatedHrefs?: readonly { href: string; label: string }[];
+  /** Optional notice above the header (e.g. Explorer WIP). */
+  banner?: React.ReactNode;
 };
 
 export const SectionHub = ({
@@ -17,6 +19,7 @@ export const SectionHub = ({
   purpose,
   comingSoon = [],
   relatedHrefs = [],
+  banner,
 }: SectionHubProps) => {
   const siblings = getEntriesByGroup(entry.group).filter(
     (item) => item.slug !== entry.slug,
@@ -25,6 +28,8 @@ export const SectionHub = ({
   return (
     <DocsReadableWidth>
       <article className="space-y-8">
+        {banner}
+
         <DocsPageHeader entry={entry} />
 
         <section className="space-y-2" aria-labelledby="purpose-heading">

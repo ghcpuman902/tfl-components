@@ -1,27 +1,36 @@
 ## Station typography
 
-Deterministic word-boundary line breaks for diagram and destination labels, measured against the live **Hammersmith One** font (`next/font` → `--font-sans`).
+Tool for inspecting and tuning destination labels. Box width, font size, line-count, abbreviation, and scale controls belong here — they do not all need to become production component props.
 
-### Break rules
+### Related component
 
-1. Prefer a single line when it fits the available width.
-2. Otherwise try every split **between words** (never mid-token) and pick the most balanced pair that fits.
-3. Optional abbreviations (`Street` → `St`, `Road` → `Rd`, `and` → `&`, …) only when enabled and still needed.
-4. Optional scale-down (floor **0.75**) as the last resort.
+The reusable renderer is **[Station name](/primitives/station-name)** (`StationName`). Prefer that page for production usage.
 
-### Usage
+### Production example from playground settings
 
 ```tsx
-import { StationName } from "@/components/tfl/station-name";
-import { formatStationLabel } from "@/lib/tfl/station-typography";
+import { StationName } from "@/components/tfl/station-name"
 
 <StationName
   name="King's Cross St. Pancras"
   layout="auto"
+  maxWidth={140}
   maxLines={2}
-  allowAbbreviation={false}
+  allowAbbreviation
+  allowScaleDown
+  minScale={0.75}
 />
 ```
-This is a **Tool** (inspect / tune), not the production component API. The embeddable renderer is `StationName` under Primitives (used by line strips). Prefer your product typeface in production, or request Johnston via TfL font requests.
 
-This page is not an installable registry item.
+Adjust `maxWidth`, `maxLines`, and abbreviation flags to match what you measured in this lab.
+
+### Break rules (owned by StationName)
+
+1. Prefer a single line when it fits.
+2. Otherwise try every split **between words** and pick the most balanced pair that fits.
+3. Optional abbreviations (`Street` → `St`, …) only when enabled.
+4. Optional scale-down (floor **0.75**) as the last resort.
+
+### Why a tool
+
+This page exists to inspect / tune / debug label fitting. It is not an installable registry item and is not the production component API.

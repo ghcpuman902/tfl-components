@@ -38,7 +38,7 @@ export default function BranchStripDemo() {
       <section className="space-y-3" aria-labelledby="branch-horizontal">
         <h2
           id="branch-horizontal"
-          className="text-lg font-semibold tracking-tight"
+          className="text-lg font-semibold"
         >
           Horizontal
         </h2>
@@ -53,7 +53,7 @@ export default function BranchStripDemo() {
       <section className="space-y-3" aria-labelledby="branch-vertical">
         <h2
           id="branch-vertical"
-          className="text-lg font-semibold tracking-tight"
+          className="text-lg font-semibold"
         >
           Vertical
         </h2>

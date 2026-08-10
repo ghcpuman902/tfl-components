@@ -1,20 +1,11 @@
 ## Purpose
 
-Severity-sorted service status board for Tube, Elizabeth, and related modes. Embed when you already have normalised line status rows.
+Severity-sorted service status board for Tube, Elizabeth, and related modes. Embed when you already have normalised line status rows from `tfl-ts`.
 
-## Installation
-
-```bash
-pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tube-status-board.json
-```
-
-## Getting the data
-
-Status comes from `tfl-ts` via `line.getStatus`. Fetch in your app (or use the site helper), then pass rows in:
+## Getting data with tfl-ts
 
 ```ts
-import TflClient from "tfl-ts"
-import { sortLinesBySeverityAndOrder } from "tfl-ts"
+import TflClient, { sortLinesBySeverityAndOrder } from "tfl-ts"
 
 const tfl = new TflClient({
   appId: process.env.TFL_APP_ID!,
@@ -28,7 +19,9 @@ const data = sortLinesBySeverityAndOrder(
 )
 ```
 
-On this docs site, `getCachedLineStatuses` in `@/lib/tfl/status-data` wraps the same idea with Cache Components.
+`data` is the public `tfl.line.getStatus()` row type (aliased in this repo as `StatusLine`). No docs-site-only transformation.
+
+On this docs site, `getCachedLineStatuses` in `@/lib/tfl/status-data` wraps the same idea with Cache Components (**Cached data**).
 
 ## Render
 
@@ -40,7 +33,7 @@ export default function Page({ data }) {
 }
 ```
 
-The board does **not** fetch. Pass normalised line status rows as `data`.
+The board does **not** fetch.
 
 ## Variations
 
@@ -63,20 +56,21 @@ export default async function Page() {
 
 Pass `hideHeader` when a parent layout already provides a title.
 
-## Behaviour
+## Behaviour / edge cases
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `data` | `readonly StatusLine[]` | Normalised line status rows. Missing/`undefined` renders empty. |
+| `data` | `readonly StatusLine[]` | Rows from `tfl.line.getStatus()`. Missing/`undefined` renders empty. |
 | `hideHeader` | `boolean` | Omit the board header when a parent layout already has one. |
 | `children` | `ReactNode` | Optional slot below the status list. |
 
-- Severity sorting should happen before pass-in (e.g. `sortLinesBySeverityAndOrder`).
+- Severity sorting should happen before pass-in (`sortLinesBySeverityAndOrder`).
 - Official colours come from `tfl-ts` CSS helpers inside the board.
 
-## Underlying foundations
+## Data ownership
 
-- [Line colours & badges](/foundations/line-badge)
-- [Roundel](/foundations/tfl-roundel)
+Credentials, fetch, and cache live in the app. Fixtures can demonstrate severe delays without live disruption.
 
-See also [Week ahead](/blocks/week-ahead) for a Block that composes status with schematic strips.
+## Related Blocks
+
+See [Week ahead](/blocks/week-ahead) for a Block that composes status interpretation with schematic strips.

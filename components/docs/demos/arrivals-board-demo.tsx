@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  ArrivalsBoard,
-  type ArrivalRow,
-} from "@/components/tfl/arrivals/arrivals-board";
+import type { RealtimePrediction } from "tfl-ts";
+import { ArrivalsBoard } from "@/components/tfl/arrivals/arrivals-board";
+import { DataSourceLabel } from "@/components/docs/data-source-label";
 import { getStopArrivalsAction } from "@/lib/tfl/live-arrivals-action";
 
 const RAIL_STOP = {
@@ -15,11 +14,10 @@ const RAIL_STOP = {
 const POLL_MS = 15_000;
 
 /**
- * Converged arrivals demo — rail stop via shared ArrivalsBoard + data props.
- * Bus discovery remains available via the bus-arrivals registry helper for now.
+ * Converged arrivals demo — rail stop via shared ArrivalsBoard + tfl-ts predictions.
  */
 export default function ArrivalsBoardDemo() {
-  const [data, setData] = useState<ArrivalRow[]>([]);
+  const [data, setData] = useState<RealtimePrediction[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
@@ -37,12 +35,7 @@ export default function ArrivalsBoardDemo() {
           setData([]);
         } else {
           setError(null);
-          setData(
-            result.arrivals.map((arrival) => ({
-              ...arrival,
-              busStyle: false,
-            })),
-          );
+          setData(result.arrivals);
           setTick((n) => n + 1);
         }
       } catch {
@@ -64,16 +57,15 @@ export default function ArrivalsBoardDemo() {
 
   return (
     <div className="space-y-4">
+      <DataSourceLabel source="live" />
       <p className="text-sm text-muted-foreground">
-        Unified arrivals UI. Fetch/poll outside the board; pass rows as{" "}
-        <code className="text-xs">data</code>. Bus uses the same list model with{" "}
-        <code className="text-xs">busStyle</code> chips.
+        Pass <code className="text-xs">RealtimePrediction[]</code> from{" "}
+        <code className="text-xs">tfl.stopPoint.getArrivals</code> as{" "}
+        <code className="text-xs">data</code>. Polling stays outside the board.
       </p>
       <ArrivalsBoard
         data={data}
         stopName={RAIL_STOP.name}
-        stopPointId={RAIL_STOP.id}
-        title="Arrivals"
         loading={loading}
         error={error}
         statusLabel={`Poll #${tick} · every ${POLL_MS / 1000}s`}

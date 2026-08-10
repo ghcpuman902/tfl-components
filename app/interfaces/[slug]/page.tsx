@@ -13,6 +13,7 @@ type PageProps = {
 const INTERFACE_SLUGS = new Set([
   "tube-status-board",
   "arrivals-board",
+  "line-strip",
 ]);
 
 export const generateStaticParams = () =>
@@ -34,14 +35,21 @@ export default async function InterfacesComponentPage({ params }: PageProps) {
 
   const relatedBySlug: Record<string, { href: string; label: string }[]> = {
     "tube-status-board": [
-      { href: "/foundations/line-badge", label: "Foundations — Line colours & badges" },
-      { href: "/foundations/tfl-roundel", label: "Foundations — Roundel" },
-      { href: "/blocks/week-ahead", label: "Blocks — Week ahead" },
-      { href: "/explore/lines", label: "Explore — Browse lines" },
+      { href: "/foundations/line-badge", label: "Line colours & badges" },
+      { href: "/foundations/tfl-roundel", label: "Roundel" },
+      { href: "/blocks/week-ahead", label: "Week ahead Block" },
+      { href: "/explore/lines", label: "Browse lines" },
     ],
     "arrivals-board": [
-      { href: "/foundations/line-badge", label: "Foundations — Line colours & badges" },
-      { href: "/explore/routes", label: "Explore — Route stations" },
+      { href: "/foundations/line-badge", label: "Line colours & badges" },
+      { href: "/explore/routes", label: "Route stations" },
+    ],
+    "line-strip": [
+      { href: "/primitives/branch-strip", label: "Branch strip" },
+      { href: "/primitives/station-name", label: "Station name" },
+      { href: "/maps/schematic", label: "Schematic & network" },
+      { href: "/blocks/week-ahead", label: "Week ahead Block" },
+      { href: "/tools/typography", label: "Station typography tool" },
     ],
   };
 

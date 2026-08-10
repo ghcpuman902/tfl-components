@@ -122,12 +122,13 @@
       "name": "arrivals-board",
       "type": "registry:component",
       "title": "Arrivals Board",
-      "description": "Unified arrivals list — pass ArrivalRow[] as data (rail or busStyle chips).",
+      "description": "Per-station departures grouped by line and compass bound — pass RealtimePrediction[] as data.",
       "dependencies": [
         "tfl-ts",
         "lucide-react"
       ],
       "registryDependencies": [
+        "line-badge",
         "skeleton"
       ],
       "files": [
@@ -142,12 +143,13 @@
       "name": "bus-arrivals-board",
       "type": "registry:block",
       "title": "Bus Arrivals Board",
-      "description": "Nearby bus stops and live arrivals with route-number chips.",
+      "description": "Nearby bus stops and live arrivals via shared ArrivalsBoard.",
       "dependencies": [
         "tfl-ts",
         "lucide-react"
       ],
       "registryDependencies": [
+        "arrivals-board",
         "button",
         "input",
         "label",

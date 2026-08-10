@@ -23,7 +23,7 @@ type LineBadgeProps = {
 /** Skeleton for a line badge chip — use in `loading.tsx` or Suspense. */
 export const LineBadgeSkeleton = ({ className }: { className?: string }) => (
   <Skeleton
-    className={cn("inline-flex h-5 w-16 rounded-md", className)}
+    className={cn("inline-flex h-5 w-16", className)}
     aria-hidden
   />
 );
@@ -86,7 +86,7 @@ export const LineBadge = ({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md bg-[var(--line-color)] px-2 py-0.5 text-xs font-bold text-white tabular-nums dark:[box-shadow:var(--line-dark-box-shadow)]",
+        "inline-flex items-center bg-[var(--line-color)] px-2 py-0.5 text-xs font-bold text-white tabular-nums dark:[box-shadow:var(--line-dark-box-shadow)]",
         className,
       )}
       style={cssProps}

@@ -4,16 +4,20 @@
 
 You copy component source with the shadcn CLI — not a locked npm UI package.
 
+### Flow
+
+```text
+Get TfL data with tfl-ts
+Pass normalised data to tfl-components
+Render a useful interface
+```
+
 ### Two layers in `tfl-components`
 
-1. **Data-aware interfaces** — accept (or responsibly obtain) normalised `tfl-ts` data and render useful transport UI.  
-2. **Rendering primitives** — presentational building blocks from explicit values; discoverable when you need control.
+1. **Data-aware components** — accept normalised `tfl-ts` data and render useful transport UI.  
+2. **Rendering primitives** — presentational building blocks from explicit values.
 
-Highest-value path: **get data → render**.
-
-Shared brand language lives in **Foundations**. **Maps** split geographic vs schematic. **Explore** explains what TfL knows. **Tools** are playgrounds; **Drafts** incubate experiments.
-
-See `docs/TARGET_ARCHITECTURE.md` (frozen Stage 1).
+Shared brand language lives in **Foundations**. **Maps** split geographic vs schematic. **Explorer** explains what TfL knows (work in progress). **Blocks** compose several parts into mini-apps. **Tools** are playgrounds; **Drafts** incubate experiments.
 
 ### Distribution
 
@@ -22,16 +26,5 @@ pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tube-status-board
 ```
 
 Put `TFL_APP_ID` and `TFL_APP_KEY` in your server environment. See [Installation](/installation).
-
-### How this site is organised
-
-- **Start** — introduction and install  
-- **Explore** — information model and relationships  
-- **Interfaces** — data-aware embeddable boards  
-- **Primitives** — lower-level visual control  
-- **Foundations** — colours, identity, licensing  
-- **Maps** — geographic vs schematic/network  
-- **Tools** — inspect / tune / debug playgrounds  
-- **Drafts** — incubation  
 
 Press `d` to toggle dark mode.

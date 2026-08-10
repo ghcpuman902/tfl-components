@@ -16,7 +16,7 @@ import type { LineSchematic } from "./line-schematic.ts";
 /**
  * Geometry + label invariants for BranchStrip / Northern fixtures.
  *
- * Visual check after any edit: http://localhost:3999/components/branch-strip
+ * Visual check after any edit: http://localhost:3999/primitives/branch-strip
  * 1. Mill Hill curves into Finchley (Bezier) — never a flat 90° stub
  * 2. Camden → Mornington is a smooth S-curve — never staircase / arc-L
  * 3. Station labels do not overlap each other

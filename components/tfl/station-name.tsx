@@ -82,12 +82,64 @@ type SizeState = {
 const WIDTH_EPSILON = 0.5;
 const FONT_EPSILON = 0.05;
 const FALLBACK_FONT = "Hammersmith One, system-ui, sans-serif";
+/** Unitless so wrapped lines stay clustered when `scale` shrinks font-size. */
+const MULTILINE_LINE_HEIGHT = 1.15;
 
+/**
+ * Invisible inline completion (e.g. St + "reet" → Street) for engines that
+ * still index font-size: 0. Primary cross-line find uses FindPhrase below.
+ */
 const FindExpand = ({ text }: { text: string }) => (
   <span className="text-[0px] leading-none" aria-hidden="true">
     {text}
   </span>
 );
+
+const FIND_PHRASE_WRAPPER_CLASS =
+  "absolute left-1/2 top-full z-20 mt-1 -translate-x-1/2 whitespace-nowrap";
+const FIND_PHRASE_CHIP_CLASS =
+  "inline-block bg-foreground px-1.5 py-0.5 text-[11px] font-medium leading-none text-background";
+
+const escapeFindText = (value: string): string =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+/**
+ * Canonical name for Cmd/Ctrl+F when paint wraps (`<br>`) or abbreviates —
+ * find-in-page cannot match a phrase across the `<br>` between visual lines.
+ *
+ * Three constraints shape this:
+ * 1. React serialises `hidden` as a boolean (`hidden=""` → `display: none`,
+ *    unsearchable), so `until-found` has to be written as raw markup.
+ * 2. `until-found` is ignored on `display: inline` / `none`, hence `absolute`.
+ * 3. Reveal walks a match's *ancestors*, so the text sits in a child.
+ *
+ * Firefox / Safari have no `until-found`; they do match `opacity: 0` text.
+ */
+const FindPhrase = ({ text }: { text: string }) => {
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if ("onbeforematch" in document.body) return;
+    const target = ref.current?.firstElementChild;
+    if (!(target instanceof HTMLElement)) return;
+    target.removeAttribute("hidden");
+    target.style.opacity = "0";
+  }, [text]);
+
+  return (
+    <span
+      ref={ref}
+      className="contents"
+      dangerouslySetInnerHTML={{
+        __html: `<span hidden="until-found" class="${FIND_PHRASE_WRAPPER_CLASS}"><span class="${FIND_PHRASE_CHIP_CLASS}">${escapeFindText(text)}</span></span>`,
+      }}
+    />
+  );
+};
 
 const renderFindableLine = (line: string): ReactNode[] =>
   line.split(/(\s+|&)/).map((part, index) => {
@@ -256,11 +308,13 @@ export const StationName = ({
   const result = useMemo(() => {
     if (!useAuto) return fixedResult(name, visualLines);
 
-    if (hasFixedMetrics && size.width > 0) {
-      return formatStationLabel(name, measure, formatOptions);
-    }
-    if (!size.measured || size.width <= 0) {
-      return fixedResult(name, visualLines);
+    // Until the box is measured, run the fit policy at a 1px width so we
+    // land on the smallest form — never flash the full-size overflow default.
+    if (!hasFixedMetrics && (!size.measured || size.width <= 0)) {
+      return formatStationLabel(name, approximateStationMeasure, {
+        ...formatOptions,
+        maxWidth: 1,
+      });
     }
     return formatStationLabel(name, measure, formatOptions);
   }, [
@@ -295,12 +349,22 @@ export const StationName = ({
 
   const textAlign =
     align === "center" ? "center" : align === "right" ? "right" : "left";
+  const multiline = result.lines.length > 1;
+
+  const paintDiffersFromCopy =
+    multiline ||
+    result.abbreviated ||
+    result.lines.join(" ").replace(/\s+/g, " ").trim() !== copyName;
+  const extraFindAliases = findAliases.filter(
+    (alias) => alias.toLowerCase() !== copyName.toLowerCase(),
+  );
 
   return (
     <span
       ref={ref}
       className={cn(
-        "inline-flex w-full min-w-0 flex-col leading-none",
+        "relative inline-flex h-full min-h-0 w-full min-w-0 flex-col justify-center",
+        !multiline && "leading-none",
         align === "center" && "items-center",
         align === "right" && "items-end",
         align === "left" && "items-start",
@@ -314,10 +378,16 @@ export const StationName = ({
       aria-label={copyName}
       onCopy={handleCopy}
     >
+      {paintDiffersFromCopy ? <FindPhrase text={copyName} /> : null}
+      {extraFindAliases.map((alias) => (
+        <FindPhrase key={alias} text={alias} />
+      ))}
       <span
         className="inline-block w-full min-w-0"
         style={{
           fontSize: result.scale !== 1 ? `${result.scale * 100}%` : undefined,
+          // Unitless LH tracks scaled font-size; rem leading from callers would not.
+          lineHeight: multiline ? MULTILINE_LINE_HEIGHT : undefined,
         }}
         aria-hidden="true"
       >
@@ -333,11 +403,6 @@ export const StationName = ({
               {renderFindableLine(line)}
             </span>
           </Fragment>
-        ))}
-        {findAliases.map((alias) => (
-          <span key={alias} className="text-[0px] leading-none">
-            {` ${alias}`}
-          </span>
         ))}
       </span>
     </span>

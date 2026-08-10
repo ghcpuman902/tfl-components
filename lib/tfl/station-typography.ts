@@ -209,25 +209,34 @@ export const formatStationLabel = (
   }
 
   // 3. Scale down (full name first, then abbreviated)
+  let smallest: StationLabelFormatResult = result;
   if (allowScaleDown && minScale < 1) {
     const steps = 8;
     for (let i = 1; i <= steps; i += 1) {
       const scale = Math.max(minScale, 1 - (i / steps) * (1 - minScale));
       const full = tryName(displayName, false, scale);
       if (full.fits) return full;
+      if (full.scale < smallest.scale) smallest = full;
 
       if (allowAbbreviation) {
         const abbreviatedName = applyAbbreviations(displayName);
         if (abbreviatedName !== displayName) {
           const abbr = tryName(abbreviatedName, true, scale);
           if (abbr.fits) return abbr;
+          // Prefer the shorter visual when both overflow at the same scale.
+          if (
+            abbr.scale < smallest.scale ||
+            (abbr.scale === smallest.scale && abbr.abbreviated)
+          ) {
+            smallest = abbr;
+          }
         }
       }
     }
   }
 
-  // Best effort — may overflow slightly
-  return result;
+  // Nothing fitted — keep the smallest attempt, never bounce back to full size.
+  return smallest;
 };
 
 /**

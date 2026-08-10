@@ -1,63 +1,99 @@
 ## Purpose
 
-Unified arrivals / departures board for rail and bus. One interface — domain differences are data shape and chip treatment, not separate products.
+Unified arrivals / departures board for rail and bus. One interface — domain differences are presentation (`variant`), not separate products.
 
-## Installation
+## Getting data with tfl-ts
 
-```bash
-pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/arrivals-board.json
+```ts
+import TflClient from "tfl-ts"
+
+const tfl = new TflClient({
+  appId: process.env.TFL_APP_ID!,
+  appKey: process.env.TFL_APP_KEY!,
+})
+
+const data = await tfl.stopPoint.getArrivals({
+  stopPointIds: ["940GZZLUOXC"],
+  sortBy: "timeToStation",
+})
 ```
 
-Legacy install names `live-arrivals-board` and `bus-arrivals-board` remain available for older docs; prefer `arrivals-board`.
-
-## Getting the data
-
-Arrivals come from `tfl-ts` stop-point arrivals (rail) or bus stop arrivals. Prefer Server Actions so keys stay on the server. Map results into `ArrivalRow[]` and pass them as `data`.
-
-Rail and bus share one board — domain differences are data shape + `busStyle` chip treatment, not two products.
+`getArrivals` returns `RealtimePrediction[]` (exported from `tfl-ts`). Pass that array directly — no application-specific `.map()` into a docs-only row type.
 
 ## Render
 
 ```tsx
 import { ArrivalsBoard } from "@/components/tfl/arrivals/arrivals-board"
 
-export default function Page({ rows }) {
+export default function Page({ data }) {
   return (
-    <ArrivalsBoard
-      data={rows}
-      stopName="Oxford Circus"
-      stopPointId="940GZZLUOXC"
-    />
+    <ArrivalsBoard data={data} stopName="Oxford Circus" />
   )
 }
 ```
 
 ## Variations
 
-### Rail line colours
+### Rail — line then bound
 
-Omit `busStyle` (or set `false`) so chips use `getLineCssProps`.
+Default `variant="rail"` groups by line (name + colour bar), then by compass bound from `platformName` (Northbound / Southbound / Eastbound / Westbound). Bound labels match the line-name size. Each row leads with a solid platform chip (`Platform 1` → `Plat 1` → `P1` → `1` as the board narrows), then destination + countdown. Destinations use [`StationName`](/primitives/station-name) with the same abbreviation rules as line diagrams (`Road`→`Rd`, `and`→`&`, …) — visual shortening only; copy and screen readers keep the full name. Hairlines inside a line group share one weight — including under bound titles.
 
 ### Bus route numbers
 
-Set `busStyle: true` on each row for high-contrast route-number chips.
+```tsx
+<ArrivalsBoard data={data} variant="bus" stopName="Trafalgar Square" />
+```
+
+Bus groups by route with a bus-red bar. The stop letter (e.g. `G`) is a stop property — rendered as a red circle next to the stop name. Each row repeats the route number in a bus-red rectangle.
+
+### Baseline grid
+
+Rail and bus share one vertical rhythm, so two boards side by side line up. Every block is a whole number of `--arrivals-unit` (`0.5rem`): the stop name, each line header, bound label, and arrival row are 6 units (`3rem`). Retune density by overriding the vars on a wrapper:
+
+```tsx
+<div style={{ "--arrivals-unit": "0.375rem" }}>
+  <ArrivalsBoard data={data} stopName="Oxford Circus" />
+</div>
+```
+
+### Optional adapter
+
+If you need per-row overrides, use the public domain adapter:
+
+```ts
+import { toArrivalRows } from "@/components/tfl/arrivals/arrivals-board"
+
+const rows = toArrivalRows(data, { busStyle: true })
+```
+
+Prefer board-level `variant` for the common case.
 
 ### Polling
 
-Keep polling outside the board (timer + Server Action), then update `data`. The optional `statusLabel` prop can show poll metadata.
+Keep polling outside the board (timer + Server Action), then update `data`. Optional `statusLabel` shows poll metadata.
 
 Stop discovery / geolocation for buses is composition chrome — treat it as a Block or app shell, not a second arrivals component.
 
-## Behaviour
+## Behaviour / edge cases
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `data` | `readonly ArrivalRow[]` | Normalised arrival rows. Missing/`undefined` treated as empty. |
-| `stopName` | `string` | Header stop name. |
-| `stopPointId` | `string` | Optional ID shown in the header. |
+| `data` | `readonly RealtimePrediction[]` | Normalised arrivals from `tfl-ts`. Missing/`undefined` → empty. |
+| `variant` | `"rail" \| "bus"` | Chip presentation. |
+| `stopName` | `string` | Board heading (e.g. Oxford Circus). Fits via abbr/scale — same policy as destinations. |
+| `stopLetter` | `string` | Bus stop letter — red circle next to the stop name. |
 | `loading` / `error` | … | Loading and error presentation. |
 | `statusLabel` | `string` | Optional poll / refresh caption. |
 
-## Underlying foundations
+## Data ownership
 
-Line colour chips reuse [Foundations colour helpers](/foundations/line-badge) via `tfl-ts` when not `busStyle`.
+Fetching, caching, polling, geolocation, and API credentials stay in the application layer. This component only renders.
+
+## Migration note
+
+Legacy registry names `live-arrivals-board` and `bus-arrivals-board` remain as compatibility helpers. Prefer installing `arrivals-board` and composing fetch yourself.
+
+## Related
+
+- Foundations: [Line colours & badges](/foundations/line-badge)
+- Explorer: [Route stations](/explore/routes)

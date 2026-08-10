@@ -24,7 +24,7 @@ async function TypographyDocs() {
 }
 
 export default async function TypographyPage() {
-  const entry = getDocsEntry("typography")!;
+  const entry = getDocsEntry("station-typography")!;
 
   return (
     <DocsReadableWidth>

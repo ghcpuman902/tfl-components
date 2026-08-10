@@ -4,7 +4,7 @@ import { SectionHub } from "@/components/docs/section-hub";
 import { getDocsEntry } from "@/lib/docs-catalog";
 
 export const metadata: Metadata = {
-  title: "Interfaces",
+  title: "Data-aware components",
   description:
     "Data-aware TfL components — get normalised data and render useful transport UI.",
 };
@@ -16,12 +16,12 @@ export default function InterfacesIndexPage() {
   return (
     <SectionHub
       entry={entry}
-      purpose="Embeddable, data-aware components organised by developer intent (status, arrivals, journeys, routes). Highest-value path: get data → render."
+      purpose="Embeddable, data-aware components organised by developer intent (status, arrivals, line diagrams). Highest-value path: get data → render. Under Components → Data-aware in the sidebar."
       comingSoon={["Journeys", "Service information"]}
       relatedHrefs={[
-        { href: "/primitives", label: "Primitives — lower-level control" },
-        { href: "/foundations", label: "Foundations — brand and colour" },
-        { href: "/explore", label: "Explore — understand the data" },
+        { href: "/primitives", label: "Rendering primitives" },
+        { href: "/foundations", label: "Foundations" },
+        { href: "/explore", label: "Explorer" },
       ]}
     />
   );

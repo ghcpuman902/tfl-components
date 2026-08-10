@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
+import { RelationshipBadges } from "@/components/docs/relationship-badges";
+import { DataSourceLabel } from "@/components/docs/data-source-label";
 import { WeekAheadSection } from "@/components/tfl/week-ahead/week-ahead-section";
 import { WeekAheadSkeleton } from "@/components/tfl/week-ahead/week-ahead-skeleton";
 import { getDocsEntry } from "@/lib/docs-catalog";
@@ -20,22 +22,54 @@ export default function WeekAheadBlockPage() {
     <div className="w-full min-w-0 space-y-8">
       <DocsReadableWidth>
         <DocsPageHeader entry={entry} />
-        <p className="max-w-prose text-sm text-muted-foreground">
-          A <strong className="font-medium text-foreground">Block</strong>{" "}
-          (shadcn-style): not a single registry component, but a composition of
-          data-aware status interpretation and schematic{" "}
-          <Link
-            href="/primitives/line-strip"
-            className="text-primary underline-offset-4 hover:underline"
-          >
-            line strip
-          </Link>{" "}
-          primitives. Also featured on the{" "}
-          <Link href="/" className="text-primary underline-offset-4 hover:underline">
-            home page
-          </Link>
-          .
-        </p>
+        <RelationshipBadges
+          builtWith={entry.builtWith}
+          usesFoundations={entry.usesFoundations}
+        />
+        <div className="mt-6 space-y-4 text-sm text-muted-foreground">
+          <p>
+            A <strong className="font-medium text-foreground">Block</strong> —
+            not a single registry component. Composition boundary:
+          </p>
+          <ul className="list-inside list-disc space-y-1">
+            <li>
+              This Block owns the week and day-selection experience.
+            </li>
+            <li>
+              Data-aware status interpretation consumes normalised service
+              information (same family as{" "}
+              <Link
+                href="/interfaces/tube-status-board"
+                className="text-primary underline-offset-4 hover:underline"
+              >
+                Status board
+              </Link>
+              ).
+            </li>
+            <li>
+              <Link
+                href="/interfaces/line-strip"
+                className="text-primary underline-offset-4 hover:underline"
+              >
+                Line strip
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/primitives/branch-strip"
+                className="text-primary underline-offset-4 hover:underline"
+              >
+                Branch strip
+              </Link>{" "}
+              render schematic routes.
+            </li>
+            <li>
+              Disabled stations and segment states remain reusable rendering
+              capabilities on the strip primitives — install those
+              independently if you only need diagrams.
+            </li>
+          </ul>
+          <DataSourceLabel source="cached" />
+        </div>
       </DocsReadableWidth>
 
       <div className="w-full min-w-0 max-w-full overflow-x-clip px-0">

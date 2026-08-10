@@ -77,7 +77,7 @@ export const WeekAheadShell = ({ days, children }: ShellProps) => {
         <div className="space-y-3">
           <h1
             id="week-ahead-heading"
-            className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+            className="text-3xl font-bold text-foreground sm:text-4xl"
           >
             This week ahead
           </h1>
@@ -148,7 +148,7 @@ export const WeekAheadLineRow = ({ route }: { route: WeekAheadLineRoute }) => {
     >
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2
-          className="tfl-dark-line-text text-base font-semibold tracking-tight"
+          className="tfl-dark-line-text text-base font-semibold"
           style={{ color: styles.color, ...cssProps }}
         >
           {route.lineName}

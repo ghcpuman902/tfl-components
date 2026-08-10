@@ -16,6 +16,8 @@ See [docs/agent-workflow.md](./docs/agent-workflow.md) for collaboration pattern
 
 See [docs/design-system.md](./docs/design-system.md) for Tailwind and shadcn/ui conventions.
 
+Arrivals board vertical rhythm (fixed tiles, absolute hairlines, box-border brand bars): [docs/design-system.md](./docs/design-system.md#arrivals-board-rhythm) and [`.cursor/rules/arrivals-board-layout.mdc`](./.cursor/rules/arrivals-board-layout.mdc).
+
 # Coding style
 
 See [docs/coding-style.md](./docs/coding-style.md) for TypeScript and React patterns.

@@ -1,0 +1,98 @@
+---
+description: Chrome uses shadcn tokens; domain UI uses TfL brand — reject SaaS clone aesthetics
+globs: app/**/*.{tsx,css},components/**/*.{tsx,css},content/**/*.mdx,lib/tfl/**/*.ts
+alwaysApply: false
+---
+
+# Chrome vs TfL brand
+
+Two visual systems share this repo. Do not collapse them into a generic shadcn/Vercel dashboard look.
+
+Canonical detail: [docs/design-system.md](docs/design-system.md) and Foundations IA.
+
+## Split responsibility
+
+| Surface | Language | Examples |
+|---------|----------|----------|
+| **Site chrome** | shadcn / base-nova semantic tokens | Sidebar, docs layout, buttons, cards, callouts, install command UI |
+| **Domain / product visuals** | TfL brand + diagram tokens | Line colours, roundels, line/branch strips, status severity treatments, station labels |
+
+```tsx
+// ✅ Chrome — semantic tokens
+<aside className="bg-sidebar text-sidebar-foreground border-sidebar-border">
+
+// ✅ Domain — TfL tokens / brand helpers
+import { UNDERGROUND_LINE_COLOURS, DIAGRAM_SCALE_CLASS } from "@/lib/tfl/brand";
+<div className={DIAGRAM_SCALE_CLASS} style={{ color: UNDERGROUND_LINE_COLOURS.victoria }}>
+```
+
+```tsx
+// ❌ BAD — zinc/Geist SaaS palette as “TfL UI”
+<div className="bg-zinc-950 text-zinc-100 font-[Geist]">
+  <div className="rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600">
+```
+
+## No card chrome by default (domain components)
+
+TfL / library components ship **without** outer border, border-radius, or card padding. Consumers wrap in their own `Card` (or none) when they want a framed surface.
+
+Badges and chips also default to **square corners** (`rounded-none` / no `rounded-*`). Do not add `rounded-md` / `rounded-full` on line or bus route chips unless the consumer opts in via `className`.
+
+```tsx
+// ✅ Component is the content; page owns layout
+<div className="grid md:grid-cols-12 gap-8">
+  <div className="md:col-span-8">
+    <ArrivalsBoard data={…} stopName="Oxford Circus" />
+  </div>
+</div>
+
+// ❌ Don't bake a card into the library component
+<div className="rounded-2xl border p-6">
+  <ArrivalsBoard … />
+</div>
+```
+
+Bus route chips: TfL bus red (`TFL_MODAL_COLOURS.buses`), fixed `w-[5ch]`, no horizontal padding, centered text (route codes ≤ 4 characters).
+
+## Beautiful defaults (chrome only)
+
+For docs chrome and app shell:
+
+- Prefer `style: base-nova` already configured in `components.json`  
+- Use CSS variables / semantic utilities: `bg-background`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-primary`, `ring-ring`  
+- One density per page (comfortable or compact); do not mix arbitrary padding scales  
+- Lucide icons at consistent sizes (`size-4` / `size-5`)  
+- Cards are for **interaction or docs grouping**, not decorative wrappers around every paragraph  
+- Domain components ship without outer card chrome (border / radius / padding); see “No card chrome by default” above
+
+Do **not** default the product to dark mode + Geist because the shadcn/Vercel skill suggests it for dashboards. This site is content- and brand-led; respect existing theme (`next-themes`, Hammersmith One for body demos).
+
+## TfL domain rules
+
+- **Do not** download or redistribute Johnston. Hammersmith One is a Johnston-*like* demo stand-in only.  
+- Line / mode colours come from `@/lib/tfl/brand` (Issue 4 tokens), not ad-hoc hex in JSX unless matching a documented token.  
+- Roundel and trademark behaviour: follow Foundations constants (`ROUNDEL_*`, licensing copy on Foundations pages).  
+- Diagram geometry ratios live in `LINE_DIAGRAM` / strip components — not in theme `--radius` tokens.  
+- Station labels: use `StationName` / `formatStationLabel`; never ad-hoc `<br>` hacks for diagram names.
+- Arrivals board tiles: fixed rhythm + absolute hairlines / box-border brand bars — see [docs/design-system.md](docs/design-system.md) (“Arrivals board rhythm”) and [`.cursor/rules/arrivals-board-layout.mdc`](arrivals-board-layout.mdc).
+
+## Homepage and Blocks proof
+
+The proof surface should read as **London transport**, not as a shadcn marketing bento:
+
+- Status boards, line strips, arrivals, maps — yes  
+- Generic finance charts, QR “Ledger”, AI chat chrome as the brand story — no  
+- Restrained chrome around loud TfL colour and schematic structure — yes  
+- Homepage demos are proof, not hit-targets — discovery CTA in the hero (e.g. Browse components), not overlay links on the boards  
+
+## Motion
+
+`motion` is available. Respect `prefers-reduced-motion`. Prefer intentional motion on domain previews over decorative chrome animation.
+
+## Anti-patterns
+
+- Purple/indigo gradient themes, glassmorphism, glow stacks on docs chrome  
+- Nested cards inside cards for MDX layout  
+- Replacing TfL line colours with a single accent for “consistency” with shadcn  
+- Teaching primitives with fake SaaS content instead of transport fixtures  
+- Mixing `text-xs sm:text-sm` on diagram ticks/rings/labels (desyncs `--tfl-diagram-scale`)  

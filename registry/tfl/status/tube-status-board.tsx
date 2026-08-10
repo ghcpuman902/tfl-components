@@ -59,7 +59,7 @@ export const TubeStatusBoardHeader = () => (
     <div className="flex items-center gap-3">
       <TfLRoundel className="size-10 lg:size-12" />
       <div>
-        <h1 className="scroll-m-20 text-balance text-4xl font-extrabold tracking-tight lg:text-5xl">
+        <h1 className="scroll-m-20 text-balance text-4xl font-extrabold lg:text-5xl">
           Live TfL Status
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">

@@ -5,6 +5,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { getLineCssProps, getLineInlineStyles } from "tfl-ts";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
+import { ExploreWipNotice } from "@/components/docs/explore-wip-notice";
 import { LineColorBar } from "@/components/tfl/brand/line-badge";
 import { ExploreBodySkeleton } from "@/components/tfl/page-skeletons";
 import { getDocsEntry } from "@/lib/docs-catalog";
@@ -87,6 +88,7 @@ export default async function BrowseLinesPage() {
   return (
     <DocsReadableWidth>
       <article className="space-y-8">
+        <ExploreWipNotice />
         <DocsPageHeader entry={entry} />
         <Suspense fallback={<ExploreBodySkeleton />}>
           <BrowseLinesBody />

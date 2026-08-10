@@ -24,5 +24,5 @@ export async function getCachedLineStatuses(
           modes: ["tube", "elizabeth-line", "dlr", "tram", "overground"],
         },
   );
-  return sortLinesBySeverityAndOrder(lineStatuses) as StatusLine[];
+  return sortLinesBySeverityAndOrder(lineStatuses);
 }

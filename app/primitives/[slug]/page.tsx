@@ -10,7 +10,7 @@ type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
-const PRIMITIVE_SLUGS = new Set(["line-strip", "branch-strip"]);
+const PRIMITIVE_SLUGS = new Set(["branch-strip", "station-name"]);
 
 export const generateStaticParams = () =>
   [...PRIMITIVE_SLUGS].map((slug) => ({ slug }));
@@ -32,8 +32,12 @@ export default async function PrimitivesComponentPage({ params }: PageProps) {
     slug,
     relatedLinks: [
       {
+        href: "/interfaces/line-strip",
+        label: "Line strip (data-aware)",
+      },
+      {
         href: "/maps/schematic",
-        label: "Maps → Schematic & network (topology overview)",
+        label: "Maps → Schematic & network",
       },
       {
         href: "/blocks/week-ahead",
@@ -43,9 +47,15 @@ export default async function PrimitivesComponentPage({ params }: PageProps) {
         href: "/tools/typography",
         label: "Tools — Station typography",
       },
-      ...(slug === "line-strip"
-        ? [{ href: "/primitives/branch-strip", label: "Primitives — Branch strip" }]
-        : [{ href: "/primitives/line-strip", label: "Primitives — Line strip" }]),
+      ...(slug === "station-name"
+        ? [
+            {
+              href: "/foundations/station-labels",
+              label: "Foundations — Station labels",
+            },
+            { href: "/primitives/branch-strip", label: "Branch strip" },
+          ]
+        : [{ href: "/primitives/station-name", label: "Station name" }]),
     ],
   });
 }

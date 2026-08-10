@@ -1,0 +1,57 @@
+---
+description: Arrivals board vertical rhythm, title fit, and side-by-side alignment
+globs: registry/tfl/arrivals/**/*.{tsx,ts},components/tfl/arrivals/**/*.{tsx,ts},components/docs/**/*arrivals*,content/components/arrivals*.mdx,lib/tfl/station-*.ts
+alwaysApply: false
+---
+
+# Arrivals board layout
+
+Domain board under `registry/tfl/arrivals/arrivals-board.tsx`. Rail and bus share one component (`variant`).
+
+## Rhythm
+
+- One unit: `--arrivals-unit` (`0.5rem`). One row: `--arrivals-row` = 6 units (`3rem` / 48px).
+- Stop title, line headers, bound labels, and arrival rows are each **exactly one tile** (`TILE_CLASS`: fixed height + `box-border` + `overflow-hidden`).
+- Do **not** reserve a double-height title band “in case it wraps”. That leaves a dead gap under short names and desyncs rail vs bus.
+- Title → first line group gap stays tight (`space-y-2` / one unit).
+- **No gap between line sections** — last arrival row of one group sits flush against the next line header (continuous tile stack).
+
+## Borders and bars (never grow a tile)
+
+- **Row separators** — absolute pseudo-elements (`after:` at the bottom). Never `border-b` on arrival/bound rows if that would stack outside the box without `box-border` discipline; prefer absolute hairlines.
+- **Line / route brand bar** — solid colours: `border-b-4` + `box-border` so the bar is **inside** the tile height. Do **not** put an in-flow `h-1` div + `mt-*` under the name (that shifts baselines between rail and bus).
+- **Striped** Overground / Elizabeth bars — absolute `LineColorBar` pinned to the tile bottom (border cannot paint dual rails).
+- Content that does not fit clips; it must not expand the tile (`min/max-height` locked to `--arrivals-row`).
+
+## Side-by-side alignment
+
+When two boards share a homepage/grid row, their stop titles and first content rows must land on the same horizontal lines. Same title height, same title→body gap, same row unit.
+
+## Stop / station title
+
+- Render the human stop name only. **Do not** put NaPTAN / stop-point ids in the UI (dev meta — keep as deprecated unused prop if needed for call-site compat).
+- Bus stop letter (e.g. `G`) may sit inline as a red circle; it is a stop property, not per-row.
+- Fit with `StationName` (`layout="auto"`, `maxLines={1}`, `allowAbbreviation`, `allowScaleDown`). Prefer full name → abbr → scale. No CSS truncate that hides the name; no layout growth from wrapping.
+- Screen readers / copy keep the full canonical name (`StationName` contract).
+
+## Destinations
+
+- Same `StationName` fit policy. Rows stay fixed `--arrivals-row` height; wrap only inside that box (overflow clipped), never grow the row.
+- When nothing fits, `formatStationLabel` must keep the **smallest** attempt — never fall back to full-size overflow (see `lib/tfl/station-typography.ts`).
+
+## Rail vs bus rows
+
+- Rail: platform chip before destination (`Platform N` → `Plat N` → `PN` → `N` via container query). Solid muted fill, no border. Aria always “Platform N”.
+- Bus: route-number chip per row (bus red); stop letter on the header only.
+- Bound labels (Northbound…) match line-name size; same hairline weight as arrival rows inside a line group.
+
+## Anti-patterns
+
+- Double-height title reservation that sits empty when the name is one line
+- Showing stop-point ids next to the title
+- `space-y-8` (or similar) between title and first line group
+- Truncating stop names with ellipsis instead of abbr/scale
+- In-flow brand bar (`h-1` / `mt-*` under the line name) that shifts the painted baseline
+- Flow `border-b` on arrival rows **without** keeping the bar inside a `box-border` fixed tile (prefer absolute hairlines)
+- Letting wrap, padding, or borders increase row height and break the baseline grid
+- Wrapping homepage proof boards in overlay links to docs — use a hero CTA (e.g. Browse components) instead

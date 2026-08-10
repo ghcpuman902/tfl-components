@@ -4,12 +4,16 @@ import { JourneyDiagram } from "@/components/tfl/diagram/journey-diagram";
 import { LineRouteDiagram } from "@/components/tfl/diagram/line-route-diagram";
 import { LineStrip } from "@/components/tfl/diagram/line-strip";
 import { sliceJourney } from "@/lib/tfl/diagram-mappers";
-import type { DiagramSegment, DiagramStation } from "@/lib/tfl/diagram-station";
-import { UNDERGROUND_LINE_COLOURS } from "@/lib/tfl/brand-colours";
+import type { DiagramStation } from "@/lib/tfl/diagram-station";
 import {
   DIAGRAM_BASELINE,
   DIAGRAM_SCALE_CLASS,
 } from "@/lib/tfl/line-diagram";
+import {
+  VICTORIA_LINE_COLOR,
+  VICTORIA_PART_CLOSURE_SEGMENTS,
+  VICTORIA_STRIP,
+} from "@/lib/tfl/fixtures/victoria-line-strip";
 import { getCachedWeekAheadRoutes } from "@/lib/tfl/week-ahead-data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -19,136 +23,15 @@ import {
   PartClosureDemo,
 } from "@/components/docs/demos/line-strip-demo-controls";
 
-const U = UNDERGROUND_LINE_COLOURS;
-
-/** Curated Victoria southbound spine for offline / always-on demos. */
-const VICTORIA_SAMPLE: DiagramStation[] = [
-  { id: "walthamstow", name: "Walthamstow Central", interchange: true, nationalRail: true },
-  { id: "blackhorse", name: "Blackhorse Road", interchange: true },
-  { id: "tottenham", name: "Tottenham Hale", interchange: true, nationalRail: true },
-  { id: "seven-sisters", name: "Seven Sisters", interchange: true, nationalRail: true },
-  { id: "finsbury", name: "Finsbury Park", interchange: true, nationalRail: true },
-  { id: "highbury", name: "Highbury & Islington", interchange: true },
-  { id: "kings-cross", name: "King's Cross St. Pancras", interchange: true, nationalRail: true },
-  { id: "euston", name: "Euston", interchange: true, nationalRail: true },
-  { id: "warren-street", name: "Warren Street", interchange: true },
-  { id: "oxford-circus", name: "Oxford Circus", interchange: true },
-  { id: "green-park", name: "Green Park", interchange: true },
-  { id: "victoria", name: "Victoria", interchange: true, nationalRail: true },
-  { id: "pimlico", name: "Pimlico" },
-  { id: "vauxhall", name: "Vauxhall", interchange: true, nationalRail: true },
-  { id: "stockwell", name: "Stockwell", interchange: true },
-  { id: "brixton", name: "Brixton", interchange: true },
-];
-
-/**
- * Simplified Victoria strip demo — key Tube interchange flag blocks.
- * National Rail uses the pictogram beside the name, not a text flag.
- */
-const VICTORIA_STRIP: DiagramStation[] = [
-  { id: "walthamstow", name: "Walthamstow Central", interchange: true, nationalRail: true },
-  { id: "blackhorse", name: "Blackhorse Road", interchange: true },
-  { id: "tottenham", name: "Tottenham Hale", interchange: true, nationalRail: true },
-  { id: "seven-sisters", name: "Seven Sisters", interchange: true, nationalRail: true },
-  {
-    id: "finsbury",
-    name: "Finsbury Park",
-    interchange: true,
-    nationalRail: true,
-    connections: [
-      { id: "piccadilly", name: "Piccadilly", color: U.piccadilly.hex },
-    ],
-  },
-  { id: "highbury", name: "Highbury & Islington", interchange: true },
-  {
-    id: "kings-cross",
-    name: "King's Cross St. Pancras",
-    interchange: true,
-    nationalRail: true,
-    connections: [
-      { id: "circle", name: "Circle", color: U.circle.hex, darkText: true },
-      {
-        id: "hammersmith-city",
-        name: "Hammersmith & City",
-        color: U.hammersmithCity.hex,
-        darkText: true,
-      },
-      { id: "metropolitan", name: "Metropolitan", color: U.metropolitan.hex },
-      { id: "northern", name: "Northern", color: U.northern.hex },
-      { id: "piccadilly", name: "Piccadilly", color: U.piccadilly.hex },
-    ],
-  },
-  {
-    id: "euston",
-    name: "Euston",
-    interchange: true,
-    nationalRail: true,
-    connections: [{ id: "northern", name: "Northern", color: U.northern.hex }],
-  },
-  {
-    id: "warren-street",
-    name: "Warren Street",
-    interchange: true,
-    connections: [{ id: "northern", name: "Northern", color: U.northern.hex }],
-  },
-  {
-    id: "oxford-circus",
-    name: "Oxford Circus",
-    interchange: true,
-    connections: [
-      { id: "bakerloo", name: "Bakerloo", color: U.bakerloo.hex },
-      { id: "central", name: "Central", color: U.central.hex },
-    ],
-  },
-  {
-    id: "green-park",
-    name: "Green Park",
-    interchange: true,
-    connections: [
-      { id: "jubilee", name: "Jubilee", color: U.jubilee.hex },
-      { id: "piccadilly", name: "Piccadilly", color: U.piccadilly.hex },
-    ],
-  },
-  {
-    id: "victoria",
-    name: "Victoria",
-    interchange: true,
-    nationalRail: true,
-    connections: [
-      { id: "circle", name: "Circle", color: U.circle.hex, darkText: true },
-      { id: "district", name: "District", color: U.district.hex },
-    ],
-  },
-  { id: "pimlico", name: "Pimlico" },
-  { id: "vauxhall", name: "Vauxhall", interchange: true, nationalRail: true },
-  {
-    id: "stockwell",
-    name: "Stockwell",
-    interchange: true,
-    connections: [{ id: "northern", name: "Northern", color: U.northern.hex }],
-  },
-  { id: "brixton", name: "Brixton", interchange: true },
-];
-
-/** Sample: no service between Seven Sisters and Green Park — endpoints stay open. */
-const PART_CLOSURE_SEGMENTS: DiagramSegment[] = (() => {
-  const from = "seven-sisters";
-  const to = "green-park";
-  const fromIndex = VICTORIA_STRIP.findIndex((s) => s.id === from);
-  const toIndex = VICTORIA_STRIP.findIndex((s) => s.id === to);
-  if (fromIndex < 0 || toIndex < 0 || fromIndex >= toIndex) return [];
-  const segments: DiagramSegment[] = [];
-  for (let i = fromIndex; i < toIndex; i += 1) {
-    segments.push({
-      fromStationId: VICTORIA_STRIP[i]!.id,
-      toStationId: VICTORIA_STRIP[i + 1]!.id,
-      state: "out-of-use",
-    });
-  }
-  return segments;
-})();
-
-const victoriaBlue = U.victoria.hex;
+/** Plain Victoria spine for journey-slice demos (no connection flags). */
+const VICTORIA_SAMPLE: DiagramStation[] = VICTORIA_STRIP.map(
+  ({ id, name, interchange, nationalRail }) => ({
+    id,
+    name,
+    interchange,
+    nationalRail,
+  }),
+);
 
 async function LiveStripSection() {
   const { routes } = await getCachedWeekAheadRoutes();
@@ -194,9 +77,9 @@ export default function LineStripDemo() {
         </p>
         <PartClosureDemo
           stations={VICTORIA_STRIP}
-          lineColor={victoriaBlue}
+          lineColor={VICTORIA_LINE_COLOR}
           lineName="Victoria line"
-          segments={PART_CLOSURE_SEGMENTS}
+          segments={VICTORIA_PART_CLOSURE_SEGMENTS}
         />
       </section>
 
@@ -209,7 +92,7 @@ export default function LineStripDemo() {
         </p>
         <LabelPlacementDemo
           stations={VICTORIA_STRIP}
-          lineColor={victoriaBlue}
+          lineColor={VICTORIA_LINE_COLOR}
           lineName="Victoria line"
         />
       </section>
@@ -225,7 +108,7 @@ export default function LineStripDemo() {
         <LineStrip
           lineId="victoria"
           stations={VICTORIA_STRIP}
-          lineColor={victoriaBlue}
+          lineColor={VICTORIA_LINE_COLOR}
           lineName="Victoria line"
         />
         <pre className="mt-4 overflow-x-auto rounded bg-muted p-3 text-xs text-foreground">
@@ -255,7 +138,7 @@ import { LineStrip } from "@/components/tfl/diagram/line-strip";
             from={journey.from}
             to={journey.to}
             intermediates={journey.intermediates}
-            lineColor={victoriaBlue}
+            lineColor={VICTORIA_LINE_COLOR}
             lineName="Victoria line"
           />
         </div>
@@ -282,7 +165,7 @@ import { LineStrip } from "@/components/tfl/diagram/line-strip";
         <div className="max-h-[22rem] max-w-md overflow-y-auto pr-2">
           <LineRouteDiagram
             stations={VICTORIA_SAMPLE}
-            lineColor={victoriaBlue}
+            lineColor={VICTORIA_LINE_COLOR}
             lineName="Victoria line"
             directionLabel="Southbound"
           />
@@ -293,7 +176,7 @@ import { LineStrip } from "@/components/tfl/diagram/line-strip";
             Browse lines
           </Link>
           . Branched schematics live under{" "}
-          <Link href="/components/branch-strip" className="underline">
+          <Link href="/primitives/branch-strip" className="underline">
             Branch strip
           </Link>
           .

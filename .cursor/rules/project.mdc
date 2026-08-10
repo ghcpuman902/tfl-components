@@ -18,6 +18,8 @@ Stack: **Next.js 16** (App Router) + **TypeScript** + **Tailwind CSS 4** + **sha
 
 Before changing routing, data fetching, caching, or server/client boundaries, read the relevant guide in `node_modules/next/dist/docs/`. Training data is often outdated for Next.js 16.
 
+With `cacheComponents: true`, do not call `Date.now()` / `new Date()` / `Math.random()` in the prerender shell — see `.cursor/rules/nextjs-cache-components-time.mdc`.
+
 ## Dev server
 
 Do **not** start the dev server unless the user explicitly asks. The user may already have one running.

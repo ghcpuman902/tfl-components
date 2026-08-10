@@ -17,14 +17,10 @@ export default function FoundationsIndexPage() {
     <SectionHub
       entry={entry}
       purpose="Shared visual language and licensing guidance consumed by primitives, interfaces, maps, and tools. Safe defaults where TfL branding requires permission."
-      comingSoon={[
-        "Typography guidance",
-        "Icons / pictograms",
-        "Licensing page",
-      ]}
       relatedHrefs={[
-        { href: "/primitives", label: "Primitives" },
-        { href: "/interfaces", label: "Interfaces" },
+        { href: "/primitives", label: "Rendering primitives" },
+        { href: "/interfaces", label: "Data-aware components" },
+        { href: "/foundations/licensing", label: "Licensing & brand use" },
       ]}
     />
   );

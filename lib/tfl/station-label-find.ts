@@ -56,39 +56,65 @@ export const expandStationLineForFind = (line: string): string =>
     })
     .join("");
 
+const normalizeFindPhrase = (value: string): string =>
+  value.replace(/\s+/g, " ").trim();
+
+/**
+ * Phrases already contiguous in the DOM for Cmd/Ctrl+F.
+ * Multi-line paint inserts `<br>`, which breaks matching across lines — so a
+ * joined expansion is NOT treated as covered when there is more than one line.
+ */
+export const stationFindCoveredPhrases = (
+  visualLines: readonly string[],
+): string[] => {
+  const covered: string[] = [];
+  for (const line of visualLines) {
+    const trimmed = normalizeFindPhrase(line);
+    if (trimmed) covered.push(trimmed);
+    const expanded = normalizeFindPhrase(expandStationLineForFind(line));
+    if (expanded) covered.push(expanded);
+  }
+  if (visualLines.length === 1) {
+    const only = visualLines[0] ?? "";
+    const joined = normalizeFindPhrase(expandStationLineForFind(only));
+    if (joined) covered.push(joined);
+  }
+  return covered;
+};
+
 /**
  * Extra phrases to expose to Cmd/Ctrl+F when they are not already covered by
- * the visible lines + abbreviation expansions. Highlight for these is weak
- * (font-size 0) but match count + scroll-to-station still work.
+ * contiguous DOM text (visible lines + inline abbreviation completions).
+ * StationName renders these with `hidden="until-found"` (findable; shows on match).
+ *
+ * Contract: copy / aria / find all keep the canonical single-line full name,
+ * even when the paint wraps or abbreviates (`<br>` breaks cross-line find).
  */
 export const stationFindAliases = (
   copyName: string,
   visualLines: readonly string[],
 ): string[] => {
-  const covered = new Set<string>();
-  const visualJoined = visualLines.join(" ").replace(/\s+/g, " ").trim();
-  const visualExpanded = visualLines
-    .map(expandStationLineForFind)
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  const remember = (value: string) => {
-    const trimmed = value.replace(/\s+/g, " ").trim();
-    if (trimmed) covered.add(trimmed.toLowerCase());
-  };
-
-  remember(visualJoined);
-  remember(visualExpanded);
-  remember(expandStationLineForFind(visualJoined));
+  const covered = new Set(
+    stationFindCoveredPhrases(visualLines).map((value) => value.toLowerCase()),
+  );
 
   const candidates = new Set<string>();
   const add = (value: string) => {
-    const trimmed = value.replace(/\s+/g, " ").trim();
+    const trimmed = normalizeFindPhrase(value);
     if (!trimmed) return;
     if (covered.has(trimmed.toLowerCase())) return;
     candidates.add(trimmed);
   };
+  /** Drop phrases contained in a longer one so match counts stay honest. */
+  const withoutSubstrings = (values: string[]): string[] =>
+    values.filter(
+      (value) =>
+        !values.some(
+          (other) =>
+            other.length > value.length &&
+            other.toLowerCase().includes(value.toLowerCase()),
+        ),
+    );
 
   add(copyName);
   add(stationAndForm(copyName));
@@ -97,9 +123,10 @@ export const stationFindAliases = (
   add(stationAndForm(stripStationApostrophes(copyName)));
   add(normalizeStationApostrophes(stationAndForm(copyName)));
 
+  const visualJoined = normalizeFindPhrase(visualLines.join(" "));
   add(stationAndForm(visualJoined));
   add(stripStationApostrophes(visualJoined));
   add(normalizeStationApostrophes(visualJoined));
 
-  return [...candidates];
+  return withoutSubstrings([...candidates]);
 };

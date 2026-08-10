@@ -16,14 +16,14 @@ export default function DraftsIndexPage() {
   return (
     <SectionHub
       entry={entry}
-      purpose="Experimental or incomplete ideas live here without pretending to be stable public APIs. Promotion requires clear intent, a target group, documented contracts, licensing safety, and human review (see docs/product-architecture.md §12)."
+      purpose="Experimental or incomplete ideas live here without pretending to be stable public APIs. Draft pages must show maturity, intended destination, unanswered questions, and promotion requirements. Do not include Drafts in standard installation lists."
       comingSoon={[
         "Incoming experiments",
         "AI-generated explorations under review",
       ]}
       relatedHrefs={[
         { href: "/tools", label: "Tools — promoted playgrounds" },
-        { href: "/interfaces", label: "Interfaces — promoted components" },
+        { href: "/interfaces", label: "Data-aware — promoted components" },
         { href: "/blocks", label: "Blocks — composed patterns" },
       ]}
     />
