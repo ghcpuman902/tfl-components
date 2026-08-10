@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 const EXPLORER_VIEWS = [
   { href: "/explore/lines", label: "Browse lines" },
   { href: "/explore/routes", label: "Route stations" },
+  { href: "/explore/bus-stops", label: "Bus stops" },
 ] as const;
 
 export default function DocsExplorerPage() {
@@ -49,7 +50,6 @@ export default function DocsExplorerPage() {
                 </Link>
               </li>
             ))}
-            <li className="text-muted-foreground">Stations — coming soon</li>
             <li className="text-muted-foreground">
               Relationships — coming soon
             </li>

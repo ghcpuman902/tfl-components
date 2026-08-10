@@ -102,8 +102,7 @@
       ],
       "registryDependencies": [
         "line-badge",
-        "tfl-roundel",
-        "skeleton"
+        "tfl-roundel"
       ],
       "files": [
         {
@@ -115,6 +114,68 @@
           "path": "lib/tfl/status-types.ts",
           "type": "registry:lib",
           "target": "lib/tfl/status-types.ts"
+        }
+      ]
+    },
+    {
+      "name": "cycle-hire-docks",
+      "type": "registry:block",
+      "title": "Cycle Hire Docks",
+      "description": "Santander Cycles Map + Detail surfaces — pass normalised tfl-ts bike points as data.",
+      "dependencies": [
+        "tfl-ts",
+        "lucide-react",
+        "maplibre-gl"
+      ],
+      "registryDependencies": [
+        "tfl-roundel",
+        "skeleton"
+      ],
+      "files": [
+        {
+          "path": "registry/tfl/cycle-hire/cycle-hire-docks.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/cycle-hire/cycle-hire-docks.tsx"
+        },
+        {
+          "path": "registry/tfl/cycle-hire/cycle-hire-colours.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/cycle-hire/cycle-hire-colours.ts"
+        },
+        {
+          "path": "registry/tfl/cycle-hire/cycle-hire-dock-marker.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/cycle-hire/cycle-hire-dock-marker.tsx"
+        },
+        {
+          "path": "registry/tfl/cycle-hire/cycle-hire-docks-detail.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/cycle-hire/cycle-hire-docks-detail.tsx"
+        },
+        {
+          "path": "registry/tfl/cycle-hire/cycle-hire-docks-map.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/cycle-hire/cycle-hire-docks-map.tsx"
+        },
+        {
+          "path": "registry/tfl/cycle-hire/cycle-hire-docks-context.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/cycle-hire/cycle-hire-docks-context.tsx"
+        },
+        {
+          "path": "registry/tfl/cycle-hire/cycle-hire-docks-root.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/cycle-hire/cycle-hire-docks-root.tsx"
+        },
+        {
+          "path": "lib/tfl/cycle-hire-types.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/cycle-hire-types.ts"
+        },
+        {
+          "path": "lib/tfl/brand-colours.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/brand-colours.ts"
         }
       ]
     },
@@ -143,7 +204,7 @@
       "name": "bus-arrivals-board",
       "type": "registry:block",
       "title": "Bus Arrivals Board",
-      "description": "Nearby bus stops and live arrivals via shared ArrivalsBoard.",
+      "description": "Stop discovery (near you / search) composed with ArrivalsBoard — Explorer/Block chrome, not the Interface API.",
       "dependencies": [
         "tfl-ts",
         "lucide-react"

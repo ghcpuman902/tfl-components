@@ -41,12 +41,49 @@ public/        # static assets
 
 ### TfL component layers
 
-Under `components/tfl/`:
+Under `components/tfl/` (and registry mirrors under `registry/tfl/`):
 
 - `brand/` and `diagram/` — **rendering primitives** (explicit values; little or no TfL API shape knowledge)
 - `status/` and `arrivals/` — **data-aware** boards (interpret `tfl-ts` domain; compose primitives)
 
 Prep helpers stay in `lib/tfl/*`. Product layers and IA: [product-architecture.md](./product-architecture.md) and [TARGET_ARCHITECTURE.md](./TARGET_ARCHITECTURE.md).
+
+### Multi-surface Interfaces (Map + Detail)
+
+When one normalised dataset needs **more than one presentation** (e.g. geographic glance vs dense detail), export **surfaces**, not a single `variant` prop:
+
+1. **Explicit `data` on each surface** — default Open Code path; RSC-friendly; each surface usable alone.
+2. **Optional compound Provider** — inject `data` once when Map and Detail are co-mounted; children omit `data`.
+3. **App owns chrome** — full-screen map shell, Sheet, floating card wrap the surfaces; the library does not force layout.
+
+```tsx
+// Explicit
+<>
+  <CycleHireDocksMap data={data} className="h-dvh" />
+  <Sheet><CycleHireDocksDetail data={data} hideHeader /></Sheet>
+</>
+
+// Compound (optional)
+<CycleHireDocks data={data}>
+  <CycleHireDocks.Map className="h-dvh" />
+  <Sheet><CycleHireDocks.Detail hideHeader /></Sheet>
+</CycleHireDocks>
+```
+
+Use `variant` only when the **same board chrome** paints differently (e.g. Arrivals `rail` / `bus`). MapLibre / DOM adapters stay in client surface files; do not put provider-specific map code in shared geography helpers.
+
+Canonical example: `registry/tfl/cycle-hire/` (`CycleHireDocks`, `.Map`, `.Detail`).
+
+### Domain board skeletons
+
+Suspense fallbacks for data-aware boards should look like the **product at rest**:
+
+- Paint **static identity** only — mode set, `LINE_ORDER` (or equivalent), display names, brand bars.
+- Do **not** invent severity (no fake Disruptions section or reason copy).
+- Mute brand colour while loading (`saturate-0` or equivalent); live data restores full saturation and severity split.
+- Match TfL product groupings (Tube & Rail ≠ Cable Car). Wire docs Preview to the board’s `*Skeleton`, not a generic pulse block.
+
+Canonical example: `TubeStatusBoardSkeleton` in `registry/tfl/status/tube-status-board.tsx`. Agent rule: [`.cursor/rules/domain-skeletons.mdc`](../.cursor/rules/domain-skeletons.mdc).
 
 ## Imports
 

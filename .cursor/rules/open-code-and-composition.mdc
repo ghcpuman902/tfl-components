@@ -82,6 +82,32 @@ Site helpers (e.g. `getCachedLineStatuses`) are fine for **this Next app** and d
 - Diagram scale: one inherited `--tfl-diagram-scale` (see design-system docs); do not desync ticks/rings/labels with ad-hoc text utilities.  
 - Use `cn()` for class merging; semantic tokens for chrome (`bg-background`, `text-muted-foreground`, `border-border`).
 
+## Multi-surface Interfaces (Map + Detail)
+
+When one normalised dataset needs distinct presentations (geographic map vs detail list), ship **composable surfaces** — not a forced single layout and not a weak `variant="map"|"detail"`:
+
+```tsx
+// Preferred — explicit data (usable alone; RSC-friendly)
+<CycleHireDocksMap data={data} className="h-dvh" />
+<Sheet><CycleHireDocksDetail data={data} /></Sheet>
+
+// Optional — compound Provider when both mount together
+<CycleHireDocks data={data}>
+  <CycleHireDocks.Map className="h-dvh" />
+  <Sheet><CycleHireDocks.Detail /></Sheet>
+</CycleHireDocks>
+```
+
+Rules:
+
+1. Surfaces take normalised `data` (or read it from an optional Provider). Fetching stays in the app.  
+2. App owns chrome (full-screen map, Sheet, floating card) — library surfaces stay chrome-free.  
+3. Do not auto-link Map selection to Detail unless the product explicitly needs it; glance + independent detail is valid.  
+4. Keep MapLibre (or other map SDKs) in client surface files — not in shared geography prep helpers.  
+5. Reserve board-level `variant` for the same chrome with different paint (e.g. Arrivals rail/bus).
+
+Canonical implementation: `registry/tfl/cycle-hire/`. See also [docs/coding-style.md](docs/coding-style.md) (“Multi-surface Interfaces”).
+
 ## AI / agent readiness
 
 Agents (and humans) succeed when:

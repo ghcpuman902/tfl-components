@@ -6,12 +6,12 @@ import {
   getLineInlineStyles,
   isNormalService,
   hasNightService,
+  LINE_ORDER,
 } from "tfl-ts";
 import { ExternalLink, Package, TrainFrontTunnel } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LineColorBar } from "@/components/tfl/brand/line-badge";
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
-import { Skeleton } from "@/components/ui/skeleton";
 import type { StatusLine } from "@/lib/tfl/status-types";
 
 export type { StatusLine } from "@/lib/tfl/status-types";
@@ -25,7 +25,27 @@ type Props = {
 };
 
 /**
- * Full Underground + Elizabeth — common curated subset for demos / Blocks.
+ * Modes on TfL’s Tube & Rail status surface (Cable Car is listed separately).
+ * Prefer `getCachedLineStatuses()` with no IDs so the client fetches by mode.
+ */
+export const DEFAULT_STATUS_MODES = [
+  "tube",
+  "elizabeth-line",
+  "dlr",
+  "tram",
+  "overground",
+] as const;
+
+/**
+ * Tube & Rail lines in `tfl-ts` `LINE_ORDER` (default board sort, no severity).
+ * Matches TfL’s Tube / Overground / Elizabeth / DLR / Tram set.
+ */
+export const DEFAULT_STATUS_BOARD_LINE_IDS = LINE_ORDER;
+
+export const DEFAULT_STATUS_LINE_COUNT = DEFAULT_STATUS_BOARD_LINE_IDS.length;
+
+/**
+ * Curated Underground + Elizabeth subset for demos / Blocks.
  * Fetch with `getCachedLineStatuses(DEFAULT_STATUS_LINE_IDS)` in the app layer.
  */
 export const DEFAULT_STATUS_LINE_IDS = [
@@ -42,6 +62,46 @@ export const DEFAULT_STATUS_LINE_IDS = [
   "victoria",
   "waterloo-city",
 ] as const;
+
+const STATUS_LINE_LABELS: Record<string, string> = {
+  bakerloo: "Bakerloo",
+  central: "Central",
+  circle: "Circle",
+  district: "District",
+  elizabeth: "Elizabeth line",
+  "hammersmith-city": "Hammersmith & City",
+  jubilee: "Jubilee",
+  metropolitan: "Metropolitan",
+  northern: "Northern",
+  piccadilly: "Piccadilly",
+  victoria: "Victoria",
+  "waterloo-city": "Waterloo & City",
+  dlr: "DLR",
+  tram: "Tram",
+  liberty: "Liberty",
+  lioness: "Lioness",
+  mildmay: "Mildmay",
+  suffragette: "Suffragette",
+  weaver: "Weaver",
+  windrush: "Windrush",
+};
+
+const OVERGROUND_LINE_IDS = new Set([
+  "liberty",
+  "lioness",
+  "mildmay",
+  "suffragette",
+  "weaver",
+  "windrush",
+]);
+
+const statusLineModeName = (lineId: string) => {
+  if (lineId === "elizabeth") return "elizabeth-line";
+  if (OVERGROUND_LINE_IDS.has(lineId)) return "overground";
+  if (lineId === "dlr") return "dlr";
+  if (lineId === "tram") return "tram";
+  return "tube";
+};
 
 const darkReadableTextClass = "tfl-dark-line-text";
 
@@ -94,37 +154,51 @@ export const TubeStatusBoardHeader = () => (
 );
 
 type SkeletonProps = {
-  lineCount?: number;
+  /** Line IDs to paint (defaults to `LINE_ORDER` Tube & Rail set). */
+  lineIds?: readonly string[];
 };
 
+/**
+ * Calm Good Service placeholder — every line in default `LINE_ORDER`,
+ * brand bars/titles present but fully desaturated until live data arrives.
+ */
 export const TubeStatusBoardSkeleton = ({
-  lineCount = DEFAULT_STATUS_LINE_IDS.length,
+  lineIds = DEFAULT_STATUS_BOARD_LINE_IDS,
 }: SkeletonProps) => (
-  <div className="flex w-full flex-col gap-6" aria-busy aria-label="Loading line status">
-    <div>
-      <h2 className="mb-4 text-xl font-semibold">Service Disruptions</h2>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <div className="flex flex-col gap-3">
-          <Skeleton className="h-6 w-28" />
-          <Skeleton className="h-[6px] w-full" />
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-16 w-full" />
-        </div>
-      </div>
-    </div>
-
+  <div
+    className="flex w-full flex-col gap-6"
+    aria-busy
+    aria-label="Loading line status"
+  >
     <div>
       <h2 className="mb-4 text-xl font-semibold">Good Service</h2>
       <div className="grid grid-cols-2 justify-items-stretch gap-4 md:grid-cols-3 lg:grid-cols-5">
-        {Array.from({ length: lineCount }).map((_, i) => (
-          <div
-            key={i}
-            className="flex flex-col"
-          >
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="mt-2 h-[6px] w-full" />
-          </div>
-        ))}
+        {lineIds.map((lineId) => {
+          const lineStyles = getLineInlineStyles(lineId);
+          const cssProps = getLineCssProps(lineId);
+          const label = STATUS_LINE_LABELS[lineId] ?? lineId;
+
+          return (
+            <div key={lineId} className="flex flex-col saturate-0">
+              <h3
+                className={cn(
+                  "text-sm leading-tight font-semibold",
+                  darkReadableTextClass,
+                )}
+                style={{ color: lineStyles.color, ...cssProps }}
+              >
+                {label}
+              </h3>
+              <div className="mt-2">
+                <LineColorBar
+                  lineId={lineId}
+                  modeName={statusLineModeName(lineId)}
+                  heightClass="h-[6px]"
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
 

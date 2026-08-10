@@ -88,17 +88,18 @@ export const SyntaxHighlightedCode = ({
           data-copied="false"
           aria-label="Copy code"
           className={cn(
-            "group/copy absolute top-2 right-2 z-10 inline-flex h-8 items-center gap-1.5 rounded-lg border border-border/60 bg-background px-2.5 text-sm font-medium text-foreground shadow-xs",
-            "opacity-100 sm:opacity-0 sm:transition-opacity",
-            "sm:group-hover/code:opacity-100 sm:focus-visible:opacity-100",
+            "group/copy absolute top-2 right-2 z-10 inline-flex size-8 items-center justify-center rounded-lg border border-border/60 bg-background text-foreground shadow-xs",
+            "opacity-100 transition-[opacity,background-color,transform] duration-150 ease",
+            "sm:opacity-0 sm:group-hover/code:opacity-100 sm:focus-visible:opacity-100",
             "hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "motion-safe:active:scale-[0.97]",
+            "motion-reduce:transition-opacity motion-reduce:active:scale-100",
           )}
         >
           <span className="relative size-3.5 shrink-0" aria-hidden>
-            <CopyIcon className="absolute inset-0 size-3.5 transition-opacity group-data-[copied=true]/copy:opacity-0" />
-            <CheckIcon className="absolute inset-0 size-3.5 opacity-0 transition-opacity group-data-[copied=true]/copy:opacity-100" />
+            <CopyIcon className="absolute inset-0 size-3.5 transition-opacity duration-150 ease group-data-[copied=true]/copy:opacity-0" />
+            <CheckIcon className="absolute inset-0 size-3.5 opacity-0 transition-opacity duration-150 ease group-data-[copied=true]/copy:opacity-100" />
           </span>
-          <span data-mdx-copy-label>Copy</span>
         </button>
       ) : null}
 

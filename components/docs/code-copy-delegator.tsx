@@ -26,15 +26,12 @@ export const CodeCopyDelegator = () => {
 
       event.preventDefault();
 
-      const label = button.querySelector("[data-mdx-copy-label]");
       const finish = (ok: boolean) => {
         button.setAttribute("aria-label", ok ? "Copied" : "Copy code");
         button.dataset.copied = ok ? "true" : "false";
-        if (label) label.textContent = ok ? "Copied" : "Copy";
         window.setTimeout(() => {
           button.setAttribute("aria-label", "Copy code");
           button.dataset.copied = "false";
-          if (label) label.textContent = "Copy";
         }, COPIED_MS);
       };
 

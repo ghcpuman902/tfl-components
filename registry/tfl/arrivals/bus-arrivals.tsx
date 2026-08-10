@@ -149,6 +149,11 @@ const geolocationErrorMessage = (code: number): string => {
   }
 };
 
+/**
+ * Explorer / Block composition: geolocation or search → pick a stop →
+ * {@link ArrivalsBoard}. Prefer `ArrivalsBoard` + your own fetch for the
+ * installable Interface API.
+ */
 export const BusArrivals = () => {
   const [stops, setStops] = useState<NearbyBusStop[]>([]);
   const [selectedStop, setSelectedStop] = useState<NearbyBusStop | null>(null);

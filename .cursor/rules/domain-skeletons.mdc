@@ -1,0 +1,42 @@
+---
+description: Domain board skeletons — static identity vs live severity; Suspense fallbacks
+globs: registry/tfl/status/**/*.{tsx,ts},registry/tfl/arrivals/**/*.{tsx,ts},components/tfl/**/*skeleton*,components/docs/demos/**/*.{tsx,ts},components/docs/render-component-docs.tsx,content/components/*status*.mdx,lib/tfl/status-*.ts
+alwaysApply: false
+---
+
+# Domain board skeletons
+
+Suspense / `loading` fallbacks for data-aware TfL boards should look like the **product at rest**, not a gray slab and not a fake incident.
+
+Canonical example: `TubeStatusBoardSkeleton` in `registry/tfl/status/tube-status-board.tsx`.
+
+## Split: static vs live
+
+| Layer | Available without fetch? | Skeleton | Live board |
+|---|---|---|---|
+| Mode set / product grouping | Yes (IA + TfL surface) | Which lines exist | Same |
+| Line IDs + canonical order | Yes (`tfl-ts` `LINE_ORDER`) | Grid membership + order | Re-bucket; may re-sort by severity |
+| Display names + brand bars | Yes (labels / `LineColorBar`) | Paint structure | Full colour |
+| Severity / reasons / night flags | **No** | Do **not** invent | Split Disruptions vs Good Service |
+
+**Rule:** identity and order are static; severity is dynamic. Skeleton paints only the static layer.
+
+## Decision tree
+
+1. **Which TfL surface?** Match the official grouping. Tube & Rail = `tube` + `elizabeth-line` + `dlr` + `tram` + `overground`. Cable Car is separate — do not mix in by default.
+2. **Know line identity without fetch?** Yes → paint real lines in default order (`LINE_ORDER`). No → generic chrome only.
+3. **Know live severity?** No → one calm section (e.g. Good Service for all). Yes → split with `isNormalService`.
+4. **Brand loudness?** Skeleton → real titles/bars with `saturate-0` (or equivalent mute). Live → full saturation + severity styling.
+
+## Docs / Suspense wiring
+
+- Prefer the board’s exported `*Skeleton` in docs Preview `<Suspense fallback={…}>` — not a `h-40 bg-muted` pulse block.
+- Keep skeletons free of `Date.now()` / randomness (see `nextjs-cache-components-time.mdc`).
+
+## Anti-patterns
+
+- Generic muted rectangle that does not resemble the board
+- Fake disruption counts or invented reason copy while loading
+- Full-saturation brand colours that imply live status is already known
+- Dumping every API mode into one board because the client can fetch them
+- Docs demos using a curated ID subset while the skeleton assumes a different set (keep mode set + line count aligned)

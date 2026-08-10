@@ -1,0 +1,125 @@
+## Purpose
+
+Santander Cycles dock occupancy as two composable surfaces over the same normalised `tfl-ts` rows: an OSM **Map** (circle gauges) and a **Detail** list (bars + counts). Layout chrome — full-screen map, Sheet, floating card — stays in the app.
+
+## Getting data with tfl-ts
+
+```ts
+import TflClient from "tfl-ts"
+
+const tfl = new TflClient({
+  appId: process.env.TFL_APP_ID!,
+  appKey: process.env.TFL_APP_KEY!,
+})
+
+const data = await Promise.all([
+  tfl.bikePoint.getById("BikePoints_237"),
+  tfl.bikePoint.getById("BikePoints_490"),
+  tfl.bikePoint.getById("BikePoints_46"),
+])
+```
+
+`data` is the public `tfl.bikePoint.getById()` row type (aliased here as `CycleHireDock`). Nearby search:
+
+```ts
+const nearby = await tfl.bikePoint.getByRadius({
+  lat: 51.508418,
+  lon: -0.067048,
+  radius: 500,
+})
+// nearby.places — same normalised shape
+```
+
+On this docs site, `getCachedBikePoints` in `@/lib/tfl/cycle-hire-data` wraps the curated IDs with Cache Components (**Cached data**).
+
+## Render
+
+### Compound (shared `data`)
+
+```tsx
+import { CycleHireDocks } from "@/components/tfl/cycle-hire/cycle-hire-docks"
+
+export default function Page({ data }) {
+  return (
+    <CycleHireDocks data={data}>
+      <CycleHireDocks.Map className="h-dvh" />
+      <CycleHireDocks.Detail hideHeader />
+    </CycleHireDocks>
+  )
+}
+```
+
+Mount one child or both. Wrap Detail in a Sheet / card, or Map in a full-screen shell, in the app.
+
+### Explicit `data` on each surface
+
+```tsx
+import {
+  CycleHireDocksMap,
+  CycleHireDocksDetail,
+} from "@/components/tfl/cycle-hire/cycle-hire-docks"
+
+<>
+  <CycleHireDocksMap data={data} className="h-dvh" />
+  <CycleHireDocksDetail data={data} hideHeader />
+</>
+```
+
+Neither surface fetches.
+
+## Variations
+
+### Curated demo docks
+
+```tsx
+import {
+  CycleHireDocks,
+  DEFAULT_CYCLE_HIRE_DOCK_IDS,
+} from "@/components/tfl/cycle-hire/cycle-hire-docks"
+import { getCachedBikePoints } from "@/lib/tfl/cycle-hire-data"
+
+export default async function Page() {
+  const data = await getCachedBikePoints(DEFAULT_CYCLE_HIRE_DOCK_IDS)
+  return (
+    <CycleHireDocks data={data}>
+      <CycleHireDocks.Map />
+      <CycleHireDocks.Detail hideHeader />
+    </CycleHireDocks>
+  )
+}
+```
+
+### Single dock row
+
+```tsx
+import { CycleHireDockRow } from "@/components/tfl/cycle-hire/cycle-hire-docks"
+
+<CycleHireDockRow dock={data[0]} />
+```
+
+### Show broken docks
+
+Broken slots are hidden by default. Pass `showBroken` on Detail or a row:
+
+```tsx
+<CycleHireDocks.Detail hideHeader showBroken />
+```
+
+## Behaviour / edge cases
+
+| Prop / API | Type | Description |
+|------------|------|-------------|
+| `CycleHireDocks` | `{ data, children }` | Optional Provider root — inject `data` once for Map / Detail children. |
+| `CycleHireDocks.Map` / `CycleHireDocksMap` | `data?`, `className?` | OSM MapLibre surface; markers need `lat` / `lon` on each row. |
+| `CycleHireDocks.Detail` / `CycleHireDocksDetail` | `data?`, `showBroken?`, `hideHeader?` | Occupancy bars + counts. |
+| `showBroken` | `boolean` | Include broken docks in the detail bar. Default `false`. |
+
+- Map markers: bike → e-bike → empty ring (broken omitted). Lucide `Bike` in the centre.
+- Map labels use `StationName` (`layout="auto"`, two lines → abbreviate → scale) — no CSS ellipsis.
+- Detail segment order: bike → e-bike → empty → broken (when `showBroken`).
+- Accents (light UI): classic bikes `red-500`, e-bikes `cyan-400`, broken `amber-300` — bars and labels share the same tokens.
+- Map and Detail are not selection-linked — compose that in the app if needed.
+
+## Data ownership
+
+Credentials, fetch, and cache live in the app. Surfaces only paint docks you pass in (or inject via `CycleHireDocks`).

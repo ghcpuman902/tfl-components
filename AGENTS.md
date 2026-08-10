@@ -18,6 +18,8 @@ See [docs/design-system.md](./docs/design-system.md) for Tailwind and shadcn/ui 
 
 Arrivals board vertical rhythm (fixed tiles, absolute hairlines, box-border brand bars): [docs/design-system.md](./docs/design-system.md#arrivals-board-rhythm) and [`.cursor/rules/arrivals-board-layout.mdc`](./.cursor/rules/arrivals-board-layout.mdc).
 
+Domain board skeletons (static identity vs live severity, Suspense fallbacks): [docs/coding-style.md](./docs/coding-style.md) (“Domain board skeletons”) and [`.cursor/rules/domain-skeletons.mdc`](./.cursor/rules/domain-skeletons.mdc).
+
 # Coding style
 
 See [docs/coding-style.md](./docs/coding-style.md) for TypeScript and React patterns.

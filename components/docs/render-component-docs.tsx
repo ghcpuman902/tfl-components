@@ -13,6 +13,7 @@ import {
 } from "@/lib/docs-catalog";
 import { loadComponentDemo } from "@/lib/load-component-demo";
 import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code";
+import { TubeStatusBoardSkeleton } from "@/components/tfl/status/tube-status-board";
 
 type RelatedLink = { href: string; label: string };
 
@@ -27,7 +28,9 @@ type RenderComponentDocsOptions = {
 
 const DATA_AWARE_GET_DATA: Record<string, string> = {
   "tube-status-board": `const data = sortLinesBySeverityAndOrder(
-  await tfl.line.getStatus({ modes: ["tube", "elizabeth-line"] }),
+  await tfl.line.getStatus({
+    modes: ["tube", "elizabeth-line", "dlr", "tram", "overground"],
+  }),
 )
 
 <TubeStatusBoard data={data} />`,
@@ -37,6 +40,16 @@ const DATA_AWARE_GET_DATA: Record<string, string> = {
 })
 
 <ArrivalsBoard data={data} stopName="Oxford Circus" />`,
+  "cycle-hire-docks": `const data = await Promise.all([
+  tfl.bikePoint.getById("BikePoints_237"),
+  tfl.bikePoint.getById("BikePoints_490"),
+  tfl.bikePoint.getById("BikePoints_46"),
+])
+
+<CycleHireDocks data={data}>
+  <CycleHireDocks.Map />
+  <CycleHireDocks.Detail hideHeader />
+</CycleHireDocks>`,
   "line-strip": `const spine = await getLineSpine("victoria")
 
 <LineStrip lineId="victoria" spine={spine} fit />`,
@@ -111,10 +124,15 @@ export const renderComponentDocs = async ({
             </h2>
             <Suspense
               fallback={
-                <div
-                  className="h-40 animate-pulse rounded-lg bg-muted"
-                  aria-hidden
-                />
+                contentSlug === "tube-status-board" ||
+                slug === "tube-rail-status" ? (
+                  <TubeStatusBoardSkeleton />
+                ) : (
+                  <div
+                    className="h-40 animate-pulse rounded-lg bg-muted"
+                    aria-hidden
+                  />
+                )
               }
             >
               <Demo />

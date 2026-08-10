@@ -6,8 +6,21 @@ import type { StatusLine } from "@/lib/tfl/status-types";
 export type { StatusLine } from "@/lib/tfl/status-types";
 
 /**
+ * Modes on TfL’s Tube & Rail status surface (Cable Car is listed separately).
+ * Keep in sync with `DEFAULT_STATUS_MODES` on `TubeStatusBoard`.
+ */
+export const CACHED_STATUS_MODES = [
+  "tube",
+  "elizabeth-line",
+  "dlr",
+  "tram",
+  "overground",
+] as const;
+
+/**
  * Site/demo fetch for status boards — keep out of the reusable component.
  * Prefer passing the result as `data` into `TubeStatusBoard`.
+ * With no `lineIds`, fetches TfL Tube & Rail modes (excludes Cable Car).
  */
 export async function getCachedLineStatuses(
   lineIds?: readonly string[],
@@ -21,7 +34,7 @@ export async function getCachedLineStatuses(
     lineIds && lineIds.length > 0
       ? { lineIds: [...lineIds] }
       : {
-          modes: ["tube", "elizabeth-line", "dlr", "tram", "overground"],
+          modes: [...CACHED_STATUS_MODES],
         },
   );
   return sortLinesBySeverityAndOrder(lineStatuses);

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 const SLUG_MAP: Record<string, string> = {
   "arrivals-board": "/docs/tube-rail-arrivals",
   "tube-status-board": "/docs/tube-rail-status",
+  "cycle-hire-docks": "/docs/cycle-hire-docks",
   "line-strip": "/docs/line-strip",
 };
 

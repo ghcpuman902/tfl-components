@@ -72,7 +72,9 @@ Prefer board-level `variant` for the common case.
 
 Keep polling outside the board (timer + Server Action), then update `data`. Optional `statusLabel` shows poll metadata.
 
-Stop discovery / geolocation for buses is composition chrome — treat it as a Block or app shell, not a second arrivals component.
+Stop discovery / geolocation for buses is composition chrome — use
+[Explorer → Bus stops](/explore/bus-stops) (or your own app shell), not a second
+arrivals component.
 
 ## Behaviour / edge cases
 
@@ -96,4 +98,4 @@ Legacy registry names `live-arrivals-board` and `bus-arrivals-board` remain as c
 ## Related
 
 - Foundations: [Line colours & badges](/foundations/line-badge)
-- Explorer: [Route stations](/explore/routes)
+- Explorer: [Route stations](/explore/routes), [Bus stops](/explore/bus-stops)
