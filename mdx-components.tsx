@@ -18,7 +18,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       return (
         <h1
           id={id}
-          className="tfl-title scroll-m-20 text-3xl"
+          className="tfl-title text-3xl"
         >
           <a href={`#${id}`} className={headingLinkClass}>
             {children}
@@ -31,7 +31,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       return (
         <h2
           id={id}
-          className="mt-10 scroll-m-20 border-b pb-2 text-2xl font-semibold first:mt-0"
+          className="mt-10 border-b pb-2 text-2xl font-semibold first:mt-0"
         >
           <a href={`#${id}`} className={headingLinkClass}>
             {children}
@@ -42,7 +42,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     h3: ({ children }) => {
       const id = slugifyHeading(getHeadingText(children)) || "heading";
       return (
-        <h3 id={id} className="mt-8 scroll-m-20 text-xl font-semibold">
+        <h3 id={id} className="mt-8 text-xl font-semibold">
           <a href={`#${id}`} className={headingLinkClass}>
             {children}
           </a>
@@ -52,7 +52,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     h4: ({ children }) => {
       const id = slugifyHeading(getHeadingText(children)) || "heading";
       return (
-        <h4 id={id} className="scroll-m-20 text-lg font-semibold">
+        <h4 id={id} className="text-lg font-semibold">
           <a href={`#${id}`} className={headingLinkClass}>
             {children}
           </a>

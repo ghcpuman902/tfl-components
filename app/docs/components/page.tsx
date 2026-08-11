@@ -26,7 +26,7 @@ export default function DocsComponentsCataloguePage() {
         <DocsPageHeader entry={entry} />
 
         <section className="space-y-3">
-          <h2 id="how-to-choose" className="scroll-m-20 text-lg font-semibold">
+          <h2 id="how-to-choose" className="text-lg font-semibold">
             How to choose
           </h2>
           <p className="max-w-prose text-muted-foreground">
@@ -84,7 +84,7 @@ export default function DocsComponentsCataloguePage() {
         </section>
 
         <section className="space-y-2 border-t border-border pt-8">
-          <h2 id="related-blocks" className="scroll-m-20 text-lg font-semibold">
+          <h2 id="related-blocks" className="text-lg font-semibold">
             Related Blocks
           </h2>
           <p className="text-sm text-muted-foreground">

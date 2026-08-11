@@ -73,6 +73,9 @@ html[data-tfl-type-profile="johnston-compatible"] {
 :root {
     --tfl-title-weight: 400;
     --tfl-title-tracking: 0;
+    /* Sticky site header (`SiteHeader` h-12). Hash / :target scroll clearance. */
+    --site-header-height: 3rem;
+    --site-hash-scroll-margin: calc(var(--site-header-height) + 0.5rem);
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -169,6 +172,8 @@ html[data-tfl-type-profile="johnston-compatible"] {
   }
   html {
     @apply font-sans;
+    /* Clear sticky header for in-page hash links (TOC, heading anchors, deep links). */
+    scroll-padding-top: var(--site-hash-scroll-margin);
     /* Thin page scrollbar; gutter + overflow set on <html> className (layout). */
     scrollbar-width: thin;
     scrollbar-color: color-mix(in oklch, var(--foreground) 28%, transparent)

@@ -45,8 +45,10 @@ import {
 import {
   DRAFT_STORAGE_KEY,
   HONEYPOT_FIELD,
+  LAST_SENT_STORAGE_KEY,
   LOADED_AT_FIELD,
   MAX_SCREENSHOT_BYTES,
+  RECENT_SEND_HINT_SECONDS,
 } from "@/lib/feedback/constants";
 import {
   buildGitHubIssueUrl,
@@ -172,10 +174,41 @@ const clearDraft = () => {
   }
 };
 
-const formatRetryAfter = (seconds: number): string => {
-  if (seconds <= 60) return "under a minute";
-  const minutes = Math.ceil(seconds / 60);
-  return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+const loadLastSentAt = (): number | null => {
+  try {
+    const raw = window.localStorage.getItem(LAST_SENT_STORAGE_KEY);
+    if (!raw) return null;
+    const lastSentAt = Number(raw);
+    if (!Number.isFinite(lastSentAt) || lastSentAt <= 0) return null;
+    return lastSentAt;
+  } catch {
+    return null;
+  }
+};
+
+const saveLastSentAt = (sentAt = Date.now()) => {
+  try {
+    window.localStorage.setItem(LAST_SENT_STORAGE_KEY, String(sentAt));
+  } catch {
+    // Ignore.
+  }
+};
+
+const formatSentAgo = (lastSentAt: number, nowMs = Date.now()): string => {
+  const elapsedSeconds = Math.max(0, Math.floor((nowMs - lastSentAt) / 1000));
+  if (elapsedSeconds < 60) return "just now";
+  const minutes = Math.floor(elapsedSeconds / 60);
+  if (minutes === 1) return "1 minute ago";
+  if (minutes < 60) return `${minutes} minutes ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours === 1) return "1 hour ago";
+  return `${hours} hours ago`;
+};
+
+const recentSendNotice = (lastSentAt: number, nowMs = Date.now()): string | null => {
+  const ageMs = nowMs - lastSentAt;
+  if (ageMs < 0 || ageMs > RECENT_SEND_HINT_SECONDS * 1000) return null;
+  return `You sent feedback ${formatSentAgo(lastSentAt, nowMs)} — no need to send it twice unless something new came up.`;
 };
 
 const FormField = ({
@@ -313,6 +346,13 @@ export const FeedbackDialog = () => {
           setBugFreeformText(draft.bugFreeformText);
           setSuggestionText(draft.suggestionText);
           setEmail(draft.email);
+        }
+
+        const lastSentAt = loadLastSentAt();
+        const recent = lastSentAt ? recentSendNotice(lastSentAt) : null;
+        if (recent) {
+          setNotice(recent);
+        } else if (draft) {
           setNotice("Restored what you were writing last time.");
         }
 
@@ -427,8 +467,6 @@ export const FeedbackDialog = () => {
         ok?: boolean;
         error?: string;
         soft?: boolean;
-        reason?: "cooldown";
-        retryAfterSeconds?: number;
       } | null;
 
       if (!response.ok || !result?.ok) {
@@ -437,18 +475,12 @@ export const FeedbackDialog = () => {
         return;
       }
 
-      // Rate-limited: be honest instead of pretending this send went out.
-      // (Bot/spam soft-fails omit `reason`, so those still fall through to
-      // the normal thank-you below — no tipping off the sender.)
-      if (result.soft && result.reason === "cooldown") {
-        setNotice(
-          `You already sent feedback recently — thanks! You can send another in ${formatRetryAfter(result.retryAfterSeconds ?? 0)}.`,
-        );
-        setSubmitting(false);
-        return;
+      // Bot/spam soft-fails still look like success (no tip-off). Only a real
+      // send clears the draft and stamps "last sent" for the soft hint.
+      if (!result.soft) {
+        clearDraft();
+        saveLastSentAt();
       }
-
-      clearDraft();
       setStep("done");
       toast.success("Thanks — feedback sent.");
     } catch {

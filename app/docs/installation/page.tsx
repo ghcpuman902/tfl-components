@@ -21,7 +21,7 @@ export default async function DocsInstallationPage() {
         <DocsPageHeader entry={entry} />
 
         <section className="space-y-4">
-          <h2 id="quick-install" className="scroll-m-20 text-lg font-semibold">
+          <h2 id="quick-install" className="text-lg font-semibold">
             Quick install
           </h2>
           <p className="max-w-prose text-sm text-muted-foreground">

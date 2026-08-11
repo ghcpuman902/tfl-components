@@ -40,14 +40,6 @@ export const isAllowedPageUrl = (
 export type SoftSuccess = {
   ok: true;
   soft: true;
-  /**
-   * Omitted for spam/bot soft-fails (honeypot, timing, gibberish) so we don't
-   * tip off the sender that they were detected. Set to "cooldown" for a real
-   * rate-limited person, so the client can be honest with them instead of
-   * pretending their message went out.
-   */
-  reason?: "cooldown";
-  retryAfterSeconds?: number;
 };
 
 export type HardSuccess = {
@@ -62,10 +54,8 @@ export type FeedbackError = {
 
 export type FeedbackResult = SoftSuccess | HardSuccess | FeedbackError;
 
-export const softThanks = (
-  reason?: SoftSuccess["reason"],
-  retryAfterSeconds?: number,
-): SoftSuccess => ({ ok: true, soft: true, reason, retryAfterSeconds });
+/** Silent thank-you for bots/spam — never tip them off. */
+export const softThanks = (): SoftSuccess => ({ ok: true, soft: true });
 
 export type ValidatedSubmission = {
   fields: FeedbackFields;

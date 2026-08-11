@@ -91,19 +91,19 @@ export default function StationLabelsFoundationPage() {
           </ul>
         </section>
 
-        <section id="width" className="scroll-mt-20 space-y-4">
+        <section id="width" className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
             Every screen size
           </h2>
           <StationWidthDemo />
         </section>
 
-        <section id="platforms" className="scroll-mt-20 space-y-4">
+        <section id="platforms" className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">Platforms</h2>
           <PlatformWidthDemo />
         </section>
 
-        <section id="abbreviations" className="scroll-mt-20 space-y-4">
+        <section id="abbreviations" className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
             Abbreviations
           </h2>
@@ -113,7 +113,7 @@ export default function StationLabelsFoundationPage() {
           <AbbreviationDemo />
         </section>
 
-        <section id="accessibility" className="scroll-mt-20 space-y-4">
+        <section id="accessibility" className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
             Copy, find, and screen readers
           </h2>

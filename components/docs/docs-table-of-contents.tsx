@@ -65,7 +65,8 @@ export const DocsTableOfContents = ({
         }
       },
       {
-        rootMargin: "-80px 0px -60% 0px",
+        /* Keep in sync with `--site-hash-scroll-margin` (3.5rem @ 16px). */
+        rootMargin: "-56px 0px -60% 0px",
         threshold: [0, 1],
       },
     );
@@ -80,7 +81,7 @@ export const DocsTableOfContents = ({
     <nav
       aria-label="On this page"
       className={cn(
-        "sticky top-16 hidden max-h-[calc(100svh-5rem)] w-48 shrink-0 overflow-y-auto xl:block",
+        "sticky top-(--site-hash-scroll-margin) hidden max-h-[calc(100svh-var(--site-hash-scroll-margin)-1rem)] w-48 shrink-0 overflow-y-auto xl:block",
         className,
       )}
     >

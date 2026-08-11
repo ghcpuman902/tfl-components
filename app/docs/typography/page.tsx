@@ -29,7 +29,7 @@ export default function FoundationsTypographyPage() {
         <RelationshipBadges usedBy={getUsedBySlugs(entry.slug)} />
 
         <section className="space-y-2">
-          <h2 id="purpose" className="scroll-m-20 text-lg font-semibold">
+          <h2 id="purpose" className="text-lg font-semibold">
             Purpose
           </h2>
           <p className="max-w-prose text-muted-foreground">
@@ -42,7 +42,7 @@ export default function FoundationsTypographyPage() {
         </section>
 
         <section className="space-y-2">
-          <h2 id="profiles" className="scroll-m-20 text-lg font-semibold">
+          <h2 id="profiles" className="text-lg font-semibold">
             Profiles used by this site
           </h2>
           <p className="max-w-prose text-muted-foreground">
@@ -73,7 +73,7 @@ export default function FoundationsTypographyPage() {
           </div>
         </section>
 
-        <section id="component-contract" className="scroll-mt-20 space-y-4">
+        <section id="component-contract" className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
             Component contract
           </h2>
@@ -124,7 +124,7 @@ export default function FoundationsTypographyPage() {
           </dl>
         </section>
 
-        <section id="tracking" className="scroll-mt-20 space-y-4">
+        <section id="tracking" className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
             Tracking follows the font
           </h2>
@@ -143,7 +143,7 @@ export default function FoundationsTypographyPage() {
           <TrackingRuleDemo />
         </section>
 
-        <section id="chips" className="scroll-mt-20 space-y-4">
+        <section id="chips" className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
             Text inside chips
           </h2>
@@ -156,7 +156,7 @@ export default function FoundationsTypographyPage() {
           <ChipTextDemo />
         </section>
 
-        <section id="minimum-size" className="scroll-mt-20 space-y-4">
+        <section id="minimum-size" className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
             Fit before shrinking
           </h2>
@@ -189,7 +189,7 @@ export default function FoundationsTypographyPage() {
         </section>
 
         <section className="space-y-2 border-t border-border pt-8">
-          <h2 id="licensing" className="scroll-m-20 text-lg font-semibold">
+          <h2 id="licensing" className="text-lg font-semibold">
             Licensing
           </h2>
           <p className="max-w-prose text-muted-foreground">

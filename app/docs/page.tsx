@@ -19,7 +19,7 @@ export default function DocsIntroductionPage() {
         <DocsPageHeader entry={entry} />
 
         <section className="space-y-3">
-          <h2 id="what-this-is" className="scroll-m-20 text-lg font-semibold">
+          <h2 id="what-this-is" className="text-lg font-semibold">
             What this is
           </h2>
           <p className="max-w-prose text-muted-foreground">
@@ -39,7 +39,7 @@ export default function DocsIntroductionPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 id="fast-path" className="scroll-m-20 text-lg font-semibold">
+          <h2 id="fast-path" className="text-lg font-semibold">
             Fast path
           </h2>
           <ol className="list-inside list-decimal space-y-2 text-muted-foreground">
@@ -68,7 +68,7 @@ export default function DocsIntroductionPage() {
         </section>
 
         <section className="space-y-2">
-          <h2 id="layers" className="scroll-m-20 text-lg font-semibold">
+          <h2 id="layers" className="text-lg font-semibold">
             Layers
           </h2>
           <p className="max-w-prose text-muted-foreground">

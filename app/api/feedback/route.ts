@@ -1,8 +1,6 @@
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { Resend } from "resend";
 import {
-  COOLDOWN_COOKIE,
-  COOLDOWN_SECONDS,
   FEEDBACK_FROM,
   FEEDBACK_TO,
   HONEYPOT_FIELD,
@@ -30,13 +28,6 @@ export async function POST(request: Request) {
   const contentLength = Number(request.headers.get("content-length") ?? "0");
   if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
     return json({ ok: false, error: "Payload too large." }, { status: 413 });
-  }
-
-  const cookieStore = await cookies();
-  const cooldownExpiresAt = Number(cookieStore.get(COOLDOWN_COOKIE)?.value);
-  if (Number.isFinite(cooldownExpiresAt) && cooldownExpiresAt > Date.now()) {
-    const retryAfterSeconds = Math.ceil((cooldownExpiresAt - Date.now()) / 1000);
-    return json(softThanks("cooldown", retryAfterSeconds));
   }
 
   let form: FormData;
@@ -145,17 +136,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const response = json({ ok: true });
-  const forwardedProto = requestHeaders.get("x-forwarded-proto");
-  const secure =
-    forwardedProto === "https" ||
-    (!forwardedProto && process.env.NODE_ENV === "production");
-  const nextCooldownExpiresAt = Date.now() + COOLDOWN_SECONDS * 1000;
-  response.headers.append(
-    "Set-Cookie",
-    `${COOLDOWN_COOKIE}=${nextCooldownExpiresAt}; Path=/; Max-Age=${COOLDOWN_SECONDS}; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}`,
-  );
-  return response;
+  return json({ ok: true });
 }
 
 const parseScreenshot = async (

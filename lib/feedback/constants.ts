@@ -19,12 +19,18 @@ export const ALLOWED_SCREENSHOT_TYPES = [
 
 export const HONEYPOT_FIELD = "company_website";
 export const LOADED_AT_FIELD = "loadedAt";
-export const COOLDOWN_COOKIE = "tfl_feedback_cd";
-export const COOLDOWN_SECONDS = 5 * 60;
 
-/** localStorage key for the client-side draft, so a rate-limited or failed
- * submit never loses what someone typed. */
+/** localStorage key for the client-side draft, so a failed submit never
+ * loses what someone typed. */
 export const DRAFT_STORAGE_KEY = "tfl-feedback-draft";
+
+/** localStorage timestamp of the last successful send — used for a soft
+ * "you already sent recently" hint, not a hard block. */
+export const LAST_SENT_STORAGE_KEY = "tfl-feedback-last-sent";
+
+/** How long after a successful send to gently suggest they don't need to
+ * send again (submit stays enabled). */
+export const RECENT_SEND_HINT_SECONDS = 30 * 60;
 
 export const GITHUB_REPO = "https://github.com/ghcpuman902/tfl-components";
 export const GITHUB_ISSUES_NEW = `${GITHUB_REPO}/issues/new`;
