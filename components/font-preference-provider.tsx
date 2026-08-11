@@ -23,6 +23,32 @@ const FontPreferenceContext = createContext<FontPreferenceContextValue | null>(
   null,
 );
 
+const typekitHref = (): string | null => {
+  const kitId = process.env.NEXT_PUBLIC_ADOBE_FONTS_KIT_ID;
+  return kitId ? `https://use.typekit.net/${kitId}.css` : null;
+};
+
+/** Ensure P22 kit CSS is present without blocking the default Hammersmith path. */
+const ensureTypekitStylesheet = () => {
+  const href = typekitHref();
+  if (!href || typeof document === "undefined") return;
+
+  const existing = document.querySelector<HTMLLinkElement>(
+    `link[data-tfl-typekit="true"]`,
+  );
+  if (existing) return;
+
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = href;
+  link.dataset.tflTypekit = "true";
+  link.media = "print";
+  link.onload = () => {
+    link.media = "all";
+  };
+  document.head.appendChild(link);
+};
+
 const applyFontAttributes = (
   font: FontPreference,
   adobeFontsConfigured: boolean,
@@ -30,6 +56,7 @@ const applyFontAttributes = (
   document.documentElement.removeAttribute("data-tfl-type-profile");
 
   if (font === "p22" && adobeFontsConfigured) {
+    ensureTypekitStylesheet();
     document.documentElement.setAttribute("data-font", "p22");
     document.documentElement.setAttribute(
       "data-tfl-type-profile",

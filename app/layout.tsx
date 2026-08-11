@@ -29,8 +29,12 @@ const hammersmith = Hammersmith_One({
  */
 const adobeFontsKitId = process.env.NEXT_PUBLIC_ADOBE_FONTS_KIT_ID;
 
-/** Apply stored font preference before paint to avoid a Hammersmith → P22 flash. */
-const fontPreferenceScript = `(function(){try{if(localStorage.getItem("tfl-font-pref")==="p22"){document.documentElement.setAttribute("data-font","p22");document.documentElement.setAttribute("data-tfl-type-profile","johnston-compatible");}}catch(e){}})();`;
+/** Apply stored font preference before paint to avoid a Hammersmith → P22 flash.
+ * Typekit is injected only when P22 is selected — never render-blocking for the
+ * default Hammersmith path (Lighthouse / first-fold). */
+const fontPreferenceScript = adobeFontsKitId
+  ? `(function(){try{if(localStorage.getItem("tfl-font-pref")!=="p22")return;document.documentElement.setAttribute("data-font","p22");document.documentElement.setAttribute("data-tfl-type-profile","johnston-compatible");var l=document.createElement("link");l.rel="stylesheet";l.href=${JSON.stringify(`https://use.typekit.net/${adobeFontsKitId}.css`)};l.media="print";l.onload=function(){this.media="all"};document.head.appendChild(l);}catch(e){}})();`
+  : null;
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],
@@ -69,17 +73,10 @@ export default function RootLayout({
       )}
     >
       <head>
-        {adobeFontsKitId ? (
-          <>
-            <script
-              dangerouslySetInnerHTML={{ __html: fontPreferenceScript }}
-            />
-            <link
-              rel="stylesheet"
-              href={`https://use.typekit.net/${adobeFontsKitId}.css`}
-              precedence="default"
-            />
-          </>
+        {fontPreferenceScript ? (
+          <script
+            dangerouslySetInnerHTML={{ __html: fontPreferenceScript }}
+          />
         ) : null}
       </head>
       <body>

@@ -9,6 +9,19 @@ const nextConfig: NextConfig = {
       mdxType: "gfm",
     },
   },
+  async headers() {
+    return [
+      {
+        source: "/images/home/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       // —— J6 docs chrome ——

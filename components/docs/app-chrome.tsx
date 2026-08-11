@@ -30,15 +30,18 @@ const AppChromeShell = ({
   const showDocsSidebar = isDocsPath(pathname);
 
   if (!showDocsSidebar) {
+    // Empty pathname = AppChrome Suspense fallback before usePathname resolves.
+    // Prefer home chrome (no main padding) so `/` does not CLS from px-4 → px-0.
+    const isHome = pathname === "/" || pathname === "";
     return (
       <div className="flex min-h-svh flex-col">
-        <SiteHeader pathname={pathname} />
+        <SiteHeader pathname={pathname || "/"} />
         <div className="border-b border-border px-4 py-2 md:hidden">
           <DocsSearch variant="header" />
         </div>
         <main
           className={
-            pathname === "/"
+            isHome
               ? "mx-auto w-full min-w-0 max-w-full flex-1 px-0 py-0"
               : "mx-auto w-full min-w-0 max-w-full flex-1 px-4 py-6"
           }
@@ -73,6 +76,8 @@ const AppChromeShell = ({
 /**
  * Pathname is only known at request time for dynamic segments without
  * generateStaticParams — Suspense keeps the static shell prerenderable.
+ * Children stay in the fallback so the homepage hero can paint in the PPR shell.
+ * Dynamic `[slug]` routes need their own `loading.tsx` for `params`.
  */
 const AppChromeWithPathname = ({ children, footer }: AppChromeProps) => {
   const pathname = usePathname();

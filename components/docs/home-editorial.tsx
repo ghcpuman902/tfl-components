@@ -1,9 +1,9 @@
 import { Suspense, type CSSProperties } from "react";
 import { ArrivalsBoard } from "@/components/tfl/arrivals/arrivals-board";
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
-import { CycleHireDocksMap } from "@/components/tfl/cycle-hire/cycle-hire-docks";
 import { LineStrip } from "@/components/tfl/diagram/line-strip";
 import { WeekAheadLineSkeleton } from "@/components/tfl/week-ahead/week-ahead-skeleton";
+import { HomeCycleHireMap } from "@/components/docs/home-cycle-hire-map";
 import { DIAGRAM_SCALE_CLASS } from "@/lib/tfl/line-diagram";
 import {
   getCachedHomeCycleHireDocks,
@@ -159,7 +159,7 @@ async function HomeBusAndCycleHirePanel() {
           No docks found nearby.
         </p>
       ) : (
-        <CycleHireDocksMap
+        <HomeCycleHireMap
           data={cycle.docks}
           className={cn(
             "w-full border border-border bg-muted",

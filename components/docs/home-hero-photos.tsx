@@ -81,9 +81,15 @@ const SLIDES: readonly HeroSlide[] = [
 
 const INTERVAL_MS = 5500;
 
+/**
+ * First-fold LCP image only on initial HTML; later slides mount after idle so
+ * ~3MB of carousel JPEGs do not contend with paint / TfL panel streaming.
+ */
 export const HomeHeroPhotos = () => {
   const [index, setIndex] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [loadedThrough, setLoadedThrough] = useState(0);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -96,20 +102,52 @@ export const HomeHeroPhotos = () => {
   }, []);
 
   useEffect(() => {
-    if (reduceMotion) return;
+    let cancelled = false;
+    const unlockCarousel = () => {
+      if (cancelled) return;
+      setHydrated(true);
+      setLoadedThrough(1);
+    };
+
+    if (typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(unlockCarousel, {
+        timeout: 1800,
+      });
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback(idleId);
+      };
+    }
+
+    const timeoutId = window.setTimeout(unlockCarousel, 400);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated || reduceMotion) return;
 
     const id = window.setInterval(() => {
-      setIndex((current) => (current + 1) % SLIDES.length);
+      setIndex((current) => {
+        const next = (current + 1) % SLIDES.length;
+        setLoadedThrough((through) => Math.max(through, next));
+        return next;
+      });
     }, INTERVAL_MS);
 
     return () => window.clearInterval(id);
-  }, [reduceMotion]);
+  }, [hydrated, reduceMotion]);
 
   const active = SLIDES[index] ?? SLIDES[0];
+  const visibleThrough = Math.max(loadedThrough, index);
 
   return (
     <>
       {SLIDES.map((slide, slideIndex) => {
+        if (slideIndex > visibleThrough) return null;
+
         const isActive = slideIndex === index;
         return (
           // Native img keeps Display P3 ICC; next/image can strip wide-gamut profiles.
@@ -120,7 +158,8 @@ export const HomeHeroPhotos = () => {
             alt={isActive ? slide.alt : ""}
             width={slide.width}
             height={slide.height}
-            decoding="async"
+            decoding={slideIndex === 0 ? "sync" : "async"}
+            loading={slideIndex === 0 ? "eager" : "lazy"}
             fetchPriority={slideIndex === 0 ? "high" : "low"}
             aria-hidden={!isActive}
             className={cn(
