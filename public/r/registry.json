@@ -1,7 +1,7 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "tfl-components",
-  "homepage": "https://tfl-components.vercel.app",
+  "homepage": "https://tfl.manglekuo.com",
   "items": [
     {
       "name": "tfl-roundel",
@@ -402,7 +402,7 @@
         "tfl-ts"
       ],
       "registryDependencies": [
-        "https://tfl-components.vercel.app/r/tfl-colours.json",
+        "https://tfl.manglekuo.com/r/tfl-colours.json",
         "skeleton"
       ],
       "files": [
@@ -423,9 +423,9 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://tfl-components.vercel.app/r/tfl-colours.json",
-        "line-badge",
-        "tfl-roundel"
+        "https://tfl.manglekuo.com/r/tfl-colours.json",
+        "https://tfl.manglekuo.com/r/line-badge.json",
+        "https://tfl.manglekuo.com/r/tfl-roundel.json"
       ],
       "files": [
         {
@@ -451,7 +451,7 @@
         "maplibre-gl"
       ],
       "registryDependencies": [
-        "tfl-roundel",
+        "https://tfl.manglekuo.com/r/tfl-roundel.json",
         "skeleton"
       ],
       "files": [
@@ -553,10 +553,11 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://tfl-components.vercel.app/r/tfl-colours.json",
-        "line-badge",
-        "platform-chip",
-        "bus-number-chip",
+        "https://tfl.manglekuo.com/r/tfl-colours.json",
+        "https://tfl.manglekuo.com/r/line-badge.json",
+        "https://tfl.manglekuo.com/r/platform-chip.json",
+        "https://tfl.manglekuo.com/r/bus-number-chip.json",
+        "https://tfl.manglekuo.com/r/tfl-roundel.json",
         "skeleton"
       ],
       "files": [
@@ -577,8 +578,8 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://tfl-components.vercel.app/r/tfl-colours.json",
-        "arrivals-board",
+        "https://tfl.manglekuo.com/r/tfl-colours.json",
+        "https://tfl.manglekuo.com/r/arrivals-board.json",
         "button",
         "input",
         "label",
@@ -617,9 +618,9 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://tfl-components.vercel.app/r/tfl-colours.json",
+        "https://tfl.manglekuo.com/r/tfl-colours.json",
         "skeleton",
-        "arrivals-board"
+        "https://tfl.manglekuo.com/r/arrivals-board.json"
       ],
       "files": [
         {
@@ -653,7 +654,7 @@
         "tfl-ts"
       ],
       "registryDependencies": [
-        "https://tfl-components.vercel.app/r/tfl-colours.json",
+        "https://tfl.manglekuo.com/r/tfl-colours.json",
         "button"
       ],
       "files": [

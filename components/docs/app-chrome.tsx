@@ -4,13 +4,15 @@ import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { DocsSidebar } from "@/components/docs/docs-sidebar";
 import { DocsTableOfContents } from "@/components/docs/docs-table-of-contents";
-import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSearch } from "@/components/docs/docs-search";
+import { VisitBeacon } from "@/components/visit-beacon";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 type AppChromeProps = {
   children: React.ReactNode;
+  /** Server-rendered footer slot (keeps SiteFooter out of the client bundle). */
+  footer: React.ReactNode;
 };
 
 const isDocsPath = (pathname: string) =>
@@ -23,6 +25,7 @@ const isDocsPath = (pathname: string) =>
 const AppChromeShell = ({
   pathname,
   children,
+  footer,
 }: AppChromeProps & { pathname: string }) => {
   const showDocsSidebar = isDocsPath(pathname);
 
@@ -42,7 +45,7 @@ const AppChromeShell = ({
         >
           {children}
         </main>
-        <SiteFooter />
+        {footer}
       </div>
     );
   }
@@ -60,7 +63,7 @@ const AppChromeShell = ({
             <div className="min-w-0 flex-1">{children}</div>
             <DocsTableOfContents />
           </div>
-          <SiteFooter />
+          {footer}
         </SidebarInset>
       </div>
     </SidebarProvider>
@@ -71,14 +74,27 @@ const AppChromeShell = ({
  * Pathname is only known at request time for dynamic segments without
  * generateStaticParams — Suspense keeps the static shell prerenderable.
  */
-const AppChromeWithPathname = ({ children }: AppChromeProps) => {
+const AppChromeWithPathname = ({ children, footer }: AppChromeProps) => {
   const pathname = usePathname();
-  return <AppChromeShell pathname={pathname}>{children}</AppChromeShell>;
+  return (
+    <AppChromeShell pathname={pathname} footer={footer}>
+      {children}
+    </AppChromeShell>
+  );
 };
 
 /** Homepage + Blocks/Tools: header only. Docs: header + sidebar. */
-export const AppChrome = ({ children }: AppChromeProps) => (
-  <Suspense fallback={<AppChromeShell pathname="">{children}</AppChromeShell>}>
-    <AppChromeWithPathname>{children}</AppChromeWithPathname>
-  </Suspense>
+export const AppChrome = ({ children, footer }: AppChromeProps) => (
+  <>
+    <VisitBeacon />
+    <Suspense
+      fallback={
+        <AppChromeShell pathname="" footer={footer}>
+          {children}
+        </AppChromeShell>
+      }
+    >
+      <AppChromeWithPathname footer={footer}>{children}</AppChromeWithPathname>
+    </Suspense>
+  </>
 );

@@ -20,7 +20,7 @@ const validFields = {
   kind: "bug",
   message: "The arrivals board clips on narrow widths.",
   email: "",
-  pageUrl: "https://tfl-components.vercel.app/docs/arrivals-board",
+  pageUrl: "https://tfl.manglekuo.com/docs/arrivals-board",
   pageTitle: "Arrivals board",
   appVersion: "v0.4.0",
   loadedAt: Date.now() - 10_000,
@@ -105,8 +105,8 @@ describe("page URL allowlist", () => {
   it("allows same-origin page URLs", () => {
     assert.equal(
       isAllowedPageUrl(
-        "https://tfl-components.vercel.app/docs/arrivals-board",
-        "https://tfl-components.vercel.app",
+        "https://tfl.manglekuo.com/docs/arrivals-board",
+        "https://tfl.manglekuo.com",
       ),
       true,
     );
@@ -116,12 +116,12 @@ describe("page URL allowlist", () => {
     assert.equal(
       isAllowedPageUrl(
         "https://evil.example/phish",
-        "https://tfl-components.vercel.app",
+        "https://tfl.manglekuo.com",
       ),
       false,
     );
     assert.equal(
-      isAllowedPageUrl("javascript:alert(1)", "https://tfl-components.vercel.app"),
+      isAllowedPageUrl("javascript:alert(1)", "https://tfl.manglekuo.com"),
       false,
     );
   });

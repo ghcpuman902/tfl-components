@@ -7,7 +7,7 @@
     "tfl-ts"
   ],
   "registryDependencies": [
-    "https://tfl-components.vercel.app/r/tfl-colours.json",
+    "https://tfl.manglekuo.com/r/tfl-colours.json",
     "skeleton"
   ],
   "files": [

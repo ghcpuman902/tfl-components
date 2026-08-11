@@ -8,9 +8,9 @@
     "lucide-react"
   ],
   "registryDependencies": [
-    "https://tfl-components.vercel.app/r/tfl-colours.json",
-    "line-badge",
-    "tfl-roundel"
+    "https://tfl.manglekuo.com/r/tfl-colours.json",
+    "https://tfl.manglekuo.com/r/line-badge.json",
+    "https://tfl.manglekuo.com/r/tfl-roundel.json"
   ],
   "files": [
     {

@@ -2,10 +2,12 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { FontPreferenceProvider } from "@/components/font-preference-provider";
 import { CodeCopyDelegator } from "@/components/docs/code-copy-delegator";
 import { AppChrome } from "@/components/docs/app-chrome";
+import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Geist_Mono, Hammersmith_One } from "next/font/google";
 import type { Metadata } from "next";
+import { SITE_DESCRIPTION, SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 import "./globals.css";
@@ -36,12 +38,17 @@ const fontMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? SITE_URL),
   title: {
     default: "tfl-components",
     template: "%s · tfl-components",
   },
-  description:
-    "Open React components for London transport boards, powered by tfl-ts.",
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    locale: "en_GB",
+    siteName: "tfl-components",
+  },
 };
 
 export default function RootLayout({
@@ -82,7 +89,7 @@ export default function RootLayout({
           >
             <CodeCopyDelegator />
             <TooltipProvider>
-              <AppChrome>{children}</AppChrome>
+              <AppChrome footer={<SiteFooter />}>{children}</AppChrome>
               <Toaster />
             </TooltipProvider>
           </FontPreferenceProvider>

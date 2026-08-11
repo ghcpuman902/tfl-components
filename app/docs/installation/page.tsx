@@ -4,6 +4,7 @@ import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
 import { InstallCommand } from "@/components/docs/install-command";
 import { getDocsEntry } from "@/lib/docs-catalog";
+import { REGISTRY_BASE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Installation",
@@ -34,7 +35,9 @@ export default async function DocsInstallationPage() {
             </Link>
             .
           </p>
-          <InstallCommand registryUrl="https://tfl-components.vercel.app/r/tube-status-board.json" />
+          <InstallCommand
+            registryUrl={`${REGISTRY_BASE}/tube-status-board.json`}
+          />
         </section>
 
         <section className="border-t border-border pt-8">

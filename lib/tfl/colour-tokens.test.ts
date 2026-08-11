@@ -79,5 +79,25 @@ describe("colour tokens generator", () => {
 
     const lineBadge = registry.items.find((entry) => entry.name === "line-badge");
     assert.ok(lineBadge?.registryDependencies?.includes(COLOURS_REGISTRY_URL));
+
+    const ownNames = new Set(registry.items.map((entry) => entry.name));
+    for (const entry of registry.items) {
+      for (const dep of entry.registryDependencies ?? []) {
+        assert.equal(
+          ownNames.has(dep),
+          false,
+          `${entry.name} has bare own registryDependency "${dep}" — use ${COLOURS_REGISTRY_URL.replace(/tfl-colours\.json$/, `${dep}.json`)} so URL installs do not hit ui.shadcn.com`,
+        );
+      }
+    }
+
+    const tube = registry.items.find(
+      (entry) => entry.name === "tube-status-board",
+    );
+    assert.ok(
+      tube?.registryDependencies?.includes(
+        COLOURS_REGISTRY_URL.replace("tfl-colours.json", "line-badge.json"),
+      ),
+    );
   });
 });

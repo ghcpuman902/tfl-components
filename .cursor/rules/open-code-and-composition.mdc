@@ -13,9 +13,10 @@ shadcn’s core product idea applies here: this is **how you build** a TfL compo
 - Document install with the real registry URL pattern used in this project:
 
 ```bash
-pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/<name>.json
+pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/<name>.json
 ```
 
+- **Own `registryDependencies` must be absolute URLs** (`https://tfl.manglekuo.com/r/line-badge.json`), never bare names. Bare names resolve to ui.shadcn.com. Official shadcn atoms (`button`, `skeleton`, …) stay bare. `pnpm registry:build` normalises this.
 - Prefer extending owned source (or composing wrappers in the **app**) over fighting a black-box dependency.
 - Do **not** treat `components/ui/` lightly as a place for drive-by edits; extend via composition when possible. Domain components live under `components/tfl/` (and related), not as forks of every shadcn atom.
 

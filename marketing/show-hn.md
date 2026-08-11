@@ -2,7 +2,7 @@
 
 **Title:** Show HN: tfl-components – London tube status boards you can copy into Next.js
 
-**URL:** https://tfl-components.vercel.app
+**URL:** https://tfl.manglekuo.com
 
 **First comment (post immediately):**
 

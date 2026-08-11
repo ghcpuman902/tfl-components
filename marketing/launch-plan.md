@@ -2,7 +2,7 @@
 
 ## Order of operations
 
-1. Demo is live (done): https://tfl-components.vercel.app
+1. Demo is live (done): https://tfl.manglekuo.com
 2. Point `tfl.manglekuo.com` at the project (DNS CNAME at GoDaddy → `cname.vercel-dns.com`)
 3. Take screenshots of `/status` and `/arrivals` in light and dark mode
 4. Update tfl-ts README with those screenshots and the demo link
@@ -10,7 +10,7 @@
 
 ## Domain
 
-Until DNS is set, use `https://tfl-components.vercel.app` in posts.
+Until DNS is set, use `https://tfl.manglekuo.com` in posts.
 
 After DNS:
 

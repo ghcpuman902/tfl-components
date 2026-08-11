@@ -9,9 +9,9 @@ This is **not** an npm UI package. You copy source into your app.
 Source of truth for installable files: **[`registry/tfl/`](./registry/tfl/)** ([readme](./registry/tfl/README.md)).
 
 ```bash
-pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tube-status-board.json
-pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/arrivals-board.json
-pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tfl-roundel.json
+pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/tube-status-board.json
+pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/arrivals-board.json
+pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/tfl-roundel.json
 ```
 
 Registry items declare `tfl-ts` as a dependency. Copied code reads `TFL_APP_ID` / `TFL_APP_KEY` from **your** environment.
@@ -44,8 +44,7 @@ Changelog: [CHANGELOG.md](./CHANGELOG.md).
 
 ## Docs / demo site
 
-Live site: https://tfl-components.vercel.app  
-Intended custom domain: `tfl.manglekuo.com` (`CNAME tfl → cname.vercel-dns.com`).
+Live site: https://tfl.manglekuo.com
 
 The Next.js app in this repo is the developer environment (docs, demos, Blocks). It is **not** what the shadcn CLI copies. Prefer [`registry/tfl/`](./registry/tfl/) when browsing for installable code.
 

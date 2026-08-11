@@ -5,10 +5,30 @@ Copy a component into your Next.js app with the shadcn CLI. The registry item de
 ### Recommended
 
 ```bash
-pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tube-status-board.json
+pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/tube-status-board.json
 ```
 
+That one URL pulls the board plus its TfL deps (`line-badge`, `tfl-roundel`, colour tokens) as absolute registry URLs. Official shadcn atoms (`button`, `skeleton`, …) still resolve from the default registry.
+
 See the [Components catalogue](/docs/components) for Arrivals, Line strip, Roundel, Colours, and other installable items.
+
+### Optional: `@tfl` namespace
+
+If you install several items, add the registry once in `components.json`:
+
+```json
+{
+  "registries": {
+    "@tfl": "https://tfl.manglekuo.com/r/{name}.json"
+  }
+}
+```
+
+Then:
+
+```bash
+pnpm dlx shadcn@latest add @tfl/tube-status-board
+```
 
 ### API keys
 

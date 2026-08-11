@@ -7,9 +7,9 @@ Installable Open Code for TfL boards and primitives. This folder is what the sha
 From any app that uses the shadcn CLI:
 
 ```bash
-pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tube-status-board.json
-pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/arrivals-board.json
-pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tfl-roundel.json
+pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/tube-status-board.json
+pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/arrivals-board.json
+pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/tfl-roundel.json
 ```
 
 Built payloads live under [`public/r/`](../../public/r/). The catalog is [`registry.json`](../../registry.json) at the repo root.

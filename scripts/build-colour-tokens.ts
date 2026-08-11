@@ -28,13 +28,13 @@ import {
   northernDarkOklch,
   NORTHERN_DARK_HEX,
 } from "../lib/tfl/dark-line-colours";
+import { REGISTRY_BASE } from "../lib/site";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 export const COLOUR_TOKENS_CSS_PATH = join(ROOT, "app/tfl-colours.css");
 export const COLOUR_TOKENS_REGISTRY_PATH = join(ROOT, "registry.json");
-export const COLOURS_REGISTRY_URL =
-  "https://tfl-components.vercel.app/r/tfl-colours.json";
+export const COLOURS_REGISTRY_URL = `${REGISTRY_BASE}/tfl-colours.json`;
 
 const WHITE_OKLCH = "oklch(100% 0 0)";
 const BLACK_OKLCH = "oklch(0% 0 0)";
@@ -337,6 +337,47 @@ const COLOUR_CONSUMERS = [
   "line-strip",
 ] as const;
 
+/**
+ * Bare names resolve to ui.shadcn.com. Our own items must be absolute URLs
+ * so `shadcn add https://tfl.manglekuo.com/r/….json` pulls the full graph
+ * without requiring a `@tfl` namespace in the consumer's components.json.
+ */
+const absoluteOwnRegistryDep = (
+  dep: string,
+  ownNames: ReadonlySet<string>,
+): string => {
+  if (
+    dep.startsWith("http://") ||
+    dep.startsWith("https://") ||
+    dep.startsWith("@") ||
+    dep.includes("/")
+  ) {
+    return dep;
+  }
+  if (!ownNames.has(dep)) return dep;
+  return `${REGISTRY_BASE}/${dep}.json`;
+};
+
+const normalizeOwnRegistryDependencies = (registry: {
+  items: Array<Record<string, unknown>>;
+}): void => {
+  const ownNames = new Set(
+    registry.items
+      .map((entry) => entry.name)
+      .filter((name): name is string => typeof name === "string"),
+  );
+
+  for (const entry of registry.items) {
+    const deps = entry.registryDependencies;
+    if (!Array.isArray(deps)) continue;
+    entry.registryDependencies = deps.map((dep) =>
+      typeof dep === "string"
+        ? absoluteOwnRegistryDep(dep, ownNames)
+        : dep,
+    );
+  }
+};
+
 const upsertRegistryItem = (artefacts: ColourTokensArtefacts): void => {
   const raw = readFileSync(COLOUR_TOKENS_REGISTRY_PATH, "utf8");
   const registry = JSON.parse(raw) as {
@@ -380,6 +421,8 @@ const upsertRegistryItem = (artefacts: ColourTokensArtefacts): void => {
     }
     entry.registryDependencies = deps;
   }
+
+  normalizeOwnRegistryDependencies(registry);
 
   writeFileSync(
     COLOUR_TOKENS_REGISTRY_PATH,

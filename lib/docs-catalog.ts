@@ -3,6 +3,8 @@
  * Discovery chrome follows J6 — docs/TARGET_ARCHITECTURE.md.
  */
 
+import { REGISTRY_BASE } from "@/lib/site";
+
 export type DocsGroupId =
   | "start"
   | "explore"
@@ -83,8 +85,6 @@ export type DocsGroup = {
   title: string;
   description: string;
 };
-
-const REGISTRY_BASE = "https://tfl-components.vercel.app/r";
 
 export const DOCS_GROUPS: readonly DocsGroup[] = [
   {

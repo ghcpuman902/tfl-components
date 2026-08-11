@@ -38,6 +38,7 @@
     "react-dom": "19.2.8",
     "react-resizable-panels": "^4.12.1",
     "recharts": "3.8.0",
+    "redis": "^6.2.0",
     "remark-gfm": "^4.0.1",
     "resend": "^6.18.1",
     "shadcn": "^4.13.0",

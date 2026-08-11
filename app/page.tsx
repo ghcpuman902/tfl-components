@@ -3,11 +3,11 @@ import Link from "next/link";
 import { ArrowRightIcon } from "lucide-react";
 import { HomeEditorial } from "@/components/docs/home-editorial";
 import { HomeHeroPhotos } from "@/components/docs/home-hero-photos";
+import { SITE_DESCRIPTION } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "tfl-components",
-  description:
-    "React components for everyday TfL data displays. Responsive, accessible. Use with tfl-ts for live dashboards, or on their own for the look.",
+  description: SITE_DESCRIPTION,
 };
 
 export default function HomePage() {
