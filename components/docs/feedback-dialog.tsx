@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { domToBlob } from "modern-screenshot";
 import {
@@ -43,6 +43,7 @@ import {
   suggestComponentForPage,
 } from "@/lib/feedback/bug-template";
 import {
+  DRAFT_STORAGE_KEY,
   HONEYPOT_FIELD,
   LOADED_AT_FIELD,
   MAX_SCREENSHOT_BYTES,
@@ -107,6 +108,76 @@ const revokePreview = (state: ScreenshotState) => {
   if (state?.previewUrl) URL.revokeObjectURL(state.previewUrl);
 };
 
+/** What we can survive a lost send / rate limit with — never the screenshot,
+ * which doesn't compress small enough for localStorage. */
+type FeedbackDraft = {
+  kind: FeedbackKind;
+  freeform: boolean;
+  bugDescription: string;
+  bugSteps: string;
+  bugComponent: string;
+  bugFreeformText: string;
+  suggestionText: string;
+  email: string;
+  savedAt: number;
+};
+
+const DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+const isDraftWorthKeeping = (
+  draft: Pick<
+    FeedbackDraft,
+    "bugDescription" | "bugSteps" | "bugFreeformText" | "suggestionText"
+  >,
+) =>
+  Boolean(
+    draft.bugDescription.trim() ||
+      draft.bugSteps.trim() ||
+      draft.bugFreeformText.trim() ||
+      draft.suggestionText.trim(),
+  );
+
+const loadDraft = (): FeedbackDraft | null => {
+  try {
+    const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+    const draft = JSON.parse(raw) as FeedbackDraft;
+    if (Date.now() - draft.savedAt > DRAFT_MAX_AGE_MS) return null;
+    return isDraftWorthKeeping(draft) ? draft : null;
+  } catch {
+    return null;
+  }
+};
+
+const saveDraft = (draft: Omit<FeedbackDraft, "savedAt">) => {
+  try {
+    if (!isDraftWorthKeeping(draft)) {
+      window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+      return;
+    }
+    window.localStorage.setItem(
+      DRAFT_STORAGE_KEY,
+      JSON.stringify({ ...draft, savedAt: Date.now() }),
+    );
+  } catch {
+    // Private mode / storage full — losing the safety net beats crashing.
+  }
+};
+
+const clearDraft = () => {
+  try {
+    window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+  } catch {
+    // Ignore.
+  }
+};
+
+const formatRetryAfter = (seconds: number): string => {
+  if (seconds <= 60) return "under a minute";
+  const minutes = Math.ceil(seconds / 60);
+  return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+};
+
 const FormField = ({
   label,
   htmlFor,
@@ -145,6 +216,7 @@ export const FeedbackDialog = () => {
   const [capturing, setCapturing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [kind, setKind] = useState<FeedbackKind>("bug");
   const [loadedAt, setLoadedAt] = useState(0);
   const [pageMeta, setPageMeta] = useState({ url: "", title: "" });
@@ -157,12 +229,41 @@ export const FeedbackDialog = () => {
   const [suggestionText, setSuggestionText] = useState("");
   const [email, setEmail] = useState("");
 
+  // Autosave a draft so a rate-limited or failed send never loses what was
+  // typed. Skipped once "done", and while closed, so we don't overwrite the
+  // saved draft with the fields resetState() is about to clear.
+  useEffect(() => {
+    if (!open || step !== "form") return;
+    saveDraft({
+      kind,
+      freeform,
+      bugDescription,
+      bugSteps,
+      bugComponent,
+      bugFreeformText,
+      suggestionText,
+      email,
+    });
+  }, [
+    open,
+    step,
+    kind,
+    freeform,
+    bugDescription,
+    bugSteps,
+    bugComponent,
+    bugFreeformText,
+    suggestionText,
+    email,
+  ]);
+
   const resetState = useCallback(() => {
     setStep("form");
     setKind("bug");
     setSubmitting(false);
     setCapturing(false);
     setFormError(null);
+    setNotice(null);
     setLoadedAt(0);
     setPageMeta({ url: "", title: "" });
     setFreeform(false);
@@ -201,6 +302,20 @@ export const FeedbackDialog = () => {
         setCapturing(false);
         setStep("form");
         setKind("bug");
+
+        const draft = loadDraft();
+        if (draft) {
+          setKind(draft.kind);
+          setFreeform(draft.freeform);
+          setBugDescription(draft.bugDescription);
+          setBugSteps(draft.bugSteps);
+          if (draft.bugComponent) setBugComponent(draft.bugComponent);
+          setBugFreeformText(draft.bugFreeformText);
+          setSuggestionText(draft.suggestionText);
+          setEmail(draft.email);
+          setNotice("Restored what you were writing last time.");
+        }
+
         setOpen(true);
       })();
     },
@@ -281,6 +396,7 @@ export const FeedbackDialog = () => {
       return;
     }
     setFormError(null);
+    setNotice(null);
 
     const data = new FormData();
     data.set("kind", kind);
@@ -310,6 +426,9 @@ export const FeedbackDialog = () => {
       const result = (await response.json().catch(() => null)) as {
         ok?: boolean;
         error?: string;
+        soft?: boolean;
+        reason?: "cooldown";
+        retryAfterSeconds?: number;
       } | null;
 
       if (!response.ok || !result?.ok) {
@@ -318,6 +437,18 @@ export const FeedbackDialog = () => {
         return;
       }
 
+      // Rate-limited: be honest instead of pretending this send went out.
+      // (Bot/spam soft-fails omit `reason`, so those still fall through to
+      // the normal thank-you below — no tipping off the sender.)
+      if (result.soft && result.reason === "cooldown") {
+        setNotice(
+          `You already sent feedback recently — thanks! You can send another in ${formatRetryAfter(result.retryAfterSeconds ?? 0)}.`,
+        );
+        setSubmitting(false);
+        return;
+      }
+
+      clearDraft();
       setStep("done");
       toast.success("Thanks — feedback sent.");
     } catch {
@@ -590,6 +721,16 @@ export const FeedbackDialog = () => {
                     maxLength={254}
                   />
                 </FormField>
+
+                {notice ? (
+                  <p
+                    className="text-sm text-muted-foreground"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {notice}
+                  </p>
+                ) : null}
 
                 {formError ? (
                   <p className="text-sm text-destructive" role="alert">

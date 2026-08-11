@@ -1,6 +1,6 @@
 /** Shared limits and labels for the site feedback flow. */
 
-export const FEEDBACK_TO = "manglekuo@mail.com";
+export const FEEDBACK_TO = "manglekuo@gmail.com";
 export const FEEDBACK_FROM = "TfL Components <feedback@mangl.es>";
 
 export const MIN_SUBMIT_MS = 4_000;
@@ -20,7 +20,11 @@ export const ALLOWED_SCREENSHOT_TYPES = [
 export const HONEYPOT_FIELD = "company_website";
 export const LOADED_AT_FIELD = "loadedAt";
 export const COOLDOWN_COOKIE = "tfl_feedback_cd";
-export const COOLDOWN_SECONDS = 60 * 60;
+export const COOLDOWN_SECONDS = 5 * 60;
+
+/** localStorage key for the client-side draft, so a rate-limited or failed
+ * submit never loses what someone typed. */
+export const DRAFT_STORAGE_KEY = "tfl-feedback-draft";
 
 export const GITHUB_REPO = "https://github.com/ghcpuman902/tfl-components";
 export const GITHUB_ISSUES_NEW = `${GITHUB_REPO}/issues/new`;

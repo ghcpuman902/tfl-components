@@ -33,8 +33,10 @@ export async function POST(request: Request) {
   }
 
   const cookieStore = await cookies();
-  if (cookieStore.get(COOLDOWN_COOKIE)?.value) {
-    return json(softThanks());
+  const cooldownExpiresAt = Number(cookieStore.get(COOLDOWN_COOKIE)?.value);
+  if (Number.isFinite(cooldownExpiresAt) && cooldownExpiresAt > Date.now()) {
+    const retryAfterSeconds = Math.ceil((cooldownExpiresAt - Date.now()) / 1000);
+    return json(softThanks("cooldown", retryAfterSeconds));
   }
 
   let form: FormData;
@@ -148,9 +150,10 @@ export async function POST(request: Request) {
   const secure =
     forwardedProto === "https" ||
     (!forwardedProto && process.env.NODE_ENV === "production");
+  const nextCooldownExpiresAt = Date.now() + COOLDOWN_SECONDS * 1000;
   response.headers.append(
     "Set-Cookie",
-    `${COOLDOWN_COOKIE}=1; Path=/; Max-Age=${COOLDOWN_SECONDS}; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}`,
+    `${COOLDOWN_COOKIE}=${nextCooldownExpiresAt}; Path=/; Max-Age=${COOLDOWN_SECONDS}; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}`,
   );
   return response;
 }
