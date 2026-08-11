@@ -3,6 +3,7 @@
 import {
   createContext,
   useContext,
+  useMemo,
   type ReactNode,
 } from "react";
 import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types";
@@ -16,6 +17,7 @@ const CycleHireDocksContext = createContext<CycleHireDocksContextValue | null>(
 );
 
 const EMPTY_DOCKS: readonly CycleHireDock[] = [];
+const EMPTY_VALUE: CycleHireDocksContextValue = { data: EMPTY_DOCKS };
 
 type ProviderProps = {
   data?: readonly CycleHireDock[];
@@ -29,11 +31,18 @@ type ProviderProps = {
 export const CycleHireDocksProvider = ({
   data,
   children,
-}: ProviderProps) => (
-  <CycleHireDocksContext.Provider value={{ data: data ?? EMPTY_DOCKS }}>
-    {children}
-  </CycleHireDocksContext.Provider>
-);
+}: ProviderProps) => {
+  const value = useMemo<CycleHireDocksContextValue>(
+    () => (data == null ? EMPTY_VALUE : { data }),
+    [data],
+  );
+
+  return (
+    <CycleHireDocksContext.Provider value={value}>
+      {children}
+    </CycleHireDocksContext.Provider>
+  );
+};
 
 /** Read docks from an explicit `data` prop, else the nearest Provider. */
 export const useCycleHireDocksData = (

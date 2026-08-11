@@ -1,5 +1,3 @@
-"use client";
-
 import { cn } from "@/lib/utils";
 import { horizontalDiagramMetrics, ux } from "@/lib/tfl/line-diagram";
 import { formatStationName } from "@/lib/tfl/diagram-station";
@@ -18,6 +16,8 @@ import {
   type StripLabelPlacement,
   type StripSegmentState,
 } from "@/lib/tfl/strip-model";
+
+type DiagramMetrics = ReturnType<typeof horizontalDiagramMetrics>;
 
 export type {
   StraightStripStation,
@@ -159,6 +159,8 @@ type StationColumnProps = {
   outOfUse?: boolean;
   /** Where station names sit relative to the route. */
   labelPlacement?: StripLabelPlacement;
+  /** Hoisted metrics from the parent strip (avoids per-column rebuild). */
+  metrics?: DiagramMetrics;
 };
 
 export const StraightStripStationColumn = ({
@@ -170,8 +172,9 @@ export const StraightStripStationColumn = ({
   colWidth,
   outOfUse = false,
   labelPlacement = "above",
+  metrics,
 }: StationColumnProps) => {
-  const m = horizontalDiagramMetrics();
+  const m = metrics ?? horizontalDiagramMetrics(labelPlacement);
   const isInterchange = Boolean(station.interchange);
   const connections = (station.connections ?? []).filter(
     (c) => c.id !== "national-rail",
@@ -185,6 +188,7 @@ export const StraightStripStationColumn = ({
     labelPlacement === "below" || labelPlacement === "alternate";
   const showAbove = showLabel && labelSide === "above";
   const showBelow = showLabel && labelSide === "below";
+  const hasLabelLines = Boolean(station.labelLines?.length);
 
   const nameBand = (visible: boolean, alignEnd: boolean) => (
     <div
@@ -200,7 +204,7 @@ export const StraightStripStationColumn = ({
           <StationName
             name={station.name}
             lines={station.labelLines}
-            layout="auto"
+            layout={hasLabelLines ? "fixed" : "auto"}
             accessibleName={accessibleName}
             maxLines={2}
             allowScaleDown={false}
@@ -347,9 +351,10 @@ export const selectFittedLabelIndexes = (
   const budget = Math.max(2, Math.floor(availableWidthPx / pitch));
   if (show.size >= budget) return show;
 
-  const interchangeIndexes = stations
-    .map((station, index) => (station.interchange ? index : -1))
-    .filter((index) => index > 0 && index < n - 1);
+  const interchangeIndexes: number[] = [];
+  for (let index = 1; index < n - 1; index += 1) {
+    if (stations[index]?.interchange) interchangeIndexes.push(index);
+  }
 
   for (const index of interchangeIndexes) {
     if (show.size >= budget) break;

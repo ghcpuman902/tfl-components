@@ -1,5 +1,3 @@
-"use client";
-
 import { cn } from "@/lib/utils";
 import {
   diagramUnitStyle,
@@ -126,14 +124,13 @@ export const StraightStrip = ({
   }
 
   const m = horizontalDiagramMetrics(labelPlacement);
-  const maxConnections = stations.reduce(
-    (n, s) =>
-      Math.max(
-        n,
-        (s.connections ?? []).filter((c) => c.id !== "national-rail").length,
-      ),
-    0,
-  );
+  const maxConnections = stations.reduce((n, s) => {
+    let count = 0;
+    for (const c of s.connections ?? []) {
+      if (c.id !== "national-rail") count += 1;
+    }
+    return Math.max(n, count);
+  }, 0);
   const connectionBand =
     maxConnections > 0
       ? `calc(${m.flagHeight} * ${maxConnections})`
@@ -179,6 +176,7 @@ export const StraightStrip = ({
               colWidth={m.colWidth}
               outOfUse={stationOutOfUse[index] ?? false}
               labelPlacement={labelPlacement}
+              metrics={m}
             />
           ))}
         </ol>

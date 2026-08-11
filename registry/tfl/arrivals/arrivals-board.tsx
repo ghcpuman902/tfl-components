@@ -1,5 +1,3 @@
-"use client";
-
 import type { CSSProperties } from "react";
 import type { RealtimePrediction } from "tfl-ts";
 import { Loader2 } from "lucide-react";
@@ -100,7 +98,7 @@ const RHYTHM_VARS = {
  * but borders/bars must never grow the tile (`box-border` + overflow lock).
  */
 const TILE_CLASS =
-  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden";
+  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden [content-visibility:auto] [contain-intrinsic-size:auto_3rem]";
 
 /** In-list hairlines: absolute, so they never add to tile height. */
 const ROW_RULE_CLASS =

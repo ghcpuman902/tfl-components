@@ -1,7 +1,4 @@
-"use client";
-
-import { BranchStrip } from "@/components/tfl/diagram/branch-strip";
-import { StraightStrip } from "@/components/tfl/diagram/straight-strip";
+import { BranchStrip } from "@/components/tfl/diagram/branch-strip";import { StraightStrip } from "@/components/tfl/diagram/straight-strip";
 import { LineRouteDiagram } from "@/components/tfl/diagram/line-route-diagram";
 import {
   sliceLineSpineStations,

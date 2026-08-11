@@ -21,6 +21,11 @@
           "target": "components/tfl/brand/tfl-roundel.tsx"
         },
         {
+          "path": "registry/tfl/brand/tfl-roundel-trademark-modal.tsx",
+          "type": "registry:ui",
+          "target": "components/tfl/brand/tfl-roundel-trademark-modal.tsx"
+        },
+        {
           "path": "lib/tfl/roundel-presets.ts",
           "type": "registry:lib",
           "target": "lib/tfl/roundel-presets.ts"

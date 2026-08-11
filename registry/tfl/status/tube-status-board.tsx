@@ -219,12 +219,15 @@ export const TubeStatusBoard = ({
   children,
 }: Props) => {
   const lines = data ?? [];
-  const disruptedLines = lines.filter(
-    (line) => !isNormalService(line.lineStatuses ?? []),
-  );
-  const goodServiceLines = lines.filter((line) =>
-    isNormalService(line.lineStatuses ?? []),
-  );
+  const disruptedLines: StatusLine[] = [];
+  const goodServiceLines: StatusLine[] = [];
+  for (const line of lines) {
+    if (isNormalService(line.lineStatuses ?? [])) {
+      goodServiceLines.push(line);
+    } else {
+      disruptedLines.push(line);
+    }
+  }
 
   return (
     <div className="mt-4 flex w-full flex-col gap-6">

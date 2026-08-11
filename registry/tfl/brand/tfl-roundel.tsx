@@ -1,32 +1,14 @@
-"use client";
-
-import { useState, type ReactNode, type SVGProps } from "react";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { type ReactNode, type SVGProps } from "react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TFL_BLUE, UNDERGROUND_RING_RED } from "@/lib/tfl/brand-colours";
 import { ROUNDEL_FONT_FAMILY } from "@/lib/tfl/brand-rules";
 import {
   ROUNDEL_PRESETS,
-  TFL_BRAND_LINKS,
   getRoundelLogoPath,
   type RoundelPreset,
 } from "@/lib/tfl/roundel-presets";
+import { RoundelTrademarkModal } from "@/components/tfl/brand/tfl-roundel-trademark-modal";
 
 /** Skeleton matching the roundel footprint — use in `loading.tsx` or Suspense. */
 export const TfLRoundelSkeleton = ({ className }: { className?: string }) => (
@@ -267,7 +249,7 @@ const resolveRoundelColors = ({
 };
 
 /** Shared outer box — keeps placeholder and official mark the same size. */
-const ROUNDEL_FRAME_CLASS =
+export const ROUNDEL_FRAME_CLASS =
   "inline-flex size-10 shrink-0 items-center justify-center leading-none [&>svg]:block [&>svg]:size-full [&>img]:block [&>img]:size-full";
 
 const RoundelFrame = ({
@@ -468,7 +450,8 @@ const RoundelArtwork = ({
  * clearly not the trademarked hollow ring. Still honours text / colours /
  * variants so demos stay useful without the env flag.
  */
-const PlaceholderRoundelSvg = ({
+/** Filled-disc stand-in — also used by the dev trademark modal. */
+export const PlaceholderRoundelSvg = ({
   variant,
   text,
   ringColor,
@@ -598,98 +581,6 @@ const PlaceholderRoundelSvg = ({
   return <RoundelFrame className={className}>{svg}</RoundelFrame>;
 };
 
-const RoundelTrademarkModal = ({
-  className,
-  ...props
-}: TfLRoundelProps) => {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger
-            className={cn(
-              ROUNDEL_FRAME_CLASS,
-              "cursor-help",
-              className,
-            )}
-            // span (not button) so this stays valid inside links / other controls
-            render={
-              <span
-                role="button"
-                tabIndex={0}
-                aria-label="TfL roundel placeholder — trademark notice"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setOpen(true);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") return;
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setOpen(true);
-                }}
-              />
-            }
-          >
-            <PlaceholderRoundelSvg
-              {...props}
-              framed={false}
-              className="size-full"
-            />
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[14rem]">
-            Trademark placeholder. Click for details.
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md" showCloseButton>
-          <DialogHeader>
-            <DialogTitle>Trademark placeholder</DialogTitle>
-            <DialogDescription>
-              The TfL roundel is a registered trademark. This library ships a
-              filled, rounded stand-in by default so demos stay safe.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3 text-sm text-muted-foreground">
-            <p>
-              Opting in with{" "}
-              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground">
-                NEXT_PUBLIC_ALLOW_TFL_ROUNDEL=true
-              </code>{" "}
-              means <em className="text-foreground">your</em> app accepts
-              trademark responsibility for showing the real mark.
-            </p>
-            <p>
-              For licensing, logo requests, and design rules, use TfL&apos;s
-              own brand guidance — not this package.
-            </p>
-          </div>
-
-          <DialogFooter className="gap-2 sm:justify-between">
-            <DialogClose render={<Button variant="outline" />}>
-              Close
-            </DialogClose>
-            <a
-              href={TFL_BRAND_LINKS.usingBrandIp}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cn(buttonVariants())}
-            >
-              TfL brand IP guide
-            </a>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-};
-
 /**
  * Env-gated TfL roundel.
  *
@@ -700,7 +591,7 @@ const RoundelTrademarkModal = ({
  *
  * Without the flag, a filled-disc + rounded-bar placeholder of the same size
  * is shown (still respects `text` / colours / variants). In development only,
- * hover/click opens a short trademark notice.
+ * hover/click opens a short trademark notice (client island).
  *
  * @example
  * ```tsx
@@ -743,7 +634,15 @@ export const TfLRoundel = ({
   }
 
   if (isDevelopment()) {
-    return <RoundelTrademarkModal {...shared} />;
+    return (
+      <RoundelTrademarkModal className={className}>
+        <PlaceholderRoundelSvg
+          {...shared}
+          framed={false}
+          className="size-full"
+        />
+      </RoundelTrademarkModal>
+    );
   }
 
   return <PlaceholderRoundelSvg {...shared} />;

@@ -22,19 +22,26 @@ export const DEFAULT_CYCLE_HIRE_DOCK_IDS = [
 
 type SegmentKind = "standard" | "eBike" | "empty" | "broken";
 
-const buildSegments = (
+type OccupancySegment = {
+  kind: SegmentKind;
+  count: number;
+};
+
+const buildOccupancySegments = (
   counts: ReturnType<typeof getDockCounts>,
   showBroken: boolean,
-): SegmentKind[] => {
+): OccupancySegment[] => {
   const { standardBikes, eBikes, emptyDocks, brokenDocks } = counts;
-  return [
-    ...Array.from({ length: standardBikes }, () => "standard" as const),
-    ...Array.from({ length: eBikes }, () => "eBike" as const),
-    ...Array.from({ length: emptyDocks }, () => "empty" as const),
-    ...(showBroken
-      ? Array.from({ length: brokenDocks }, () => "broken" as const)
-      : []),
-  ];
+  const segments: OccupancySegment[] = [];
+  if (standardBikes > 0) {
+    segments.push({ kind: "standard", count: standardBikes });
+  }
+  if (eBikes > 0) segments.push({ kind: "eBike", count: eBikes });
+  if (emptyDocks > 0) segments.push({ kind: "empty", count: emptyDocks });
+  if (showBroken && brokenDocks > 0) {
+    segments.push({ kind: "broken", count: brokenDocks });
+  }
+  return segments;
 };
 
 const segmentFillClass = (kind: SegmentKind) => {
@@ -108,7 +115,7 @@ export const CycleHireDockRow = ({
     );
   }
 
-  const segments = buildSegments(counts, showBroken);
+  const segments = buildOccupancySegments(counts, showBroken);
   const showBrokenCount = showBroken && brokenDocks > 0;
 
   const ariaParts = [
@@ -119,7 +126,9 @@ export const CycleHireDockRow = ({
   ].filter(Boolean);
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
+    <div
+      className={cn("flex flex-col gap-2", className)}
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h3 className="text-sm font-semibold text-foreground">{dock.name}</h3>
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -139,10 +148,11 @@ export const CycleHireDockRow = ({
         role="img"
         aria-label={`${dock.name}: ${ariaParts.join(", ")}`}
       >
-        {segments.map((kind, index) => (
+        {segments.map((segment) => (
           <div
-            key={`${dock.id}-${index}`}
-            className={cn("min-w-0 flex-1", segmentFillClass(kind))}
+            key={`${dock.id}-${segment.kind}`}
+            className={cn("min-w-0", segmentFillClass(segment.kind))}
+            style={{ flexGrow: segment.count, flexBasis: 0 }}
           />
         ))}
       </div>

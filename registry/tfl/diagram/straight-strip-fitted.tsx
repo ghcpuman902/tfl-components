@@ -71,8 +71,9 @@ export const StraightStripFitted = ({
     return () => observer.disconnect();
   }, []);
 
-  const colWidthUnits = horizontalDiagramMetrics(labelPlacement).colWidthUnits;
-  const colWidthPxApprox = DIAGRAM_BASELINE.horizontal * 0.85 * colWidthUnits;
+  const m = horizontalDiagramMetrics(labelPlacement);
+  const colWidthPxApprox =
+    DIAGRAM_BASELINE.horizontal * 0.85 * m.colWidthUnits;
 
   const selfScale =
     width > 0 && stations.length > 0
@@ -88,21 +89,20 @@ export const StraightStripFitted = ({
         }
   ) as CSSProperties;
 
-  const m = horizontalDiagramMetrics(labelPlacement);
-  const maxConnections = stations.reduce(
-    (n, s) =>
-      Math.max(
-        n,
-        (s.connections ?? []).filter((c) => c.id !== "national-rail").length,
-      ),
-    0,
-  );
+  const maxConnections = stations.reduce((n, s) => {
+    let count = 0;
+    for (const c of s.connections ?? []) {
+      if (c.id !== "national-rail") count += 1;
+    }
+    return Math.max(n, count);
+  }, 0);
   const connectionBand =
     maxConnections > 0
       ? `calc(${m.flagHeight} * ${maxConnections})`
       : undefined;
   const totalWidth = `calc(${m.colWidth} * ${stations.length})`;
 
+  const forcedIds = forceLabelIds ? new Set(forceLabelIds) : null;
   const labelIndexes =
     width > 0
       ? selectFittedLabelIndexes(
@@ -111,15 +111,15 @@ export const StraightStripFitted = ({
           forceLabelIds,
           colWidthPxApprox * fitScale,
         )
-      : new Set([
-          0,
-          stations.length - 1,
-          ...(forceLabelIds
-            ? stations.flatMap((s, i) =>
-                forceLabelIds.includes(s.id) ? [i] : [],
-              )
-            : []),
-        ]);
+      : (() => {
+          const show = new Set<number>([0, stations.length - 1]);
+          if (forcedIds) {
+            stations.forEach((s, i) => {
+              if (forcedIds.has(s.id)) show.add(i);
+            });
+          }
+          return show;
+        })();
 
   return (
     <div
@@ -161,6 +161,7 @@ export const StraightStripFitted = ({
               colWidth={m.colWidth}
               outOfUse={stationOutOfUse[index] ?? false}
               labelPlacement={labelPlacement}
+              metrics={m}
             />
           ))}
         </ol>

@@ -34,6 +34,7 @@ type MapProps = {
 type MarkerEntry = {
   marker: maplibregl.Marker;
   root: Root;
+  dock: CycleHireDock & { lat: number; lon: number };
 };
 
 /** Defer createRoot unmount — sync unmount during React render/cleanup races. */
@@ -153,34 +154,54 @@ export const CycleHireDocksMap = ({
 
     let cancelled = false;
 
-    const clearMarkers = () => {
-      for (const entry of markersRef.current) {
-        disposeMarkerEntry(entry);
-      }
-      markersRef.current = [];
-    };
-
     const syncMarkers = () => {
       if (cancelled) return;
-      clearMarkers();
 
       const located = docks.filter(hasCoordinates);
-      if (located.length === 0) return;
+      const nextById = new Map(located.map((dock) => [dock.id, dock]));
+      const prevById = new Map(
+        markersRef.current.map((entry) => [entry.dock.id, entry]),
+      );
+
+      for (const [id, entry] of prevById) {
+        if (!nextById.has(id)) {
+          disposeMarkerEntry(entry);
+          markersRef.current = markersRef.current.filter(
+            (item) => item.dock.id !== id,
+          );
+        }
+      }
 
       const bounds = new maplibregl.LngLatBounds();
+      const nextEntries: MarkerEntry[] = [];
 
       for (const dock of located) {
-        const el = document.createElement("div");
-        const root = createRoot(el);
-        root.render(<DockMapPin dock={dock} size={markerSize} />);
-
-        const marker = new maplibregl.Marker({ element: el, anchor: "top" })
-          .setLngLat([dock.lon, dock.lat])
-          .addTo(map);
-
-        markersRef.current.push({ marker, root });
+        const existing = prevById.get(dock.id);
+        if (existing) {
+          const moved =
+            existing.dock.lat !== dock.lat || existing.dock.lon !== dock.lon;
+          if (moved) {
+            existing.marker.setLngLat([dock.lon, dock.lat]);
+          }
+          // Re-render in place — avoid createRoot teardown on every data tick.
+          existing.root.render(<DockMapPin dock={dock} size={markerSize} />);
+          existing.dock = dock;
+          nextEntries.push(existing);
+        } else {
+          const el = document.createElement("div");
+          const root = createRoot(el);
+          root.render(<DockMapPin dock={dock} size={markerSize} />);
+          const marker = new maplibregl.Marker({ element: el, anchor: "top" })
+            .setLngLat([dock.lon, dock.lat])
+            .addTo(map);
+          nextEntries.push({ marker, root, dock });
+        }
         bounds.extend([dock.lon, dock.lat]);
       }
+
+      markersRef.current = nextEntries;
+
+      if (located.length === 0) return;
 
       if (located.length === 1) {
         map.easeTo({
@@ -207,7 +228,6 @@ export const CycleHireDocksMap = ({
     return () => {
       cancelled = true;
       map.off("load", syncMarkers);
-      clearMarkers();
     };
   }, [docks, markerSize, fitPadding]);
 

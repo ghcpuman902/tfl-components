@@ -1,5 +1,3 @@
-"use client";
-
 import { StationName } from "@/components/tfl/station-name";
 import { OUT_OF_USE_LINE_COLOR } from "@/components/tfl/diagram/straight-strip-parts";
 import {
@@ -197,7 +195,7 @@ export const BranchStrip = ({
                 <StationName
                   name={point.name}
                   lines={labelLines}
-                  layout="auto"
+                  layout={labelLines?.length ? "fixed" : "auto"}
                   maxWidth={labelMaxWidth}
                   maxLines={2}
                   allowScaleDown={false}
@@ -224,7 +222,7 @@ export const BranchStrip = ({
                 <StationName
                   name={point.name}
                   lines={labelLines}
-                  layout="auto"
+                  layout={labelLines?.length ? "fixed" : "auto"}
                   maxWidth={verticalLabelWidth}
                   maxLines={2}
                   allowScaleDown={false}
@@ -258,7 +256,7 @@ export const BranchStrip = ({
               <StationName
                 name={point.name}
                 lines={labelLines}
-                layout="auto"
+                layout={labelLines?.length ? "fixed" : "auto"}
                 maxWidth={verticalLabelWidth}
                 maxLines={2}
                 allowScaleDown={false}
