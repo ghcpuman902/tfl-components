@@ -54,7 +54,7 @@ async function RouteFromParams({ searchParams }: PageProps) {
       <div>
         <h2
           data-line={lineId}
-          className="tfl-dark-line-text text-2xl font-bold text-[var(--line-color)]"
+          className="tfl-title tfl-dark-line-text text-2xl text-[var(--line-color)]"
         >
           {line?.name ?? lineId} route
         </h2>

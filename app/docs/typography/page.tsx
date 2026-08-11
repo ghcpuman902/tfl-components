@@ -15,7 +15,7 @@ import { getDocsEntry, getUsedBySlugs } from "@/lib/docs-catalog";
 export const metadata: Metadata = {
   title: "Typography",
   description:
-    "Safe defaults for type — licensed Johnston / TfL Go vs open alternatives.",
+    "Font profiles and legible defaults for open and licensed TfL interfaces.",
 };
 
 export default function FoundationsTypographyPage() {
@@ -33,88 +33,72 @@ export default function FoundationsTypographyPage() {
             Purpose
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Transport UI carries a lot of type at small sizes — stop names,
-            platform chips, countdowns. What keeps it legible is case,
-            tracking, how text sits inside a chip, and when to abbreviate —
-            not which specific typeface you use. Installing a component does{" "}
-            <strong className="font-medium text-foreground">not</strong>{" "}
-            grant a licence to use Johnston or other protected transport
-            typefaces.
+            TfL typography guidance assumes a typeface with Johnston’s weights
+            and spacing. Most people installing these components will not have
+            that font, so the default must also work with an open alternative.
+            This foundation separates those two cases instead of forcing one
+            set of metrics onto every font.
           </p>
         </section>
 
         <section className="space-y-2">
-          <h2 id="safe-default" className="scroll-m-20 text-lg font-semibold">
-            Safe default
+          <h2 id="profiles" className="scroll-m-20 text-lg font-semibold">
+            Profiles used by this site
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            This site demos with{" "}
+            The public site defaults to{" "}
             <strong className="font-medium text-foreground">
               Hammersmith One
             </strong>{" "}
-            (open Google Font) as a geometric-sans stand-in via{" "}
-            <code className="text-xs">next/font</code>. Prefer your own
-            product typeface, or request an official licensed typeface
-            through the relevant operator’s font process.
+            through <code className="text-xs">next/font</code>. It is free and
+            visually related to Johnston, but it has only one real weight:
+            400. Titles therefore use that weight without synthetic bold or
+            tight tracking.
           </p>
           <div className="space-y-3 border-t border-border pt-4">
-            <div>
-              <p className="text-2xl leading-tight font-normal text-foreground">
-                Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu
-                Vv Ww Xx Yy Zz
-              </p>
-              <p className="mt-1 text-xs font-medium text-muted-foreground">
-                Regular · <code className="text-[11px]">font-normal</code>
-              </p>
-            </div>
-            <div className="border-t border-border pt-3">
-              <p className="text-2xl leading-tight font-semibold text-foreground">
-                Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu
-                Vv Ww Xx Yy Zz
-              </p>
-              <p className="mt-1 text-xs font-medium text-muted-foreground">
-                Semibold · <code className="text-[11px]">font-semibold</code>
-              </p>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Hammersmith One only ships one weight (400); the browser
-              synthesises the row above. Switch to P22 Underground below and
-              it stops faking it — 600 is a real DemiBold cut.
-            </p>
-          </div>
-          <div className="space-y-3 border-t border-border pt-4">
             <p className="max-w-prose text-muted-foreground">
-              The closest a public typeface gets to TfL’s own Johnston is{" "}
+              This development site can also load{" "}
               <strong className="font-medium text-foreground">
                 P22 Underground
               </strong>
-              , a commercial Adobe Fonts family. It needs an Adobe Fonts
-              subscription with this kit added, so it stays opt-in rather
-              than bundled: the switch below changes the whole site’s body
-              font, but only renders P22 if your own browser has that kit
-              loaded.
+              , a commercial Johnston-like family from Adobe Fonts. The server
+              enables this option only when{" "}
+              <code className="text-xs">
+                NEXT_PUBLIC_ADOBE_FONTS_KIT_ID
+              </code>{" "}
+              is configured. The switch changes this site, not the components
+              people install.
             </p>
             <FontPreferenceSwitch />
           </div>
         </section>
 
-        <section id="scale" className="scroll-mt-20 space-y-4">
+        <section id="component-contract" className="scroll-mt-20 space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
-            Weight and size
+            Component contract
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            One scale, used consistently, reads as a system. Mixing ad-hoc
-            sizes and weights per component is what makes a UI feel
-            unbranded.
+            Installable components neither load a font nor inspect the
+            browser. They inherit the host’s font family and read two optional
+            variables for prominent titles.
+          </p>
+          <p className="max-w-prose text-muted-foreground">
+            Without overrides,{" "}
+            <code className="text-xs">--tfl-title-weight</code> falls back to
+            400 and <code className="text-xs">--tfl-title-tracking</code> to
+            normal spacing. A host using licensed Johnston or a tested
+            compatible face can set them to 600 and{" "}
+            <code className="text-xs">-0.025em</code>. P22 is compatible with
+            those metrics, but it is not the official TfL typeface.
           </p>
           <dl className="grid gap-x-6 gap-y-4 border-t border-border pt-4 sm:grid-cols-[10rem_1fr]">
-            <dt className="text-sm font-medium text-foreground">Heading</dt>
+            <dt className="text-sm font-medium text-foreground">Title</dt>
             <dd>
-              <p className="text-2xl font-bold tracking-tight text-foreground">
+              <p className="tfl-title text-2xl text-foreground">
                 Victoria line
               </p>
               <code className="text-[11px] text-muted-foreground">
-                text-2xl font-bold tracking-tight
+                tfl-title text-2xl
               </code>
             </dd>
             <dt className="text-sm font-medium text-foreground">Body</dt>
@@ -142,18 +126,19 @@ export default function FoundationsTypographyPage() {
 
         <section id="tracking" className="scroll-mt-20 space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
-            Tracking: caps vs sentence case
+            Tracking follows the font
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Adjust letter-spacing on{" "}
-            <strong className="font-medium text-foreground">uppercase</strong>{" "}
-            labels freely — every glyph is the same cap height, so tightened
-            or widened tracking still separates cleanly. Leave{" "}
-            <strong className="font-medium text-foreground">
-              lowercase / sentence case
-            </strong>{" "}
-            body text at normal tracking; the same adjustment collides
-            ascenders, descenders, and round letterforms.
+            Tight title tracking is not a universal TfL effect. It works with
+            Johnston-compatible proportions and a real display weight; on
+            Hammersmith One plus synthetic bold it crowds sentence-case text.
+            Body copy stays at normal tracking in both profiles.
+          </p>
+          <p className="max-w-prose text-muted-foreground">
+            Uppercase operational labels are a separate case. Their uniform
+            cap height tolerates deliberate spacing changes better than
+            lowercase text, but the value should still be tested in the
+            chosen font. Do not apply a title token to ordinary copy.
           </p>
           <TrackingRuleDemo />
         </section>
@@ -163,44 +148,43 @@ export default function FoundationsTypographyPage() {
             Text inside chips
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Chips (platform numbers, route codes) centre text with a
-            cap-height text-box trim instead of padding, so the glyph — not
-            the box — sits on the optical centre line. Keep the label’s real
-            casing; don’t paint it uppercase on top of the trim.
+            Platform and route chips keep the casing supplied by their data.
+            They use cap-height trimming to centre the visible glyphs, rather
+            than forcing uppercase or adding uneven padding. This remains
+            stable when the host changes font.
           </p>
           <ChipTextDemo />
         </section>
 
         <section id="minimum-size" className="scroll-mt-20 space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
-            How small before you abbreviate
+            Fit before shrinking
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Shrinking type is a fit strategy, not a floor-less one. This
-            library’s scale-down policy stops at{" "}
-            <code className="text-xs">STATION_LABEL_MIN_SCALE = 0.75</code> —
-            roughly a 16px label bottoming out at 12px. Below that, swap in an
-            abbreviation (or a different treatment entirely) rather than
-            continuing to shrink text that’s already hard to read.
+            Station names may wrap, abbreviate, or scale, but scaling stops at{" "}
+            <code className="text-xs">STATION_LABEL_MIN_SCALE = 0.75</code>.
+            A nominal 16px label therefore bottoms out near 12px. Below that,
+            abbreviate or change the layout instead of making the text harder
+            to read.
           </p>
           <MinimumSizeDemo />
           <p className="max-w-prose text-sm text-muted-foreground">
-            This is the same policy behind{" "}
+            The{" "}
             <Link
               href="/docs/station-name-labels"
               className="text-foreground underline-offset-4 hover:underline"
             >
               Station labels
-            </Link>
-            , where it also handles wrapping, find, copy, and screen readers
-            for real station names. Tune it live in the{" "}
+            </Link>{" "}
+            component applies this policy while preserving find, copy, and
+            accessible names. Use the{" "}
             <Link
               href="/tools/typography"
               className="text-foreground underline-offset-4 hover:underline"
             >
               Station typography
             </Link>{" "}
-            tool.
+            tool to test real names at different widths.
           </p>
         </section>
 
@@ -209,15 +193,18 @@ export default function FoundationsTypographyPage() {
             Licensing
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            See{" "}
+            Installing these components grants no right to use Johnston, TfL
+            Go, or other protected typefaces. Use Hammersmith One, supply your
+            own product font, or follow TfL’s font request process when the
+            work qualifies. See{" "}
             <Link
               href="/docs/tfl-licensing"
               className="text-primary underline-offset-4 hover:underline"
             >
               Licensing & brand use
             </Link>{" "}
-            for the full distinction between line colours, protected marks,
-            and licensed typefaces.
+            for the wider distinction between type, colours, and protected
+            marks.
           </p>
         </section>
       </article>

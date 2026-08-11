@@ -229,7 +229,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "typography",
     title: "Typography",
     description:
-      "Safe defaults for type — licensed Johnston / TfL Go vs open alternatives.",
+      "Font profiles and legible defaults for open and licensed TfL interfaces.",
     group: "foundations",
     kind: "page",
     href: "/docs/typography",

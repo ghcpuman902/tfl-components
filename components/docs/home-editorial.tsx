@@ -127,7 +127,7 @@ async function HomeBusAndCycleHirePanel() {
 
       <h2
         className={cn(
-          "mt-[var(--arrivals-row)] flex min-w-0 items-center gap-x-2 text-3xl font-bold leading-none text-foreground",
+          "tfl-title mt-[var(--arrivals-row)] flex min-w-0 items-center gap-x-2 text-3xl leading-none text-foreground",
           ARRIVALS_TILE_CLASS,
         )}
       >

@@ -18,7 +18,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       return (
         <h1
           id={id}
-          className="scroll-m-20 text-3xl font-bold"
+          className="tfl-title scroll-m-20 text-3xl"
         >
           <a href={`#${id}`} className={headingLinkClass}>
             {children}

@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  startTransition,
   useContext,
   useEffect,
   useState,
@@ -15,7 +16,6 @@ const STORAGE_KEY = "tfl-font-pref";
 type FontPreferenceContextValue = {
   font: FontPreference;
   setFont: (font: FontPreference) => void;
-  /** Whether an Adobe Fonts kit was configured server-side (`NEXT_PUBLIC_ADOBE_FONTS_KIT_ID`). */
   adobeFontsConfigured: boolean;
 };
 
@@ -23,39 +23,51 @@ const FontPreferenceContext = createContext<FontPreferenceContextValue | null>(
   null,
 );
 
-const applyFontAttribute = (font: FontPreference) => {
-  if (font === "p22") {
+const applyFontAttributes = (
+  font: FontPreference,
+  adobeFontsConfigured: boolean,
+) => {
+  document.documentElement.removeAttribute("data-tfl-type-profile");
+
+  if (font === "p22" && adobeFontsConfigured) {
     document.documentElement.setAttribute("data-font", "p22");
-  } else {
-    document.documentElement.removeAttribute("data-font");
+    document.documentElement.setAttribute(
+      "data-tfl-type-profile",
+      "johnston-compatible",
+    );
+    return;
   }
+
+  document.documentElement.removeAttribute("data-font");
 };
 
 /**
  * Site-wide body font switch (default Hammersmith One vs Adobe Fonts P22
- * Underground), persisted to localStorage. Applies a `data-font` attribute
- * on `<html>` so `--font-sans` — and everything that inherits it — follows,
- * without waiting for a client re-render on every route.
+ * Underground), persisted to localStorage.
  */
 export const FontPreferenceProvider = ({
   children,
+  adobeFontsConfigured,
 }: {
   children: ReactNode;
+  adobeFontsConfigured: boolean;
 }) => {
   const [font, setFontState] = useState<FontPreference>("default");
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored === "p22") {
-      setFontState("p22");
-      applyFontAttribute("p22");
-    }
-  }, []);
+    const initialFont =
+      stored === "p22" && adobeFontsConfigured ? "p22" : "default";
+    startTransition(() => setFontState(initialFont));
+    applyFontAttributes(initialFont, adobeFontsConfigured);
+  }, [adobeFontsConfigured]);
 
   const setFont = (next: FontPreference) => {
-    setFontState(next);
-    applyFontAttribute(next);
-    window.localStorage.setItem(STORAGE_KEY, next);
+    const selectedFont =
+      next === "p22" && !adobeFontsConfigured ? "default" : next;
+    setFontState(selectedFont);
+    applyFontAttributes(selectedFont, adobeFontsConfigured);
+    window.localStorage.setItem(STORAGE_KEY, selectedFont);
   };
 
   return (
@@ -63,9 +75,7 @@ export const FontPreferenceProvider = ({
       value={{
         font,
         setFont,
-        adobeFontsConfigured: Boolean(
-          process.env.NEXT_PUBLIC_ADOBE_FONTS_KIT_ID,
-        ),
+        adobeFontsConfigured,
       }}
     >
       {children}

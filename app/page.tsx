@@ -21,7 +21,7 @@ export default function HomePage() {
             </figure>
 
             <div className="flex min-w-0 flex-col gap-8 md:col-span-6 md:h-[min(66.6667svh,40rem)] md:justify-between md:gap-10 lg:col-span-7">
-              <h1 className="text-5xl font-bold tracking-tight text-foreground md:text-6xl lg:text-7xl">
+              <h1 className="tfl-title text-5xl text-foreground md:text-6xl lg:text-7xl">
                 tfl-components
               </h1>
               <div className="space-y-6 md:space-y-8">

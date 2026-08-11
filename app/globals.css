@@ -59,7 +59,20 @@ html[data-font="p22"] {
       system-ui, sans-serif;
 }
 
+html[data-tfl-type-profile="johnston-compatible"] {
+    --tfl-title-weight: 600;
+    --tfl-title-tracking: -0.025em;
+}
+
+.tfl-title {
+    font-weight: var(--tfl-title-weight, 400);
+    letter-spacing: var(--tfl-title-tracking, 0);
+    font-synthesis: none;
+}
+
 :root {
+    --tfl-title-weight: 400;
+    --tfl-title-tracking: 0;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -179,6 +192,27 @@ html[data-font="p22"] {
   }
   *::-webkit-scrollbar-corner {
     background: transparent;
+  }
+
+  /* Feedback modal: reserve both gutters, thinner thumb, transparent track. */
+  [data-feedback-dialog] {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--foreground) 28%, transparent)
+      transparent;
+  }
+  [data-feedback-dialog]::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  [data-feedback-dialog]::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  [data-feedback-dialog]::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklch, var(--foreground) 28%, transparent);
+    border-radius: 9999px;
+  }
+  [data-feedback-dialog]::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklch, var(--foreground) 42%, transparent);
   }
 }
 

@@ -28,7 +28,7 @@ const hammersmith = Hammersmith_One({
 const adobeFontsKitId = process.env.NEXT_PUBLIC_ADOBE_FONTS_KIT_ID;
 
 /** Apply stored font preference before paint to avoid a Hammersmith → P22 flash. */
-const fontPreferenceScript = `(function(){try{var p=localStorage.getItem("tfl-font-pref");if(p==="p22")document.documentElement.setAttribute("data-font","p22");}catch(e){}})();`;
+const fontPreferenceScript = `(function(){try{if(localStorage.getItem("tfl-font-pref")==="p22"){document.documentElement.setAttribute("data-font","p22");document.documentElement.setAttribute("data-tfl-type-profile","johnston-compatible");}}catch(e){}})();`;
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],
@@ -61,19 +61,25 @@ export default function RootLayout({
         hammersmith.variable,
       )}
     >
-      <script
-        dangerouslySetInnerHTML={{ __html: fontPreferenceScript }}
-      />
-      {adobeFontsKitId ? (
-        <link
-          rel="stylesheet"
-          href={`https://use.typekit.net/${adobeFontsKitId}.css`}
-          precedence="default"
-        />
-      ) : null}
+      <head>
+        {adobeFontsKitId ? (
+          <>
+            <script
+              dangerouslySetInnerHTML={{ __html: fontPreferenceScript }}
+            />
+            <link
+              rel="stylesheet"
+              href={`https://use.typekit.net/${adobeFontsKitId}.css`}
+              precedence="default"
+            />
+          </>
+        ) : null}
+      </head>
       <body>
         <ThemeProvider>
-          <FontPreferenceProvider>
+          <FontPreferenceProvider
+            adobeFontsConfigured={Boolean(adobeFontsKitId)}
+          >
             <CodeCopyDelegator />
             <TooltipProvider>
               <AppChrome>{children}</AppChrome>

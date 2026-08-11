@@ -22,6 +22,19 @@ Theme variables are defined in `app/globals.css`. Dark mode is class-based via `
 - **Do not** download or redistribute TfL’s Johnston typeface. Prefer your own product font. To licence Johnston, use [TfL font requests](https://tfl.gov.uk/info-for/business-and-advertisers/font-requests?intcmp=5840). Alternatives: [Hammersmith One](https://fonts.google.com/specimen/Hammersmith+One) or [P22 Underground](https://fonts.adobe.com/fonts/p22-underground) (Adobe Fonts).
 - Use `text-sm` / `text-xs` for secondary metadata, not as the default for main content.
 
+### Title profiles
+
+Hammersmith One has only a 400 cut. It is the public default, so titles default to weight `400`, normal tracking, and no synthetic bold. Licensed Johnston and tested Johnston-compatible faces can opt into weight `600` and `-0.025em` tracking.
+
+Use the semantic title metrics instead of pairing `font-bold` with `tracking-tight`:
+
+```css
+--tfl-title-weight: 400;
+--tfl-title-tracking: 0;
+```
+
+Installable components read those inherited variables with the same safe fallbacks. They do not load a font or infer which font the host uses. A host that supplies compatible font metrics can override both variables on any wrapper; P22 Underground is an alternative, not an authentic TfL typeface.
+
 ### Station label breaks (for agents and consumers)
 
 Use `StationName` / `formatStationLabel` — never ad-hoc `<br>` or CSS wrapping for diagram names.

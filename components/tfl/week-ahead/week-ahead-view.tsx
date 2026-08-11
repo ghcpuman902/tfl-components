@@ -76,7 +76,7 @@ export const WeekAheadShell = ({ days, children }: ShellProps) => {
         <div className="space-y-3">
           <h1
             id="week-ahead-heading"
-            className="text-3xl font-bold text-foreground sm:text-4xl"
+            className="tfl-title text-3xl text-foreground sm:text-4xl"
           >
             This week ahead
           </h1>

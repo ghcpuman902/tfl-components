@@ -13,6 +13,7 @@ import { APP_VERSION_LABEL } from "@/lib/version";
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
 import { UNDERGROUND_LINE_COLOURS } from "@/lib/tfl/brand-colours";
 import type { RoundelPreset } from "@/lib/tfl/roundel-presets";
+import { FeedbackDialog } from "@/components/docs/feedback-dialog";
 import {
   Sidebar,
   SidebarContent,
@@ -238,14 +239,17 @@ export const DocsSidebar = () => {
         ) : null}
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border px-2 py-3">
-        <a
-          href={`https://github.com/ghcpuman902/tfl-components/releases/tag/${APP_VERSION_LABEL}`}
-          className="rounded-md px-2 py-1.5 text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {APP_VERSION_LABEL}
-        </a>
+        <div className="flex items-center justify-between gap-2">
+          <FeedbackDialog />
+          <a
+            href={`https://github.com/ghcpuman902/tfl-components/releases/tag/${APP_VERSION_LABEL}`}
+            className="rounded-md px-2 py-1.5 text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {APP_VERSION_LABEL}
+          </a>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

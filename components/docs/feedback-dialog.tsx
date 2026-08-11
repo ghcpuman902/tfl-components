@@ -1,0 +1,682 @@
+"use client";
+
+import { useCallback, useId, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
+import { domToBlob } from "modern-screenshot";
+import {
+  BugIcon,
+  GitPullRequestIcon,
+  CircleDotIcon,
+  ImagePlusIcon,
+  MessageCircleIcon,
+  MessageSquarePlusIcon,
+  NotepadTextIcon,
+  XIcon,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  buildBugTemplate,
+  FEEDBACK_COMPONENT_OPTIONS,
+  parseBugTemplate,
+  suggestComponentForPage,
+} from "@/lib/feedback/bug-template";
+import {
+  HONEYPOT_FIELD,
+  LOADED_AT_FIELD,
+  MAX_SCREENSHOT_BYTES,
+} from "@/lib/feedback/constants";
+import {
+  buildGitHubIssueUrl,
+  buildGitHubPrUrl,
+} from "@/lib/feedback/github";
+import { isAllowedScreenshotType } from "@/lib/feedback/schema";
+import { APP_VERSION_LABEL } from "@/lib/version";
+
+/** Square attach slot — matches Send button height so the row never shifts. */
+const ATTACH_SLOT = "size-11";
+
+type Step = "form" | "done";
+type FeedbackKind = "bug" | "suggestion";
+
+type ScreenshotState = {
+  blob: Blob;
+  previewUrl: string;
+} | null;
+
+const captureViewport = async (): Promise<ScreenshotState> => {
+  try {
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const blob = await domToBlob(document.documentElement, {
+      width,
+      height,
+      scale: Math.min(1, 1280 / Math.max(width, 1)),
+      quality: 0.72,
+      type: "image/jpeg",
+      features: {
+        restoreScrollPosition: true,
+      },
+      style: {
+        transform: `translate(${-scrollX}px, ${-scrollY}px)`,
+        overflow: "hidden",
+      },
+      filter: (node) => {
+        if (!(node instanceof Element)) return true;
+        if (node.closest("[data-feedback-dialog]")) return false;
+        if (node.getAttribute("aria-hidden") === "true") return false;
+        return true;
+      },
+    });
+
+    if (!blob || blob.size === 0 || blob.size > MAX_SCREENSHOT_BYTES) {
+      return null;
+    }
+
+    return { blob, previewUrl: URL.createObjectURL(blob) };
+  } catch {
+    return null;
+  }
+};
+
+const revokePreview = (state: ScreenshotState) => {
+  if (state?.previewUrl) URL.revokeObjectURL(state.previewUrl);
+};
+
+const FormField = ({
+  label,
+  htmlFor,
+  optional,
+  description,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  optional?: boolean;
+  description?: string;
+  children: ReactNode;
+}) => (
+  <div className="flex flex-col gap-1.5">
+    <label htmlFor={htmlFor} className="text-sm font-medium text-foreground">
+      {label}
+      {optional ? (
+        <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+          optional
+        </span>
+      ) : null}
+    </label>
+    {description ? (
+      <p className="text-xs text-muted-foreground">{description}</p>
+    ) : null}
+    {children}
+  </div>
+);
+
+export const FeedbackDialog = () => {
+  const pathname = usePathname();
+  const titleId = useId();
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<Step>("form");
+  const [screenshot, setScreenshot] = useState<ScreenshotState>(null);
+  const [capturing, setCapturing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [kind, setKind] = useState<FeedbackKind>("bug");
+  const [loadedAt, setLoadedAt] = useState(0);
+  const [pageMeta, setPageMeta] = useState({ url: "", title: "" });
+
+  const [freeform, setFreeform] = useState(false);
+  const [bugDescription, setBugDescription] = useState("");
+  const [bugSteps, setBugSteps] = useState("");
+  const [bugComponent, setBugComponent] = useState("");
+  const [bugFreeformText, setBugFreeformText] = useState("");
+  const [suggestionText, setSuggestionText] = useState("");
+  const [email, setEmail] = useState("");
+
+  const resetState = useCallback(() => {
+    setStep("form");
+    setKind("bug");
+    setSubmitting(false);
+    setCapturing(false);
+    setFormError(null);
+    setLoadedAt(0);
+    setPageMeta({ url: "", title: "" });
+    setFreeform(false);
+    setBugDescription("");
+    setBugSteps("");
+    setBugComponent("");
+    setBugFreeformText("");
+    setSuggestionText("");
+    setEmail("");
+    setScreenshot((prev) => {
+      revokePreview(prev);
+      return null;
+    });
+  }, []);
+
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
+        setOpen(false);
+        resetState();
+        return;
+      }
+
+      void (async () => {
+        setCapturing(true);
+        const title = document.title;
+        const path = window.location.pathname;
+        setPageMeta({
+          url: window.location.href,
+          title,
+        });
+        setBugComponent(suggestComponentForPage(path, title));
+        setLoadedAt(Date.now());
+        const shot = await captureViewport();
+        setScreenshot(shot);
+        setCapturing(false);
+        setStep("form");
+        setKind("bug");
+        setOpen(true);
+      })();
+    },
+    [resetState],
+  );
+
+  const handleRemoveScreenshot = () => {
+    setScreenshot((prev) => {
+      revokePreview(prev);
+      return null;
+    });
+  };
+
+  const handleAttachImage = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!isAllowedScreenshotType(file.type) || file.size > MAX_SCREENSHOT_BYTES) {
+      toast.error("Use a JPEG, PNG, or WebP under 1.5MB.");
+      return;
+    }
+
+    setScreenshot((prev) => {
+      revokePreview(prev);
+      return { blob: file, previewUrl: URL.createObjectURL(file) };
+    });
+  };
+
+  const handleKindChange = (value: string | number | null) => {
+    if (value !== "bug" && value !== "suggestion") return;
+    setKind(value);
+    setFormError(null);
+  };
+
+  const handleToggleFreeform = (checked: boolean) => {
+    if (checked) {
+      setBugFreeformText(
+        buildBugTemplate(bugDescription, bugSteps, bugComponent),
+      );
+    } else {
+      const parsed = parseBugTemplate(bugFreeformText);
+      setBugDescription(parsed.description);
+      setBugSteps(parsed.steps);
+      if (parsed.component) {
+        setBugComponent(parsed.component);
+      }
+    }
+    setFreeform(checked);
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting) return;
+
+    const message =
+      kind === "bug"
+        ? freeform
+          ? bugFreeformText.trim()
+          : buildBugTemplate(bugDescription, bugSteps, bugComponent).trim()
+        : suggestionText.trim();
+
+    const requiredMissing =
+      kind === "bug"
+        ? freeform
+          ? !bugFreeformText.trim()
+          : !bugDescription.trim()
+        : !suggestionText.trim();
+
+    if (requiredMissing) {
+      setFormError(
+        kind === "bug"
+          ? "Tell us what happened."
+          : "Let us know what's on your mind.",
+      );
+      return;
+    }
+    setFormError(null);
+
+    const data = new FormData();
+    data.set("kind", kind);
+    data.set("message", message);
+    data.set("email", email);
+    data.set("pageUrl", pageMeta.url || window.location.href);
+    data.set("pageTitle", pageMeta.title || document.title);
+    data.set("appVersion", APP_VERSION_LABEL);
+    data.set(LOADED_AT_FIELD, String(loadedAt || Date.now()));
+    data.set(HONEYPOT_FIELD, "");
+
+    if (screenshot) {
+      data.set(
+        "screenshot",
+        new File([screenshot.blob], "feedback-screenshot.jpg", {
+          type: screenshot.blob.type || "image/jpeg",
+        }),
+      );
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        body: data,
+      });
+      const result = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        error?: string;
+      } | null;
+
+      if (!response.ok || !result?.ok) {
+        toast.error(result?.error ?? "Could not send feedback.");
+        setSubmitting(false);
+        return;
+      }
+
+      setStep("done");
+      toast.success("Thanks — feedback sent.");
+    } catch {
+      toast.error("Could not send feedback. Check your connection.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const issueUrl = buildGitHubIssueUrl({
+    pageUrl: pageMeta.url || pathname,
+    pageTitle: pageMeta.title,
+  });
+  const prUrl = buildGitHubPrUrl();
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger
+        render={
+          <button
+            type="button"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            aria-label="Send feedback"
+          />
+        }
+      >
+        <MessageSquarePlusIcon className="size-3.5 shrink-0" aria-hidden />
+        Feedback
+      </DialogTrigger>
+
+      <DialogContent
+        data-feedback-dialog=""
+        showCloseButton={false}
+        className="max-h-[min(90svh,42rem)] gap-0 overflow-y-auto p-0 sm:max-w-md scrollbar-gutter-stable"
+        aria-labelledby={titleId}
+      >
+        <DialogClose
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="absolute top-2 right-2 z-10"
+              aria-label="Close feedback"
+            />
+          }
+        >
+          <XIcon />
+          <span className="sr-only">Close</span>
+        </DialogClose>
+
+        <div className="flex flex-col gap-4 p-4 pr-[calc(1rem-4px)]">
+          <DialogHeader className="gap-1.5 pr-8">
+            <DialogTitle id={titleId}>Feedback</DialogTitle>
+            {step === "done" ? (
+              <DialogDescription>
+                Got it. Thanks for helping improve TfL Components.
+              </DialogDescription>
+            ) : (
+              <DialogDescription className="sr-only">
+                Send private feedback or open a GitHub issue or pull request.
+              </DialogDescription>
+            )}
+          </DialogHeader>
+
+          {capturing ? (
+            <p className="text-sm text-muted-foreground" aria-live="polite">
+              Capturing the page…
+            </p>
+          ) : null}
+
+          {step === "form" ? (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Hello! If you are comfortable with GitHub, you can{" "}
+                <a
+                  href={issueUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline font-medium text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <CircleDotIcon
+                    className="mr-1 inline size-3.5 -translate-y-[0.1lh] align-text-bottom"
+                    aria-hidden
+                  />
+                  open an issue
+                </a>{" "}
+                or{" "}
+                <a
+                  href={prUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline font-medium text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <GitPullRequestIcon
+                    className="mr-1 inline size-3.5 -translate-y-[0.1lh] align-text-bottom"
+                    aria-hidden
+                  />
+                  submit a PR
+                </a>
+                . Otherwise:
+              </p>
+
+              <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                <Tabs
+                  value={kind}
+                  onValueChange={handleKindChange}
+                  className="gap-3"
+                >
+                  <TabsList className="grid h-9 w-full grid-cols-2">
+                    <TabsTrigger value="bug" className="gap-1.5">
+                      <BugIcon className="size-3.5" aria-hidden />
+                      Report a bug
+                    </TabsTrigger>
+                    <TabsTrigger value="suggestion" className="gap-1.5">
+                      <MessageCircleIcon className="size-3.5" aria-hidden />
+                      Say hi
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="bug" className="mt-0 flex flex-col gap-3">
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <NotepadTextIcon
+                            className="size-3.5 shrink-0 text-muted-foreground"
+                            aria-hidden
+                          />
+                          <span className="text-xs text-muted-foreground">
+                            Paste as one note instead
+                          </span>
+                        </div>
+                        <Switch
+                          size="sm"
+                          checked={freeform}
+                          onCheckedChange={handleToggleFreeform}
+                          aria-label="Switch to plain text mode"
+                        />
+                      </div>
+
+                      {freeform ? (
+                        <FormField
+                          label="Bug report"
+                          htmlFor="feedback-bug-freeform"
+                        >
+                          <Textarea
+                            id="feedback-bug-freeform"
+                            rows={8}
+                            value={bugFreeformText}
+                            onChange={(event) =>
+                              setBugFreeformText(event.target.value)
+                            }
+                            maxLength={4000}
+                          />
+                        </FormField>
+                      ) : (
+                        <>
+                          <FormField
+                            label="What happened, and what did you expect instead?"
+                            htmlFor="feedback-bug-description"
+                          >
+                            <Textarea
+                              id="feedback-bug-description"
+                              rows={3}
+                              placeholder="e.g. the arrivals board clips on narrow screens; I expected it to wrap."
+                              value={bugDescription}
+                              onChange={(event) =>
+                                setBugDescription(event.target.value)
+                              }
+                              maxLength={2000}
+                            />
+                          </FormField>
+
+                          <FormField
+                            label="Steps to reproduce"
+                            htmlFor="feedback-bug-steps"
+                            optional
+                          >
+                            <Textarea
+                              id="feedback-bug-steps"
+                              rows={3}
+                              placeholder={
+                                "1. Go to ...\n2. Click ...\n3. See ..."
+                              }
+                              value={bugSteps}
+                              onChange={(event) =>
+                                setBugSteps(event.target.value)
+                              }
+                              maxLength={2000}
+                            />
+                          </FormField>
+
+                          <FormField
+                            label="Component or page"
+                            htmlFor="feedback-bug-component"
+                            optional
+                          >
+                            <Combobox
+                              items={[...FEEDBACK_COMPONENT_OPTIONS]}
+                              inputValue={bugComponent}
+                              onInputValueChange={(value) => {
+                                setBugComponent(String(value).slice(0, 200));
+                              }}
+                              onValueChange={(value) => {
+                                if (typeof value === "string") {
+                                  setBugComponent(value.slice(0, 200));
+                                }
+                              }}
+                              openOnInputClick
+                              modal={false}
+                            >
+                              <ComboboxInput
+                                id="feedback-bug-component"
+                                placeholder="Start typing or pick a page…"
+                                className="w-full"
+                                showClear={bugComponent.length > 0}
+                              />
+                              <ComboboxContent className="z-[200]">
+                                <ComboboxEmpty>
+                                  No match — keep your text
+                                </ComboboxEmpty>
+                                <ComboboxList>
+                                  {(item) => (
+                                    <ComboboxItem key={item} value={item}>
+                                      {item}
+                                    </ComboboxItem>
+                                  )}
+                                </ComboboxList>
+                              </ComboboxContent>
+                            </Combobox>
+                          </FormField>
+                        </>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent
+                      value="suggestion"
+                      className="mt-0 flex flex-col gap-3"
+                    >
+                      <FormField
+                        label="What's on your mind?"
+                        htmlFor="feedback-suggestion"
+                      >
+                        <Textarea
+                          id="feedback-suggestion"
+                          rows={10}
+                          className="min-h-40"
+                          placeholder="What worked well, what was frustrating, or the one change that would help most."
+                          value={suggestionText}
+                          onChange={(event) =>
+                            setSuggestionText(event.target.value)
+                          }
+                          maxLength={4000}
+                        />
+                      </FormField>
+                    </TabsContent>
+                </Tabs>
+
+                <FormField
+                  label="Can we follow up?"
+                  htmlFor="feedback-email"
+                  optional
+                  description="Only used if we need to ask about this."
+                >
+                  <Input
+                    id="feedback-email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    maxLength={254}
+                  />
+                </FormField>
+
+                {formError ? (
+                  <p className="text-sm text-destructive" role="alert">
+                    {formError}
+                  </p>
+                ) : null}
+
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute left-[-9999px] h-0 w-0 overflow-hidden opacity-0"
+                >
+                  <label>
+                    Company website
+                    <input
+                      type="text"
+                      name={HONEYPOT_FIELD}
+                      tabIndex={-1}
+                      autoComplete="off"
+                      defaultValue=""
+                    />
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className={`relative ${ATTACH_SLOT} shrink-0`}>
+                    {screenshot ? (
+                      <>
+                        <div className="overflow-hidden rounded-md border border-border bg-muted">
+                          {/* eslint-disable-next-line @next/next/no-img-element -- blob preview */}
+                          <img
+                            src={screenshot.previewUrl}
+                            alt="Screenshot attached to this feedback"
+                            className={`block ${ATTACH_SLOT} object-cover object-top`}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveScreenshot}
+                          aria-label="Remove screenshot"
+                          className="absolute -top-1.5 -right-1.5 inline-flex size-5 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-sm ring-1 ring-border hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <XIcon className="size-3" aria-hidden />
+                        </button>
+                      </>
+                    ) : (
+                      <label
+                        className={`flex ${ATTACH_SLOT} cursor-pointer items-center justify-center rounded-md border border-dashed border-border bg-muted/40 text-muted-foreground transition-colors hover:border-foreground/30 hover:bg-muted hover:text-foreground focus-within:outline-none focus-within:ring-2 focus-within:ring-ring`}
+                      >
+                        <ImagePlusIcon className="size-4" aria-hidden />
+                        <span className="sr-only">Attach image</span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="sr-only"
+                          onChange={handleAttachImage}
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={submitting}
+                    className="min-h-11 min-w-0 flex-1"
+                  >
+                    {submitting ? "Sending…" : "Send feedback"}
+                  </Button>
+                </div>
+              </form>
+            </>
+          ) : null}
+
+          {step === "done" ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-muted-foreground" aria-live="polite">
+                Your note is in my inbox
+                {screenshot ? ", with the page screenshot" : ""}.
+              </p>
+              <DialogClose
+                render={<Button variant="outline" className="min-h-11" />}
+              >
+                Close
+              </DialogClose>
+            </div>
+          ) : null}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};

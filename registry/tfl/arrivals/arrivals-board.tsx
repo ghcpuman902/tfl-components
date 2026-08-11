@@ -108,6 +108,8 @@ const ROW_RULE_CLASS =
 
 /** Line/route brand bar thickness — painted inside the tile via border-box. */
 const LINE_BAR_BORDER_CLASS = "border-b-4";
+const TITLE_CLASS =
+  "[font-synthesis:none] [font-weight:var(--tfl-title-weight,400)] [letter-spacing:var(--tfl-title-tracking,0)]";
 
 const formatCountdown = (seconds?: number): string => {
   if (seconds === undefined || seconds < 0) return "-";
@@ -442,7 +444,7 @@ export const ArrivalsBoard = ({
           aria-hidden
         />
         <TitleTag
-          className="min-w-0 flex-1 text-3xl font-bold"
+          className={cn("min-w-0 flex-1 text-3xl", TITLE_CLASS)}
           aria-label={stopName}
         >
           <span className="block min-w-0" aria-hidden="true">
@@ -452,7 +454,7 @@ export const ArrivalsBoard = ({
               maxLines={1}
               allowAbbreviation
               allowScaleDown
-              className="justify-center font-bold leading-8"
+              className="justify-center leading-8"
             />
           </span>
         </TitleTag>

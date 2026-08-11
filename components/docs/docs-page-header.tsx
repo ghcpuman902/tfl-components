@@ -49,7 +49,7 @@ export const DocsPageHeader = ({ entry }: DocsPageHeaderProps) => {
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="tfl-title text-3xl text-foreground">
             {entry.title}
           </h1>
           <p className="mt-2 max-w-prose text-muted-foreground">
