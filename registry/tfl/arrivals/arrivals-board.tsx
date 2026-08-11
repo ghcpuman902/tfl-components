@@ -8,6 +8,10 @@ import { PlatformChip } from "@/components/tfl/arrivals/platform-chip";
 import { LineColorBar } from "@/components/tfl/brand/line-badge";
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
 import { StationName } from "@/components/tfl/station-name";
+import {
+  ARRIVALS_EMPTY_COPY,
+  type ArrivalsEmptyKind,
+} from "@/lib/tfl/arrivals-empty";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -45,9 +49,19 @@ export type ArrivalsBoardProps = {
   /** Semantic heading level for the stop name. Prefer `2` when embedded under a page `h1`. */
   headingLevel?: 1 | 2;
   loading?: boolean;
+  /**
+   * Fetch/render failure. Takes precedence over an empty list.
+   * Prefer a short human line — raw API strings read as broken UI.
+   */
   error?: string | null;
   /** Optional poll / refresh label (e.g. "Poll #3 · every 15s"). */
   statusLabel?: string;
+  /**
+   * Why the board has no rows when `error` is unset.
+   * Resolve in the app (`resolveArrivalsEmptyKind`) from clock / offline / variant.
+   */
+  emptyKind?: ArrivalsEmptyKind;
+  /** Override copy for `emptyKind`. Prefer setting `emptyKind` instead. */
   emptyMessage?: string;
   maxRows?: number;
   /**
@@ -385,7 +399,8 @@ export const ArrivalsBoard = ({
   loading = false,
   error = null,
   statusLabel,
-  emptyMessage = "No arrivals right now.",
+  emptyKind = "empty",
+  emptyMessage,
   maxRows = 16,
   variant = "rail",
 }: ArrivalsBoardProps) => {
@@ -398,6 +413,8 @@ export const ArrivalsBoard = ({
   const stopLetter =
     stopLetterProp?.trim().toUpperCase() ||
     (busBoard ? resolveBusStopLetter(limited) : null);
+  const emptyCopy = emptyMessage ?? ARRIVALS_EMPTY_COPY[emptyKind];
+  const showEmpty = !error && rows.length === 0 && !loading;
 
   if (loading && rows.length === 0 && !error) {
     return <ArrivalsBoardSkeleton />;
@@ -461,7 +478,7 @@ export const ArrivalsBoard = ({
       {error ? (
         <p
           className={cn(
-            "flex items-center text-sm text-destructive",
+            "flex items-center truncate text-sm text-destructive",
             TILE_CLASS,
           )}
           role="alert"
@@ -470,14 +487,15 @@ export const ArrivalsBoard = ({
         </p>
       ) : null}
 
-      {!error && rows.length === 0 && !loading ? (
+      {showEmpty ? (
         <p
           className={cn(
-            "flex items-center text-sm text-muted-foreground",
+            "flex items-center truncate text-sm text-muted-foreground",
             TILE_CLASS,
           )}
+          role="status"
         >
-          {emptyMessage}
+          {emptyCopy}
         </p>
       ) : null}
 

@@ -84,7 +84,9 @@ arrivals component.
 | `variant` | `"rail" \| "bus"` | Chip presentation. |
 | `stopName` | `string` | Board heading (e.g. Oxford Circus). Fits via abbr/scale — same policy as destinations. |
 | `stopLetter` | `string` | Bus stop letter — red circle next to the stop name. |
-| `loading` / `error` | … | Loading and error presentation. |
+| `loading` / `error` | … | Loading and error presentation. Prefer a short human `error` string. |
+| `emptyKind` | `"empty" \| "ended" \| "offline"` | Why there are no rows when `error` is unset. Resolve in the app (`resolveArrivalsEmptyKind`). |
+| `emptyMessage` | `string` | Optional copy override for `emptyKind`. |
 | `statusLabel` | `string` | Optional poll / refresh caption. |
 
 ## Data ownership

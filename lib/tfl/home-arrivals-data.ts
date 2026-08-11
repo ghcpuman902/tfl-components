@@ -1,6 +1,10 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { connection } from "next/server";
 import type { RealtimePrediction } from "tfl-ts";
+import {
+  resolveArrivalsEmptyKind,
+  type ArrivalsEmptyKind,
+} from "@/lib/tfl/arrivals-empty";
 import { getTflClient } from "@/lib/tfl/client";
 
 /** Tube / rail station for the homepage departures board. */
@@ -114,4 +118,34 @@ export const formatCacheAgeLabel = (fetchedAt: number, now: number): string => {
 export const readCacheAgeLabel = async (fetchedAt: number): Promise<string> => {
   await connection();
   return formatCacheAgeLabel(fetchedAt, Date.now());
+};
+
+const ARRIVALS_LOAD_ERROR = "Couldn't load arrivals.";
+
+/**
+ * Friendly board props for a cached arrivals payload. Owns `connection()` so
+ * empty-kind heuristics can read London local time without leaking into the
+ * static shell.
+ */
+export const readHomeArrivalsBoardState = async (
+  payload: CachedArrivalsPayload,
+  variant: "rail" | "bus" = "rail",
+): Promise<{
+  error: string | null;
+  emptyKind: ArrivalsEmptyKind;
+}> => {
+  await connection();
+  const nowMs = Date.now();
+  if (payload.error) {
+    return { error: ARRIVALS_LOAD_ERROR, emptyKind: "empty" };
+  }
+  return {
+    error: null,
+    emptyKind:
+      resolveArrivalsEmptyKind({
+        rowCount: payload.arrivals.length,
+        variant,
+        nowMs,
+      }) ?? "empty",
+  };
 };

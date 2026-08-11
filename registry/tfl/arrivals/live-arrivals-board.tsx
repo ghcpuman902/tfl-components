@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { RealtimePrediction } from "tfl-ts";
 import { ArrivalsBoard } from "@/components/tfl/arrivals/arrivals-board";
 import { getStopArrivalsAction } from "@/lib/tfl/live-arrivals-action";
+import { useArrivalsBoardUiState } from "@/lib/tfl/use-arrivals-board-ui-state";
 
 const DEFAULT_STOP_ID = "940GZZLUOXC";
 const POLL_MS = 15_000;
@@ -22,9 +23,10 @@ export const LiveArrivalsBoard = ({
   stopName?: string;
 }) => {
   const [data, setData] = useState<RealtimePrediction[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
+  const boardState = useArrivalsBoardUiState(data.length, fetchError, "rail");
 
   useEffect(() => {
     let cancelled = false;
@@ -35,15 +37,15 @@ export const LiveArrivalsBoard = ({
         const result = await getStopArrivalsAction(stopPointId);
         if (cancelled) return;
         if (!result.ok) {
-          setError(result.error);
+          setFetchError(result.error);
           setData([]);
         } else {
-          setError(null);
+          setFetchError(null);
           setData(result.arrivals);
           setTick((n) => n + 1);
         }
       } catch {
-        if (!cancelled) setError("Failed to load arrivals.");
+        if (!cancelled) setFetchError("Failed to load arrivals.");
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -64,7 +66,8 @@ export const LiveArrivalsBoard = ({
       data={data}
       stopName={stopName}
       loading={loading}
-      error={error}
+      error={boardState.error}
+      emptyKind={boardState.emptyKind}
       statusLabel={`Poll #${tick} · every ${POLL_MS / 1000}s`}
     />
   );

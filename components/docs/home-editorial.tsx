@@ -13,6 +13,7 @@ import {
   getCachedHomeBusArrivals,
   getCachedHomeRailArrivals,
   readCacheAgeLabel,
+  readHomeArrivalsBoardState,
 } from "@/lib/tfl/home-arrivals-data";
 import { getCachedHomeVictoriaStrip } from "@/lib/tfl/home-victoria-data";
 import { cn } from "@/lib/utils";
@@ -76,7 +77,10 @@ const BoardSkeleton = ({ dense = false }: { dense?: boolean }) => (
 
 async function HomeDeparturesPanel() {
   const payload = await getCachedHomeRailArrivals();
-  const ageLabel = await readCacheAgeLabel(payload.fetchedAt);
+  const [ageLabel, boardState] = await Promise.all([
+    readCacheAgeLabel(payload.fetchedAt),
+    readHomeArrivalsBoardState(payload, "rail"),
+  ]);
 
   return (
     <DemoFrame caption={["Cached TfL data", ageLabel]} style={ARRIVALS_RHYTHM}>
@@ -84,7 +88,8 @@ async function HomeDeparturesPanel() {
         data={payload.arrivals}
         stopName={payload.stopName}
         headingLevel={2}
-        error={payload.error ?? null}
+        error={boardState.error}
+        emptyKind={boardState.emptyKind}
         maxRows={10}
         variant="rail"
       />
@@ -97,9 +102,10 @@ async function HomeBusAndCycleHirePanel() {
     getCachedHomeBusArrivals(),
     getCachedHomeCycleHireDocks(),
   ]);
-  const ageLabel = await readCacheAgeLabel(
-    Math.max(bus.fetchedAt, cycle.fetchedAt),
-  );
+  const [ageLabel, busState] = await Promise.all([
+    readCacheAgeLabel(Math.max(bus.fetchedAt, cycle.fetchedAt)),
+    readHomeArrivalsBoardState(bus, "bus"),
+  ]);
 
   const cycleCaption = cycle.error
     ? (["Cached TfL data", ageLabel, "Unavailable"] as const)
@@ -113,7 +119,8 @@ async function HomeBusAndCycleHirePanel() {
         data={bus.arrivals}
         stopName={bus.stopName}
         headingLevel={2}
-        error={bus.error ?? null}
+        error={busState.error}
+        emptyKind={busState.emptyKind}
         maxRows={6}
         variant="bus"
       />

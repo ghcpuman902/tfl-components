@@ -89,34 +89,13 @@ export default function StationLabelsFoundationPage() {
               </li>
             ))}
           </ul>
-          <p className="max-w-prose text-sm text-muted-foreground">
-            See{" "}
-            <Link
-              href="/docs/station-name-labels"
-              className="text-foreground underline-offset-4 hover:underline"
-            >
-              StationName
-            </Link>{" "}
-            for implementation details.
-          </p>
         </section>
-   
 
         <section id="width" className="scroll-mt-20 space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
             Every screen size
           </h2>
           <StationWidthDemo />
-          <p className="max-w-prose text-sm text-muted-foreground">
-            Tune in{" "}
-            <Link
-              href="/tools/typography"
-              className="text-foreground underline-offset-4 hover:underline"
-            >
-              Station typography
-            </Link>
-            .
-          </p>
         </section>
 
         <section id="platforms" className="scroll-mt-20 space-y-4">
@@ -139,7 +118,8 @@ export default function StationLabelsFoundationPage() {
             Copy, find, and screen readers
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Layout can wrap or shorten. Identity does not.
+            The painted label can wrap or abbreviate. Find, copy, and screen
+            readers still get the full station name.
           </p>
           <CopyFindDemo />
         </section>
@@ -151,10 +131,10 @@ export default function StationLabelsFoundationPage() {
             <code className="text-xs">station-abbreviations</code> ·{" "}
             <code className="text-xs">station-label-find</code> ·{" "}
             <Link
-              href="/docs/station-name-labels"
+              href="/docs/platform-chip"
               className="text-foreground underline-offset-4 hover:underline"
             >
-              Station name
+              Platform chip
             </Link>
           </p>
         </section>

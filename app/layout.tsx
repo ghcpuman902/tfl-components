@@ -1,4 +1,5 @@
 import { ThemeProvider } from "@/components/theme-provider";
+import { FontPreferenceProvider } from "@/components/font-preference-provider";
 import { CodeCopyDelegator } from "@/components/docs/code-copy-delegator";
 import { AppChrome } from "@/components/docs/app-chrome";
 import { Toaster } from "@/components/ui/sonner";
@@ -9,11 +10,25 @@ import { cn } from "@/lib/utils";
 
 import "./globals.css";
 
+// next/font must own `--font-sans` on the <html> class — Tailwind's
+// `@theme inline { --font-sans: var(--font-sans) }` only works when a real
+// value is set that way. The P22 switch overrides the same variable under
+// `html[data-font="p22"]` (see globals.css).
 const hammersmith = Hammersmith_One({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-sans",
 });
+
+/**
+ * Adobe Fonts (Typekit) kit id for P22 Underground — a closer commercial
+ * match to TfL's Johnston than the open Hammersmith One default. Requires
+ * your own Adobe Fonts subscription; never hardcoded, see .env.example.
+ */
+const adobeFontsKitId = process.env.NEXT_PUBLIC_ADOBE_FONTS_KIT_ID;
+
+/** Apply stored font preference before paint to avoid a Hammersmith → P22 flash. */
+const fontPreferenceScript = `(function(){try{var p=localStorage.getItem("tfl-font-pref");if(p==="p22")document.documentElement.setAttribute("data-font","p22");}catch(e){}})();`;
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],
@@ -46,13 +61,25 @@ export default function RootLayout({
         hammersmith.variable,
       )}
     >
+      <script
+        dangerouslySetInnerHTML={{ __html: fontPreferenceScript }}
+      />
+      {adobeFontsKitId ? (
+        <link
+          rel="stylesheet"
+          href={`https://use.typekit.net/${adobeFontsKitId}.css`}
+          precedence="default"
+        />
+      ) : null}
       <body>
         <ThemeProvider>
-          <CodeCopyDelegator />
-          <TooltipProvider>
-            <AppChrome>{children}</AppChrome>
-            <Toaster />
-          </TooltipProvider>
+          <FontPreferenceProvider>
+            <CodeCopyDelegator />
+            <TooltipProvider>
+              <AppChrome>{children}</AppChrome>
+              <Toaster />
+            </TooltipProvider>
+          </FontPreferenceProvider>
         </ThemeProvider>
       </body>
     </html>

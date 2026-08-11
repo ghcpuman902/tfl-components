@@ -48,6 +48,17 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * next/font sets --font-sans on <html> (Hammersmith One). When the site-wide
+ * switch opts into Adobe Fonts, override the same variable. Keep string
+ * fallbacks so a missing Typekit face never invalidates the whole stack
+ * into the browser default.
+ */
+html[data-font="p22"] {
+    --font-sans: "p22-underground", "Hammersmith One", "Hammersmith One Fallback",
+      system-ui, sans-serif;
+}
+
 :root {
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);

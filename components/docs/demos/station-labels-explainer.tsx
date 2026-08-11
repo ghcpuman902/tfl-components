@@ -1,31 +1,22 @@
 "use client";
 
 import {
-  useEffect,
-  useRef,
   useState,
   type ClipboardEvent,
   type CSSProperties,
 } from "react";
-import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text";
+import { DocsResizeFrame } from "@/components/docs/docs-resize-frame";
 import { PlatformChip } from "@/components/tfl/arrivals/platform-chip";
 import { StationName } from "@/components/tfl/station-name";
 import { TFL_BLUE } from "@/lib/tfl/brand";
 import { STATION_ABBREVIATION_TABLE } from "@/lib/tfl/station-abbreviations";
 import { cn } from "@/lib/utils";
 
-const platformFormChipClassName = cn(
-  "inline-flex h-5 shrink-0 items-center justify-center bg-muted-foreground px-1.5 text-xs font-semibold tabular-nums text-background",
-  CHIP_CAP_TEXT_BOX_CLASS,
-);
-
 const WIDTH_DEMO_NAME = "London Liverpool Street";
 const COPY_NAME = "London Liverpool Street";
 const LABEL_FONT_SIZE = 16;
 
 const WIDTH_STEPS = [320, 220, 160, 120, 88] as const;
-
-const PLATFORM_FORMS = ["4", "P4", "Plat 4", "Platform 4"] as const;
 
 const ABBREVIATION_SAMPLES = [
   { name: "London Liverpool Street", due: "2 min" },
@@ -74,106 +65,93 @@ export const StationWidthDemo = () => (
   </ul>
 );
 
+/** Board widths that unlock Platform 4 / Plat 4 / P4 / 4. */
+const PLATFORM_FORM_WIDTHS = [560, 448, 320, 240] as const;
+
 export const PlatformWidthDemo = () => (
-  <div className="flex flex-wrap items-center gap-2">
-    {PLATFORM_FORMS.map((form) => (
-      <span
-        key={form}
-        className={platformFormChipClassName}
-        aria-label="Platform 4"
-      >
-        <span aria-hidden>{form}</span>
-      </span>
+  <ul className="flex flex-col gap-3">
+    {PLATFORM_FORM_WIDTHS.map((width) => (
+      <li key={width} className="flex items-center gap-3">
+        <span className="w-12 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+          {width}px
+        </span>
+        <div
+          className="@container/arrivals flex h-8 shrink-0 items-center overflow-x-auto"
+          style={{ width }}
+        >
+          <PlatformChip number="4" />
+        </div>
+      </li>
     ))}
-  </div>
+  </ul>
 );
 
-export const AbbreviationDemo = () => {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(280);
-
-  useEffect(() => {
-    const el = panelRef.current;
-    if (!el) return;
-
-    const observer = new ResizeObserver((entries) => {
-      const next = entries[0]?.contentRect.width;
-      if (next != null) setWidth(Math.round(next));
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div className="space-y-5">
-      <table className="w-auto text-left text-sm">
-        <thead>
-          <tr className="border-b border-border text-muted-foreground">
-            <th className="py-1.5 pr-6 font-medium">Full</th>
-            <th className="py-1.5 pr-6 font-medium">Short</th>
-            <th className="py-1.5 pr-6 font-medium tabular-nums">Stations</th>
-            <th className="py-1.5 font-medium">Examples</th>
+export const AbbreviationDemo = () => (
+  <div className="space-y-5">
+    <table className="w-auto text-left text-sm">
+      <thead>
+        <tr className="border-b border-border text-muted-foreground">
+          <th className="py-1.5 pr-6 font-medium">Full</th>
+          <th className="py-1.5 pr-6 font-medium">Short</th>
+          <th className="py-1.5 pr-6 font-medium tabular-nums">Stations</th>
+          <th className="py-1.5 font-medium">Examples</th>
+        </tr>
+      </thead>
+      <tbody>
+        {STATION_ABBREVIATION_TABLE.map((row) => (
+          <tr key={row.short} className="border-b border-border/60">
+            <td className="py-1.5 pr-6 text-foreground">{row.full}</td>
+            <td className="py-1.5 pr-6 font-medium text-foreground">
+              {row.short}
+            </td>
+            <td className="py-1.5 pr-6 tabular-nums text-foreground">
+              {row.count}
+            </td>
+            <td className="py-1.5 text-muted-foreground">
+              {row.examples.join(" · ")}
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {STATION_ABBREVIATION_TABLE.map((row) => (
-            <tr key={row.short} className="border-b border-border/60">
-              <td className="py-1.5 pr-6 text-foreground">{row.full}</td>
-              <td className="py-1.5 pr-6 font-medium text-foreground">
-                {row.short}
-              </td>
-              <td className="py-1.5 pr-6 tabular-nums text-foreground">
-                {row.count}
-              </td>
-              <td className="py-1.5 text-muted-foreground">
-                {row.examples.join(" · ")}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        ))}
+      </tbody>
+    </table>
 
-      <div className="space-y-2">
-        <div
-          ref={panelRef}
-          className="@container/arrivals w-72 min-w-30 max-w-full resize-x overflow-auto border border-border bg-background"
-          style={ARRIVALS_RHYTHM}
-        >
-          <ul>
-            {ABBREVIATION_SAMPLES.map((row, index) => (
-              <li
-                key={row.name}
-                className={cn(
-                  "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 px-2 text-sm",
-                  ARRIVALS_TILE,
-                  index < ABBREVIATION_SAMPLES.length - 1 && ARRIVALS_ROW_RULE,
-                )}
-              >
-                <PlatformChip number="4" />
-                <div className="min-w-0 overflow-hidden">
-                  <StationName
-                    name={row.name}
-                    layout="auto"
-                    maxLines={2}
-                    allowAbbreviation
-                    allowScaleDown
-                    className="font-medium text-foreground"
-                  />
-                </div>
-                <span className="shrink-0 font-semibold tabular-nums text-foreground">
-                  {row.due}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <p className="text-xs tabular-nums text-muted-foreground">
-          {width}px · resize to see it in action
-        </p>
-      </div>
-    </div>
-  );
-};
+    <DocsResizeFrame
+      defaultWidth={288}
+      minWidth={120}
+      className="@container/arrivals min-w-30"
+      style={ARRIVALS_RHYTHM}
+      captionSuffix=" · resize to see it in action"
+    >
+      <ul>
+        {ABBREVIATION_SAMPLES.map((row, index) => (
+          <li
+            key={row.name}
+            className={cn(
+              "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 px-2 text-sm",
+              ARRIVALS_TILE,
+              index < ABBREVIATION_SAMPLES.length - 1 && ARRIVALS_ROW_RULE,
+            )}
+          >
+            <PlatformChip number="4" />
+            <div className="min-w-0 overflow-hidden">
+              <StationName
+                name={row.name}
+                layout="auto"
+                maxLines={2}
+                allowAbbreviation
+                allowScaleDown
+                className="font-medium text-foreground"
+              />
+            </div>
+            <span className="shrink-0 font-semibold tabular-nums text-foreground">
+              {row.due}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </DocsResizeFrame>
+  </div>
+);
 
 const COPY_FIND_WIDTH = 88;
 

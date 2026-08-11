@@ -479,7 +479,9 @@ export const BusArrivals = () => {
             variant="bus"
             loading={loadingArrivals}
             error={
-              arrivalsResult?.ok === false ? arrivalsResult.error : null
+              arrivalsResult?.ok === false
+                ? "Couldn't load arrivals."
+                : null
             }
             emptyMessage="No buses due at this stop right now."
             maxRows={12}

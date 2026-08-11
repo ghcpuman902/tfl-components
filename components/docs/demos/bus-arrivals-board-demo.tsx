@@ -6,6 +6,7 @@ import type { RealtimePrediction } from "tfl-ts";
 import { ArrivalsBoard } from "@/components/tfl/arrivals/arrivals-board";
 import { DataSourceLabel } from "@/components/docs/data-source-label";
 import { getStopArrivalsAction } from "@/lib/tfl/live-arrivals-action";
+import { useArrivalsBoardUiState } from "@/lib/tfl/use-arrivals-board-ui-state";
 
 /** Matches homepage / docs get-data example (NaPTAN 490…G). */
 const BUS_STOP = {
@@ -22,9 +23,10 @@ const POLL_MS = 15_000;
  */
 export default function BusArrivalsBoardDemo() {
   const [data, setData] = useState<RealtimePrediction[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
+  const boardState = useArrivalsBoardUiState(data.length, fetchError, "bus");
 
   useEffect(() => {
     let cancelled = false;
@@ -35,15 +37,15 @@ export default function BusArrivalsBoardDemo() {
         const result = await getStopArrivalsAction(BUS_STOP.id);
         if (cancelled) return;
         if (!result.ok) {
-          setError(result.error);
+          setFetchError(result.error);
           setData([]);
         } else {
-          setError(null);
+          setFetchError(null);
           setData(result.arrivals);
           setTick((n) => n + 1);
         }
       } catch {
-        if (!cancelled) setError("Failed to load arrivals.");
+        if (!cancelled) setFetchError("Failed to load arrivals.");
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -82,9 +84,14 @@ export default function BusArrivalsBoardDemo() {
         stopLetter={BUS_STOP.stopLetter}
         variant="bus"
         loading={loading}
-        error={error}
+        error={boardState.error}
+        emptyKind={boardState.emptyKind}
+        emptyMessage={
+          boardState.emptyKind === "empty"
+            ? "No buses due at this stop right now."
+            : undefined
+        }
         statusLabel={`Poll #${tick} · every ${POLL_MS / 1000}s`}
-        emptyMessage="No buses due at this stop right now."
       />
     </div>
   );
