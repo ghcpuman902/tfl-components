@@ -207,7 +207,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "installation",
     title: "Installation",
     description:
-      "Add a board with the shadcn CLI, install tfl-ts, and set your TfL API keys.",
+      "Copy a board into your app with the shadcn CLI — what lands on disk, what still needs keys.",
     group: "start",
     kind: "page",
     href: "/docs/installation",

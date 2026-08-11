@@ -9,7 +9,7 @@ import { REGISTRY_BASE } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Installation",
   description:
-    "Add a TfL board with the shadcn CLI and configure your API keys.",
+    "Copy a board into your app with the shadcn CLI — what lands on disk, what still needs keys.",
 };
 
 export default async function DocsInstallationPage() {
@@ -26,7 +26,11 @@ export default async function DocsInstallationPage() {
             Quick install
           </h2>
           <p className="max-w-prose text-sm text-muted-foreground">
-            One primary path — Status board. Browse the rest on the{" "}
+            Status board first — one URL copies the board, brand helpers, and
+            colour tokens into your repo. Expect a dozen-plus files, a{" "}
+            <code className="text-xs">globals.css</code> update, and{" "}
+            <code className="text-xs">tfl-ts</code> as a dependency. More items
+            on the{" "}
             <Link
               href="/docs/components"
               className="text-foreground underline underline-offset-4"
