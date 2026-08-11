@@ -1,7 +1,5 @@
 "use client";
 
-import { CheckIcon, InfoIcon } from "lucide-react";
-
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   useFontPreference,
@@ -10,7 +8,6 @@ import {
 
 export const FontPreferenceSwitch = () => {
   const { font, setFont, adobeFontsConfigured } = useFontPreference();
-  const showDebugInfo = process.env.NODE_ENV === "development";
 
   return (
     <div className="space-y-4">
@@ -52,28 +49,6 @@ export const FontPreferenceSwitch = () => {
           P22 Underground
         </ToggleGroupItem>
       </ToggleGroup>
-      {showDebugInfo ? (
-        <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
-          {adobeFontsConfigured ? (
-            <>
-              <CheckIcon
-                className="mt-0.5 size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
-                strokeWidth={3}
-              />
-              Adobe Fonts kit configured.
-            </>
-          ) : (
-            <>
-              <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
-              P22 disabled:{" "}
-              <code className="font-mono text-[0.7rem]">
-                NEXT_PUBLIC_ADOBE_FONTS_KIT_ID
-              </code>{" "}
-              is not configured.
-            </>
-          )}
-        </p>
-      ) : null}
     </div>
   );
 };

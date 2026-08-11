@@ -11,6 +11,7 @@ import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
 import { RelationshipBadges } from "@/components/docs/relationship-badges";
 import { getDocsEntry, getUsedBySlugs } from "@/lib/docs-catalog";
+import { TFL_BRAND_LINKS } from "@/lib/tfl/brand";
 
 export const metadata: Metadata = {
   title: "Typography",
@@ -41,36 +42,48 @@ export default function FoundationsTypographyPage() {
           </p>
         </section>
 
-        <section className="space-y-2">
+        <section className="space-y-4">
           <h2 id="profiles" className="text-lg font-semibold">
             Profiles used by this site
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            The public site defaults to{" "}
+            Neither face below is Johnston.{" "}
             <strong className="font-medium text-foreground">
               Hammersmith One
             </strong>{" "}
-            through <code className="text-xs">next/font</code>. It is free and
-            visually related to Johnston, but it has only one real weight:
-            400. Titles therefore use that weight without synthetic bold or
-            tight tracking.
+            is free and safe to ship; it only has weight 400, so titles stay
+            regular with normal tracking.{" "}
+            <strong className="font-medium text-foreground">
+              P22 Underground
+            </strong>{" "}
+            is a closer commercial match and can use a real 600 weight with
+            tighter title tracking. Compare them side by side.
           </p>
-          <div className="space-y-3 border-t border-border pt-4">
-            <p className="max-w-prose text-muted-foreground">
-              This development site can also load{" "}
-              <strong className="font-medium text-foreground">
-                P22 Underground
-              </strong>
-              , a commercial Johnston-like family from Adobe Fonts. The server
-              enables this option only when{" "}
-              <code className="text-xs">
-                NEXT_PUBLIC_ADOBE_FONTS_KIT_ID
-              </code>{" "}
-              is configured. The switch changes this site, not the components
-              people install.
-            </p>
-            <FontPreferenceSwitch />
-          </div>
+          <FontPreferenceSwitch />
+          <p className="max-w-prose text-muted-foreground">
+            Johnston is TfL’s licensed typeface. Shipping an unlicensed copy,
+            or a scraped file that pretends to be it, is infringement. For a
+            legal closer look, licence{" "}
+            <a
+              href={TFL_BRAND_LINKS.p22UndergroundAdobe}
+              className="text-foreground underline-offset-4 hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              P22 Underground via Adobe Fonts
+            </a>
+            , or another commercial Johnston-like face you actually own. To use
+            Johnston itself on qualifying work, apply through{" "}
+            <a
+              href={TFL_BRAND_LINKS.fontRequests}
+              className="text-foreground underline-offset-4 hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              TfL font requests
+            </a>
+            .
+          </p>
         </section>
 
         <section id="component-contract" className="space-y-4">
@@ -194,17 +207,41 @@ export default function FoundationsTypographyPage() {
           </h2>
           <p className="max-w-prose text-muted-foreground">
             Installing these components grants no right to use Johnston, TfL
-            Go, or other protected typefaces. Use Hammersmith One, supply your
-            own product font, or follow TfL’s font request process when the
-            work qualifies. See{" "}
+            Go, or other protected typefaces. Ship{" "}
+            <a
+              href={TFL_BRAND_LINKS.hammersmithOne}
+              className="text-foreground underline-offset-4 hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Hammersmith One
+            </a>
+            , your own product font, or a licensed commercial stand-in such as{" "}
+            <a
+              href={TFL_BRAND_LINKS.p22UndergroundAdobe}
+              className="text-foreground underline-offset-4 hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              P22 Underground
+            </a>
+            . For Johnston on qualifying work, use{" "}
+            <a
+              href={TFL_BRAND_LINKS.fontRequests}
+              className="text-foreground underline-offset-4 hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              TfL font requests
+            </a>
+            . See{" "}
             <Link
               href="/docs/tfl-licensing"
               className="text-primary underline-offset-4 hover:underline"
             >
               Licensing & brand use
             </Link>{" "}
-            for the wider distinction between type, colours, and protected
-            marks.
+            for type, colours, and protected marks.
           </p>
         </section>
       </article>
