@@ -229,7 +229,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "typography",
     title: "Typography",
     description:
-      "Font profiles and legible defaults for open and licensed TfL interfaces.",
+      "TfL uses licensed Johnston. Compare Hammersmith One and P22 Underground for web interfaces.",
     group: "foundations",
     kind: "page",
     href: "/docs/typography",

@@ -1,54 +1,168 @@
 "use client";
 
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import type { CSSProperties } from "react";
 import {
   useFontPreference,
   type FontPreference,
 } from "@/components/font-preference-provider";
+import { cn } from "@/lib/utils";
+
+type FontProfile = {
+  id: FontPreference;
+  name: string;
+  description: string;
+  specimenClassName: string;
+  fontFamily: string;
+  titleSettings: string;
+  titleWeight: 400 | 600;
+  titleTracking: "0" | "-0.025em";
+};
+
+const FONT_PROFILES: readonly FontProfile[] = [
+  {
+    id: "default",
+    name: "Hammersmith One",
+    description:
+      "Free to use and the default for this site. Google Fonts has one real 400, so titles stay regular and track normally.",
+    specimenClassName:
+      "font-['Hammersmith_One',sans-serif] font-normal tracking-normal",
+    fontFamily:
+      '"Hammersmith One", "Hammersmith One Fallback", system-ui, sans-serif',
+    titleSettings: "400 / normal",
+    titleWeight: 400,
+    titleTracking: "0",
+  },
+  {
+    id: "p22",
+    name: "P22 Underground",
+    description:
+      "A closer Adobe Fonts alternative to Johnston. This repo uses 400 for reading text and 600 for prominent titles.",
+    specimenClassName:
+      "font-['p22-underground','Hammersmith_One',sans-serif] font-semibold tracking-tight",
+    fontFamily:
+      '"p22-underground", "Hammersmith One", "Hammersmith One Fallback", system-ui, sans-serif',
+    titleSettings: "600 / -0.025em",
+    titleWeight: 600,
+    titleTracking: "-0.025em",
+  },
+];
+
+const PreviewButton = ({
+  active,
+  disabled,
+  onClick,
+}: {
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    aria-pressed={active}
+    className={cn(
+      "shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      active
+        ? "bg-foreground text-background"
+        : "text-foreground hover:bg-muted",
+      "disabled:cursor-not-allowed disabled:opacity-50",
+    )}
+  >
+    {disabled ? "Adobe kit required" : active ? "Previewing this site" : "Preview this site"}
+  </button>
+);
 
 export const FontPreferenceSwitch = () => {
   const { font, setFont, adobeFontsConfigured } = useFontPreference();
 
   return (
-    <div className="space-y-4">
-      <div className="grid border-y border-border sm:grid-cols-2">
-        <figure className="space-y-1 py-4 sm:pr-6">
-          <figcaption className="text-xs text-muted-foreground">
-            Hammersmith One · 400 · normal tracking
-          </figcaption>
-          <p className="font-['Hammersmith_One',sans-serif] text-2xl font-normal tracking-normal [font-synthesis:none]">
-            Victoria line
-          </p>
-          <p className="font-['Hammersmith_One',sans-serif] text-sm [font-synthesis:none]">
-            Minor delays while we fix a signal fault.
-          </p>
-        </figure>
-        <figure className="space-y-1 border-t border-border py-4 sm:border-t-0 sm:border-l sm:pl-6">
-          <figcaption className="text-xs text-muted-foreground">
-            P22 Underground · 600 · tight tracking
-          </figcaption>
-          <p className="font-['p22-underground','Hammersmith_One',sans-serif] text-2xl font-semibold tracking-tight [font-synthesis:none]">
-            Victoria line
-          </p>
-          <p className="font-['p22-underground','Hammersmith_One',sans-serif] text-sm [font-synthesis:none]">
-            Minor delays while we fix a signal fault.
-          </p>
-        </figure>
-      </div>
-      <ToggleGroup
-        value={[font]}
-        onValueChange={(values) => {
-          const next = values[0] as FontPreference | undefined;
-          if (next) setFont(next);
-        }}
-        variant="outline"
-        aria-label="Site body font"
-      >
-        <ToggleGroupItem value="default">Hammersmith One</ToggleGroupItem>
-        <ToggleGroupItem value="p22" disabled={!adobeFontsConfigured}>
-          P22 Underground
-        </ToggleGroupItem>
-      </ToggleGroup>
+    <div className="space-y-14">
+      {FONT_PROFILES.map((profile) => {
+        const active = font === profile.id;
+        const unavailable = profile.id === "p22" && !adobeFontsConfigured;
+
+        return (
+          <figure
+            key={profile.id}
+            className="space-y-6"
+            style={
+              {
+                "--tfl-title-weight": profile.titleWeight,
+                "--tfl-title-tracking": profile.titleTracking,
+                fontFamily: profile.fontFamily,
+              } as CSSProperties
+            }
+          >
+            <figcaption className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className={cn("text-2xl text-foreground", profile.specimenClassName)}>
+                {profile.name}
+              </h3>
+              <PreviewButton
+                active={active}
+                disabled={unavailable}
+                onClick={() => setFont(profile.id)}
+              />
+            </figcaption>
+
+            <p className="max-w-prose text-muted-foreground">
+              {profile.description}
+            </p>
+
+            <div className={cn("grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem]", profile.specimenClassName)}>
+              <dl className="space-y-5">
+                <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4">
+                  <dt className="pt-1 text-xs font-normal tracking-normal text-muted-foreground">
+                    Title
+                  </dt>
+                  <dd className="space-y-1">
+                    <p className="tfl-title text-3xl text-foreground [font-synthesis:none]">
+                      Victoria line
+                    </p>
+                    <code className="block text-[11px] font-normal tracking-normal text-muted-foreground">
+                      tfl-title text-2xl
+                    </code>
+                  </dd>
+                </div>
+                <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4">
+                  <dt className="pt-0.5 text-xs font-normal tracking-normal text-muted-foreground">
+                    Body
+                  </dt>
+                  <dd className="space-y-1">
+                    <p className="text-base font-normal tracking-normal text-foreground [font-synthesis:none]">
+                      Minor delays while we fix a signal fault.
+                    </p>
+                    <code className="block text-[11px] font-normal tracking-normal text-muted-foreground">
+                      text-base font-normal
+                    </code>
+                  </dd>
+                </div>
+                <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4">
+                  <dt className="pt-0.5 text-xs font-normal tracking-normal text-muted-foreground">
+                    Secondary information
+                  </dt>
+                  <dd className="space-y-1">
+                    <p className="text-sm font-normal tracking-normal text-muted-foreground [font-synthesis:none]">
+                      Updated 2 minutes ago
+                    </p>
+                    <code className="block text-[11px] font-normal tracking-normal text-muted-foreground">
+                      text-sm text-muted-foreground
+                    </code>
+                  </dd>
+                </div>
+              </dl>
+
+              <pre className="overflow-x-auto font-mono text-[10px] leading-4 tracking-normal text-muted-foreground">
+                {`ROLE       TYPE                     SETTINGS
+title      tfl-title text-2xl       ${profile.titleSettings}
+body       text-base                400 / normal
+secondary  text-sm muted            400 / normal`}
+              </pre>
+            </div>
+          </figure>
+        );
+      })}
     </div>
   );
 };

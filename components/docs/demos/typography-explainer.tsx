@@ -139,10 +139,15 @@ export const ChipTextDemo = () => (
 );
 
 const MIN_SIZE_LABEL_FONT = 16;
-const MIN_SIZE_NAME = "Clapham Junction";
-const MIN_SIZE_DEFAULT_WIDTH = 100;
+const MIN_SIZE_NAME = "Caledonian Road & Barnsbury";
+const MIN_SIZE_DEFAULT_WIDTH = 220;
 
-type FormatReadout = { scale: number; abbreviated: boolean; fits: boolean };
+type FormatReadout = {
+  scale: number;
+  abbreviated: boolean;
+  fits: boolean;
+  label: string;
+};
 
 const readoutMessage = (
   readout: FormatReadout | null,
@@ -154,16 +159,22 @@ const readoutMessage = (
   if (readout.abbreviated) {
     return {
       good: true,
-      text: `Abbreviated to “Clapham Jct”, ${px}px — back to a comfortable size.`,
+      text: `Abbreviated to "${readout.label}" at ${px}px, back to a comfortable size.`,
     };
   }
   if (!allowsAbbreviation && readout.scale <= STATION_LABEL_MIN_SCALE) {
     return {
       good: false,
-      text: `Scaled to ${px}px (${Math.round(readout.scale * 100)}% of ${MIN_SIZE_LABEL_FONT}px) — at or past the floor. Stop shrinking; abbreviate instead.`,
+      text: `Scaled to ${px}px (${Math.round(readout.scale * 100)}% of ${MIN_SIZE_LABEL_FONT}px). This is at or past the floor. Stop shrinking and abbreviate.`,
     };
   }
-  return { good: true, text: `Full name, ${px}px — plenty of room.` };
+  if (readout.scale < 1) {
+    return {
+      good: true,
+      text: `Full name scaled to ${px}px. Drag narrower to see where it reaches the 12px floor.`,
+    };
+  }
+  return { good: true, text: `Full name at ${px}px. Plenty of room.` };
 };
 
 const MinSizeRow = ({
@@ -186,6 +197,7 @@ const MinSizeRow = ({
       scale: result.scale,
       abbreviated: result.abbreviated,
       fits: result.fits,
+      label: result.lines.join(" "),
     });
   }, []);
 
@@ -240,12 +252,12 @@ export const MinimumSizeDemo = () => (
   >
     <div className="space-y-4">
       <MinSizeRow
-        title="Keeps scaling (no abbreviation)"
+        title="Keeps shrinking without abbreviations"
         allowAbbreviation={false}
         minScale={0.4}
       />
       <MinSizeRow
-        title="Abbreviates at the floor"
+        title="Abbreviates at the 12px floor"
         allowAbbreviation
         minScale={STATION_LABEL_MIN_SCALE}
       />
