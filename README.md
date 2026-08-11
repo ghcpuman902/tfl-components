@@ -1,57 +1,22 @@
 # tfl-components
 
-React UI components and a shadcn registry for London transport boards, built on [`tfl-ts`](https://www.npmjs.com/package/tfl-ts).
+React UI for London transport boards, distributed as a [shadcn](https://ui.shadcn.com) registry on [`tfl-ts`](https://www.npmjs.com/package/tfl-ts).
 
-This is **not** an npm component package. You copy the source into your app:
+This is **not** an npm UI package. You copy source into your app.
+
+## Install components
+
+Source of truth for installable files: **[`registry/tfl/`](./registry/tfl/)** ([readme](./registry/tfl/README.md)).
 
 ```bash
 pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tube-status-board.json
+pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/arrivals-board.json
 pnpm dlx shadcn@latest add https://tfl-components.vercel.app/r/tfl-roundel.json
 ```
 
-The registry item declares `tfl-ts` as a dependency. Copied code reads `TFL_APP_ID` / `TFL_APP_KEY` from **your** environment.
+Registry items declare `tfl-ts` as a dependency. Copied code reads `TFL_APP_ID` / `TFL_APP_KEY` from **your** environment.
 
-## Live demo
-
-Home page is the live status board plus docs catalog: https://tfl-components.vercel.app
-
-Intended custom domain (needs GoDaddy DNS): `tfl.manglekuo.com`
-
-```
-CNAME  tfl  cname.vercel-dns.com
-```
-
-## Local setup
-
-```bash
-pnpm install
-cp .env.example .env.local   # or copy from tfl-ts if you already have keys
-# fill TFL_APP_ID / TFL_APP_KEY from https://api-portal.tfl.gov.uk/
-pnpm dev
-```
-
-Press `d` to toggle dark mode. Use the left sidebar (or `b`) to browse components.
-
-## Docs layout
-
-Frozen Stage 1 IA ([docs/TARGET_ARCHITECTURE.md](./docs/TARGET_ARCHITECTURE.md)):
-
-| Group | Role |
-|-------|------|
-| Start | Introduction, installation |
-| Explore | What TfL knows / relationships |
-| Interfaces | Data-aware embeddable boards |
-| Primitives | Lower-level visual control |
-| Foundations | Colours, identity, licensing |
-| Maps | Geographic vs schematic/network |
-| Tools | Playgrounds (inspect / tune / debug) |
-| Drafts | Incubation |
-
-Existing component docs still live under `/components/[slug]` and `/tools/[slug]` until bulk migration. New section indexes: `/explore`, `/interfaces`, `/primitives`, `/foundations`, `/maps`, `/maps/geographic`, `/maps/schematic`, `/tools`, `/drafts`.
-
-## Install targets (pre-1.0)
-
-Components install into nested folders:
+Install targets (pre-1.0):
 
 ```
 components/tfl/brand/…
@@ -61,16 +26,45 @@ components/tfl/diagram/…
 lib/tfl/…
 ```
 
-Import example:
-
 ```tsx
 import { TubeStatusBoard } from "@/components/tfl/status/tube-status-board"
 import { LineBadge } from "@/components/tfl/brand/line-badge"
 ```
 
-## Caching
+## Releases
 
-Status and browse data use Next.js Cache Components (`cacheComponents: true`) with `use cache` and ~60s / ~300s revalidate — not the old `export const revalidate` route segment config.
+Same GitHub repo, **two version tracks** ([docs/releases.md](./docs/releases.md)):
+
+| Track | Tags | Follow if you… |
+|-------|------|----------------|
+| Components | `v0.4.0`, … | Install from `/r/*.json` |
+| Web app | `web-v0.5.0`, … | Run or contribute to the docs/demo site |
+
+Changelog: [CHANGELOG.md](./CHANGELOG.md).
+
+## Docs / demo site
+
+Live site: https://tfl-components.vercel.app  
+Intended custom domain: `tfl.manglekuo.com` (`CNAME tfl → cname.vercel-dns.com`).
+
+The Next.js app in this repo is the developer environment (docs, demos, Blocks). It is **not** what the shadcn CLI copies. Prefer [`registry/tfl/`](./registry/tfl/) when browsing for installable code.
+
+### Local setup
+
+```bash
+pnpm install
+cp .env.example .env.local
+# fill TFL_APP_ID / TFL_APP_KEY from https://api-portal.tfl.gov.uk/
+pnpm dev
+```
+
+Press `d` for dark mode. Browse via the header (Docs · Components · Blocks · Tools).
+
+Frozen Stage 1 IA: [docs/TARGET_ARCHITECTURE.md](./docs/TARGET_ARCHITECTURE.md).
+
+### Caching
+
+Status and browse data use Next.js Cache Components (`cacheComponents: true`) with `use cache` and ~60s / ~300s revalidate.
 
 ## Branding and the roundel
 
@@ -83,9 +77,7 @@ Status and browse data use Next.js Cache Components (`cacheComponents: true`) wi
 NEXT_PUBLIC_ALLOW_TFL_ROUNDEL=true
 ```
 
-(Also accepts `VITE_ALLOW_TFL_ROUNDEL`.) Use a public-prefixed env var so SSR and the client agree — a bare `ALLOW_TFL_ROUNDEL` is server-only in Next.js and will hydrate incorrectly. Setting the flag shifts trademark responsibility to your application layer — this package only delivers the code.
-
-Once enabled, customise freely:
+(Also accepts `VITE_ALLOW_TFL_ROUNDEL`.) Use a public-prefixed env var so SSR and the client agree. Setting the flag shifts trademark responsibility to your application layer.
 
 ```tsx
 <TfLRoundel text="MY APP" ringColor="#E32017" barColor="#0019A8" />
@@ -95,11 +87,9 @@ Once enabled, customise freely:
 
 Mode presets and Wikimedia paths are exported as `ROUNDEL_PRESETS`, `ROUNDEL_LOGO_PATHS`, and `ROUNDEL_LOGO_SOURCES`. SVG files ship in `public/transit-logos/`.
 
-Brand helpers live in `@/lib/tfl/brand`: modal colours, Underground / Overground line colours, `getRoundelExclusion()`, font/do-not constants, and **line-strip geometry** (`LINE_DIAGRAM`, SVG shape components).
+Brand helpers live in `@/lib/tfl/brand`. Cropped line-diagram references are in `public/brand/line-diagram/`; source PDF in `reference/brand/`.
 
-Cropped references from *Line diagram standard* Issue 4 are in `public/brand/line-diagram/`; source PDF in `reference/brand/`. Demo: `/components/line-strip`.
-
-**Fonts:** this demo app uses [Hammersmith One](https://fonts.google.com/specimen/Hammersmith+One) as a Johnston-like stand-in. Do **not** download Johnston without a licence — [apply via TfL](https://tfl.gov.uk/info-for/business-and-advertisers/font-requests?intcmp=5840), or use Hammersmith One / [P22 Underground](https://fonts.adobe.com/fonts/p22-underground) (Adobe Fonts). Prefer your own product typeface in shipping apps.
+**Fonts:** the demo site may use Hammersmith One or Adobe Fonts P22 Underground as Johnston stand-ins. Do **not** download Johnston without a licence. Prefer your own product typeface in shipping apps.
 
 ## Rules
 
