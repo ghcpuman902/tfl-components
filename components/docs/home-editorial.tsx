@@ -12,6 +12,7 @@ import {
 import {
   getCachedHomeBusArrivals,
   getCachedHomeRailArrivals,
+  HOME_RAIL_LINES,
   readCacheAgeLabel,
   readHomeArrivalsBoardState,
 } from "@/lib/tfl/home-arrivals-data";
@@ -86,6 +87,7 @@ async function HomeDeparturesPanel() {
     <DemoFrame caption={["Cached TfL data", ageLabel]} style={ARRIVALS_RHYTHM}>
       <ArrivalsBoard
         data={payload.arrivals}
+        lines={HOME_RAIL_LINES}
         stopName={payload.stopName}
         headingLevel={2}
         error={boardState.error}

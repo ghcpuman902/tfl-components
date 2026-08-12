@@ -13,6 +13,13 @@ export const HOME_RAIL_STOP = {
   name: "Oxford Circus",
 } as const;
 
+/** Lines that serve {@link HOME_RAIL_STOP} — keeps empty sections stable on the board. */
+export const HOME_RAIL_LINES = [
+  { lineId: "bakerloo", lineName: "Bakerloo", modeName: "tube" },
+  { lineId: "central", lineName: "Central", modeName: "tube" },
+  { lineId: "victoria", lineName: "Victoria", modeName: "tube" },
+] as const;
+
 /**
  * Busy boardable bus stop at Trafalgar Square (NaPTAN 490…).
  * Chosen for a reliable, visually useful board without discovery UI.

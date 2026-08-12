@@ -8,8 +8,10 @@ import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
 import { StationName } from "@/components/tfl/station-name";
 import {
   ARRIVALS_EMPTY_COPY,
+  ARRIVALS_LINE_EMPTY_COPY,
   type ArrivalsEmptyKind,
 } from "@/lib/tfl/arrivals-empty";
+import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -24,12 +26,25 @@ export type ArrivalRow = RealtimePrediction & {
 
 export type ArrivalsBoardVariant = "rail" | "bus";
 
+/** Serving line/route identity for empty sections and stable membership. */
+export type ArrivalsBoardLine = {
+  lineId: string;
+  lineName: string;
+  modeName?: string;
+};
+
 export type ArrivalsBoardProps = {
   /**
    * Normalised arrivals from `tfl.stopPoint.getArrivals` (`RealtimePrediction[]`).
    * Missing/`undefined` treated as an empty list.
    */
   data?: readonly RealtimePrediction[] | readonly ArrivalRow[];
+  /**
+   * Optional serving lines/routes for this stop. Lines with no predictions still
+   * render (empty “No information” row) and sort below lines that have arrivals.
+   * Order in this array is ignored — board order uses `LINE_ORDER` / route name.
+   */
+  lines?: readonly ArrivalsBoardLine[];
   stopName: string;
   /**
    * @deprecated Dev/meta NaPTAN id — not shown in the board UI. Kept for call-site compat.
@@ -175,15 +190,6 @@ const boundSortKey = (label: string | null): number => {
   return idx === -1 ? BOUND_ORDER.length : idx;
 };
 
-const earliestSeconds = (
-  arrivals: readonly (RealtimePrediction | ArrivalRow)[],
-): number =>
-  Math.min(
-    ...arrivals.map((a) =>
-      a.timeToStation === undefined ? Number.POSITIVE_INFINITY : a.timeToStation,
-    ),
-  );
-
 type DirectionGroup = {
   label: string | null;
   arrivals: (RealtimePrediction | ArrivalRow)[];
@@ -197,9 +203,13 @@ type LineGroup = {
   directions: DirectionGroup[];
 };
 
+const lineHasInformation = (line: LineGroup): boolean =>
+  line.directions.some((direction) => direction.arrivals.length > 0);
+
 const groupArrivals = (
   rows: readonly (RealtimePrediction | ArrivalRow)[],
   variant: ArrivalsBoardVariant,
+  expectedLines: readonly ArrivalsBoardLine[] = [],
 ): LineGroup[] => {
   const byLine = new Map<
     string,
@@ -229,8 +239,30 @@ const groupArrivals = (
     });
   }
 
+  for (const expected of expectedLines) {
+    const key = expected.lineId || expected.lineName;
+    if (!key || byLine.has(key)) continue;
+    byLine.set(key, {
+      lineId: expected.lineId,
+      lineName: expected.lineName,
+      modeName: expected.modeName,
+      bus: variant === "bus",
+      arrivals: [],
+    });
+  }
+
   return [...byLine.values()]
     .map((line) => {
+      if (line.arrivals.length === 0) {
+        return {
+          lineId: line.lineId,
+          lineName: line.lineName,
+          modeName: line.modeName,
+          bus: line.bus,
+          directions: [{ label: null, arrivals: [] }],
+        };
+      }
+
       const byBound = new Map<string | null, (RealtimePrediction | ArrivalRow)[]>();
       for (const arrival of line.arrivals) {
         const bound = line.bus ? null : getCompassBound(arrival.platformName);
@@ -246,11 +278,7 @@ const groupArrivals = (
             (a, b) => (a.timeToStation ?? 0) - (b.timeToStation ?? 0),
           ),
         }))
-        .sort((a, b) => {
-          const boundDiff = boundSortKey(a.label) - boundSortKey(b.label);
-          if (boundDiff !== 0) return boundDiff;
-          return earliestSeconds(a.arrivals) - earliestSeconds(b.arrivals);
-        });
+        .sort((a, b) => boundSortKey(a.label) - boundSortKey(b.label));
 
       // Single null bucket → no direction headers (bus / unknown platforms).
       const onlyUngrouped =
@@ -266,11 +294,22 @@ const groupArrivals = (
           : directions,
       };
     })
-    .sort((a, b) => {
-      const aEarliest = earliestSeconds(a.directions.flatMap((d) => d.arrivals));
-      const bEarliest = earliestSeconds(b.directions.flatMap((d) => d.arrivals));
-      return aEarliest - bEarliest;
-    });
+    .sort((a, b) =>
+      compareArrivalsLines(
+        {
+          lineId: a.lineId,
+          lineName: a.lineName,
+          bus: a.bus,
+          hasInformation: lineHasInformation(a),
+        },
+        {
+          lineId: b.lineId,
+          lineName: b.lineName,
+          bus: b.bus,
+          hasInformation: lineHasInformation(b),
+        },
+      ),
+    );
 };
 
 /** Shared stop letter across bus predictions (TfL stop letter on the stop, not the vehicle). */
@@ -388,11 +427,13 @@ const ArrivalRowItem = ({
  * Fetching / polling / stop discovery belong outside this component.
  *
  * Rail: group by line (name + colour bar), then by compass bound; platform
- * number chip before destination. Bus: route chip per row; stop letter lives
- * on the board header.
+ * number chip before destination. Line sections keep `LINE_ORDER` (info-first),
+ * not soonest-train order. Bus: route chip per row; stop letter lives on the
+ * board header; routes sort by name, also info-first.
  */
 export const ArrivalsBoard = ({
   data,
+  lines: expectedLines,
   stopName,
   stopLetter: stopLetterProp,
   headingLevel = 1,
@@ -408,13 +449,14 @@ export const ArrivalsBoard = ({
   const TitleTag = headingLevel === 2 ? "h2" : "h1";
   const LineHeadingTag = headingLevel === 2 ? "h3" : "h2";
   const limited = rows.slice(0, maxRows);
-  const groups = groupArrivals(limited, variant);
+  const groups = groupArrivals(limited, variant, expectedLines ?? []);
   const busBoard = variant === "bus" || groups.some((g) => g.bus);
   const stopLetter =
     stopLetterProp?.trim().toUpperCase() ||
     (busBoard ? resolveBusStopLetter(limited) : null);
   const emptyCopy = emptyMessage ?? ARRIVALS_EMPTY_COPY[emptyKind];
-  const showEmpty = !error && rows.length === 0 && !loading;
+  // Board-level empty only when nothing to section — expected `lines` still paint.
+  const showEmpty = !error && !loading && groups.length === 0;
 
   if (loading && rows.length === 0 && !error) {
     return <ArrivalsBoardSkeleton />;
@@ -490,7 +532,7 @@ export const ArrivalsBoard = ({
       {showEmpty ? (
         <p
           className={cn(
-            "flex items-center truncate text-sm text-muted-foreground",
+            "flex items-center text-sm text-muted-foreground",
             TILE_CLASS,
           )}
           role="status"
@@ -506,6 +548,7 @@ export const ArrivalsBoard = ({
             !line.bus &&
             (line.modeName === "overground" ||
               line.modeName === "elizabeth-line");
+          const hasInfo = lineHasInformation(line);
 
           // Flat sequence so bound titles and arrival rows share one hairline weight.
           const items: Array<
@@ -515,23 +558,28 @@ export const ArrivalsBoard = ({
                 arrival: RealtimePrediction | ArrivalRow;
                 key: string;
               }
+            | { kind: "empty"; key: string }
           > = [];
-          for (const direction of line.directions) {
-            if (direction.label) {
-              items.push({
-                kind: "bound",
-                label: direction.label,
-                key: `bound-${direction.label}`,
-              });
-            }
-            for (const [index, arrival] of direction.arrivals.entries()) {
-              items.push({
-                kind: "arrival",
-                arrival,
-                key:
-                  arrival.id ??
-                  `${arrival.vehicleId ?? arrival.lineId}-${arrival.timeToStation}-${index}`,
-              });
+          if (!hasInfo) {
+            items.push({ kind: "empty", key: "empty" });
+          } else {
+            for (const direction of line.directions) {
+              if (direction.label) {
+                items.push({
+                  kind: "bound",
+                  label: direction.label,
+                  key: `bound-${direction.label}`,
+                });
+              }
+              for (const [index, arrival] of direction.arrivals.entries()) {
+                items.push({
+                  kind: "arrival",
+                  arrival,
+                  key:
+                    arrival.id ??
+                    `${arrival.vehicleId ?? arrival.lineId}-${arrival.timeToStation}-${index}`,
+                });
+              }
             }
           }
 
@@ -560,6 +608,7 @@ export const ArrivalsBoard = ({
                   className={cn(
                     "min-w-0 truncate text-base font-semibold leading-6 text-[var(--line-color)]",
                     !line.bus && "tfl-dark-line-text",
+                    !hasInfo && "opacity-70",
                   )}
                 >
                   {line.lineName}
@@ -592,6 +641,21 @@ export const ArrivalsBoard = ({
                         )}
                       >
                         {item.label}
+                      </li>
+                    );
+                  }
+                  if (item.kind === "empty") {
+                    return (
+                      <li
+                        key={item.key}
+                        className={cn(
+                          "flex items-center text-sm text-muted-foreground",
+                          TILE_CLASS,
+                          showRule && ROW_RULE_CLASS,
+                        )}
+                        aria-label={`${line.lineName}: ${ARRIVALS_LINE_EMPTY_COPY}`}
+                      >
+                        {ARRIVALS_LINE_EMPTY_COPY}
                       </li>
                     );
                   }

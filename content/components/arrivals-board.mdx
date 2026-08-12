@@ -38,6 +38,8 @@ export default function Page({ data }) {
 
 Default `variant="rail"` groups by line (name + colour bar), then by compass bound from `platformName` (Northbound / Southbound / Eastbound / Westbound). Bound labels match the line-name size. Each row leads with a [`PlatformChip`](/docs/platform-chip) (`Platform 1` → `Plat 1` → `P1` → `1` as the board narrows), then destination + countdown. Destinations use [`StationName`](/docs/station-name-labels) with the same abbreviation rules as line diagrams (`Road`→`Rd`, `and`→`&`, …) — visual shortening only; copy and screen readers keep the full name. Hairlines inside a line group share one weight — including under bound titles.
 
+Line sections stay in canonical `LINE_ORDER` (from `tfl-ts`), not “soonest train first”, so the board does not reshuffle on refresh. Pass optional `lines` for the stop’s serving set: lines with no predictions still render a muted **No information** row and sort below lines that have arrivals. Board-level empty (`emptyKind`: empty / ended / offline), loading skeleton, and `error` stay separate from that per-line empty.
+
 ### Bus route numbers
 
 ```tsx
@@ -81,11 +83,12 @@ arrivals component.
 | Prop | Type | Description |
 |------|------|-------------|
 | `data` | `readonly RealtimePrediction[]` | Normalised arrivals from `tfl-ts`. Missing/`undefined` → empty. |
+| `lines` | `readonly { lineId, lineName, modeName? }[]` | Optional serving lines. Empty lines keep a “No information” row and sort below lines with arrivals. |
 | `variant` | `"rail" \| "bus"` | Chip presentation. |
 | `stopName` | `string` | Board heading (e.g. Oxford Circus). Fits via abbr/scale — same policy as destinations. |
 | `stopLetter` | `string` | Bus stop letter — red circle next to the stop name. |
 | `loading` / `error` | … | Loading and error presentation. Prefer a short human `error` string. |
-| `emptyKind` | `"empty" \| "ended" \| "offline"` | Why there are no rows when `error` is unset. Resolve in the app (`resolveArrivalsEmptyKind`). |
+| `emptyKind` | `"empty" \| "ended" \| "offline"` | Why the board has no sections when `error` is unset and `lines` is empty. Resolve in the app (`resolveArrivalsEmptyKind`). |
 | `emptyMessage` | `string` | Optional copy override for `emptyKind`. |
 | `statusLabel` | `string` | Optional poll / refresh caption. |
 

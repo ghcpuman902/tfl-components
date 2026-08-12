@@ -12,6 +12,9 @@ export const ARRIVALS_EMPTY_COPY: Record<ArrivalsEmptyKind, string> = {
   offline: "You're offline. Arrivals will update when you're back.",
 };
 
+/** Per-line / per-route when predictions are missing but the line is still shown. */
+export const ARRIVALS_LINE_EMPTY_COPY = "No information";
+
 const londonHourFormatter = new Intl.DateTimeFormat("en-GB", {
   timeZone: LONDON_TIME_ZONE,
   hour: "2-digit",
