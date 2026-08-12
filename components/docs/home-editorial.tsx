@@ -5,6 +5,7 @@ import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
 import { LineStrip } from "@/components/tfl/diagram/line-strip";
 import { WeekAheadLineSkeleton } from "@/components/tfl/week-ahead/week-ahead-skeleton";
 import { HomeCycleHireMap } from "@/components/docs/home-cycle-hire-map";
+import { CYCLE_HIRE_MAP_HOME_FRAME_CLASSNAME } from "@/components/tfl/cycle-hire/cycle-hire-map-camera";
 import { DIAGRAM_SCALE_CLASS } from "@/lib/tfl/line-diagram";
 import {
   getCachedHomeCycleHireDocks,
@@ -28,9 +29,6 @@ const ARRIVALS_RHYTHM = {
 
 const ARRIVALS_TILE_CLASS =
   "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden";
-
-/** Map = six arrival tiles (static class for Tailwind). */
-const CYCLE_HIRE_MAP_HEIGHT_CLASS = "h-[calc(var(--arrivals-row)*6)]";
 
 type DemoFrameProps = {
   caption: readonly string[];
@@ -167,14 +165,8 @@ async function HomeBusAndCycleHirePanel() {
       ) : (
         <HomeCycleHireMap
           data={cycle.docks}
-          className={cn(
-            "w-full border border-border bg-muted",
-            CYCLE_HIRE_MAP_HEIGHT_CLASS,
-          )}
           markerSize={28}
           showNavigation={false}
-          // Extra bottom padding shifts the fitted centre south a little.
-          fitPadding={{ top: 16, right: 28, bottom: 64, left: 28 }}
         />
       )}
     </DemoFrame>
@@ -193,7 +185,7 @@ const BusAndCycleHireSkeleton = () => (
     <div
       className={cn(
         "w-full animate-pulse bg-muted/70",
-        CYCLE_HIRE_MAP_HEIGHT_CLASS,
+        CYCLE_HIRE_MAP_HOME_FRAME_CLASSNAME,
       )}
     />
   </div>

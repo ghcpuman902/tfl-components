@@ -115,7 +115,7 @@ Broken slots are hidden by default. Pass `showBroken` on Detail or a row:
 | `showBroken` | `boolean` | Include broken docks in the detail bar. Default `false`. |
 
 - Map markers: bike → e-bike → empty ring (broken omitted). Lucide `Bike` in the centre.
-- Map labels use `StationName` (`layout="auto"`, two lines → abbreviate → scale) — no CSS ellipsis.
+- Map labels use `StationName` (`layout="auto"`, two lines → abbreviate → scale) — no CSS ellipsis. Labels hang below the pin, then flip above when they would cover another pin or leave the map (`position-try: flip-block` analogue).
 - Detail segment order: bike → e-bike → empty → broken (when `showBroken`).
 - Accents (light UI): classic bikes `red-500`, e-bikes `cyan-400`, broken `amber-300` — bars and labels share the same tokens.
 - Map and Detail are not selection-linked — compose that in the app if needed.
