@@ -54,6 +54,11 @@ const PREVIEW_SNIPPETS: Record<string, string> = {
   "line-strip": `const spine = await getLineSpine("victoria")
 
 <LineStrip lineId="victoria" spine={spine} fit />`,
+  "map-geographic": `import { TflGeographicMap } from "@/components/tfl/geography/tfl-geographic-map"
+
+<div className="h-100">
+  <TflGeographicMap />
+</div>`,
 };
 
 export const componentDocsMetadata = async (

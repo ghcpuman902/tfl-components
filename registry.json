@@ -738,6 +738,35 @@
       ]
     },
     {
+      "name": "tfl-geographic-map",
+      "type": "registry:block",
+      "title": "Geographic Map",
+      "description": "Free MapLibre geographic map — OSM transit line and station geometry, no API key required.",
+      "dependencies": [
+        "maplibre-gl"
+      ],
+      "registryDependencies": [
+        "https://tfl.manglekuo.com/r/tfl-colours.json"
+      ],
+      "files": [
+        {
+          "path": "registry/tfl/geography/tfl-geographic-map.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/geography/tfl-geographic-map.tsx"
+        },
+        {
+          "path": "lib/tfl/geography-types.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/geography-types.ts"
+        },
+        {
+          "path": "lib/tfl/geography-credits.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/geography-credits.ts"
+        }
+      ]
+    },
+    {
       "name": "line-strip",
       "type": "registry:block",
       "title": "Line Strip",

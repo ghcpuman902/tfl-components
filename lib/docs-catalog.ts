@@ -377,7 +377,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "maps-geographic",
     title: "Map (Geographic)",
     description:
-      "Provider-independent GeoJSON geometry with a MapLibre demo adapter.",
+      "Provider-independent GeoJSON geometry for London transit. Install the packaged free map or bring your own renderer.",
     group: "maps",
     kind: "component",
     href: "/docs/map-geographic",
@@ -385,7 +385,10 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 70,
     preferred: true,
     modeMarker: "map",
+    registryName: "tfl-geographic-map",
+    registryUrl: `${REGISTRY_BASE}/tfl-geographic-map.json`,
     layer: "map",
+    usesFoundations: ["line-badge"],
   },
   {
     slug: "map-tubemap",
