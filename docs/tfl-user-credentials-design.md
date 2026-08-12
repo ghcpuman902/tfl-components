@@ -126,7 +126,15 @@ Polling demos pause while `document.visibilityState === "hidden"` and refresh im
 
 ### Explorer
 
-Existing Explorer list/route pages stay on cached site-key data (anonymous introductory experience). Stage 5 ships a reusable **key-required gate** primitive for future extensive/fresh operations; it does **not** retrofit the cached pages.
+Explorer under `/docs/explorer` is organised around **Points** and **Lines**, each with **Browse** (default) and **Find**.
+
+- **Browse** is free: bundled geography, station catalogue, and deliberately cached site-key examples (Trafalgar Square bus stops, curated bus lines, featured cycle hire docks, Tube & rail line directory + route sequences). Local filtering over already-loaded data never spends visitor quota.
+- **Find** uses the visitor’s TfL API key: remote search, SMS-code lookup, geolocation nearby queries, and explicit live Refresh / Load actions. Calls go browser → `api.tfl.gov.uk` via `createBrowserTflClient`. Invalid or rate-limited keys produce translated errors with **no** silent site-key fallback.
+- Typing in Find never spends quota — only Search / Enter / Locate / Load / Refresh do.
+- No polling in Explorer; live panels are explicit one-shot requests with a request timestamp.
+- Legacy `/explore/lines`, `/explore/routes`, and `/explore/bus-stops` redirect into equivalent unified Explorer URL state.
+
+The **key-required gate** (`UserTflKeyRequired` / `useRequireUserTflKey`) and submit-time gating in Find adapters prompt for a key only when the visitor initiates a live or extensive request. Cached Browse stays anonymous.
 
 ## 5. Persistence + threat model
 
@@ -218,7 +226,8 @@ Out of scope for this epic to change registry JSON or fetch-inside helpers. Docs
 | Homepage proof (status, week-ahead, home arrivals, cycle hire) | **Site** — shared cache; independent of user credentials |
 | Server-rendered docs demos (Tube status, cycle-hire RSC, line-strip) | **Site** unless a later family PR adds a client refresh strip |
 | Arrivals / bus interactive demos that already poll from the client | **User key when ready**, else site Server Action |
-| Explorer cached list/route pages | **Site** (introductory); gate primitive for future extensive ops |
+| Explorer Browse (cached directories, featured examples, bundled geography) | **Site** (introductory; free) |
+| Explorer Find / live Load / Refresh / Locate | **User key** (browser → TfL); gate on initiate |
 | Registry install docs / code snippets | Consumer env `TFL_APP_KEY` — unrelated to browser paste |
 | Feedback, stats, registry CDN | Unrelated |
 
@@ -231,7 +240,7 @@ Out of scope for this epic to change registry JSON or fetch-inside helpers. Docs
 | **2** | Dual-path polling hook + `"use server"` appKey guard | Visibility pause/resume; cancellation; CI grep |
 | **3** | Wire arrivals-family docs demos | User key → direct TfL; empty → Server Action; status pill |
 | **4** | Docs copy | Get started / arrivals note; browser key ≠ server env |
-| **5** | Remaining families + Explorer gate primitive | By API family; gate only (no cached-page retrofit) |
+| **5** | Remaining families + Explorer Browse/Find | By API family; Explorer free Browse + keyed Find |
 | **6** | Remove browser-fetch lab | Delete `/temp/tfl-browser-fetch` and its dev-only env prefill |
 
 ### Explicitly later / other epics
@@ -265,7 +274,9 @@ Out of scope for this epic to change registry JSON or fetch-inside helpers. Docs
 
 **Stage 5**
 
-- Explorer gate primitive; further demo adapters by family
+- Explorer Points/Lines shell at `/docs/explorer` with free Browse and keyed Find
+- `TfLPointPicker` (site-owned), domain Find adapters, entity inspector
+- Gate primitive retained for submit-time keyed ops; Browse stays anonymous
 
 **Stage 6**
 
@@ -302,5 +313,5 @@ Out of scope for this epic to change registry JSON or fetch-inside helpers. Docs
 - [x] Pause polling when tab hidden; refresh on visible
 - [x] CSP tracked separately (not claimed as mitigation here)
 - [x] First wired surfaces = arrivals-family docs demos
-- [x] Explorer: gate primitive only for now; cached pages stay anonymous
+- [x] Explorer: free Browse (cached/bundled) + keyed Find (visitor key, no site fallback)
 - [x] `tfl-ts` ≥ 2.6.2 — no further coordinated release required
