@@ -18,6 +18,11 @@ export {
 } from "@/components/tfl/cycle-hire/cycle-hire-docks-detail";
 export { CycleHireDocksMap } from "@/components/tfl/cycle-hire/cycle-hire-docks-map";
 export {
+  CYCLE_HIRE_MAP_SOUTH_OFFSET_DEG,
+  CYCLE_HIRE_MAP_SOUTH_OFFSET_M,
+  offsetLngLatSouth,
+} from "@/components/tfl/cycle-hire/cycle-hire-map-camera";
+export {
   CycleHireDocksProvider,
   useCycleHireDocksData,
 } from "@/components/tfl/cycle-hire/cycle-hire-docks-context";

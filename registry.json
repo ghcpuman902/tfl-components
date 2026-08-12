@@ -486,6 +486,11 @@
           "target": "components/tfl/cycle-hire/cycle-hire-docks-map.tsx"
         },
         {
+          "path": "registry/tfl/cycle-hire/cycle-hire-map-camera.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/cycle-hire/cycle-hire-map-camera.ts"
+        },
+        {
           "path": "registry/tfl/cycle-hire/cycle-hire-docks-context.tsx",
           "type": "registry:component",
           "target": "components/tfl/cycle-hire/cycle-hire-docks-context.tsx"
