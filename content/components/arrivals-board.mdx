@@ -36,9 +36,9 @@ export default function Page({ data }) {
 
 ### Rail — line then bound
 
-Default `variant="rail"` groups by line (name + colour bar), then by compass bound from `platformName` (Northbound / Southbound / Eastbound / Westbound). Bound labels match the line-name size. Each row leads with a [`PlatformChip`](/docs/platform-chip) (`Platform 1` → `Plat 1` → `P1` → `1` as the board narrows), then destination + countdown. Destinations use [`StationName`](/docs/station-name-labels) with the same abbreviation rules as line diagrams (`Road`→`Rd`, `and`→`&`, …) — visual shortening only; copy and screen readers keep the full name. Hairlines inside a line group share one weight — including under bound titles.
+Default `variant="rail"` groups by line (name + colour bar), then by compass bound from `platformName` (Westbound / Eastbound / Northbound / Southbound). On a vertical board, West sits above East (reading-order analogy) and North above South (geographic). Bound labels match the line-name size. Each row leads with a [`PlatformChip`](/docs/platform-chip) (`Platform 1` → `Plat 1` → `P1` → `1` as the board narrows), then destination + countdown. Destinations use [`StationName`](/docs/station-name-labels) with the same abbreviation rules as line diagrams (`Road`→`Rd`, `and`→`&`, …) — visual shortening only; copy and screen readers keep the full name. Hairlines inside a line group share one weight — including under bound titles.
 
-Line sections stay in canonical `LINE_ORDER` (from `tfl-ts`), not “soonest train first”, so the board does not reshuffle on refresh. Pass optional `lines` for the stop’s serving set: lines with no predictions still render a muted **No information** row and sort below lines that have arrivals. Board-level empty (`emptyKind`: empty / ended / offline), loading skeleton, and `error` stay separate from that per-line empty.
+Line sections stay in canonical `LINE_ORDER` (from `tfl-ts`), not “soonest train first”, so the board does not reshuffle on refresh. Pass optional `lines` for the stop’s serving set: lines with no predictions still render a muted **No information** row and sort below lines that have arrivals. When `lines[].bounds` lists the compass sides that station actually serves, those bound groups still render even if the current poll has no trains that way — otherwise a missing side is omitted (arrival-inferred groups only). Board-level empty (`emptyKind`: empty / ended / offline), loading skeleton, and `error` stay separate from that per-line / per-bound empty.
 
 ### Bus route numbers
 
@@ -83,7 +83,7 @@ arrivals component.
 | Prop | Type | Description |
 |------|------|-------------|
 | `data` | `readonly RealtimePrediction[]` | Normalised arrivals from `tfl-ts`. Missing/`undefined` → empty. |
-| `lines` | `readonly { lineId, lineName, modeName? }[]` | Optional serving lines. Empty lines keep a “No information” row and sort below lines with arrivals. |
+| `lines` | `readonly { lineId, lineName, modeName?, bounds? }[]` | Optional serving lines. Empty lines keep a “No information” row and sort below lines with arrivals. Optional `bounds` seeds West/East/North/South groups from station metadata. |
 | `variant` | `"rail" \| "bus"` | Chip presentation. |
 | `stopName` | `string` | Board heading (e.g. Oxford Circus). Fits via abbr/scale — same policy as destinations. |
 | `stopLetter` | `string` | Bus stop letter — red circle next to the stop name. |

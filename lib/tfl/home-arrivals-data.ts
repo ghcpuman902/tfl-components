@@ -15,9 +15,24 @@ export const HOME_RAIL_STOP = {
 
 /** Lines that serve {@link HOME_RAIL_STOP} — keeps empty sections stable on the board. */
 export const HOME_RAIL_LINES = [
-  { lineId: "bakerloo", lineName: "Bakerloo", modeName: "tube" },
-  { lineId: "central", lineName: "Central", modeName: "tube" },
-  { lineId: "victoria", lineName: "Victoria", modeName: "tube" },
+  {
+    lineId: "bakerloo",
+    lineName: "Bakerloo",
+    modeName: "tube",
+    bounds: ["northbound", "southbound"],
+  },
+  {
+    lineId: "central",
+    lineName: "Central",
+    modeName: "tube",
+    bounds: ["westbound", "eastbound"],
+  },
+  {
+    lineId: "victoria",
+    lineName: "Victoria",
+    modeName: "tube",
+    bounds: ["northbound", "southbound"],
+  },
 ] as const;
 
 /**

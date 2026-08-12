@@ -11,6 +11,14 @@ import {
   ARRIVALS_LINE_EMPTY_COPY,
   type ArrivalsEmptyKind,
 } from "@/lib/tfl/arrivals-empty";
+import {
+  COMPASS_BOUND_RE,
+  compareArrivalsBounds,
+  formatArrivalsBoundLabel,
+  normalizeArrivalsBoundId,
+  parseCompassBoundId,
+  type ArrivalsBoundId,
+} from "@/lib/tfl/arrivals-bound-sort";
 import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,6 +39,13 @@ export type ArrivalsBoardLine = {
   lineId: string;
   lineName: string;
   modeName?: string;
+  /**
+   * Station metadata: compass bounds this line serves at the stop.
+   * When set, those bound groups still render (with “No information”) even if
+   * no arrival currently carries that platform prefix. Arrival-only boards omit
+   * missing bounds — that is intentional.
+   */
+  bounds?: readonly ArrivalsBoundId[];
 };
 
 export type ArrivalsBoardProps = {
@@ -139,25 +154,6 @@ const isBusRow = (
   return variant === "bus";
 };
 
-/** Compass bound from TfL platform labels, e.g. "Northbound - Platform 4". */
-const COMPASS_BOUND_RE =
-  /^(northbound|southbound|eastbound|westbound)\b/i;
-
-const BOUND_ORDER = [
-  "northbound",
-  "eastbound",
-  "southbound",
-  "westbound",
-] as const;
-
-const getCompassBound = (platformName?: string): string | null => {
-  if (!platformName) return null;
-  const match = platformName.match(COMPASS_BOUND_RE);
-  if (!match?.[1]) return null;
-  const raw = match[1].toLowerCase();
-  return raw.charAt(0).toUpperCase() + raw.slice(1);
-};
-
 /**
  * Platform number for the rail chip — "Northbound - Platform 4" → "4".
  * Falls back to the stripped label when no digit is present.
@@ -182,12 +178,19 @@ const getBusStopLetter = (platformName?: string): string | null => {
   return null;
 };
 
-const boundSortKey = (label: string | null): number => {
-  if (!label) return BOUND_ORDER.length + 1;
-  const idx = BOUND_ORDER.indexOf(
-    label.toLowerCase() as (typeof BOUND_ORDER)[number],
-  );
-  return idx === -1 ? BOUND_ORDER.length : idx;
+const resolveExpectedBounds = (
+  bounds: readonly ArrivalsBoundId[] | undefined,
+): ArrivalsBoundId[] => {
+  if (!bounds?.length) return [];
+  const seen = new Set<ArrivalsBoundId>();
+  const resolved: ArrivalsBoundId[] = [];
+  for (const value of bounds) {
+    const id = normalizeArrivalsBoundId(value);
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    resolved.push(id);
+  }
+  return resolved;
 };
 
 type DirectionGroup = {
@@ -218,6 +221,7 @@ const groupArrivals = (
       lineName: string;
       modeName?: string;
       bus: boolean;
+      expectedBounds: ArrivalsBoundId[];
       arrivals: (RealtimePrediction | ArrivalRow)[];
     }
   >();
@@ -235,25 +239,56 @@ const groupArrivals = (
       lineName: (arrival.lineName ?? lineId) || "Unknown",
       modeName: arrival.modeName,
       bus: isBusRow(arrival, variant),
+      expectedBounds: [],
       arrivals: [arrival],
     });
   }
 
   for (const expected of expectedLines) {
     const key = expected.lineId || expected.lineName;
-    if (!key || byLine.has(key)) continue;
+    if (!key) continue;
+    const bounds = resolveExpectedBounds(expected.bounds);
+    const existing = byLine.get(key);
+    if (existing) {
+      if (bounds.length > 0) existing.expectedBounds = bounds;
+      continue;
+    }
     byLine.set(key, {
       lineId: expected.lineId,
       lineName: expected.lineName,
       modeName: expected.modeName,
       bus: variant === "bus",
+      expectedBounds: bounds,
       arrivals: [],
     });
   }
 
   return [...byLine.values()]
     .map((line) => {
-      if (line.arrivals.length === 0) {
+      const byBound = new Map<
+        string | null,
+        (RealtimePrediction | ArrivalRow)[]
+      >();
+
+      for (const arrival of line.arrivals) {
+        const boundId = line.bus
+          ? null
+          : parseCompassBoundId(arrival.platformName);
+        const label = boundId ? formatArrivalsBoundLabel(boundId) : null;
+        const list = byBound.get(label);
+        if (list) list.push(arrival);
+        else byBound.set(label, [arrival]);
+      }
+
+      // Station metadata seeds bound groups even when arrivals omit that side.
+      if (!line.bus) {
+        for (const boundId of line.expectedBounds) {
+          const label = formatArrivalsBoundLabel(boundId);
+          if (!byBound.has(label)) byBound.set(label, []);
+        }
+      }
+
+      if (byBound.size === 0) {
         return {
           lineId: line.lineId,
           lineName: line.lineName,
@@ -263,14 +298,6 @@ const groupArrivals = (
         };
       }
 
-      const byBound = new Map<string | null, (RealtimePrediction | ArrivalRow)[]>();
-      for (const arrival of line.arrivals) {
-        const bound = line.bus ? null : getCompassBound(arrival.platformName);
-        const list = byBound.get(bound);
-        if (list) list.push(arrival);
-        else byBound.set(bound, [arrival]);
-      }
-
       const directions: DirectionGroup[] = [...byBound.entries()]
         .map(([label, arrivals]) => ({
           label,
@@ -278,7 +305,7 @@ const groupArrivals = (
             (a, b) => (a.timeToStation ?? 0) - (b.timeToStation ?? 0),
           ),
         }))
-        .sort((a, b) => boundSortKey(a.label) - boundSortKey(b.label));
+        .sort((a, b) => compareArrivalsBounds(a.label, b.label));
 
       // Single null bucket → no direction headers (bus / unknown platforms).
       const onlyUngrouped =
@@ -427,9 +454,11 @@ const ArrivalRowItem = ({
  * Fetching / polling / stop discovery belong outside this component.
  *
  * Rail: group by line (name + colour bar), then by compass bound; platform
- * number chip before destination. Line sections keep `LINE_ORDER` (info-first),
- * not soonest-train order. Bus: route chip per row; stop letter lives on the
- * board header; routes sort by name, also info-first.
+ * number chip before destination. Bound order is West→East, North→South.
+ * Line sections keep `LINE_ORDER` (info-first), not soonest-train order.
+ * Optional `lines[].bounds` seeds empty bound groups from station metadata.
+ * Bus: route chip per row; stop letter lives on the board header; routes sort
+ * by name, also info-first.
  */
 export const ArrivalsBoard = ({
   data,
@@ -558,9 +587,13 @@ export const ArrivalsBoard = ({
                 arrival: RealtimePrediction | ArrivalRow;
                 key: string;
               }
-            | { kind: "empty"; key: string }
+            | { kind: "empty"; key: string; boundLabel?: string }
           > = [];
-          if (!hasInfo) {
+          const labeledDirections = line.directions.filter(
+            (direction) => direction.label,
+          );
+
+          if (!hasInfo && labeledDirections.length === 0) {
             items.push({ kind: "empty", key: "empty" });
           } else {
             for (const direction of line.directions) {
@@ -570,6 +603,18 @@ export const ArrivalsBoard = ({
                   label: direction.label,
                   key: `bound-${direction.label}`,
                 });
+              }
+              if (direction.arrivals.length === 0) {
+                // Metadata-seeded (or empty) labeled bounds keep a row; bare
+                // null buckets without arrivals are omitted here.
+                if (direction.label) {
+                  items.push({
+                    kind: "empty",
+                    key: `empty-${direction.label}`,
+                    boundLabel: direction.label,
+                  });
+                }
+                continue;
               }
               for (const [index, arrival] of direction.arrivals.entries()) {
                 items.push({
@@ -645,6 +690,9 @@ export const ArrivalsBoard = ({
                     );
                   }
                   if (item.kind === "empty") {
+                    const emptyScope = item.boundLabel
+                      ? `${line.lineName} ${item.boundLabel}`
+                      : line.lineName;
                     return (
                       <li
                         key={item.key}
@@ -653,7 +701,7 @@ export const ArrivalsBoard = ({
                           TILE_CLASS,
                           showRule && ROW_RULE_CLASS,
                         )}
-                        aria-label={`${line.lineName}: ${ARRIVALS_LINE_EMPTY_COPY}`}
+                        aria-label={`${emptyScope}: ${ARRIVALS_LINE_EMPTY_COPY}`}
                       >
                         {ARRIVALS_LINE_EMPTY_COPY}
                       </li>
