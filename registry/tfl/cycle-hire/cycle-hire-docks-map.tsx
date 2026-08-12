@@ -8,10 +8,12 @@ import { cn } from "@/lib/utils";
 import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types";
 import { useCycleHireDocksData } from "@/components/tfl/cycle-hire/cycle-hire-docks-context";
 import { CycleHireDockMarker } from "@/components/tfl/cycle-hire/cycle-hire-dock-marker";
+import { offsetLngLatSouth } from "@/components/tfl/cycle-hire/cycle-hire-map-camera";
 import { StationName } from "@/components/tfl/station-name";
 
 const CARTO_ATTRIBUTION = "© CARTO · © OpenStreetMap contributors";
-const LONDON_CENTER: [number, number] = [-0.08, 51.507];
+/** Geographic London fallback, then south chrome/textbox compensation. */
+const LONDON_CENTER = offsetLngLatSouth([-0.08, 51.507]);
 const FALLBACK_ZOOM = 13;
 /** Map pin label box — fit policy measures against this width. */
 const LABEL_WIDTH_PX = 112;
@@ -205,7 +207,7 @@ export const CycleHireDocksMap = ({
 
       if (located.length === 1) {
         map.easeTo({
-          center: [located[0].lon, located[0].lat],
+          center: offsetLngLatSouth([located[0].lon, located[0].lat]),
           zoom: 15,
           duration: 0,
         });
@@ -217,6 +219,10 @@ export const CycleHireDocksMap = ({
         maxZoom: 16,
         duration: 0,
       });
+      // fitBounds centres the geographic midpoint; nudge south so pin+label
+      // clear chrome / textbox overlays (see cycle-hire-map-camera).
+      const fitted = map.getCenter();
+      map.setCenter(offsetLngLatSouth([fitted.lng, fitted.lat]));
     };
 
     if (map.isStyleLoaded()) {

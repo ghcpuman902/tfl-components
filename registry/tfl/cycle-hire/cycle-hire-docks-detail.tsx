@@ -20,31 +20,25 @@ export const DEFAULT_CYCLE_HIRE_DOCK_IDS = [
   "BikePoints_46",
 ] as const;
 
-type SegmentKind = "standard" | "eBike" | "empty" | "broken";
+type SlotKind = "standard" | "eBike" | "empty" | "broken";
 
-type OccupancySegment = {
-  kind: SegmentKind;
-  count: number;
-};
-
-const buildOccupancySegments = (
+/** One cell per dock slot so `gap-*` reads between every slot, not only kind changes. */
+const buildOccupancySlots = (
   counts: ReturnType<typeof getDockCounts>,
   showBroken: boolean,
-): OccupancySegment[] => {
+): SlotKind[] => {
   const { standardBikes, eBikes, emptyDocks, brokenDocks } = counts;
-  const segments: OccupancySegment[] = [];
-  if (standardBikes > 0) {
-    segments.push({ kind: "standard", count: standardBikes });
+  const slots: SlotKind[] = [];
+  for (let i = 0; i < standardBikes; i += 1) slots.push("standard");
+  for (let i = 0; i < eBikes; i += 1) slots.push("eBike");
+  for (let i = 0; i < emptyDocks; i += 1) slots.push("empty");
+  if (showBroken) {
+    for (let i = 0; i < brokenDocks; i += 1) slots.push("broken");
   }
-  if (eBikes > 0) segments.push({ kind: "eBike", count: eBikes });
-  if (emptyDocks > 0) segments.push({ kind: "empty", count: emptyDocks });
-  if (showBroken && brokenDocks > 0) {
-    segments.push({ kind: "broken", count: brokenDocks });
-  }
-  return segments;
+  return slots;
 };
 
-const segmentFillClass = (kind: SegmentKind) => {
+const slotFillClass = (kind: SlotKind) => {
   if (kind === "standard") return cycleHireBikeFillClass;
   if (kind === "eBike") return cycleHireEbikeFillClass;
   if (kind === "broken") return cycleHireBrokenFillClass;
@@ -115,7 +109,7 @@ export const CycleHireDockRow = ({
     );
   }
 
-  const segments = buildOccupancySegments(counts, showBroken);
+  const slots = buildOccupancySlots(counts, showBroken);
   const showBrokenCount = showBroken && brokenDocks > 0;
 
   const ariaParts = [
@@ -148,11 +142,10 @@ export const CycleHireDockRow = ({
         role="img"
         aria-label={`${dock.name}: ${ariaParts.join(", ")}`}
       >
-        {segments.map((segment) => (
+        {slots.map((kind, index) => (
           <div
-            key={`${dock.id}-${segment.kind}`}
-            className={cn("min-w-0", segmentFillClass(segment.kind))}
-            style={{ flexGrow: segment.count, flexBasis: 0 }}
+            key={`${dock.id}-${kind}-${index}`}
+            className={cn("min-w-0 flex-1", slotFillClass(kind))}
           />
         ))}
       </div>
