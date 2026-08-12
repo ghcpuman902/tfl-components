@@ -18,9 +18,27 @@ export {
 } from "@/components/tfl/cycle-hire/cycle-hire-docks-detail";
 export { CycleHireDocksMap } from "@/components/tfl/cycle-hire/cycle-hire-docks-map";
 export {
-  CYCLE_HIRE_MAP_SOUTH_OFFSET_DEG,
-  CYCLE_HIRE_MAP_SOUTH_OFFSET_M,
-  offsetLngLatSouth,
+  CYCLE_HIRE_MAP_ATTRIBUTION_FALLBACK_PX,
+  CYCLE_HIRE_MAP_EDGE_BREATHING_PX,
+  CYCLE_HIRE_MAP_FRAME_CLASSNAME,
+  CYCLE_HIRE_MAP_HOME_FRAME_CLASSNAME,
+  CYCLE_HIRE_MAP_LABEL_FONT_SIZE_PX,
+  CYCLE_HIRE_MAP_LABEL_MAX_LINES,
+  CYCLE_HIRE_MAP_LABEL_WIDTH_PX,
+  CYCLE_HIRE_MAP_NAV_RIGHT_PX,
+  CYCLE_HIRE_MAP_PIN_LABEL_GAP_PX,
+  clampCycleHireFitPadding,
+  cycleHireFitPadding,
+  cycleHireLabelRect,
+  estimateCycleHirePinExtent,
+  resolveCycleHireLabelSides,
+} from "@/components/tfl/cycle-hire/cycle-hire-map-camera";
+export type {
+  CycleHireFitPaddingOptions,
+  CycleHireLabelSide,
+  CycleHireMapEdgePadding,
+  CycleHirePinExtent,
+  CycleHireScreenPin,
 } from "@/components/tfl/cycle-hire/cycle-hire-map-camera";
 export {
   CycleHireDocksProvider,

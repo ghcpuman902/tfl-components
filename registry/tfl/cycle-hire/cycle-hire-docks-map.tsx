@@ -2,24 +2,33 @@
 
 import { useEffect, useRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { flushSync } from "react-dom";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { cn } from "@/lib/utils";
 import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types";
 import { useCycleHireDocksData } from "@/components/tfl/cycle-hire/cycle-hire-docks-context";
 import { CycleHireDockMarker } from "@/components/tfl/cycle-hire/cycle-hire-dock-marker";
-import { offsetLngLatSouth } from "@/components/tfl/cycle-hire/cycle-hire-map-camera";
+import {
+  CYCLE_HIRE_MAP_ATTRIBUTION_FALLBACK_PX,
+  CYCLE_HIRE_MAP_FRAME_CLASSNAME,
+  CYCLE_HIRE_MAP_LABEL_FONT_SIZE_PX,
+  CYCLE_HIRE_MAP_LABEL_WIDTH_PX,
+  clampCycleHireFitPadding,
+  cycleHireFitPadding,
+  resolveCycleHireLabelSides,
+  type CycleHireLabelSide,
+  type CycleHireMapEdgePadding,
+} from "@/components/tfl/cycle-hire/cycle-hire-map-camera";
 import { StationName } from "@/components/tfl/station-name";
 
 const CARTO_ATTRIBUTION = "© CARTO · © OpenStreetMap contributors";
-/** Geographic London fallback, then south chrome/textbox compensation. */
-const LONDON_CENTER = offsetLngLatSouth([-0.08, 51.507]);
+const LONDON_CENTER: [number, number] = [-0.08, 51.507];
 const FALLBACK_ZOOM = 13;
-/** Map pin label box — fit policy measures against this width. */
-const LABEL_WIDTH_PX = 112;
-const LABEL_FONT_SIZE_PX = 11;
+const SINGLE_DOCK_ZOOM = 15;
+const MULTI_DOCK_MAX_ZOOM = 16;
 
-type MapPadding = number | { top: number; bottom: number; left: number; right: number };
+type MapPadding = number | CycleHireMapEdgePadding;
 
 type MapProps = {
   /** Normalised bike points. Omit when rendered under `CycleHireDocks` / Provider. */
@@ -29,7 +38,10 @@ type MapProps = {
   markerSize?: number;
   /** Zoom controls (default true). Hide on compact proof surfaces. */
   showNavigation?: boolean;
-  /** `fitBounds` padding in px (default 72). Use less / asymmetric on mini maps. */
+  /**
+   * Optional `fitBounds` padding override. When omitted, padding is derived
+   * from measured pin + label + attribution via `cycleHireFitPadding`.
+   */
   fitPadding?: MapPadding;
 };
 
@@ -37,6 +49,7 @@ type MarkerEntry = {
   marker: maplibregl.Marker;
   root: Root;
   dock: CycleHireDock & { lat: number; lon: number };
+  labelSide: CycleHireLabelSide;
 };
 
 /** Defer createRoot unmount — sync unmount during React render/cleanup races. */
@@ -58,21 +71,26 @@ const hasCoordinates = (
 const DockMapPin = ({
   dock,
   size,
+  labelSide,
 }: {
   dock: CycleHireDock;
   size: number;
+  labelSide: CycleHireLabelSide;
 }) => (
-  <div className="flex flex-col items-center gap-0.5">
+  <div className="relative" style={{ width: size, height: size }}>
     <CycleHireDockMarker dock={dock} size={size} />
     <div
-      className="bg-background/90 leading-none shadow-sm"
-      style={{ width: LABEL_WIDTH_PX }}
+      className={cn(
+        "absolute left-1/2 z-1 -translate-x-1/2 bg-background/90 leading-none shadow-sm",
+        labelSide === "below" ? "top-full mt-0.5" : "bottom-full mb-0.5",
+      )}
+      style={{ width: CYCLE_HIRE_MAP_LABEL_WIDTH_PX }}
     >
       <StationName
         name={dock.name}
         layout="auto"
-        maxWidth={LABEL_WIDTH_PX}
-        fontSize={LABEL_FONT_SIZE_PX}
+        maxWidth={CYCLE_HIRE_MAP_LABEL_WIDTH_PX}
+        fontSize={CYCLE_HIRE_MAP_LABEL_FONT_SIZE_PX}
         maxLines={2}
         allowAbbreviation
         allowScaleDown
@@ -83,21 +101,95 @@ const DockMapPin = ({
   </div>
 );
 
+const paintPin = (entry: MarkerEntry, markerSize: number) => {
+  entry.root.render(
+    <DockMapPin
+      dock={entry.dock}
+      size={markerSize}
+      labelSide={entry.labelSide}
+    />,
+  );
+};
+
+const measureAttributionHeight = (container: HTMLElement): number => {
+  const attrib = container.querySelector(".maplibregl-ctrl-attrib");
+  if (!(attrib instanceof HTMLElement)) {
+    return CYCLE_HIRE_MAP_ATTRIBUTION_FALLBACK_PX;
+  }
+  return Math.max(
+    attrib.getBoundingClientRect().height,
+    CYCLE_HIRE_MAP_ATTRIBUTION_FALLBACK_PX,
+  );
+};
+
+const resolveFitPadding = (
+  map: maplibregl.Map,
+  container: HTMLElement,
+  markerSize: number,
+  showNavigation: boolean,
+  fitPadding: MapPadding | undefined,
+  labelClearance: "below" | "both" = "below",
+): MapPadding => {
+  if (fitPadding != null) return fitPadding;
+  const padding = cycleHireFitPadding(markerSize, {
+    showNavigation,
+    labelClearance,
+    attributionHeight: measureAttributionHeight(container),
+  });
+  const canvas = map.getCanvas();
+  return clampCycleHireFitPadding(
+    padding,
+    canvas.clientWidth,
+    canvas.clientHeight,
+  );
+};
+
+const fitDocksCamera = (
+  map: maplibregl.Map,
+  located: readonly (CycleHireDock & { lat: number; lon: number })[],
+  padding: MapPadding,
+) => {
+  if (located.length === 0) return;
+
+  if (located.length === 1) {
+    const dock = located[0];
+    map.easeTo({
+      center: [dock.lon, dock.lat],
+      zoom: SINGLE_DOCK_ZOOM,
+      padding,
+      duration: 0,
+    });
+    return;
+  }
+
+  const bounds = new maplibregl.LngLatBounds();
+  for (const dock of located) {
+    bounds.extend([dock.lon, dock.lat]);
+  }
+  map.fitBounds(bounds, {
+    padding,
+    maxZoom: MULTI_DOCK_MAX_ZOOM,
+    duration: 0,
+  });
+};
+
 /**
  * OSM / MapLibre surface — circle-gauge markers at dock lat/lon.
  * Glance info only (bike / e-bike / space). Not linked to Detail selection.
+ * Camera fits once when the map has a real size and docks are on the canvas.
  */
 export const CycleHireDocksMap = ({
   data,
   className,
   markerSize = 48,
   showNavigation = true,
-  fitPadding = 72,
+  fitPadding,
 }: MapProps) => {
   const docks = useCycleHireDocksData(data);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<MarkerEntry[]>([]);
+  const hasFittedRef = useRef(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -139,6 +231,7 @@ export const CycleHireDocksMap = ({
       );
     }
     mapRef.current = map;
+    hasFittedRef.current = false;
 
     return () => {
       for (const entry of markersRef.current) {
@@ -147,18 +240,19 @@ export const CycleHireDocksMap = ({
       markersRef.current = [];
       map.remove();
       mapRef.current = null;
+      hasFittedRef.current = false;
     };
   }, [showNavigation]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    const container = containerRef.current;
+    if (!map || !container) return;
 
     let cancelled = false;
+    let observer: ResizeObserver | null = null;
 
     const syncMarkers = () => {
-      if (cancelled) return;
-
       const located = docks.filter(hasCoordinates);
       const nextById = new Map(located.map((dock) => [dock.id, dock]));
       const prevById = new Map(
@@ -174,7 +268,6 @@ export const CycleHireDocksMap = ({
         }
       }
 
-      const bounds = new maplibregl.LngLatBounds();
       const nextEntries: MarkerEntry[] = [];
 
       for (const dock of located) {
@@ -185,64 +278,144 @@ export const CycleHireDocksMap = ({
           if (moved) {
             existing.marker.setLngLat([dock.lon, dock.lat]);
           }
-          // Re-render in place — avoid createRoot teardown on every data tick.
-          existing.root.render(<DockMapPin dock={dock} size={markerSize} />);
           existing.dock = dock;
+          paintPin(existing, markerSize);
           nextEntries.push(existing);
         } else {
           const el = document.createElement("div");
           const root = createRoot(el);
-          root.render(<DockMapPin dock={dock} size={markerSize} />);
-          const marker = new maplibregl.Marker({ element: el, anchor: "top" })
+          const marker = new maplibregl.Marker({
+            element: el,
+            anchor: "center",
+          })
             .setLngLat([dock.lon, dock.lat])
             .addTo(map);
-          nextEntries.push({ marker, root, dock });
+          const entry: MarkerEntry = {
+            marker,
+            root,
+            dock,
+            labelSide: "below",
+          };
+          if (!hasFittedRef.current) {
+            flushSync(() => {
+              paintPin(entry, markerSize);
+            });
+          } else {
+            paintPin(entry, markerSize);
+          }
+          nextEntries.push(entry);
         }
-        bounds.extend([dock.lon, dock.lat]);
       }
 
       markersRef.current = nextEntries;
+      return located;
+    };
 
-      if (located.length === 0) return;
+    const applyLabelSides = () => {
+      if (cancelled) return;
+      const canvas = map.getCanvas();
+      const sides = resolveCycleHireLabelSides(
+        markersRef.current.map((entry) => {
+          const point = map.project([entry.dock.lon, entry.dock.lat]);
+          return { id: entry.dock.id, x: point.x, y: point.y };
+        }),
+        {
+          markerSize,
+          mapWidth: canvas.clientWidth,
+          mapHeight: canvas.clientHeight,
+          attributionHeight: measureAttributionHeight(container),
+        },
+      );
+      let flippedUp = false;
+      for (const entry of markersRef.current) {
+        const nextSide = sides.get(entry.dock.id) ?? "below";
+        if (nextSide === "above") flippedUp = true;
+        if (entry.labelSide === nextSide) continue;
+        entry.labelSide = nextSide;
+        paintPin(entry, markerSize);
+      }
+      return flippedUp;
+    };
 
-      if (located.length === 1) {
-        map.easeTo({
-          center: offsetLngLatSouth([located[0].lon, located[0].lat]),
-          zoom: 15,
-          duration: 0,
-        });
+    const tryInitialFit = (
+      located: readonly (CycleHireDock & { lat: number; lon: number })[],
+    ) => {
+      if (cancelled || hasFittedRef.current || located.length === 0) return true;
+      const { width, height } = container.getBoundingClientRect();
+      if (width < 2 || height < 2) return false;
+      map.resize();
+      const padding = resolveFitPadding(
+        map,
+        container,
+        markerSize,
+        showNavigation,
+        fitPadding,
+      );
+      fitDocksCamera(map, located, padding);
+      hasFittedRef.current = true;
+      const flippedUp = applyLabelSides();
+      if (flippedUp && fitPadding == null) {
+        fitDocksCamera(
+          map,
+          located,
+          resolveFitPadding(
+            map,
+            container,
+            markerSize,
+            showNavigation,
+            undefined,
+            "both",
+          ),
+        );
+        applyLabelSides();
+      }
+      return true;
+    };
+
+    const run = () => {
+      if (cancelled) return;
+      const located = syncMarkers();
+      if (tryInitialFit(located)) {
+        observer?.disconnect();
+        observer = null;
         return;
       }
-
-      map.fitBounds(bounds, {
-        padding: fitPadding,
-        maxZoom: 16,
-        duration: 0,
+      if (observer) return;
+      observer = new ResizeObserver(() => {
+        if (tryInitialFit(located)) {
+          observer?.disconnect();
+          observer = null;
+        }
       });
-      // fitBounds centres the geographic midpoint; nudge south so pin+label
-      // clear chrome / textbox overlays (see cycle-hire-map-camera).
-      const fitted = map.getCenter();
-      map.setCenter(offsetLngLatSouth([fitted.lng, fitted.lat]));
+      observer.observe(container);
     };
 
     if (map.isStyleLoaded()) {
-      syncMarkers();
+      run();
     } else {
-      map.once("load", syncMarkers);
+      map.once("load", run);
     }
+
+    const handleMoveEnd = () => {
+      if (!hasFittedRef.current) return;
+      applyLabelSides();
+    };
+    map.on("moveend", handleMoveEnd);
 
     return () => {
       cancelled = true;
-      map.off("load", syncMarkers);
+      observer?.disconnect();
+      map.off("load", run);
+      map.off("moveend", handleMoveEnd);
     };
-  }, [docks, markerSize, fitPadding]);
+  }, [docks, markerSize, fitPadding, showNavigation]);
 
   const locatedCount = docks.filter(hasCoordinates).length;
 
   return (
     <div
       ref={containerRef}
-      className={cn("h-[min(70vh,28rem)] w-full bg-muted", className)}
+      className={cn("bg-muted", CYCLE_HIRE_MAP_FRAME_CLASSNAME, className)}
       role="region"
       aria-label={
         locatedCount === 0
