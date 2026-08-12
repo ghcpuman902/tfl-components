@@ -55,7 +55,7 @@ When visible paint differs from the canonical name (abbreviation, `<br>`-split l
 
 ### Arrivals board rhythm
 
-Shared rail/bus board: `registry/tfl/arrivals/arrivals-board.tsx`.  
+Shared rail/bus presentation: `registry/tfl/arrivals/arrivals-board-view.tsx`. Domain boards: `rail-arrivals-board.tsx`, `bus-arrivals-board.tsx`.  
 Agent rule (globs the board + demos): [`.cursor/rules/arrivals-board-layout.mdc`](../.cursor/rules/arrivals-board-layout.mdc).
 
 **Baseline grid**
@@ -106,6 +106,10 @@ Every tile uses a locked box (`box-border`, fixed `min`/`max`/`height` = `--arri
 **Side-by-side boards**
 
 Share the same title height, title→body gap, and row unit so the first line headers align. Mid-board drift from extra rail bound rows (Northbound / Southbound) is **content structure**, not a chrome-height bug.
+
+**Responsive arrangements (CSS-first)**
+
+Boards stay single-column by default. Consumers arrange generated levels with `className` (root) and `classNames` (`groups` / `group` / `subgroups` / `subgroup` / `rows`), each mapping to a stable `data-slot="arrivals-*"` element. The board root is a `@container` named `arrivals`; every line/route section is a `@container` named `arrivals-group`, so bound columns respond to their own line's width — never the whole board's. No JavaScript measuring, no layout enums, no extra wrappers; the tile rhythm above holds in every arrangement. Usage examples: [rail](/docs/tube-rail-arrivals) and [bus](/docs/bus-arrivals) “Responsive arrangements”.
 
 
 ## Brand tooling

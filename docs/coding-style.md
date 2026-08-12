@@ -70,7 +70,7 @@ When one normalised dataset needs **more than one presentation** (e.g. geographi
 </CycleHireDocks>
 ```
 
-Use `variant` only when the **same board chrome** paints differently (e.g. Arrivals `rail` / `bus`). MapLibre / DOM adapters stay in client surface files; do not put provider-specific map code in shared geography helpers.
+Use `variant` only when the **same board chrome** paints differently. Rail and bus arrivals are separate domain boards (`RailArrivalsBoard`, `BusArrivalsBoard`), not a `variant` switch. MapLibre / DOM adapters stay in client surface files; do not put provider-specific map code in shared geography helpers.
 
 Canonical example: `registry/tfl/cycle-hire/` (`CycleHireDocks`, `.Map`, `.Detail`).
 

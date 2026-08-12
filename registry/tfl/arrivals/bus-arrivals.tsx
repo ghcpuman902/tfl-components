@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrivalsBoard } from "@/components/tfl/arrivals/arrivals-board";
+import type { RealtimePrediction } from "tfl-ts";
+import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board";
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -112,8 +113,10 @@ const LineBadge = ({ line }: { line: string }) => (
   <BusNumberChip label={line} className="text-[11px]" />
 );
 
-/** Map action rows into the shared board shape (route chip + destination). */
-const toBoardData = (arrivals: readonly BusArrival[]) =>
+/** Map action rows into normalised predictions for {@link BusArrivalsBoard}. */
+const toBoardData = (
+  arrivals: readonly BusArrival[],
+): RealtimePrediction[] =>
   arrivals.map((arrival) => ({
     lineId: arrival.lineName,
     lineName: arrival.lineName,
@@ -124,8 +127,7 @@ const toBoardData = (arrivals: readonly BusArrival[]) =>
     expectedArrival: arrival.expectedArrival,
     vehicleId: arrival.vehicleId,
     direction: arrival.direction,
-    busStyle: true as const,
-  }));
+  })) as RealtimePrediction[];
 
 /** Numeric codes; avoid relying on the GeolocationPositionError global. */
 const GEO_PERMISSION_DENIED = 1;
@@ -147,7 +149,7 @@ const geolocationErrorMessage = (code: number): string => {
 
 /**
  * Explorer / Block composition: geolocation or search → pick a stop →
- * {@link ArrivalsBoard}. Prefer `ArrivalsBoard` + your own fetch for the
+ * {@link BusArrivalsBoard}. Prefer `BusArrivalsBoard` + your own fetch for the
  * installable Interface API.
  */
 export const BusArrivals = () => {
@@ -467,7 +469,7 @@ export const BusArrivals = () => {
               towards {selectedStop.towards}
             </p>
           ) : null}
-          <ArrivalsBoard
+          <BusArrivalsBoard
             data={
               arrivalsResult?.ok === true
                 ? toBoardData(arrivalsResult.arrivals)
@@ -476,7 +478,6 @@ export const BusArrivals = () => {
             stopName={selectedStop.name}
             stopLetter={selectedStop.stopLetter}
             headingLevel={2}
-            variant="bus"
             loading={loadingArrivals}
             error={
               arrivalsResult?.ok === false

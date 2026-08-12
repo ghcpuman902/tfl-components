@@ -1,5 +1,6 @@
 import { Suspense, type CSSProperties } from "react";
-import { ArrivalsBoard } from "@/components/tfl/arrivals/arrivals-board";
+import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board";
+import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board";
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
 import { LineStrip } from "@/components/tfl/diagram/line-strip";
 import { WeekAheadLineSkeleton } from "@/components/tfl/week-ahead/week-ahead-skeleton";
@@ -12,6 +13,8 @@ import {
 import {
   getCachedHomeBusArrivals,
   getCachedHomeRailArrivals,
+  HOME_RAIL_LINES,
+  HOME_BUS_STOP,
   readCacheAgeLabel,
   readHomeArrivalsBoardState,
 } from "@/lib/tfl/home-arrivals-data";
@@ -84,14 +87,15 @@ async function HomeDeparturesPanel() {
 
   return (
     <DemoFrame caption={["Cached TfL data", ageLabel]} style={ARRIVALS_RHYTHM}>
-      <ArrivalsBoard
+      <RailArrivalsBoard
         data={payload.arrivals}
+        lines={HOME_RAIL_LINES}
         stopName={payload.stopName}
         headingLevel={2}
         error={boardState.error}
         emptyKind={boardState.emptyKind}
         maxRows={10}
-        variant="rail"
+        pageSize={2}
       />
     </DemoFrame>
   );
@@ -115,14 +119,16 @@ async function HomeBusAndCycleHirePanel() {
 
   return (
     <DemoFrame caption={cycleCaption} style={ARRIVALS_RHYTHM}>
-      <ArrivalsBoard
+      <BusArrivalsBoard
         data={bus.arrivals}
         stopName={bus.stopName}
+        stopLetter={HOME_BUS_STOP.stopLetter}
         headingLevel={2}
         error={busState.error}
         emptyKind={busState.emptyKind}
         maxRows={6}
-        variant="bus"
+        pageSize={2}
+        groupBy="route"
       />
 
       <h2

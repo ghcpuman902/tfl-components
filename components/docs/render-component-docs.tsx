@@ -37,7 +37,13 @@ const PREVIEW_SNIPPETS: Record<string, string> = {
   sortBy: "timeToStation",
 })
 
-<ArrivalsBoard data={data} stopName="Oxford Circus" />`,
+<RailArrivalsBoard data={data} stopName="Oxford Circus" />`,
+  "rail-arrivals-board": `const data = await tfl.stopPoint.getArrivals({
+  stopPointIds: ["940GZZLUOXC"],
+  sortBy: "timeToStation",
+})
+
+<RailArrivalsBoard data={data} stopName="Oxford Circus" />`,
   "cycle-hire-docks": `const data = await Promise.all([
   tfl.bikePoint.getById("BikePoints_237"),
   tfl.bikePoint.getById("BikePoints_490"),
@@ -84,10 +90,10 @@ export const renderComponentDocs = async ({
     const mod = await import(`@/content/components/${contentSlug}.mdx`);
     MDXPage = mod.default;
   } catch {
-    // Bus arrivals reuses arrivals-board MDX when no bus-specific file.
+    // Bus arrivals has its own MDX; keep this only as a last-resort fallback.
     if (contentSlug === "bus-arrivals-board") {
       try {
-        const mod = await import(`@/content/components/arrivals-board.mdx`);
+        const mod = await import(`@/content/components/rail-arrivals-board.mdx`);
         MDXPage = mod.default;
       } catch {
         MDXPage = null;

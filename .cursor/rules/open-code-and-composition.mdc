@@ -105,7 +105,7 @@ Rules:
 2. App owns chrome (full-screen map, Sheet, floating card) — library surfaces stay chrome-free.  
 3. Do not auto-link Map selection to Detail unless the product explicitly needs it; glance + independent detail is valid.  
 4. Keep MapLibre (or other map SDKs) in client surface files — not in shared geography prep helpers.  
-5. Reserve board-level `variant` for the same chrome with different paint (e.g. Arrivals rail/bus).
+5. Reserve board-level `variant` for the same chrome with different paint. Rail and bus arrivals are separate domain boards, not a `variant` switch.
 
 Canonical implementation: `registry/tfl/cycle-hire/`. See also [docs/coding-style.md](docs/coding-style.md) (“Multi-surface Interfaces”).
 

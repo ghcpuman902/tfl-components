@@ -162,6 +162,8 @@ export const MODE_MARKER_COLOURS: Record<
 /** Old catalogue slugs → current (pages / MDX / registry demos). */
 const SLUG_ALIASES: Record<string, string> = {
   "arrivals-board": "tube-rail-arrivals",
+  "rail-arrivals-board": "tube-rail-arrivals",
+  "bus-arrivals-board": "bus-arrivals",
   "tube-status-board": "tube-rail-status",
   "station-name": "station-name-labels",
   "station-labels": "station-name-labels",
@@ -172,7 +174,7 @@ const SLUG_ALIASES: Record<string, string> = {
  * When omitted, the catalogue slug is used.
  */
 const CONTENT_ASSET_SLUGS: Record<string, string> = {
-  "tube-rail-arrivals": "arrivals-board",
+  "tube-rail-arrivals": "rail-arrivals-board",
   "tube-rail-status": "tube-status-board",
   "bus-arrivals": "bus-arrivals-board",
   "station-name-labels": "station-name",
@@ -293,7 +295,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "tube-rail-arrivals",
     title: "Tube & Rail Arrivals",
     description:
-      "Per-station departures for Tube and rail from tfl-ts predictions.",
+      "Per-station Tube and rail departures from tfl-ts predictions.",
     group: "interfaces",
     kind: "component",
     href: "/docs/tube-rail-arrivals",
@@ -301,8 +303,8 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 10,
     preferred: true,
     modeMarker: "tube-rail",
-    registryName: "arrivals-board",
-    registryUrl: `${REGISTRY_BASE}/arrivals-board.json`,
+    registryName: "rail-arrivals-board",
+    registryUrl: `${REGISTRY_BASE}/rail-arrivals-board.json`,
     layer: "data-aware",
     builtWith: ["platform-chip", "station-name-labels"],
     usesFoundations: ["line-badge", "tfl-roundel"],
@@ -335,8 +337,8 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 30,
     preferred: true,
     modeMarker: "bus",
-    registryName: "arrivals-board",
-    registryUrl: `${REGISTRY_BASE}/arrivals-board.json`,
+    registryName: "bus-arrivals-board",
+    registryUrl: `${REGISTRY_BASE}/bus-arrivals-board.json`,
     layer: "data-aware",
     builtWith: ["bus-number-chip", "station-name-labels"],
     usesFoundations: ["line-badge", "tfl-roundel"],

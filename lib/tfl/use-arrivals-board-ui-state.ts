@@ -20,7 +20,7 @@ type ArrivalsBoardUiState = {
 export const useArrivalsBoardUiState = (
   rowCount: number,
   fetchError: string | null,
-  variant: "rail" | "bus" = "rail",
+  domain: "rail" | "bus" = "rail",
 ): ArrivalsBoardUiState => {
   const [offline, setOffline] = useState(false);
 
@@ -45,7 +45,7 @@ export const useArrivalsBoardUiState = (
       resolveArrivalsEmptyKind({
         rowCount,
         offline: offline && rowCount === 0,
-        variant,
+        domain,
         nowMs: Date.now(),
       }) ?? "empty",
   };
