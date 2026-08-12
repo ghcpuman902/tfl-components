@@ -1,12 +1,13 @@
-# Design: sidebar user TfL credentials
+# Design: user TfL API credentials
 
-Status: **proposal** (not implemented).  
-Audience: human review before any implementation PR.  
-Branch / epic: `docs/tfl-user-credentials-design` → follow-up implementation PRs.
+Status: **implemented** (stages 0–6).  
+Audience: implementers and reviewers.  
+Branch / epic: `docs/tfl-user-credentials-design` → implementation landed in app chrome + arrivals demos.  
+CSP remains a separately tracked hardening ticket (not claimed as a mitigation here).
 
 ## 1. Problem
 
-This site’s live demos and server caches call the TfL Unified API with **site** credentials (`TFL_APP_ID` / `TFL_APP_KEY` in server env via `getTflClient()`). That is correct for shared proof surfaces (homepage, cached status, Explorer).
+This site’s live demos and server caches call the TfL Unified API with a **site** key (`TFL_APP_KEY` in server env via `getTflClient()`). That is correct for shared proof surfaces (homepage, cached status, Explorer).
 
 Developers exploring the docs may want **their own** portal subscription key so that:
 
@@ -20,15 +21,14 @@ Product architecture already names this acquisition mode: *developer credentials
 
 ### Credentials model
 
-| Concept | Today in this repo | TfL portal (2024+) |
-|--------|--------------------|--------------------|
-| `TFL_APP_ID` | Required by `tfl-ts` constructor; sent as `app_id` query param | **No longer required**; portal copy says ignore `app_id` |
-| `TFL_APP_KEY` | Server env; sent as `app_key` query param | Same value as **Primary key** / subscription key |
-| Primary key | Not named in UI | What users copy from Profile after subscribing to “500 requests/min” |
+| Concept | Today in this repo | TfL portal |
+|--------|--------------------|------------|
+| TfL API key | `TFL_APP_KEY` → `app_key` query param | Profile → **Primary key** or **Secondary key** after subscribing to **500 Requests per min**. Append as `app_key`. Either portal key works. |
+| `app_id` | Not used. `tfl-ts` ≥ 2.6.2 is appKey-only. | Unused since **Jan 2021**. Not shown in new-user UI. |
 
 `lib/tfl/client.ts` builds a server-only `TflClient` from env. There is **no** browser credential store and **no** `/api/tfl` proxy. Site API routes are stats, registry, and feedback only.
 
-`tfl-ts` still requires both `appId` and `appKey` (throws `TflConfigError` if either is missing) and always appends both query params. For browser use with a modern primary key only, the adapter must pass a **harmless sentinel `appId`** (e.g. `"browser"`) until upstream `tfl-ts` relaxes the check — TfL ignores unused `app_id`.
+`tfl-ts` ≥ 2.6.2 takes `{ appKey }` only.
 
 ### Who fetches today
 
@@ -40,13 +40,13 @@ Product architecture already names this acquisition mode: *developer credentials
 | `BusArrivals` registry helper | Client → Server Actions in `lib/tfl/actions.ts` | Site env |
 | Published boards (`TubeStatusBoard`, `ArrivalsBoard`, cycle-hire surfaces) | **Props only** — no fetch | N/A (Open Code) |
 
-There is no first-class client → `api.tfl.gov.uk` path in this app yet. Interactive demos already run in the browser but **delegate** network to Server Actions, so every poll uses the site key.
+Interactive demos already run in the browser but **delegate** network to Server Actions, so every poll uses the site key until a user key is present.
 
-### Sidebar chrome
+### Site chrome
 
 - Docs shell: `components/docs/app-chrome.tsx` → `DocsSidebar` when pathname is `/docs` or `/explore`.
 - Footer today: `SidebarFooter` with `FeedbackDialog` + version link (`components/docs/docs-sidebar.tsx`).
-- Homepage / Blocks / Tools: **no** docs sidebar — credential UI is docs/explorer-only unless we later add a header affordance (out of scope for v1).
+- **All routes** share `SiteHeader` (home, docs, Blocks, Tools). Credential entry lives in the docs/explore **sidebar footer** only (homepage / Blocks / Tools do not show it).
 
 ### CORS (verified 2026-08)
 
@@ -56,11 +56,11 @@ There is no first-class client → `api.tfl.gov.uk` path in this app yet. Intera
 
 ### Goals
 
-1. Sidebar-bottom affordance to paste / clear a user **Primary key** (`app_key`).
-2. Persist safely for the developer’s machine without teaching bad Open Code habits.
-3. When set, **opt-in client demos** call TfL with the user’s key (quota on their subscription).
+1. Docs/explore sidebar affordance to paste / clear a user **TfL API key** (`app_key`).
+2. Persist in the browser (localStorage default; optional session-only) without teaching bad Open Code habits.
+3. When set, **eligible client demos** call TfL with the user’s key (quota on their subscription). No silent fallback to the site key on failure.
 4. Keep published registry components on **data-as-props**; do not bake credentials into installable source.
-5. Keys **must not be persisted on our servers** (Redis, DB, logs, cookies we can read).
+5. Keys **must never** pass through our origin (Server Actions, route handlers, logs, analytics, URLs, rendered HTML, diagnostics, error reporting).
 
 ### Non-goals (v1)
 
@@ -68,48 +68,65 @@ There is no first-class client → `api.tfl.gov.uk` path in this app yet. Intera
 - Publishing a credential manager as a registry item.
 - Multi-user accounts, OAuth, or TfL portal SSO.
 - Encrypting keys at rest beyond “browser storage + never send to our origin”.
-- Changing Tools IA to own this (Tools = inspect/tune; this is **docs chrome**, not a Tool page).
+- Claiming the key is safe from same-origin XSS.
+- Shipping a Content Security Policy as part of this epic (tracked separately — see §5).
 - Making every Server Action accept a client-supplied key (would put keys on our server every call).
+- Prefilling the real credentials UI from a development environment variable (lab-only; removed when the lab goes).
 
-## 4. UX — sidebar bottom
+## 4. UX — docs sidebar
 
 ### Placement
 
-In `DocsSidebar` `SidebarFooter`, **above** or **beside** the Feedback + version row:
+**Docs/explore only:** `DocsSidebar` `SidebarFooter`, above Feedback + version. Not in the global header (homepage / Blocks / Tools do not need the control up front).
 
 ```
 ┌─────────────────────────────┐
 │ … nav …                     │
 ├─────────────────────────────┤
 │ ○ Add TfL API key        ›  │  ← empty state
-│ ● Key ·•••9bdf  Clear    ›  │  ← filled state (masked)
+│ ● Key ·•••9bdf           ›  │  ← filled state (masked)
 │ Feedback          v0.5.0    │
 └─────────────────────────────┘
 ```
 
-Collapsed offcanvas: same control remains in the drawer footer (no separate mobile-only design).
+Collapsed offcanvas: same control remains in the drawer footer.
 
 ### Empty state
 
-- Label: **Add TfL API key** (or **Use your TfL key**).
-- Opens a small dialog (pattern: `FeedbackDialog` — Dialog/Sheet, not an always-expanded form that steals footer height).
+- Label: **Add TfL API key**.
+- Opens a small dialog (pattern: `FeedbackDialog` — Dialog, not an always-expanded form).
 - Copy (short):
-  - Get a free **Primary key** from [api-portal.tfl.gov.uk](https://api-portal.tfl.gov.uk/) (subscribe to 500 req/min → Profile → Show).
+  - Subscribe to **500 Requests per min** on [api-portal.tfl.gov.uk](https://api-portal.tfl.gov.uk/), then Profile → Show.
   - Stored **only in this browser**; never sent to tfl.manglekuo.com.
-  - Used for **live demos that run in your browser**; homepage and cached boards still use site credentials.
-- Single password-style field: Primary key / `app_key`. Optional advanced collapse for legacy `app_id` (default sentinel, hide unless needed).
-- Actions: **Save**, **Cancel**. Validate non-empty + reasonable length (hex-ish / 32+ chars) with soft warning, not hard block.
+  - Used for **live demos that run in your browser**; homepage and cached boards still use the site key.
+- Single password-style field: **TfL API key**.
+- Persist toggle: **Keep in this browser** (default) / **Forget when I close this tab**.
+- Muted helper (not the headline): *On the portal you’ll see two keys (Primary and Secondary); either works. `app_id` has been unused since Jan 2021.*
+- Do not mention a removed pair, “legacy”, or “we used to ask for both.”
+- Actions: **Save**, **Cancel**. Soft shape warning (hex-ish / 32+ chars); then one browser request to TfL to confirm the key before saving as ready. No server-side validation endpoint.
 
 ### Filled state
 
-- Compact status: **Your key** + last 4 characters (never full key in the footer label).
-- Menu / dialog: **Replace**, **Clear**, link to portal, one-line reminder of which demos use it.
+- Compact status: **Your key** + last 4 characters (never full key in the label).
+- Dialog: **Replace**, **Clear**, link to portal, one-line reminder of which demos use it.
 - Optional toast on save: “Live demos will use your key.”
+
+### Demo status pill
+
+Migrated demos show a small pill: **Shared demo data** (site key / Server Action path) vs **Using your key** (browser → TfL).
 
 ### Discoverability
 
-- First-visit: no modal interrupt. Rely on footer + a one-line callout on the first arrivals / interactive demo that still uses Server Actions (“Prefer your own quota? Add a key in the sidebar”).
-- Do not put credentials in the global header (J6 chrome stays Docs · Components · Blocks · Tools).
+- First-visit: no modal interrupt. Rely on sidebar footer + a one-line callout on interactive demos.
+- J6 primary nav stays Docs · Components · Blocks · Tools; the key control is sidebar chrome, not a nav item.
+
+### Hidden tabs
+
+Polling demos pause while `document.visibilityState === "hidden"` and refresh immediately when the tab becomes visible again.
+
+### Explorer
+
+Existing Explorer list/route pages stay on cached site-key data (anonymous introductory experience). Stage 5 ships a reusable **key-required gate** primitive for future extensive/fresh operations; it does **not** retrofit the cached pages.
 
 ## 5. Persistence + threat model
 
@@ -117,33 +134,34 @@ Collapsed offcanvas: same control remains in the drawer footer (no separate mobi
 
 | Option | XSS can read? | Survives tab close? | Hits our server? | Verdict |
 |--------|---------------|---------------------|------------------|---------|
-| **localStorage** | Yes | Yes | No (if never posted) | **Default** — matches font pref / feedback draft patterns; best DX |
-| **sessionStorage** | Yes | No | No | Offer as **“Forget when I close this tab”** toggle for cautious users |
-| httpOnly cookie | No (JS) | Configurable | **Yes** — browser sends to our origin | **Reject** — expands server blast radius; invites proxying every request with their key |
-| Server session / Redis | N/A | Yes | **Yes** | **Reject** — we become key custodian |
+| **localStorage** | Yes | Yes | No (if never posted) | **Default** — best DX |
+| **sessionStorage** | Yes | No | No | Offer as **“Forget when I close this tab”** |
+| httpOnly cookie | No (JS) | Configurable | **Yes** | **Reject** |
+| Server session / Redis | N/A | Yes | **Yes** | **Reject** |
 
 **Threat model (honest):**
 
-1. **XSS on this origin** can read localStorage and exfiltrate the key. Mitigations: keep CSP tight, avoid `dangerouslySetInnerHTML` / untrusted MDX scripts, treat any XSS as credential-loss. Same class of risk as any SPA that stores API tokens client-side.
-2. **Shared machine**: last-4 display + Clear; document “Clear when done on a shared computer.”
-3. **Our backend compromise**: irrelevant for user keys **if** we never receive them. Do not log request bodies that might contain keys; do not add “validate key” Server Actions that echo the key.
-4. **Supply-chain / malicious extension**: out of scope; same as any localStorage secret.
-5. **TfL ToS / quota**: user’s responsibility; UI links portal T&Cs briefly.
+1. **XSS on this origin** can read localStorage/sessionStorage and exfiltrate the key. Neither option is safe from same-origin XSS. This is an **explicit product tradeoff** required for direct browser-to-TfL requests. Do not claim otherwise.
+2. **Content Security Policy** is a separately tracked hardening ticket, not part of this epic. The repo has no CSP today; adding one needs nonce plumbing for the layout FOUC script, font hosts, MapLibre, and related allow-lists. This design must not claim CSP mitigates XSS until that ships.
+3. **Shared machine**: last-4 display + Clear; document “Clear when done on a shared computer.”
+4. **Our backend compromise**: irrelevant for user keys **if** we never receive them. Do not log request bodies that might contain keys; do not add “validate key” Server Actions.
+5. **Supply-chain / malicious extension**: out of scope; same as any localStorage secret.
+6. **TfL ToS / quota**: user’s responsibility; UI links the portal briefly.
+7. **Open source repo**: no personal or real credential may enter source, fixtures, snapshots, logs, screenshots, or tests.
 
-**Storage shape** (illustrative):
+**Storage shape:**
 
 ```ts
-// localStorage key: "tfl-user-api-credentials" (versioned)
+// Storage key: "tfl-user-api-key.v1"
 type StoredUserTflCredentials = {
   v: 1;
   appKey: string;
-  appId?: string; // optional legacy; omit → sentinel at runtime
   persist: "local" | "session";
   savedAt: number; // Date.now() only in client effects — never in RSC shell
 };
 ```
 
-Mirror the `FontPreferenceProvider` hydration pattern: default “empty” on SSR, read storage in `useEffect` / `startTransition` to avoid hydration mismatch and Cache Components time pitfalls.
+Writing to `local` clears `session` and vice versa so only one slot is active. Mirror the `FontPreferenceProvider` hydration pattern: default “empty” on SSR, read storage in `useEffect` / `startTransition`.
 
 ## 6. Client injection path (without breaking Open Code)
 
@@ -151,158 +169,138 @@ Mirror the `FontPreferenceProvider` hydration pattern: default “empty” on SS
 
 ```text
 Sidebar UI  →  UserTflCredentialsProvider (site chrome)
-                    ↓
-           useUserTflCredentials()
-                    ↓
-           createBrowserTflClient(creds)   // docs/site helper only
-                    ↓
-           Demo loaders / client adapters  // still pass `data` into boards
-                    ↓
-           TubeStatusBoard / ArrivalsBoard / …  // unchanged props API
+                              ↓
+                     useUserTflCredentials()
+                              ↓
+                     createBrowserTflClient(appKey)   // site helper only
+                              ↓
+                     Demo loaders / dual-path hooks   // still pass `data` into boards
+                              ↓
+                     TubeStatusBoard / ArrivalsBoard / …  // unchanged props API
 ```
 
-**Invariant:** Registry / `components/tfl/**` installable surfaces continue to accept normalised `data` (and UI state). Fetching with user keys lives in **docs demos, Blocks, or site helpers** — same rule as today’s `getCachedLineStatuses` vs `TubeStatusBoard`.
+**Invariant:** Registry / `components/tfl/**` installable surfaces continue to accept normalised `data`. Fetching with user keys lives in **docs demos, Blocks, or site helpers**.
 
-### Provider
+### Data path
 
-- Site-only: e.g. `components/docs/user-tfl-credentials-provider.tsx` wrapping docs chrome (or root layout next to `FontPreferenceProvider`).
-- API: `{ status: "empty" | "ready"; appKeyMasked; save; clear; persistMode; createClient() }`.
-- `createClient()` returns `new TflClient({ appId: stored.appId ?? "browser", appKey: stored.appKey })` **only in the browser**. Never import this into `"use cache"` modules.
+- **No user key:** existing cached data or server-side site-key path (Server Actions / `"use cache"`).
+- **User key present:** browser request directly to `api.tfl.gov.uk`.
+- **User key fails:** visible user-key error; **no** automatic site-key fallback.
+- **Registry component:** receives `data` as props in every case.
 
-### Demo adapter (not a global fetch monkey-patch)
-
-Prefer an explicit helper over wrapping `fetch`:
+### Provider API (site-only)
 
 ```ts
-// lib/tfl/browser-demo-client.ts — SITE ONLY, not registry
-export function getDemoArrivals(stopPointId: string, client: TflClient) {
-  return client.stopPoint.getArrivals({ stopPointIds: [stopPointId], sortBy: "timeToStation" });
+{
+  status: "empty" | "validating" | "ready" | "invalid";
+  appKeyMasked: string | null;
+  persistMode: "local" | "session";
+  error: TranslatedTflError | null;
+  save: (appKey: string, persist: "local" | "session") => Promise<void>;
+  clear: () => void;
+  getAppKey: () => string | null; // browser-only; never logged
+  markInvalid: (error: TranslatedTflError) => void;
 }
 ```
 
-Client demos:
+Validate on Save with a lightweight browser request (e.g. tube status). Do not re-validate on every page load; reactively mark invalid on 401/429 from real demo requests.
 
-```tsx
-const { status, createClient } = useUserTflCredentials();
-useEffect(() => {
-  if (status !== "ready") {
-    // fallback: existing Server Action (site key) OR show CTA to add key
-    return;
-  }
-  const client = createClient();
-  void getDemoArrivals(stopId, client).then(/* setState → <ArrivalsBoard data={…} /> */);
-}, [status, stopId]);
-```
+Do **not** pass user keys into Server Actions.
 
-**Fallback policy when empty:** keep current Server Action / cached RSC behaviour so demos work without a key (site quota). When ready, **prefer** browser client and **skip** the Server Action for that demo so quota moves to the user.
+### Registry `LiveArrivalsBoard` / `BusArrivals`
 
-Do **not** pass user keys into Server Actions “for convenience.”
-
-### What about registry `LiveArrivalsBoard` / `BusArrivals`?
-
-Those helpers currently import site Server Actions. Options for later PRs:
-
-1. **Docs demos first** — fork behaviour only under `components/docs/demos/*` (lowest risk).
-2. **Deprecate fetch-inside registry helpers** further toward props-only (already partially documented); user-key path accelerates that cleanup.
-3. Avoid teaching consumers to paste keys into published components.
+Out of scope for this epic to change registry JSON or fetch-inside helpers. Docs demos migrate first under `components/docs/demos/*`.
 
 ## 7. What stays on site credentials vs user overwrite
 
-| Surface | v1 behaviour |
-|--------|----------------|
-| Homepage proof (status, week-ahead, home arrivals, cycle hire) | **Site** — shared cache, PPR/`"use cache"`, no per-visitor key |
-| Server-rendered docs demos (`TubeStatusBoardDemo`, cycle-hire RSC demo, line-strip live section) | **Site** unless a follow-up adds an optional client refresh strip |
-| Arrivals / bus interactive demos that already poll from the client | **User key when set**, else site Server Action |
-| Explorer pages | **Site** in v1 (RSC + cache); optional later “live with my key” client panels |
-| Registry install docs / code snippets | Continue showing **consumer env** `TFL_APP_ID` / `TFL_APP_KEY` — unrelated to sidebar paste |
+| Surface | Behaviour |
+|--------|-----------|
+| Homepage proof (status, week-ahead, home arrivals, cycle hire) | **Site** — shared cache; independent of user credentials |
+| Server-rendered docs demos (Tube status, cycle-hire RSC, line-strip) | **Site** unless a later family PR adds a client refresh strip |
+| Arrivals / bus interactive demos that already poll from the client | **User key when ready**, else site Server Action |
+| Explorer cached list/route pages | **Site** (introductory); gate primitive for future extensive ops |
+| Registry install docs / code snippets | Consumer env `TFL_APP_KEY` — unrelated to browser paste |
 | Feedback, stats, registry CDN | Unrelated |
 
-**Overwrite** means: for opted-in **client** demos only, replace the site Server Action hop with browser `tfl-ts`. It does **not** mean rewriting `getTflClient()` or injecting into `"use cache"`.
+## 8. Implementation stages
 
-## 8. Proposed PR split (this epic only)
+| Stage | Title | Delivers |
+|-------|-------|----------|
+| **0** | Design doc (this) | Shared agreement |
+| **1** | Storage + provider + dialog + sidebar trigger | Save/clear/validate; no demo behaviour change |
+| **2** | Dual-path polling hook + `"use server"` appKey guard | Visibility pause/resume; cancellation; CI grep |
+| **3** | Wire arrivals-family docs demos | User key → direct TfL; empty → Server Action; status pill |
+| **4** | Docs copy | Get started / arrivals note; browser key ≠ server env |
+| **5** | Remaining families + Explorer gate primitive | By API family; gate only (no cached-page retrofit) |
+| **6** | Remove browser-fetch lab | Delete `/temp/tfl-browser-fetch` and its dev-only env prefill |
 
-Merge order — each PR shippable alone; stop after any PR if priorities shift.
+### Explicitly later / other epics
 
-| PR | Title focus | Delivers | Depends on |
-|----|-------------|----------|------------|
-| **0** | Design doc (this) | Shared agreement | — |
-| **1** | Storage + provider + sidebar UI | Save/clear/mask; local vs session; no demo behaviour change yet | 0 |
-| **2** | Browser demo client adapter | `createBrowserTflClient` / `browser-demo-client` helpers; unit tests for storage parse + sentinel `appId` | 1 |
-| **3** | Wire arrivals-family demos | Docs arrivals + bus demos: user key → direct TfL; empty → Server Action; sidebar CTA copy | 2 |
-| **4** | Docs copy | Short Get started / arrivals page note; `.env.example` comment that sidebar keys ≠ server env | 1+ (can parallel 3) |
+- Content Security Policy (site-wide hardening).
+- Client refresh for Tube status demo (as its own family PR under Stage 5).
+- Deprecating Server Actions from registry `LiveArrivalsBoard` / `BusArrivals`.
+- Geomap work, registry JSON releases, unrelated component releases.
 
-### Explicitly later / other epics (not this sequence)
+## 9. Files (implementation)
 
-- Client refresh for Tube status demo.
-- Explorer live panels.
-- Upstream `tfl-ts` “appKey-only” constructor.
-- Removing Server Actions from registry `LiveArrivalsBoard` / `BusArrivals` entirely.
+**Stage 1**
 
-### Relative to other WIP
+- `lib/tfl/user-credentials-storage.ts`, `redact-secrets.ts`, `browser-tfl-client.ts`, `tfl-error-translation.ts`
+- `components/user-tfl-credentials-provider.tsx`, `user-tfl-credentials-dialog.tsx`, `user-tfl-credentials-trigger.tsx`
+- `components/docs/docs-sidebar.tsx`, `app/layout.tsx`
 
-- Independent of cycle-hire map polish, registry colour builds, feedback email.
-- Do not block component `v*` releases: this is **web app chrome** (`web-v*`), not registry payloads.
-- Avoid merging PR 3 while a large arrivals-board layout PR is in flight on the same demo files — sequence after or rebase carefully.
+**Stage 2**
 
-## 9. Files likely touched (implementation)
+- `hooks/use-dual-path-arrivals.ts`
+- `scripts/check-no-server-appkey.ts`
 
-**PR 1 — UI + storage**
+**Stage 3**
 
-- `components/docs/docs-sidebar.tsx` — footer slot
-- `components/docs/user-tfl-credentials-dialog.tsx` (new)
-- `components/docs/user-tfl-credentials-provider.tsx` (new)
-- `lib/tfl/user-credentials-storage.ts` (new) — read/write/clear, no React
-- `app/layout.tsx` or docs chrome provider tree — mount provider
-- Possibly `components/ui/dialog` / existing Base UI patterns only
-
-**PR 2 — adapter**
-
-- `lib/tfl/browser-demo-client.ts` (new)
-- `lib/tfl/user-credentials-storage.test.ts` (new)
-
-**PR 3 — wire demos**
-
-- `components/docs/demos/arrivals-board-demo.tsx`
+- `components/docs/demos/rail-arrivals-board-demo.tsx`
 - `components/docs/demos/bus-arrivals-board-demo.tsx`
-- Optionally docs-only wrapper replacing `LiveArrivalsBoard` usage; **avoid** changing published registry behaviour until intentional
 
-**PR 4 — copy**
+**Stage 4**
 
-- Relevant MDX under docs arrivals / get-started
-- `.env.example` comment clarifying site env vs browser paste
+- Arrivals / installation MDX; `.env.example` comment
+
+**Stage 5**
+
+- Explorer gate primitive; further demo adapters by family
+
+**Stage 6**
+
+- Delete `app/temp/tfl-browser-fetch/**`
 
 **Do not touch for this epic**
 
 - `lib/tfl/client.ts` site env path (except comments)
-- `"use cache"` data modules
-- Frozen IA docs (unless a one-line cross-link under §11 is explicitly approved)
-- Registry JSON / `pnpm registry:build` (unless a later PR deprecates fetch-inside helpers)
+- `"use cache"` data modules / homepage
+- Frozen IA docs
+- Registry JSON / `pnpm registry:build`
 
 ## 10. Risks
 
 | Risk | Mitigation |
 |------|------------|
-| XSS exfiltrates localStorage key | CSP, no key in URLs, document risk; session-only option |
-| Accidental Server Action that accepts `appKey` | Code review checklist; lint/grep for `appKey` in `"use server"` files |
-| Demo dual-path complexity (site vs user) | Single helper `loadDemoArrivals({ mode })`; tests for both branches |
-| Users think homepage uses their key | Explicit UX copy + filled-state helper text |
-| `tfl-ts` requires `appId` | Sentinel `appId`; track upstream fix |
-| CORS regression on some verbs | Feature-detect or catch network errors; fall back to site action + message |
-| Quota confusion / 429 | Surface TfL error message; link portal |
+| XSS exfiltrates browser-stored key | Honest docs; session-only option; separate CSP ticket; no key in URLs we control |
+| Accidental Server Action that accepts `appKey` | `scripts/check-no-server-appkey.ts` + review checklist |
+| Demo dual-path complexity | Single `useDualPathArrivals` hook; status pill |
+| Users think homepage uses their key | Explicit UX copy |
+| Quota confusion / 429 | Translated errors; no silent site-key fallback |
 | Teaching consumers to put keys in client bundles of production apps | Docs: “docs site convenience only; production apps keep keys server-side” |
 
-## 11. Decision checklist (approve before PR 1)
+## 11. Decision checklist
 
-- [ ] Persist default = **localStorage**, with session-only toggle
-- [ ] Keys **never** posted to our origin (no validate endpoint)
-- [ ] Direct browser → `api.tfl.gov.uk` when key present
-- [ ] Published components stay props-only
-- [ ] Site `"use cache"` / homepage stay on site env
-- [ ] First wired surfaces = arrivals-family docs demos
-- [ ] Design lives at `docs/tfl-user-credentials-design.md` until implemented; then fold a short “How demos fetch” note into Get started and archive or mark this doc Implemented
-
-## 12. Open questions for human review
-
-1. Should empty-state demos keep using the **site** Server Action (recommended), or require a key for interactive polling to protect site quota?
-2. Is a header entry on non-docs routes (Blocks/Tools) needed in v1, or sidebar-only?
-3. Optional: soft rate-limit / pause polling when tab is hidden (`document.visibilityState`) — product polish, not storage design.
+- [x] Call it a **TfL API key** (dialog explains either portal key works)
+- [x] Persist default = **localStorage**, with session-only toggle
+- [x] Keys **never** posted to our origin (no validate endpoint)
+- [x] Direct browser → `api.tfl.gov.uk` when key present
+- [x] Invalid/rate-limited user key → explicit error, no site-key fallback
+- [x] Published components stay props-only
+- [x] Site `"use cache"` / homepage stay on site env
+- [x] Docs/explore sidebar entry only (no global header control)
+- [x] Pause polling when tab hidden; refresh on visible
+- [x] CSP tracked separately (not claimed as mitigation here)
+- [x] First wired surfaces = arrivals-family docs demos
+- [x] Explorer: gate primitive only for now; cached pages stay anonymous
+- [x] `tfl-ts` ≥ 2.6.2 — no further coordinated release required

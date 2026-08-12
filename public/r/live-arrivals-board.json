@@ -39,7 +39,7 @@
     },
     {
       "path": "lib/tfl/client.ts",
-      "content": "import TflClient from \"tfl-ts\";\n\nexport const getTflClient = (): TflClient => {\n  const appId = process.env.TFL_APP_ID;\n  const appKey = process.env.TFL_APP_KEY;\n  if (appId && appKey) {\n    return new TflClient({ appId, appKey });\n  }\n  return new TflClient();\n};\n",
+      "content": "import TflClient from \"tfl-ts\";\n\nexport const getTflClient = (): TflClient => {\n  const appKey = process.env.TFL_APP_KEY;\n  if (!appKey) {\n    return new TflClient();\n  }\n  return new TflClient({ appKey });\n};\n",
       "type": "registry:lib",
       "target": "lib/tfl/client.ts"
     }

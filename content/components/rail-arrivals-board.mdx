@@ -17,7 +17,6 @@ Fetching, caching, and polling stay in the app.
 import TflClient from "tfl-ts"
 
 const tfl = new TflClient({
-  appId: process.env.TFL_APP_ID!,
   appKey: process.env.TFL_APP_KEY!,
 })
 
@@ -28,6 +27,8 @@ const data = await tfl.stopPoint.getArrivals({
 ```
 
 `getArrivals` returns `RealtimePrediction[]`. Pass that array directly. The board sorts it; callers do not need to pre-sort.
+
+On this docs site, the live preview polls with the site key until you paste a **TfL API key** in the docs sidebar. With your key set, the preview requests TfL directly from the browser against your quota. That browser key is unrelated to the `TFL_APP_KEY` env var in the snippet above — keep production keys on the server.
 
 ## Render
 
