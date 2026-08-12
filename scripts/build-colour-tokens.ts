@@ -332,6 +332,7 @@ const COLOUR_CONSUMERS = [
   "line-badge",
   "tube-status-board",
   "arrivals-board",
+  "rail-arrivals-board",
   "bus-arrivals-board",
   "live-arrivals-board",
   "line-strip",

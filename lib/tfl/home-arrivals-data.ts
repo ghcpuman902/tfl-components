@@ -6,43 +6,13 @@ import {
   type ArrivalsEmptyKind,
 } from "@/lib/tfl/arrivals-empty";
 import { getTflClient } from "@/lib/tfl/client";
+import {
+  HOME_BUS_STOP,
+  HOME_RAIL_LINES,
+  HOME_RAIL_STOP,
+} from "@/lib/tfl/home-arrivals-stops";
 
-/** Tube / rail station for the homepage departures board. */
-export const HOME_RAIL_STOP = {
-  id: "940GZZLUOXC",
-  name: "Oxford Circus",
-} as const;
-
-/** Lines that serve {@link HOME_RAIL_STOP} — keeps empty sections stable on the board. */
-export const HOME_RAIL_LINES = [
-  {
-    lineId: "bakerloo",
-    lineName: "Bakerloo",
-    modeName: "tube",
-    bounds: ["northbound", "southbound"],
-  },
-  {
-    lineId: "central",
-    lineName: "Central",
-    modeName: "tube",
-    bounds: ["westbound", "eastbound"],
-  },
-  {
-    lineId: "victoria",
-    lineName: "Victoria",
-    modeName: "tube",
-    bounds: ["northbound", "southbound"],
-  },
-] as const;
-
-/**
- * Busy boardable bus stop at Trafalgar Square (NaPTAN 490…).
- * Chosen for a reliable, visually useful board without discovery UI.
- */
-export const HOME_BUS_STOP = {
-  id: "490000091G",
-  name: "Trafalgar Square",
-} as const;
+export { HOME_BUS_STOP, HOME_RAIL_LINES, HOME_RAIL_STOP };
 
 export type CachedArrivalsPayload = {
   arrivals: RealtimePrediction[];
@@ -151,7 +121,7 @@ const ARRIVALS_LOAD_ERROR = "Couldn't load arrivals.";
  */
 export const readHomeArrivalsBoardState = async (
   payload: CachedArrivalsPayload,
-  variant: "rail" | "bus" = "rail",
+  domain: "rail" | "bus" = "rail",
 ): Promise<{
   error: string | null;
   emptyKind: ArrivalsEmptyKind;
@@ -166,7 +136,7 @@ export const readHomeArrivalsBoardState = async (
     emptyKind:
       resolveArrivalsEmptyKind({
         rowCount: payload.arrivals.length,
-        variant,
+        domain,
         nowMs,
       }) ?? "empty",
   };

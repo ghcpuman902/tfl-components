@@ -28,6 +28,8 @@ const nextConfig: NextConfig = {
       { source: "/installation", destination: "/docs/installation", permanent: true },
       { source: "/interfaces", destination: "/docs/components", permanent: true },
       { source: "/interfaces/arrivals-board", destination: "/docs/tube-rail-arrivals", permanent: true },
+      { source: "/interfaces/rail-arrivals-board", destination: "/docs/tube-rail-arrivals", permanent: true },
+      { source: "/interfaces/bus-arrivals-board", destination: "/docs/bus-arrivals", permanent: true },
       { source: "/interfaces/tube-status-board", destination: "/docs/tube-rail-status", permanent: true },
       { source: "/interfaces/line-strip", destination: "/docs/line-strip", permanent: true },
       { source: "/primitives", destination: "/docs/components", permanent: true },

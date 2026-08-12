@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Arrivals board layout
 
-Domain board under `registry/tfl/arrivals/arrivals-board.tsx`. Rail and bus share one component (`variant`).
+Domain boards under `registry/tfl/arrivals/rail-arrivals-board.tsx` and `bus-arrivals-board.tsx`. Shared presentation lives in `arrivals-board-view.tsx`. Rail and bus do **not** share a high-level `variant` API.
 
 ## Rhythm
 

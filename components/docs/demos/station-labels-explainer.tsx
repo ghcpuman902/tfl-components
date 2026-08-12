@@ -25,7 +25,7 @@ const ABBREVIATION_SAMPLES = [
   { name: "Clapham Junction", due: "7 min" },
 ] as const;
 
-/** Same rhythm as ArrivalsBoard — one row = 6 × 0.5rem, fits two leading-5 lines. */
+/** Same rhythm as arrivals boards — one row = 6 × 0.5rem, fits two leading-5 lines. */
 const ARRIVALS_RHYTHM = {
   "--arrivals-unit": "0.5rem",
   "--arrivals-row": "calc(var(--arrivals-unit) * 6)",

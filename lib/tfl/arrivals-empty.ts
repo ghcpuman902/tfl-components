@@ -1,5 +1,3 @@
-import { LONDON_TIME_ZONE } from "@/lib/tfl/london-dates";
-
 /**
  * Why an arrivals board has no rows. Callers resolve this from fetch result +
  * clock; the board only paints the copy.
@@ -14,6 +12,8 @@ export const ARRIVALS_EMPTY_COPY: Record<ArrivalsEmptyKind, string> = {
 
 /** Per-line / per-route when predictions are missing but the line is still shown. */
 export const ARRIVALS_LINE_EMPTY_COPY = "No information";
+
+const LONDON_TIME_ZONE = "Europe/London";
 
 const londonHourFormatter = new Intl.DateTimeFormat("en-GB", {
   timeZone: LONDON_TIME_ZONE,
@@ -43,7 +43,8 @@ type ResolveArrivalsEmptyKindOptions = {
   /** Fetch/render failure — board uses `error` instead. */
   hasError?: boolean;
   offline?: boolean;
-  variant?: "rail" | "bus";
+  /** Rail uses the overnight `ended` heuristic; bus does not. */
+  domain?: "rail" | "bus";
   nowMs: number;
 };
 
@@ -55,11 +56,11 @@ export const resolveArrivalsEmptyKind = ({
   rowCount,
   hasError = false,
   offline = false,
-  variant = "rail",
+  domain = "rail",
   nowMs,
 }: ResolveArrivalsEmptyKindOptions): ArrivalsEmptyKind | null => {
   if (hasError || rowCount > 0) return null;
   if (offline) return "offline";
-  if (variant !== "bus" && isLikelyRailServiceEnded(nowMs)) return "ended";
+  if (domain !== "bus" && isLikelyRailServiceEnded(nowMs)) return "ended";
   return "empty";
 };

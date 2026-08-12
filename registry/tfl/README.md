@@ -8,7 +8,8 @@ From any app that uses the shadcn CLI:
 
 ```bash
 pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/tube-status-board.json
-pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/arrivals-board.json
+pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/rail-arrivals-board.json
+pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/bus-arrivals-board.json
 pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/tfl-roundel.json
 ```
 
@@ -20,7 +21,7 @@ Built payloads live under [`public/r/`](../../public/r/). The catalog is [`regis
 registry/tfl/
   brand/       # roundel, line badge
   status/      # tube status board
-  arrivals/    # arrivals board, chips, live helper
+  arrivals/    # rail + bus boards, shared view, chips, live helper
   cycle-hire/  # map + detail surfaces
   diagram/     # line strips and schematic atoms
 ```

@@ -55,7 +55,7 @@ When visible paint differs from the canonical name (abbreviation, `<br>`-split l
 
 ### Arrivals board rhythm
 
-Shared rail/bus board: `registry/tfl/arrivals/arrivals-board.tsx`.  
+Shared rail/bus presentation: `registry/tfl/arrivals/arrivals-board-view.tsx`. Domain boards: `rail-arrivals-board.tsx`, `bus-arrivals-board.tsx`.  
 Agent rule (globs the board + demos): [`.cursor/rules/arrivals-board-layout.mdc`](../.cursor/rules/arrivals-board-layout.mdc).
 
 **Baseline grid**

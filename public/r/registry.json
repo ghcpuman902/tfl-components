@@ -549,10 +549,10 @@
       ]
     },
     {
-      "name": "arrivals-board",
+      "name": "rail-arrivals-board",
       "type": "registry:component",
-      "title": "Arrivals Board",
-      "description": "Per-station departures grouped by line and compass bound — pass RealtimePrediction[] as data.",
+      "title": "Rail Arrivals Board",
+      "description": "Per-station Tube and rail departures grouped by line and compass bound — pass RealtimePrediction[] as data.",
       "dependencies": [
         "tfl-ts",
         "lucide-react"
@@ -567,6 +567,123 @@
       ],
       "files": [
         {
+          "path": "registry/tfl/arrivals/rail-arrivals-board.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/rail-arrivals-board.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/arrivals-board-view.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/arrivals-board-view.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/arrivals-bound-group.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/arrivals-bound-group.tsx"
+        },
+        {
+          "path": "lib/tfl/arrivals-prepare.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-prepare.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-line-sort.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-line-sort.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-bound-sort.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-bound-sort.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-route-sort.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-route-sort.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-empty.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-empty.ts"
+        }
+      ]
+    },
+    {
+      "name": "bus-arrivals-board",
+      "type": "registry:component",
+      "title": "Bus Arrivals Board",
+      "description": "Bus stop departures as a flat time-ordered list, with optional route grouping — pass RealtimePrediction[] as data.",
+      "dependencies": [
+        "tfl-ts",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "https://tfl.manglekuo.com/r/tfl-colours.json",
+        "https://tfl.manglekuo.com/r/line-badge.json",
+        "https://tfl.manglekuo.com/r/platform-chip.json",
+        "https://tfl.manglekuo.com/r/bus-number-chip.json",
+        "https://tfl.manglekuo.com/r/tfl-roundel.json",
+        "skeleton"
+      ],
+      "files": [
+        {
+          "path": "registry/tfl/arrivals/bus-arrivals-board.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/bus-arrivals-board.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/arrivals-board-view.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/arrivals-board-view.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/arrivals-bound-group.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/arrivals-bound-group.tsx"
+        },
+        {
+          "path": "lib/tfl/arrivals-prepare.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-prepare.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-line-sort.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-line-sort.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-bound-sort.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-bound-sort.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-route-sort.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-route-sort.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-empty.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-empty.ts"
+        }
+      ]
+    },
+    {
+      "name": "arrivals-board",
+      "type": "registry:component",
+      "title": "Arrivals Board",
+      "description": "Deprecated adapter. Install rail-arrivals-board or bus-arrivals-board instead.",
+      "dependencies": [
+        "tfl-ts",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "https://tfl.manglekuo.com/r/tfl-colours.json",
+        "https://tfl.manglekuo.com/r/rail-arrivals-board.json",
+        "https://tfl.manglekuo.com/r/bus-arrivals-board.json"
+      ],
+      "files": [
+        {
           "path": "registry/tfl/arrivals/arrivals-board.tsx",
           "type": "registry:component",
           "target": "components/tfl/arrivals/arrivals-board.tsx"
@@ -574,50 +691,10 @@
       ]
     },
     {
-      "name": "bus-arrivals-board",
-      "type": "registry:block",
-      "title": "Bus Arrivals Board",
-      "description": "Stop discovery (near you / search) composed with ArrivalsBoard — Explorer/Block chrome, not the Interface API.",
-      "dependencies": [
-        "tfl-ts",
-        "lucide-react"
-      ],
-      "registryDependencies": [
-        "https://tfl.manglekuo.com/r/tfl-colours.json",
-        "https://tfl.manglekuo.com/r/arrivals-board.json",
-        "button",
-        "input",
-        "label",
-        "skeleton"
-      ],
-      "files": [
-        {
-          "path": "registry/tfl/arrivals/bus-arrivals.tsx",
-          "type": "registry:component",
-          "target": "components/tfl/arrivals/bus-arrivals.tsx"
-        },
-        {
-          "path": "lib/tfl/actions.ts",
-          "type": "registry:lib",
-          "target": "lib/tfl/actions.ts"
-        },
-        {
-          "path": "lib/tfl/geo.ts",
-          "type": "registry:lib",
-          "target": "lib/tfl/geo.ts"
-        },
-        {
-          "path": "lib/tfl/client.ts",
-          "type": "registry:lib",
-          "target": "lib/tfl/client.ts"
-        }
-      ]
-    },
-    {
       "name": "live-arrivals-board",
       "type": "registry:block",
       "title": "Live Arrivals Board",
-      "description": "Polling helper that feeds ArrivalsBoard with stop arrivals data.",
+      "description": "Polling helper that feeds RailArrivalsBoard with stop arrivals data.",
       "dependencies": [
         "tfl-ts",
         "lucide-react"
@@ -625,7 +702,7 @@
       "registryDependencies": [
         "https://tfl.manglekuo.com/r/tfl-colours.json",
         "skeleton",
-        "https://tfl.manglekuo.com/r/arrivals-board.json"
+        "https://tfl.manglekuo.com/r/rail-arrivals-board.json"
       ],
       "files": [
         {
@@ -634,14 +711,19 @@
           "target": "components/tfl/arrivals/live-arrivals-board.tsx"
         },
         {
-          "path": "registry/tfl/arrivals/arrivals-board.tsx",
-          "type": "registry:component",
-          "target": "components/tfl/arrivals/arrivals-board.tsx"
-        },
-        {
           "path": "lib/tfl/live-arrivals-action.ts",
           "type": "registry:lib",
           "target": "lib/tfl/live-arrivals-action.ts"
+        },
+        {
+          "path": "lib/tfl/use-arrivals-board-ui-state.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/use-arrivals-board-ui-state.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-empty.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-empty.ts"
         },
         {
           "path": "lib/tfl/client.ts",

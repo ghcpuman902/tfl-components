@@ -1,0 +1,109 @@
+## Purpose
+
+Per-station Tube and rail departures. `RailArrivalsBoard` interprets `RealtimePrediction[]` and owns rail grouping: line, then compass bound. Bus has its own board, [`BusArrivalsBoard`](/docs/bus-arrivals). The two share row chrome, chips, and the tile rhythm, not the high-level API.
+
+Fetching, caching, and polling stay in the app.
+
+## Getting data with tfl-ts
+
+```ts
+import TflClient from "tfl-ts"
+
+const tfl = new TflClient({
+  appId: process.env.TFL_APP_ID!,
+  appKey: process.env.TFL_APP_KEY!,
+})
+
+const data = await tfl.stopPoint.getArrivals({
+  stopPointIds: ["940GZZLUOXC"],
+  sortBy: "timeToStation",
+})
+```
+
+`getArrivals` returns `RealtimePrediction[]`. Pass that array directly. The board sorts it; callers do not need to pre-sort.
+
+## Render
+
+```tsx
+import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
+
+export default function Page({ data }) {
+  return (
+    <RailArrivalsBoard
+      data={data}
+      stopName="Oxford Circus"
+      lines={[
+        { lineId: "bakerloo", lineName: "Bakerloo", bounds: ["northbound", "southbound"] },
+        { lineId: "central", lineName: "Central", bounds: ["westbound", "eastbound"] },
+        { lineId: "victoria", lineName: "Victoria", bounds: ["northbound", "southbound"] },
+      ]}
+    />
+  )
+}
+```
+
+## Variations
+
+### Line then bound
+
+Groups by line (name + colour bar), then by compass bound from `platformName` (Westbound / Eastbound / Northbound / Southbound). On a vertical board, West sits above East and North above South. Bound labels match the line-name size. Each row leads with a [`PlatformChip`](/docs/platform-chip) (`Platform 1` → `Plat 1` → `P1` → `1` as the board narrows), then destination + countdown. Destinations use [`StationName`](/docs/station-name-labels) with the same abbreviation rules as line diagrams. Hairlines inside a line group share one weight, including under bound titles.
+
+Line sections stay in canonical `LINE_ORDER` from `tfl-ts`. Empty expected lines keep that slot; they do not drop below live lines. Pass optional `lines` for the stop’s serving set so a line with no predictions still renders a muted **No information** row. When `lines[].bounds` lists the compass sides that station actually serves, those bound groups still render even if the current poll has no trains that way. Otherwise a missing side is omitted.
+
+Each bound shows `pageSize` trains (default 3). Hover the bound label and its rows to page further arrivals — Lucide triangle arrows on the right of the bound title, same muted colour as Westbound / Eastbound. A quiet `1/5` sits between them; on a single page both arrows stay disabled (`1/1`). Touch screens keep the arrows visible. A short last page still occupies `pageSize` rows so paging does not jump the layout. A bound with only one page (even a single train) stays short.
+
+A completely flat rail board is a different product. It would need a compressed row that still shows line, bound, platform, destination, and countdown, not a layout switch on this component.
+
+### Ordering
+
+Named policies, not comparator callbacks:
+
+| Prop | Default | `"source"` |
+|------|---------|------------|
+| `sortBy` | `timeToStation` within each bound | Input order within each bound |
+| `lineSortBy` | `canonical` (`LINE_ORDER`) | First appearance in `data`, then unused `lines` |
+| `boundSortBy` | `compass` (West→East, North→South) | First appearance within the line |
+
+`maxRows` is a per-bound cap after that order (it does not drop later lines). `pageSize` (default 3) is how many trains each Westbound / Eastbound / Northbound / Southbound group shows at once; hover the bound group for quieter next/previous arrows. Equal `timeToStation` keeps input order. The board does not mutate `data`.
+
+### Baseline grid
+
+Rail and bus share one vertical rhythm, so two boards side by side line up. Every block is a whole number of `--arrivals-unit` (`0.5rem`): the stop name, each line header, bound label, and arrival row are 6 units (`3rem`). Retune density by overriding the vars on a wrapper:
+
+```tsx
+<div style={{ "--arrivals-unit": "0.375rem" }}>
+  <RailArrivalsBoard data={data} stopName="Oxford Circus" />
+</div>
+```
+
+### Polling
+
+Keep polling outside the board (timer + Server Action), then update `data`. Optional `statusLabel` shows poll metadata.
+
+## Behaviour / edge cases
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `data` | `readonly RealtimePrediction[]` | Normalised arrivals from `tfl-ts`. Missing/`undefined` → empty. |
+| `lines` | `readonly { lineId, lineName, modeName?, bounds? }[]` | Optional serving lines. Empty lines keep a "No information" row in canonical order. Optional `bounds` seeds West/East/North/South groups from station metadata. |
+| `sortBy` | `"timeToStation" \| "source"` | Arrival order within each bound. |
+| `lineSortBy` | `"canonical" \| "source"` | Line section order. |
+| `boundSortBy` | `"compass" \| "source"` | Bound order within a line. |
+| `stopName` | `string` | Board heading. Fits via abbr/scale, same policy as destinations. |
+| `loading` / `error` | … | Loading and error presentation. Prefer a short human `error` string. |
+| `emptyKind` | `"empty" \| "ended" \| "offline"` | Why the board has no sections when `error` is unset and `lines` is empty. Resolve in the app (`resolveArrivalsEmptyKind`). |
+| `emptyMessage` | `string` | Optional copy override for `emptyKind`. |
+| `statusLabel` | `string` | Optional poll / refresh caption. |
+| `maxRows` | `number` | Per-bound prediction cap after ordering. Does not drop later lines. Headers and empty rows do not count. |
+| `pageSize` | `number` | Visible arrivals per bound (default 3). Extra trains page behind hover arrows. |
+
+## Data ownership
+
+Fetching, caching, polling, geolocation, and API credentials stay in the application layer. This component only renders.
+
+## Related
+
+- Interface: [Bus Arrivals](/docs/bus-arrivals)
+- Primitives: [Platform chip](/docs/platform-chip)
+- Foundations: [Line colours & badges](/docs/colors)
+- Explorer: [Route stations](/explore/routes)

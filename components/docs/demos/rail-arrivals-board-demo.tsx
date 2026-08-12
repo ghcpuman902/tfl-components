@@ -3,25 +3,22 @@
 import { useEffect, useState } from "react"
 import type { RealtimePrediction } from "tfl-ts"
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
+import { DataSourceLabel } from "@/components/docs/data-source-label"
 import { getStopArrivalsAction } from "@/lib/tfl/live-arrivals-action"
+import { HOME_RAIL_LINES } from "@/lib/tfl/home-arrivals-stops"
 import { useArrivalsBoardUiState } from "@/lib/tfl/use-arrivals-board-ui-state"
 
-const DEFAULT_STOP_ID = "940GZZLUOXC"
+const RAIL_STOP = {
+  id: "940GZZLUOXC",
+  name: "Oxford Circus",
+} as const
+
 const POLL_MS = 15_000
 
 /**
- * Docs/demo helper: polls a stop and passes predictions into {@link RailArrivalsBoard}.
- * Prefer using `RailArrivalsBoard` with `data` directly in applications.
- *
- * @deprecated Prefer RailArrivalsBoard + your own fetch. Legacy registry name only.
+ * Rail arrivals demo — Oxford Circus via RailArrivalsBoard + tfl-ts predictions.
  */
-export const LiveArrivalsBoard = ({
-  stopPointId = DEFAULT_STOP_ID,
-  stopName = "Oxford Circus",
-}: {
-  stopPointId?: string
-  stopName?: string
-}) => {
+export default function RailArrivalsBoardDemo() {
   const [data, setData] = useState<RealtimePrediction[]>([])
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -34,7 +31,7 @@ export const LiveArrivalsBoard = ({
 
     const load = async () => {
       try {
-        const result = await getStopArrivalsAction(stopPointId)
+        const result = await getStopArrivalsAction(RAIL_STOP.id)
         if (cancelled) return
         if (!result.ok) {
           setFetchError(result.error)
@@ -59,19 +56,25 @@ export const LiveArrivalsBoard = ({
       cancelled = true
       if (timer) clearTimeout(timer)
     }
-  }, [stopPointId])
+  }, [])
 
   return (
-    <RailArrivalsBoard
-      data={data}
-      stopName={stopName}
-      loading={loading}
-      error={boardState.error}
-      emptyKind={boardState.emptyKind}
-      statusLabel={`Poll #${tick} · every ${POLL_MS / 1000}s`}
-    />
+    <div className="space-y-4">
+      <DataSourceLabel source="live" />
+      <p className="text-sm text-muted-foreground">
+        Pass <code className="text-xs">RealtimePrediction[]</code> from{" "}
+        <code className="text-xs">tfl.stopPoint.getArrivals</code> as{" "}
+        <code className="text-xs">data</code>. Polling stays outside the board.
+      </p>
+      <RailArrivalsBoard
+        data={data}
+        lines={HOME_RAIL_LINES}
+        stopName={RAIL_STOP.name}
+        loading={loading}
+        error={boardState.error}
+        emptyKind={boardState.emptyKind}
+        statusLabel={`Poll #${tick} · every ${POLL_MS / 1000}s`}
+      />
+    </div>
   )
 }
-
-export { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
-export { ArrivalsBoardSkeleton } from "@/components/tfl/arrivals/arrivals-board-view"

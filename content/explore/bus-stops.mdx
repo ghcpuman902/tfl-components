@@ -1,9 +1,10 @@
 ## Bus stops
 
-Find stops near a location or by name, then load live arrivals into the shared
-`ArrivalsBoard` (`variant="bus"`). Uses `stopPoint.getByGeoPoint`,
+Find stops near a location or by name, then load live arrivals into
+`BusArrivalsBoard` (flat, time-ordered by default). Uses `stopPoint.getByGeoPoint`,
 `stopPoint.search`, and `stopPoint.getArrivals`.
 
 The installable Interface is [Bus Arrivals](/docs/bus-arrivals) — pass
 normalised predictions as `data`. Keep discovery (location / search) in your
-app or this Explorer view.
+app or this Explorer view. The explorer composition is `BusArrivals`; the
+board is `BusArrivalsBoard`.
