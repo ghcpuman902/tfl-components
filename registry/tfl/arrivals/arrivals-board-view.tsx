@@ -19,10 +19,12 @@ import {
   ArrivalsGroupHeader,
   ArrivalsPagedGroup,
   ArrivalsPagedList,
+  type ArrivalsBoardClassNames,
 } from "@/components/tfl/arrivals/arrivals-bound-group"
 
 export type ArrivalsBoardMode = "rail" | "bus"
 
+export type { ArrivalsBoardClassNames }
 export {
   formatArrivalsCountdown,
   getArrivalsPlatformNumber,
@@ -122,11 +124,14 @@ const StopLetterBadge = ({ letter }: { letter: string }) => (
 
 export const ArrivalsBoardSkeleton = ({
   mode = "rail",
+  className,
 }: {
   mode?: ArrivalsBoardMode
+  className?: string
 }) => (
   <div
-    className="w-full space-y-2"
+    data-slot="arrivals-board"
+    className={cn("@container/arrivals w-full space-y-2", className)}
     style={ARRIVALS_RHYTHM_VARS}
     aria-busy
     aria-label="Loading arrivals"
@@ -175,17 +180,30 @@ const GroupBody = ({
   group,
   mode,
   pageSize,
+  classNames,
 }: {
   group: ArrivalsPreparedGroup
   mode: ArrivalsBoardMode
   pageSize?: number
+  classNames?: ArrivalsBoardClassNames
 }) => {
   const labeledBounds = group.bounds.filter((bound) => bound.label)
+  // `grid-cols-1` (not block) so consumer `grid-cols-*` variants merge cleanly.
+  const subgroupsClassName = cn(
+    LIST_RESET_CLASS,
+    "grid grid-cols-1",
+    classNames?.subgroups
+  )
 
   if (!group.hasInformation && labeledBounds.length === 0) {
     return (
-      <ul className={LIST_RESET_CLASS} role="list">
+      <ul
+        data-slot="arrivals-subgroups"
+        className={subgroupsClassName}
+        role="list"
+      >
         <li
+          data-slot="arrivals-row"
           className={cn(
             "flex items-center text-sm text-muted-foreground",
             ARRIVALS_TILE_CLASS
@@ -199,7 +217,11 @@ const GroupBody = ({
   }
 
   return (
-    <ul className={LIST_RESET_CLASS} role="list">
+    <ul
+      data-slot="arrivals-subgroups"
+      className={subgroupsClassName}
+      role="list"
+    >
       {group.bounds.map((bound, index) => (
         <ArrivalsBoundGroup
           key={bound.key}
@@ -208,6 +230,7 @@ const GroupBody = ({
           lineName={group.lineName}
           isLastBound={index === group.bounds.length - 1}
           pageSize={pageSize}
+          classNames={classNames}
         />
       ))}
     </ul>
@@ -224,6 +247,19 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
    * to show the prepared rows.
    */
   pageSize?: number
+  /**
+   * Root classes, merged over the board container (`data-slot="arrivals-board"`).
+   * The root *is* the `arrivals` container, so container-query variants here
+   * query an outer context — put board-width arrangements on `classNames.groups`
+   * instead.
+   */
+  className?: string
+  /**
+   * Layout-level class overrides for generated parts (`data-slot` per level).
+   * CSS-first: arrange line sections via `groups`, bound columns via
+   * `subgroups` — no JavaScript layout config.
+   */
+  classNames?: ArrivalsBoardClassNames
 }
 
 /**
@@ -242,6 +278,8 @@ export const ArrivalsBoardView = ({
   emptyKind = "empty",
   emptyMessage,
   pageSize,
+  className,
+  classNames,
 }: ArrivalsBoardViewProps) => {
   const TitleTag = headingLevel === 2 ? "h2" : "h1"
   const emptyCopy = emptyMessage ?? ARRIVALS_EMPTY_COPY[emptyKind]
@@ -253,7 +291,8 @@ export const ArrivalsBoardView = ({
 
   return (
     <div
-      className="@container/arrivals w-full space-y-2"
+      data-slot="arrivals-board"
+      className={cn("@container/arrivals w-full space-y-2", className)}
       style={ARRIVALS_RHYTHM_VARS}
     >
       <div
@@ -329,9 +368,13 @@ export const ArrivalsBoardView = ({
           rows={prepared.rows}
           mode={mode}
           pageSize={pageSize}
+          classNames={classNames}
         />
       ) : mode === "bus" ? (
-        <div className="flex flex-col">
+        <div
+          data-slot="arrivals-groups"
+          className={cn("grid grid-cols-1", classNames?.groups)}
+        >
           {prepared.groups.map((group, index) => (
             <ArrivalsPagedGroup
               key={group.key}
@@ -340,21 +383,31 @@ export const ArrivalsBoardView = ({
               headingLevel={headingLevel}
               pageSize={pageSize}
               isLastGroup={index === prepared.groups.length - 1}
+              classNames={classNames}
             />
           ))}
         </div>
       ) : (
-        <div className="flex flex-col">
+        <div
+          data-slot="arrivals-groups"
+          className={cn("grid grid-cols-1", classNames?.groups)}
+        >
           {prepared.groups.map((group) => (
-            <section key={group.key}>
-              <ArrivalsGroupHeader
-                group={group}
-                headingLevel={headingLevel}
-              />
+            <section
+              key={group.key}
+              data-slot="arrivals-group"
+              data-line={group.lineId || undefined}
+              className={cn(
+                "@container/arrivals-group min-w-0",
+                classNames?.group
+              )}
+            >
+              <ArrivalsGroupHeader group={group} headingLevel={headingLevel} />
               <GroupBody
                 group={group}
                 mode={mode}
                 pageSize={pageSize}
+                classNames={classNames}
               />
             </section>
           ))}

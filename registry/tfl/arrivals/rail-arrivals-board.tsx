@@ -3,6 +3,7 @@ import {
   ArrivalsBoardSkeleton,
   ArrivalsBoardView,
   type ArrivalsBoardChromeProps,
+  type ArrivalsBoardClassNames,
 } from "@/components/tfl/arrivals/arrivals-board-view"
 import {
   prepareRailArrivals,
@@ -40,11 +41,26 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
    * bound label. Default 3.
    */
   pageSize?: number
+  /**
+   * Root classes, merged over the board container
+   * (`data-slot="arrivals-board"`). Use `classNames` for board-width
+   * arrangements — the root is the `arrivals` container itself.
+   */
+  className?: string
+  /**
+   * Layout-level class overrides for generated parts. `groups` arranges the
+   * line sections against the board container (`/arrivals`); `subgroups`
+   * arranges bounds against their own line section (`/arrivals-group`), so a
+   * narrow line column keeps its bounds stacked even on a wide board.
+   */
+  classNames?: ArrivalsBoardClassNames
 }
 
-export const RailArrivalsBoardSkeleton = () => (
-  <ArrivalsBoardSkeleton mode="rail" />
-)
+export const RailArrivalsBoardSkeleton = ({
+  className,
+}: {
+  className?: string
+} = {}) => <ArrivalsBoardSkeleton mode="rail" className={className} />
 
 /**
  * Rail arrivals board. Groups by line, then compass bound. Fetching, caching,
@@ -65,11 +81,13 @@ export const RailArrivalsBoard = ({
   pageSize = 3,
   loading = false,
   error = null,
+  className,
+  classNames,
   ...chrome
 }: RailArrivalsBoardProps) => {
   const rows = data ?? []
   if (loading && rows.length === 0 && !error) {
-    return <RailArrivalsBoardSkeleton />
+    return <RailArrivalsBoardSkeleton className={className} />
   }
 
   const prepared = prepareRailArrivals({
@@ -88,12 +106,14 @@ export const RailArrivalsBoard = ({
       loading={loading}
       error={error}
       pageSize={pageSize}
+      className={className}
+      classNames={classNames}
       {...chrome}
     />
   )
 }
 
-export type { RailArrivalsLine }
+export type { ArrivalsBoardClassNames, RailArrivalsLine }
 export type {
   RailArrivalsBoundSortBy,
   RailArrivalsLineSortBy,

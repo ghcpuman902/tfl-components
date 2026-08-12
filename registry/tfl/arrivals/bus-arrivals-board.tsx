@@ -4,6 +4,7 @@ import {
   ArrivalsBoardView,
   resolveBusStopLetter,
   type ArrivalsBoardChromeProps,
+  type ArrivalsBoardClassNames,
 } from "@/components/tfl/arrivals/arrivals-board-view"
 import {
   prepareBusArrivals,
@@ -34,11 +35,26 @@ export type BusArrivalsBoardProps = ArrivalsBoardChromeProps & {
    * Flat: the whole list, arrows in a trailing tile. Default 3.
    */
   pageSize?: number
+  /**
+   * Root classes, merged over the board container
+   * (`data-slot="arrivals-board"`). Use `classNames` for board-width
+   * arrangements — the root is the `arrivals` container itself.
+   */
+  className?: string
+  /**
+   * Layout-level class overrides for generated parts. Grouped: `groups`
+   * arranges route sections against the board container (`/arrivals`).
+   * Flat: `rows` styles the single time-ordered list. `subgroups` /
+   * `subgroup` are rail-only — bus routes have no bound level.
+   */
+  classNames?: ArrivalsBoardClassNames
 }
 
-export const BusArrivalsBoardSkeleton = () => (
-  <ArrivalsBoardSkeleton mode="bus" />
-)
+export const BusArrivalsBoardSkeleton = ({
+  className,
+}: {
+  className?: string
+} = {}) => <ArrivalsBoardSkeleton mode="bus" className={className} />
 
 /**
  * Bus arrivals board. Default is a flat time-ordered list with a route chip
@@ -58,11 +74,13 @@ export const BusArrivalsBoard = ({
   stopLetter,
   loading = false,
   error = null,
+  className,
+  classNames,
   ...chrome
 }: BusArrivalsBoardProps) => {
   const rows = data ?? []
   if (loading && rows.length === 0 && !error) {
-    return <BusArrivalsBoardSkeleton />
+    return <BusArrivalsBoardSkeleton className={className} />
   }
 
   const prepared = prepareBusArrivals({
@@ -83,11 +101,14 @@ export const BusArrivalsBoard = ({
       loading={loading}
       error={error}
       pageSize={pageSize}
+      className={className}
+      classNames={classNames}
       {...chrome}
     />
   )
 }
 
+export type { ArrivalsBoardClassNames }
 export type {
   BusArrivalsGroupBy,
   BusArrivalsGroupSortBy,

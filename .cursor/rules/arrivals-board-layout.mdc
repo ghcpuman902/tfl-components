@@ -27,6 +27,17 @@ Domain boards under `registry/tfl/arrivals/rail-arrivals-board.tsx` and `bus-arr
 
 When two boards share a homepage/grid row, their stop titles and first content rows must land on the same horizontal lines. Same title height, same title→body gap, same row unit.
 
+## Responsive layout API
+
+Boards are single-column by default; consumers arrange groups/bounds via `className` (root) + `classNames` (`groups`, `group`, `subgroups`, `subgroup`, `rows`). Rules:
+
+- **CSS only.** Container queries, grid/flex, data-slot selectors, custom properties. Never measure widths in JS or add resize-driven state for layout.
+- **Containers:** board root = `@container/arrivals`; every line/route section = `@container/arrivals-group`. Bound-column classes on `subgroups` must query `/arrivals-group` (the line's own width), never `/arrivals`.
+- **No new wrappers.** `groups` styles the existing sections wrapper, `subgroups` the bounds `<ul>`, `subgroup` the bound `<li>`, `rows` the rows `<ul>`. Slots live on real semantic elements (`data-slot="arrivals-board|arrivals-groups|arrivals-group|arrivals-subgroups|arrivals-subgroup|arrivals-rows|arrivals-row"`).
+- **Defaults:** groups/subgroups containers are `grid grid-cols-1` so consumer `grid-cols-*` variants merge without fighting a base `flex`. Sections/subgroups carry `min-w-0` so grid tracks can't be blown out by content.
+- **Rhythm holds in columns.** Tiles stay fixed-height; sections of different heights sit side by side — do not pad groups to equal height. No vertical gaps appear between stacked sections (`gap-x` only).
+- Domain attributes stay useful: `data-line` on rail sections + headers, `data-bound` on bound subgroups, `data-route` on bus route sections.
+
 ## Stop / station title
 
 - Render the human stop name only. **Do not** put NaPTAN / stop-point ids in the UI (dev meta — keep as deprecated unused prop if needed for call-site compat).

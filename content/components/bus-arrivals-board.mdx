@@ -1,4 +1,8 @@
 import { BusArrivalsGroupedVariant } from "@/components/docs/demos/bus-arrivals-grouped-variant"
+import {
+  BusRouteColumnsDemo,
+  BusFlatDemo,
+} from "@/components/docs/demos/arrivals-layout-demos"
 
 ## Purpose
 
@@ -59,6 +63,48 @@ Pass `groupBy="route"` when you want route sections (the homepage proof board do
 />
 ```
 
+### Responsive arrangements
+
+Same CSS-first model as [rail](/docs/tube-rail-arrivals#responsive-arrangements): the board root is a container named `arrivals`, and each route section is a container named `arrivals-group`. Pass `className` for the root and `classNames` for generated levels — no JavaScript layout config.
+
+| `classNames` key | `data-slot` | Level |
+|-----|-----|-----|
+| — | `arrivals-board` | Board root (the `className` prop) |
+| `groups` | `arrivals-groups` | All route sections (grouped only) |
+| `group` | `arrivals-group` | One route section — also a container named `arrivals-group` |
+| `rows` | `arrivals-rows` | One route's rows (grouped) or the whole list (flat) |
+| — | `arrivals-row` | Each arrival or empty-state row tile |
+
+`subgroups` / `subgroup` are rail-only — bus routes have no bound level. The flat board stays one time-ordered list at every width; arrange columns on the grouped board only.
+
+#### Route columns
+
+<BusRouteColumnsDemo />
+
+```tsx
+<BusArrivalsBoard
+  data={data}
+  stopName={stop.commonName}
+  stopLetter={stop.stopLetter}
+  groupBy="route"
+  classNames={{
+    groups: "@min-[40rem]/arrivals:grid-cols-2 @min-[40rem]/arrivals:gap-x-6",
+  }}
+/>
+```
+
+#### Flat (default)
+
+<BusFlatDemo />
+
+```tsx
+<BusArrivalsBoard
+  data={data}
+  stopName={stop.commonName}
+  stopLetter={stop.stopLetter}
+/>
+```
+
 ### Ordering
 
 Named policies, not comparator callbacks:
@@ -95,6 +141,8 @@ Keep polling outside the board, then update `data`. Optional `statusLabel` shows
 | `statusLabel` | `string` | Optional poll / refresh caption. |
 | `maxRows` | `number` | Prediction cap after ordering. Per route when grouped; whole list when flat. Headers do not count. |
 | `pageSize` | `number` | Visible arrivals per page (default 3). Grouped: arrows on the route header. Flat: trailing tile, right-aligned. |
+| `className` | `string` | Root classes, merged over the board container. |
+| `classNames` | `{ groups?, group?, rows? }` | Layout-level class overrides for generated `data-slot` levels. `subgroups` / `subgroup` are rail-only. |
 
 ## Data ownership
 

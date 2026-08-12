@@ -19,6 +19,29 @@ import { cn } from "@/lib/utils"
 type ArrivalsBoardMode = "rail" | "bus"
 
 /**
+ * Layout-level class overrides for generated board parts. Each key maps to a
+ * stable `data-slot` element. Keep to layout levels — decorative spans, chips,
+ * and countdowns are styled through the theme, not this API.
+ *
+ * - `groups` → `arrivals-groups`: the line / route sections container.
+ * - `group` → `arrivals-group`: one line (rail) or route (bus) section. Each
+ *   is also a container named `arrivals-group`, so children can respond to the
+ *   section's own width.
+ * - `subgroups` → `arrivals-subgroups`: rail only — the bounds list inside a
+ *   line section.
+ * - `subgroup` → `arrivals-subgroup`: rail only — one bound (label + rows).
+ * - `rows` → `arrivals-rows`: the arrival rows list (per bound on rail, per
+ *   route on grouped bus, the whole list on flat bus).
+ */
+export type ArrivalsBoardClassNames = {
+  groups?: string
+  group?: string
+  subgroups?: string
+  subgroup?: string
+  rows?: string
+}
+
+/**
  * Keep in sync with `ARRIVALS_TILE_CLASS` / row rule in arrivals-board-view.
  * This file cannot import those constants — the view imports this module.
  */
@@ -83,6 +106,7 @@ export const ArrivalRowItem = ({
 
   return (
     <li
+      data-slot="arrivals-row"
       aria-label={rowLabel}
       className={cn(
         "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 text-sm",
@@ -150,7 +174,10 @@ const BoundPager = ({
         onClick={onPrev}
         className="inline-flex h-6 cursor-pointer items-center justify-center pr-1.5 pl-0 text-muted-foreground disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
       >
-        <Play className="size-3 fill-current stroke-none -scale-x-100" aria-hidden />
+        <Play
+          className="size-3 -scale-x-100 fill-current stroke-none"
+          aria-hidden
+        />
       </button>
       <span className="min-w-[2.75ch] text-center text-xs leading-none tabular-nums">
         <span aria-hidden="true">
@@ -179,38 +206,43 @@ export const ArrivalsBoundGroup = ({
   lineName,
   isLastBound,
   pageSize = 0,
+  classNames,
 }: {
   bound: ArrivalsPreparedBound
   mode: ArrivalsBoardMode
   lineName: string
   isLastBound: boolean
   pageSize?: number
+  classNames?: ArrivalsBoardClassNames
 }) => {
   const [page, setPage] = useState(0)
   const canPage = Boolean(bound.label) && pageSize > 0
-  const sliced = sliceBoundPage(
-    bound.rows,
-    page,
-    canPage ? pageSize : 0
-  )
+  const sliced = sliceBoundPage(bound.rows, page, canPage ? pageSize : 0)
   const showPager = canPage
   const visibleRows = sliced.rows
   const showEmpty = visibleRows.length === 0
-  const emptyScope = bound.label
-    ? `${lineName} ${bound.label}`
-    : lineName
+  const emptyScope = bound.label ? `${lineName} ${bound.label}` : lineName
 
   const handlePrev = () => {
-    setPage((current) => Math.max(0, Math.min(current, sliced.pageCount - 1) - 1))
+    setPage((current) =>
+      Math.max(0, Math.min(current, sliced.pageCount - 1) - 1)
+    )
   }
   const handleNext = () => {
     setPage((current) =>
-      Math.min(sliced.pageCount - 1, Math.min(current, sliced.pageCount - 1) + 1)
+      Math.min(
+        sliced.pageCount - 1,
+        Math.min(current, sliced.pageCount - 1) + 1
+      )
     )
   }
 
   return (
-    <li className="group/bound">
+    <li
+      data-slot="arrivals-subgroup"
+      data-bound={bound.label?.toLowerCase()}
+      className={cn("group/bound min-w-0", classNames?.subgroup)}
+    >
       {bound.label ? (
         <div
           className={cn(
@@ -231,9 +263,14 @@ export const ArrivalsBoundGroup = ({
           ) : null}
         </div>
       ) : null}
-      <ul className={LIST_RESET_CLASS} role="list">
+      <ul
+        data-slot="arrivals-rows"
+        className={cn(LIST_RESET_CLASS, classNames?.rows)}
+        role="list"
+      >
         {showEmpty ? (
           <li
+            data-slot="arrivals-row"
             className={cn(
               "flex items-center text-sm text-muted-foreground",
               TILE_CLASS,
@@ -261,7 +298,8 @@ export const ArrivalsBoundGroup = ({
         )}
         {Array.from({ length: sliced.padCount }, (_, index) => {
           const slotIndex = visibleRows.length + index
-          const isLastSlot = slotIndex === visibleRows.length + sliced.padCount - 1
+          const isLastSlot =
+            slotIndex === visibleRows.length + sliced.padCount - 1
           return (
             <li
               key={`pad-${index}`}
@@ -351,6 +389,7 @@ const PagedArrivalRows = ({
   if (rows.length === 0) {
     return (
       <li
+        data-slot="arrivals-row"
         className={cn(
           "flex items-center text-sm text-muted-foreground",
           TILE_CLASS,
@@ -397,12 +436,14 @@ export const ArrivalsPagedGroup = ({
   headingLevel,
   pageSize = 0,
   isLastGroup,
+  classNames,
 }: {
   group: ArrivalsPreparedGroup
   mode: ArrivalsBoardMode
   headingLevel: 1 | 2
   pageSize?: number
   isLastGroup: boolean
+  classNames?: ArrivalsBoardClassNames
 }) => {
   const [page, setPage] = useState(0)
   const rows = group.bounds.flatMap((bound) => bound.rows)
@@ -410,16 +451,28 @@ export const ArrivalsPagedGroup = ({
   const showPager = pageSize > 0
 
   const handlePrev = () => {
-    setPage((current) => Math.max(0, Math.min(current, sliced.pageCount - 1) - 1))
+    setPage((current) =>
+      Math.max(0, Math.min(current, sliced.pageCount - 1) - 1)
+    )
   }
   const handleNext = () => {
     setPage((current) =>
-      Math.min(sliced.pageCount - 1, Math.min(current, sliced.pageCount - 1) + 1)
+      Math.min(
+        sliced.pageCount - 1,
+        Math.min(current, sliced.pageCount - 1) + 1
+      )
     )
   }
 
   return (
-    <section className="group/bound">
+    <section
+      data-slot="arrivals-group"
+      data-route={group.lineId || group.lineName}
+      className={cn(
+        "group/bound @container/arrivals-group min-w-0",
+        classNames?.group
+      )}
+    >
       <ArrivalsGroupHeader
         group={group}
         headingLevel={headingLevel}
@@ -435,7 +488,11 @@ export const ArrivalsPagedGroup = ({
           ) : null
         }
       />
-      <ul className={LIST_RESET_CLASS} role="list">
+      <ul
+        data-slot="arrivals-rows"
+        className={cn(LIST_RESET_CLASS, classNames?.rows)}
+        role="list"
+      >
         <PagedArrivalRows
           rows={sliced.rows}
           padCount={sliced.padCount}
@@ -453,26 +510,37 @@ export const ArrivalsPagedList = ({
   rows,
   mode,
   pageSize = 0,
+  classNames,
 }: {
   rows: readonly ArrivalsPreparedRow[]
   mode: ArrivalsBoardMode
   pageSize?: number
+  classNames?: ArrivalsBoardClassNames
 }) => {
   const [page, setPage] = useState(0)
   const sliced = sliceBoundPage(rows, page, pageSize)
   const showPager = pageSize > 0
 
   const handlePrev = () => {
-    setPage((current) => Math.max(0, Math.min(current, sliced.pageCount - 1) - 1))
+    setPage((current) =>
+      Math.max(0, Math.min(current, sliced.pageCount - 1) - 1)
+    )
   }
   const handleNext = () => {
     setPage((current) =>
-      Math.min(sliced.pageCount - 1, Math.min(current, sliced.pageCount - 1) + 1)
+      Math.min(
+        sliced.pageCount - 1,
+        Math.min(current, sliced.pageCount - 1) + 1
+      )
     )
   }
 
   return (
-    <ul className={cn(LIST_RESET_CLASS, "group/bound")} role="list">
+    <ul
+      data-slot="arrivals-rows"
+      className={cn(LIST_RESET_CLASS, "group/bound", classNames?.rows)}
+      role="list"
+    >
       <PagedArrivalRows
         rows={sliced.rows}
         padCount={sliced.padCount}
