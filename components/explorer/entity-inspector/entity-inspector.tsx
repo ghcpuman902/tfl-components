@@ -2,7 +2,9 @@
 
 import { useState, type ReactNode } from "react";
 import { Check, Copy } from "lucide-react";
+import { explorerPaneClassName } from "@/components/explorer/explorer-split";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 type InspectorSectionProps = {
@@ -110,12 +112,22 @@ export const CodeSnippet = ({ title, code }: CodeSnippetProps) => {
           {copied ? "Copied" : "Copy"}
         </Button>
       </div>
-      <pre className="overflow-x-auto text-xs leading-relaxed">
+      <pre className="scrollbar-thin overflow-x-auto overscroll-contain text-xs leading-relaxed">
         <code>{code}</code>
       </pre>
     </div>
   );
 };
+
+type InspectorJsonProps = {
+  value: unknown;
+};
+
+export const InspectorJson = ({ value }: InspectorJsonProps) => (
+  <pre className="scrollbar-thin overflow-x-auto overscroll-contain rounded-lg border border-border bg-muted/30 p-3 text-xs">
+    {JSON.stringify(value, null, 2)}
+  </pre>
+);
 
 type EntityInspectorShellProps = {
   title: string;
@@ -125,6 +137,8 @@ type EntityInspectorShellProps = {
   relationships?: ReactNode;
   normalised?: ReactNode;
   code?: ReactNode;
+  /** Streamed sections after Identity (Preview, Relationships, …). */
+  details?: ReactNode;
 };
 
 export const EntityInspectorShell = ({
@@ -135,29 +149,40 @@ export const EntityInspectorShell = ({
   relationships,
   normalised,
   code,
+  details,
 }: EntityInspectorShellProps) => (
-  <article className="space-y-6 rounded-lg border border-border p-4">
-    <header className="space-y-1">
-      <h2 className="text-lg font-semibold text-balance">{title}</h2>
-      {subtitle ? (
-        <p className="text-sm text-muted-foreground">{subtitle}</p>
-      ) : null}
-    </header>
+  <article
+    className={cn(explorerPaneClassName, "flex min-h-0 flex-col lg:h-full")}
+  >
+    <ScrollArea className="min-h-0 lg:h-full">
+      <div className="space-y-6 p-4">
+        <header className="space-y-1">
+          <h2 className="text-lg font-semibold text-balance">{title}</h2>
+          {subtitle ? (
+            <p className="text-sm text-muted-foreground">{subtitle}</p>
+          ) : null}
+        </header>
 
-    <InspectorSection title="Identity">{identity}</InspectorSection>
+        <InspectorSection title="Identity">{identity}</InspectorSection>
 
-    {preview ? (
-      <InspectorSection title="Preview">{preview}</InspectorSection>
-    ) : null}
+        {details}
 
-    {relationships ? (
-      <InspectorSection title="Relationships">{relationships}</InspectorSection>
-    ) : null}
+        {preview ? (
+          <InspectorSection title="Preview">{preview}</InspectorSection>
+        ) : null}
 
-    {normalised ? (
-      <InspectorSection title="Normalised data">{normalised}</InspectorSection>
-    ) : null}
+        {relationships ? (
+          <InspectorSection title="Relationships">
+            {relationships}
+          </InspectorSection>
+        ) : null}
 
-    {code ? <InspectorSection title="Code">{code}</InspectorSection> : null}
+        {normalised ? (
+          <InspectorSection title="Normalised data">{normalised}</InspectorSection>
+        ) : null}
+
+        {code ? <InspectorSection title="Code">{code}</InspectorSection> : null}
+      </div>
+    </ScrollArea>
   </article>
 );

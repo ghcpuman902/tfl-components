@@ -1,28 +1,93 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, use, useEffect, useState, type ReactNode } from "react";
 import type { RealtimePrediction } from "tfl-ts";
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board";
+import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board";
 import { CycleHireDocksDetail } from "@/components/tfl/cycle-hire/cycle-hire-docks";
 import { Button } from "@/components/ui/button";
 import {
   CodeSnippet,
   CopyableField,
   EntityInspectorShell,
+  InspectorJson,
 } from "@/components/explorer/entity-inspector/entity-inspector";
 import { useExplorerKeyedQuery } from "@/hooks/use-explorer-keyed-query";
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise";
+import {
+  cachedArrivalsForPoint,
+  type ExplorerCachedArrivals,
+} from "@/lib/tfl/explorer/selection";
 import { buildExplorerHref } from "@/lib/tfl/explorer-url-state";
 import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types";
 
 type PointInspectorProps = {
   point: ExplorerPoint;
-  /** Optional preloaded cycle dock for Browse occupancy preview. */
+  /** Optional preloaded cycle dock for cached occupancy preview. */
   cycleDock?: CycleHireDock | null;
+  /** Site-cached arrivals for the default-selected seed stop. */
+  cachedArrivals?: ExplorerCachedArrivals | null;
 };
 
-export const PointInspector = ({ point, cycleDock }: PointInspectorProps) => {
-  const { loading, error, runKeyed } = useExplorerKeyedQuery();
+type PointInspectorDeferredProps = Omit<PointInspectorProps, "cachedArrivals"> & {
+  /** Unresolved seed arrivals — inspector identity paints while this streams. */
+  cachedArrivalsPromise?: Promise<ExplorerCachedArrivals | null>;
+  /** Local selection has not caught up to the URL yet — skip a stale promise. */
+  detailsPending?: boolean;
+};
+
+const PointInspectorFromPromise = ({
+  cachedArrivalsPromise,
+  ...props
+}: Omit<PointInspectorDeferredProps, "cachedArrivalsPromise" | "detailsPending"> & {
+  cachedArrivalsPromise: Promise<ExplorerCachedArrivals | null>;
+}) => {
+  const cachedArrivals = use(cachedArrivalsPromise);
+  return <PointInspector {...props} cachedArrivals={cachedArrivals} />;
+};
+
+/** Point inspector that streams seed arrivals without blocking identity. */
+export const PointInspectorDeferred = ({
+  cachedArrivalsPromise,
+  detailsPending = false,
+  ...props
+}: PointInspectorDeferredProps) => {
+  if (detailsPending || !cachedArrivalsPromise) {
+    return <PointInspector {...props} />;
+  }
+
+  return (
+    <Suspense fallback={<PointInspector {...props} />}>
+      <PointInspectorFromPromise
+        {...props}
+        cachedArrivalsPromise={cachedArrivalsPromise}
+      />
+    </Suspense>
+  );
+};
+
+const KeyPrompt = ({
+  purpose,
+  onAddKey,
+}: {
+  purpose: string;
+  onAddKey: () => void;
+}) => (
+  <div className="space-y-3">
+    <p className="text-sm text-muted-foreground">{purpose}</p>
+    <Button type="button" size="sm" onClick={onAddKey}>
+      Add TfL API key
+    </Button>
+  </div>
+);
+
+export const PointInspector = ({
+  point,
+  cycleDock,
+  cachedArrivals = null,
+}: PointInspectorProps) => {
+  const { ready, hydrated, loading, error, runKeyed, openDialog } =
+    useExplorerKeyedQuery();
   const [arrivals, setArrivals] = useState<RealtimePrediction[] | null>(null);
   const [arrivalsFetchedAt, setArrivalsFetchedAt] = useState<number | null>(
     null,
@@ -37,14 +102,56 @@ export const PointInspector = ({ point, cycleDock }: PointInspectorProps) => {
     (point.modes?.includes("bus") ||
       Boolean(point.stopLetter || point.smsCode));
   const isBike = point.kind === "bikePoint";
+  const seedArrivals = cachedArrivalsForPoint(cachedArrivals, point);
 
-  const handleLoadArrivals = async () => {
-    const result = await runKeyed(async (client) => {
-      return client.stopPoint.getArrivals({
+  useEffect(() => {
+    setArrivals(null);
+    setArrivalsFetchedAt(null);
+    setLiveDock(cycleDock ?? null);
+    setDockFetchedAt(null);
+  }, [point.id, cycleDock]);
+
+  useEffect(() => {
+    if (!hydrated || !ready) return;
+
+    let cancelled = false;
+    const pointId = point.id;
+
+    const load = async () => {
+      if (isBike) {
+        const result = await runKeyed(async (client) =>
+          client.bikePoint.getById(pointId),
+        );
+        if (cancelled || !result.ok) return;
+        setLiveDock(result.data);
+        setDockFetchedAt(Date.now());
+        return;
+      }
+
+      const result = await runKeyed(async (client) =>
+        client.stopPoint.getArrivals({
+          stopPointIds: [pointId],
+          sortBy: "timeToStation",
+        }),
+      );
+      if (cancelled || !result.ok) return;
+      setArrivals(result.data);
+      setArrivalsFetchedAt(Date.now());
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrated, ready, point.id, isBike, runKeyed]);
+
+  const handleRefreshArrivals = async () => {
+    const result = await runKeyed(async (client) =>
+      client.stopPoint.getArrivals({
         stopPointIds: [point.id],
         sortBy: "timeToStation",
-      });
-    });
+      }),
+    );
     if (result.ok) {
       setArrivals(result.data);
       setArrivalsFetchedAt(Date.now());
@@ -52,9 +159,9 @@ export const PointInspector = ({ point, cycleDock }: PointInspectorProps) => {
   };
 
   const handleRefreshDock = async () => {
-    const result = await runKeyed(async (client) => {
-      return client.bikePoint.getById(point.id);
-    });
+    const result = await runKeyed(async (client) =>
+      client.bikePoint.getById(point.id),
+    );
     if (result.ok) {
       setLiveDock(result.data);
       setDockFetchedAt(Date.now());
@@ -94,7 +201,6 @@ export const PointInspector = ({ point, cycleDock }: PointInspectorProps) => {
         const href = buildExplorerHref({
           kind: "lines",
           domain: isBusLine ? "bus" : "tube-rail",
-          tab: "browse",
           id: lineId,
         });
         return (
@@ -115,77 +221,144 @@ export const PointInspector = ({ point, cycleDock }: PointInspectorProps) => {
     </p>
   );
 
-  const preview = isBus ? (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          onClick={handleLoadArrivals}
-          disabled={loading}
-        >
-          {arrivals ? "Refresh arrivals" : "Load arrivals"}
-        </Button>
-        {arrivalsFetchedAt ? (
-          <p className="text-xs text-muted-foreground">
-            Requested {new Date(arrivalsFetchedAt).toLocaleTimeString("en-GB")}
-          </p>
-        ) : null}
-      </div>
-      {error ? (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
+  const displayArrivals = arrivals ?? seedArrivals?.arrivals ?? null;
+  const occupancyLive = dockFetchedAt !== null;
+  const displayDock = liveDock ?? cycleDock ?? null;
+
+  const previewMeta = (label: string | null, refresh: ReactNode) => (
+    <div className="flex flex-wrap items-center gap-2">
+      {refresh}
+      {label ? (
+        <p className="text-xs text-muted-foreground">{label}</p>
       ) : null}
-      {arrivals ? (
-        <BusArrivalsBoard
-          data={arrivals}
-          stopName={point.name}
-          stopLetter={point.stopLetter}
-          headingLevel={2}
-          maxRows={8}
-        />
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          Live arrivals require your TfL API key and an explicit Load.
-        </p>
-      )}
     </div>
-  ) : isBike ? (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          onClick={handleRefreshDock}
-          disabled={loading}
-        >
-          {liveDock ? "Refresh occupancy" : "Load occupancy"}
-        </Button>
-        {dockFetchedAt ? (
-          <p className="text-xs text-muted-foreground">
-            Requested {new Date(dockFetchedAt).toLocaleTimeString("en-GB")}
-          </p>
-        ) : null}
-      </div>
-      {error ? (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      ) : null}
-      {liveDock ? (
-        <CycleHireDocksDetail data={[liveDock]} hideHeader />
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          Occupancy requires your TfL API key (or a cached Browse example).
-        </p>
-      )}
-    </div>
-  ) : (
-    <p className="text-sm text-muted-foreground">
-      No live preview for this Tube & rail station in Explorer yet.
-    </p>
   );
+
+  const arrivalsBoard = displayArrivals ? (
+    isBus ? (
+      <BusArrivalsBoard
+        data={displayArrivals}
+        stopName={point.name}
+        stopLetter={point.stopLetter}
+        headingLevel={2}
+        maxRows={8}
+      />
+    ) : (
+      <RailArrivalsBoard
+        data={displayArrivals}
+        stopName={point.name}
+        lines={point.lineIds?.map((lineId) => ({
+          lineId,
+          lineName: lineId,
+          modeName: point.modes?.[0],
+        }))}
+        headingLevel={2}
+        maxRows={8}
+      />
+    )
+  ) : null;
+
+  const stopPreview = () => {
+    if (ready) {
+      return (
+        <div className="space-y-3">
+          {previewMeta(
+            arrivalsFetchedAt
+              ? `Live · ${new Date(arrivalsFetchedAt).toLocaleTimeString("en-GB")}`
+              : loading
+                ? "Loading live arrivals…"
+                : null,
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleRefreshArrivals}
+              disabled={loading}
+            >
+              Refresh arrivals
+            </Button>,
+          )}
+          {error ? (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {arrivalsBoard}
+        </div>
+      );
+    }
+    if (seedArrivals && arrivalsBoard) {
+      return (
+        <div className="space-y-3">
+          {previewMeta("Cached example", null)}
+          {arrivalsBoard}
+        </div>
+      );
+    }
+    if (!hydrated) {
+      return (
+        <p className="text-sm text-muted-foreground">Checking for a TfL API key…</p>
+      );
+    }
+    return (
+      <KeyPrompt
+        purpose="Live arrivals for this stop use your TfL API key."
+        onAddKey={openDialog}
+      />
+    );
+  };
+
+  const bikePreview = () => {
+    if (ready) {
+      return (
+        <div className="space-y-3">
+          {previewMeta(
+            dockFetchedAt
+              ? `Live · ${new Date(dockFetchedAt).toLocaleTimeString("en-GB")}`
+              : loading
+                ? "Loading live occupancy…"
+                : null,
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleRefreshDock}
+              disabled={loading}
+            >
+              Refresh occupancy
+            </Button>,
+          )}
+          {error ? (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {displayDock ? (
+            <CycleHireDocksDetail data={[displayDock]} hideHeader />
+          ) : null}
+        </div>
+      );
+    }
+    if (displayDock) {
+      return (
+        <div className="space-y-3">
+          {previewMeta(occupancyLive ? null : "Cached example", null)}
+          <CycleHireDocksDetail data={[displayDock]} hideHeader />
+        </div>
+      );
+    }
+    if (!hydrated) {
+      return (
+        <p className="text-sm text-muted-foreground">Checking for a TfL API key…</p>
+      );
+    }
+    return (
+      <KeyPrompt
+        purpose="Live occupancy for this dock uses your TfL API key."
+        onAddKey={openDialog}
+      />
+    );
+  };
+
+  const preview = isBike ? bikePreview() : stopPreview();
 
   const code = (
     <div className="space-y-2">
@@ -197,7 +370,7 @@ export const PointInspector = ({ point, cycleDock }: PointInspectorProps) => {
             : `await client.stopPoint.get("${point.id}")`
         }
       />
-      {isBus ? (
+      {!isBike ? (
         <CodeSnippet
           title="stopPoint.getArrivals"
           code={`await client.stopPoint.getArrivals({\n  stopPointIds: ["${point.id}"],\n  sortBy: "timeToStation",\n})`}
@@ -220,10 +393,10 @@ export const PointInspector = ({ point, cycleDock }: PointInspectorProps) => {
       preview={preview}
       relationships={relationships}
       normalised={
-        <pre className="max-h-64 overflow-auto rounded-lg border border-border bg-muted/30 p-3 text-xs">
-          {JSON.stringify(
-            isBike && liveDock
-              ? liveDock
+        <InspectorJson
+          value={
+            isBike && displayDock
+              ? displayDock
               : {
                   id: point.id,
                   name: point.name,
@@ -236,13 +409,11 @@ export const PointInspector = ({ point, cycleDock }: PointInspectorProps) => {
                   stopLetter: point.stopLetter,
                   smsCode: point.smsCode,
                   towards: point.towards,
-                  bikes: liveDock?.bikes ?? point.bikes,
-                  spaces: liveDock?.spaces ?? point.spaces,
-                },
-            null,
-            2,
-          )}
-        </pre>
+                  bikes: displayDock?.bikes ?? point.bikes,
+                  spaces: displayDock?.spaces ?? point.spaces,
+                }
+          }
+        />
       }
       code={code}
     />

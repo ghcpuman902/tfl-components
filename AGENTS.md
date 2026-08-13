@@ -20,6 +20,8 @@ Arrivals board vertical rhythm (fixed tiles, absolute hairlines, box-border bran
 
 Domain board skeletons (static identity vs live severity, Suspense fallbacks): [docs/coding-style.md](./docs/coding-style.md) (“Domain board skeletons”) and [`.cursor/rules/domain-skeletons.mdc`](./.cursor/rules/domain-skeletons.mdc).
 
+Explorer inspector streaming (optimistic identity, `use(promise)` for route/arrivals/status): [docs/explorer-inspector-streaming.md](./docs/explorer-inspector-streaming.md) and [`.cursor/rules/explorer-inspector-streaming.mdc`](./.cursor/rules/explorer-inspector-streaming.mdc).
+
 # Coding style
 
 See [docs/coding-style.md](./docs/coding-style.md) for TypeScript and React patterns.

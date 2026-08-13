@@ -128,6 +128,29 @@ describe("prepareRailArrivals", () => {
     ])
   })
 
+  it("keeps row keys unique when TfL repeats a prediction id", () => {
+    const first = prediction({
+      id: "322784161",
+      lineId: "dlr",
+      lineName: "DLR",
+      platformName: "Eastbound - Platform 1",
+      timeToStation: 120,
+    })
+    const second = prediction({
+      id: "322784161",
+      lineId: "dlr",
+      lineName: "DLR",
+      platformName: "Eastbound - Platform 1",
+      timeToStation: 240,
+    })
+    const board = prepareRailArrivals({ data: [first, second] })
+    const keys = board.groups.flatMap((group) =>
+      group.bounds.flatMap((bound) => bound.rows.map((row) => row.key)),
+    )
+    assert.equal(keys.length, 2)
+    assert.equal(new Set(keys).size, keys.length)
+  })
+
   it("sorts arrivals by time within each bound", () => {
     const laterNorth = prediction({
       id: "b-n-late",

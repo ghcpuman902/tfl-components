@@ -126,15 +126,15 @@ Polling demos pause while `document.visibilityState === "hidden"` and refresh im
 
 ### Explorer
 
-Explorer under `/docs/explorer` is organised around **Points** and **Lines**, each with **Browse** (default) and **Find**.
+Explorer under `/docs/explorer` is organised around **Points** and **Lines** (Kind → Domain). There is a single panel per domain — no Browse/Find tabs.
 
-- **Browse** is free: bundled geography, station catalogue, and deliberately cached site-key examples (Trafalgar Square bus stops, curated bus lines, featured cycle hire docks, Tube & rail line directory + route sequences). Local filtering over already-loaded data never spends visitor quota.
-- **Find** uses the visitor’s TfL API key: remote search, SMS-code lookup, geolocation nearby queries, and explicit live Refresh / Load actions. Calls go browser → `api.tfl.gov.uk` via `createBrowserTflClient`. Invalid or rate-limited keys produce translated errors with **no** silent site-key fallback.
-- Typing in Find never spends quota — only Search / Enter / Locate / Load / Refresh do.
-- No polling in Explorer; live panels are explicit one-shot requests with a request timestamp.
-- Legacy `/explore/lines`, `/explore/routes`, and `/explore/bus-stops` redirect into equivalent unified Explorer URL state.
+- **Cached seed (free):** bundled geography, station catalogue, and deliberately cached site-key examples (Trafalgar Square bus stops, London bus line directory, featured cycle hire docks, Tube & rail line directory + route sequences) load as the default result list. The inspector opens on the first seed item with a light cached preview (arrivals, occupancy, or line status + route). Local filtering over already-loaded data never spends visitor quota.
+- **Search / Locate** use the visitor’s TfL API key: remote search, SMS-code lookup, geolocation nearby queries, and live preview for any entity other than the cached seed. Calls go browser → `api.tfl.gov.uk` via `createBrowserTflClient`. Invalid or rate-limited keys produce translated errors with **no** silent site-key fallback.
+- Typing never spends quota — only Search / Enter / Locate / Refresh, and automatic live preview once a key is present, do.
+- When a visitor key is present, the inspector loads live preview automatically (one-shot, with Refresh). No polling in Explorer.
+- Legacy `/explore/lines`, `/explore/routes`, and `/explore/bus-stops` redirect into equivalent unified Explorer URL state. Legacy `?tab=` is ignored.
 
-The **key-required gate** (`UserTflKeyRequired` / `useRequireUserTflKey`) and submit-time gating in Find adapters prompt for a key only when the visitor initiates a live or extensive request. Cached Browse stays anonymous.
+The **key-required gate** (`UserTflKeyRequired` / `useRequireUserTflKey`) and submit-time gating in find adapters prompt for a key only when the visitor initiates a live request. Cached seed data stays anonymous.
 
 ## 5. Persistence + threat model
 
@@ -226,8 +226,8 @@ Out of scope for this epic to change registry JSON or fetch-inside helpers. Docs
 | Homepage proof (status, week-ahead, home arrivals, cycle hire) | **Site** — shared cache; independent of user credentials |
 | Server-rendered docs demos (Tube status, cycle-hire RSC, line-strip) | **Site** unless a later family PR adds a client refresh strip |
 | Arrivals / bus interactive demos that already poll from the client | **User key when ready**, else site Server Action |
-| Explorer Browse (cached directories, featured examples, bundled geography) | **Site** (introductory; free) |
-| Explorer Find / live Load / Refresh / Locate | **User key** (browser → TfL); gate on initiate |
+| Explorer cached seed (directories, featured examples, bundled geography) | **Site** (introductory; free) |
+| Explorer Search / Locate / live preview / Refresh | **User key** (browser → TfL); auto-preview when key is present; gate Search/Locate on initiate |
 | Registry install docs / code snippets | Consumer env `TFL_APP_KEY` — unrelated to browser paste |
 | Feedback, stats, registry CDN | Unrelated |
 
@@ -240,7 +240,7 @@ Out of scope for this epic to change registry JSON or fetch-inside helpers. Docs
 | **2** | Dual-path polling hook + `"use server"` appKey guard | Visibility pause/resume; cancellation; CI grep |
 | **3** | Wire arrivals-family docs demos | User key → direct TfL; empty → Server Action; status pill |
 | **4** | Docs copy | Get started / arrivals note; browser key ≠ server env |
-| **5** | Remaining families + Explorer Browse/Find | By API family; Explorer free Browse + keyed Find |
+| **5** | Remaining families + Explorer | By API family; Explorer cached seed + keyed Search/Locate |
 | **6** | Remove browser-fetch lab | Delete `/temp/tfl-browser-fetch` and its dev-only env prefill |
 
 ### Explicitly later / other epics
@@ -274,9 +274,9 @@ Out of scope for this epic to change registry JSON or fetch-inside helpers. Docs
 
 **Stage 5**
 
-- Explorer Points/Lines shell at `/docs/explorer` with free Browse and keyed Find
-- `TfLPointPicker` (site-owned), domain Find adapters, entity inspector
-- Gate primitive retained for submit-time keyed ops; Browse stays anonymous
+- Explorer Points/Lines shell at `/docs/explorer` with cached seed results and keyed Search/Locate
+- `TfLPointPicker` (site-owned), domain find adapters, entity inspector
+- Gate primitive retained for submit-time keyed ops; cached seed stays anonymous
 
 **Stage 6**
 
@@ -313,5 +313,5 @@ Out of scope for this epic to change registry JSON or fetch-inside helpers. Docs
 - [x] Pause polling when tab hidden; refresh on visible
 - [x] CSP tracked separately (not claimed as mitigation here)
 - [x] First wired surfaces = arrivals-family docs demos
-- [x] Explorer: free Browse (cached/bundled) + keyed Find (visitor key, no site fallback)
+- [x] Explorer: cached seed (bundled/featured) + keyed Search/Locate (visitor key, no site fallback)
 - [x] `tfl-ts` ≥ 2.6.2 — no further coordinated release required

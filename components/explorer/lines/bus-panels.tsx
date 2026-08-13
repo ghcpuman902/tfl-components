@@ -1,197 +1,152 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useId, useMemo, useState, type FormEvent } from "react";
+import { Filter } from "lucide-react";
 import { LineInspector } from "@/components/explorer/entity-inspector/line-inspector";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useExplorerKeyedQuery } from "@/hooks/use-explorer-keyed-query";
 import {
-  buildExplorerHref,
-  type ExplorerState,
-} from "@/lib/tfl/explorer-url-state";
+  ExplorerSplit,
+  explorerPaneClassName,
+} from "@/components/explorer/explorer-split";
+import { useOptimisticLine } from "@/components/explorer/use-optimistic-selection";
+import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import type { ExplorerState } from "@/lib/tfl/explorer-url-state";
 import type {
-  ExplorerLineRoute,
+  ExplorerLineDetailsPayload,
   ExplorerLineSummary,
 } from "@/lib/tfl/explorer/common";
 import { cn } from "@/lib/utils";
 
-type LinesBusBrowseProps = {
+type LinesBusPanelProps = {
   state: ExplorerState;
   lines: readonly ExplorerLineSummary[];
-  route?: ExplorerLineRoute | null;
+  detailsPromise?: Promise<ExplorerLineDetailsPayload> | null;
 };
 
-export const LinesBusBrowse = ({
+const filterBusLines = (
+  lines: readonly ExplorerLineSummary[],
+  query: string,
+): readonly ExplorerLineSummary[] => {
+  const q = query.trim().toLowerCase();
+  if (!q) return lines;
+  return lines.filter(
+    (line) =>
+      line.id.toLowerCase().includes(q) ||
+      line.name.toLowerCase().includes(q),
+  );
+};
+
+/** Cached London bus line directory — filter locally over wrapping route chips. */
+export const LinesBusPanel = ({
   state,
   lines,
-  route,
-}: LinesBusBrowseProps) => {
-  const router = useRouter();
-  const selected =
-    lines.find((line) => line.id === state.id) ??
-    (state.id
-      ? ({ id: state.id, name: state.id, modeName: "bus" } as ExplorerLineSummary)
-      : null);
-
-  return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      <div className="space-y-3">
-        <p className="text-sm text-muted-foreground text-pretty">
-          Curated central London bus routes. A complete London directory is too
-          large for a free cached Browse list — use Find with your TfL API key
-          for arbitrary route numbers.
-        </p>
-        <ul className="grid gap-2 sm:grid-cols-2" role="list">
-          {lines.map((line) => {
-            const isSelected = line.id === selected?.id;
-            return (
-              <li key={line.id}>
-                <button
-                  type="button"
-                  onClick={() =>
-                    router.push(
-                      buildExplorerHref({ id: line.id, dir: state.dir }, state),
-                      { scroll: false },
-                    )
-                  }
-                  className={cn(
-                    "w-full rounded-lg border border-border bg-card p-3 text-left transition-colors hover:bg-muted/50",
-                    isSelected && "ring-1 ring-primary",
-                  )}
-                >
-                  <span className="font-semibold">{line.name}</span>
-                  <code className="mt-1 block text-xs text-muted-foreground">
-                    {line.id}
-                  </code>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-
-      <div>
-        {selected ? (
-          <LineInspector
-            line={selected}
-            route={route}
-            direction={state.dir}
-            domain="bus"
-          />
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Select a bus route to inspect ordered stops.
-          </p>
-        )}
-      </div>
-    </div>
-  );
-};
-
-type LinesBusFindProps = {
-  state: ExplorerState;
-};
-
-export const LinesBusFind = ({ state }: LinesBusFindProps) => {
-  const router = useRouter();
-  const { loading, error, runKeyed } = useExplorerKeyedQuery();
+  detailsPromise,
+}: LinesBusPanelProps) => {
+  const listId = useId();
   const [query, setQuery] = useState(state.q ?? "");
-  const [line, setLine] = useState<ExplorerLineSummary | null>(
-    state.id
-      ? { id: state.id, name: state.id, modeName: "bus" }
-      : null,
+  const {
+    selectedLine,
+    direction,
+    detailsPending,
+    handleSelectLine,
+    handleDirectionChange,
+  } = useOptimisticLine(lines, state);
+  const visibleLines = useMemo(
+    () => filterBusLines(lines, query),
+    [lines, query],
   );
-  const [route, setRoute] = useState<ExplorerLineRoute | null>(null);
 
-  const handleLookup = async (event: React.FormEvent) => {
+  const handleFilterSubmit = (event: FormEvent) => {
     event.preventDefault();
-    const trimmed = query.trim().toLowerCase();
-    if (!trimmed) return;
-
-    const result = await runKeyed(async (client) => {
-      const lines = await client.line.get({ lineIds: [trimmed] });
-      const found = lines[0];
-      if (!found?.id) {
-        throw new Error(`No bus line found for “${trimmed}”.`);
-      }
-      const sequence = await client.line.getRouteSequence({
-        id: found.id,
-        direction: state.dir,
-      });
-      return {
-        line: {
-          id: found.id,
-          name: found.name ?? found.id,
-          modeName: found.modeName ?? "bus",
-        } satisfies ExplorerLineSummary,
-        route: {
-          line: {
-            id: found.id,
-            name: found.name,
-            modeName: found.modeName,
-          },
-          stops:
-            sequence.stopPointSequences?.flatMap(
-              (seq) => seq.stopPoint ?? [],
-            ) ?? [],
-        } satisfies ExplorerLineRoute,
-      };
-    });
-
-    if (result.ok) {
-      setLine(result.data.line);
-      setRoute(result.data.route);
-      router.push(
-        buildExplorerHref({ id: result.data.line.id, q: trimmed }, state),
-        { scroll: false },
-      );
-    }
+    const first = visibleLines[0];
+    if (first) handleSelectLine(first.id);
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      <form onSubmit={handleLookup} className="space-y-3" role="search">
-        <div className="space-y-1">
-          <Label htmlFor="bus-line-lookup">Bus route number</Label>
-          <Input
-            id="bus-line-lookup"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="e.g. 73"
-            autoComplete="off"
-          />
-        </div>
-        <Button type="submit" disabled={loading || query.trim().length === 0}>
-          {loading ? "Looking up…" : "Look up line"}
-        </Button>
-        {error ? (
-          <p className="text-sm text-destructive" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <p className="text-sm text-muted-foreground text-pretty">
-          Arbitrary bus line lookup uses your TfL API key and calls{" "}
-          <code className="text-xs">line.get</code> +{" "}
-          <code className="text-xs">line.getRouteSequence</code> directly.
-        </p>
-      </form>
+    <ExplorerSplit
+      lead={
+        <div className="flex h-full min-h-0 flex-col gap-3">
+          <form onSubmit={handleFilterSubmit}>
+            <InputGroup className="h-9 min-w-0">
+              <InputGroupAddon align="inline-start">
+                <Filter className="size-4" aria-hidden />
+              </InputGroupAddon>
+              <InputGroupInput
+                type="text"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Filter routes"
+                aria-label="Filter bus routes"
+                aria-controls={listId}
+                autoComplete="off"
+              />
+            </InputGroup>
+          </form>
 
-      <div>
-        {line ? (
+          {visibleLines.length === 0 ? (
+            <div
+              className={cn(
+                explorerPaneClassName,
+                "flex h-112 items-center p-4 lg:h-auto lg:min-h-0 lg:flex-1",
+              )}
+            >
+              <p className="text-sm text-muted-foreground">
+                No bus routes match. Try another route number.
+              </p>
+            </div>
+          ) : (
+            <div
+              className={cn(
+                explorerPaneClassName,
+                "h-112 overflow-y-auto overscroll-contain p-3 scrollbar-thin lg:h-auto lg:min-h-0 lg:flex-1",
+              )}
+            >
+              <ul
+                id={listId}
+                className="flex flex-wrap content-start gap-1"
+                aria-label="Bus routes"
+              >
+                {visibleLines.map((line) => {
+                  const selected = line.id === selectedLine?.id;
+                  return (
+                    <li key={line.id}>
+                      <button
+                        type="button"
+                        aria-pressed={selected}
+                        aria-label={`Route ${line.name}`}
+                        onClick={() => handleSelectLine(line.id)}
+                        className={cn(
+                          "rounded-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                          selected &&
+                            "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                        )}
+                      >
+                        <BusNumberChip label={line.name} />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </div>
+      }
+      inspector={
+        selectedLine ? (
           <LineInspector
-            line={line}
-            route={route}
-            direction={state.dir}
+            line={selectedLine}
+            direction={direction}
             domain="bus"
+            detailsPromise={detailsPromise}
+            detailsPending={detailsPending}
+            onDirectionChange={handleDirectionChange}
           />
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Enter a route number to inspect it.
-          </p>
-        )}
-      </div>
-    </div>
+        ) : null
+      }
+    />
   );
 };

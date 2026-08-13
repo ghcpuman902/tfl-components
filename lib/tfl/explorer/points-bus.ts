@@ -5,12 +5,12 @@ import { mapStopsFromGeoResponse } from "@/lib/tfl/bus-stop-shape";
 import type { ExplorerBusPoint } from "@/lib/tfl/explorer/common";
 
 const FEATURED_RADIUS_METERS = 400;
-/** Featured Browse example size — not the full London bus network. */
+/** Featured seed size — not the full London bus network. */
 const FEATURED_LIMIT = 12;
 
 /**
- * Cached Trafalgar Square bus-stop example for Points / Bus / Browse.
- * Arbitrary search and nearby lookup require a visitor key (Find).
+ * Cached Trafalgar Square bus-stop seed for Points / Bus.
+ * Arbitrary search and nearby lookup require a visitor key.
  */
 export async function getExplorerFeaturedBusStops(): Promise<{
   stops: ExplorerBusPoint[];

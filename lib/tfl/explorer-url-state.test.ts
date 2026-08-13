@@ -46,7 +46,6 @@ describe("parseExplorerState", () => {
     assert.deepEqual(state, {
       kind: "lines",
       domain: "bus",
-      tab: "find",
       view: "map",
       id: "central",
       dir: "outbound",
@@ -54,13 +53,12 @@ describe("parseExplorerState", () => {
     });
   });
 
-  it("falls back on invalid tab/view/dir", () => {
+  it("ignores legacy tab and falls back on invalid view/dir", () => {
     const state = parseExplorerState({
       tab: "map",
       view: "browse",
       dir: "both",
     });
-    assert.equal(state.tab, "browse");
     assert.equal(state.view, "list");
     assert.equal(state.dir, "inbound");
   });
@@ -80,12 +78,12 @@ describe("parseExplorerState", () => {
     assert.equal(state.id, "victoria");
   });
 
-  it("accepts URLSearchParams", () => {
+  it("accepts URLSearchParams and ignores tab", () => {
     const params = new URLSearchParams("kind=points&domain=bus&tab=find");
     const state = parseExplorerState(params);
     assert.equal(state.kind, "points");
     assert.equal(state.domain, "bus");
-    assert.equal(state.tab, "find");
+    assert.equal("tab" in state, false);
   });
 });
 
@@ -96,23 +94,23 @@ describe("buildExplorerHref", () => {
 
   it("omits default values", () => {
     assert.equal(
-      buildExplorerHref({ kind: "points", domain: "tube-rail", tab: "browse" }),
+      buildExplorerHref({ kind: "points", domain: "tube-rail" }),
       EXPLORER_PATH,
     );
   });
 
-  it("includes non-default values", () => {
+  it("includes non-default values and never emits tab", () => {
     const href = buildExplorerHref({
       kind: "lines",
       domain: "bus",
-      tab: "find",
       id: "9",
       dir: "outbound",
     });
     assert.equal(
       href,
-      `${EXPLORER_PATH}?kind=lines&domain=bus&tab=find&dir=outbound&id=9`,
+      `${EXPLORER_PATH}?kind=lines&domain=bus&dir=outbound&id=9`,
     );
+    assert.ok(!href.includes("tab="));
   });
 
   it("clamps cycle when switching to lines", () => {
@@ -132,7 +130,6 @@ describe("buildExplorerHref", () => {
     const original = {
       kind: "lines" as const,
       domain: "tube-rail" as const,
-      tab: "browse" as const,
       view: "list" as const,
       id: "central",
       dir: "outbound" as const,

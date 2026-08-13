@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { TfLPointPicker } from "@/components/explorer/tfl-point-picker";
 import { ExplorerPointMapLazy } from "@/components/explorer/explorer-point-map-lazy";
 import {
@@ -28,6 +28,24 @@ type TubeRailPointFinderProps = {
   view: ExplorerView;
   onViewChange: (view: ExplorerView) => void;
   initialQuery?: string;
+  /** Cached catalog — shown until Search / Locate replaces with live results. */
+  initialPoints?: readonly ExplorerPoint[];
+  emptyMessage?: string;
+};
+
+const filterCachedPoints = (
+  points: readonly ExplorerPoint[],
+  query: string,
+): ExplorerPoint[] => {
+  const q = query.trim().toLowerCase();
+  if (!q) return [...points];
+  return points.filter(
+    (point) =>
+      point.name.toLowerCase().includes(q) ||
+      point.id.toLowerCase().includes(q) ||
+      point.lineIds?.some((lineId) => lineId.toLowerCase().includes(q)) ||
+      point.modes?.some((mode) => mode.toLowerCase().includes(q)),
+  );
 };
 
 export const TubeRailPointFinder = ({
@@ -36,10 +54,26 @@ export const TubeRailPointFinder = ({
   view,
   onViewChange,
   initialQuery = "",
+  initialPoints = [],
+  emptyMessage = "Filter the cached catalog locally, or Search / Locate with your TfL API key.",
 }: TubeRailPointFinderProps) => {
   const { loading, error, setError, runKeyed } = useExplorerKeyedQuery();
-  const [points, setPoints] = useState<ExplorerPoint[]>([]);
+  const [livePoints, setLivePoints] = useState<ExplorerPoint[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
+
+  const points = useMemo(() => {
+    if (livePoints !== null) return livePoints;
+    return filterCachedPoints(initialPoints, query);
+  }, [livePoints, initialPoints, query]);
+
+  const handleSearchValueChange = (next: string) => {
+    setQuery(next);
+    // Typing filters the cached catalog; leave live results until Search/Locate.
+    if (livePoints !== null) {
+      setLivePoints(null);
+      setError(null);
+    }
+  };
 
   const handleSearchSubmit = async (nextQuery: string) => {
     const trimmed = nextQuery.trim();
@@ -70,7 +104,7 @@ export const TubeRailPointFinder = ({
     });
 
     if (result.ok) {
-      setPoints(result.data);
+      setLivePoints(result.data);
       if (result.data[0]) onSelect(result.data[0]);
     }
   };
@@ -94,7 +128,7 @@ export const TubeRailPointFinder = ({
       });
 
       if (result.ok) {
-        setPoints(result.data);
+        setLivePoints(result.data);
         if (result.data[0]) onSelect(result.data[0]);
       }
     } catch (err) {
@@ -111,12 +145,12 @@ export const TubeRailPointFinder = ({
       onLocate={handleLocate}
       loading={loading}
       error={error}
-      emptyMessage="Search by station name or use your location. Live queries use your TfL API key."
+      emptyMessage={emptyMessage}
       view={view}
       onViewChange={onViewChange}
       searchPlaceholder="Search Tube & rail stations"
       searchValue={query}
-      onSearchValueChange={setQuery}
+      onSearchValueChange={handleSearchValueChange}
       renderMap={(props) => <ExplorerPointMapLazy {...props} />}
     />
   );

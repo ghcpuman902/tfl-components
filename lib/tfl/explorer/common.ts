@@ -1,5 +1,7 @@
 import type { NearbyBusStop } from "@/lib/tfl/bus-stop-shape";
 import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types";
+import type { ExplorerDirection } from "@/lib/tfl/explorer-url-state";
+import type { StatusLine } from "@/lib/tfl/status-types";
 
 export type ExplorerRailModeId =
   | "tube"
@@ -33,11 +35,6 @@ export type ExplorerLineSummary = {
   modeName?: string;
 };
 
-export type ExplorerModeGroup = {
-  mode: { id: ExplorerRailModeId | "bus"; label: string };
-  lines: ExplorerLineSummary[];
-};
-
 export type ExplorerRouteStop = {
   id?: string;
   name?: string;
@@ -50,4 +47,11 @@ export type ExplorerLineRoute = {
     modeName?: string;
   };
   stops: ExplorerRouteStop[];
+};
+
+export type ExplorerLineDetailsPayload = {
+  lineId: string;
+  direction: ExplorerDirection;
+  route: ExplorerLineRoute;
+  status: StatusLine | null;
 };

@@ -4,14 +4,14 @@ import { HOME_CYCLE_HIRE } from "@/lib/tfl/cycle-hire-data";
 import type { ExplorerCyclePoint } from "@/lib/tfl/explorer/common";
 
 /**
- * Featured Browse example size — larger than the homepage mini map (4),
+ * Featured seed size — larger than the homepage mini map (4),
  * still small enough that map labels stay restrained.
  */
 const FEATURED_LIMIT = 12;
 
 /**
- * Cached central-London cycle-hire example for Points / Cycle hire / Browse.
- * Arbitrary search, nearby, and live occupancy require a visitor key (Find).
+ * Cached central-London cycle-hire seed for Points / Cycle hire.
+ * Arbitrary search, nearby, and live occupancy require a visitor key.
  */
 export async function getExplorerFeaturedCycleHireDocks(): Promise<{
   docks: ExplorerCyclePoint[];

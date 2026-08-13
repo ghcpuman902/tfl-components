@@ -1,20 +1,19 @@
 /**
  * Stable URL state for `/docs/explorer`.
  * Invalid params fall back safely — never throw.
+ * Legacy `?tab=` is ignored (Browse/Find tabs removed).
  */
 
 export const EXPLORER_PATH = "/docs/explorer";
 
 export type ExplorerKind = "points" | "lines";
 export type ExplorerDomain = "tube-rail" | "bus" | "cycle";
-export type ExplorerTab = "browse" | "find";
 export type ExplorerView = "list" | "map";
 export type ExplorerDirection = "inbound" | "outbound";
 
 export type ExplorerState = {
   kind: ExplorerKind;
   domain: ExplorerDomain;
-  tab: ExplorerTab;
   view: ExplorerView;
   id?: string;
   dir: ExplorerDirection;
@@ -24,13 +23,11 @@ export type ExplorerState = {
 export const DEFAULT_EXPLORER_STATE: ExplorerState = {
   kind: "points",
   domain: "tube-rail",
-  tab: "browse",
   view: "list",
   dir: "inbound",
 };
 
 const KINDS = new Set<ExplorerKind>(["points", "lines"]);
-const TABS = new Set<ExplorerTab>(["browse", "find"]);
 const VIEWS = new Set<ExplorerView>(["list", "map"]);
 const DIRS = new Set<ExplorerDirection>(["inbound", "outbound"]);
 
@@ -63,11 +60,6 @@ const parseDomain = (
     return raw as ExplorerDomain;
   }
   return "tube-rail";
-};
-
-const parseTab = (raw: string | undefined): ExplorerTab => {
-  if (raw && TABS.has(raw as ExplorerTab)) return raw as ExplorerTab;
-  return DEFAULT_EXPLORER_STATE.tab;
 };
 
 const parseView = (raw: string | undefined): ExplorerView => {
@@ -105,13 +97,12 @@ export const parseExplorerState = (
 
   const kind = parseKind(get("kind"));
   const domain = parseDomain(kind, get("domain"));
-  const tab = parseTab(get("tab"));
   const view = parseView(get("view"));
   const dir = parseDir(get("dir"));
   const id = parseOptionalString(get("id"));
   const q = parseOptionalString(get("q"));
 
-  return { kind, domain, tab, view, dir, id, q };
+  return { kind, domain, view, dir, id, q };
 };
 
 /**
@@ -139,9 +130,6 @@ export const buildExplorerHref = (
   }
   if (merged.domain !== DEFAULT_EXPLORER_STATE.domain) {
     params.set("domain", merged.domain);
-  }
-  if (merged.tab !== DEFAULT_EXPLORER_STATE.tab) {
-    params.set("tab", merged.tab);
   }
   if (merged.view !== DEFAULT_EXPLORER_STATE.view) {
     params.set("view", merged.view);

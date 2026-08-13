@@ -1,6 +1,5 @@
-import { cacheLife, cacheTag } from "next/cache";
+import { LINE_STATION_SEQUENCES } from "tfl-ts";
 import { formatStationName } from "@/lib/tfl/diagram-station";
-import { getTflClient } from "@/lib/tfl/client";
 import {
   stationLabelKey,
   upsertStationRecord,
@@ -27,16 +26,9 @@ export type CatalogStation = {
   lines: string[];
 };
 
-const DIRECTIONS = ["inbound", "outbound"] as const;
-const BATCH_SIZE = 4;
-
-const chunk = <T,>(items: T[], size: number): T[][] => {
-  const out: T[][] = [];
-  for (let i = 0; i < items.length; i += size) {
-    out.push(items.slice(i, i + size));
-  }
-  return out;
-};
+const CATALOG_MODE_IDS = new Set<string>(
+  STATION_CATALOG_MODES.map((mode) => mode.id),
+);
 
 const toCatalogStation = (record: StationRecord): CatalogStation => ({
   id: record.id,
@@ -49,70 +41,32 @@ const toCatalogStation = (record: StationRecord): CatalogStation => ({
 
 /**
  * Deduplicated A–Z station catalogue for Tube, Elizabeth line, DLR,
- * Overground, and Tram — union of published route sequences.
- * Indexed by Naptan; homonyms merge via aliasIds on the first-seen record.
+ * Overground, and Tram — built from tfl-ts `LINE_STATION_SEQUENCES`
+ * (offline topology; refresh by bumping tfl-ts).
  */
-export async function getStationCatalog(): Promise<CatalogStation[]> {
-  "use cache";
-  cacheLife("days");
-  cacheTag("tfl-station-catalog-v4");
-
-  const client = getTflClient();
+export const buildStationCatalog = (): CatalogStation[] => {
   const byId = new Map<string, StationRecord>();
   const byDisplayKey = new Map<string, string>();
 
-  const modeLinePairs = (
-    await Promise.all(
-      STATION_CATALOG_MODES.map(async (mode) => {
-        const lines = await client.line.get({ modes: [mode.id] });
-        return lines
-          .map((line) => line.id)
-          .filter((id): id is string => Boolean(id))
-          .map((lineId) => ({ modeId: mode.id, lineId }));
-      }),
-    )
-  ).flat();
+  for (const sequence of Object.values(LINE_STATION_SEQUENCES)) {
+    if (!CATALOG_MODE_IDS.has(sequence.modeName)) continue;
+    const modeId = sequence.modeName as StationCatalogModeId;
 
-  for (const batch of chunk(modeLinePairs, BATCH_SIZE)) {
-    await Promise.all(
-      batch.map(async ({ modeId, lineId }) => {
-        for (const direction of DIRECTIONS) {
-          try {
-            const sequence = await client.line.getRouteSequence({
-              id: lineId,
-              direction,
-            });
-
-            const fromSequences =
-              sequence.stopPointSequences?.flatMap(
-                (seq) => seq.stopPoint ?? [],
-              ) ?? [];
-            const stops =
-              fromSequences.length > 0
-                ? fromSequences
-                : (sequence.stations ?? []);
-
-            for (const stop of stops) {
-              const rawName = stop.name?.trim();
-              if (!rawName) continue;
-              const id = stop.id?.trim() || rawName;
-              upsertStationRecord(
-                { byId, byDisplayKey },
-                {
-                  id,
-                  name: rawName,
-                  lineId,
-                  modeId,
-                },
-                { mergeHomonyms: true },
-              );
-            }
-          } catch {
-            // Skip failed line/direction pairs; catalogue stays partial but usable.
-          }
-        }
-      }),
-    );
+    for (const stop of sequence.stations) {
+      const rawName = stop.name.trim();
+      if (!rawName) continue;
+      const id = stop.id.trim() || rawName;
+      upsertStationRecord(
+        { byId, byDisplayKey },
+        {
+          id,
+          name: rawName,
+          lineId: sequence.lineId,
+          modeId,
+        },
+        { mergeHomonyms: true },
+      );
+    }
   }
 
   const seen = new Set<string>();
@@ -128,7 +82,15 @@ export async function getStationCatalog(): Promise<CatalogStation[]> {
       sensitivity: "base",
     }),
   );
-}
+};
+
+let catalogMemo: CatalogStation[] | undefined;
+
+/** Same as {@link buildStationCatalog}, memoised for the process lifetime. */
+export const getStationCatalog = (): CatalogStation[] => {
+  catalogMemo ??= buildStationCatalog();
+  return catalogMemo;
+};
 
 /** Build a display-key lookup for tests / tools. */
 export const catalogDisplayKey = (name: string): string =>

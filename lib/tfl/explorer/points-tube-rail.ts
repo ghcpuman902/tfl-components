@@ -1,4 +1,3 @@
-import { cacheLife, cacheTag } from "next/cache";
 import { getStationCatalog } from "@/lib/tfl/station-catalog";
 import type { ExplorerTubeRailPoint } from "@/lib/tfl/explorer/common";
 import tubeGeometry from "@/data/geography/tube-geometry.json";
@@ -11,7 +10,6 @@ type StationFeature = {
   id?: string | number;
   properties?: {
     featureId?: string;
-    zone?: string | null;
     label?: string;
     name?: string;
   };
@@ -28,7 +26,6 @@ type GeometryBundle = {
 };
 
 type GeoLookup = {
-  zone?: string;
   lat?: number;
   lon?: number;
 };
@@ -54,9 +51,6 @@ const buildGeoLookup = (): Map<string, GeoLookup> => {
       const coords = feature.geometry?.coordinates;
       const existing = lookup.get(id) ?? {};
       lookup.set(id, {
-        zone:
-          existing.zone ??
-          (feature.properties?.zone?.trim() || undefined),
         lon:
           existing.lon ??
           (Array.isArray(coords) && typeof coords[0] === "number"
@@ -74,21 +68,9 @@ const buildGeoLookup = (): Map<string, GeoLookup> => {
   return lookup;
 };
 
-/**
- * Cached Tube & rail Points Browse dataset.
- * Identity from `getStationCatalog`; zone/coords from bundled geography.
- */
-export async function getExplorerTubeRailPoints(): Promise<
-  ExplorerTubeRailPoint[]
-> {
-  "use cache";
-  cacheLife("days");
-  cacheTag("tfl-explorer-tube-rail-points");
-
-  const [catalog, geoLookup] = await Promise.all([
-    getStationCatalog(),
-    Promise.resolve(buildGeoLookup()),
-  ]);
+const buildExplorerTubeRailPoints = (): ExplorerTubeRailPoint[] => {
+  const catalog = getStationCatalog();
+  const geoLookup = buildGeoLookup();
 
   return catalog.map((station) => {
     const geo =
@@ -97,9 +79,20 @@ export async function getExplorerTubeRailPoints(): Promise<
 
     return {
       ...station,
-      zone: geo?.zone,
       lat: geo?.lat,
       lon: geo?.lon,
     };
   });
-}
+};
+
+let pointsMemo: ExplorerTubeRailPoint[] | undefined;
+
+/**
+ * Tube & rail Points seed dataset — hard-cached topology.
+ * Identity from tfl-ts `LINE_STATION_SEQUENCES`; coords from bundled geography.
+ * Zone is not in that snapshot — omit it from the seed list.
+ */
+export const getExplorerTubeRailPoints = (): ExplorerTubeRailPoint[] => {
+  pointsMemo ??= buildExplorerTubeRailPoints();
+  return pointsMemo;
+};

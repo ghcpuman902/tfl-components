@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRequireUserTflKey } from "@/hooks/use-require-user-tfl-key";
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider";
 import { createBrowserTflClient } from "@/lib/tfl/browser-tfl-client";
@@ -24,47 +24,50 @@ export const useExplorerKeyedQuery = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const runKeyed = async <T,>(
-    operation: (client: TflClient) => Promise<T>,
-  ): Promise<KeyedQueryResult<T>> => {
-    if (!hydrated) {
-      return { ok: false, error: "Checking for a TfL API key…", gated: true };
-    }
-
-    if (!ready) {
-      openDialog();
-      setError(KEY_REQUIRED_MESSAGE);
-      return { ok: false, error: KEY_REQUIRED_MESSAGE, gated: true };
-    }
-
-    const appKey = getAppKey();
-    if (!appKey) {
-      openDialog();
-      setError(KEY_REQUIRED_MESSAGE);
-      return { ok: false, error: KEY_REQUIRED_MESSAGE, gated: true };
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const client = await createBrowserTflClient(appKey);
-      const data = await operation(client);
-      setLoading(false);
-      return { ok: true, data };
-    } catch (err) {
-      const translated = translateTflClientError(err, [appKey]);
-      if (
-        translated.kind === "invalid-key" ||
-        translated.kind === "rate-limited"
-      ) {
-        markInvalid(translated);
+  const runKeyed = useCallback(
+    async <T,>(
+      operation: (client: TflClient) => Promise<T>,
+    ): Promise<KeyedQueryResult<T>> => {
+      if (!hydrated) {
+        return { ok: false, error: "Checking for a TfL API key…", gated: true };
       }
-      setError(translated.message);
-      setLoading(false);
-      return { ok: false, error: translated.message };
-    }
-  };
+
+      if (!ready) {
+        openDialog();
+        setError(KEY_REQUIRED_MESSAGE);
+        return { ok: false, error: KEY_REQUIRED_MESSAGE, gated: true };
+      }
+
+      const appKey = getAppKey();
+      if (!appKey) {
+        openDialog();
+        setError(KEY_REQUIRED_MESSAGE);
+        return { ok: false, error: KEY_REQUIRED_MESSAGE, gated: true };
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const client = await createBrowserTflClient(appKey);
+        const data = await operation(client);
+        setLoading(false);
+        return { ok: true, data };
+      } catch (err) {
+        const translated = translateTflClientError(err, [appKey]);
+        if (
+          translated.kind === "invalid-key" ||
+          translated.kind === "rate-limited"
+        ) {
+          markInvalid(translated);
+        }
+        setError(translated.message);
+        setLoading(false);
+        return { ok: false, error: translated.message };
+      }
+    },
+    [hydrated, ready, openDialog, getAppKey, markInvalid],
+  );
 
   return {
     ready,

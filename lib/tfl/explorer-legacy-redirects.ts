@@ -8,7 +8,6 @@ export const mapLegacyBrowseLinesRedirect = (): string =>
   buildExplorerHref({
     kind: "lines",
     domain: "tube-rail",
-    tab: "browse",
   });
 
 /**
@@ -25,20 +24,18 @@ export const mapLegacyRouteStationsRedirect = (
   return buildExplorerHref({
     kind: "lines",
     domain: "tube-rail",
-    tab: "browse",
     id,
     dir,
   });
 };
 
 /**
- * Map legacy `/explore/bus-stops` → Points/Bus Browse.
- * The old Trafalgar Square default is the free Browse example;
- * arbitrary nearby/search is now keyed Find.
+ * Map legacy `/explore/bus-stops` → Points/Bus.
+ * The old Trafalgar Square default is the cached featured example;
+ * arbitrary nearby/search still uses a visitor key.
  */
 export const mapLegacyBusStopsRedirect = (): string =>
   buildExplorerHref({
     kind: "points",
     domain: "bus",
-    tab: "browse",
   });

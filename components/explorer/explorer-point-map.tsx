@@ -242,7 +242,7 @@ export const ExplorerPointMap = ({
   return (
     <div
       className={cn(
-        "relative h-72 w-full overflow-hidden rounded-lg border border-border bg-muted sm:h-96",
+        "relative h-full min-h-72 w-full overflow-hidden rounded-xl border border-border bg-muted",
         className,
       )}
     >

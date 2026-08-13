@@ -5,7 +5,7 @@ import type { ComponentProps } from "react";
 
 const MapSkeleton = () => (
   <div
-    className="h-72 w-full animate-pulse rounded-lg border border-border bg-muted sm:h-96"
+    className="h-full min-h-72 w-full animate-pulse rounded-xl border border-border bg-muted"
     aria-hidden
   />
 );

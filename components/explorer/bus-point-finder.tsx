@@ -27,6 +27,9 @@ type BusPointFinderProps = {
   view: ExplorerView;
   onViewChange: (view: ExplorerView) => void;
   initialQuery?: string;
+  /** Featured cached stops — shown until Search / Locate replaces them. */
+  initialPoints?: readonly ExplorerPoint[];
+  emptyMessage?: string;
 };
 
 const toExplorerPoint = (
@@ -54,9 +57,11 @@ export const BusPointFinder = ({
   view,
   onViewChange,
   initialQuery = "",
+  initialPoints = [],
+  emptyMessage = "Select a cached stop, or Search / Locate with your TfL API key.",
 }: BusPointFinderProps) => {
   const { loading, error, setError, runKeyed } = useExplorerKeyedQuery();
-  const [points, setPoints] = useState<ExplorerPoint[]>([]);
+  const [points, setPoints] = useState<ExplorerPoint[]>(() => [...initialPoints]);
   const [query, setQuery] = useState(initialQuery);
 
   const handleSearchSubmit = async (nextQuery: string) => {
@@ -173,7 +178,7 @@ export const BusPointFinder = ({
       onLocate={handleLocate}
       loading={loading}
       error={error}
-      emptyMessage="Search by stop name or 5-digit SMS code, or use your location. Live queries use your TfL API key."
+      emptyMessage={emptyMessage}
       view={view}
       onViewChange={onViewChange}
       searchPlaceholder="Search bus stops or SMS code"
