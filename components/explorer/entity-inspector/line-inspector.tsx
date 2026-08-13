@@ -139,11 +139,6 @@ const LineInspectorDetails = ({
     lineId !== expectedLineId || direction !== expectedDirection;
 
   useEffect(() => {
-    setLiveStatus(null);
-    setStatusFetchedAt(null);
-  }, [lineId]);
-
-  useEffect(() => {
     if (!hydrated || !ready) return;
 
     let cancelled = false;
@@ -372,6 +367,7 @@ export const LineInspector = ({
         ) : (
           <Suspense fallback={detailsFallback}>
             <LineInspectorDetails
+              key={line.id}
               detailsPromise={detailsPromise}
               expectedLineId={line.id}
               expectedDirection={direction}

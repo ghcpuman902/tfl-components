@@ -81,7 +81,7 @@ const KeyPrompt = ({
   </div>
 );
 
-export const PointInspector = ({
+const PointInspectorLive = ({
   point,
   cycleDock,
   cachedArrivals = null,
@@ -103,13 +103,6 @@ export const PointInspector = ({
       Boolean(point.stopLetter || point.smsCode));
   const isBike = point.kind === "bikePoint";
   const seedArrivals = cachedArrivalsForPoint(cachedArrivals, point);
-
-  useEffect(() => {
-    setArrivals(null);
-    setArrivalsFetchedAt(null);
-    setLiveDock(cycleDock ?? null);
-    setDockFetchedAt(null);
-  }, [point.id, cycleDock]);
 
   useEffect(() => {
     if (!hydrated || !ready) return;
@@ -419,3 +412,8 @@ export const PointInspector = ({
     />
   );
 };
+
+/** Remount live arrivals/occupancy state when the selected point changes. */
+export const PointInspector = (props: PointInspectorProps) => (
+  <PointInspectorLive key={props.point.id} {...props} />
+);
