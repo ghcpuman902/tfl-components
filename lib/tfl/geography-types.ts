@@ -15,7 +15,11 @@ export type LineSegmentProperties = {
   lineId: string;
   lineName: string;
   color: string;
-  lineOffset: number;
+  /**
+   * Parallel-corridor paint offset on full OSM variant bundles.
+   * Omitted on unique-track map geometry (spine + leftover branches only).
+   */
+  lineOffset?: number;
 };
 
 export type StationFeatureCollection = FeatureCollection<

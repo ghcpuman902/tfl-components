@@ -1,30 +1,16 @@
-## Purpose
+## Licensing
 
-TfL roundel mark with safe trademark defaults. Foundations identity — used in board headers and brand surfaces.
-
-## Licensing / trademark
-
-The TfL roundel is trademarked. By default the component renders a filled placeholder with the same footprint so layouts do not jump. Enable the official SVG in **your** app only if you have permission:
+The TfL roundel is trademarked. By default the component renders a filled placeholder with the same footprint so layouts do not jump. Enable the official SVG in your app only if you have permission:
 
 ```env
 NEXT_PUBLIC_ALLOW_TFL_ROUNDEL=true
 ```
 
-Setting the flag shifts trademark responsibility to your application layer. See [TfL brand IP](https://tfl.gov.uk/info-for/business-and-advertisers/using-tfl-brand-ip).
+Setting the flag shifts trademark responsibility to your application. See [TfL brand IP](https://tfl.gov.uk/info-for/business-and-advertisers/using-tfl-brand-ip). Without the flag you see the placeholder disc and bar.
 
-## Installation
+## Props
 
-```bash
-pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/tfl-roundel.json
-```
-
-## Preview
-
-See the preview above. Without the env flag you see the placeholder disc + bar.
-
-## API / values
-
-Pass explicit colours or a mode preset — it does not fetch TfL data.
+Pass explicit colours or a mode preset. It does not fetch TfL data.
 
 ```tsx
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
@@ -42,15 +28,10 @@ export default function Page() {
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `variant` | mode preset | `underground`, `elizabeth`, `overground`, `dlr`, `tram`, `cycles`, … |
+| `variant` | mode preset | `underground`, `elizabeth`, `overground`, `dlr`, `tram`, `cycles` |
 | `text` | `string` | Bar label. |
 | `ringColor` / `barColor` / `textColor` | `string` | Custom colours. |
-| `barBorderColor` | `string` | Stroke around the bar. **Cycles only** per TfL Basic Elements (white bar + green border); omit for other modes. |
-| `artwork` | `boolean` | Use Wikimedia / local SVG artwork when allowed. |
+| `barBorderColor` | `string` | Stroke around the bar. Cycles only, per TfL Basic Elements: white bar plus green border. Omit for other modes. |
+| `artwork` | `boolean` | Use Wikimedia or local SVG artwork when allowed. |
 
 Mode presets and logo paths are exported as `ROUNDEL_PRESETS`, `ROUNDEL_LOGO_PATHS`, and `ROUNDEL_LOGO_SOURCES`.
-
-## Used by
-
-- [Status board](/interfaces/tube-status-board)
-- Other Interfaces and Blocks that need a brand mark

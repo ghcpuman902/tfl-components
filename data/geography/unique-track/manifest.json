@@ -1,0 +1,61 @@
+{
+  "description": "Unique-track OSM geometry for map drawing. Full route variants stay in data/geography/{mode}-geometry.json; maps serve public/ copies of unique-track full.",
+  "snapshottedAt": "2026-08-13T21:22:57.998Z",
+  "modes": [
+    {
+      "mode": "tube",
+      "source": "data/geography/tube-geometry.json",
+      "stations": 270,
+      "variantLines": 208,
+      "fullLines": 42,
+      "previewLines": 38,
+      "fullBytes": 145896,
+      "previewBytes": 96609,
+      "lineSource": "osm-route-network"
+    },
+    {
+      "mode": "overground",
+      "source": "data/geography/overground-geometry.json",
+      "stations": 112,
+      "variantLines": 50,
+      "fullLines": 12,
+      "previewLines": 12,
+      "fullBytes": 52024,
+      "previewBytes": 35659,
+      "lineSource": "osm-route-network"
+    },
+    {
+      "mode": "elizabeth",
+      "source": "data/geography/elizabeth-geometry.json",
+      "stations": 41,
+      "variantLines": 24,
+      "fullLines": 6,
+      "previewLines": 6,
+      "fullBytes": 23388,
+      "previewBytes": 14845,
+      "lineSource": "osm-route-network"
+    },
+    {
+      "mode": "dlr",
+      "source": "data/geography/dlr-geometry.json",
+      "stations": 45,
+      "variantLines": 12,
+      "fullLines": 6,
+      "previewLines": 6,
+      "fullBytes": 18922,
+      "previewBytes": 13691,
+      "lineSource": "osm-route-network"
+    },
+    {
+      "mode": "tram",
+      "source": "data/geography/tram-geometry.json",
+      "stations": 38,
+      "variantLines": 10,
+      "fullLines": 3,
+      "previewLines": 3,
+      "fullBytes": 16494,
+      "previewBytes": 11946,
+      "lineSource": "osm-route-network"
+    }
+  ]
+}

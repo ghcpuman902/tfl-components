@@ -52,9 +52,20 @@ export type BusArrivalsBoardProps = ArrivalsBoardChromeProps & {
 
 export const BusArrivalsBoardSkeleton = ({
   className,
+  stopName,
+  stopLetter,
 }: {
   className?: string
-} = {}) => <ArrivalsBoardSkeleton mode="bus" className={className} />
+  stopName?: string
+  stopLetter?: string
+} = {}) => (
+  <ArrivalsBoardSkeleton
+    mode="bus"
+    className={className}
+    stopName={stopName}
+    stopLetter={stopLetter}
+  />
+)
 
 /**
  * Bus arrivals board. Default is a flat time-ordered list with a route chip
@@ -80,7 +91,13 @@ export const BusArrivalsBoard = ({
 }: BusArrivalsBoardProps) => {
   const rows = data ?? []
   if (loading && rows.length === 0 && !error) {
-    return <BusArrivalsBoardSkeleton className={className} />
+    return (
+      <BusArrivalsBoardSkeleton
+        className={className}
+        stopName={chrome.stopName}
+        stopLetter={stopLetter}
+      />
+    )
   }
 
   const prepared = prepareBusArrivals({

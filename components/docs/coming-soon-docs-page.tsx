@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { Badge } from "@/components/ui/badge";
 import { getDocsEntry, type DocsEntry } from "@/lib/docs-catalog";
 
 type ComingSoonPageProps = {
@@ -26,16 +25,15 @@ export const ComingSoonDocsPage = ({ slug }: ComingSoonPageProps) => {
     <DocsReadableWidth>
       <article className="space-y-8">
         <DocsPageHeader entry={entry as DocsEntry} />
-        <Badge variant="outline">Coming soon</Badge>
         <p className="max-w-prose text-muted-foreground">
-          This surface is on the roadmap. Prefer existing boards on the{" "}
+          Not built yet. Use the boards that already ship on{" "}
           <Link
             href="/docs/components"
             className="text-foreground underline underline-offset-4"
           >
-            Components catalogue
-          </Link>{" "}
-          meanwhile.
+            Components
+          </Link>
+          .
         </p>
       </article>
     </DocsReadableWidth>

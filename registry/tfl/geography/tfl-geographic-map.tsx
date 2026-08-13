@@ -17,10 +17,12 @@ import {
 
 const LONDON_CENTER: [number, number] = [-0.12, 51.51];
 const LONDON_ZOOM = 10.2;
+
+/** Bottom → top paint order so DLR / tram / Overground stay visible over Tube casing. */
 const DEFAULT_MODES: readonly TransitMode[] = [
   "tube",
-  "elizabeth",
   "overground",
+  "elizabeth",
   "dlr",
   "tram",
 ];
@@ -46,65 +48,93 @@ type TflGeographicMapProps = {
   className?: string;
 };
 
-const addModeToMap = (
+const asFeatureCollection = (
+  collection: TransitGeometryBundle["lines"] | TransitGeometryBundle["stations"],
+) => ({
+  type: "FeatureCollection" as const,
+  features: collection.features ?? [],
+});
+
+/**
+ * Add sources first, then casings, then coloured cores, then stations.
+ * Per-mode casing→core→stations stacks the next mode’s white casing over the
+ * previous mode’s colour (Tube/Jubilee was hiding DLR teal in Docklands).
+ */
+const addTransitLayers = (
   map: maplibregl.Map,
-  mode: TransitGeometryMode,
-  bundle: TransitGeometryBundle,
+  bundles: { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[],
   showLines: boolean,
   showStations: boolean,
 ) => {
-  const linesId = `${mode}-lines`;
-  const stationsId = `${mode}-stations`;
+  for (const { mode, bundle } of bundles) {
+    if (showLines) {
+      map.addSource(`${mode}-lines`, {
+        type: "geojson",
+        data: asFeatureCollection(bundle.lines),
+      });
+    }
+    if (showStations) {
+      map.addSource(`${mode}-stations`, {
+        type: "geojson",
+        data: asFeatureCollection(bundle.stations),
+      });
+    }
+  }
 
   if (showLines) {
-    map.addSource(linesId, { type: "geojson", data: bundle.lines });
-    map.addLayer({
-      id: `${mode}-lines-casing`,
-      type: "line",
-      source: linesId,
-      paint: {
-        "line-color": "#ffffff",
-        "line-width": 5,
-        "line-opacity": 0.85,
-      },
-    });
-    map.addLayer({
-      id: `${mode}-lines-core`,
-      type: "line",
-      source: linesId,
-      paint: {
-        "line-color": [
-          "coalesce",
-          ["get", "color"],
-          ["get", "lineColour"],
-          "#0019A8",
-        ],
-        "line-width": 3,
-      },
-    });
+    for (const { mode } of bundles) {
+      map.addLayer({
+        id: `${mode}-lines-casing`,
+        type: "line",
+        source: `${mode}-lines`,
+        paint: {
+          "line-color": "#ffffff",
+          "line-width": 5,
+          "line-opacity": 0.85,
+        },
+      });
+    }
+    for (const { mode } of bundles) {
+      map.addLayer({
+        id: `${mode}-lines-core`,
+        type: "line",
+        source: `${mode}-lines`,
+        paint: {
+          "line-color": [
+            "coalesce",
+            ["get", "color"],
+            ["get", "lineColour"],
+            "#0019A8",
+          ],
+          "line-width": 3,
+        },
+      });
+    }
   }
 
   if (showStations) {
-    map.addSource(stationsId, { type: "geojson", data: bundle.stations });
-    map.addLayer({
-      id: `${mode}-stations`,
-      type: "circle",
-      source: stationsId,
-      paint: {
-        "circle-radius": 3,
-        "circle-color": "#ffffff",
-        "circle-stroke-width": 1.25,
-        "circle-stroke-color": "#111827",
-      },
-    });
+    for (const { mode } of bundles) {
+      map.addLayer({
+        id: `${mode}-stations`,
+        type: "circle",
+        source: `${mode}-stations`,
+        paint: {
+          "circle-radius": 3,
+          "circle-color": "#ffffff",
+          "circle-stroke-width": 1.25,
+          "circle-stroke-color": "#111827",
+        },
+      });
+    }
   }
 };
 
 /**
  * Free geographic map — MapLibre GL JS over CARTO Positron, no API key.
  *
- * Renders vendored OSM transit line + station geometry by default.
- * Auto-fills parent via `h-full w-full`; wrap in a sized container.
+ * Renders unique-track OSM transit geometry by default (spine + leftover
+ * branches only — not every timetable variant). Fetches from
+ * `/data/geography/`. Auto-fills parent via `h-full w-full`.
  *
  * ```tsx
  * <div className="h-100">
@@ -134,25 +164,34 @@ export const TflGeographicMap = ({
     { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[]
   > => {
     if (data) {
-      return Object.entries(data)
-        .filter(([mode]) => activeModes.includes(mode as TransitMode))
-        .map(([mode, bundle]) => ({
-          mode: mode as TransitGeometryMode,
-          bundle: bundle as TransitGeometryBundle,
-        }));
+      const ordered = DEFAULT_MODES.filter(
+        (mode) => activeModes.includes(mode) && data[mode],
+      );
+      return ordered.map((mode) => ({
+        mode,
+        bundle: data[mode] as TransitGeometryBundle,
+      }));
     }
 
-    const assets = TRANSIT_GEOMETRY_PUBLIC_ASSETS.filter((a) =>
-      activeModes.includes(a.mode),
+    const assetByMode = new Map(
+      TRANSIT_GEOMETRY_PUBLIC_ASSETS.map((asset) => [asset.mode, asset]),
     );
+    const orderedModes = DEFAULT_MODES.filter((mode) =>
+      activeModes.includes(mode),
+    );
+
     const results = await Promise.all(
-      assets.map(async (asset) => {
+      orderedModes.map(async (mode) => {
+        const asset = assetByMode.get(mode);
+        if (!asset) {
+          throw new Error(`No geography asset for mode ${mode}`);
+        }
         const res = await fetch(asset.url);
         if (!res.ok) {
           throw new Error(`Failed to load ${asset.label} (${res.status})`);
         }
         return {
-          mode: asset.mode,
+          mode,
           bundle: (await res.json()) as TransitGeometryBundle,
         };
       }),
@@ -208,9 +247,7 @@ export const TflGeographicMap = ({
         const bundles = await loadGeometry();
         if (cancelled) return;
 
-        for (const { mode, bundle } of bundles) {
-          addModeToMap(map, mode, bundle, showLines, showStations);
-        }
+        addTransitLayers(map, bundles, showLines, showStations);
         setStatus("ready");
       } catch {
         if (!cancelled) setStatus("error");

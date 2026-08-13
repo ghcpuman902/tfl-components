@@ -61,24 +61,39 @@ export const MapLibreExample = () => {
 
     map.on("load", async () => {
       try {
-        const bundles = await Promise.all(
-          TRANSIT_GEOMETRY_PUBLIC_ASSETS.map(async (asset) => {
-            const res = await fetch(asset.url);
-            if (!res.ok) return null;
-            const bundle = (await res.json()) as TransitGeometryBundle;
-            return { mode: asset.mode, bundle };
-          }),
+        const bundles = (
+          await Promise.all(
+            TRANSIT_GEOMETRY_PUBLIC_ASSETS.map(async (asset) => {
+              const res = await fetch(asset.url);
+              if (!res.ok) return null;
+              const bundle = (await res.json()) as TransitGeometryBundle;
+              return { mode: asset.mode, bundle };
+            }),
+          )
+        ).filter(
+          (item): item is { mode: (typeof TRANSIT_GEOMETRY_PUBLIC_ASSETS)[number]["mode"]; bundle: TransitGeometryBundle } =>
+            item != null,
         );
         if (cancelled) return;
 
-        for (const item of bundles) {
-          if (!item) continue;
-          const { mode, bundle } = item;
-
+        for (const { mode, bundle } of bundles) {
           map.addSource(`${mode}-lines`, {
             type: "geojson",
-            data: bundle.lines,
+            data: {
+              type: "FeatureCollection",
+              features: bundle.lines.features ?? [],
+            },
           });
+          map.addSource(`${mode}-stations`, {
+            type: "geojson",
+            data: {
+              type: "FeatureCollection",
+              features: bundle.stations.features ?? [],
+            },
+          });
+        }
+
+        for (const { mode } of bundles) {
           map.addLayer({
             id: `${mode}-lines-casing`,
             type: "line",
@@ -89,6 +104,8 @@ export const MapLibreExample = () => {
               "line-opacity": 0.85,
             },
           });
+        }
+        for (const { mode } of bundles) {
           map.addLayer({
             id: `${mode}-lines-core`,
             type: "line",
@@ -98,11 +115,8 @@ export const MapLibreExample = () => {
               "line-width": 3,
             },
           });
-
-          map.addSource(`${mode}-stations`, {
-            type: "geojson",
-            data: bundle.stations,
-          });
+        }
+        for (const { mode } of bundles) {
           map.addLayer({
             id: `${mode}-stations`,
             type: "circle",

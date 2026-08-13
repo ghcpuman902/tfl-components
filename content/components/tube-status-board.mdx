@@ -1,8 +1,4 @@
-## Purpose
-
-Severity-sorted service status board for TfL Tube & Rail — Tube, Elizabeth line, Overground, DLR, and Tram (Cable Car is separate on TfL’s status surface). Embed when you already have normalised line status rows from `tfl-ts`.
-
-## Getting data with tfl-ts
+## Get line status
 
 ```ts
 import TflClient, { sortLinesBySeverityAndOrder } from "tfl-ts"
@@ -18,9 +14,9 @@ const data = sortLinesBySeverityAndOrder(
 )
 ```
 
-`data` is the public `tfl.line.getStatus()` row type (aliased in this repo as `StatusLine`). No docs-site-only transformation.
+`data` is the public `tfl.line.getStatus()` row type, aliased here as `StatusLine`. Sort before you pass it in. The board does not fetch.
 
-On this docs site, `getCachedLineStatuses` in `@/lib/tfl/status-data` wraps the same idea with Cache Components (**Cached data**).
+On this docs site, `getCachedLineStatuses` in `@/lib/tfl/status-data` wraps the same call with Cache Components.
 
 ## Render
 
@@ -32,11 +28,9 @@ export default function Page({ data }) {
 }
 ```
 
-The board does **not** fetch.
-
 ## Variations
 
-### Curated Underground + Elizabeth IDs
+### Underground and Elizabeth only
 
 ```tsx
 import {
@@ -53,23 +47,14 @@ export default async function Page() {
 
 ### Hide header
 
-Pass `hideHeader` when a parent layout already provides a title.
+Pass `hideHeader` when the parent already has a title.
 
-## Behaviour / edge cases
+## Props
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `data` | `readonly StatusLine[]` | Rows from `tfl.line.getStatus()`. Missing/`undefined` renders empty. |
-| `hideHeader` | `boolean` | Omit the board header when a parent layout already has one. |
+| `data` | `readonly StatusLine[]` | Rows from `tfl.line.getStatus()`. Missing or `undefined` renders empty. |
+| `hideHeader` | `boolean` | Omit the board header. |
 | `children` | `ReactNode` | Optional slot below the status list. |
 
-- Severity sorting should happen before pass-in (`sortLinesBySeverityAndOrder`).
-- Official colours come from `tfl-ts` CSS helpers inside the board.
-
-## Data ownership
-
-Credentials, fetch, and cache live in the app. Fixtures can demonstrate severe delays without live disruption.
-
-## Related Blocks
-
-See [Week ahead](/blocks/week-ahead) for a Block that composes status interpretation with schematic strips.
+Official colours come from `tfl-ts` CSS helpers inside the board. Fixtures can show severe delays without waiting for a live incident.

@@ -4,14 +4,8 @@ import Link from "next/link";
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board";
 import { useArrivalsBoardUiState } from "@/lib/tfl/use-arrivals-board-ui-state";
 import type { BusArrivalsGroupBy } from "@/lib/tfl/arrivals-prepare";
+import { HOME_BUS_STOP } from "@/lib/tfl/home-arrivals-stops";
 import { useDualPathArrivals } from "@/hooks/use-dual-path-arrivals";
-
-/** Matches homepage / docs get-data example (NaPTAN 490…G). */
-const BUS_STOP = {
-  id: "490000091G",
-  name: "Trafalgar Square",
-  stopLetter: "G",
-} as const;
 
 const POLL_MS = 15_000;
 
@@ -23,7 +17,7 @@ const BusArrivalsLiveBoard = ({
   showIntro?: boolean;
 }) => {
   const { data, loading, fetchError, tick } = useDualPathArrivals({
-    stopPointId: BUS_STOP.id,
+    stopPointId: HOME_BUS_STOP.id,
     pollMs: POLL_MS,
   });
   const boardState = useArrivalsBoardUiState(data.length, fetchError, "bus");
@@ -48,8 +42,8 @@ const BusArrivalsLiveBoard = ({
       ) : null}
       <BusArrivalsBoard
         data={data}
-        stopName={BUS_STOP.name}
-        stopLetter={BUS_STOP.stopLetter}
+        stopName={HOME_BUS_STOP.name}
+        stopLetter={HOME_BUS_STOP.stopLetter}
         groupBy={groupBy}
         loading={loading}
         error={boardState.error}
