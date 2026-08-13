@@ -57,6 +57,9 @@ export {
   TFL_MODAL_COLOURS,
   UNDERGROUND_LINE_COLOURS,
   UNDERGROUND_RING_RED,
+} from "@/lib/tfl/brand-colours";
+
+export {
   getRoundelExclusion,
   isRoundelAboveMinSize,
   ROUNDEL_DO_NOT,
@@ -65,7 +68,7 @@ export {
   ROUNDEL_FONT_POLICY,
   ROUNDEL_MIN_WIDTH_MM,
   ROUNDEL_MIN_WIDTH_PX,
-} from "@/lib/tfl/brand";
+} from "@/lib/tfl/brand-rules";
 
 /** Wikimedia geometry: bar extends past the circle (≈615×500). */
 const VIEW_W = 615.3;

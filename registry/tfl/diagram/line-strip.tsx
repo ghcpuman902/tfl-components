@@ -3,7 +3,7 @@ import { LineRouteDiagram } from "@/components/tfl/diagram/line-route-diagram";
 import {
   sliceLineSpineStations,
   type LineSpine,
-} from "@/lib/tfl/line-spine";
+} from "@/lib/tfl/line-spine-model";
 import type { DiagramSegment, DiagramStation } from "@/lib/tfl/diagram-station";
 import type { LineSchematic } from "@/lib/tfl/line-schematic";
 import {

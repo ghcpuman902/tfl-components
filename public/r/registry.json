@@ -41,11 +41,6 @@
           "target": "lib/tfl/brand-rules.ts"
         },
         {
-          "path": "lib/tfl/brand.ts",
-          "type": "registry:lib",
-          "target": "lib/tfl/brand.ts"
-        },
-        {
           "path": "public/transit-logos/underground.svg",
           "type": "registry:file",
           "target": "public/transit-logos/underground.svg"
@@ -453,7 +448,7 @@
       "dependencies": [
         "tfl-ts",
         "lucide-react",
-        "maplibre-gl"
+        "maplibre-gl@5.24.0"
       ],
       "registryDependencies": [
         "https://tfl.manglekuo.com/r/tfl-roundel.json",
@@ -509,6 +504,36 @@
           "path": "lib/tfl/brand-colours.ts",
           "type": "registry:lib",
           "target": "lib/tfl/brand-colours.ts"
+        },
+        {
+          "path": "components/tfl/station-name.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/station-name.tsx"
+        },
+        {
+          "path": "components/tfl/findable-text.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/findable-text.tsx"
+        },
+        {
+          "path": "lib/tfl/station-typography.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-typography.ts"
+        },
+        {
+          "path": "lib/tfl/diagram-station.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/diagram-station.ts"
+        },
+        {
+          "path": "lib/tfl/station-label-find.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-label-find.ts"
+        },
+        {
+          "path": "lib/tfl/station-abbreviations.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-abbreviations.ts"
         }
       ]
     },
@@ -610,6 +635,36 @@
           "path": "lib/tfl/arrivals-empty.ts",
           "type": "registry:lib",
           "target": "lib/tfl/arrivals-empty.ts"
+        },
+        {
+          "path": "components/tfl/station-name.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/station-name.tsx"
+        },
+        {
+          "path": "components/tfl/findable-text.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/findable-text.tsx"
+        },
+        {
+          "path": "lib/tfl/station-typography.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-typography.ts"
+        },
+        {
+          "path": "lib/tfl/diagram-station.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/diagram-station.ts"
+        },
+        {
+          "path": "lib/tfl/station-label-find.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-label-find.ts"
+        },
+        {
+          "path": "lib/tfl/station-abbreviations.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-abbreviations.ts"
         }
       ]
     },
@@ -670,6 +725,36 @@
           "path": "lib/tfl/arrivals-empty.ts",
           "type": "registry:lib",
           "target": "lib/tfl/arrivals-empty.ts"
+        },
+        {
+          "path": "components/tfl/station-name.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/station-name.tsx"
+        },
+        {
+          "path": "components/tfl/findable-text.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/findable-text.tsx"
+        },
+        {
+          "path": "lib/tfl/station-typography.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-typography.ts"
+        },
+        {
+          "path": "lib/tfl/diagram-station.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/diagram-station.ts"
+        },
+        {
+          "path": "lib/tfl/station-label-find.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-label-find.ts"
+        },
+        {
+          "path": "lib/tfl/station-abbreviations.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-abbreviations.ts"
         }
       ]
     },
@@ -743,7 +828,7 @@
       "title": "Geographic Map",
       "description": "Free MapLibre geographic map — OSM transit line and station geometry, no API key required.",
       "dependencies": [
-        "maplibre-gl"
+        "maplibre-gl@5.24.0"
       ],
       "registryDependencies": [
         "https://tfl.manglekuo.com/r/tfl-colours.json"
@@ -858,6 +943,71 @@
           "path": "lib/tfl/schematic-layout.ts",
           "type": "registry:lib",
           "target": "lib/tfl/schematic-layout.ts"
+        },
+        {
+          "path": "lib/tfl/route-track.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/route-track.ts"
+        },
+        {
+          "path": "lib/tfl/brand-colours.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/brand-colours.ts"
+        },
+        {
+          "path": "lib/tfl/branch-strip-layout.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/branch-strip-layout.ts"
+        },
+        {
+          "path": "lib/tfl/line-spine-model.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/line-spine-model.ts"
+        },
+        {
+          "path": "lib/tfl/station-index.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-index.ts"
+        },
+        {
+          "path": "components/tfl/national-rail-pictogram.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/national-rail-pictogram.tsx"
+        },
+        {
+          "path": "lib/tfl/roundel-presets.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/roundel-presets.ts"
+        },
+        {
+          "path": "public/transit-logos/national-rail.svg",
+          "type": "registry:file",
+          "target": "public/transit-logos/national-rail.svg"
+        },
+        {
+          "path": "components/tfl/station-name.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/station-name.tsx"
+        },
+        {
+          "path": "components/tfl/findable-text.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/findable-text.tsx"
+        },
+        {
+          "path": "lib/tfl/station-typography.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-typography.ts"
+        },
+        {
+          "path": "lib/tfl/station-label-find.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-label-find.ts"
+        },
+        {
+          "path": "lib/tfl/station-abbreviations.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-abbreviations.ts"
         }
       ]
     }

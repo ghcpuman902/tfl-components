@@ -1,5 +1,4 @@
 import { formatStationName } from "@/lib/tfl/diagram-station";
-import { stopIdentityIds, type StopLike } from "@/lib/tfl/week-ahead-status";
 
 /**
  * Lowercase + apostrophe fold for recipe / catalog lookup.
@@ -129,9 +128,6 @@ export const resolveStationRecord = (
 /** IDs that should match the same physical stop in disruption payloads. */
 export const stationRecordIdentityIds = (record: StationRecord): string[] =>
   [...new Set([record.id, ...record.aliasIds])];
-
-export const stopLikeIdentityIds = (stop: StopLike | null | undefined): string[] =>
-  stopIdentityIds(stop);
 
 const uniqPush = (list: string[], value: string): string[] =>
   list.includes(value) ? list : [...list, value];

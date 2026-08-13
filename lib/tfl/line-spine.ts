@@ -1,18 +1,16 @@
 import { getTflClient } from "@/lib/tfl/client";
 import { toDiagramStation } from "@/lib/tfl/diagram-mappers";
 import type { DiagramStation } from "@/lib/tfl/diagram-station";
+import {
+  type LineSpine,
+  sliceLineSpineStations,
+} from "@/lib/tfl/line-spine-model";
 import { resolveDiagramLineColor } from "@/lib/tfl/route-track";
 import { getStaticLineSpine } from "@/lib/tfl/static-line-spines";
 import { selectLongestOrderedRoute } from "@/lib/tfl/week-ahead-status";
 
-export type LineSpine = {
-  lineId: string;
-  lineName: string;
-  lineColor: string;
-  stations: DiagramStation[];
-  spineIds: string[];
-  routeError?: string;
-};
+export type { LineSpine } from "@/lib/tfl/line-spine-model";
+export { sliceLineSpineStations } from "@/lib/tfl/line-spine-model";
 
 type StopPoolItem = {
   id?: string | null;
@@ -169,16 +167,3 @@ export const getLineSpine = async (lineId: string): Promise<LineSpine> => {
   }
 };
 
-/** Inclusive slice of a spine between two station ids (either order). */
-export const sliceLineSpineStations = (
-  stations: readonly DiagramStation[],
-  fromId: string,
-  toId: string,
-): DiagramStation[] => {
-  const fromIndex = stations.findIndex((s) => s.id === fromId);
-  const toIndex = stations.findIndex((s) => s.id === toId);
-  if (fromIndex < 0 || toIndex < 0) return [...stations];
-  const [start, end] =
-    fromIndex <= toIndex ? [fromIndex, toIndex] : [toIndex, fromIndex];
-  return stations.slice(start, end + 1);
-};
