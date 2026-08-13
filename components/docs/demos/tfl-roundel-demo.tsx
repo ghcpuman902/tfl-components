@@ -48,7 +48,7 @@ export default function TflRoundelDemo() {
         <p className="text-sm text-muted-foreground">
           {allowed
             ? "Official SVG enabled via env flag."
-            : "Placeholder shown — set NEXT_PUBLIC_ALLOW_TFL_ROUNDEL=true to enable the mark."}
+            : "Placeholder. Set NEXT_PUBLIC_ALLOW_TFL_ROUNDEL=true to enable the mark."}
         </p>
         <div className="flex flex-wrap items-center gap-6">
           <TfLRoundel className="size-16" />

@@ -1,24 +1,23 @@
 "use client";
 
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board";
-import { HOME_RAIL_LINES } from "@/lib/tfl/home-arrivals-stops";
+import {
+  HOME_RAIL_LINES,
+  HOME_RAIL_STOP,
+} from "@/lib/tfl/home-arrivals-stops";
 import { useArrivalsBoardUiState } from "@/lib/tfl/use-arrivals-board-ui-state";
 import { useDualPathArrivals } from "@/hooks/use-dual-path-arrivals";
-
-const RAIL_STOP = {
-  id: "940GZZLUOXC",
-  name: "Oxford Circus",
-} as const;
 
 const POLL_MS = 15_000;
 
 /**
  * Rail arrivals demo — Oxford Circus via RailArrivalsBoard + tfl-ts predictions.
  * Site Server Action when no user key; browser tfl-ts when a key is ready.
+ * Identity (stop name) paints immediately; predictions stream in after poll.
  */
 export default function RailArrivalsBoardDemo() {
   const { data, loading, fetchError, tick } = useDualPathArrivals({
-    stopPointId: RAIL_STOP.id,
+    stopPointId: HOME_RAIL_STOP.id,
     pollMs: POLL_MS,
   });
   const boardState = useArrivalsBoardUiState(data.length, fetchError, "rail");
@@ -33,7 +32,7 @@ export default function RailArrivalsBoardDemo() {
       <RailArrivalsBoard
         data={data}
         lines={HOME_RAIL_LINES}
-        stopName={RAIL_STOP.name}
+        stopName={HOME_RAIL_STOP.name}
         loading={loading}
         error={boardState.error}
         emptyKind={boardState.emptyKind}

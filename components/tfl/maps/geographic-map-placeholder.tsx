@@ -25,9 +25,9 @@ const MODE_LABELS = TRANSIT_GEOMETRY_PUBLIC_ASSETS.map(
 ).join(", ");
 
 /**
- * MapLibre geographic placeholder — provider adapter over vendored GeoJSON.
- * Core data stays in /data/geography (and public mirror); this component is not
- * the geography source of truth.
+ * MapLibre geographic placeholder — provider adapter over unique-track GeoJSON
+ * at `/data/geography/`. Full OSM route variants stay under `data/geography/`
+ * for non-map use; this component is not the geography source of truth.
  */
 export const GeographicMapPlaceholder = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -76,59 +76,6 @@ export const GeographicMapPlaceholder = () => {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
 
-    const addModeLayers = (
-      mode: TransitGeometryMode,
-      bundle: TransitGeometryBundle,
-    ) => {
-      const linesSourceId = `${mode}-lines`;
-      const stationsSourceId = `${mode}-stations`;
-
-      map.addSource(linesSourceId, {
-        type: "geojson",
-        data: bundle.lines,
-      });
-      map.addSource(stationsSourceId, {
-        type: "geojson",
-        data: bundle.stations,
-      });
-
-      map.addLayer({
-        id: `${mode}-lines-casing`,
-        type: "line",
-        source: linesSourceId,
-        paint: {
-          "line-color": "#ffffff",
-          "line-width": 5,
-          "line-opacity": 0.85,
-        },
-      });
-      map.addLayer({
-        id: `${mode}-lines`,
-        type: "line",
-        source: linesSourceId,
-        paint: {
-          "line-color": [
-            "coalesce",
-            ["get", "color"],
-            ["get", "lineColour"],
-            "#0019A8",
-          ],
-          "line-width": 3,
-        },
-      });
-      map.addLayer({
-        id: `${mode}-stations`,
-        type: "circle",
-        source: stationsSourceId,
-        paint: {
-          "circle-radius": 3,
-          "circle-color": "#ffffff",
-          "circle-stroke-width": 1.25,
-          "circle-stroke-color": "#111827",
-        },
-      });
-    };
-
     const handleLoad = async () => {
       try {
         const results = await Promise.all(
@@ -146,7 +93,63 @@ export const GeographicMapPlaceholder = () => {
         if (cancelled) return;
 
         for (const { mode, bundle } of results) {
-          addModeLayers(mode, bundle);
+          map.addSource(`${mode}-lines`, {
+            type: "geojson",
+            data: {
+              type: "FeatureCollection",
+              features: bundle.lines.features ?? [],
+            },
+          });
+          map.addSource(`${mode}-stations`, {
+            type: "geojson",
+            data: {
+              type: "FeatureCollection",
+              features: bundle.stations.features ?? [],
+            },
+          });
+        }
+
+        // Casings for every mode, then cores — avoids Tube white stroke hiding DLR.
+        for (const { mode } of results) {
+          map.addLayer({
+            id: `${mode}-lines-casing`,
+            type: "line",
+            source: `${mode}-lines`,
+            paint: {
+              "line-color": "#ffffff",
+              "line-width": 5,
+              "line-opacity": 0.85,
+            },
+          });
+        }
+        for (const { mode } of results) {
+          map.addLayer({
+            id: `${mode}-lines`,
+            type: "line",
+            source: `${mode}-lines`,
+            paint: {
+              "line-color": [
+                "coalesce",
+                ["get", "color"],
+                ["get", "lineColour"],
+                "#0019A8",
+              ],
+              "line-width": 3,
+            },
+          });
+        }
+        for (const { mode } of results) {
+          map.addLayer({
+            id: `${mode}-stations`,
+            type: "circle",
+            source: `${mode}-stations`,
+            paint: {
+              "circle-radius": 3,
+              "circle-color": "#ffffff",
+              "circle-stroke-width": 1.25,
+              "circle-stroke-color": "#111827",
+            },
+          });
         }
 
         setLoadedModes(results.map((result) => result.mode));

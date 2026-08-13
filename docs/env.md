@@ -46,4 +46,9 @@ export const env = envSchema.parse(process.env)
 
 - Do not log secrets.
 - Do not put API keys in `NEXT_PUBLIC_*` variables.
+- Exception: browser map keys for the live vendor examples on
+  `/docs/map-geographic`. Set `NEXT_PUBLIC_MAPBOX_TOKEN` (public `pk.*`) and
+  `NEXT_PUBLIC_GOOGLE_MAPS_KEY` in `.env.local`, restrict both to
+  `http://localhost:3000/*`, enable Maps JavaScript API on the Google key,
+  and restart `next dev` after changing them.
 - Rotate keys if accidentally committed; use gitignored scratch files for recovery notes.

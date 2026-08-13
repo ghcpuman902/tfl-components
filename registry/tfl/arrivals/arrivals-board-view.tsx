@@ -125,9 +125,14 @@ const StopLetterBadge = ({ letter }: { letter: string }) => (
 export const ArrivalsBoardSkeleton = ({
   mode = "rail",
   className,
+  stopName,
+  stopLetter,
 }: {
   mode?: ArrivalsBoardMode
   className?: string
+  /** Known stop identity — paint immediately; do not wait on predictions. */
+  stopName?: string
+  stopLetter?: string
 }) => (
   <div
     data-slot="arrivals-board"
@@ -136,8 +141,33 @@ export const ArrivalsBoardSkeleton = ({
     aria-busy
     aria-label="Loading arrivals"
   >
-    <div className={cn("flex items-center", ARRIVALS_TILE_CLASS)}>
-      <Skeleton className="h-8 w-56 max-w-full" />
+    <div
+      className={cn("flex min-w-0 items-center gap-x-3", ARRIVALS_TILE_CLASS)}
+    >
+      {stopName ? (
+        <>
+          <TfLRoundel
+            variant={mode === "bus" ? "buses" : "underground"}
+            className="size-[var(--arrivals-row)] shrink-0"
+            aria-hidden
+          />
+          <p className={cn("min-w-0 flex-1 text-3xl", TITLE_CLASS)}>
+            <span className="block min-w-0">
+              <StationName
+                name={stopName}
+                layout="auto"
+                maxLines={1}
+                allowAbbreviation
+                allowScaleDown
+                className="justify-center leading-8"
+              />
+            </span>
+          </p>
+          {stopLetter ? <StopLetterBadge letter={stopLetter} /> : null}
+        </>
+      ) : (
+        <Skeleton className="h-8 w-56 max-w-full" />
+      )}
     </div>
     {mode === "bus" ? (
       <div>

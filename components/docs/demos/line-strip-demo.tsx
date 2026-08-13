@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { connection } from "next/server";
 import { JourneyDiagram } from "@/components/tfl/diagram/journey-diagram";
 import { LineRouteDiagram } from "@/components/tfl/diagram/line-route-diagram";
 import { LineStrip } from "@/components/tfl/diagram/line-strip";
@@ -15,13 +14,11 @@ import {
   VICTORIA_PART_CLOSURE_SEGMENTS,
   VICTORIA_STRIP,
 } from "@/lib/tfl/fixtures/victoria-line-strip";
-import { getLineSpine } from "@/lib/tfl/line-spine";
+import { getCachedLineSpine } from "@/lib/tfl/line-spine-data";
 import {
   SIMPLE_LINE_STRIP_IDS,
   type SimpleLineStripId,
 } from "@/lib/tfl/route-track";
-import { getCachedWeekAheadRoutes } from "@/lib/tfl/week-ahead-data";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
   LabelPlacementDemo,
@@ -45,42 +42,25 @@ const SIMPLE_ORDER = new Map(
 );
 
 async function LiveStripSection() {
-  // Live TfL client reads the clock; keep this under Suspense + request time.
-  await connection();
-
-  const [{ routes }, cableCar] = await Promise.all([
-    getCachedWeekAheadRoutes(),
-    getLineSpine("london-cable-car"),
-  ]);
-
-  const fromWeekAhead = routes
-    .filter((route): route is typeof route & { lineId: SimpleLineStripId } =>
-      SIMPLE_ORDER.has(route.lineId as SimpleLineStripId),
-    )
-    .map(
-      (route): LiveStripRoute => ({
-        lineId: route.lineId,
-        lineName: route.lineName,
-        lineColor: route.lineColor,
-        stations: route.stations,
-        routeError: route.routeError,
-      }),
-    );
-
-  const simpleRoutes: LiveStripRoute[] = [
-    ...fromWeekAhead,
-    {
-      lineId: cableCar.lineId,
-      lineName: cableCar.lineName,
-      lineColor: cableCar.lineColor,
-      stations: cableCar.stations,
-      routeError: cableCar.routeError,
-    },
-  ].sort(
-    (a, b) =>
-      (SIMPLE_ORDER.get(a.lineId as SimpleLineStripId) ?? 99) -
-      (SIMPLE_ORDER.get(b.lineId as SimpleLineStripId) ?? 99),
+  const spines = await Promise.all(
+    SIMPLE_LINE_STRIP_IDS.map((id) => getCachedLineSpine(id)),
   );
+
+  const simpleRoutes: LiveStripRoute[] = spines
+    .map(
+      (spine): LiveStripRoute => ({
+        lineId: spine.lineId,
+        lineName: spine.lineName,
+        lineColor: spine.lineColor,
+        stations: spine.stations,
+        routeError: spine.routeError,
+      }),
+    )
+    .sort(
+      (a, b) =>
+        (SIMPLE_ORDER.get(a.lineId as SimpleLineStripId) ?? 99) -
+        (SIMPLE_ORDER.get(b.lineId as SimpleLineStripId) ?? 99),
+    );
 
   return (
     <LiveLineStripPicker routes={simpleRoutes} defaultLineId="victoria" />
@@ -89,8 +69,15 @@ async function LiveStripSection() {
 
 const LiveSkeleton = () => (
   <div className="space-y-4">
-    <Skeleton className="h-10 w-48" />
-    <Skeleton className="h-28 w-full" />
+    <p className="text-sm text-muted-foreground">
+      Victoria line · sample sequence
+    </p>
+    <LineStrip
+      lineId="victoria"
+      stations={VICTORIA_STRIP}
+      lineColor={VICTORIA_LINE_COLOR}
+      lineName="Victoria line"
+    />
   </div>
 );
 

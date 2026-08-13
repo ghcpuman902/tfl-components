@@ -1,18 +1,6 @@
-## Purpose
+## Route codes
 
-Bus route-number rectangle — TfL bus red, fixed `5ch`, centered route code. Same cap text-box trim as the platform chip so glyphs sit optically centered in the rectangle (label casing unchanged).
-
-## Installation
-
-```bash
-pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/bus-number-chip.json
-```
-
-## Preview
-
-See the preview above for common route codes.
-
-## API / values
+TfL bus red, fixed `5ch`, centred route code. Same cap text-box trim as the platform chip, so glyphs sit optically in the middle of the rectangle. Label casing is unchanged.
 
 ```tsx
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
@@ -24,17 +12,7 @@ export default function Row() {
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `label` | `string` | Route code (`73`, `N253`, `EL1`, …). |
+| `label` | `string` | Route code (`73`, `N253`, `EL1`). |
 | `className` | `string` | Optional class merge. |
 
-`aria-label` is `Route {label}`. Route codes are expected ≤ 4 characters inside the fixed width.
-
-## Composition
-
-- Fill: `TFL_MODAL_COLOURS.buses`
-- `[text-box:trim-both_cap_alphabetic]` for centering (not forced `uppercase`)
-- Square corners — no `rounded-*` by default
-
-## Used by
-
-- [Bus Arrivals](/docs/bus-arrivals)
+`aria-label` is `Route {label}`. Route codes are expected at most 4 characters inside the fixed width. Square corners, no `rounded-*` by default. Fill is `TFL_MODAL_COLOURS.buses`.

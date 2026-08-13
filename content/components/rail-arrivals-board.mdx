@@ -5,13 +5,7 @@ import {
   RailLineAndBoundColumnsDemo,
 } from "@/components/docs/demos/arrivals-layout-demos"
 
-## Purpose
-
-Per-station Tube and rail departures. `RailArrivalsBoard` interprets `RealtimePrediction[]` and owns rail grouping: line, then compass bound. Bus has its own board, [`BusArrivalsBoard`](/docs/bus-arrivals). The two share row chrome, chips, and the tile rhythm, not the high-level API.
-
-Fetching, caching, and polling stay in the app.
-
-## Getting data with tfl-ts
+## Get predictions
 
 ```ts
 import TflClient from "tfl-ts"
@@ -26,9 +20,11 @@ const data = await tfl.stopPoint.getArrivals({
 })
 ```
 
-`getArrivals` returns `RealtimePrediction[]`. Pass that array directly. The board sorts it; callers do not need to pre-sort.
+`getArrivals` returns `RealtimePrediction[]`. Pass that array straight through. The board sorts it.
 
-On this docs site, the live preview polls with the site key until you paste a **TfL API key** in the docs sidebar. With your key set, the preview requests TfL directly from the browser against your quota. That browser key is unrelated to the `TFL_APP_KEY` env var in the snippet above — keep production keys on the server.
+Bus has its own board, [`BusArrivalsBoard`](/docs/bus-arrivals). The two share row chrome, chips, and the tile rhythm, not the high-level API. Fetching, caching, and polling stay in the app.
+
+On this docs site, the live preview polls with the site key until you paste a TfL API key in the docs sidebar. With your key set, the preview requests TfL from the browser against your quota. That browser key is not `TFL_APP_KEY`. Keep production keys on the server.
 
 ## Render
 
@@ -50,35 +46,33 @@ export default function Page({ data }) {
 }
 ```
 
-## Variations
+## Line, then bound
 
-### Line then bound
+Groups by line, then by compass bound from `platformName`. On a vertical board, West sits above East and North above South. Bound labels match the line-name size. Each row leads with a [`PlatformChip`](/docs/platform-chip), then destination and countdown. Destinations use [`StationName`](/docs/station-name-labels). Hairlines inside a line group share one weight, including under bound titles.
 
-Groups by line (name + colour bar), then by compass bound from `platformName` (Westbound / Eastbound / Northbound / Southbound). On a vertical board, West sits above East and North above South. Bound labels match the line-name size. Each row leads with a [`PlatformChip`](/docs/platform-chip) (`Platform 1` → `Plat 1` → `P1` → `1` as the board narrows), then destination + countdown. Destinations use [`StationName`](/docs/station-name-labels) with the same abbreviation rules as line diagrams. Hairlines inside a line group share one weight, including under bound titles.
+Line sections stay in canonical `LINE_ORDER`. Empty expected lines keep that slot. Pass optional `lines` for the stop's serving set so a line with no predictions still renders a muted **No information** row. When `lines[].bounds` lists the compass sides that station actually serves, those bound groups still render even if the current poll has no trains that way. Otherwise a missing side is omitted.
 
-Line sections stay in canonical `LINE_ORDER` from `tfl-ts`. Empty expected lines keep that slot; they do not drop below live lines. Pass optional `lines` for the stop’s serving set so a line with no predictions still renders a muted **No information** row. When `lines[].bounds` lists the compass sides that station actually serves, those bound groups still render even if the current poll has no trains that way. Otherwise a missing side is omitted.
-
-Each bound shows `pageSize` trains (default 3). Hover the bound label and its rows to page further arrivals — Lucide triangle arrows on the right of the bound title, same muted colour as Westbound / Eastbound. A quiet `1/5` sits between them; on a single page both arrows stay disabled (`1/1`). Touch screens keep the arrows visible. A short last page still occupies `pageSize` rows so paging does not jump the layout. A bound with only one page (even a single train) stays short.
+Each bound shows `pageSize` trains, default 3. Hover the bound label and its rows to page further arrivals. A quiet `1/5` sits between the arrows. Touch screens keep the arrows visible. A short last page still occupies `pageSize` rows so paging does not jump the layout. A bound with only one page stays short.
 
 A completely flat rail board is a different product. It would need a compressed row that still shows line, bound, platform, destination, and countdown, not a layout switch on this component.
 
-### Responsive arrangements
+## Arrangements
 
-The default board is one vertical stack at every width. Arrangement is CSS-first: the board root is a container named `arrivals`, and each line section is a container named `arrivals-group`. Pass `className` for the root and `classNames` for the generated levels — no JavaScript layout config, no resize listeners, no extra wrappers.
+The default board is one vertical stack at every width. Arrangement is CSS. The board root is a container named `arrivals`, and each line section is a container named `arrivals-group`. Pass `className` for the root and `classNames` for the generated levels. No JavaScript layout config, no resize listeners, no extra wrappers.
 
 | `classNames` key | `data-slot` | Level |
 |-----|-----|-----|
-| — | `arrivals-board` | Board root (the `className` prop) |
+| | `arrivals-board` | Board root, the `className` prop |
 | `groups` | `arrivals-groups` | All line sections |
-| `group` | `arrivals-group` | One line section — also a container named `arrivals-group` |
+| `group` | `arrivals-group` | One line section, also a container named `arrivals-group` |
 | `subgroups` | `arrivals-subgroups` | The bounds list inside one line |
-| `subgroup` | `arrivals-subgroup` | One bound (label tile + rows) |
+| `subgroup` | `arrivals-subgroup` | One bound, label tile plus rows |
 | `rows` | `arrivals-rows` | One bound's arrival rows |
-| — | `arrivals-row` | Each arrival or empty-state row tile |
+| | `arrivals-row` | Each arrival or empty-state row tile |
 
-Bound columns must respond to their own line section, so query `/arrivals-group` (not `/arrivals`) on `subgroups` — a wide board of narrow line columns keeps bounds stacked. Below your breakpoints every arrangement returns to the single-column stack, and sections of different heights sit side by side without padding tiles. The fixed tile rhythm is unchanged in every arrangement.
+Bound columns must respond to their own line section, so query `/arrivals-group` on `subgroups`, not `/arrivals`. A wide board of narrow line columns keeps bounds stacked. Below your breakpoints every arrangement returns to the single-column stack. The fixed tile rhythm is unchanged.
 
-#### Vertical (default)
+### Vertical
 
 <RailVerticalDemo />
 
@@ -86,9 +80,9 @@ Bound columns must respond to their own line section, so query `/arrivals-group`
 <RailArrivalsBoard data={data} stopName="Oxford Circus" lines={lines} />
 ```
 
-#### Line columns
+### Line columns
 
-Three lines side by side once the board itself is wide enough; one column below that.
+Three lines side by side once the board itself is wide enough.
 
 <RailLineColumnsDemo />
 
@@ -103,9 +97,9 @@ Three lines side by side once the board itself is wide enough; one column below 
 />
 ```
 
-#### Bound columns within each line
+### Bound columns within each line
 
-Lines stay stacked; a line wide enough places Westbound beside Eastbound. The query is against `/arrivals-group` — the line section, not the board.
+Lines stay stacked. A line wide enough places Westbound beside Eastbound. The query is against `/arrivals-group`.
 
 <RailBoundColumnsDemo />
 
@@ -121,9 +115,9 @@ Lines stay stacked; a line wide enough places Westbound beside Eastbound. The qu
 />
 ```
 
-#### Line columns, bounds decided per line
+### Line columns, bounds decided per line
 
-Flex-wrap arranges the lines; each line then decides on its own whether its bounds fit side by side. Here a line sharing a row stays narrow and stacks its bounds, while a line alone on a row grows wide enough to columnise them.
+Flex-wrap arranges the lines. Each line then decides on its own whether its bounds fit side by side. A line sharing a row stays narrow and stacks its bounds. A line alone on a row grows wide enough to columnise them.
 
 <RailLineAndBoundColumnsDemo />
 
@@ -142,7 +136,7 @@ Flex-wrap arranges the lines; each line then decides on its own whether its boun
 />
 ```
 
-### Ordering
+## Order and density
 
 Named policies, not comparator callbacks:
 
@@ -152,9 +146,7 @@ Named policies, not comparator callbacks:
 | `lineSortBy` | `canonical` (`LINE_ORDER`) | First appearance in `data`, then unused `lines` |
 | `boundSortBy` | `compass` (West→East, North→South) | First appearance within the line |
 
-`maxRows` is a per-bound cap after that order (it does not drop later lines). `pageSize` (default 3) is how many trains each Westbound / Eastbound / Northbound / Southbound group shows at once; hover the bound group for quieter next/previous arrows. Equal `timeToStation` keeps input order. The board does not mutate `data`.
-
-### Baseline grid
+`maxRows` is a per-bound cap after that order. It does not drop later lines. `pageSize` is how many trains each bound shows at once. Equal `timeToStation` keeps input order. The board does not mutate `data`.
 
 Rail and bus share one vertical rhythm, so two boards side by side line up. Every block is a whole number of `--arrivals-unit` (`0.5rem`): the stop name, each line header, bound label, and arrival row are 6 units (`3rem`). Retune density by overriding the vars on a wrapper:
 
@@ -164,15 +156,13 @@ Rail and bus share one vertical rhythm, so two boards side by side line up. Ever
 </div>
 ```
 
-### Polling
+Keep polling outside the board, then update `data`. Optional `statusLabel` shows poll metadata.
 
-Keep polling outside the board (timer + Server Action), then update `data`. Optional `statusLabel` shows poll metadata.
-
-## Behaviour / edge cases
+## Props
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `data` | `readonly RealtimePrediction[]` | Normalised arrivals from `tfl-ts`. Missing/`undefined` → empty. |
+| `data` | `readonly RealtimePrediction[]` | Normalised arrivals from `tfl-ts`. Missing or `undefined` renders empty. |
 | `lines` | `readonly { lineId, lineName, modeName?, bounds? }[]` | Optional serving lines. Empty lines keep a "No information" row in canonical order. Optional `bounds` seeds West/East/North/South groups from station metadata. |
 | `sortBy` | `"timeToStation" \| "source"` | Arrival order within each bound. |
 | `lineSortBy` | `"canonical" \| "source"` | Line section order. |
@@ -183,17 +173,6 @@ Keep polling outside the board (timer + Server Action), then update `data`. Opti
 | `emptyMessage` | `string` | Optional copy override for `emptyKind`. |
 | `statusLabel` | `string` | Optional poll / refresh caption. |
 | `maxRows` | `number` | Per-bound prediction cap after ordering. Does not drop later lines. Headers and empty rows do not count. |
-| `pageSize` | `number` | Visible arrivals per bound (default 3). Extra trains page behind hover arrows. |
+| `pageSize` | `number` | Visible arrivals per bound, default 3. Extra trains page behind hover arrows. |
 | `className` | `string` | Root classes, merged over the board container. |
 | `classNames` | `{ groups?, group?, subgroups?, subgroup?, rows? }` | Layout-level class overrides for generated `data-slot` levels. |
-
-## Data ownership
-
-Fetching, caching, polling, geolocation, and API credentials stay in the application layer. This component only renders.
-
-## Related
-
-- Interface: [Bus Arrivals](/docs/bus-arrivals)
-- Primitives: [Platform chip](/docs/platform-chip)
-- Foundations: [Line colours & badges](/docs/colors)
-- Explorer: [Route stations](/explore/routes)

@@ -198,7 +198,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "components-index",
     title: "Components",
     description:
-      "Catalogue of embeddable TfL surfaces — preferred boards first, then rendering parts.",
+      "Preferred boards first, then the parts they are built from.",
     group: "start",
     kind: "page",
     href: "/docs/components",
@@ -242,7 +242,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "line-badge",
     title: "Colours",
     description:
-      "Official TfL line colours, OKLCH tokens, and adaptive data-line roles.",
+      "Official line colours as OKLCH tokens, chips, and colour bars.",
     group: "foundations",
     kind: "component",
     href: "/docs/colors",
@@ -256,7 +256,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "tfl-roundel",
     title: "Roundel",
     description:
-      "Env-gated TfL roundel with mode presets and colour customisation.",
+      "TfL roundel with mode presets. Official artwork stays off until you allow it.",
     group: "foundations",
     kind: "component",
     href: "/docs/tfl-roundel",
@@ -295,7 +295,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "tube-rail-arrivals",
     title: "Tube & Rail Arrivals",
     description:
-      "Per-station Tube and rail departures from tfl-ts predictions.",
+      "Departures at a Tube or rail station, grouped by line and bound.",
     group: "interfaces",
     kind: "component",
     href: "/docs/tube-rail-arrivals",
@@ -313,7 +313,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "tube-rail-status",
     title: "Tube & Rail Status",
     description:
-      "Network and per-station Tube/rail status from normalised line status data.",
+      "Severity-sorted status for Tube, Elizabeth, Overground, DLR, and Tram.",
     group: "interfaces",
     kind: "component",
     href: "/docs/tube-rail-status",
@@ -329,7 +329,8 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "bus-arrivals",
     title: "Bus Arrivals",
-    description: "Bus stop departures board from normalised predictions.",
+    description:
+      "Departures at a bus stop. Flat by default, or grouped by route.",
     group: "interfaces",
     kind: "component",
     href: "/docs/bus-arrivals",
@@ -346,7 +347,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "river-bus-arrivals",
     title: "River bus arrivals",
-    description: "River bus pier departures — coming soon.",
+    description: "River bus pier departures. Coming soon.",
     group: "interfaces",
     kind: "placeholder",
     href: "/docs/river-bus-arrivals",
@@ -360,7 +361,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "cycle-hire-docks",
     title: "Cycle hire docks",
     description:
-      "Santander Cycles Map + Detail surfaces — OSM gauges and occupancy bars over tfl-ts bike points.",
+      "Santander Cycles docks as a map and a detail list, from the same bike-point rows.",
     group: "interfaces",
     kind: "component",
     href: "/docs/cycle-hire-docks",
@@ -377,7 +378,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "maps-geographic",
     title: "Map (Geographic)",
     description:
-      "Provider-independent GeoJSON geometry for London transit. Install the packaged free map or bring your own renderer.",
+      "Track geometry as GeoJSON for Tube, Elizabeth, Overground, DLR, and Tram. Use the packaged MapLibre map, or draw the same files in your own SDK.",
     group: "maps",
     kind: "component",
     href: "/docs/map-geographic",
@@ -393,7 +394,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "map-tubemap",
     title: "Map (TubeMap)",
-    description: "Schematic Tube-style network map — coming soon.",
+    description: "Schematic Tube-style network map. Coming soon.",
     group: "maps",
     kind: "placeholder",
     href: "/docs/map-tubemap",
@@ -408,7 +409,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "line-strip",
     title: "Simple Line strip",
     description:
-      "Data-aware molecular strip — colour, labels, closures → StraightStrip / BranchStrip.",
+      "A line diagram from route data: colour, labels, and closures already applied.",
     group: "interfaces",
     kind: "component",
     href: "/docs/line-strip",
@@ -424,7 +425,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "branch-strip",
     title: "Branch line strip",
     description:
-      "Atomic branched strip — lane×pos schematics with SVG geometry and station labels.",
+      "A branched schematic with an explicit colour and a prepared lane model.",
     group: "primitives",
     kind: "component",
     href: "/docs/branch-strip",
@@ -440,7 +441,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "station-name-labels",
     title: "Station name labels",
     description:
-      "TfL-aware station labels with width fitting, accessibility, and find-in-page behaviour.",
+      "How station names and platform chips shrink with width while copy, find, and screen readers keep the full name.",
     group: "primitives",
     kind: "component",
     href: "/docs/station-name-labels",
@@ -452,7 +453,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "platform-chip",
     title: "Platform chip",
     description:
-      "Rail platform label in a muted rectangle — title case with cap text-box trim for centering.",
+      "Rail platform label in a muted rectangle. Narrows from Platform 4 to 4.",
     group: "primitives",
     kind: "component",
     href: "/docs/platform-chip",
@@ -466,7 +467,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "bus-number-chip",
     title: "Bus number chip",
     description:
-      "Bus route-number rectangle — bus red, fixed width, cap text-box trim for centering.",
+      "Bus route number in a red rectangle. Fixed width, optically centred.",
     group: "primitives",
     kind: "component",
     href: "/docs/bus-number-chip",
@@ -526,7 +527,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "maps-schematic",
     title: "Schematic & network",
     description:
-      "Topology: line diagrams, branches, journeys, and multi-line networks.",
+      "Line diagrams, branches, and journeys. Topology, not geography. A full multi-line network map is not shipped yet.",
     group: "maps",
     kind: "page",
     href: "/docs/map-schematic",

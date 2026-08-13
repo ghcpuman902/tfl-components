@@ -127,43 +127,38 @@ map.on("load", () => {
   });
 });`;
 
-export const GOOGLE_MAPS_EXAMPLE = `import { Loader } from "@googlemaps/js-api-loader";
+export const GOOGLE_MAPS_EXAMPLE = `import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 
 import tubeGeometry from "./data/geography/tube-geometry.json";
 
 // Your Google Maps API key — consumers supply their own
-const loader = new Loader({
-  apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY!,
-  version: "weekly",
-});
+setOptions({ key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY! });
 
-const { Map } = await loader.importLibrary("maps");
+const { Map } = await importLibrary("maps");
 
 const map = new Map(document.getElementById("map")!, {
   center: { lat: 51.51, lng: -0.12 },
   zoom: 10,
-  mapId: "YOUR_MAP_ID",
 });
 
-// Add line geometry
 map.data.addGeoJson(tubeGeometry.lines);
-map.data.setStyle((feature) => ({
-  strokeColor: feature.getProperty("color") ?? "#0019A8",
-  strokeWeight: 3,
-  strokeOpacity: 0.9,
-}));
-
-// Stations need a separate Data layer or markers
-const stationLayer = new google.maps.Data();
-stationLayer.addGeoJson(tubeGeometry.stations);
-stationLayer.setStyle({
-  icon: {
-    path: google.maps.SymbolPath.CIRCLE,
-    scale: 3,
-    fillColor: "#ffffff",
-    fillOpacity: 1,
-    strokeColor: "#111827",
-    strokeWeight: 1.25,
-  },
-});
-stationLayer.setMap(map);`;
+map.data.addGeoJson(tubeGeometry.stations);
+map.data.setStyle((feature) => {
+  if (feature.getGeometry()?.getType() === "Point") {
+    return {
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 3,
+        fillColor: "#ffffff",
+        fillOpacity: 1,
+        strokeColor: "#111827",
+        strokeWeight: 1.25,
+      },
+    };
+  }
+  return {
+    strokeColor: feature.getProperty("color") ?? "#0019A8",
+    strokeWeight: 3,
+    strokeOpacity: 0.9,
+  };
+});`;

@@ -15,12 +15,25 @@ type ArrivalsBoardUiState = {
 
 const NOON_SENTINEL_MS = Date.UTC(2020, 0, 1, 12, 0, 0);
 
+// `useSyncExternalStore`'s snapshot must be a *stable* cached value — it is
+// re-read on every render, and `Date.now()` returns a new value on every
+// call. Reading it directly here would make React see the store as "changed"
+// on every render, forcing another render, forever (Maximum update depth
+// exceeded). Instead, only mutate the cache inside the subscribe callback,
+// which React guarantees runs client-side only, never during SSR/prerender.
+let cachedNowMs = NOON_SENTINEL_MS;
+
 const subscribeToMinuteClock = (onStoreChange: () => void) => {
-  const id = window.setInterval(onStoreChange, 60_000);
+  const sync = () => {
+    cachedNowMs = Date.now();
+    onStoreChange();
+  };
+  sync();
+  const id = window.setInterval(sync, 60_000);
   return () => window.clearInterval(id);
 };
 
-const getClockSnapshot = () => Date.now();
+const getClockSnapshot = () => cachedNowMs;
 const getServerClockSnapshot = () => NOON_SENTINEL_MS;
 
 /**

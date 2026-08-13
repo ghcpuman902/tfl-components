@@ -12,13 +12,9 @@ export default function BranchStripDemo() {
     <div className={cn("w-full min-w-0 space-y-10", DIAGRAM_SCALE_CLASS)}>
       <div className="space-y-4">
         <p className="max-w-prose text-sm text-muted-foreground">
-          Atomic <code className="text-xs">BranchStrip</code> via molecular{" "}
-          <code className="text-xs">LineStrip</code> (no live TfL fetch).
-          Horizontal and vertical each use their own{" "}
-          <code className="text-xs">lane × pos</code> layout — including
-          duplicate Euston nodes — rather than rotating one graph. Labels use{" "}
-          <code className="text-xs">StationName</code> for find/copy/aria, with
-          editorial line breaks prepared by <code className="text-xs">LineStrip</code>.
+          Northern line, horizontal and vertical. Separate schematics, not one
+          graph rotated. Duplicate Euston nodes where the corridors run
+          parallel.
         </p>
 
         <ul className="flex flex-wrap gap-3 text-sm text-muted-foreground">

@@ -58,9 +58,13 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
 
 export const RailArrivalsBoardSkeleton = ({
   className,
+  stopName,
 }: {
   className?: string
-} = {}) => <ArrivalsBoardSkeleton mode="rail" className={className} />
+  stopName?: string
+} = {}) => (
+  <ArrivalsBoardSkeleton mode="rail" className={className} stopName={stopName} />
+)
 
 /**
  * Rail arrivals board. Groups by line, then compass bound. Fetching, caching,
@@ -87,7 +91,12 @@ export const RailArrivalsBoard = ({
 }: RailArrivalsBoardProps) => {
   const rows = data ?? []
   if (loading && rows.length === 0 && !error) {
-    return <RailArrivalsBoardSkeleton className={className} />
+    return (
+      <RailArrivalsBoardSkeleton
+        className={className}
+        stopName={chrome.stopName}
+      />
+    )
   }
 
   const prepared = prepareRailArrivals({

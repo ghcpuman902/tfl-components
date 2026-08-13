@@ -1,57 +1,24 @@
-## Purpose
+## When to use this
 
-Atomic branched schematic strip — lane×pos nodes and edges with an explicit `lineColor`. Use when you already have a prepared render model.
-
-## Installation
-
-Ships with the [line-strip](/interfaces/line-strip) registry item:
-
-```bash
-pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/line-strip.json
-```
-
-## Preview
-
-See the interactive preview above. Pass a prepared schematic — no TfL fetch inside this atom.
-
-## API / values
+Use `BranchStrip` when you already have a prepared render model and an explicit `lineColor`. Prefer [`LineStrip`](/docs/line-strip) when you still need TfL label recipes and colour resolution.
 
 ```tsx
 import { BranchStrip } from "@/components/tfl/diagram/branch-strip"
 import { LineStrip } from "@/components/tfl/diagram/line-strip"
 import { prepareBranchStrip } from "@/lib/tfl/strip-model"
-
-// Prefer LineStrip when you want TfL label recipes + colour resolution.
-// Use BranchStrip directly only with a prepared render model.
 ```
-
-### When to use which
 
 | Need | Use |
 |------|-----|
 | TfL colour, label recipes, prepared schematic | `LineStrip` with `schematic={…}` |
-| Full control over a prepared lane×pos model | `BranchStrip` |
+| Full control over a prepared lane model | `BranchStrip` |
 
-`BranchStrip` is a **rendering primitive**. Prefer `LineStrip` for data-driven callers; drop to this atom when you already have a render model.
+It ships with the line-strip registry item. No `tfl-ts` fetch inside this atom.
 
-## Composition
+## Geometry
 
-`BranchStrip` takes a `LineSchematic` (lane × pos nodes and edges), an explicit `lineColor`, and optional prepared `nodeLabelLines` / `segmentStates`. It does not fetch TfL data or look up label recipes.
+`BranchStrip` takes a `LineSchematic` of lane and position nodes and edges, an explicit `lineColor`, and optional prepared `nodeLabelLines` / `segmentStates`.
 
-`LineStrip` is the **molecular** wrapper that applies recipes and colour, then renders `BranchStrip`.
+Author separate horizontal and vertical schematics. Do not rotate one graph. Shared stations that diverge and converge, Camden Town, Kennington, are single nodes. Parallel corridors that share a name, Euston, use duplicate nodes with a shared `stationKey`.
 
-### Geometry
-
-Author separate horizontal and vertical schematics — do not rotate one graph. Shared stations that diverge and converge (Camden Town, Kennington) are single nodes; parallel corridors that share a name (Euston) use duplicate nodes with a shared `stationKey`.
-
-Lane joins follow the **Line Diagram Standard** (not the geographic Tube map): circular arcs at 45° / 90°, never freeform Beziers. Horizontal strips use in-carriage §6 joins (45° S when space allows, otherwise 90° R). Vertical strips use platform §11 branch curves (90° with R3n / R4n).
-
-## Used by
-
-- [Line strip](/interfaces/line-strip) — molecular wrapper
-- [Maps → Schematic](/maps/schematic) — topology discovery
-- [Week ahead](/blocks/week-ahead) — composed Block
-
-## Independence notes
-
-No `tfl-ts` fetch required. Colour and labels are caller-supplied (or prepared by `LineStrip`).
+Lane joins follow the Line Diagram Standard, not the geographic Tube map: circular arcs at 45° / 90°, never freeform Béziers. Horizontal strips use in-carriage §6 joins, 45° S when space allows, otherwise 90° R. Vertical strips use platform §11 branch curves, 90° with R3n / R4n.

@@ -1,12 +1,6 @@
-## Purpose
+## Get a spine
 
-Data-aware molecular line / route diagram. Accept prepared spine or schematic values derived from `tfl-ts` route data, apply colour / label recipes / closures, then compose `StraightStrip` or `BranchStrip`.
-
-`StraightStrip` and `BranchStrip` remain rendering primitives for explicit visual control. Prefer `LineStrip` when you have TfL line data.
-
-## Getting data with tfl-ts
-
-Fetch a route sequence in your app (or use the site helper), prepare stations, then pass a spine:
+Fetch a route sequence in your app, or use the site helper, prepare stations, then pass a spine:
 
 ```ts
 import { getLineSpine } from "@/lib/tfl/line-spine"
@@ -14,9 +8,7 @@ import { getLineSpine } from "@/lib/tfl/line-spine"
 const spine = await getLineSpine("victoria")
 ```
 
-`getLineSpine` uses `tfl.line.getRouteSequence` / stop points under the hood. Fetching stays outside `LineStrip`.
-
-You can also pass explicit `stations` prepared with `toDiagramStation` from stop-point data.
+`getLineSpine` uses `tfl.line.getRouteSequence` under the hood. Fetching stays outside `LineStrip`. You can also pass explicit `stations` prepared with `toDiagramStation`.
 
 ## Render
 
@@ -38,25 +30,19 @@ Branched schematic:
 />
 ```
 
+`StraightStrip` and `BranchStrip` stay available when you already have a prepared visual model. Prefer `LineStrip` when you have TfL line data.
+
 ## When to drop to primitives
 
 | Need | Use |
 |------|-----|
-| TfL line data, label recipes, closures, colour | `LineStrip` (this page) |
-| Linear corridor with already-prepared stations | [`StraightStrip`](/interfaces/line-strip) via atom import |
-| Branched schematic with prepared nodes | [Branch strip](/primitives/branch-strip) |
-| Station label fitting only | [Station name](/primitives/station-name) |
+| TfL line data, label recipes, closures, colour | `LineStrip` |
+| Linear corridor with already-prepared stations | `StraightStrip` via the line-strip package |
+| Branched schematic with prepared nodes | [Branch strip](/docs/branch-strip) |
+| Station label fitting only | [Station name labels](/docs/station-name-labels) |
 
 ## Part closures
 
-For “no service between A and B”, mute the **track** with `segments`. `LineStrip` derives station greys with the all-adjacent-closed rule. Disabled stations and segment states remain reusable rendering capabilities on the strip atoms.
+For "no service between A and B", mute the track with `segments`. `LineStrip` greys stations when every adjacent segment is closed. Closed stretches render as a full-thickness muted solid.
 
-## Data ownership
-
-Do not put credentials or polling inside `LineStrip`. Prepare spine / schematic in the app or a Block (see [Week ahead](/blocks/week-ahead)).
-
-## Brand notes
-
-- Official line colours are fine.
-- Do not redistribute Johnston without a licence — demos use Hammersmith One.
-- Closed stretches render as a full-thickness muted solid.
+Official line colours are fine. Do not redistribute Johnston without a licence. Demos use Hammersmith One. Prepare spine or schematic in the app or a Block. See [Week ahead](/blocks/week-ahead).

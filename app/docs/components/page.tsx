@@ -13,7 +13,7 @@ import {
 export const metadata: Metadata = {
   title: "Components",
   description:
-    "Catalogue of embeddable TfL surfaces — preferred boards first, then rendering parts.",
+    "Preferred boards first, then the parts they are built from.",
 };
 
 export default function DocsComponentsCataloguePage() {
@@ -24,17 +24,6 @@ export default function DocsComponentsCataloguePage() {
     <DocsReadableWidth>
       <article className="space-y-8">
         <DocsPageHeader entry={entry} />
-
-        <section className="space-y-3">
-          <h2 id="how-to-choose" className="text-lg font-semibold">
-            How to choose
-          </h2>
-          <p className="max-w-prose text-muted-foreground">
-            Start with preferred boards (marked in the sidebar). They accept
-            normalised data as props. Lower rows are rendering parts for finer
-            control. Composition: data-aware → primitives → foundations.
-          </p>
-        </section>
 
         <section className="space-y-1" aria-label="Component catalogue">
           <ul className="divide-y divide-border border-y border-border">
@@ -83,9 +72,9 @@ export default function DocsComponentsCataloguePage() {
           </ul>
         </section>
 
-        <section className="space-y-2 border-t border-border pt-8">
-          <h2 id="related-blocks" className="text-lg font-semibold">
-            Related Blocks
+        <section className="max-w-prose space-y-2 border-t border-border pt-8">
+          <h2 id="in-code" className="text-lg font-semibold">
+            In code
           </h2>
           <p className="text-sm text-muted-foreground">
             Composed mini-apps live under{" "}
@@ -95,7 +84,7 @@ export default function DocsComponentsCataloguePage() {
             >
               Blocks
             </Link>
-            , not in this catalogue.
+            , not in this list.
           </p>
         </section>
       </article>

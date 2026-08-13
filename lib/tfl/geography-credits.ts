@@ -27,9 +27,19 @@ export type TransitGeometryPublicAsset = {
   url: `/data/geography/${TransitGeometryMode}-geometry.json`;
 };
 
-/** Demo bundles mirrored under public/data/geography for the MapLibre placeholder. */
+/**
+ * Unique-track GeoJSON served under `/data/geography/` for map drawing.
+ * Order = bottom → top paint preference (Tube under DLR / tram / Overground).
+ * Full OSM route variants stay in `data/geography/{mode}-geometry.json`
+ * (not painted). Rebuild with `pnpm geography:unique-track`.
+ */
 export const TRANSIT_GEOMETRY_PUBLIC_ASSETS: readonly TransitGeometryPublicAsset[] =
   [
+    {
+      mode: "tube",
+      label: "Underground",
+      url: "/data/geography/tube-geometry.json",
+    },
     {
       mode: "overground",
       label: "Overground",
@@ -50,11 +60,6 @@ export const TRANSIT_GEOMETRY_PUBLIC_ASSETS: readonly TransitGeometryPublicAsset
       label: "Tram",
       url: "/data/geography/tram-geometry.json",
     },
-    {
-      mode: "tube",
-      label: "Underground",
-      url: "/data/geography/tube-geometry.json",
-    },
   ] as const;
 
 export const OSM_TRANSIT_GEOMETRY_CREDIT: GeographyCredit = {
@@ -66,7 +71,7 @@ export const OSM_TRANSIT_GEOMETRY_CREDIT: GeographyCredit = {
   datasetUrl: "https://www.openstreetmap.org/copyright",
   attribution: "© OpenStreetMap contributors · track geometry · ODbL",
   notes:
-    "Vendored from ssh.ldn Overpass cache (tube, DLR, Elizabeth, Overground, tram).",
+    "Unique-track map layer derived from ssh.ldn Overpass cache (tube, DLR, Elizabeth, Overground, tram). Full route variants kept under data/geography for non-map use.",
 };
 
 export const TFL_STATION_ENRICHMENT_CREDIT: GeographyCredit = {

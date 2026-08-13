@@ -1,18 +1,6 @@
-## Purpose
+## Width steps
 
-Muted rectangle for a rail platform label. Used on arrivals rows before the destination. Label casing stays title-style (`Platform 4`, `Plat 4`); vertical centering trims the text box to uppercase (`cap alphabetic`) metrics.
-
-## Installation
-
-```bash
-pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/platform-chip.json
-```
-
-## Preview
-
-See the preview above. Width steps need an `@container/arrivals` ancestor (as on [`RailArrivalsBoard`](/docs/tube-rail-arrivals)).
-
-## API / values
+Width steps need an `@container/arrivals` ancestor, as on [`RailArrivalsBoard`](/docs/tube-rail-arrivals). Label casing stays title-style (`Platform 4`, `Plat 4`). Vertical centering trims the text box to cap-alphabetic metrics.
 
 ```tsx
 import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
@@ -28,16 +16,9 @@ export default function Row() {
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `number` | `string` | Platform number / letter after “Platform”. |
+| `number` | `string` | Platform number or letter after “Platform”. |
 | `className` | `string` | Optional class merge. |
 
 Visible form steps with board width: `Platform N` → `Plat N` → `PN` → `N`. `aria-label` stays `Platform N`.
 
-## Composition
-
-- Optical center via `[text-box:trim-both_cap_alphabetic]` (shared `CHIP_CAP_TEXT_BOX_CLASS`)
-- Solid `bg-muted-foreground` fill, square corners, no border
-
-## Used by
-
-- [Tube & Rail Arrivals](/docs/tube-rail-arrivals)
+Solid `bg-muted-foreground` fill, square corners, no border. Optical centre via `[text-box:trim-both_cap_alphabetic]`.

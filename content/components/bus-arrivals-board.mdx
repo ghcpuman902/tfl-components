@@ -4,13 +4,7 @@ import {
   BusFlatDemo,
 } from "@/components/docs/demos/arrivals-layout-demos"
 
-## Purpose
-
-Bus stop departures. `BusArrivalsBoard` interprets `RealtimePrediction[]` and owns bus defaults: one flat list in arrival-time order, [`BusNumberChip`](/docs/bus-number-chip) on every row, stop letter on the header. Tube and rail use [`RailArrivalsBoard`](/docs/tube-rail-arrivals). The two share row chrome and the tile rhythm, not the high-level API.
-
-Fetching, caching, polling, and stop discovery stay in the app. Nearby / search lives under [Explorer → Bus stops](/explore/bus-stops). That explorer composition is `BusArrivals`, not this board.
-
-## Getting data with tfl-ts
+## Get predictions
 
 ```ts
 import TflClient from "tfl-ts"
@@ -29,9 +23,11 @@ const [stop, data] = await Promise.all([
 ])
 ```
 
-`get` returns the stop (`commonName`, `stopLetter`). `getArrivals` returns `RealtimePrediction[]`. Pass both through; the board sorts arrivals itself.
+`get` returns the stop (`commonName`, `stopLetter`). `getArrivals` returns `RealtimePrediction[]`. Pass both through. The board sorts arrivals itself.
 
-On this docs site, the live preview polls with the site key until you paste a **TfL API key** in the docs sidebar. With your key set, the preview requests TfL directly from the browser against your quota. That browser key is unrelated to the `TFL_APP_KEY` env var in the snippet above — keep production keys on the server.
+Tube and rail use [`RailArrivalsBoard`](/docs/tube-rail-arrivals). The two share row chrome and the tile rhythm, not the high-level API. Fetching, caching, polling, and stop discovery stay in the app. Nearby search lives under [Explorer → Bus stops](/explore/bus-stops).
+
+On this docs site, the live preview polls with the site key until you paste a TfL API key in the docs sidebar. With your key set, the preview requests TfL from the browser against your quota. That browser key is not `TFL_APP_KEY`. Keep production keys on the server.
 
 ## Render
 
@@ -47,11 +43,9 @@ import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 
 The default is flat: no route headers, no route colour bars, interleaved route numbers in soonest-first order.
 
-## Variations
+## Group by route
 
-### Group by route
-
-Pass `groupBy="route"` when you want route sections (the homepage proof board does this). Routes sort in stable natural numeric order (`9` before `18` before `205`). Arrivals inside each route sort by `timeToStation`. Each section uses a bus-red bar and repeats the route chip on every row. Hover a route group for next/previous arrows on the route header.
+Pass `groupBy="route"` when you want route sections. The homepage proof board does this. Routes sort in stable natural numeric order (`9` before `18` before `205`). Arrivals inside each route sort by `timeToStation`. Each section uses a bus-red bar and repeats the route chip on every row. Hover a route group for next and previous arrows on the route header.
 
 <BusArrivalsGroupedVariant />
 
@@ -64,21 +58,21 @@ Pass `groupBy="route"` when you want route sections (the homepage proof board do
 />
 ```
 
-### Responsive arrangements
+## Arrangements
 
-Same CSS-first model as [rail](/docs/tube-rail-arrivals#responsive-arrangements): the board root is a container named `arrivals`, and each route section is a container named `arrivals-group`. Pass `className` for the root and `classNames` for generated levels — no JavaScript layout config.
+Same CSS model as [rail](/docs/tube-rail-arrivals#arrangements): the board root is a container named `arrivals`, and each route section is a container named `arrivals-group`. Pass `className` for the root and `classNames` for generated levels.
 
 | `classNames` key | `data-slot` | Level |
 |-----|-----|-----|
-| — | `arrivals-board` | Board root (the `className` prop) |
-| `groups` | `arrivals-groups` | All route sections (grouped only) |
-| `group` | `arrivals-group` | One route section — also a container named `arrivals-group` |
-| `rows` | `arrivals-rows` | One route's rows (grouped) or the whole list (flat) |
-| — | `arrivals-row` | Each arrival or empty-state row tile |
+| - | `arrivals-board` | Board root, the `className` prop |
+| `groups` | `arrivals-groups` | All route sections, grouped only |
+| `group` | `arrivals-group` | One route section, also a container named `arrivals-group` |
+| `rows` | `arrivals-rows` | One route's rows when grouped, or the whole list when flat |
+| - | `arrivals-row` | Each arrival or empty-state row tile |
 
-`subgroups` / `subgroup` are rail-only — bus routes have no bound level. The flat board stays one time-ordered list at every width; arrange columns on the grouped board only.
+`subgroups` / `subgroup` are rail-only. Bus routes have no bound level. The flat board stays one time-ordered list at every width. Arrange columns on the grouped board only.
 
-#### Route columns
+### Route columns
 
 <BusRouteColumnsDemo />
 
@@ -94,7 +88,7 @@ Same CSS-first model as [rail](/docs/tube-rail-arrivals#responsive-arrangements)
 />
 ```
 
-#### Flat (default)
+### Flat
 
 <BusFlatDemo />
 
@@ -106,51 +100,37 @@ Same CSS-first model as [rail](/docs/tube-rail-arrivals#responsive-arrangements)
 />
 ```
 
-### Ordering
+## Order and density
 
 Named policies, not comparator callbacks:
 
 | Prop | Default | `"source"` |
 |------|---------|------------|
-| `groupBy` | `none` (flat list) | — |
-| `sortBy` | `timeToStation` | Input order (global when flat, per route when grouped) |
+| `groupBy` | `none` (flat list) | - |
+| `sortBy` | `timeToStation` | Input order, global when flat, per route when grouped |
 | `groupSortBy` | `route` (natural numeric) | First appearance in `data` |
 
-`groupSortBy` only applies when `groupBy="route"`. `maxRows` is a per-route cap when grouped (it does not drop later routes) and a list cap when flat. `pageSize` (default 3) pages extra arrivals — arrows on the route header when grouped, or in a trailing tile (right-aligned, empty left) when flat. Equal `timeToStation` keeps input order. The board does not mutate `data`.
-
-### Baseline grid
+`groupSortBy` only applies when `groupBy="route"`. `maxRows` is a per-route cap when grouped, and a list cap when flat. `pageSize` pages extra arrivals: arrows on the route header when grouped, or in a trailing tile when flat. Equal `timeToStation` keeps input order. The board does not mutate `data`.
 
 Same `--arrivals-unit` / `--arrivals-row` tiles as rail, so a bus board beside a rail board lines up. The stop letter is a red circle next to the stop name, not a per-row field.
 
-### Polling
-
 Keep polling outside the board, then update `data`. Optional `statusLabel` shows poll metadata.
 
-## Behaviour / edge cases
+## Props
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `data` | `readonly RealtimePrediction[]` | Normalised arrivals from `tfl-ts`. Missing/`undefined` → empty. |
-| `groupBy` | `"none" \| "route"` | Flat list (default) or route sections. |
+| `data` | `readonly RealtimePrediction[]` | Normalised arrivals from `tfl-ts`. Missing or `undefined` renders empty. |
+| `groupBy` | `"none" \| "route"` | Flat list, default, or route sections. |
 | `sortBy` | `"timeToStation" \| "source"` | Arrival order. |
 | `groupSortBy` | `"route" \| "source"` | Route-group order when grouped. |
 | `stopName` | `string` | Board heading. Fits via abbr/scale. |
-| `stopLetter` | `string` | Stop letter — red circle next to the stop name. |
+| `stopLetter` | `string` | Stop letter, red circle next to the stop name. |
 | `loading` / `error` | … | Loading and error presentation. Prefer a short human `error` string. |
 | `emptyKind` | `"empty" \| "ended" \| "offline"` | Why the board has no rows when `error` is unset. Resolve in the app (`resolveArrivalsEmptyKind`). Night buses still run, so prefer `empty` over `ended`. |
 | `emptyMessage` | `string` | Optional copy override for `emptyKind`. |
 | `statusLabel` | `string` | Optional poll / refresh caption. |
-| `maxRows` | `number` | Prediction cap after ordering. Per route when grouped; whole list when flat. Headers do not count. |
-| `pageSize` | `number` | Visible arrivals per page (default 3). Grouped: arrows on the route header. Flat: trailing tile, right-aligned. |
+| `maxRows` | `number` | Prediction cap after ordering. Per route when grouped, whole list when flat. Headers do not count. |
+| `pageSize` | `number` | Visible arrivals per page, default 3. Grouped: arrows on the route header. Flat: trailing tile, right-aligned. |
 | `className` | `string` | Root classes, merged over the board container. |
 | `classNames` | `{ groups?, group?, rows? }` | Layout-level class overrides for generated `data-slot` levels. `subgroups` / `subgroup` are rail-only. |
-
-## Data ownership
-
-Fetching, caching, polling, geolocation, and API credentials stay in the application layer. This component only renders.
-
-## Related
-
-- Interface: [Tube & Rail Arrivals](/docs/tube-rail-arrivals)
-- Primitives: [Bus number chip](/docs/bus-number-chip)
-- Explorer: [Bus stops](/explore/bus-stops)

@@ -10,30 +10,20 @@ const WIDTH_STEPS = [
 /** Presentational — no API keys required. */
 export default function PlatformChipDemo() {
   return (
-    <div className="space-y-6">
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Width steps</h2>
-        <p className="text-sm text-muted-foreground">
-          Container queries on{" "}
-          <code className="text-xs">@container/arrivals</code> — title-case
-          labels, cap text-box trim for centering.
-        </p>
-        <ul className="space-y-3">
-          {WIDTH_STEPS.map((step) => (
-            <li key={step.label} className="space-y-1.5">
-              <p className="text-xs text-muted-foreground">{step.label}</p>
-              <div
-                className={`@container/arrivals max-w-full rounded-md border border-border bg-background p-3 ${step.className}`}
-              >
-                <div className="flex items-center gap-2">
-                  <PlatformChip number="4" />
-                  <span className="text-sm font-medium">Canary Wharf</span>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
+    <ul className="space-y-3">
+      {WIDTH_STEPS.map((step) => (
+        <li key={step.label} className="space-y-1.5">
+          <p className="text-xs text-muted-foreground">{step.label}</p>
+          <div
+            className={`@container/arrivals max-w-full rounded-md border border-border bg-background p-3 ${step.className}`}
+          >
+            <div className="flex items-center gap-2">
+              <PlatformChip number="4" />
+              <span className="text-sm font-medium">Canary Wharf</span>
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
