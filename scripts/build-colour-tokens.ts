@@ -390,9 +390,21 @@ const upsertRegistryItem = (artefacts: ColourTokensArtefacts): void => {
     type: "registry:theme",
     title: "TfL colours",
     description:
-      "Installable TfL line/mode OKLCH colour tokens with data-line role bindings and a11y adaptations (dark, contrast, forced-colors, mono).",
+      "Installable TfL line/mode OKLCH colour tokens with data-line role bindings, a11y adaptations, and an importable line→colour map for static Tailwind classes.",
     cssVars: artefacts.cssVars,
     css: artefacts.css,
+    files: [
+      {
+        path: "lib/tfl/brand-colours.ts",
+        type: "registry:lib",
+        target: "lib/tfl/brand-colours.ts",
+      },
+      {
+        path: "lib/tfl/line-colour-map.ts",
+        type: "registry:lib",
+        target: "lib/tfl/line-colour-map.ts",
+      },
+    ],
   };
 
   const index = registry.items.findIndex(

@@ -64,6 +64,10 @@ const PREVIEW_SNIPPETS: Record<string, string> = {
 <div className="h-100">
   <TflGeographicMap />
 </div>`,
+  "line-badge": `import { LineBadge, LineColorBar } from "@/components/tfl/brand/line-badge"
+
+<LineBadge lineId="victoria" name="Victoria" />
+<LineColorBar lineId="victoria" heightClass="h-[6px]" />`,
 };
 
 const RailDocsPreviewFallback = () => (

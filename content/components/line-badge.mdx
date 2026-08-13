@@ -1,57 +1,16 @@
-## Licensing
+## Purpose
 
-Official line colours are fine to use for accurate line identity. That is not a licence for Johnston or the TfL roundel. See [Roundel](/docs/tfl-roundel).
+Filled chips and colour bars that paint official line colours. Tokens come from [Colours](/docs/colors) — install `tfl-colours` first (or let this package pull it).
 
-Colours come from TfL's [design standards](https://tfl.gov.uk/info-for/business-and-advertisers/design-standards), which links to the Colour standard PDF and Line diagram standard PDF. Values in `@/lib/tfl/brand-colours` follow those publications. Colour standard Issue 10. Line diagram Issue 4 for diagram paint notes such as Cable Car map red.
-
-Mono line identity follows the black-and-white Tube map key. Get the [large-print B&W Tube map](https://content.tfl.gov.uk/bw-large-print-tube-map.pdf) from TfL's [Tube map](https://tfl.gov.uk/maps/track/tube) page. The preview lists colour vs mono stroke patterns. Wiring those motifs into `data-tfl-colour="mono"` strips is still provisional.
-
-## Tokens
-
-Install the colour tokens first, or let a component pull them transitively:
-
-```bash
-pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/tfl-colours.json
-```
-
-Then the badge and bar primitives:
+## Installation
 
 ```bash
 pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/line-badge.json
 ```
 
-`line-badge` lists `tfl-colours` as a registry dependency, so a single add of `line-badge` also merges the tokens into your CSS.
+`line-badge` lists `tfl-colours` as a registry dependency.
 
-Components only read the third tier:
-
-1. Palette. `--tfl-line-central`, `--tfl-mode-buses`, OKLCH in `:root` / `.dark`
-2. Binding. `[data-line="central"] { --line-raw: var(--tfl-line-central); }`
-3. Roles. `--line-color`, `--line-ink`, `--line-stroke-style`, and `--line-border` under forced colours
-
-```tsx
-<span data-line="central" className="bg-[var(--line-color)] text-[var(--line-ink)]">
-  Central
-</span>
-```
-
-Optional `color` on `LineBadge` / `LineColorBar` sets `--line-raw` inline for paints outside the token set, such as Cable Car map red. Tailwind utilities such as `bg-tfl-line-central` are available via `@theme inline` aliases.
-
-## Adaptive modes
-
-| Signal | Behaviour |
-|--------|-----------|
-| `.dark` | Brand + Go night OKLCH method. Raise L about 3%, slight chroma, hold hue. Northern becomes `#FCFCFC` fill / black ink |
-| `data-tfl-northern="halo"` | Opt-in: keep brand-black Northern. Add `.tfl-northern-halo-stroke` / `.tfl-northern-halo-bar` only when paint sits on an uncontrolled background, not filled chips |
-| `prefers-contrast: more` | Darken `--line-color` via relative OKLCH, skipped when forced-colors is active |
-| `prefers-contrast` | Strip decorative extras (`--line-decoration: none`) |
-| `forced-colors: active` | System colours. Real border via `--line-border`. Shadows are forced away |
-| `data-tfl-colour="mono"` | App opt-in colourless mode. Greys fills today. B&W map stroke patterns shown in the Mono line styles preview, not yet wired into role tokens |
-
-There is no standard colourless media query. Mono is an app attribute on `<html>`.
-
-Poor-contrast lines such as Northern use a dark-palette token swap, white fill and black ink, instead of a shadow outline. Shadows disappear under `forced-colors`.
-
-## Props
+## Render
 
 ```tsx
 import { LineBadge, LineColorBar } from "@/components/tfl/brand/line-badge"
@@ -71,14 +30,14 @@ export default function Page() {
 }
 ```
 
-Published Pantone / CMYK / RGB / NCS live on `@/lib/tfl/brand-colours`. Screen tokens are OKLCH and HEX for light and dark.
+## Props
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `lineId` | `string` | TfL line or mode id (`central`, `northern`, `elizabeth`). Sets `data-line`. |
+| `lineId` | `string` | TfL line or mode id. Sets `data-line`. |
 | `name` | `string` | Display label. Defaults to `lineId`. |
-| `variant` | `"chip" \| "text"` | Filled chip, default, or coloured text. |
-| `color` | `string` | Optional `--line-raw` override when the paint is not the token colour. |
+| `variant` | `"chip" \| "text"` | Filled chip (default) or coloured text. |
+| `color` | `string` | Optional `--line-raw` override (e.g. Cable Car map red). |
 | `lineStatuses` | `array` | Optional statuses for a richer ARIA label. |
 
 `LineColorBar` takes `lineId`, optional `modeName` (`overground` / `elizabeth-line` parallel rails, `cable-car` = 3 red + 2 white), optional `color`, and `heightClass`.

@@ -167,6 +167,7 @@ const SLUG_ALIASES: Record<string, string> = {
   "tube-status-board": "tube-rail-status",
   "station-name": "station-name-labels",
   "station-labels": "station-name-labels",
+  colors: "colours",
 };
 
 /**
@@ -178,7 +179,6 @@ const CONTENT_ASSET_SLUGS: Record<string, string> = {
   "tube-rail-status": "tube-status-board",
   "bus-arrivals": "bus-arrivals-board",
   "station-name-labels": "station-name",
-  "line-badge": "line-badge",
 };
 
 export const DOCS_ENTRIES: readonly DocsEntry[] = [
@@ -239,18 +239,17 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 50,
   },
   {
-    slug: "line-badge",
+    slug: "colours",
     title: "Colours",
     description:
-      "Official line colours as OKLCH tokens, chips, and colour bars.",
+      "Official TfL line and mode colours — install tokens, map line ids, copy HEX or OKLCH.",
     group: "foundations",
-    kind: "component",
+    kind: "page",
     href: "/docs/colors",
     sidebarSection: "get-started",
     sidebarOrder: 60,
-    registryName: "line-badge",
-    registryUrl: `${REGISTRY_BASE}/line-badge.json`,
-    layer: "primitive",
+    registryName: "tfl-colours",
+    registryUrl: `${REGISTRY_BASE}/tfl-colours.json`,
   },
   {
     slug: "tfl-roundel",
@@ -306,8 +305,8 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryName: "rail-arrivals-board",
     registryUrl: `${REGISTRY_BASE}/rail-arrivals-board.json`,
     layer: "data-aware",
-    builtWith: ["platform-chip", "station-name-labels"],
-    usesFoundations: ["line-badge", "tfl-roundel"],
+    builtWith: ["platform-chip", "station-name-labels", "line-badge"],
+    usesFoundations: ["colours", "tfl-roundel"],
   },
   {
     slug: "tube-rail-status",
@@ -324,7 +323,8 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryName: "tube-status-board",
     registryUrl: `${REGISTRY_BASE}/tube-status-board.json`,
     layer: "data-aware",
-    usesFoundations: ["line-badge", "tfl-roundel"],
+    builtWith: ["line-badge"],
+    usesFoundations: ["colours", "tfl-roundel"],
   },
   {
     slug: "bus-arrivals",
@@ -342,7 +342,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryUrl: `${REGISTRY_BASE}/bus-arrivals-board.json`,
     layer: "data-aware",
     builtWith: ["bus-number-chip", "station-name-labels"],
-    usesFoundations: ["line-badge", "tfl-roundel"],
+    usesFoundations: ["colours", "tfl-roundel"],
   },
   {
     slug: "river-bus-arrivals",
@@ -389,7 +389,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryName: "tfl-geographic-map",
     registryUrl: `${REGISTRY_BASE}/tfl-geographic-map.json`,
     layer: "map",
-    usesFoundations: ["line-badge"],
+    usesFoundations: ["colours"],
   },
   {
     slug: "map-tubemap",
@@ -418,8 +418,8 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryName: "line-strip",
     registryUrl: `${REGISTRY_BASE}/line-strip.json`,
     layer: "data-aware",
-    builtWith: ["branch-strip", "station-name-labels"],
-    usesFoundations: ["line-badge"],
+    builtWith: ["branch-strip", "station-name-labels", "line-badge"],
+    usesFoundations: ["colours"],
   },
   {
     slug: "branch-strip",
@@ -435,7 +435,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryUrl: `${REGISTRY_BASE}/line-strip.json`,
     layer: "primitive",
     builtWith: ["station-name-labels"],
-    usesFoundations: ["line-badge"],
+    usesFoundations: ["colours"],
   },
   {
     slug: "station-name-labels",
@@ -476,6 +476,21 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryName: "bus-number-chip",
     registryUrl: `${REGISTRY_BASE}/bus-number-chip.json`,
     layer: "primitive",
+  },
+  {
+    slug: "line-badge",
+    title: "Line Badge",
+    description:
+      "Filled chips and colour bars that paint official line colours from Colours tokens.",
+    group: "primitives",
+    kind: "component",
+    href: "/docs/line-badge",
+    sidebarSection: "components",
+    sidebarOrder: 140,
+    registryName: "line-badge",
+    registryUrl: `${REGISTRY_BASE}/line-badge.json`,
+    layer: "primitive",
+    usesFoundations: ["colours"],
   },
 
   // —— Primitives & Foundations tail ——
@@ -555,8 +570,8 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     href: "/blocks/week-ahead",
     sidebarSection: "hidden",
     sidebarOrder: 0,
-    builtWith: ["line-strip", "branch-strip", "station-name-labels"],
-    usesFoundations: ["line-badge"],
+    builtWith: ["line-strip", "branch-strip", "station-name-labels", "line-badge"],
+    usesFoundations: ["colours"],
   },
   {
     slug: "tools-index",
