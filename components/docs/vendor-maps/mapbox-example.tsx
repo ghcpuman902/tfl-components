@@ -63,7 +63,7 @@ const MapboxLiveMap = ({ accessToken }: { accessToken: string }) => {
         style: "mapbox://styles/mapbox/light-v11",
         center: [-0.12, 51.51],
         zoom: 10.2,
-        attributionControl: { compact: true },
+        attributionControl: true,
       });
       mapRef.current = map;
       map.addControl(
