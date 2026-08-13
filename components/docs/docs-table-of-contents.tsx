@@ -28,7 +28,7 @@ export const DocsTableOfContents = ({
   React.useEffect(() => {
     const article = document.querySelector("article");
     if (!article) {
-      setItems([]);
+      queueMicrotask(() => setItems([]));
       return;
     }
 
@@ -46,8 +46,10 @@ export const DocsTableOfContents = ({
       })
       .filter((item): item is TocItem => item !== null);
 
-    setItems(nextItems);
-    setActiveId(nextItems[0]?.id ?? null);
+    queueMicrotask(() => {
+      setItems(nextItems);
+      setActiveId(nextItems[0]?.id ?? null);
+    });
 
     if (nextItems.length < MIN_HEADINGS) return;
 

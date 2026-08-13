@@ -15,7 +15,7 @@ pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/bus-arrivals-board.json
 pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/tfl-roundel.json
 ```
 
-Registry items declare `tfl-ts` as a dependency. Copied code reads `TFL_APP_ID` / `TFL_APP_KEY` from **your** environment.
+Registry items declare `tfl-ts` as a dependency. Copied code reads `TFL_APP_KEY` (your Primary key) from **your** environment.
 
 Install targets (pre-1.0):
 
@@ -54,7 +54,7 @@ The Next.js app in this repo is the developer environment (docs, demos, Blocks).
 ```bash
 pnpm install
 cp .env.example .env.local
-# fill TFL_APP_ID / TFL_APP_KEY from https://api-portal.tfl.gov.uk/
+# fill TFL_APP_KEY from https://api-portal.tfl.gov.uk/ (Products → 500 Requests per min → Profile → Show)
 pnpm dev
 ```
 

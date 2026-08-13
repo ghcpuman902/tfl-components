@@ -8,7 +8,6 @@ Severity-sorted service status board for TfL Tube & Rail — Tube, Elizabeth lin
 import TflClient, { sortLinesBySeverityAndOrder } from "tfl-ts"
 
 const tfl = new TflClient({
-  appId: process.env.TFL_APP_ID!,
   appKey: process.env.TFL_APP_KEY!,
 })
 

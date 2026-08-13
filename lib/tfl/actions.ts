@@ -2,6 +2,13 @@
 
 import { getTflClient } from "@/lib/tfl/client";
 import { isValidLatLon, truncateLatLon } from "@/lib/tfl/geo";
+import {
+  isBoardableBusStopId,
+  isBusStop,
+  mapStopPoint,
+  mapStopsFromGeoResponse,
+  type NearbyBusStop,
+} from "@/lib/tfl/bus-stop-shape";
 
 export type BusArrival = {
   lineName?: string;
@@ -15,15 +22,7 @@ export type BusArrival = {
   vehicleId?: string;
 };
 
-export type NearbyBusStop = {
-  id: string;
-  name: string;
-  indicator?: string;
-  stopLetter?: string;
-  towards?: string;
-  distance?: number;
-  lines?: string[];
-};
+export type { NearbyBusStop };
 
 export type GetBusArrivalsResult =
   | { ok: true; arrivals: BusArrival[]; stopName?: string }
@@ -40,69 +39,6 @@ export type SearchBusStopsResult =
 const NEARBY_RADIUS_METERS = 400;
 const MAX_NEARBY_STOPS = 8;
 const MAX_SEARCH_STOPS = 6;
-
-type AdditionalProperty = { key?: string; value?: string };
-
-const readTowards = (properties?: AdditionalProperty[]): string | undefined => {
-  const value = properties?.find((prop) => prop.key?.toLowerCase() === "towards")?.value;
-  return value?.trim() || undefined;
-};
-
-const readStopLetter = (stopLetter?: string, indicator?: string): string | undefined => {
-  const fromLetter = stopLetter?.trim();
-  if (fromLetter) return fromLetter.slice(0, 2).toUpperCase();
-  const fromIndicator = indicator?.replace(/^stop\s+/i, "").trim();
-  if (fromIndicator && fromIndicator.length <= 2) return fromIndicator.toUpperCase();
-  return undefined;
-};
-
-const mapStopPoint = (stop: {
-  id?: string;
-  commonName?: string;
-  name?: string;
-  indicator?: string;
-  stopLetter?: string;
-  distance?: number;
-  lines?: Array<{ name?: string }>;
-  additionalProperties?: AdditionalProperty[];
-}): NearbyBusStop | null => {
-  if (!stop.id) return null;
-
-  return {
-    id: stop.id,
-    name: (stop.commonName ?? stop.name)?.trim() || "Unknown stop",
-    indicator: stop.indicator,
-    stopLetter: readStopLetter(stop.stopLetter, stop.indicator),
-    towards: readTowards(stop.additionalProperties),
-    distance: stop.distance,
-    lines: stop.lines?.map((line) => line.name).filter(Boolean) as string[] | undefined,
-  };
-};
-
-const isBusStop = (modes?: string[]) => modes?.includes("bus") ?? false;
-
-/** London bus stop points that support live arrivals (not hubs / station parents). */
-const isBoardableBusStopId = (id: string) => /^490\d/i.test(id);
-
-const mapStopsFromGeoResponse = (
-  stopPoints: Array<{
-    id?: string;
-    commonName?: string;
-    indicator?: string;
-    stopLetter?: string;
-    distance?: number;
-    modes?: string[];
-    lines?: Array<{ name?: string }>;
-    additionalProperties?: AdditionalProperty[];
-  }>,
-  limit: number,
-): NearbyBusStop[] =>
-  stopPoints
-    .filter((stop) => stop.id && isBusStop(stop.modes) && isBoardableBusStopId(stop.id))
-    .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
-    .slice(0, limit)
-    .map(mapStopPoint)
-    .filter((stop): stop is NearbyBusStop => stop !== null);
 
 const fetchBusStopsNear = async (
   lat: number,
@@ -144,6 +80,9 @@ const enrichStops = async (stops: NearbyBusStop[]): Promise<NearbyBusStop[]> => 
         towards: stop.towards ?? detail.towards,
         lines: stop.lines?.length ? stop.lines : detail.lines,
         name: stop.name || detail.name,
+        smsCode: stop.smsCode ?? detail.smsCode,
+        lat: stop.lat ?? detail.lat,
+        lon: stop.lon ?? detail.lon,
       };
     });
   } catch {
@@ -211,6 +150,8 @@ export async function searchBusStops(query: string): Promise<SearchBusStopsResul
           commonName: match.name ?? match.stationName,
           indicator: match.platformName,
           lines: match.lines,
+          lat: match.lat,
+          lon: match.lon,
         }),
       )
       .filter((stop): stop is NearbyBusStop => stop !== null);

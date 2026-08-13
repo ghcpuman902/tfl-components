@@ -53,14 +53,17 @@ Pass **normalised** line-status rows as `data`. Fetching stays in your app — n
 
 ### What you still configure
 
-Register at the [TfL API portal](https://api-portal.tfl.gov.uk/) and set server-side env:
+Register at the [TfL API portal](https://api-portal.tfl.gov.uk/), subscribe to **500 Requests per min**, then copy a key from Profile (Show) into server-side env:
 
 ```env
-TFL_APP_ID=your-app-id
-TFL_APP_KEY=your-app-key
+TFL_APP_KEY=your-primary-key
 ```
 
-Keep keys off the client and out of reusable components. Until credentials exist, use fixture or cached rows so the board still renders.
+<p className="text-xs text-muted-foreground">On the portal you’ll see two keys (Primary and Secondary); either works. <code>app_id</code> has been unused since Jan 2021.</p>
+
+Keep the key off the client and out of reusable components. Until credentials exist, use fixture or cached rows so the board still renders.
+
+On **this docs site**, the sidebar **Add TfL API key** control is a separate browser convenience for live demos. It is stored only in your browser and never posted to our server. It is **not** the same as putting `TFL_APP_KEY` in your app’s server env — production apps should keep keys server-side.
 
 | Source | Use |
 |--------|-----|

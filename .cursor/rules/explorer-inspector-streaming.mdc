@@ -1,0 +1,26 @@
+---
+description: Explorer — optimistic identity, stream route/arrivals/status behind Suspense
+globs: app/docs/explorer/**/*,components/explorer/**/*,lib/tfl/explorer/**/*,lib/tfl/explorer-*.ts
+alwaysApply: false
+---
+
+# Explorer inspector streaming
+
+Full write-up: [docs/explorer-inspector-streaming.md](../../docs/explorer-inspector-streaming.md).
+
+Clicks must paint **Identity** (id, name, mode) from the in-memory directory **before** RSC. Do not `await` per-entity TfL data in the page before returning the panel.
+
+## Do
+
+- Optimistic select (`useOptimisticLine` / `useOptimisticPoint`), then `router.push`.
+- Pass `"use cache"` work as a **Promise** (`detailsPromise`, `cachedArrivalsPromise`).
+- `use(promise)` behind `<Suspense>` in the inspector. If `detailsPending` or the promise is for another id, skip `use()` and show a skeleton / identity-only inspector.
+- Keep inbound/outbound with the stop sequence (Relationships), not Identity.
+
+## Don’t
+
+- `await getExplorerLineRoute` / arrivals / status in `ExplorerActivePanel` before render.
+- Derive the inspector title only from `state.id` (click waits on the full RSC).
+- `use()` the seed arrivals promise while a different point is selected.
+
+Canonical: `LineInspector`, `PointInspectorDeferred`, `app/docs/explorer/page.tsx`.

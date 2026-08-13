@@ -28,6 +28,12 @@ This app enables `cacheComponents: true` (PPR). Routes validate an `instant` sta
 - Pure prep (`prepareStraightStrip`, `prepareBranchStrip`, layout maths) stays in `lib/tfl/*` with **no** `"use client"`.
 - Docs pages that **dynamically import** demos must wrap `<Demo />` in `<Suspense>` so client module graphs are not part of the static shell.
 
+### Explorer inspector streaming
+
+Identity (id, name, mode) paints from the in-memory directory on click. Route / arrivals / status stream via `use(promise)` behind `<Suspense>`. Do not `await` per-entity fetches in the explorer page before returning the panel.
+
+Canonical: [docs/explorer-inspector-streaming.md](./explorer-inspector-streaming.md). Agent rule: [`.cursor/rules/explorer-inspector-streaming.mdc`](../.cursor/rules/explorer-inspector-streaming.mdc).
+
 ## File structure
 
 ```

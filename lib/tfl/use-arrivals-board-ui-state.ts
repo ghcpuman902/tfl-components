@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   resolveArrivalsEmptyKind,
   type ArrivalsEmptyKind,
@@ -13,6 +13,16 @@ type ArrivalsBoardUiState = {
   emptyKind: ArrivalsEmptyKind;
 };
 
+const NOON_SENTINEL_MS = Date.UTC(2020, 0, 1, 12, 0, 0);
+
+const subscribeToMinuteClock = (onStoreChange: () => void) => {
+  const id = window.setInterval(onStoreChange, 60_000);
+  return () => window.clearInterval(id);
+};
+
+const getClockSnapshot = () => Date.now();
+const getServerClockSnapshot = () => NOON_SENTINEL_MS;
+
 /**
  * Client-side empty/error presentation for live demos and polling boards.
  * Distinguishes offline vs fetch failure vs night-ended vs plain empty.
@@ -23,10 +33,15 @@ export const useArrivalsBoardUiState = (
   domain: "rail" | "bus" = "rail",
 ): ArrivalsBoardUiState => {
   const [offline, setOffline] = useState(false);
+  const nowMs = useSyncExternalStore(
+    subscribeToMinuteClock,
+    getClockSnapshot,
+    getServerClockSnapshot,
+  );
 
   useEffect(() => {
     const sync = () => setOffline(!navigator.onLine);
-    sync();
+    queueMicrotask(sync);
     window.addEventListener("online", sync);
     window.addEventListener("offline", sync);
     return () => {
@@ -46,7 +61,7 @@ export const useArrivalsBoardUiState = (
         rowCount,
         offline: offline && rowCount === 0,
         domain,
-        nowMs: Date.now(),
+        nowMs,
       }) ?? "empty",
   };
 };

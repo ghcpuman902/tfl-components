@@ -97,9 +97,15 @@ const sortIndexed = (
     sortBy === "source" ? compareIndexedBySource : compareIndexedByTime
   )
 
-const rowKey = (item: IndexedArrival): string =>
-  item.arrival.id ??
-  `${item.arrival.vehicleId ?? item.arrival.lineId ?? "row"}-${item.arrival.timeToStation ?? 0}-${item.sourceIndex}`
+/** TfL sometimes repeats `id` in one bound; `sourceIndex` keeps React keys unique. */
+const rowKey = (item: IndexedArrival): string => {
+  const identity =
+    item.arrival.id ??
+    item.arrival.vehicleId ??
+    item.arrival.lineId ??
+    "row"
+  return `${identity}-${item.sourceIndex}`
+}
 
 const toRow = (item: IndexedArrival): ArrivalsPreparedRow => ({
   key: rowKey(item),

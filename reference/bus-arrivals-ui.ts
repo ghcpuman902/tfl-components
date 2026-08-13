@@ -18,7 +18,7 @@
  *
  * Prerequisites in YOUR app:
  *   pnpm add tfl-ts
- *   TFL_APP_ID / TFL_APP_KEY in server env only
+ *   TFL_APP_KEY (Primary key) in server env only
  */
 
 import TflClient from 'tfl-ts';
