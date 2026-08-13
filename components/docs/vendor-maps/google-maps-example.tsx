@@ -122,9 +122,7 @@ const GoogleMapsLiveMap = ({ apiKey }: { apiKey: string }) => {
       cancelled = true;
       window.gm_authFailure = previousAuthFailure;
       mapRef.current = null;
-      if (containerRef.current) {
-        containerRef.current.replaceChildren();
-      }
+      container.replaceChildren();
     };
   }, [apiKey]);
 
