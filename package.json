@@ -11,7 +11,7 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test 'lib/tfl/**/*.test.ts' 'lib/feedback/**/*.test.ts' && tsx scripts/check-no-server-appkey.ts",
+    "test": "tsx --test 'lib/tfl/**/*.test.ts' 'lib/feedback/**/*.test.ts' && tsx scripts/check-no-server-appkey.ts && tsx scripts/check-registry-urls.ts",
     "geography:unique-track": "node scripts/snapshot-unique-track-geometry.mjs",
     "registry:build": "tsx scripts/build-colour-tokens.ts && shadcn build"
   },

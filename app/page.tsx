@@ -6,7 +6,9 @@ import { HomeHeroPhotos } from "@/components/docs/home-hero-photos";
 import { SITE_DESCRIPTION } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "tfl-components",
+  title: {
+    absolute: "tfl-components",
+  },
   description: SITE_DESCRIPTION,
 };
 

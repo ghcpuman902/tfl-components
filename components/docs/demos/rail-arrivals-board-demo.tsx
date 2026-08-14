@@ -8,7 +8,7 @@ import {
 import { useArrivalsBoardUiState } from "@/lib/tfl/use-arrivals-board-ui-state";
 import { useDualPathArrivals } from "@/hooks/use-dual-path-arrivals";
 
-const POLL_MS = 15_000;
+const POLL_MS = 20_000;
 
 /**
  * Rail arrivals demo — Oxford Circus via RailArrivalsBoard + tfl-ts predictions.

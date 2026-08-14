@@ -7,7 +7,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Geist_Mono, Hammersmith_One } from "next/font/google";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { SITE_DESCRIPTION, SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +42,15 @@ const fontMono = Geist_Mono({
   variable: "--font-mono",
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? SITE_URL),
   title: {
@@ -53,6 +62,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_GB",
     siteName: "tfl-components",
+    title: "tfl-components",
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "tfl-components",
+    description: SITE_DESCRIPTION,
   },
 };
 

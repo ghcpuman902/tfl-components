@@ -77,7 +77,7 @@ export const SiteHeader = ({
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "shrink-0",
+                  "shrink-0 px-1.5 py-2",
                   active
                     ? "font-medium text-foreground"
                     : "text-muted-foreground hover:text-foreground",
@@ -95,7 +95,7 @@ export const SiteHeader = ({
 
         <a
           href={GITHUB}
-          className="shrink-0 text-sm text-muted-foreground hover:text-foreground"
+          className="shrink-0 px-1.5 py-2 text-sm text-muted-foreground hover:text-foreground"
           target="_blank"
           rel="noreferrer"
         >

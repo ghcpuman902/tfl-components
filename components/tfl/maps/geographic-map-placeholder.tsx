@@ -71,6 +71,7 @@ export const GeographicMapPlaceholder = () => {
       center: LONDON_CENTER,
       zoom: LONDON_ZOOM,
       attributionControl: { compact: true },
+      cooperativeGestures: true,
     });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");

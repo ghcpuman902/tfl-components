@@ -107,6 +107,7 @@ export const ExplorerPointMap = ({
       center: LONDON_CENTER,
       zoom: FALLBACK_ZOOM,
       attributionControl: { compact: true },
+      cooperativeGestures: true,
     });
 
     map.addControl(

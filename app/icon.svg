@@ -1,15 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 615.3 615.3" role="img" aria-label="tfl-components">
-  <g transform="translate(0 57.65)">
-    <circle cx="308.123" cy="249.985" r="250" fill="#737373" opacity="0.35" />
-    <rect
-      x="0"
-      y="199.5"
-      width="615.3"
-      height="101.1"
-      rx="50.55"
-      ry="50.55"
-      fill="#737373"
-      opacity="0.85"
-    />
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="tfl-components">
+  <rect width="64" height="64" fill="#0a0a0a" />
+  <rect x="8" y="14" width="48" height="6" fill="#E32017" />
+  <rect x="8" y="24" width="48" height="6" fill="#0098D4" />
+  <rect x="8" y="34" width="48" height="6" fill="#00782A" />
+  <rect x="8" y="44" width="48" height="6" fill="#F3A9BB" />
 </svg>

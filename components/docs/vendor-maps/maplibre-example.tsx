@@ -51,6 +51,7 @@ export const MapLibreExample = () => {
       center: [-0.12, 51.51],
       zoom: 10.2,
       attributionControl: { compact: true },
+      cooperativeGestures: true,
     });
 
     map.addControl(

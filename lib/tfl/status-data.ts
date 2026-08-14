@@ -21,6 +21,7 @@ export const CACHED_STATUS_MODES = [
  * Site/demo fetch for status boards — keep out of the reusable component.
  * Prefer passing the result as `data` into `TubeStatusBoard`.
  * With no `lineIds`, fetches TfL Tube & Rail modes (excludes Cable Car).
+ * Soft-fails to `[]` on TfL errors so a quota/outage spike does not crash the page.
  */
 export async function getCachedLineStatuses(
   lineIds?: readonly string[],
@@ -29,13 +30,17 @@ export async function getCachedLineStatuses(
   cacheLife({ revalidate: 60 });
   cacheTag("tfl-line-status");
 
-  const client = getTflClient();
-  const lineStatuses = await client.line.getStatus(
-    lineIds && lineIds.length > 0
-      ? { lineIds: [...lineIds] }
-      : {
-          modes: [...CACHED_STATUS_MODES],
-        },
-  );
-  return sortLinesBySeverityAndOrder(lineStatuses);
+  try {
+    const client = getTflClient();
+    const lineStatuses = await client.line.getStatus(
+      lineIds && lineIds.length > 0
+        ? { lineIds: [...lineIds] }
+        : {
+            modes: [...CACHED_STATUS_MODES],
+          },
+    );
+    return sortLinesBySeverityAndOrder(lineStatuses);
+  } catch {
+    return [];
+  }
 }

@@ -12,7 +12,7 @@ import { translateTflClientError } from "@/lib/tfl/tfl-error-translation";
 import { getStopArrivalsAction } from "@/lib/tfl/live-arrivals-action";
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider";
 
-const DEFAULT_POLL_MS = 15_000;
+const DEFAULT_POLL_MS = 20_000;
 
 const INVALID_KEY_FALLBACK =
   "Your TfL API key was rejected. Replace or clear it in the sidebar.";

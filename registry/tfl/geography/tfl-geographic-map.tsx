@@ -232,6 +232,7 @@ export const TflGeographicMap = ({
       center,
       zoom,
       attributionControl: { compact: true },
+      cooperativeGestures: true,
     });
 
     if (showNavigation) {

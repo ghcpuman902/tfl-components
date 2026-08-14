@@ -1,6 +1,10 @@
 "use server";
 
 import { getTflClient } from "@/lib/tfl/client";
+import {
+  getCachedStopArrivals,
+  isDemoStopArrivalsId,
+} from "@/lib/tfl/cached-stop-arrivals";
 import { isValidLatLon, truncateLatLon } from "@/lib/tfl/geo";
 import {
   isBoardableBusStopId,
@@ -183,6 +187,12 @@ export async function searchBusStops(query: string): Promise<SearchBusStopsResul
   }
 }
 
+/**
+ * Site-key bus arrivals. Only allowlisted demo stop IDs are served
+ * (shared cache) — same bound as `getStopArrivalsAction`.
+ * Nearby / search below remain on-demand; no live route mounts them today
+ * (`registry/tfl/arrivals/bus-arrivals.tsx` is unused by docs pages).
+ */
 export async function getBusArrivals(
   stopId: string,
   stopName?: string,
@@ -192,12 +202,16 @@ export async function getBusArrivals(
     return { ok: false, error: "No stop selected." };
   }
 
+  if (!isDemoStopArrivalsId(trimmed)) {
+    return {
+      ok: false,
+      error:
+        "This stop is not available on the site key. Add your own TfL API key.",
+    };
+  }
+
   try {
-    const client = getTflClient();
-    const arrivals = await client.stopPoint.getArrivals({
-      stopPointIds: [trimmed],
-      sortBy: "timeToStation",
-    });
+    const arrivals = await getCachedStopArrivals(trimmed);
     const mapped: BusArrival[] = arrivals.map((arrival) => ({
       lineName: arrival.lineName,
       destinationName: arrival.destinationName,

@@ -7,7 +7,7 @@ import { getStopArrivalsAction } from "@/lib/tfl/live-arrivals-action"
 import { useArrivalsBoardUiState } from "@/lib/tfl/use-arrivals-board-ui-state"
 
 const DEFAULT_STOP_ID = "940GZZLUOXC"
-const POLL_MS = 15_000
+const POLL_MS = 20_000
 
 /**
  * Docs/demo helper: polls a stop and passes predictions into {@link RailArrivalsBoard}.

@@ -172,7 +172,7 @@ const BoundPager = ({
         aria-label={`Previous ${label} arrivals`}
         disabled={atStart}
         onClick={onPrev}
-        className="inline-flex h-6 cursor-pointer items-center justify-center pr-1.5 pl-0 text-muted-foreground disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
+        className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-1.5 pl-0 text-muted-foreground before:absolute before:inset-y-[-0.5rem] before:inset-x-[-0.25rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
       >
         <Play
           className="size-3 -scale-x-100 fill-current stroke-none"
@@ -192,7 +192,7 @@ const BoundPager = ({
         aria-label={`Next ${label} arrivals`}
         disabled={atEnd}
         onClick={onNext}
-        className="inline-flex h-6 cursor-pointer items-center justify-center pr-0 pl-1.5 text-muted-foreground disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
+        className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-0 pl-1.5 text-muted-foreground before:absolute before:inset-y-[-0.5rem] before:inset-x-[-0.25rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
       >
         <Play className="size-3 fill-current stroke-none" aria-hidden />
       </button>

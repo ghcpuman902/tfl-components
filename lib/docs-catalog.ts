@@ -612,8 +612,9 @@ export const getDocsEntry = (slug: string): DocsEntry | undefined => {
 export const getComponentEntries = (): DocsEntry[] =>
   DOCS_ENTRIES.filter(
     (entry) =>
-      entry.kind === "component" ||
-      (entry.kind === "placeholder" && entry.sidebarSection === "components"),
+      !entry.comingSoon &&
+      (entry.kind === "component" ||
+        (entry.kind === "placeholder" && entry.sidebarSection === "components")),
   );
 
 export const getToolEntries = (): DocsEntry[] =>
@@ -636,9 +637,14 @@ export const getEntriesByGroup = (groupId: DocsGroupId): DocsEntry[] =>
 export const getSidebarEntries = (
   section: Exclude<DocsSidebarSection, "hidden">,
 ): DocsEntry[] =>
-  DOCS_ENTRIES.filter((entry) => entry.sidebarSection === section).sort(
-    (a, b) => a.sidebarOrder - b.sidebarOrder,
-  );
+  DOCS_ENTRIES.filter(
+    (entry) => entry.sidebarSection === section && !entry.comingSoon,
+  ).sort((a, b) => a.sidebarOrder - b.sidebarOrder);
+
+/** Catalogue rows for `/docs/components` (preferred + rendering parts). */
+export const getCatalogueEntries = (): DocsEntry[] =>
+  getSidebarEntries("components");
+
 
 /** Matches DocsSidebar: get-started top → components → get-started bottom → primitives & foundations. */
 const GET_STARTED_BOTTOM_FROM = 200;
@@ -704,10 +710,6 @@ export const getUsedBySlugs = (slug: string): string[] =>
       entry.builtWith?.includes(slug) ||
       entry.usesFoundations?.includes(slug),
   ).map((entry) => entry.slug);
-
-/** Catalogue rows for `/docs/components` (preferred + rendering parts). */
-export const getCatalogueEntries = (): DocsEntry[] =>
-  getSidebarEntries("components");
 
 export const HOME_CATALOG_GROUPS: readonly DocsGroupId[] = [
   "interfaces",

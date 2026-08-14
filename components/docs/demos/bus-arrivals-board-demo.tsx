@@ -7,7 +7,7 @@ import type { BusArrivalsGroupBy } from "@/lib/tfl/arrivals-prepare";
 import { HOME_BUS_STOP } from "@/lib/tfl/home-arrivals-stops";
 import { useDualPathArrivals } from "@/hooks/use-dual-path-arrivals";
 
-const POLL_MS = 15_000;
+const POLL_MS = 20_000;
 
 const BusArrivalsLiveBoard = ({
   groupBy = "none",

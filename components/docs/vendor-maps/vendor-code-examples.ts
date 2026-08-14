@@ -24,6 +24,7 @@ const map = new maplibregl.Map({
   },
   center: [-0.12, 51.51],
   zoom: 10,
+  cooperativeGestures: true,
 });
 
 map.on("load", () => {

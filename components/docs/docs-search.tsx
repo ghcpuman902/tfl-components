@@ -53,7 +53,9 @@ export const DocsSearch = ({
 
   const results = useMemo(() => {
     if (!query.trim()) return [] as DocsEntry[];
-    return DOCS_ENTRIES.filter((entry) => matchesQuery(entry, query)).slice(
+    return DOCS_ENTRIES.filter(
+      (entry) => !entry.comingSoon && matchesQuery(entry, query),
+    ).slice(
       0,
       12,
     );

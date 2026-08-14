@@ -222,6 +222,7 @@ export const CycleHireDocksMap = ({
       center: LONDON_CENTER,
       zoom: FALLBACK_ZOOM,
       attributionControl: { compact: true },
+      cooperativeGestures: true,
     });
 
     if (showNavigation) {
