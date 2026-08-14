@@ -6,6 +6,7 @@ import { SearchIcon } from "lucide-react";
 import {
   DOCS_ENTRIES,
   DOCS_GROUPS,
+  isInternalDocsEntry,
   type DocsEntry,
 } from "@/lib/docs-catalog";
 import { cn } from "@/lib/utils";
@@ -53,9 +54,16 @@ export const DocsSearch = ({
 
   const results = useMemo(() => {
     if (!query.trim()) return [] as DocsEntry[];
-    return DOCS_ENTRIES.filter(
-      (entry) => !entry.comingSoon && matchesQuery(entry, query),
-    ).slice(
+    return DOCS_ENTRIES.filter((entry) => {
+      if (entry.comingSoon) return false;
+      if (
+        process.env.NODE_ENV !== "development" &&
+        isInternalDocsEntry(entry)
+      ) {
+        return false;
+      }
+      return matchesQuery(entry, query);
+    }).slice(
       0,
       12,
     );

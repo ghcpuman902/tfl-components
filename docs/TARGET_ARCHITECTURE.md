@@ -1,30 +1,30 @@
 # Target information architecture
 
-**Status: FROZEN (Stage 1) + human amendments J1 / J6.** Derived from [product-architecture.md](./product-architecture.md). Do not reshape to match current file placement without a new decision.
+**Status: FROZEN (Stage 1) + human amendments J1 / J6 / J8.** Derived from [product-architecture.md](./product-architecture.md). Do not reshape to match current file placement without a new decision.
 
 Transport domains (Tube & rail, Bus, River, Cycle, Roads / traffic, Cable car, …) are **filters / metadata / markers**, not top-level nav trees.
 
-See [ia-migration/DECISIONS.md](./ia-migration/DECISIONS.md) **J6** for the nav-chrome amendment (2026-08-10).
+See [ia-migration/DECISIONS.md](./ia-migration/DECISIONS.md) **J6** (nav chrome, 2026-08-10) and **J8** (publish chrome, 2026-08-14).
 
 ---
 
 ## Site chrome (persistent header)
 
-Same header on homepage, docs, Blocks, and Tools:
+Same header on homepage, docs, Blocks, and Explorer:
 
 ```text
-[Logo → /]  Docs  Components  Blocks  Tools     [Search]  [GitHub]
+[Logo → /]  Docs  Components  Blocks  Explorer     [Search]  [GitHub]
 ```
 
 | Link | Lands on |
 |------|----------|
 | Logo | `/` (full-width homepage — no docs sidebar) |
-| Docs | `/docs/installation` |
+| Docs | `/docs` (Introduction) |
 | Components | `/docs/components` (catalogue) |
 | Blocks | `/blocks` |
-| Tools | `/tools` |
+| Explorer | `/docs/explorer` |
 
-**Homepage** stays full-width proof (no sidebar). **Docs** routes use this header plus a compact docs sidebar. **Blocks** and **Tools** use the same header **without** the docs taxonomy sidebar (own section, like shadcn Blocks).
+**Homepage** stays full-width proof (no sidebar). **Docs** routes use this header plus a compact docs sidebar. **Blocks** use the same header **without** the docs taxonomy sidebar (own section, like shadcn Blocks). **Tools** and **Drafts** are footer links in development only — hidden in production.
 
 ---
 
@@ -38,11 +38,11 @@ Orient before picking a surface:
 
 - Introduction (`/docs`) — separate from the homepage
 - Components directory (`/docs/components`)
-- Installation
 - Explorer (single entry; WIP — owns its own sub-nav when opened)
 - Typography
 - Colours
 - Roundel
+- Troubleshoot (`/docs/installation`) — below the Components list; CLI detail, not a global install
 - TfL brand licensing (and Skills for AI when present)
 
 ### Components (flat list)
@@ -57,7 +57,7 @@ Examples of preferred entries: Tube & rail arrivals, Tube & rail status, Bus arr
 
 Super lower-level or guidance leftovers that do not fit Get started or the preferred Components list (e.g. icons). Prefer pure CSS/HTML primitives here as the library grows.
 
-**Blocks, Tools, Drafts** are not permanent docs-sidebar groups. Drafts: footer / contributor path. Tools and Blocks: top nav.
+**Blocks, Tools, Drafts** are not permanent docs-sidebar groups. Blocks: top nav. Tools and Drafts: footer / contributor path, development only (J8).
 
 ---
 

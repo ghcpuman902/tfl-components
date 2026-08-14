@@ -7,9 +7,9 @@ import { getDocsEntry } from "@/lib/docs-catalog";
 import { REGISTRY_BASE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Installation",
+  title: "Troubleshoot",
   description:
-    "Copy a board into your app with the shadcn CLI — what lands on disk, what still needs keys.",
+    "CLI details, files on disk, and what to check when a component install does not look right.",
 };
 
 export default async function DocsInstallationPage() {
@@ -22,22 +22,32 @@ export default async function DocsInstallationPage() {
         <DocsPageHeader entry={entry} />
 
         <section className="space-y-4">
-          <h2 id="quick-install" className="text-lg font-semibold">
-            Quick install
-          </h2>
-          <p className="max-w-prose text-sm text-muted-foreground">
-            Status board first — one URL copies the board, brand helpers, and
-            colour tokens into your repo. Expect a dozen-plus files, a{" "}
-            <code className="text-xs">globals.css</code> update, and{" "}
-            <code className="text-xs">tfl-ts</code> as a dependency. More items
-            on the{" "}
+          <p className="max-w-prose text-muted-foreground">
+            There is no all-in-one install. Start from the{" "}
+            <Link
+              href="/docs"
+              className="text-foreground underline underline-offset-4"
+            >
+              Introduction
+            </Link>{" "}
+            and add the one board you need from{" "}
             <Link
               href="/docs/components"
               className="text-foreground underline underline-offset-4"
             >
-              Components catalogue
+              Components
             </Link>
-            .
+            . This page is the CLI detail — files on disk, skipped atoms, and
+            what still needs a key.
+          </p>
+          <h2 id="quick-install" className="text-lg font-semibold">
+            Example: status board
+          </h2>
+          <p className="max-w-prose text-sm text-muted-foreground">
+            One URL copies the board, brand helpers, and colour tokens into
+            your repo. Expect a dozen-plus files, a{" "}
+            <code className="text-xs">globals.css</code> update, and{" "}
+            <code className="text-xs">tfl-ts</code> as a dependency.
           </p>
           <InstallCommand
             registryUrl={`${REGISTRY_BASE}/tube-status-board.json`}

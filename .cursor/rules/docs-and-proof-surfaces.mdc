@@ -103,9 +103,9 @@ Docs are read by humans **and** coding agents.
 
 Navigation answers: *What is the developer trying to understand, render, or build?*
 
-- Persistent header: **Docs · Components · Blocks · Tools** (+ Search, GitHub); logo → `/`
-- Docs sidebar: **Get started** + flat **Components** (preferred mode markers) + **Primitives & Foundations** tail
-- Homepage full-width (no sidebar). Blocks/Tools: header only (no docs sidebar)
+- Persistent header: **Docs · Components · Blocks · Explorer** (+ Search, GitHub); logo → `/`; Docs lands on Introduction
+- Docs sidebar: **Get started** + flat **Components** (preferred mode markers) + **Troubleshoot** below Components + **Primitives & Foundations** tail
+- Homepage full-width (no sidebar). Blocks: header only (no docs sidebar). Tools and Drafts: footer, development only
 - Transport domains are **filters/markers**, not top-level duplicated feature trees
 - Do **not** make shadcn UI atoms (Button, Dialog, Card) the product discovery path — they are chrome under `components/ui/`
 - **Tools** = inspect / test / tune / debug only; otherwise Drafts or a real group

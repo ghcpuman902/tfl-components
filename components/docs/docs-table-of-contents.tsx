@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { usePathname } from "next/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 type TocItem = {
@@ -12,9 +13,42 @@ type TocItem = {
 
 const MIN_HEADINGS = 2;
 
+const TOC_RAIL_CLASS =
+  "sticky top-(--site-hash-scroll-margin) hidden max-h-[calc(100svh-var(--site-hash-scroll-margin)-1rem)] w-48 shrink-0 overflow-y-auto xl:block";
+
+/** Fixed line widths — identity chrome only; no randomness (prerender-safe). */
+const TOC_SKELETON_LINE_WIDTHS = ["w-28", "w-36", "w-24", "w-32", "w-[6.5rem]"] as const;
+
+/**
+ * Holds the xl right-rail width before headings are known. Always rendered on
+ * the server / first paint so the article column does not shift when the TOC
+ * hydrates.
+ */
+const DocsTocSkeleton = () => (
+  <>
+    <p className="mb-2 text-xs font-medium text-muted-foreground">
+      On this page
+    </p>
+    <ul
+      className="space-y-1.5 border-l border-border"
+      aria-hidden
+    >
+      {TOC_SKELETON_LINE_WIDTHS.map((width) => (
+        <li key={width} className="pl-3 py-0.5">
+          <Skeleton className={cn("h-4", width)} />
+        </li>
+      ))}
+    </ul>
+  </>
+);
+
 /**
  * Right-rail "On this page" nav. Scans rendered article headings after mount
  * so it works for both MDX and hand-coded JSX sections.
+ *
+ * The `w-48` rail is reserved from the first paint (skeleton) so swapping in
+ * links does not shift the article. After the scan, short pages keep an empty
+ * spacer of the same width so the column never collapses.
  */
 export const DocsTableOfContents = ({
   className,
@@ -24,11 +58,15 @@ export const DocsTableOfContents = ({
   const pathname = usePathname();
   const [items, setItems] = React.useState<TocItem[]>([]);
   const [activeId, setActiveId] = React.useState<string | null>(null);
+  const [ready, setReady] = React.useState(false);
 
   React.useEffect(() => {
     const article = document.querySelector("article");
     if (!article) {
-      queueMicrotask(() => setItems([]));
+      queueMicrotask(() => {
+        setItems([]);
+        setReady(true);
+      });
       return;
     }
 
@@ -49,6 +87,7 @@ export const DocsTableOfContents = ({
     queueMicrotask(() => {
       setItems(nextItems);
       setActiveId(nextItems[0]?.id ?? null);
+      setReady(true);
     });
 
     if (nextItems.length < MIN_HEADINGS) return;
@@ -77,16 +116,26 @@ export const DocsTableOfContents = ({
     return () => observer.disconnect();
   }, [pathname]);
 
-  if (items.length < MIN_HEADINGS) return null;
+  const railClassName = cn(TOC_RAIL_CLASS, className);
+
+  if (!ready) {
+    return (
+      <nav
+        aria-busy
+        aria-label="On this page"
+        className={railClassName}
+      >
+        <DocsTocSkeleton />
+      </nav>
+    );
+  }
+
+  if (items.length < MIN_HEADINGS) {
+    return <div className={railClassName} aria-hidden />;
+  }
 
   return (
-    <nav
-      aria-label="On this page"
-      className={cn(
-        "sticky top-(--site-hash-scroll-margin) hidden max-h-[calc(100svh-var(--site-hash-scroll-margin)-1rem)] w-48 shrink-0 overflow-y-auto xl:block",
-        className,
-      )}
-    >
+    <nav aria-label="On this page" className={railClassName}>
       <p className="mb-2 text-xs font-medium text-muted-foreground">
         On this page
       </p>

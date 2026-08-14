@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search } from "lucide-react";
 import {
+  GET_STARTED_BOTTOM_FROM,
   getSidebarEntries,
   type DocsEntry,
   type DocsModeMarker,
@@ -181,9 +182,6 @@ const EntryList = ({
   </SidebarMenu>
 );
 
-/** Split get-started into top (before Components) and bottom (licensing / skills). */
-const GET_STARTED_BOTTOM_FROM = 200;
-
 export const DocsSidebar = () => {
   const pathname = usePathname();
   const getStarted = getSidebarEntries("get-started");
@@ -223,7 +221,6 @@ export const DocsSidebar = () => {
 
         {getStartedBottom.length > 0 ? (
           <SidebarGroup>
-            <SidebarGroupLabel>Get started</SidebarGroupLabel>
             <SidebarGroupContent>
               <EntryList entries={getStartedBottom} pathname={pathname} />
             </SidebarGroupContent>

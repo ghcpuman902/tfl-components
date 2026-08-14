@@ -9,10 +9,10 @@ import { cn } from "@/lib/utils";
 const GITHUB = "https://github.com/ghcpuman902/tfl-components";
 
 const PRIMARY_LINKS = [
-  { href: "/docs/installation", label: "Docs", match: "docs" },
+  { href: "/docs", label: "Docs", match: "docs" },
   { href: "/docs/components", label: "Components", match: "components" },
   { href: "/blocks", label: "Blocks", match: "blocks" },
-  { href: "/tools", label: "Tools", match: "tools" },
+  { href: "/docs/explorer", label: "Explorer", match: "explorer" },
 ] as const;
 
 type SiteHeaderProps = {
@@ -32,9 +32,19 @@ const linkIsActive = (
       pathname.startsWith("/docs/components/")
     );
   }
+  if (match === "explorer") {
+    return (
+      pathname === "/docs/explorer" ||
+      pathname.startsWith("/docs/explorer/") ||
+      pathname === "/explore" ||
+      pathname.startsWith("/explore/")
+    );
+  }
   if (match === "docs") {
     return (
-      pathname.startsWith("/docs") && !pathname.startsWith("/docs/components")
+      pathname.startsWith("/docs") &&
+      !pathname.startsWith("/docs/components") &&
+      !pathname.startsWith("/docs/explorer")
     );
   }
   return pathname === `/${match}` || pathname.startsWith(`/${match}/`);

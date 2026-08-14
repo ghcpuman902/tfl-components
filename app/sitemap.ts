@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { DOCS_ENTRIES } from "@/lib/docs-catalog";
+import { DOCS_ENTRIES, isInternalDocsEntry } from "@/lib/docs-catalog";
 import { SITE_URL } from "@/lib/site";
 
 const STATIC_PATHS = [
@@ -9,8 +9,6 @@ const STATIC_PATHS = [
   "/docs/installation",
   "/blocks",
   "/blocks/week-ahead",
-  "/tools",
-  "/tools/typography",
 ] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -33,7 +31,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }
 
   for (const entry of DOCS_ENTRIES) {
-    if (entry.comingSoon) continue;
+    if (entry.comingSoon || isInternalDocsEntry(entry)) continue;
     push(entry.href.split("?")[0]!, 0.7);
   }
 

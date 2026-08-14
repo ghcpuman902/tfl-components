@@ -50,13 +50,31 @@ export const SiteFooter = () => {
           <SiteFooterStats />
         </Suspense>
         <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
-          <Link
-            href="/drafts"
-            className="underline-offset-4 hover:text-foreground hover:underline"
-          >
-            Drafts
-          </Link>
-          <span aria-hidden>·</span>
+          {process.env.NODE_ENV === "development" ? (
+            <>
+              <Link
+                href="/tools"
+                className="underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Tools
+              </Link>
+              <span aria-hidden>·</span>
+              <Link
+                href="/tools/typography"
+                className="underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Typography lab
+              </Link>
+              <span aria-hidden>·</span>
+              <Link
+                href="/drafts"
+                className="underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Drafts
+              </Link>
+              <span aria-hidden>·</span>
+            </>
+          ) : null}
           <a
             href={`https://github.com/ghcpuman902/tfl-components/releases/tag/${APP_VERSION_LABEL}`}
             className="underline-offset-4 hover:text-foreground hover:underline"

@@ -12,7 +12,7 @@ Canonical implementation:
 
 - [`components/docs/docs-page-header.tsx`](components/docs/docs-page-header.tsx) — breadcrumb, Copy page, Prev/Next, title, one-line intro, single layer/kind badge
 - [`components/docs/render-component-docs.tsx`](components/docs/render-component-docs.tsx) — Preview (demo only) + separate Usage peek + compact install; no shared border frame
-- [`components/docs/docs-table-of-contents.tsx`](components/docs/docs-table-of-contents.tsx) — right-rail “On this page”
+- [`components/docs/docs-table-of-contents.tsx`](components/docs/docs-table-of-contents.tsx) — right-rail “On this page”; `w-48` rail + skeleton from first paint so the article does not shift when headings hydrate
 - Frozen anatomy still applies: [`docs/page-anatomy.md`](docs/page-anatomy.md)
 
 ## First fold (required order)

@@ -1,6 +1,6 @@
 /**
  * Single source for docs navigation, search, and static params.
- * Discovery chrome follows J6 — docs/TARGET_ARCHITECTURE.md.
+ * Discovery chrome follows J6 / J8 — docs/TARGET_ARCHITECTURE.md.
  */
 
 import { REGISTRY_BASE } from "@/lib/site";
@@ -90,7 +90,7 @@ export const DOCS_GROUPS: readonly DocsGroup[] = [
   {
     id: "start",
     title: "Get started",
-    description: "Introduction, installation, explorer, and brand basics.",
+    description: "Introduction, explorer, brand basics, and troubleshoot.",
   },
   {
     id: "explore",
@@ -187,7 +187,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "introduction",
     title: "Introduction",
     description:
-      "Open React components for London transport, copied into your app via the shadcn registry.",
+      "A free TfL key, one component, and an optional typeface — that is the path to the same look.",
     group: "start",
     kind: "page",
     href: "/docs",
@@ -206,17 +206,6 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 20,
   },
   {
-    slug: "installation",
-    title: "Installation",
-    description:
-      "Copy a board into your app with the shadcn CLI — what lands on disk, what still needs keys.",
-    group: "start",
-    kind: "page",
-    href: "/docs/installation",
-    sidebarSection: "get-started",
-    sidebarOrder: 30,
-  },
-  {
     slug: "explore-index",
     title: "Explorer",
     description:
@@ -225,7 +214,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     kind: "page",
     href: "/docs/explorer",
     sidebarSection: "get-started",
-    sidebarOrder: 40,
+    sidebarOrder: 30,
   },
   {
     slug: "typography",
@@ -264,6 +253,17 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryName: "tfl-roundel",
     registryUrl: `${REGISTRY_BASE}/tfl-roundel.json`,
     layer: "primitive",
+  },
+  {
+    slug: "installation",
+    title: "Troubleshoot",
+    description:
+      "CLI details, files on disk, and what to check when a component install does not look right.",
+    group: "start",
+    kind: "page",
+    href: "/docs/installation",
+    sidebarSection: "get-started",
+    sidebarOrder: 190,
   },
   {
     slug: "licensing",
@@ -661,8 +661,12 @@ export const getCatalogueEntries = (): DocsEntry[] =>
   getSidebarEntries("components");
 
 
-/** Matches DocsSidebar: get-started top → components → get-started bottom → primitives & foundations. */
-const GET_STARTED_BOTTOM_FROM = 200;
+/** Matches DocsSidebar: get-started top → components → Troubleshoot / licensing tail → primitives. */
+export const GET_STARTED_BOTTOM_FROM = 190;
+
+/** Tools and Drafts — footer / search in development only (J8). */
+export const isInternalDocsEntry = (entry: DocsEntry): boolean =>
+  entry.group === "tools" || entry.group === "drafts";
 
 export const getFlatSidebarOrder = (): DocsEntry[] => {
   const getStarted = getSidebarEntries("get-started");

@@ -58,7 +58,7 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Press `d` for dark mode. Browse via the header (Docs · Components · Blocks · Tools).
+Press `d` for dark mode. Browse via the header (Docs · Components · Blocks · Explorer).
 
 Frozen Stage 1 IA: [docs/TARGET_ARCHITECTURE.md](./docs/TARGET_ARCHITECTURE.md).
 

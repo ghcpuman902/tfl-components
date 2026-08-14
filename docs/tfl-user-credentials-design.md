@@ -118,7 +118,7 @@ Migrated demos show a small pill: **Shared demo data** (site key / Server Action
 ### Discoverability
 
 - First-visit: no modal interrupt. Rely on sidebar footer + a one-line callout on interactive demos.
-- J6 primary nav stays Docs · Components · Blocks · Tools; the key control is sidebar chrome, not a nav item.
+- J8 primary nav stays Docs · Components · Blocks · Explorer; the key control is sidebar chrome, not a nav item.
 
 ### Hidden tabs
 
