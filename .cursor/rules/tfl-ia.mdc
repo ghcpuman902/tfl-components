@@ -3,14 +3,14 @@ description: Frozen TfL product IA — architecture before archaeology; layers a
 alwaysApply: true
 ---
 
-# TfL information architecture (frozen Stage 1 + J1 / J6 / J8)
+# TfL information architecture (frozen Stage 1 + J1 / J6 / J8 / J9)
 
 Before changing docs IA, navigation, or page classification, read and follow:
 
 - [docs/product-architecture.md](docs/product-architecture.md)
 - [docs/TARGET_ARCHITECTURE.md](docs/TARGET_ARCHITECTURE.md)
 - [docs/page-anatomy.md](docs/page-anatomy.md)
-- [docs/ia-migration/DECISIONS.md](docs/ia-migration/DECISIONS.md) (esp. **J6**, **J8**)
+- [docs/ia-migration/DECISIONS.md](docs/ia-migration/DECISIONS.md) (esp. **J6**, **J8**, **J9**)
 
 ## Hard rules
 
@@ -21,5 +21,5 @@ Before changing docs IA, navigation, or page classification, read and follow:
 5. **Maps are first-class** with a mandatory Geographic vs Schematic/TubeMap split — as **Components** discovery entries, never under Tools, never one vague Map bucket.
 6. **Tools ≠ Components.** Tools must meet the inspect/test/tune/debug criterion; otherwise Drafts or nowhere. Tools and Drafts are footer / contributor paths, **development only** (J8) — not production header items.
 7. **Drafts** are incubation with a promotion path — not a permanent docs-sidebar section (footer / contributor path).
-8. **Discovery chrome (J6 + J8):** persistent header `Docs · Components · Blocks · Explorer`; Docs lands on Introduction (`/docs`); docs sidebar = Get started + flat Components (preferred markers) + Troubleshoot below Components + Primitives & Foundations tail; homepage full-width without sidebar.
+8. **Discovery chrome (J6 + J8 + J9):** persistent header `Docs · Components · Blocks · Explorer · Board`; Docs lands on Introduction (`/docs`); docs sidebar = Get started + flat Components (preferred markers) + Troubleshoot below Components + Primitives & Foundations tail; homepage full-width without sidebar. `/board/view` is chromeless.
 9. If implementation conflicts with a frozen principle: **record the conflict for human review**; do not silently edit frozen docs (J6-style amendments are explicit decisions).

@@ -1,6 +1,6 @@
 /**
  * Single source for docs navigation, search, and static params.
- * Discovery chrome follows J6 / J8 — docs/TARGET_ARCHITECTURE.md.
+ * Discovery chrome follows J6 / J8 / J9 — docs/TARGET_ARCHITECTURE.md.
  */
 
 import { REGISTRY_BASE } from "@/lib/site";
@@ -13,6 +13,7 @@ export type DocsGroupId =
   | "foundations"
   | "maps"
   | "blocks"
+  | "board"
   | "tools"
   | "drafts";
 
@@ -96,7 +97,7 @@ export const DOCS_GROUPS: readonly DocsGroup[] = [
     id: "explore",
     title: "Explorer",
     description:
-      "What TfL knows and how that information relates — not a Unified API endpoint list.",
+      "What TfL knows and how stations, stops, docks, and lines relate.",
   },
   {
     id: "interfaces",
@@ -127,6 +128,12 @@ export const DOCS_GROUPS: readonly DocsGroup[] = [
     title: "Blocks",
     description:
       "Composed mini-apps (shadcn-style blocks) that demonstrate components together.",
+  },
+  {
+    id: "board",
+    title: "Board",
+    description:
+      "A full-screen board from a URL, running on your TfL key, with nothing to deploy.",
   },
   {
     id: "tools",
@@ -209,7 +216,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "explore-index",
     title: "Explorer",
     description:
-      "Developer-facing TfL information model — Points and Lines, with cached examples and keyed live search.",
+      "Open a Point or Line from a cached example, then search live with your own TfL key.",
     group: "explore",
     kind: "page",
     href: "/docs/explorer",
@@ -572,6 +579,18 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 0,
     builtWith: ["line-strip", "branch-strip", "station-name-labels", "line-badge"],
     usesFoundations: ["colours"],
+  },
+  {
+    slug: "board-index",
+    title: "Board",
+    description:
+      "Leave a URL running fullscreen, with one station's arrivals and Tube status in a side slot.",
+    group: "board",
+    kind: "page",
+    href: "/board",
+    sidebarSection: "hidden",
+    sidebarOrder: 0,
+    builtWith: ["tube-rail-status", "tube-rail-arrivals"],
   },
   {
     slug: "tools-index",

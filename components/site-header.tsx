@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { DocsSearch } from "@/components/docs/docs-search";
+import { newMarkerParentClassName } from "@/components/new-marker";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,7 @@ const PRIMARY_LINKS = [
   { href: "/docs/components", label: "Components", match: "components" },
   { href: "/blocks", label: "Blocks", match: "blocks" },
   { href: "/docs/explorer", label: "Explorer", match: "explorer" },
+  { href: "/board", label: "Board", match: "board", isNew: true },
 ] as const;
 
 type SiteHeaderProps = {
@@ -82,12 +84,14 @@ export const SiteHeader = ({
         >
           {PRIMARY_LINKS.map((link) => {
             const active = linkIsActive(pathname, link.match);
+            const isNew = "isNew" in link && link.isNew;
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
                   "shrink-0 px-1.5 py-2",
+                  isNew && newMarkerParentClassName("pr-6 after:top-0.5"),
                   active
                     ? "font-medium text-foreground"
                     : "text-muted-foreground hover:text-foreground",

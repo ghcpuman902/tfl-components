@@ -22,7 +22,9 @@ import {
 } from "@/components/tfl/cycle-hire/cycle-hire-map-camera";
 import { StationName } from "@/components/tfl/station-name";
 
-const CARTO_ATTRIBUTION = "© CARTO · © OpenStreetMap contributors";
+/** OpenFreeMap vector Positron — no API key. Inlined so the registry stays self-contained. */
+const OPENFREEMAP_POSITRON_STYLE_URL =
+  "https://tiles.openfreemap.org/styles/positron";
 const LONDON_CENTER: [number, number] = [-0.08, 51.507];
 const FALLBACK_ZOOM = 13;
 const SINGLE_DOCK_ZOOM = 15;
@@ -174,7 +176,7 @@ const fitDocksCamera = (
 };
 
 /**
- * OSM / MapLibre surface — circle-gauge markers at dock lat/lon.
+ * OpenFreeMap vector Positron / MapLibre surface — circle-gauge markers at dock lat/lon.
  * Glance info only (bike / e-bike / space). Not linked to Detail selection.
  * Camera fits once when the map has a real size and docks are on the canvas.
  */
@@ -197,28 +199,7 @@ export const CycleHireDocksMap = ({
 
     const map = new maplibregl.Map({
       container,
-      style: {
-        version: 8,
-        sources: {
-          carto: {
-            type: "raster",
-            tiles: [
-              "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-            ],
-            tileSize: 256,
-            attribution: CARTO_ATTRIBUTION,
-          },
-        },
-        layers: [
-          {
-            id: "carto",
-            type: "raster",
-            source: "carto",
-            minzoom: 0,
-            maxzoom: 20,
-          },
-        ],
-      },
+      style: OPENFREEMAP_POSITRON_STYLE_URL,
       center: LONDON_CENTER,
       zoom: FALLBACK_ZOOM,
       attributionControl: { compact: true },

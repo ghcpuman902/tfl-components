@@ -9,6 +9,7 @@ const STATIC_PATHS = [
   "/docs/installation",
   "/blocks",
   "/blocks/week-ahead",
+  "/board",
 ] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {

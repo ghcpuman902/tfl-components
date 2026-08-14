@@ -41,9 +41,9 @@ OSM stores every service pattern as its own route. Drawing all variants stacks t
 - **Licence:** [TfL Open Data](https://tfl.gov.uk/info-for/open-data-users/)  
 - Station names / ids / colours in enriched bundles should credit TfL where applicable.
 
-### Basemap (MapLibre placeholder)
+### Basemap (MapLibre)
 
-The geographic placeholder uses a **CARTO** raster basemap (Positron) built on OpenStreetMap. Credit OSM (+ CARTO where required by their terms) in the UI.
+The geographic, cycle-hire, and Explorer maps use **OpenFreeMap** vector Positron tiles (OpenMapTiles + OSM), not CARTO PNG rasters. Credit OSM + OpenFreeMap in the UI.
 
 ## Consumer rules
 

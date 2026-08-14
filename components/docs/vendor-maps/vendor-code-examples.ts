@@ -11,36 +11,25 @@ import tubeGeometry from "./data/geography/tube-geometry.json";
 
 const map = new maplibregl.Map({
   container: "map",
-  style: {
-    version: 8,
-    sources: {
-      carto: {
-        type: "raster",
-        tiles: ["https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png"],
-        tileSize: 256,
-      },
-    },
-    layers: [{ id: "carto", type: "raster", source: "carto" }],
-  },
+  style: "https://tiles.openfreemap.org/styles/positron",
   center: [-0.12, 51.51],
   zoom: 10,
   cooperativeGestures: true,
 });
 
 map.on("load", () => {
-  // Lines — coloured by line identity
   map.addSource("tube-lines", { type: "geojson", data: tubeGeometry.lines });
   map.addLayer({
     id: "tube-lines",
     type: "line",
     source: "tube-lines",
+    layout: { "line-join": "round", "line-cap": "round" },
     paint: {
       "line-color": ["get", "color"],
       "line-width": 3,
     },
   });
 
-  // Stations — white circles with dark stroke
   map.addSource("tube-stations", { type: "geojson", data: tubeGeometry.stations });
   map.addLayer({
     id: "tube-stations",
@@ -51,6 +40,24 @@ map.on("load", () => {
       "circle-color": "#ffffff",
       "circle-stroke-width": 1.25,
       "circle-stroke-color": "#111827",
+    },
+  });
+  map.addLayer({
+    id: "tube-stations-label",
+    type: "symbol",
+    source: "tube-stations",
+    layout: {
+      "text-field": ["coalesce", ["get", "label"], ["get", "name"], ""],
+      "text-font": ["Noto Sans Regular"],
+      "text-size": 11,
+      "text-offset": [0, 1.15],
+      "text-anchor": "top",
+      "text-optional": true,
+    },
+    paint: {
+      "text-color": "#111827",
+      "text-halo-color": "#ffffff",
+      "text-halo-width": 1.6,
     },
   });
 });`;
@@ -92,7 +99,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 import tubeGeometry from "./data/geography/tube-geometry.json";
 
-// Your Mapbox access token — consumers supply their own
+// Your Mapbox access token
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
 const map = new mapboxgl.Map({
@@ -132,10 +139,11 @@ export const GOOGLE_MAPS_EXAMPLE = `import { setOptions, importLibrary } from "@
 
 import tubeGeometry from "./data/geography/tube-geometry.json";
 
-// Your Google Maps API key — consumers supply their own
+// Your Google Maps API key
 setOptions({ key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY! });
 
 const { Map } = await importLibrary("maps");
+const { SymbolPath } = await importLibrary("core");
 
 const map = new Map(document.getElementById("map")!, {
   center: { lat: 51.51, lng: -0.12 },
@@ -148,7 +156,7 @@ map.data.setStyle((feature) => {
   if (feature.getGeometry()?.getType() === "Point") {
     return {
       icon: {
-        path: google.maps.SymbolPath.CIRCLE,
+        path: SymbolPath.CIRCLE,
         scale: 3,
         fillColor: "#ffffff",
         fillOpacity: 1,

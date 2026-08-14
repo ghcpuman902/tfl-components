@@ -20,6 +20,11 @@ const INVALID_KEY_FALLBACK =
 type UseDualPathArrivalsOptions = {
   stopPointId: string;
   pollMs?: number;
+  /**
+   * When set, ignore stored credentials and use this key for the user path.
+   * Empty/null stays on the site path. Omit to use the credentials provider.
+   */
+  appKeyOverride?: string | null;
 };
 
 type UseDualPathArrivalsResult = {
@@ -39,21 +44,37 @@ type UseDualPathArrivalsResult = {
 export const useDualPathArrivals = ({
   stopPointId,
   pollMs = DEFAULT_POLL_MS,
+  appKeyOverride,
 }: UseDualPathArrivalsOptions): UseDualPathArrivalsResult => {
   const { status, getAppKey, markInvalid, error: credentialError } =
     useUserTflCredentials();
-  const source = selectArrivalsDataPath(status);
-  const isInvalid = status === "invalid";
+  const usingOverride = appKeyOverride !== undefined;
+  const overrideKey = usingOverride ? appKeyOverride?.trim() || null : null;
+  const source = usingOverride
+    ? overrideKey
+      ? "user"
+      : "site"
+    : selectArrivalsDataPath(status);
+  const isInvalid = !usingOverride && status === "invalid";
+  const trimmedStop = stopPointId.trim();
 
   const [data, setData] = useState<RealtimePrediction[]>([]);
   const [pollError, setPollError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
 
-  const pathKey = `${source}:${status}:${stopPointId}`;
+  const pathKey = usingOverride
+    ? `${source}:override:${trimmedStop}`
+    : `${source}:${status}:${trimmedStop}`;
 
   useEffect(() => {
     if (isInvalid) return;
+    if (!trimmedStop) {
+      setData([]);
+      setPollError(null);
+      setLoading(false);
+      return;
+    }
 
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -93,7 +114,7 @@ export const useDualPathArrivals = ({
     const runSiteLoad = async () => {
       if (cancelled || paused) return;
       try {
-        const result = await getStopArrivalsAction(stopPointId);
+        const result = await getStopArrivalsAction(trimmedStop);
         if (cancelled || paused) return;
         if (!result.ok) {
           applyFailure(result.error);
@@ -107,8 +128,11 @@ export const useDualPathArrivals = ({
       }
     };
 
+    const resolveUserKey = (): string | null =>
+      usingOverride ? overrideKey : getAppKey();
+
     const startUserPoll = async () => {
-      const appKey = getAppKey();
+      const appKey = resolveUserKey();
       if (!appKey) {
         applyFailure(
           "Add a TfL API key to load live arrivals with your quota.",
@@ -122,7 +146,7 @@ export const useDualPathArrivals = ({
 
         stopPoll = client.realtime.pollArrivals(
           {
-            stopPointIds: [stopPointId],
+            stopPointIds: [trimmedStop],
             sortBy: "timeToStation",
             intervalMs: pollMs,
             immediate: true,
@@ -131,25 +155,27 @@ export const useDualPathArrivals = ({
             if (cancelled || paused) return;
             applySuccess(arrivals);
           },
-          (error) => {
+          (caught) => {
             if (cancelled) return;
-            const translated = translateTflClientError(error, [appKey]);
+            const translated = translateTflClientError(caught, [appKey]);
             if (
-              translated.kind === "invalid-key" ||
-              translated.kind === "rate-limited"
+              !usingOverride &&
+              (translated.kind === "invalid-key" ||
+                translated.kind === "rate-limited")
             ) {
               markInvalid(translated);
             }
             applyFailure(translated.message);
           },
         );
-      } catch (error) {
+      } catch (caught) {
         if (cancelled) return;
-        const appKeyForRedact = getAppKey() ?? "";
-        const translated = translateTflClientError(error, [appKeyForRedact]);
+        const appKeyForRedact = resolveUserKey() ?? "";
+        const translated = translateTflClientError(caught, [appKeyForRedact]);
         if (
-          translated.kind === "invalid-key" ||
-          translated.kind === "rate-limited"
+          !usingOverride &&
+          (translated.kind === "invalid-key" ||
+            translated.kind === "rate-limited")
         ) {
           markInvalid(translated);
         }
@@ -195,8 +221,10 @@ export const useDualPathArrivals = ({
     pathKey,
     pollMs,
     source,
-    stopPointId,
+    trimmedStop,
     isInvalid,
+    usingOverride,
+    overrideKey,
     getAppKey,
     markInvalid,
   ]);
@@ -206,6 +234,16 @@ export const useDualPathArrivals = ({
       data: [],
       loading: false,
       fetchError: credentialError?.message ?? INVALID_KEY_FALLBACK,
+      tick,
+      source,
+    };
+  }
+
+  if (!trimmedStop) {
+    return {
+      data: [],
+      loading: false,
+      fetchError: null,
       tick,
       source,
     };

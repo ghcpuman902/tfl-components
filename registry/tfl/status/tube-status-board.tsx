@@ -20,6 +20,8 @@ type Props = {
   children?: ReactNode;
   /** When true, omit the page header (useful inside a layout that already has one). */
   hideHeader?: boolean;
+  /** One column — for a narrow side slot. */
+  compact?: boolean;
 };
 
 /**
@@ -235,7 +237,19 @@ export const TubeStatusBoardHeader = () => (
 type SkeletonProps = {
   /** Line IDs to paint (defaults to `LINE_ORDER` Tube & Rail set). */
   lineIds?: readonly string[];
+  /** One column — for a narrow side slot. */
+  compact?: boolean;
 };
+
+const goodServiceGridClass = (compact: boolean) =>
+  compact
+    ? "mt-2 grid grid-cols-1 justify-items-stretch gap-x-4 gap-y-0"
+    : "mt-2 grid grid-cols-2 justify-items-stretch gap-x-4 gap-y-0 md:grid-cols-3 lg:grid-cols-5";
+
+const disruptionGridClass = (compact: boolean) =>
+  compact
+    ? "mt-2 grid grid-cols-1 gap-x-4 gap-y-(--arrivals-row)"
+    : "mt-2 grid grid-cols-1 gap-x-4 gap-y-(--arrivals-row) md:grid-cols-2 lg:grid-cols-3";
 
 /**
  * Calm Good Service placeholder — every line in default `LINE_ORDER`,
@@ -243,6 +257,7 @@ type SkeletonProps = {
  */
 export const TubeStatusBoardSkeleton = ({
   lineIds = DEFAULT_STATUS_BOARD_LINE_IDS,
+  compact = false,
 }: SkeletonProps) => (
   <div
     className="flex w-full flex-col gap-(--arrivals-row) text-base"
@@ -252,7 +267,7 @@ export const TubeStatusBoardSkeleton = ({
   >
     <div>
       <StatusSectionTitle>Good Service</StatusSectionTitle>
-      <div className="mt-2 grid grid-cols-2 justify-items-stretch gap-x-4 gap-y-0 md:grid-cols-3 lg:grid-cols-5">
+      <div className={goodServiceGridClass(compact)}>
         {lineIds.map((lineId) => {
           const label = STATUS_LINE_LABELS[lineId] ?? lineId;
 
@@ -291,6 +306,7 @@ export const TubeStatusBoardSkeleton = ({
 export const TubeStatusBoard = ({
   data,
   hideHeader = false,
+  compact = false,
   children,
 }: Props) => {
   const lines = data ?? [];
@@ -314,7 +330,7 @@ export const TubeStatusBoard = ({
       {disruptedLines.length > 0 && (
         <div>
           <StatusSectionTitle>Service Disruptions</StatusSectionTitle>
-          <div className="mt-2 grid grid-cols-1 gap-x-4 gap-y-(--arrivals-row) md:grid-cols-2 lg:grid-cols-3">
+          <div className={disruptionGridClass(compact)}>
             {disruptedLines.map((line) => {
               return (
                 <div
@@ -369,7 +385,7 @@ export const TubeStatusBoard = ({
             </span>
           )}
         </StatusSectionTitle>
-        <div className="mt-2 grid grid-cols-2 justify-items-stretch gap-x-4 gap-y-0 md:grid-cols-3 lg:grid-cols-5">
+        <div className={goodServiceGridClass(compact)}>
           {goodServiceLines.map((line) => {
             return (
               <StatusLineHeader

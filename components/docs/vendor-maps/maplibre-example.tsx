@@ -6,7 +6,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { TransitGeometryBundle } from "@/lib/tfl/geography-types";
 import {
   TRANSIT_GEOMETRY_PUBLIC_ASSETS,
-  CARTO_BASEMAP_CREDIT,
+  OPENFREEMAP_POSITRON_STYLE_URL,
 } from "@/lib/tfl/geography-credits";
 
 /**
@@ -26,28 +26,7 @@ export const MapLibreExample = () => {
 
     const map = new maplibregl.Map({
       container,
-      style: {
-        version: 8,
-        sources: {
-          carto: {
-            type: "raster",
-            tiles: [
-              "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-            ],
-            tileSize: 256,
-            attribution: CARTO_BASEMAP_CREDIT.attribution,
-          },
-        },
-        layers: [
-          {
-            id: "carto",
-            type: "raster",
-            source: "carto",
-            minzoom: 0,
-            maxzoom: 20,
-          },
-        ],
-      },
+      style: OPENFREEMAP_POSITRON_STYLE_URL,
       center: [-0.12, 51.51],
       zoom: 10.2,
       attributionControl: { compact: true },
@@ -129,6 +108,29 @@ export const MapLibreExample = () => {
               "circle-stroke-color": "#111827",
             },
           });
+          map.addLayer({
+            id: `${mode}-stations-label`,
+            type: "symbol",
+            source: `${mode}-stations`,
+            layout: {
+              "text-field": [
+                "coalesce",
+                ["get", "label"],
+                ["get", "name"],
+                "",
+              ],
+              "text-font": ["Noto Sans Regular"],
+              "text-size": 11,
+              "text-offset": [0, 1.15],
+              "text-anchor": "top",
+              "text-optional": true,
+            },
+            paint: {
+              "text-color": "#111827",
+              "text-halo-color": "#ffffff",
+              "text-halo-width": 1.6,
+            },
+          });
         }
         setLoaded(true);
       } catch {
@@ -152,7 +154,7 @@ export const MapLibreExample = () => {
         aria-label="MapLibre GL JS example with TfL transit lines"
       />
       <p className="text-xs text-muted-foreground">
-        MapLibre GL JS · CARTO Positron · No API key required
+        MapLibre GL JS · OpenFreeMap Positron · No API key required
         {loaded && " · Loaded"}
       </p>
     </div>

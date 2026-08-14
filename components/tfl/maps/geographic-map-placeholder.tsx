@@ -5,7 +5,8 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { FeatureCollection } from "geojson";
 import {
-  CARTO_BASEMAP_CREDIT,
+  OPENFREEMAP_BASEMAP_CREDIT,
+  OPENFREEMAP_POSITRON_STYLE_URL,
   OSM_TRANSIT_GEOMETRY_CREDIT,
   TFL_STATION_ENRICHMENT_CREDIT,
   TRANSIT_GEOMETRY_PUBLIC_ASSETS,
@@ -46,28 +47,7 @@ export const GeographicMapPlaceholder = () => {
 
     const map = new maplibregl.Map({
       container,
-      style: {
-        version: 8,
-        sources: {
-          carto: {
-            type: "raster",
-            tiles: [
-              "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-            ],
-            tileSize: 256,
-            attribution: CARTO_BASEMAP_CREDIT.attribution,
-          },
-        },
-        layers: [
-          {
-            id: "carto",
-            type: "raster",
-            source: "carto",
-            minzoom: 0,
-            maxzoom: 20,
-          },
-        ],
-      },
+      style: OPENFREEMAP_POSITRON_STYLE_URL,
       center: LONDON_CENTER,
       zoom: LONDON_ZOOM,
       attributionControl: { compact: true },
@@ -207,7 +187,7 @@ export const GeographicMapPlaceholder = () => {
             )
           </li>
           <li>{TFL_STATION_ENRICHMENT_CREDIT.attribution}</li>
-          <li>{CARTO_BASEMAP_CREDIT.attribution}</li>
+          <li>{OPENFREEMAP_BASEMAP_CREDIT.attribution}</li>
         </ul>
         <p>
           Full declaration:{" "}

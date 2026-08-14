@@ -174,17 +174,23 @@ export default function DocsIntroductionPage() {
             If you do not want to host an app
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            A hosted path is coming for the cases where the deploy is the
-            unwanted part. You will open a URL on this site in a fullscreen
-            browser, pass your TfL key and the board configuration in the query
-            string, and the page will call TfL from the client and keep the
-            component up to date. No Next app, no registry install — a kiosk,
-            a spare monitor, or a tab you leave running.
+            A hosted{" "}
+            <Link
+              href="/board"
+              className="text-foreground underline underline-offset-4"
+            >
+              Board
+            </Link>{" "}
+            is in beta for the cases where the deploy is the unwanted part. You
+            open a URL on this site in a fullscreen browser. Your TfL key and
+            the stop id live in the hash fragment — never sent to our servers —
+            and the page calls TfL from the client and keeps one station’s
+            arrivals plus Tube status up to date. No Next app, no registry
+            install — a kiosk, a spare monitor, or a tab you leave running.
           </p>
           <p className="max-w-prose text-muted-foreground">
-            Until that ships, the self-hosted path above is the one that
-            exists. It is also the one that leaves you with source you can
-            edit.
+            The self-hosted path above still leaves you with source you can
+            edit. Use Board when you only need the look on a screen.
           </p>
         </section>
       </article>

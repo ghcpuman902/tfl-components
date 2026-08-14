@@ -15,12 +15,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  TflApiKeyFieldHint,
+  TflApiKeyObtainLinks,
+  TflApiKeyPortalNote,
+} from "@/components/user-tfl-api-key-copy";
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider";
 import type { UserTflPersistMode } from "@/lib/tfl/user-credentials-storage";
-
-const PORTAL_URL = "https://api-portal.tfl.gov.uk/";
-const PORTAL_PRODUCTS_URL = `${PORTAL_URL}products`;
-const PORTAL_PROFILE_URL = `${PORTAL_URL}profile`;
 
 /**
  * Dialog to paste / replace / clear a visitor TfL API key.
@@ -109,25 +110,8 @@ export const UserTflCredentialsDialog = () => {
             >
               Explorer
             </Link>
-            .{" "}
-            <a
-              href={PORTAL_PRODUCTS_URL}
-              className="text-foreground underline underline-offset-2"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Obtain a free key
-            </a>{" "}
-            (subscribe to 500 Requests per min), then copy it from{" "}
-            <a
-              href={PORTAL_PROFILE_URL}
-              className="text-foreground underline underline-offset-2"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Profile → Show
-            </a>
-            . Stored only in this browser.
+            . <TflApiKeyObtainLinks />.
+            Stored only in this browser.
           </DialogDescription>
         </DialogHeader>
 
@@ -145,11 +129,7 @@ export const UserTflCredentialsDialog = () => {
                 </span>
               ) : null}
             </p>
-            <p className="text-xs text-muted-foreground">
-              On the portal you’ll see two keys (Primary and Secondary); either
-              works. <code className="text-[0.7rem]">app_id</code> has been
-              unused since Jan 2021.
-            </p>
+            <TflApiKeyPortalNote />
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -189,23 +169,7 @@ export const UserTflCredentialsDialog = () => {
                   className="min-w-0 flex-1"
                 />
               </div>
-              <p
-                id={`${fieldId}-hint`}
-                className="text-xs text-muted-foreground"
-              >
-                Copy from{" "}
-                <a
-                  href={PORTAL_PROFILE_URL}
-                  className="underline underline-offset-2"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Profile → Show
-                </a>
-                . Primary or Secondary both work.{" "}
-                <code className="text-[0.7rem]">app_id</code> has been unused
-                since Jan 2021.
-              </p>
+              <TflApiKeyFieldHint id={`${fieldId}-hint`} />
             </div>
 
             <fieldset className="space-y-2">

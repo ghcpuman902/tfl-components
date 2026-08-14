@@ -1,19 +1,19 @@
 # Target information architecture
 
-**Status: FROZEN (Stage 1) + human amendments J1 / J6 / J8.** Derived from [product-architecture.md](./product-architecture.md). Do not reshape to match current file placement without a new decision.
+**Status: FROZEN (Stage 1) + human amendments J1 / J6 / J8 / J9.** Derived from [product-architecture.md](./product-architecture.md). Do not reshape to match current file placement without a new decision.
 
 Transport domains (Tube & rail, Bus, River, Cycle, Roads / traffic, Cable car, …) are **filters / metadata / markers**, not top-level nav trees.
 
-See [ia-migration/DECISIONS.md](./ia-migration/DECISIONS.md) **J6** (nav chrome, 2026-08-10) and **J8** (publish chrome, 2026-08-14).
+See [ia-migration/DECISIONS.md](./ia-migration/DECISIONS.md) **J6** (nav chrome, 2026-08-10), **J8** (publish chrome, 2026-08-14), and **J9** (hosted Board, 2026-08-14).
 
 ---
 
 ## Site chrome (persistent header)
 
-Same header on homepage, docs, Blocks, and Explorer:
+Same header on homepage, docs, Blocks, Explorer, and Board:
 
 ```text
-[Logo → /]  Docs  Components  Blocks  Explorer     [Search]  [GitHub]
+[Logo → /]  Docs  Components  Blocks  Explorer  Board     [Search]  [GitHub]
 ```
 
 | Link | Lands on |
@@ -23,8 +23,9 @@ Same header on homepage, docs, Blocks, and Explorer:
 | Components | `/docs/components` (catalogue) |
 | Blocks | `/blocks` |
 | Explorer | `/docs/explorer` |
+| Board | `/board` (builder). `/board/view` is chromeless — no header or footer. |
 
-**Homepage** stays full-width proof (no sidebar). **Docs** routes use this header plus a compact docs sidebar. **Blocks** use the same header **without** the docs taxonomy sidebar (own section, like shadcn Blocks). **Tools** and **Drafts** are footer links in development only — hidden in production.
+**Homepage** stays full-width proof (no sidebar). **Docs** routes use this header plus a compact docs sidebar. **Blocks** and **Board** (builder) use the same header **without** the docs taxonomy sidebar. **Tools** and **Drafts** are footer links in development only — hidden in production.
 
 ---
 
@@ -57,7 +58,7 @@ Examples of preferred entries: Tube & rail arrivals, Tube & rail status, Bus arr
 
 Super lower-level or guidance leftovers that do not fit Get started or the preferred Components list (e.g. icons). Prefer pure CSS/HTML primitives here as the library grows.
 
-**Blocks, Tools, Drafts** are not permanent docs-sidebar groups. Blocks: top nav. Tools and Drafts: footer / contributor path, development only (J8).
+**Blocks, Tools, Drafts, Board** are not permanent docs-sidebar groups. Blocks and Board: top nav. Tools and Drafts: footer / contributor path, development only (J8). `/board/view` is chromeless (J9).
 
 ---
 

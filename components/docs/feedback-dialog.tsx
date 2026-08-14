@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
-import { usePathname } from "next/navigation";
 import { domToBlob } from "modern-screenshot";
 import {
   BugIcon,
@@ -30,7 +29,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -55,6 +53,7 @@ import {
   buildGitHubPrUrl,
 } from "@/lib/feedback/github";
 import { isAllowedScreenshotType } from "@/lib/feedback/schema";
+import { OPEN_FEEDBACK_EVENT, openFeedbackDialog } from "@/lib/feedback/open";
 import { APP_VERSION_LABEL } from "@/lib/version";
 
 /** Square attach slot — matches Send button height so the row never shifts. */
@@ -240,8 +239,21 @@ const FormField = ({
   </div>
 );
 
+export const FeedbackTrigger = () => (
+  <button
+    type="button"
+    onClick={openFeedbackDialog}
+    className="inline-flex min-h-9 w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+    aria-haspopup="dialog"
+    aria-label="Send feedback"
+  >
+    <MessageSquarePlusIcon className="size-3.5 shrink-0" aria-hidden />
+    Feedback
+  </button>
+);
+
+/** Site-wide feedback dialog. Mount once in the root layout; open with `openFeedbackDialog`. */
 export const FeedbackDialog = () => {
-  const pathname = usePathname();
   const titleId = useId();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("form");
@@ -361,6 +373,16 @@ export const FeedbackDialog = () => {
     },
     [resetState],
   );
+
+  useEffect(() => {
+    const handleOpenFeedback = () => {
+      handleOpenChange(true);
+    };
+    window.addEventListener(OPEN_FEEDBACK_EVENT, handleOpenFeedback);
+    return () => {
+      window.removeEventListener(OPEN_FEEDBACK_EVENT, handleOpenFeedback);
+    };
+  }, [handleOpenChange]);
 
   const handleRemoveScreenshot = () => {
     setScreenshot((prev) => {
@@ -491,26 +513,13 @@ export const FeedbackDialog = () => {
   };
 
   const issueUrl = buildGitHubIssueUrl({
-    pageUrl: pageMeta.url || pathname,
+    pageUrl: pageMeta.url,
     pageTitle: pageMeta.title,
   });
   const prUrl = buildGitHubPrUrl();
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger
-        render={
-          <button
-            type="button"
-            className="inline-flex min-h-9 w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-            aria-label="Send feedback"
-          />
-        }
-      >
-        <MessageSquarePlusIcon className="size-3.5 shrink-0" aria-hidden />
-        Feedback
-      </DialogTrigger>
-
       <DialogContent
         data-feedback-dialog=""
         showCloseButton={false}

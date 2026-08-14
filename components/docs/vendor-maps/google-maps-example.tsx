@@ -35,7 +35,7 @@ export const GoogleMapsExample = () => {
 
 const GoogleMapsLiveMap = ({ apiKey }: { apiKey: string }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
+  const mapRef = useRef<any>(null);
   const [loaded, setLoaded] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -58,7 +58,10 @@ const GoogleMapsLiveMap = ({ apiKey }: { apiKey: string }) => {
           "@googlemaps/js-api-loader"
         );
         setOptions({ key: apiKey, v: "weekly" });
-        const { Map } = await importLibrary("maps");
+        const [{ Map }, { SymbolPath }] = await Promise.all([
+          importLibrary("maps"),
+          importLibrary("core"),
+        ]);
         if (cancelled || !containerRef.current) return;
 
         const map = new Map(containerRef.current, {
@@ -85,11 +88,11 @@ const GoogleMapsLiveMap = ({ apiKey }: { apiKey: string }) => {
           map.data.addGeoJson(bundle.stations);
         }
 
-        map.data.setStyle((feature) => {
+        map.data.setStyle((feature: any) => {
           if (feature.getGeometry()?.getType() === "Point") {
             return {
               icon: {
-                path: google.maps.SymbolPath.CIRCLE,
+                path: SymbolPath.CIRCLE,
                 scale: 3,
                 fillColor: "#ffffff",
                 fillOpacity: 1,
@@ -137,7 +140,7 @@ const GoogleMapsLiveMap = ({ apiKey }: { apiKey: string }) => {
       <p className="text-xs text-muted-foreground" aria-live="polite">
         {errorMessage
           ? `Google Maps error: ${errorMessage}`
-          : `Google Maps JavaScript API · NEXT_PUBLIC_GOOGLE_MAPS_KEY${loaded ? " · Loaded" : ""}`}
+          : `Google Maps JavaScript API`}
       </p>
     </div>
   );

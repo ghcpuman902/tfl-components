@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import maplibregl from "maplibre-gl";
+import maplibregl, { type ExpressionSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { cn } from "@/lib/utils";
 import type {
@@ -10,7 +10,7 @@ import type {
 } from "@/lib/tfl/geography-types";
 import {
   TRANSIT_GEOMETRY_PUBLIC_ASSETS,
-  CARTO_BASEMAP_CREDIT,
+  OPENFREEMAP_POSITRON_STYLE_URL,
   OSM_TRANSIT_GEOMETRY_CREDIT,
   type TransitGeometryMode,
 } from "@/lib/tfl/geography-credits";
@@ -35,7 +35,7 @@ type TflGeographicMapProps = {
   data?: Partial<Record<TransitMode, TransitGeometryBundle>>;
   /** Which transit modes to render. Defaults to all five. */
   modes?: readonly TransitMode[];
-  /** Show station circles. Default true. */
+  /** Show station circles and names. Default true. */
   showStations?: boolean;
   /** Show line tracks. Default true. */
   showLines?: boolean;
@@ -55,8 +55,85 @@ const asFeatureCollection = (
   features: collection.features ?? [],
 });
 
+const LINE_LAYOUT = {
+  "line-join": "round" as const,
+  "line-cap": "round" as const,
+};
+
+const LINE_WIDTH: ExpressionSpecification = [
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  10,
+  2.2,
+  14,
+  3.8,
+  16,
+  5,
+];
+
+const LINE_INNER_WIDTH: ExpressionSpecification = [
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  10,
+  1.4,
+  14,
+  2.6,
+  16,
+  3.4,
+];
+
+const STATION_RADIUS: ExpressionSpecification = [
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  10,
+  2.5,
+  14,
+  4,
+  16,
+  5,
+];
+
+const STATION_LABEL_SIZE: ExpressionSpecification = [
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  10,
+  10,
+  12,
+  10,
+  14,
+  11,
+  16,
+  12,
+];
+
 /**
- * Add sources first, then casings, then coloured cores, then stations.
+ * OpenFreeMap Positron paints OSM railways and neighbourhood names that fight
+ * TfL corridors / station labels. Hide those so unique-track geometry wins.
+ */
+const OSM_LAYERS_TO_HIDE = [
+  "railway_transit",
+  "railway_transit_dashline",
+  "railway_service",
+  "railway_service_dashline",
+  "railway",
+  "railway_dashline",
+  "label_other",
+] as const;
+
+const prepareBasemapForTransit = (map: maplibregl.Map) => {
+  for (const id of OSM_LAYERS_TO_HIDE) {
+    if (map.getLayer(id)) {
+      map.setLayoutProperty(id, "visibility", "none");
+    }
+  }
+};
+
+/**
+ * Add sources first, then casings, then coloured cores, then stations + names.
  * Per-mode casing→core→stations stacks the next mode’s white casing over the
  * previous mode’s colour (Tube/Jubilee was hiding DLR teal in Docklands).
  */
@@ -87,10 +164,11 @@ const addTransitLayers = (
         id: `${mode}-lines-casing`,
         type: "line",
         source: `${mode}-lines`,
+        layout: LINE_LAYOUT,
         paint: {
           "line-color": "#ffffff",
-          "line-width": 5,
-          "line-opacity": 0.85,
+          "line-width": LINE_WIDTH,
+          "line-opacity": 0.92,
         },
       });
     }
@@ -99,6 +177,7 @@ const addTransitLayers = (
         id: `${mode}-lines-core`,
         type: "line",
         source: `${mode}-lines`,
+        layout: LINE_LAYOUT,
         paint: {
           "line-color": [
             "coalesce",
@@ -106,7 +185,7 @@ const addTransitLayers = (
             ["get", "lineColour"],
             "#0019A8",
           ],
-          "line-width": 3,
+          "line-width": LINE_INNER_WIDTH,
         },
       });
     }
@@ -118,11 +197,37 @@ const addTransitLayers = (
         id: `${mode}-stations`,
         type: "circle",
         source: `${mode}-stations`,
+        minzoom: 10,
         paint: {
-          "circle-radius": 3,
+          "circle-radius": STATION_RADIUS,
           "circle-color": "#ffffff",
-          "circle-stroke-width": 1.25,
+          "circle-stroke-width": 1.4,
           "circle-stroke-color": "#111827",
+          "circle-opacity": 0.98,
+        },
+      });
+    }
+    for (const { mode } of bundles) {
+      map.addLayer({
+        id: `${mode}-stations-label`,
+        type: "symbol",
+        source: `${mode}-stations`,
+        minzoom: 10,
+        layout: {
+          "text-field": ["coalesce", ["get", "label"], ["get", "name"], ""],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": STATION_LABEL_SIZE,
+          "text-offset": [0, 1.15],
+          "text-anchor": "top",
+          "text-max-width": 8,
+          "text-allow-overlap": false,
+          "text-optional": true,
+          "text-padding": 2,
+        },
+        paint: {
+          "text-color": "#111827",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1.6,
         },
       });
     }
@@ -130,7 +235,8 @@ const addTransitLayers = (
 };
 
 /**
- * Free geographic map — MapLibre GL JS over CARTO Positron, no API key.
+ * Free geographic map — MapLibre GL JS over OpenFreeMap vector Positron.
+ * No API key. Station names render from the geometry `label` / `name` fields.
  *
  * Renders unique-track OSM transit geometry by default (spine + leftover
  * branches only — not every timetable variant). Fetches from
@@ -207,28 +313,7 @@ export const TflGeographicMap = ({
 
     const map = new maplibregl.Map({
       container,
-      style: {
-        version: 8,
-        sources: {
-          carto: {
-            type: "raster",
-            tiles: [
-              "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-            ],
-            tileSize: 256,
-            attribution: CARTO_BASEMAP_CREDIT.attribution,
-          },
-        },
-        layers: [
-          {
-            id: "carto",
-            type: "raster",
-            source: "carto",
-            minzoom: 0,
-            maxzoom: 20,
-          },
-        ],
-      },
+      style: OPENFREEMAP_POSITRON_STYLE_URL,
       center,
       zoom,
       attributionControl: { compact: true },
@@ -245,6 +330,7 @@ export const TflGeographicMap = ({
 
     map.on("load", async () => {
       try {
+        prepareBasemapForTransit(map);
         const bundles = await loadGeometry();
         if (cancelled) return;
 

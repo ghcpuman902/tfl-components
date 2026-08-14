@@ -16,8 +16,14 @@ export default function NotFoundPage() {
         or go home.
       </p>
       <div className="flex flex-wrap gap-2">
-        <Button render={<Link href="/" />}>Home</Button>
-        <Button render={<Link href="/docs/components" />} variant="outline">
+        <Button nativeButton={false} render={<Link href="/" />}>
+          Home
+        </Button>
+        <Button
+          nativeButton={false}
+          render={<Link href="/docs/components" />}
+          variant="outline"
+        >
           Browse components
         </Button>
       </div>

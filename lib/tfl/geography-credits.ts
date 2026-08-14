@@ -84,12 +84,16 @@ export const TFL_STATION_ENRICHMENT_CREDIT: GeographyCredit = {
   attribution: "© Transport for London · station metadata where present",
 };
 
-export const CARTO_BASEMAP_CREDIT: GeographyCredit = {
-  id: "carto-positron",
-  title: "CARTO Positron basemap",
-  provider: "CARTO · OpenStreetMap contributors",
-  licence: "See CARTO / OSM terms",
-  licenceUrl: "https://carto.com/basemaps/",
-  datasetUrl: "https://www.openstreetmap.org/copyright",
-  attribution: "© CARTO · © OpenStreetMap contributors",
+/** Vector Positron — same OpenFreeMap style ssh.ldn uses instead of CARTO PNG rasters. */
+export const OPENFREEMAP_POSITRON_STYLE_URL =
+  "https://tiles.openfreemap.org/styles/positron" as const;
+
+export const OPENFREEMAP_BASEMAP_CREDIT: GeographyCredit = {
+  id: "openfreemap-positron",
+  title: "OpenFreeMap Positron basemap",
+  provider: "OpenFreeMap · OpenMapTiles · OpenStreetMap contributors",
+  licence: "BSD / ODbL (OSM data)",
+  licenceUrl: "https://openfreemap.org/",
+  datasetUrl: "https://tiles.openfreemap.org/",
+  attribution: "© OpenStreetMap contributors · © OpenFreeMap",
 };

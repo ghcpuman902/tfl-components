@@ -54,11 +54,11 @@ The Next.js app in this repo is the developer environment (docs, demos, Blocks).
 ```bash
 pnpm install
 cp .env.example .env.local
-# fill TFL_APP_KEY from https://api-portal.tfl.gov.uk/ (Products → 500 Requests per min → Profile → Show)
+# fill TFL_APP_KEY from https://api-portal.tfl.gov.uk/ (Products → 500 Requests per min → Profile / Show)
 pnpm dev
 ```
 
-Press `d` for dark mode. Browse via the header (Docs · Components · Blocks · Explorer).
+Press `d` for dark mode. Browse via the header (Docs · Components · Blocks · Explorer · Board).
 
 Frozen Stage 1 IA: [docs/TARGET_ARCHITECTURE.md](./docs/TARGET_ARCHITECTURE.md).
 

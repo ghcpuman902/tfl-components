@@ -60,7 +60,7 @@ Interactive demos already run in the browser but **delegate** network to Server 
 2. Persist in the browser (localStorage default; optional session-only) without teaching bad Open Code habits.
 3. When set, **eligible client demos** call TfL with the user’s key (quota on their subscription). No silent fallback to the site key on failure.
 4. Keep published registry components on **data-as-props**; do not bake credentials into installable source.
-5. Keys **must never** pass through our origin (Server Actions, route handlers, logs, analytics, URLs, rendered HTML, diagnostics, error reporting).
+5. Keys **must never** pass through our origin (Server Actions, route handlers, logs, analytics, query strings, rendered HTML, diagnostics, error reporting). **J9 exception:** the hosted Board may carry the key in the **hash fragment** (`/board/view#key=…`) — hashes are not sent to the server — and must keep it in memory only (never localStorage, never query).
 
 ### Non-goals (v1)
 
@@ -96,7 +96,7 @@ Collapsed offcanvas: same control remains in the drawer footer.
 - Label: **Add TfL API key**.
 - Opens a small dialog (pattern: `FeedbackDialog` — Dialog, not an always-expanded form).
 - Copy (short):
-  - Subscribe to **500 Requests per min** on [api-portal.tfl.gov.uk](https://api-portal.tfl.gov.uk/), then Profile → Show.
+  - Subscribe to **500 Requests per min** on [api-portal.tfl.gov.uk](https://api-portal.tfl.gov.uk/), then Profile / Show.
   - Stored **only in this browser**; never sent to tfl.manglekuo.com.
   - Used for **live demos that run in your browser**; homepage and cached boards still use the site key.
 - Single password-style field: **TfL API key**.
@@ -118,7 +118,7 @@ Migrated demos show a small pill: **Shared demo data** (site key / Server Action
 ### Discoverability
 
 - First-visit: no modal interrupt. Rely on sidebar footer + a one-line callout on interactive demos.
-- J8 primary nav stays Docs · Components · Blocks · Explorer; the key control is sidebar chrome, not a nav item.
+- J8 / J9 primary nav stays Docs · Components · Blocks · Explorer · Board; the docs-sidebar key control is chrome, not a nav item. Board keys travel in the URL hash, not that store.
 
 ### Hidden tabs
 

@@ -182,8 +182,8 @@ export const ExplorerShell = ({ state, children }: ExplorerShellProps) => {
       </div>
 
       <p className="text-sm text-pretty text-muted-foreground">
-        Cached examples load for free. Search and Locate use your TfL API key —
-        typing never spends quota.
+        Cached examples load for free. Search and Locate use your TfL API key.
+        Typing in the box does not spend quota.
       </p>
 
       {children}

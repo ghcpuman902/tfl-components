@@ -17,7 +17,7 @@ const STATUS_HINTS: { re: RegExp; kind: TranslatedTflErrorKind; message: string 
       re: /\b401\b|unauthoris|unauthoriz|forbidden|\b403\b|invalid.*(key|app_key)|app_key/i,
       kind: "invalid-key",
       message:
-        "TfL rejected this API key. Check Profile → Show on the API portal, or regenerate the key.",
+        "TfL rejected this API key. Check Profile / Show on the API portal, or regenerate the key.",
     },
     {
       re: /\b429\b|rate.?limit|too many requests|quota/i,

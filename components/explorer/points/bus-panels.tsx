@@ -53,8 +53,7 @@ export const PointsBusFind = ({
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground text-pretty">
-        Cached example within {radiusMeters}m of {label}. Search and Locate
-        use your TfL API key.
+        Cached example within {radiusMeters}m of {label}.
       </p>
       <ExplorerSplit
         lead={

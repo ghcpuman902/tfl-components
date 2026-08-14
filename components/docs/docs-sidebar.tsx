@@ -14,7 +14,7 @@ import { APP_VERSION_LABEL } from "@/lib/version";
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
 import { UNDERGROUND_LINE_COLOURS } from "@/lib/tfl/brand-colours";
 import type { RoundelPreset } from "@/lib/tfl/roundel-presets";
-import { FeedbackDialog } from "@/components/docs/feedback-dialog";
+import { FeedbackTrigger } from "@/components/docs/feedback-dialog";
 import { UserTflCredentialsTrigger } from "@/components/user-tfl-credentials-trigger";
 import {
   Sidebar,
@@ -240,7 +240,7 @@ export const DocsSidebar = () => {
         <UserTflCredentialsTrigger />
         <div className="flex items-center gap-1">
           <div className="min-w-0 flex-1">
-            <FeedbackDialog />
+            <FeedbackTrigger />
           </div>
           <a
             href={`https://github.com/ghcpuman902/tfl-components/releases/tag/${APP_VERSION_LABEL}`}

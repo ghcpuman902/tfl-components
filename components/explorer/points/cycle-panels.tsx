@@ -46,8 +46,7 @@ export const PointsCycleFind = ({
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground text-pretty">
-        Cached central-London example near {label} ({radiusMeters}m). Search
-        and Locate use your TfL API key.
+        Cached central-London example near {label}, {radiusMeters}m.
       </p>
       <ExplorerSplit
         lead={

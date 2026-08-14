@@ -1,5 +1,7 @@
 import { ThemeProvider } from "@/components/theme-provider";
 import { FontPreferenceProvider } from "@/components/font-preference-provider";
+import { FeedbackDialog } from "@/components/docs/feedback-dialog";
+import { UserTflCredentialsDialog } from "@/components/user-tfl-credentials-dialog";
 import { UserTflCredentialsProvider } from "@/components/user-tfl-credentials-provider";
 import { CodeCopyDelegator } from "@/components/docs/code-copy-delegator";
 import { AppChrome } from "@/components/docs/app-chrome";
@@ -106,6 +108,8 @@ export default function RootLayout({
               <CodeCopyDelegator />
               <TooltipProvider>
                 <AppChrome footer={<SiteFooter />}>{children}</AppChrome>
+                <UserTflCredentialsDialog />
+                <FeedbackDialog />
                 <Toaster />
               </TooltipProvider>
             </UserTflCredentialsProvider>

@@ -104,7 +104,8 @@ export default function MapsGeographicPage() {
             <MapGeographicDemo />
           </Suspense>
           <p className="max-w-prose text-sm text-muted-foreground">
-            MapLibre GL JS on CARTO Positron. No API key.
+            MapLibre GL JS on OpenFreeMap Positron (vector). No API key. Station
+            names appear as you zoom.
           </p>
         </section>
 
@@ -405,8 +406,8 @@ export default function MapsGeographicPage() {
             <ExternalTextLink href="https://tfl.gov.uk/info-for/open-data-users/">
               TfL Open Data
             </ExternalTextLink>
-            . The Positron basemap is © CARTO and © OpenStreetMap contributors.
-            The full declaration is{" "}
+            . The Positron basemap is © OpenStreetMap contributors and ©
+            OpenFreeMap. The full declaration is{" "}
             <code className="text-xs">data/geography/ORIGIN.md</code>.
           </p>
         </section>

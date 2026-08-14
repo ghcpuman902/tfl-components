@@ -32,7 +32,7 @@ import {
 export const metadata: Metadata = {
   title: "Explorer",
   description:
-    "Developer-facing TfL information model — Points and Lines, with cached examples and keyed live search.",
+    "Open a Point or Line from a cached example, then search live with your own TfL key.",
 };
 
 type PageProps = {
@@ -169,10 +169,8 @@ export default function DocsExplorerPage({ searchParams }: PageProps) {
 
         <section className="space-y-2">
           <p className="max-w-prose text-muted-foreground text-pretty">
-            Discover TfL identities and relationships — Points and Lines —
-            without mirroring the Unified API endpoint taxonomy. The first
-            cached example opens in the inspector; Search, Locate, and other
-            live previews use your own TfL API key.
+            Points are stations, stops, and docks. Lines are the routes that
+            serve them. Click one and the inspector opens on a cached example.
           </p>
         </section>
 

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { cn } from "@/lib/utils";
-import { CARTO_BASEMAP_CREDIT } from "@/lib/tfl/geography-credits";
+import { OPENFREEMAP_POSITRON_STYLE_URL } from "@/lib/tfl/geography-credits";
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise";
 
 const LONDON_CENTER: [number, number] = [-0.128, 51.508];
@@ -82,28 +82,7 @@ export const ExplorerPointMap = ({
 
     const map = new maplibregl.Map({
       container,
-      style: {
-        version: 8,
-        sources: {
-          carto: {
-            type: "raster",
-            tiles: [
-              "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-            ],
-            tileSize: 256,
-            attribution: CARTO_BASEMAP_CREDIT.attribution,
-          },
-        },
-        layers: [
-          {
-            id: "carto",
-            type: "raster",
-            source: "carto",
-            minzoom: 0,
-            maxzoom: 20,
-          },
-        ],
-      },
+      style: OPENFREEMAP_POSITRON_STYLE_URL,
       center: LONDON_CENTER,
       zoom: FALLBACK_ZOOM,
       attributionControl: { compact: true },

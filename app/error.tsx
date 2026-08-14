@@ -28,7 +28,11 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
         <Button type="button" onClick={reset}>
           Try again
         </Button>
-        <Button render={<Link href="/docs/components" />} variant="outline">
+        <Button
+          nativeButton={false}
+          render={<Link href="/docs/components" />}
+          variant="outline"
+        >
           Browse components
         </Button>
       </div>

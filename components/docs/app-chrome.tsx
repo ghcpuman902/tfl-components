@@ -21,12 +21,19 @@ const isDocsPath = (pathname: string) =>
   pathname === "/explore" ||
   pathname.startsWith("/explore/");
 
+const isChromelessPath = (pathname: string) =>
+  pathname === "/board/view" || pathname.startsWith("/board/view/");
+
 /** Header-only shell — safe for Suspense fallback (no URL hooks). */
 const AppChromeShell = ({
   pathname,
   children,
   footer,
 }: AppChromeProps & { pathname: string }) => {
+  if (isChromelessPath(pathname)) {
+    return <main className="min-h-dvh w-full">{children}</main>;
+  }
+
   const showDocsSidebar = isDocsPath(pathname);
 
   if (!showDocsSidebar) {
@@ -88,7 +95,7 @@ const AppChromeWithPathname = ({ children, footer }: AppChromeProps) => {
   );
 };
 
-/** Homepage + Blocks/Tools: header only. Docs: header + sidebar. */
+/** Homepage + Blocks/Board builder: header only. Docs: header + sidebar. `/board/view`: chromeless. */
 export const AppChrome = ({ children, footer }: AppChromeProps) => (
   <>
     <VisitBeacon />
