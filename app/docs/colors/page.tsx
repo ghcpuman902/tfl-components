@@ -120,10 +120,10 @@ export default function FoundationsColoursPage() {
               Install via the shadcn registry, or copy the CSS variable layers
               into <code className="text-xs">globals.css</code>. Boards and{" "}
               <Link
-                href="/docs/line-badge"
+                href="/docs/line-chip"
                 className="text-foreground underline underline-offset-4"
               >
-                Line Badge
+                Line chip
               </Link>{" "}
               also pull <code className="text-xs">tfl-colours</code>{" "}
               transitively.

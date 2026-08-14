@@ -1,6 +1,11 @@
 import { ColourTokenPins } from "@/components/docs/demos/colour-token-pins";
+import { DocsResizeFrame } from "@/components/docs/docs-resize-frame";
 import { LineChipWall } from "@/components/docs/demos/line-chip-wall";
-import { LineColorBar } from "@/components/tfl/brand/line-badge";
+import {
+  LineBadge,
+  LineBadgeGroup,
+  LineColorBar,
+} from "@/components/tfl/brand/line-badge";
 import { CABLE_CAR_MAP_COLOUR } from "@/lib/tfl/brand-colours";
 import {
   getLineColourBarMode,
@@ -14,7 +19,26 @@ const DEMO_LINES = LINE_COLOUR_TOKENS.map((token) => ({
   mapColor: token.id === "cable-car" ? CABLE_CAR_MAP_COLOUR.hex : undefined,
 }));
 
-/** Line Badge primitive preview — chips and bars that consume colour tokens. */
+/** Real stations where distinct brand colours share platforms / track. */
+const SHARED_TRACK_EXAMPLES = [
+  {
+    station: "Great Portland Street",
+    note: "Circle · H&C · Metropolitan",
+    lineIds: ["circle", "hammersmith-city", "metropolitan"] as const,
+  },
+  {
+    station: "Aldgate East",
+    note: "District · H&C",
+    lineIds: ["district", "hammersmith-city"] as const,
+  },
+  {
+    station: "South Kensington",
+    note: "Circle · District",
+    lineIds: ["circle", "district"] as const,
+  },
+] as const;
+
+/** Line chip preview — filled chips, shared-track group, colour bars. */
 export default function LineBadgeDemo() {
   return (
     <div className="space-y-8">
@@ -34,6 +58,58 @@ export default function LineBadgeDemo() {
           <code className="text-xs">color</code> override.
         </p>
         <LineChipWall />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">Smart shrink</h2>
+        <p className="max-w-prose text-sm text-muted-foreground">
+          Single-line chips opt in with{" "}
+          <code className="text-xs">fit=&quot;shrink&quot;</code>. Board headers
+          live on{" "}
+          <a
+            href="/docs/line-title"
+            className="underline underline-offset-4 hover:text-foreground"
+          >
+            Line title
+          </a>
+          .
+        </p>
+        <DocsResizeFrame
+          defaultWidth={280}
+          minWidth={72}
+          maxWidth={420}
+          captionSuffix=" · resize to step chip labels"
+          className="space-y-3 p-3"
+        >
+          <LineBadge lineId="hammersmith-city" fit="shrink" />
+        </DocsResizeFrame>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">Shared-track groups</h2>
+        <p className="max-w-prose text-sm text-muted-foreground">
+          Prefer ≤3 lines. Resize to step full → H&C → short codes.
+        </p>
+        <DocsResizeFrame
+          defaultWidth={360}
+          minWidth={72}
+          maxWidth={520}
+          captionSuffix=" · resize"
+          className="space-y-4 p-3"
+        >
+          {SHARED_TRACK_EXAMPLES.map((example) => (
+            <div key={example.station} className="space-y-1">
+              <p className="text-xs text-muted-foreground">
+                {example.station}
+                <span className="text-muted-foreground/80">
+                  {" "}
+                  — {example.note}
+                </span>
+              </p>
+              <LineBadgeGroup lineIds={example.lineIds} />
+            </div>
+          ))}
+        </DocsResizeFrame>
       </section>
 
       <section className="space-y-3">

@@ -1,4 +1,4 @@
-import { SeverityIconTable } from "@/components/docs/demos/severity-icon-table"
+import { StatusAnnouncementsExample } from "@/components/docs/demos/status-announcements-example"
 
 ## Get line status
 
@@ -30,6 +30,8 @@ export default function Page({ data }) {
 }
 ```
 
+Good Service titles auto-abbreviate at narrow grid widths (full → middle → 3-letter code) via [`Line title`](/docs/line-title). Tier data lives in `lib/tfl/line-names.ts`.
+
 ## Variations
 
 ### Underground and Elizabeth only
@@ -51,21 +53,35 @@ export default async function Page() {
 
 Pass `hideHeader` when the parent already has a title.
 
-### Raw TfL copy
+## Announcements
 
-By default the board strips mode prefixes that repeat the line title (`LONDON TRAMS:`, `LONDON OVERGROUND:`, `BAKERLOO LINE:`). Pass `rawReason` to keep the original string.
+TfL returns an array of `lineStatuses` per line. A single story can appear two or three times with different severity codes, because the code names the *kind* of status (Suspended, Special Service, Planned Closure), not the incident. The board shows what a passenger expects: what is happening now, once.
+
+By default it:
+
+1. Keeps rows TfL marks as valid now (`validityPeriods[].isNow`). Rows with no validity window are live and always kept. Future planned work is the Week ahead Block's job — a line whose only announcement is future reads as Good Service.
+2. Collapses equal paragraphs, or one paragraph that fully contains another, into the longer text painted at the worse severity.
+3. Strips mode / line prefixes that repeat the card title (`LONDON TRAMS:`, `BAKERLOO LINE:`).
+
+Each disruption shows a gray platform-style severity chip (`Severe Delays`, `Part Closure`, …) inline at the start of TfL's paragraph.
+
+Each step is opt-out:
 
 ```tsx
+{/* Keep future windows too */}
+<TubeStatusBoard data={data} currentOnly={false} />
+
+{/* Show every TfL paragraph even when one contains another */}
+<TubeStatusBoard data={data} dedupe={false} />
+
+{/* Keep LONDON TRAMS: prefixes */}
 <TubeStatusBoard data={data} rawReason />
+
+{/* TfL's array verbatim */}
+<TubeStatusBoard data={data} currentOnly={false} dedupe={false} rawReason />
 ```
 
-## Severity icons
-
-The disruption card keeps TfL's paragraph. Severity is a cap-height icon inline at the start of that paragraph, so wrapped lines run underneath it.
-
-`CalendarClock` still wins for scheduled engineering (`Planned Closure`, or `disruption.category` of `PlannedWork`). Other markers use the candidates in the table.
-
-<SeverityIconTable />
+<StatusAnnouncementsExample />
 
 ## Props
 
@@ -73,7 +89,10 @@ The disruption card keeps TfL's paragraph. Severity is a cap-height icon inline 
 |------|------|-------------|
 | `data` | `readonly StatusLine[]` | Rows from `tfl.line.getStatus()`. Missing or `undefined` renders empty. |
 | `hideHeader` | `boolean` | Omit the board header. |
-| `rawReason` | `boolean` | Keep TfL's unstripped `reason` string. |
+| `compact` | `boolean` | One column — for a narrow side slot. |
+| `currentOnly` | `boolean` | Keep only TfL `isNow` announcements (default `true`). |
+| `dedupe` | `boolean` | Collapse equal or contained paragraphs (default `true`). |
+| `rawReason` | `boolean` | Keep TfL's unstripped `reason` string (default `false`). |
 | `children` | `ReactNode` | Optional slot below the status list. |
 
 Official colours come from `tfl-ts` CSS helpers inside the board. Fixtures can show severe delays without waiting for a live incident.

@@ -1,0 +1,69 @@
+## Purpose
+
+Board **group headers** — coloured type that steps full → middle (H&C / W&C)
+→ 3-letter code as width shrinks. Width steps use CSS `@container/line-name`
+queries (same family as [Platform chip](/docs/platform-chip)), not JS measuring
+like [Station name labels](/docs/station-name-labels).
+
+This is **not** a filled chip. For labelling chips, shared-track chip rails,
+and colour bars, see [Line chip](/docs/line-chip).
+
+Prefer abbreviation before wrapping; short codes are last resort. Curated
+tiers live in `lib/tfl/line-names.ts`.
+
+Ships inside the [Line chip](/docs/line-chip) registry package today
+(`line-badge.json` — packaging name, not the UI role).
+
+## Installation
+
+```bash
+pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/line-badge.json
+```
+
+## Render
+
+```tsx
+import { LineName } from "@/components/tfl/brand/line-name"
+
+export default function Header() {
+  return (
+    <>
+      <LineName lineId="hammersmith-city" />
+      <LineName
+        lineIds={["circle", "hammersmith-city", "metropolitan"]}
+        group
+      />
+    </>
+  )
+}
+```
+
+Shared-track **board** headers stack equal-width underlines under one
+`LineName`. Shared-track **chips** (vertical colour rail) are on
+[Line chip](/docs/line-chip).
+
+## Width steps
+
+The label root is `@container/line-name` and fills its parent. Constrain the
+parent (grid cell, resizable frame) so the queries can fire.
+
+| Mode | Ladder |
+|------|--------|
+| Default (status headers) | Full → middle → short — one line only |
+| `wrap` | Full → middle → optional 2-line → short (chips; prefer [Line chip](/docs/line-chip)) |
+| `lineIds` / `group` | Wider breakpoints; short codes join as `CIR/HAC/MET` |
+
+`FindableText` keeps Ctrl/Cmd+F and copy on the full canonical name when an
+abbreviated tier is painted.
+
+## Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `lineId` | `string` | Single line id. Mutually exclusive with `lineIds`. |
+| `name` | `string` | Fallback / override when the id is unknown. |
+| `lineIds` | `string[]` | Shared-track group (e.g. Circle + H&C + Met). |
+| `names` | `string[]` | Optional per-id overrides aligned with `lineIds`. |
+| `wrap` | `boolean` | Allow a 2-line form after middle fails. |
+| `group` | `boolean` | Wider breakpoints; forced when `lineIds` is set. |
+| `className` | `string` | Optional class merge. |

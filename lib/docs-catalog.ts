@@ -174,6 +174,9 @@ const SLUG_ALIASES: Record<string, string> = {
   "tube-status-board": "tube-rail-status",
   "station-name": "station-name-labels",
   "station-labels": "station-name-labels",
+  "line-name": "line-title",
+  "line-name-labels": "line-title",
+  "line-badge": "line-chip",
   colors: "colours",
 };
 
@@ -186,6 +189,8 @@ const CONTENT_ASSET_SLUGS: Record<string, string> = {
   "tube-rail-status": "tube-status-board",
   "bus-arrivals": "bus-arrivals-board",
   "station-name-labels": "station-name",
+  "line-title": "line-name",
+  "line-chip": "line-badge",
 };
 
 export const DOCS_ENTRIES: readonly DocsEntry[] = [
@@ -312,7 +317,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryName: "rail-arrivals-board",
     registryUrl: `${REGISTRY_BASE}/rail-arrivals-board.json`,
     layer: "data-aware",
-    builtWith: ["platform-chip", "station-name-labels", "line-badge"],
+    builtWith: ["platform-chip", "station-name-labels", "line-chip"],
     usesFoundations: ["colours", "tfl-roundel"],
   },
   {
@@ -330,12 +335,11 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryName: "tube-status-board",
     registryUrl: `${REGISTRY_BASE}/tube-status-board.json`,
     layer: "data-aware",
-    builtWith: ["line-badge"],
+    builtWith: ["line-title", "line-chip"],
     usesFoundations: ["colours", "tfl-roundel"],
   },
   {
-    slug: "bus-arrivals",
-    title: "Bus Arrivals",
+    slug: "bus-arrivals",    title: "Bus Arrivals",
     description:
       "Departures at a bus stop. Flat by default, or grouped by route.",
     group: "interfaces",
@@ -414,7 +418,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   },
   {
     slug: "line-strip",
-    title: "Simple Line strip",
+    title: "Simple line strip",
     description:
       "A line diagram from route data: colour, labels, and closures already applied.",
     group: "interfaces",
@@ -425,7 +429,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryName: "line-strip",
     registryUrl: `${REGISTRY_BASE}/line-strip.json`,
     layer: "data-aware",
-    builtWith: ["branch-strip", "station-name-labels", "line-badge"],
+    builtWith: ["branch-strip", "station-name-labels", "line-chip"],
     usesFoundations: ["colours"],
   },
   {
@@ -485,18 +489,34 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     layer: "primitive",
   },
   {
-    slug: "line-badge",
-    title: "Line Badge",
+    slug: "line-title",
+    title: "Line title",
+    description:
+      "Board group headers that step full → H&C / W&C → 3-letter codes as width shrinks.",
+    group: "primitives",
+    kind: "component",
+    href: "/docs/line-title",
+    sidebarSection: "components",
+    sidebarOrder: 135,
+    registryName: "line-badge",
+    registryUrl: `${REGISTRY_BASE}/line-badge.json`,
+    layer: "primitive",
+    usesFoundations: ["colours"],
+  },
+  {
+    slug: "line-chip",
+    title: "Line chip",
     description:
       "Filled chips and colour bars that paint official line colours from Colours tokens.",
     group: "primitives",
     kind: "component",
-    href: "/docs/line-badge",
+    href: "/docs/line-chip",
     sidebarSection: "components",
     sidebarOrder: 140,
     registryName: "line-badge",
     registryUrl: `${REGISTRY_BASE}/line-badge.json`,
     layer: "primitive",
+    builtWith: ["line-title"],
     usesFoundations: ["colours"],
   },
 
@@ -577,7 +597,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     href: "/blocks/week-ahead",
     sidebarSection: "hidden",
     sidebarOrder: 0,
-    builtWith: ["line-strip", "branch-strip", "station-name-labels", "line-badge"],
+    builtWith: ["line-strip", "branch-strip", "station-name-labels", "line-chip"],
     usesFoundations: ["colours"],
   },
   {

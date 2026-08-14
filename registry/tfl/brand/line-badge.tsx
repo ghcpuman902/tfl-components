@@ -1,5 +1,11 @@
 import type { CSSProperties } from "react";
 import { getLineAriaLabel } from "tfl-ts";
+import { LineName } from "@/components/tfl/brand/line-name";
+import { TFL_BLUE } from "@/lib/tfl/brand-colours";
+import {
+  getLineNameTiers,
+  joinLineNames,
+} from "@/lib/tfl/line-names";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -20,6 +26,11 @@ type LineBadgeProps = {
    * (e.g. Cable Car map red). Sets `--line-raw` inline.
    */
   color?: string;
+  /**
+   * `clip` (default) — paint the full name, let the parent clip.
+   * `shrink` — step full → middle → short via `LineName` (chips may wrap).
+   */
+  fit?: "clip" | "shrink";
 };
 
 /** Optional `--line-raw` override for lines outside the token palette. */
@@ -66,23 +77,34 @@ export const LineBadge = ({
   className,
   variant = "chip",
   color,
+  fit = "clip",
 }: LineBadgeProps) => {
-  const label = name ?? lineId;
+  const label = name ?? getLineNameTiers(lineId).full;
   const ariaLabel =
     lineStatuses && lineStatuses.length > 0
       ? getLineAriaLabel(label, lineStatuses)
       : `${label} line`;
   const style = lineRawStyle(color);
+  const paint =
+    fit === "shrink" ? (
+      <LineName lineId={lineId} name={name ?? label} wrap />
+    ) : (
+      label
+    );
 
   if (variant === "text") {
     return (
       <span
         data-line={lineId}
-        className={cn("font-semibold text-[var(--line-color)]", className)}
+        className={cn(
+          "font-semibold text-[var(--line-color)]",
+          fit === "shrink" && "inline-block w-full min-w-0",
+          className,
+        )}
         style={style}
         aria-label={ariaLabel}
       >
-        {label}
+        {paint}
       </span>
     );
   }
@@ -92,13 +114,139 @@ export const LineBadge = ({
       data-line={lineId}
       className={cn(
         "inline-flex items-center bg-[var(--line-color)] px-2 py-0.5 text-xs font-bold text-[var(--line-ink)] tabular-nums",
+        fit === "shrink" && "w-full min-w-0 max-w-full",
         className,
       )}
       style={{ border: "var(--line-border, none)", ...style }}
       aria-label={ariaLabel}
       role="img"
     >
-      {label}
+      {paint}
+    </span>
+  );
+};
+
+export type LineBadgeGroupAlign = "left" | "right" | "center";
+/** `auto` = shrink-wrap label (side fill). `under` = full-width floating label. */
+export type LineBadgeGroupStripes = "auto" | "under";
+
+export type LineBadgeGroupProps = {
+  /** Line ids to paint as one shared-track label. Prefer ≤3. */
+  lineIds: readonly string[];
+  /** Optional per-id name overrides aligned with `lineIds`. */
+  names?: readonly string[];
+  className?: string;
+  /**
+   * Text alignment. Also inferred from `className` (`text-left` /
+   * `text-right` / `text-center`) when omitted. Default `left`.
+   */
+  align?: LineBadgeGroupAlign;
+  /**
+   * `auto` (default) — shrink-wrap the TfL blue label so stripes fill the side.
+   * `under` — full-width text on the stripe field, no blue plate.
+   */
+  stripes?: LineBadgeGroupStripes;
+};
+
+const parseAlignFromClassName = (
+  className: string | undefined,
+): LineBadgeGroupAlign | undefined => {
+  if (!className) return undefined;
+  if (/(?:^|\s)(?:text-center|justify-center)(?:\s|$)/.test(className)) {
+    return "center";
+  }
+  if (/(?:^|\s)(?:text-right|justify-end)(?:\s|$)/.test(className)) {
+    return "right";
+  }
+  if (/(?:^|\s)(?:text-left|justify-start)(?:\s|$)/.test(className)) {
+    return "left";
+  }
+  return undefined;
+};
+
+/**
+ * Shared-track chip — pure CSS.
+ *
+ * Full-bleed vertical colour stack behind. TfL blue label floats on top and
+ * shrink-wraps (`w-fit`) so stripes fill the open side (left→right tip,
+ * right→left tip; center→both). When the name would cover the chip, a thin
+ * `0.25rem` tip stays on the open side(s). Abbreviation steps against the
+ * plate budget. Ladder: full → middle → short (no wrap). When too narrow
+ * for a plate, the blue fill drops so stripes show through.
+ */
+export const LineBadgeGroup = ({
+  lineIds,
+  names,
+  className,
+  align: alignProp,
+  stripes = "auto",
+}: LineBadgeGroupProps) => {
+  const fullNames = lineIds.map((id, index) =>
+    getLineNameTiers(id, names?.[index]).full,
+  );
+  const ariaLabel = joinLineNames(fullNames);
+  const ids = lineIds.length > 0 ? lineIds : ["underground"];
+  const align =
+    alignProp ?? parseAlignFromClassName(className) ?? "left";
+  const forceUnder = stripes === "under";
+  const noPlate = stripes === "under";
+
+  return (
+    <span
+      className={cn(
+        // Chip size for the stripe-tip calc (`100cqi` below).
+        "@container/chip relative inline-flex w-full min-w-0 max-w-full items-center overflow-hidden text-xs font-bold tabular-nums",
+        className,
+      )}
+      aria-label={ariaLabel}
+      role="img"
+    >
+      <span className="absolute inset-0 flex flex-col" aria-hidden>
+        {ids.map((id) => (
+          <span
+            key={id}
+            data-line={id}
+            className="min-h-0 min-w-0 flex-1 bg-[var(--line-color)]"
+          />
+        ))}
+      </span>
+
+      {/* Full-width measure box — plate packs to the aligned edge. */}
+      <span
+        className={cn(
+          "@container/line-name relative z-10 flex w-full min-w-0",
+          align === "right" && "justify-end",
+          align === "center" && "justify-center",
+        )}
+      >
+        <span
+          className={cn(
+            "px-2 leading-5 text-white",
+            // Cap long names so a tip of stripe stays on the open side(s).
+            forceUnder
+              ? "w-full bg-transparent"
+              : "w-fit max-w-[calc(100cqi-0.25rem)] bg-[var(--line-group-plate)]",
+            align === "center" && "text-center",
+            align === "right" && "text-right",
+            align === "left" && "text-left",
+            !noPlate &&
+              // Too tight for a plate — drop blue fill instead of wrapping.
+              "@max-[10rem]/line-name:bg-transparent @max-[10rem]/line-name:px-1",
+          )}
+          style={
+            noPlate
+              ? undefined
+              : ({ "--line-group-plate": TFL_BLUE } as CSSProperties)
+          }
+        >
+          <LineName
+            lineIds={lineIds}
+            names={names}
+            group
+            establishContainer={false}
+          />
+        </span>
+      </span>
     </span>
   );
 };

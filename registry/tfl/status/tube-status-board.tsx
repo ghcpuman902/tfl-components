@@ -1,53 +1,33 @@
 import { type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import {
-  getSeverityClasses,
   isNormalService,
   hasNightService,
   LINE_ORDER,
 } from "tfl-ts";
-import {
-  Ban,
-  Bus,
-  CalendarClock,
-  CircleCheck,
-  CircleOff,
-  CirclePause,
-  CircleX,
-  Clock,
-  ExternalLink,
-  Gauge,
-  Info,
-  LogOut,
-  Moon,
-  OctagonPause,
-  Package,
-  PersonStanding,
-  RouteOff,
-  Split,
-  TrainFrontTunnel,
-  TriangleAlert,
-  TrendingDown,
-} from "lucide-react";
+import { ExternalLink, Package, TrainFrontTunnel } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text";
 import { LineColorBar } from "@/components/tfl/brand/line-badge";
+import { LineName } from "@/components/tfl/brand/line-name";
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
+import { getLineNameTiers } from "@/lib/tfl/line-names";
 import type { StatusLine } from "@/lib/tfl/status-types";
 import {
-  getDisruptionStatusIconName,
-  stripStatusReason,
-  type DisruptionStatus,
+  prepareLineAnnouncements,
+  type LineAnnouncement,
 } from "@/lib/tfl/status-reason";
 
 export type { StatusLine } from "@/lib/tfl/status-types";
 export {
-  getDisruptionStatusIconName,
+  isCurrentAnnouncement,
   isScheduledEngineeringWork,
+  prepareLineAnnouncements,
   stripStatusReason,
 } from "@/lib/tfl/status-reason";
 export type {
   DisruptionStatus,
-  DisruptionStatusIconName,
+  LineAnnouncement,
 } from "@/lib/tfl/status-reason";
 
 type Props = {
@@ -59,35 +39,22 @@ type Props = {
   /** One column — for a narrow side slot. */
   compact?: boolean;
   /**
+   * Keep only announcements TfL marks as valid now (`validityPeriods[].isNow`).
+   * Rows with no validity window are live and always kept. Default true.
+   * Set `currentOnly={false} dedupe={false} rawReason` for TfL's array verbatim.
+   */
+  currentOnly?: boolean;
+  /**
+   * Collapse equal or fully contained announcement paragraphs into one,
+   * painted at the worse severity. Default true.
+   */
+  dedupe?: boolean;
+  /**
    * Keep TfL's raw `reason` string, including mode prefixes such as
    * `LONDON TRAMS:`. Default strips those prefixes.
    */
   rawReason?: boolean;
 };
-
-const DISRUPTION_STATUS_ICONS = {
-  Ban,
-  Bus,
-  CalendarClock,
-  CircleCheck,
-  CircleOff,
-  CirclePause,
-  CircleX,
-  Clock,
-  Gauge,
-  Info,
-  LogOut,
-  Moon,
-  OctagonPause,
-  PersonStanding,
-  RouteOff,
-  Split,
-  TriangleAlert,
-  TrendingDown,
-} as const;
-
-export const getDisruptionStatusIcon = (status: DisruptionStatus) =>
-  DISRUPTION_STATUS_ICONS[getDisruptionStatusIconName(status)];
 
 /**
  * Modes on TfL’s Tube & Rail status surface (Cable Car is listed separately).
@@ -128,29 +95,6 @@ export const DEFAULT_STATUS_LINE_IDS = [
   "waterloo-city",
 ] as const;
 
-const STATUS_LINE_LABELS: Record<string, string> = {
-  bakerloo: "Bakerloo",
-  central: "Central",
-  circle: "Circle",
-  district: "District",
-  elizabeth: "Elizabeth line",
-  "hammersmith-city": "Hammersmith & City",
-  jubilee: "Jubilee",
-  metropolitan: "Metropolitan",
-  northern: "Northern",
-  piccadilly: "Piccadilly",
-  victoria: "Victoria",
-  "waterloo-city": "Waterloo & City",
-  dlr: "DLR",
-  tram: "Tram",
-  liberty: "Liberty",
-  lioness: "Lioness",
-  mildmay: "Mildmay",
-  suffragette: "Suffragette",
-  weaver: "Weaver",
-  windrush: "Windrush",
-};
-
 const OVERGROUND_LINE_IDS = new Set([
   "liberty",
   "lioness",
@@ -186,49 +130,33 @@ const lineTitleClass = "tfl-dark-line-text text-[var(--line-color)]";
 const isStripedBar = (modeName?: string) =>
   modeName === "overground" || modeName === "elizabeth-line";
 
+/** Platform-chip geometry; neutral fill so severity is read as text, not colour. */
+const SeverityChip = ({ label }: { label: string }) => (
+  <span
+    className={cn(
+      "mr-[0.35em] inline-flex h-5 max-w-full shrink-0 translate-y-[-0.1em] items-center justify-center bg-foreground/5 px-1.5 align-baseline text-xs font-semibold text-foreground/60",
+      CHIP_CAP_TEXT_BOX_CLASS,
+    )}
+  >
+    <span className="truncate">{label}</span>
+  </span>
+);
+
 const StatusDisruptionCopy = ({
-  status,
-  lineName,
-  modeName,
-  rawReason,
+  announcement,
 }: {
-  status: DisruptionStatus;
-  lineName?: string;
-  modeName?: string;
-  rawReason: boolean;
+  announcement: LineAnnouncement;
 }) => {
-  const severityClasses = getSeverityClasses(status.statusSeverity ?? 10, true);
-  const Icon = getDisruptionStatusIcon(status);
-  const severityLabel = status.statusSeverityDescription?.trim();
-  const reason = status.reason?.trim();
-  const text =
-    reason && !rawReason
-      ? stripStatusReason(reason, { name: lineName, modeName })
-      : reason;
-  const body = text || severityLabel || "Status update";
-  const repeatsSeverity =
-    Boolean(severityLabel) &&
-    body.toLowerCase().startsWith(severityLabel.toLowerCase());
+  const severityLabel = announcement.statusSeverityDescription?.trim();
+  const body = announcement.text;
+  const bodyIsOnlyLabel = severityLabel
+    ? body.toLowerCase() === severityLabel.toLowerCase()
+    : false;
 
   return (
     <p className="min-h-(--arrivals-row) text-pretty text-base text-foreground/80">
-      {repeatsSeverity || !severityLabel ? null : (
-        <span className="sr-only">{severityLabel}</span>
-      )}
-      <span
-        title={severityLabel}
-        className="mr-[0.35em] inline-block size-[1cap] align-baseline"
-      >
-        <Icon
-          className={cn(
-            "block size-full",
-            severityClasses.text,
-            severityClasses.animation,
-          )}
-          aria-hidden
-        />
-      </span>
-      {body}
+      {severityLabel ? <SeverityChip label={severityLabel} /> : null}
+      {bodyIsOnlyLabel ? null : body}
     </p>
   );
 };
@@ -264,11 +192,11 @@ const StatusLineHeader = ({
     >
       <h3
         className={cn(
-          "m-0 min-w-0 flex-1 truncate pr-2 text-xl leading-7 font-semibold",
+          "m-0 min-w-0 flex-1 pr-2 text-xl leading-7 font-semibold",
           lineTitleClass,
         )}
       >
-        {name}
+        <LineName lineId={lineId} name={name} />
       </h3>
       {trailing}
       {stripedBar ? (
@@ -373,7 +301,7 @@ export const TubeStatusBoardSkeleton = ({
       <StatusSectionTitle>Good Service</StatusSectionTitle>
       <div className={goodServiceGridClass(compact)}>
         {lineIds.map((lineId) => {
-          const label = STATUS_LINE_LABELS[lineId] ?? lineId;
+          const label = getLineNameTiers(lineId).full;
 
           return (
             <div key={lineId} className="saturate-0">
@@ -411,17 +339,32 @@ export const TubeStatusBoard = ({
   data,
   hideHeader = false,
   compact = false,
+  currentOnly = true,
+  dedupe = true,
   rawReason = false,
   children,
 }: Props) => {
   const lines = data ?? [];
-  const disruptedLines: StatusLine[] = [];
+  const disruptedLines: {
+    line: StatusLine;
+    announcements: readonly LineAnnouncement[];
+  }[] = [];
   const goodServiceLines: StatusLine[] = [];
+
   for (const line of lines) {
-    if (isNormalService(line.lineStatuses ?? [])) {
+    const announcements = prepareLineAnnouncements(line.lineStatuses ?? [], {
+      line: { name: line.name, modeName: line.modeName },
+      currentOnly,
+      dedupe,
+      rawReason,
+    });
+    const disruptions = announcements.filter(
+      (item) => !isNormalService([{ statusSeverity: item.statusSeverity }]),
+    );
+    if (disruptions.length === 0) {
       goodServiceLines.push(line);
     } else {
-      disruptedLines.push(line);
+      disruptedLines.push({ line, announcements: disruptions });
     }
   }
 
@@ -436,7 +379,7 @@ export const TubeStatusBoard = ({
         <div>
           <StatusSectionTitle>Service Disruptions</StatusSectionTitle>
           <div className={disruptionGridClass(compact)}>
-            {disruptedLines.map((line) => {
+            {disruptedLines.map(({ line, announcements }) => {
               return (
                 <div
                   key={line.id ?? line.name}
@@ -448,17 +391,12 @@ export const TubeStatusBoard = ({
                     name={line.name ?? line.id ?? "Line"}
                   />
 
-                  {(line.lineStatuses ?? [])
-                    .filter((status) => !isNormalService([status]))
-                    .map((status, index) => (
-                      <StatusDisruptionCopy
-                        key={index}
-                        status={status}
-                        lineName={line.name}
-                        modeName={line.modeName}
-                        rawReason={rawReason}
-                      />
-                    ))}
+                  {announcements.map((announcement, index) => (
+                    <StatusDisruptionCopy
+                      key={index}
+                      announcement={announcement}
+                    />
+                  ))}
                 </div>
               );
             })}

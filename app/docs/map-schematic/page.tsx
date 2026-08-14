@@ -21,7 +21,7 @@ export default function MapsSchematicPage() {
       <article className="space-y-12">
         <DocsPageHeader entry={entry} />
         <RelationshipBadges
-          builtWith={["line-strip", "branch-strip", "station-name-labels", "line-badge"]}
+          builtWith={["line-strip", "branch-strip", "station-name-labels", "line-chip"]}
           usesFoundations={["colours"]}
         />
 

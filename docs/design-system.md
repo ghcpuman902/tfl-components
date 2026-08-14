@@ -102,6 +102,7 @@ Every tile uses a locked box (`box-border`, fixed `min`/`max`/`height` = `--arri
 - Fit stop and destination names with `StationName` (`layout="auto"`, abbr then scale). Destination rows stay one tile tall.
 - Rail: [`PlatformChip`](/docs/platform-chip) before destination. Bus: [`BusNumberChip`](/docs/bus-number-chip) per row; stop letter on the header only.
 - Both chips keep normal casing. Center with uppercase/cap text-box trim: `text-box: trim-both cap alphabetic` (`CHIP_CAP_TEXT_BOX_CLASS`) — not x-height (`ex`) trim. Do not force `uppercase` paint.
+- Line titles / chips: [`LineName`](/docs/line-title) steps **full → middle (H&C / W&C) → 3-letter code** via `@container/line-name` queries for board headers. Prefer abbreviation before a 2-line wrap; short codes are last resort. Curated tiers live in `lib/tfl/line-names.ts`. Filled chips are [`Line chip`](/docs/line-chip) (`LineBadge` / `LineBadgeGroup` with a vertical colour rail for shared-track groups).
 
 **Side-by-side boards**
 

@@ -1,6 +1,10 @@
+import { LineBadgeSharedTrackLayoutExamples } from "@/components/docs/demos/line-badge-shared-track-layout-examples"
+
 ## Purpose
 
 Filled chips and colour bars that paint official line colours. Tokens come from [Colours](/docs/colors) — install `tfl-colours` first (or let this package pull it).
+
+Single-line chips use one brand fill. Shared-track groups (`LineBadgeGroup`) float a TfL blue label over a full-bleed colour stack — prefer ≤3 lines. Board headers live on [Line title](/docs/line-title).
 
 ## Installation
 
@@ -13,31 +17,67 @@ pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/line-badge.json
 ## Render
 
 ```tsx
-import { LineBadge, LineColorBar } from "@/components/tfl/brand/line-badge"
+import {
+  LineBadge,
+  LineBadgeGroup,
+  LineColorBar,
+} from "@/components/tfl/brand/line-badge"
 
 export default function Page() {
   return (
     <>
       <LineBadge lineId="central" name="Central" />
-      <LineColorBar lineId="elizabeth" modeName="elizabeth-line" />
-      <LineColorBar
-        lineId="cable-car"
-        modeName="cable-car"
-        color="var(--tfl-line-central)"
+      <LineBadge lineId="hammersmith-city" fit="shrink" />
+      {/* Great Portland Street — Circle, H&C, Met share platforms */}
+      <LineBadgeGroup
+        lineIds={["circle", "hammersmith-city", "metropolitan"]}
       />
+      <LineColorBar lineId="elizabeth" modeName="elizabeth-line" />
     </>
   )
 }
 ```
+
+## Shared-track colour layout
+
+Full-bleed colour stack behind a TfL blue shrink-wrap plate. Stripes fill the **open** side of `align`. Drop the plate with `stripes="under"`.
+
+<LineBadgeSharedTrackLayoutExamples />
+
+```tsx
+<LineBadgeGroup
+  lineIds={["circle", "hammersmith-city"]}
+  align="right"
+/>
+<LineBadgeGroup
+  lineIds={["circle", "hammersmith-city", "metropolitan"]}
+  stripes="under"
+/>
+```
+
+## Smart shrink
+
+Opt a single-line chip into the name ladder with `fit="shrink"`. Board header titles are on [Line title](/docs/line-title). Tier data is in `lib/tfl/line-names.ts`.
 
 ## Props
 
 | Prop | Type | Description |
 |------|------|-------------|
 | `lineId` | `string` | TfL line or mode id. Sets `data-line`. |
-| `name` | `string` | Display label. Defaults to `lineId`. |
+| `name` | `string` | Display label. Defaults to the curated full name for `lineId`. |
 | `variant` | `"chip" \| "text"` | Filled chip (default) or coloured text. |
+| `fit` | `"clip" \| "shrink"` | `clip` paints the full name (default). `shrink` steps via `LineName`. |
 | `color` | `string` | Optional `--line-raw` override (e.g. Cable Car map red). |
 | `lineStatuses` | `array` | Optional statuses for a richer ARIA label. |
+
+### `LineBadgeGroup`
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `lineIds` | `string[]` | Member line ids. Prefer ≤3. |
+| `names` | `string[]` | Optional per-id overrides. |
+| `align` | `"left" \| "right" \| "center"` | Label alignment (default `left`). |
+| `stripes` | `"auto" \| "under"` | `auto` shrink-wraps a TfL blue plate; `under` paints text on stripes with no plate. |
+| `className` | `string` | Merge classes; `text-*` / `justify-*` can set align when `align` is omitted. |
 
 `LineColorBar` takes `lineId`, optional `modeName` (`overground` / `elizabeth-line` parallel rails, `cable-car` = 3 red + 2 white), optional `color`, and `heightClass`.

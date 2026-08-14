@@ -68,6 +68,10 @@ const PREVIEW_SNIPPETS: Record<string, string> = {
 
 <LineBadge lineId="victoria" name="Victoria" />
 <LineColorBar lineId="victoria" heightClass="h-[6px]" />`,
+  "line-name": `import { LineName } from "@/components/tfl/brand/line-name"
+
+<LineName lineId="hammersmith-city" />
+<LineName lineIds={["circle", "hammersmith-city", "metropolitan"]} group />`,
 };
 
 const RailDocsPreviewFallback = () => (

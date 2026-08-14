@@ -6,51 +6,11 @@ export type DisruptionStatus = {
     category?: string;
     categoryDescription?: string;
   };
-};
-
-export type DisruptionStatusIconName =
-  | "Ban"
-  | "Bus"
-  | "CalendarClock"
-  | "CircleCheck"
-  | "CircleOff"
-  | "CirclePause"
-  | "CircleX"
-  | "Clock"
-  | "Gauge"
-  | "Info"
-  | "LogOut"
-  | "Moon"
-  | "OctagonPause"
-  | "PersonStanding"
-  | "RouteOff"
-  | "Split"
-  | "TriangleAlert"
-  | "TrendingDown";
-
-/** TfL `statusSeverity` → Lucide name. PlannedWork still overrides to CalendarClock. */
-export const SEVERITY_LEVEL_ICONS: Record<number, DisruptionStatusIconName> = {
-  0: "Info",
-  1: "Ban",
-  2: "OctagonPause",
-  3: "CirclePause",
-  4: "CalendarClock",
-  5: "RouteOff",
-  6: "TriangleAlert",
-  7: "TrendingDown",
-  8: "Bus",
-  9: "Clock",
-  10: "CircleCheck",
-  11: "RouteOff",
-  12: "LogOut",
-  13: "PersonStanding",
-  14: "Gauge",
-  15: "Split",
-  16: "CircleOff",
-  17: "TriangleAlert",
-  18: "CircleCheck",
-  19: "Info",
-  20: "Moon",
+  validityPeriods?: readonly {
+    isNow?: boolean;
+    fromDate?: string;
+    toDate?: string;
+  }[];
 };
 
 const MODE_REASON_PREFIXES = [
@@ -114,13 +74,144 @@ export const isScheduledEngineeringWork = (
   return categoryDescription.includes("planned work");
 };
 
-export const getDisruptionStatusIconName = (
+/**
+ * TfL's own "valid now" flag. Realtime rows omit periods entirely — those are
+ * current. Rows whose every period has `isNow: false` are future-only.
+ */
+export const isCurrentAnnouncement = (status: DisruptionStatus): boolean => {
+  const periods = status.validityPeriods ?? [];
+  if (periods.length === 0) return true;
+  return periods.some((period) => period.isNow === true);
+};
+
+export type LineAnnouncement = {
+  /** Paragraph to render (prefix-stripped unless rawReason). */
+  text: string;
+  /** Worst severity in the merged group — drives chip colour. */
+  statusSeverity?: number;
+  statusSeverityDescription?: string;
+  /** How many TfL rows collapsed into this paragraph. */
+  sourceCount: number;
+};
+
+export type PrepareLineAnnouncementsOptions = {
+  line?: { name?: string; modeName?: string };
+  /** Keep only TfL `isNow` rows (or rows with no validity window). Default true. */
+  currentOnly?: boolean;
+  /** Collapse equal / contained paragraphs. Default true. */
+  dedupe?: boolean;
+  /** Keep TfL's unstripped `reason` string. Default false. */
+  rawReason?: boolean;
+};
+
+const normalizeAnnouncementKey = (text: string): string =>
+  text.toLowerCase().replace(/\s+/g, " ").trim();
+
+const resolveAnnouncementText = (
   status: DisruptionStatus,
-): DisruptionStatusIconName => {
-  if (isScheduledEngineeringWork(status)) return "CalendarClock";
-  const level = status.statusSeverity;
-  if (level !== undefined) {
-    return SEVERITY_LEVEL_ICONS[level] ?? "CircleX";
+  options: { line?: { name?: string; modeName?: string }; rawReason: boolean },
+): string => {
+  const reason = status.reason?.trim();
+  if (reason) {
+    return options.rawReason
+      ? reason
+      : stripStatusReason(reason, options.line);
   }
-  return "CircleX";
+  return status.statusSeverityDescription?.trim() || "Status update";
+};
+
+const isWorseSeverity = (
+  candidate: number | undefined,
+  current: number | undefined,
+): boolean => {
+  if (candidate === undefined) return false;
+  if (current === undefined) return true;
+  return candidate < current;
+};
+
+type DraftAnnouncement = LineAnnouncement & {
+  key: string;
+};
+
+/**
+ * Passenger-facing announcement list for one line: current filter → text
+ * resolution → containment dedupe. All three steps are opt-out via options.
+ */
+export const prepareLineAnnouncements = (
+  statuses: readonly DisruptionStatus[],
+  options: PrepareLineAnnouncementsOptions = {},
+): readonly LineAnnouncement[] => {
+  const currentOnly = options.currentOnly ?? true;
+  const dedupe = options.dedupe ?? true;
+  const rawReason = options.rawReason ?? false;
+
+  const resolved = statuses
+    .filter((status) => (currentOnly ? isCurrentAnnouncement(status) : true))
+    .map((status) => {
+      const text = resolveAnnouncementText(status, {
+        line: options.line,
+        rawReason,
+      });
+      return {
+        text,
+        key: normalizeAnnouncementKey(text),
+        statusSeverity: status.statusSeverity,
+        statusSeverityDescription: status.statusSeverityDescription,
+        sourceCount: 1,
+      } satisfies DraftAnnouncement;
+    });
+
+  const toAnnouncement = (draft: DraftAnnouncement): LineAnnouncement => ({
+    text: draft.text,
+    statusSeverity: draft.statusSeverity,
+    statusSeverityDescription: draft.statusSeverityDescription,
+    sourceCount: draft.sourceCount,
+  });
+
+  if (!dedupe) {
+    return resolved.map(toAnnouncement);
+  }
+
+  const kept: DraftAnnouncement[] = [];
+
+  for (const item of resolved) {
+    const matchIndex = kept.findIndex(
+      (existing) =>
+        existing.key === item.key ||
+        existing.key.includes(item.key) ||
+        item.key.includes(existing.key),
+    );
+
+    if (matchIndex === -1) {
+      kept.push(item);
+      continue;
+    }
+
+    const existing = kept[matchIndex]!;
+    const preferIncoming =
+      item.key.length > existing.key.length ||
+      (item.key.length === existing.key.length &&
+        isWorseSeverity(item.statusSeverity, existing.statusSeverity));
+
+    const winner = preferIncoming ? item : existing;
+    const loser = preferIncoming ? existing : item;
+    const worstSeverity = isWorseSeverity(
+      winner.statusSeverity,
+      loser.statusSeverity,
+    )
+      ? winner
+      : isWorseSeverity(loser.statusSeverity, winner.statusSeverity)
+        ? loser
+        : winner;
+
+    kept[matchIndex] = {
+      text: winner.text,
+      key: winner.key,
+      statusSeverity: worstSeverity.statusSeverity,
+      statusSeverityDescription: worstSeverity.statusSeverityDescription,
+      sourceCount: winner.sourceCount + loser.sourceCount,
+    };
+  }
+
+  return kept.map(toAnnouncement);
 };

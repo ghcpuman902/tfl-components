@@ -422,6 +422,21 @@
           "path": "registry/tfl/brand/line-badge.tsx",
           "type": "registry:component",
           "target": "components/tfl/brand/line-badge.tsx"
+        },
+        {
+          "path": "registry/tfl/brand/line-name.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/brand/line-name.tsx"
+        },
+        {
+          "path": "lib/tfl/line-names.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/line-names.ts"
+        },
+        {
+          "path": "components/tfl/findable-text.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/findable-text.tsx"
         }
       ]
     },
@@ -449,6 +464,16 @@
           "path": "lib/tfl/status-types.ts",
           "type": "registry:lib",
           "target": "lib/tfl/status-types.ts"
+        },
+        {
+          "path": "lib/tfl/status-reason.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-reason.ts"
+        },
+        {
+          "path": "registry/tfl/arrivals/chip-text.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/arrivals/chip-text.ts"
         }
       ]
     },
