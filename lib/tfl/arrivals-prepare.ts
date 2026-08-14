@@ -183,6 +183,24 @@ export const sliceBoundPage = (
   }
 }
 
+/** Every page for a scroll-snap track. Reuses `sliceBoundPage` per index. */
+export const chunkBoundPages = (
+  rows: readonly ArrivalsPreparedRow[],
+  pageSize: number
+): {
+  pages: { rows: ArrivalsPreparedRow[]; padCount: number }[]
+  pageCount: number
+} => {
+  const { pageCount } = sliceBoundPage(rows, 0, pageSize)
+  return {
+    pageCount,
+    pages: Array.from({ length: pageCount }, (_, index) => {
+      const { rows: pageRows, padCount } = sliceBoundPage(rows, index, pageSize)
+      return { rows: pageRows, padCount }
+    }),
+  }
+}
+
 type LineBucket = {
   lineId: string
   lineName: string

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SearchIcon } from "lucide-react";
 import {
@@ -11,6 +11,15 @@ import {
 } from "@/lib/docs-catalog";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
+
+const isMacUserAgent = (userAgent: string) =>
+  /Mac|iPhone|iPod|iPad/.test(userAgent);
+
+const isVisibleElement = (element: HTMLElement) =>
+  typeof element.checkVisibility === "function"
+    ? element.checkVisibility()
+    : element.getClientRects().length > 0;
 
 type DocsSearchProps = {
   variant?: "sidebar" | "mobile" | "header";
@@ -51,6 +60,8 @@ export const DocsSearch = ({
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [open, setOpen] = useState(false);
+  const [isMac, setIsMac] = useState(true);
+  const showShortcutHint = variant === "header" || variant === "mobile";
 
   const results = useMemo(() => {
     if (!query.trim()) return [] as DocsEntry[];
@@ -81,6 +92,29 @@ export const DocsSearch = ({
     setOpen(false);
     router.push(entry.href);
   }, [router]);
+
+  useEffect(() => {
+    setIsMac(isMacUserAgent(navigator.userAgent));
+  }, []);
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      if (event.key.toLowerCase() !== "k") return;
+      if (!event.metaKey && !event.ctrlKey) return;
+      if (event.altKey || event.shiftKey) return;
+
+      const input = inputRef.current;
+      if (!input || !isVisibleElement(input)) return;
+
+      event.preventDefault();
+      input.focus();
+      input.select();
+    };
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (!open && (event.key === "ArrowDown" || event.key === "Enter")) {
@@ -159,9 +193,19 @@ export const DocsSearch = ({
             window.setTimeout(() => setOpen(false), 120);
           }}
           onKeyDown={handleKeyDown}
-          className="h-8 bg-background pl-8 text-sm"
+          aria-keyshortcuts="Meta+K Control+K"
+          className={cn(
+            "h-8 bg-background pl-8 text-sm",
+            showShortcutHint && "md:pr-16",
+          )}
           autoComplete="off"
         />
+        {showShortcutHint && !query ? (
+          <KbdGroup className="pointer-events-none absolute top-1/2 right-1.5 hidden -translate-y-1/2 md:inline-flex">
+            <Kbd>{isMac ? "⌘" : "Ctrl"}</Kbd>
+            <Kbd>K</Kbd>
+          </KbdGroup>
+        ) : null}
       </div>
 
       {open && query.trim() ? (

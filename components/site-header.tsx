@@ -131,7 +131,7 @@ export const SiteHeader = ({
           />
         </div>
 
-        <div className="hidden max-w-sm min-w-0 flex-1 md:block md:max-w-md">
+        <div className="hidden w-56 shrink-0 md:block lg:w-64">
           <DocsSearch variant="header" />
         </div>
 

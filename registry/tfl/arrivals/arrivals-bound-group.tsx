@@ -1,6 +1,14 @@
 "use client"
 
-import { useState, type CSSProperties, type ReactNode } from "react"
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+} from "react"
 import { Play } from "lucide-react"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
 import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
@@ -9,7 +17,7 @@ import { StationName } from "@/components/tfl/station-name"
 import { ARRIVALS_LINE_EMPTY_COPY } from "@/lib/tfl/arrivals-empty"
 import { COMPASS_BOUND_RE } from "@/lib/tfl/arrivals-bound-sort"
 import {
-  sliceBoundPage,
+  chunkBoundPages,
   type ArrivalsPreparedBound,
   type ArrivalsPreparedGroup,
   type ArrivalsPreparedRow,
@@ -143,6 +151,109 @@ export const ArrivalRowItem = ({
   )
 }
 
+const useArrivalsPageTrack = (pageCount: number) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const slideRefs = useRef<(HTMLElement | null)[]>([])
+  const [activePage, setActivePage] = useState(0)
+
+  useEffect(() => {
+    slideRefs.current = slideRefs.current.slice(0, pageCount)
+  }, [pageCount])
+
+  useEffect(() => {
+    setActivePage((current) => {
+      const safe = Math.min(current, Math.max(0, pageCount - 1))
+      if (safe !== current) {
+        requestAnimationFrame(() => {
+          slideRefs.current[safe]?.scrollIntoView({
+            inline: "start",
+            block: "nearest",
+            behavior: "auto",
+          })
+        })
+      }
+      return safe
+    })
+  }, [pageCount])
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container || pageCount <= 1) return
+
+    const ratios = new Map<Element, number>()
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          ratios.set(entry.target, entry.intersectionRatio)
+        }
+        let bestIndex = 0
+        let bestRatio = -1
+        for (let index = 0; index < pageCount; index++) {
+          const slide = slideRefs.current[index]
+          if (!slide) continue
+          const ratio = ratios.get(slide) ?? 0
+          if (ratio > bestRatio) {
+            bestRatio = ratio
+            bestIndex = index
+          }
+        }
+        setActivePage((current) =>
+          current === bestIndex ? current : bestIndex
+        )
+      },
+      { root: container, threshold: [0.5, 0.6, 0.75, 1] }
+    )
+
+    const frame = requestAnimationFrame(() => {
+      for (let index = 0; index < pageCount; index++) {
+        const slide = slideRefs.current[index]
+        if (slide) observer.observe(slide)
+      }
+    })
+
+    return () => {
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
+  }, [pageCount])
+
+  const goToPage = useCallback(
+    (index: number) => {
+      const safe = Math.min(Math.max(0, index), Math.max(0, pageCount - 1))
+      slideRefs.current[safe]?.scrollIntoView({
+        inline: "start",
+        block: "nearest",
+        behavior: "auto",
+      })
+      setActivePage(safe)
+    },
+    [pageCount]
+  )
+
+  const handlePrev = useCallback(() => {
+    goToPage(activePage - 1)
+  }, [activePage, goToPage])
+
+  const handleNext = useCallback(() => {
+    goToPage(activePage + 1)
+  }, [activePage, goToPage])
+
+  const setSlideRef = useCallback(
+    (index: number) => (element: HTMLElement | null) => {
+      slideRefs.current[index] = element
+    },
+    []
+  )
+
+  return {
+    containerRef,
+    setSlideRef,
+    activePage: Math.min(activePage, Math.max(0, pageCount - 1)),
+    handlePrev,
+    handleNext,
+  }
+}
+
 const BoundPager = ({
   label,
   page,
@@ -156,47 +267,195 @@ const BoundPager = ({
   onPrev: () => void
   onNext: () => void
 }) => {
+  if (pageCount <= 1) return null
+
   const atStart = page <= 0
   const atEnd = page >= pageCount - 1
 
   return (
-    <div
-      className={cn(
-        "ml-auto flex h-6 shrink-0 items-center p-0 text-muted-foreground transition-opacity duration-150",
-        "opacity-100 [@media(hover:hover)]:opacity-0",
-        "[@media(hover:hover)]:group-hover/bound:opacity-100",
-        "[@media(hover:hover)]:group-focus-within/bound:opacity-100"
-      )}
-    >
-      <button
-        type="button"
-        aria-label={`Previous ${label} arrivals`}
-        disabled={atStart}
-        onClick={onPrev}
-        className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-1.5 pl-0 text-muted-foreground before:absolute before:inset-y-[-0.5rem] before:inset-x-[-0.25rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
+    <div className="ml-auto flex h-6 shrink-0 items-center text-muted-foreground">
+      <div
+        className={cn(
+          "hidden items-center p-0 transition-opacity duration-150 [@media(hover:hover)]:flex",
+          "[@media(hover:hover)]:opacity-0",
+          "[@media(hover:hover)]:group-hover/bound:opacity-100",
+          "[@media(hover:hover)]:group-focus-within/bound:opacity-100"
+        )}
       >
-        <Play
-          className="size-3 -scale-x-100 fill-current stroke-none"
-          aria-hidden
-        />
-      </button>
-      <span className="min-w-[2.75ch] text-center text-xs leading-none tabular-nums">
-        <span aria-hidden="true">
-          {page + 1}/{pageCount}
+        <button
+          type="button"
+          aria-label={`Previous ${label} arrivals`}
+          disabled={atStart}
+          onClick={onPrev}
+          className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-1.5 pl-0 text-muted-foreground before:absolute before:inset-y-[-0.5rem] before:inset-x-[-0.25rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
+        >
+          <Play
+            className="size-3 -scale-x-100 fill-current stroke-none"
+            aria-hidden
+          />
+        </button>
+        <span className="min-w-[2.75ch] text-center text-xs leading-none tabular-nums">
+          <span aria-hidden="true">
+            {page + 1}/{pageCount}
+          </span>
+          <span className="sr-only">
+            Page {page + 1} of {pageCount}
+          </span>
         </span>
-        <span className="sr-only">
-          Page {page + 1} of {pageCount}
-        </span>
+        <button
+          type="button"
+          aria-label={`Next ${label} arrivals`}
+          disabled={atEnd}
+          onClick={onNext}
+          className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-0 pl-1.5 text-muted-foreground before:absolute before:inset-y-[-0.5rem] before:inset-x-[-0.25rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
+        >
+          <Play className="size-3 fill-current stroke-none" aria-hidden />
+        </button>
+      </div>
+      <div
+        className="flex items-center gap-1 opacity-50 [@media(hover:hover)]:hidden"
+        aria-hidden="true"
+      >
+        {Array.from({ length: pageCount }, (_, index) => (
+          <span
+            key={index}
+            className={cn(
+              "size-1.5 rounded-full bg-current",
+              index === page ? "opacity-100" : "opacity-40"
+            )}
+          />
+        ))}
+      </div>
+      <span className="sr-only [@media(hover:hover)]:hidden">
+        Page {page + 1} of {pageCount}
       </span>
-      <button
-        type="button"
-        aria-label={`Next ${label} arrivals`}
-        disabled={atEnd}
-        onClick={onNext}
-        className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-0 pl-1.5 text-muted-foreground before:absolute before:inset-y-[-0.5rem] before:inset-x-[-0.25rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
+    </div>
+  )
+}
+
+const PagedArrivalRows = ({
+  rows,
+  padCount,
+  mode,
+  isLast,
+  emptyLabel,
+}: {
+  rows: readonly ArrivalsPreparedRow[]
+  padCount: number
+  mode: ArrivalsBoardMode
+  isLast: boolean
+  emptyLabel: string
+}) => {
+  if (rows.length === 0) {
+    return (
+      <li
+        data-slot="arrivals-row"
+        className={cn(
+          "flex items-center text-base text-muted-foreground",
+          TILE_CLASS,
+          !isLast && ROW_RULE_CLASS
+        )}
+        aria-label={emptyLabel}
       >
-        <Play className="size-3 fill-current stroke-none" aria-hidden />
-      </button>
+        {ARRIVALS_LINE_EMPTY_COPY}
+      </li>
+    )
+  }
+
+  return (
+    <>
+      {rows.map((row, index) => (
+        <ArrivalRowItem
+          key={row.key}
+          row={row}
+          mode={mode}
+          showRule={!(isLast && index === rows.length - 1 && padCount === 0)}
+        />
+      ))}
+      {Array.from({ length: padCount }, (_, index) => {
+        const isLastSlot = index === padCount - 1
+        return (
+          <li
+            key={`pad-${index}`}
+            aria-hidden
+            className={cn(
+              TILE_CLASS,
+              !(isLast && isLastSlot) && ROW_RULE_CLASS
+            )}
+          />
+        )
+      })}
+    </>
+  )
+}
+
+type ArrivalsPage = {
+  rows: ArrivalsPreparedRow[]
+  padCount: number
+}
+
+const ArrivalsPageTrack = ({
+  pages,
+  mode,
+  isLast,
+  emptyLabel,
+  containerRef,
+  setSlideRef,
+  className,
+}: {
+  pages: readonly ArrivalsPage[]
+  mode: ArrivalsBoardMode
+  isLast: boolean
+  emptyLabel: string
+  containerRef: RefObject<HTMLDivElement | null>
+  setSlideRef: (index: number) => (element: HTMLElement | null) => void
+  className?: string
+}) => {
+  if (pages.length <= 1) {
+    const only = pages[0]
+    return (
+      <ul
+        data-slot="arrivals-rows"
+        className={cn(LIST_RESET_CLASS, className)}
+        role="list"
+      >
+        <PagedArrivalRows
+          rows={only?.rows ?? []}
+          padCount={only?.padCount ?? 0}
+          mode={mode}
+          isLast={isLast}
+          emptyLabel={emptyLabel}
+        />
+      </ul>
+    )
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="flex touch-pan-x snap-x snap-mandatory gap-x-6 overflow-x-auto overscroll-x-contain scrollbar-none"
+    >
+      {pages.map((page, index) => (
+        <ul
+          key={`page-${index}`}
+          ref={setSlideRef(index)}
+          data-slot="arrivals-rows"
+          className={cn(
+            LIST_RESET_CLASS,
+            "min-w-full shrink-0 snap-start snap-always",
+            className
+          )}
+          role="list"
+        >
+          <PagedArrivalRows
+            rows={page.rows}
+            padCount={page.padCount}
+            mode={mode}
+            isLast={isLast}
+            emptyLabel={emptyLabel}
+          />
+        </ul>
+      ))}
     </div>
   )
 }
@@ -216,27 +475,12 @@ export const ArrivalsBoundGroup = ({
   pageSize?: number
   classNames?: ArrivalsBoardClassNames
 }) => {
-  const [page, setPage] = useState(0)
   const canPage = Boolean(bound.label) && pageSize > 0
-  const sliced = sliceBoundPage(bound.rows, page, canPage ? pageSize : 0)
-  const showPager = canPage
-  const visibleRows = sliced.rows
-  const showEmpty = visibleRows.length === 0
+  const chunked = chunkBoundPages(bound.rows, canPage ? pageSize : 0)
+  const { containerRef, setSlideRef, activePage, handlePrev, handleNext } =
+    useArrivalsPageTrack(chunked.pageCount)
+  const showPager = canPage && chunked.pageCount > 1
   const emptyScope = bound.label ? `${lineName} ${bound.label}` : lineName
-
-  const handlePrev = () => {
-    setPage((current) =>
-      Math.max(0, Math.min(current, sliced.pageCount - 1) - 1)
-    )
-  }
-  const handleNext = () => {
-    setPage((current) =>
-      Math.min(
-        sliced.pageCount - 1,
-        Math.min(current, sliced.pageCount - 1) + 1
-      )
-    )
-  }
 
   return (
     <li
@@ -256,63 +500,23 @@ export const ArrivalsBoundGroup = ({
           {showPager ? (
             <BoundPager
               label={bound.label}
-              page={sliced.page}
-              pageCount={sliced.pageCount}
+              page={activePage}
+              pageCount={chunked.pageCount}
               onPrev={handlePrev}
               onNext={handleNext}
             />
           ) : null}
         </div>
       ) : null}
-      <ul
-        data-slot="arrivals-rows"
-        className={cn(LIST_RESET_CLASS, classNames?.rows)}
-        role="list"
-      >
-        {showEmpty ? (
-          <li
-            data-slot="arrivals-row"
-            className={cn(
-              "flex items-center text-base text-muted-foreground",
-              TILE_CLASS,
-              !isLastBound && ROW_RULE_CLASS
-            )}
-            aria-label={`${emptyScope}: ${ARRIVALS_LINE_EMPTY_COPY}`}
-          >
-            {ARRIVALS_LINE_EMPTY_COPY}
-          </li>
-        ) : (
-          visibleRows.map((row, index) => (
-            <ArrivalRowItem
-              key={row.key}
-              row={row}
-              mode={mode}
-              showRule={
-                !(
-                  isLastBound &&
-                  index === visibleRows.length - 1 &&
-                  sliced.padCount === 0
-                )
-              }
-            />
-          ))
-        )}
-        {Array.from({ length: sliced.padCount }, (_, index) => {
-          const slotIndex = visibleRows.length + index
-          const isLastSlot =
-            slotIndex === visibleRows.length + sliced.padCount - 1
-          return (
-            <li
-              key={`pad-${index}`}
-              aria-hidden
-              className={cn(
-                TILE_CLASS,
-                !(isLastBound && isLastSlot) && ROW_RULE_CLASS
-              )}
-            />
-          )
-        })}
-      </ul>
+      <ArrivalsPageTrack
+        pages={chunked.pages}
+        mode={mode}
+        isLast={isLastBound}
+        emptyLabel={`${emptyScope}: ${ARRIVALS_LINE_EMPTY_COPY}`}
+        containerRef={containerRef}
+        setSlideRef={setSlideRef}
+        className={classNames?.rows}
+      />
     </li>
   )
 }
@@ -374,62 +578,6 @@ export const ArrivalsGroupHeader = ({
   )
 }
 
-const PagedArrivalRows = ({
-  rows,
-  padCount,
-  mode,
-  isLast,
-  emptyLabel,
-}: {
-  rows: readonly ArrivalsPreparedRow[]
-  padCount: number
-  mode: ArrivalsBoardMode
-  isLast: boolean
-  emptyLabel: string
-}) => {
-  if (rows.length === 0) {
-    return (
-      <li
-        data-slot="arrivals-row"
-        className={cn(
-          "flex items-center text-base text-muted-foreground",
-          TILE_CLASS,
-          !isLast && ROW_RULE_CLASS
-        )}
-        aria-label={emptyLabel}
-      >
-        {ARRIVALS_LINE_EMPTY_COPY}
-      </li>
-    )
-  }
-
-  return (
-    <>
-      {rows.map((row, index) => (
-        <ArrivalRowItem
-          key={row.key}
-          row={row}
-          mode={mode}
-          showRule={!(isLast && index === rows.length - 1 && padCount === 0)}
-        />
-      ))}
-      {Array.from({ length: padCount }, (_, index) => {
-        const isLastSlot = index === padCount - 1
-        return (
-          <li
-            key={`pad-${index}`}
-            aria-hidden
-            className={cn(
-              TILE_CLASS,
-              !(isLast && isLastSlot) && ROW_RULE_CLASS
-            )}
-          />
-        )
-      })}
-    </>
-  )
-}
-
 /** Bus grouped-by-route: pager sits on the route header. */
 export const ArrivalsPagedGroup = ({
   group,
@@ -446,24 +594,12 @@ export const ArrivalsPagedGroup = ({
   isLastGroup: boolean
   classNames?: ArrivalsBoardClassNames
 }) => {
-  const [page, setPage] = useState(0)
   const rows = group.bounds.flatMap((bound) => bound.rows)
-  const sliced = sliceBoundPage(rows, page, pageSize)
-  const showPager = pageSize > 0
-
-  const handlePrev = () => {
-    setPage((current) =>
-      Math.max(0, Math.min(current, sliced.pageCount - 1) - 1)
-    )
-  }
-  const handleNext = () => {
-    setPage((current) =>
-      Math.min(
-        sliced.pageCount - 1,
-        Math.min(current, sliced.pageCount - 1) + 1
-      )
-    )
-  }
+  const canPage = pageSize > 0
+  const chunked = chunkBoundPages(rows, canPage ? pageSize : 0)
+  const { containerRef, setSlideRef, activePage, handlePrev, handleNext } =
+    useArrivalsPageTrack(chunked.pageCount)
+  const showPager = canPage && chunked.pageCount > 1
 
   return (
     <section
@@ -481,27 +617,23 @@ export const ArrivalsPagedGroup = ({
           showPager ? (
             <BoundPager
               label={group.lineName}
-              page={sliced.page}
-              pageCount={sliced.pageCount}
+              page={activePage}
+              pageCount={chunked.pageCount}
               onPrev={handlePrev}
               onNext={handleNext}
             />
           ) : null
         }
       />
-      <ul
-        data-slot="arrivals-rows"
-        className={cn(LIST_RESET_CLASS, classNames?.rows)}
-        role="list"
-      >
-        <PagedArrivalRows
-          rows={sliced.rows}
-          padCount={sliced.padCount}
-          mode={mode}
-          isLast={isLastGroup}
-          emptyLabel={`${group.lineName}: ${ARRIVALS_LINE_EMPTY_COPY}`}
-        />
-      </ul>
+      <ArrivalsPageTrack
+        pages={chunked.pages}
+        mode={mode}
+        isLast={isLastGroup}
+        emptyLabel={`${group.lineName}: ${ARRIVALS_LINE_EMPTY_COPY}`}
+        containerRef={containerRef}
+        setSlideRef={setSlideRef}
+        className={classNames?.rows}
+      />
     </section>
   )
 }
@@ -518,48 +650,34 @@ export const ArrivalsPagedList = ({
   pageSize?: number
   classNames?: ArrivalsBoardClassNames
 }) => {
-  const [page, setPage] = useState(0)
-  const sliced = sliceBoundPage(rows, page, pageSize)
-  const showPager = pageSize > 0
-
-  const handlePrev = () => {
-    setPage((current) =>
-      Math.max(0, Math.min(current, sliced.pageCount - 1) - 1)
-    )
-  }
-  const handleNext = () => {
-    setPage((current) =>
-      Math.min(
-        sliced.pageCount - 1,
-        Math.min(current, sliced.pageCount - 1) + 1
-      )
-    )
-  }
+  const canPage = pageSize > 0
+  const chunked = chunkBoundPages(rows, canPage ? pageSize : 0)
+  const { containerRef, setSlideRef, activePage, handlePrev, handleNext } =
+    useArrivalsPageTrack(chunked.pageCount)
+  const showPager = canPage && chunked.pageCount > 1
 
   return (
-    <ul
-      data-slot="arrivals-rows"
-      className={cn(LIST_RESET_CLASS, "group/bound", classNames?.rows)}
-      role="list"
-    >
-      <PagedArrivalRows
-        rows={sliced.rows}
-        padCount={sliced.padCount}
+    <div className="group/bound min-w-0">
+      <ArrivalsPageTrack
+        pages={chunked.pages}
         mode={mode}
         isLast={!showPager}
         emptyLabel={ARRIVALS_LINE_EMPTY_COPY}
+        containerRef={containerRef}
+        setSlideRef={setSlideRef}
+        className={classNames?.rows}
       />
       {showPager ? (
-        <li className={cn("flex items-center", TILE_CLASS)}>
+        <div className={cn("flex items-center", TILE_CLASS)}>
           <BoundPager
             label="arrivals"
-            page={sliced.page}
-            pageCount={sliced.pageCount}
+            page={activePage}
+            pageCount={chunked.pageCount}
             onPrev={handlePrev}
             onNext={handleNext}
           />
-        </li>
+        </div>
       ) : null}
-    </ul>
+    </div>
   )
 }

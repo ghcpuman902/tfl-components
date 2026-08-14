@@ -63,6 +63,8 @@ export default function DocsComponentsCataloguePage() {
                         alt=""
                         width={384}
                         height={216}
+                        sizes="192px"
+                        unoptimized={item.slug === "tube-rail-arrivals"}
                         className="aspect-video w-full max-w-48 shrink-0 rounded-md border border-border object-cover object-top sm:w-48"
                       />
                     ) : (

@@ -57,6 +57,17 @@ Boards are single-column by default; consumers arrange groups/bounds via `classN
 - Both chips: keep normal casing (`Platform 4`, route codes as given). Center with `[text-box:trim-both_cap_alphabetic]` (`CHIP_CAP_TEXT_BOX_CLASS`) — uppercase/cap metrics for the box, not `ex` trim. Do not force `uppercase` paint.
 - Bound labels (Northbound…) match line-name size; same hairline weight as arrival rows inside a line group.
 
+## Pagination
+
+Shared in `arrivals-bound-group.tsx` (`BoundPager` + `ArrivalsPageTrack`) for rail bounds, bus route groups, and flat bus lists.
+
+- Pages are real horizontal slides (`overflow-x-auto` + `snap-x snap-mandatory` + `snap-always`). Swipe is native OS scrolling — not a JS gesture library.
+- Mid-swipe: `gap-x-6` between slides (same as bound-column arrangements) so countdown never touches the next page’s chips; when snapped, each slide is full-width so the gap sits off-screen.
+- Hover-capable pointers (`@media (hover: hover)`): arrows + `n/m` chip, revealed on `group-hover/bound` / focus-within. Arrow clicks jump instantly (`scrollIntoView` with `behavior: "auto"`).
+- Touch / no-hover: half-opacity iOS-style dots in the same slot, always visible; swipe the rows track to change page.
+- Hide the entire pager when `pageCount <= 1` (no lone `1/1` or single dot).
+- Last page pads to `pageSize` height so snap height stays stable; a single short page stays short (no pad).
+
 ## Anti-patterns
 
 - Double-height title reservation that sits empty when the name is one line

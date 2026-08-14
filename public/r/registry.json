@@ -434,6 +434,11 @@
           "target": "lib/tfl/line-names.ts"
         },
         {
+          "path": "lib/tfl/brand-colours.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/brand-colours.ts"
+        },
+        {
           "path": "components/tfl/findable-text.tsx",
           "type": "registry:component",
           "target": "components/tfl/findable-text.tsx"

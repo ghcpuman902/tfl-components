@@ -52,7 +52,7 @@ Groups by line, then by compass bound from `platformName`. On a vertical board, 
 
 Line sections stay in canonical `LINE_ORDER`. Empty expected lines keep that slot. Pass optional `lines` for the stop's serving set so a line with no predictions still renders a muted **No information** row. When `lines[].bounds` lists the compass sides that station actually serves, those bound groups still render even if the current poll has no trains that way. Otherwise a missing side is omitted.
 
-Each bound shows `pageSize` trains, default 3. Hover the bound label and its rows to page further arrivals. A quiet `1/5` sits between the arrows. Touch screens keep the arrows visible. A short last page still occupies `pageSize` rows so paging does not jump the layout. A bound with only one page stays short.
+Each bound shows `pageSize` trains, default 3. Extra pages sit in a native horizontal scroll-snap track. On hover-capable pointers, hover the bound label and its rows for quiet arrows with a `1/5` count — clicks jump instantly. On touch screens, swipe the bound rows; half-opacity page dots stay visible in place of the arrows. A short last page still occupies `pageSize` rows so paging does not jump the layout. A bound with only one page stays short and hides the pager.
 
 A completely flat rail board is a different product. It would need a compressed row that still shows line, bound, platform, destination, and countdown, not a layout switch on this component.
 
@@ -173,6 +173,6 @@ Keep polling outside the board, then update `data`. Optional `statusLabel` shows
 | `emptyMessage` | `string` | Optional copy override for `emptyKind`. |
 | `statusLabel` | `string` | Optional poll / refresh caption. |
 | `maxRows` | `number` | Per-bound prediction cap after ordering. Does not drop later lines. Headers and empty rows do not count. |
-| `pageSize` | `number` | Visible arrivals per bound, default 3. Extra trains page behind hover arrows. |
+| `pageSize` | `number` | Visible arrivals per bound, default 3. Extra trains page via hover arrows or touch swipe. Hidden when only one page. |
 | `className` | `string` | Root classes, merged over the board container. |
 | `classNames` | `{ groups?, group?, subgroups?, subgroup?, rows? }` | Layout-level class overrides for generated `data-slot` levels. |

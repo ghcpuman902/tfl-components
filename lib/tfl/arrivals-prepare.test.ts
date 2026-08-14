@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import type { RealtimePrediction } from "tfl-ts"
 import {
+  chunkBoundPages,
   prepareBusArrivals,
   prepareRailArrivals,
   sliceBoundPage,
@@ -448,5 +449,45 @@ describe("sliceBoundPage", () => {
       sliced.rows.map((row) => row.key),
       ["r-3", "r-4"]
     )
+  })
+})
+
+describe("chunkBoundPages", () => {
+  const rows = [0, 1, 2, 3, 4].map((index) => ({
+    key: `r-${index}`,
+    arrival: { id: `r-${index}` } as RealtimePrediction,
+    sourceIndex: index,
+  }))
+
+  it("returns a single unpadded page when everything fits", () => {
+    const chunked = chunkBoundPages(rows, 8)
+    assert.equal(chunked.pageCount, 1)
+    assert.equal(chunked.pages.length, 1)
+    assert.equal(chunked.pages[0]?.padCount, 0)
+    assert.deepEqual(
+      chunked.pages[0]?.rows.map((row) => row.key),
+      ["r-0", "r-1", "r-2", "r-3", "r-4"]
+    )
+  })
+
+  it("chunks every page and pads the short last page", () => {
+    const chunked = chunkBoundPages(rows, 2)
+    assert.equal(chunked.pageCount, 3)
+    assert.equal(chunked.pages.length, 3)
+    assert.deepEqual(
+      chunked.pages.map((page) => page.rows.map((row) => row.key)),
+      [["r-0", "r-1"], ["r-2", "r-3"], ["r-4"]]
+    )
+    assert.deepEqual(
+      chunked.pages.map((page) => page.padCount),
+      [0, 0, 1]
+    )
+  })
+
+  it("does not pad a short single page", () => {
+    const chunked = chunkBoundPages(rows.slice(0, 1), 3)
+    assert.equal(chunked.pageCount, 1)
+    assert.equal(chunked.pages[0]?.padCount, 0)
+    assert.equal(chunked.pages[0]?.rows.length, 1)
   })
 })

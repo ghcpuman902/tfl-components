@@ -199,7 +199,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "introduction",
     title: "Introduction",
     description:
-      "A free TfL key, one component, and an optional typeface — that is the path to the same look.",
+      "Web components for your TfL projects. Use them with tfl-ts for live data, or alone for the look.",
     group: "start",
     kind: "page",
     href: "/docs",

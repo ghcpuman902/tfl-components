@@ -1,17 +1,49 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
+import { ArrowRightIcon, RocketIcon } from "lucide-react";
+import { BrowserWindow } from "@/components/docs/browser-window";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
 import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code";
+import {
+  RailArrivalsBoard,
+  RailArrivalsBoardSkeleton,
+} from "@/components/tfl/arrivals/rail-arrivals-board";
+import { newMarkerParentClassName } from "@/components/new-marker";
 import { getDocsEntry } from "@/lib/docs-catalog";
 import { TFL_BRAND_LINKS } from "@/lib/tfl/brand";
+import {
+  getCachedHomeRailArrivals,
+  HOME_RAIL_LINES,
+  readHomeArrivalsBoardState,
+} from "@/lib/tfl/home-arrivals-data";
 
-const TFL_KEY_SNIPPET = `TFL_APP_KEY=your-primary-key`;
+const TFL_KEY_SNIPPET = `TFL_APP_KEY=your-primary-or-secondary-key`;
+const ARRIVALS_INSTALL_SNIPPET =
+  "pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/rail-arrivals-board.json";
+const ARRIVALS_PAGE_SNIPPET = `import TflClient from "tfl-ts"
+import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
+
+const tfl = new TflClient({
+  appKey: process.env.TFL_APP_KEY!,
+})
+
+export default async function Page() {
+  const data = await tfl.stopPoint.getArrivals({
+    stopPointIds: ["940GZZLUOXC"],
+    sortBy: "timeToStation",
+  })
+
+  return (
+    <RailArrivalsBoard data={data} stopName="Oxford Circus" />
+  )
+}`;
 
 export const metadata: Metadata = {
   title: "Introduction",
   description:
-    "A free TfL key, one component, and an optional typeface — that is the path to the same look.",
+    "Web components for your TfL projects. Use them with tfl-ts for live data, or alone for the look.",
 };
 
 const TFL_API_PORTAL = "https://api-portal.tfl.gov.uk/";
@@ -33,121 +65,115 @@ const ExternalTextLink = ({
   </a>
 );
 
+const IntroArrivalsFallback = () => (
+  <BrowserWindow>
+    <RailArrivalsBoardSkeleton stopName="Oxford Circus" />
+  </BrowserWindow>
+);
+
+const IntroArrivalsPreview = async () => {
+  const payload = await getCachedHomeRailArrivals();
+  const boardState = await readHomeArrivalsBoardState(payload, "rail");
+
+  return (
+    <BrowserWindow>
+      <RailArrivalsBoard
+        data={payload.arrivals}
+        lines={HOME_RAIL_LINES}
+        stopName={payload.stopName}
+        headingLevel={2}
+        error={boardState.error}
+        emptyKind={boardState.emptyKind}
+      />
+    </BrowserWindow>
+  );
+};
+
 export default function DocsIntroductionPage() {
   const entry = getDocsEntry("introduction")!;
 
   return (
     <DocsReadableWidth>
-      <article className="space-y-14">
+      <article className="space-y-12">
         <DocsPageHeader entry={entry} />
 
         <section className="space-y-3">
-          <p className="max-w-prose text-muted-foreground">
-            The boards on this site are not a sealed npm UI package and not a
-            theme you drop on an existing app. They are source you copy, then
-            feed with TfL data. The path to the same look is short: get a free
-            API key, install the one component you need, and decide whether
-            type matters enough to change. That is the whole sequence.
-          </p>
-        </section>
-
-        <section className="space-y-3">
           <h2 id="get-a-key" className="text-lg font-semibold">
-            Get a TfL key
-          </h2>
-          <p className="max-w-prose text-muted-foreground">
-            Live boards talk to the Unified API. Registration on the{" "}
+            1. Get a free TfL key from the{" "}
             <ExternalTextLink href={TFL_API_PORTAL}>
               TfL API portal
-            </ExternalTextLink>{" "}
-            is free. Subscribe to{" "}
-            <strong className="font-medium text-foreground">
-              500 Requests per min
-            </strong>
-            , then copy a key from Profile (Show). Either the primary or the
-            secondary key works.{" "}
-            <code className="text-xs">app_id</code> has not been required since
-            2021.
-          </p>
+            </ExternalTextLink>
+          </h2>
           <p className="max-w-prose text-muted-foreground">
-            In your app, keep the key on the server:
+            Add to your <code className="text-xs">.env</code> /{" "}
+            <code className="text-xs">.env.local</code> /{" "}
+            <code className="text-xs">.env.development</code>.
           </p>
           <SyntaxHighlightedCode
             code={TFL_KEY_SNIPPET}
             language="bash"
             wrapperClassName="mt-0 mb-0"
           />
-          <p className="max-w-prose text-muted-foreground">
-            Without a key the components still render. They just need fixture
-            or cached rows. The key is what makes a board live.{" "}
-            <ExternalTextLink href="https://www.npmjs.com/package/tfl-ts">
-              tfl-ts
-            </ExternalTextLink>{" "}
-            is the client that turns those calls into the normalised shapes the
-            boards expect.
+          <p className="max-w-prose text-xs text-muted-foreground">
+            You only need one of the two keys (Primary or Secondary).{" "}
+            <code className="text-[0.7rem]">app_id</code> has been unused since
+            Jan 2021.
           </p>
         </section>
 
-        <section className="space-y-3">
-          <h2 id="install-one-component" className="text-lg font-semibold">
-            Install one component
-          </h2>
-          <p className="max-w-prose text-muted-foreground">
-            There is no command that installs the whole library. Each board is
-            its own registry item, because most projects only need one surface
-            — arrivals at a stop, a status wall, a cycle-hire map.
-          </p>
-          <p className="max-w-prose text-muted-foreground">
-            Open{" "}
-            <Link
-              href="/docs/components"
-              className="text-foreground underline underline-offset-4"
+        <aside className="grid grid-cols-[auto_minmax(0,1fr)] items-stretch gap-4">
+          <div className="relative aspect-square h-full overflow-hidden rounded-xl bg-muted">
+            <RocketIcon
+              className="pointer-events-none absolute top-1/2 left-1/2 size-[140%] -translate-x-1/2 -translate-y-1/2 text-background"
+              strokeWidth={2.75}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            />
+          </div>
+          <div className="min-w-0 space-y-2">
+            <h2
+              id="hosted-url"
+              className={newMarkerParentClassName(
+                "inline-block pr-8 text-lg font-semibold after:top-0.5 after:text-sm"
+              )}
             >
-              Components
-            </Link>
-            , pick the board you actually want, and run the shadcn add URL on
-            that page. The CLI copies source into your repo. Colour tokens,
-            badges, and helpers arrive as dependencies of that item. You own
-            the files afterwards.
-          </p>
-          <p className="max-w-prose text-muted-foreground">
-            Fetching stays in your app. The board takes normalised data as
-            props. If the CLI skips a file, injects CSS you did not expect, or
-            the board looks empty after install, that detail lives on{" "}
+              Board
+            </h2>
+            <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+              Wait, do you really need a server? Board is the quickest way to
+              turn an old iPad or tablet into a TfL dashboard. Once you have a
+              key, configure a single URL that opens a full-screen page for a
+              common use case.
+            </p>
             <Link
-              href="/docs/installation"
-              className="text-foreground underline underline-offset-4"
+              href="/board"
+              className="inline-flex w-fit items-center gap-1.5 text-sm text-primary underline underline-offset-4"
             >
-              Troubleshoot
+              Config your own board
+              <ArrowRightIcon className="size-3.5 shrink-0" aria-hidden />
             </Link>
-            .
-          </p>
-        </section>
+          </div>
+        </aside>
 
         <section className="space-y-3">
           <h2 id="optional-type" className="text-lg font-semibold">
-            Optional: choose a typeface
+            2. Set up a typeface (optional)
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Components inherit the font from the host. Skip this step and the
-            boards still work — they sit in whatever type your app already
-            uses. The Johnston look is a separate decision, not a prerequisite.
-          </p>
-          <p className="max-w-prose text-muted-foreground">
+            Skip this and components use your app’s font. For the TfL-inspired
+            look, start with{" "}
             <Link
               href="/docs/typography"
               className="text-foreground underline underline-offset-4"
             >
               Hammersmith One
-            </Link>{" "}
-            is the free default and is close enough for most interfaces.
-            Official Johnston needs a licence through{" "}
+            </Link>
+            . Official Johnston requires a licence from{" "}
             <ExternalTextLink href={TFL_BRAND_LINKS.fontRequests}>
-              TfL font requests
+              TfL
             </ExternalTextLink>
-            . P22 Underground is a closer commercial stand-in if you already
-            have Adobe Fonts. Installing a component grants none of those
-            rights — see{" "}
+            ; see{" "}
             <Link
               href="/docs/tfl-licensing"
               className="text-foreground underline underline-offset-4"
@@ -159,39 +185,45 @@ export default function DocsIntroductionPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 id="that-is-the-look" className="text-lg font-semibold">
-            That is the look
+          <h2 id="install-and-import" className="text-lg font-semibold">
+            3. Install and import
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            A key, one board, and an optional font. Line colours and diagram
-            geometry travel with the component. You do not need a design-system
-            install, and you do not need every board in the catalogue.
+            Start with the Tube and rail arrivals board. The command copies its
+            source and dependencies into your app:
           </p>
-        </section>
-
-        <section className="space-y-3 border-t border-border pt-8">
-          <h2 id="hosted-url" className="text-lg font-semibold">
-            If you do not want to host an app
-          </h2>
+          <SyntaxHighlightedCode
+            code={ARRIVALS_INSTALL_SNIPPET}
+            language="bash"
+            wrapperClassName="mt-0 mb-0"
+          />
           <p className="max-w-prose text-muted-foreground">
-            A hosted{" "}
-            <Link
-              href="/board"
-              className="text-foreground underline underline-offset-4"
-            >
-              Board
-            </Link>{" "}
-            is in beta for the cases where the deploy is the unwanted part. You
-            open a URL on this site in a fullscreen browser. Your TfL key and
-            the stop id live in the hash fragment — never sent to our servers —
-            and the page calls TfL from the client and keeps one station’s
-            arrivals plus Tube status up to date. No Next app, no registry
-            install — a kiosk, a spare monitor, or a tab you leave running.
+            Fetch predictions with{" "}
+            <ExternalTextLink href="https://www.npmjs.com/package/tfl-ts">
+              tfl-ts
+            </ExternalTextLink>{" "}
+            and render them from a page:
           </p>
-          <p className="max-w-prose text-muted-foreground">
-            The self-hosted path above still leaves you with source you can
-            edit. Use Board when you only need the look on a screen.
-          </p>
+          <SyntaxHighlightedCode
+            code={ARRIVALS_PAGE_SNIPPET}
+            language="tsx"
+            wrapperClassName="mt-0 mb-0"
+          />
+          <figure className="space-y-3 pt-3">
+            <Suspense fallback={<IntroArrivalsFallback />}>
+              <IntroArrivalsPreview />
+            </Suspense>
+            <figcaption className="text-sm text-muted-foreground">
+              Oxford Circus, live.{" "}
+              <Link
+                href="/docs/tube-rail-arrivals"
+                className="text-foreground underline underline-offset-4"
+              >
+                Tube and rail arrivals guide
+              </Link>{" "}
+              covers grouping, paging, and layouts.
+            </figcaption>
+          </figure>
         </section>
       </article>
     </DocsReadableWidth>
