@@ -37,7 +37,9 @@ const nextConfig: NextConfig = {
       { source: "/primitives/station-name", destination: "/docs/station-name-labels", permanent: true },
       { source: "/foundations", destination: "/docs", permanent: true },
       { source: "/foundations/typography", destination: "/docs/typography", permanent: true },
-      { source: "/foundations/line-badge", destination: "/docs/colors", permanent: true },
+      { source: "/foundations/line-badge", destination: "/docs/line-badge", permanent: true },
+      { source: "/foundations/colours", destination: "/docs/colors", permanent: true },
+      { source: "/foundations/colors", destination: "/docs/colors", permanent: true },
       { source: "/foundations/tfl-roundel", destination: "/docs/tfl-roundel", permanent: true },
       { source: "/foundations/licensing", destination: "/docs/tfl-licensing", permanent: true },
       { source: "/foundations/icons", destination: "/docs/icons", permanent: true },
@@ -52,7 +54,7 @@ const nextConfig: NextConfig = {
       { source: "/batch-status", destination: "/docs/tube-rail-status", permanent: true },
       { source: "/arrivals", destination: "/docs/tube-rail-arrivals", permanent: true },
       { source: "/arrivals/live", destination: "/docs/tube-rail-arrivals", permanent: true },
-      { source: "/line-badge", destination: "/docs/colors", permanent: true },
+      { source: "/line-badge", destination: "/docs/line-badge", permanent: true },
       { source: "/roundel", destination: "/docs/tfl-roundel", permanent: true },
       { source: "/line-diagram", destination: "/docs/line-strip", permanent: true },
       { source: "/components/line-diagram", destination: "/docs/line-strip", permanent: true },
@@ -69,7 +71,7 @@ const nextConfig: NextConfig = {
       { source: "/primitives/line-strip", destination: "/docs/line-strip", permanent: true },
       { source: "/components/branch-strip", destination: "/docs/branch-strip", permanent: true },
       { source: "/components/tfl-roundel", destination: "/docs/tfl-roundel", permanent: true },
-      { source: "/components/line-badge", destination: "/docs/colors", permanent: true },
+      { source: "/components/line-badge", destination: "/docs/line-badge", permanent: true },
     ];
   },
 };

@@ -70,7 +70,7 @@ const GetStartedAdornment = ({ slug }: { slug: string }) => {
     );
   }
 
-  if (slug === "line-badge") {
+  if (slug === "colours") {
     return (
       <span className="flex flex-col gap-0.5" aria-hidden>
         {[0, 5].map((start) => (
@@ -131,7 +131,7 @@ const EntryLabel = ({
 const GET_STARTED_ADORNMENT_SLUGS = new Set([
   "explore-index",
   "typography",
-  "line-badge",
+  "colours",
   "tfl-roundel",
 ]);
 

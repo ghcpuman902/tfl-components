@@ -33,6 +33,16 @@ export {
 } from "@/lib/tfl/colour-formats";
 
 export {
+  LINE_COLOUR_TOKENS,
+  getLineColourBarMode,
+  getLineColourBgClass,
+  getLineColourTextClass,
+  getLineColourToken,
+  type LineColourKind,
+  type LineColourToken,
+} from "@/lib/tfl/line-colour-map";
+
+export {
   ROUNDEL_LOGO_PATHS,
   ROUNDEL_LOGO_SOURCES,
   ROUNDEL_PRESETS,

@@ -52,6 +52,7 @@ const ROW_RULE_CLASS =
   "relative after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60"
 
 const LIST_RESET_CLASS = "m-0 ml-0 list-none space-y-0 p-0 [&>li]:mt-0"
+/** Half of `text-base` Johnston-like x-height (~4px). */
 const LINE_BAR_BORDER_CLASS = "border-b-4"
 
 export const formatArrivalsCountdown = (seconds?: number): string => {
@@ -109,7 +110,7 @@ export const ArrivalRowItem = ({
       data-slot="arrivals-row"
       aria-label={rowLabel}
       className={cn(
-        "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 text-sm",
+        "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 text-base",
         TILE_CLASS,
         showRule && ROW_RULE_CLASS
       )}
@@ -272,7 +273,7 @@ export const ArrivalsBoundGroup = ({
           <li
             data-slot="arrivals-row"
             className={cn(
-              "flex items-center text-sm text-muted-foreground",
+              "flex items-center text-base text-muted-foreground",
               TILE_CLASS,
               !isLastBound && ROW_RULE_CLASS
             )}
@@ -349,7 +350,7 @@ export const ArrivalsGroupHeader = ({
     >
       <LineHeadingTag
         className={cn(
-          "m-0 min-w-0 flex-1 truncate pr-2 text-base leading-6 font-semibold text-[var(--line-color)]",
+          "m-0 min-w-0 flex-1 truncate pr-2 text-xl leading-7 font-semibold text-[var(--line-color)]",
           group.kind === "rail-line" && "tfl-dark-line-text",
           !group.hasInformation && "opacity-70"
         )}
@@ -391,7 +392,7 @@ const PagedArrivalRows = ({
       <li
         data-slot="arrivals-row"
         className={cn(
-          "flex items-center text-sm text-muted-foreground",
+          "flex items-center text-base text-muted-foreground",
           TILE_CLASS,
           !isLast && ROW_RULE_CLASS
         )}

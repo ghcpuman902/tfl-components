@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 
 const SLUG_MAP: Record<string, string> = {
-  "line-badge": "/docs/colors",
+  "line-badge": "/docs/line-badge",
+  colours: "/docs/colors",
+  colors: "/docs/colors",
   "tfl-roundel": "/docs/tfl-roundel",
 };
 

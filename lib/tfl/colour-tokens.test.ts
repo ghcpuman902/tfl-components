@@ -76,6 +76,11 @@ describe("colour tokens generator", () => {
     assert.ok(item, "tfl-colours registry item missing");
     assert.deepEqual(item.cssVars, expected.cssVars);
     assert.deepEqual(item.css, expected.css);
+    const files = (item as { files?: Array<{ target?: string }> }).files;
+    assert.ok(
+      files?.some((file) => file.target === "lib/tfl/line-colour-map.ts"),
+      "tfl-colours should ship line-colour-map.ts",
+    );
 
     const lineBadge = registry.items.find((entry) => entry.name === "line-badge");
     assert.ok(lineBadge?.registryDependencies?.includes(COLOURS_REGISTRY_URL));
