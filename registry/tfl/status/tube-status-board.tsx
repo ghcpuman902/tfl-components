@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import {
   getSeverityClasses,
@@ -101,8 +101,23 @@ const statusLineModeName = (lineId: string) => {
   return "tube";
 };
 
+/** Same tile rhythm as arrivals boards — heights are N × `--arrivals-row`. */
+const BOARD_RHYTHM_VARS = {
+  "--arrivals-unit": "0.5rem",
+  "--arrivals-row": "calc(var(--arrivals-unit) * 6)",
+} as CSSProperties;
+
+const TILE_CLASS =
+  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden";
+
+/** Half of `text-base` Johnston-like x-height (~4px). */
+const LINE_BAR_BORDER_CLASS = "border-b-4";
+
 /** Resolves via `data-line` → `--line-color` from tfl-colours tokens. */
 const lineTitleClass = "tfl-dark-line-text text-[var(--line-color)]";
+
+const isStripedBar = (modeName?: string) =>
+  modeName === "overground" || modeName === "elizabeth-line";
 
 const stripStatusReason = (reason: string, lineName?: string) =>
   reason
@@ -111,6 +126,71 @@ const stripStatusReason = (reason: string, lineName?: string) =>
       /^(Hammersmith and City Line: )|(London Overground: )|(Docklands Light Railway: )\s*/,
       "",
     );
+
+const StatusLineHeader = ({
+  lineId,
+  modeName,
+  name,
+  trailing,
+}: {
+  lineId?: string;
+  modeName?: string;
+  name: string;
+  trailing?: ReactNode;
+}) => {
+  const stripedBar = isStripedBar(modeName);
+
+  return (
+    <header
+      data-line={lineId}
+      className={cn(
+        "relative flex items-end pb-2",
+        TILE_CLASS,
+        !stripedBar && LINE_BAR_BORDER_CLASS,
+      )}
+      style={
+        stripedBar
+          ? undefined
+          : ({
+              borderBottomColor: "var(--line-color)",
+            } as CSSProperties)
+      }
+    >
+      <h3
+        className={cn(
+          "m-0 min-w-0 flex-1 truncate pr-2 text-xl leading-7 font-semibold",
+          lineTitleClass,
+        )}
+      >
+        {name}
+      </h3>
+      {trailing}
+      {stripedBar ? (
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0"
+          aria-hidden
+        >
+          <LineColorBar
+            lineId={lineId}
+            modeName={modeName}
+            heightClass="h-1"
+          />
+        </div>
+      ) : null}
+    </header>
+  );
+};
+
+const StatusSectionTitle = ({ children }: { children: ReactNode }) => (
+  <h2
+    className={cn(
+      "m-0 flex items-end text-xl leading-7 font-semibold",
+      TILE_CLASS,
+    )}
+  >
+    {children}
+  </h2>
+);
 
 /** Static board chrome — no status data required. */
 export const TubeStatusBoardHeader = () => (
@@ -121,7 +201,7 @@ export const TubeStatusBoardHeader = () => (
         <h1 className="scroll-m-20 text-balance text-4xl font-extrabold lg:text-5xl">
           Live TfL Status
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-base text-muted-foreground">
           Built with{" "}
           <code className="rounded bg-muted px-1 py-0.5 text-xs">tfl-ts</code> +
           open React components
@@ -165,42 +245,37 @@ export const TubeStatusBoardSkeleton = ({
   lineIds = DEFAULT_STATUS_BOARD_LINE_IDS,
 }: SkeletonProps) => (
   <div
-    className="flex w-full flex-col gap-6"
+    className="flex w-full flex-col gap-(--arrivals-row) text-base"
+    style={BOARD_RHYTHM_VARS}
     aria-busy
     aria-label="Loading line status"
   >
     <div>
-      <h2 className="mb-4 text-xl font-semibold">Good Service</h2>
-      <div className="grid grid-cols-2 justify-items-stretch gap-4 md:grid-cols-3 lg:grid-cols-5">
+      <StatusSectionTitle>Good Service</StatusSectionTitle>
+      <div className="mt-2 grid grid-cols-2 justify-items-stretch gap-x-4 gap-y-0 md:grid-cols-3 lg:grid-cols-5">
         {lineIds.map((lineId) => {
           const label = STATUS_LINE_LABELS[lineId] ?? lineId;
 
           return (
-            <div key={lineId} className="flex flex-col saturate-0">
-              <h3
-                data-line={lineId}
-                className={cn(
-                  "text-sm leading-tight font-semibold",
-                  lineTitleClass,
-                )}
-              >
-                {label}
-              </h3>
-              <div className="mt-2">
-                <LineColorBar
-                  lineId={lineId}
-                  modeName={statusLineModeName(lineId)}
-                  heightClass="h-[6px]"
-                />
-              </div>
+            <div key={lineId} className="saturate-0">
+              <StatusLineHeader
+                lineId={lineId}
+                modeName={statusLineModeName(lineId)}
+                name={label}
+              />
             </div>
           );
         })}
       </div>
     </div>
 
-    <div className="border-t pt-4 text-center text-sm text-muted-foreground">
-      <p className="text-balance">
+    <div
+      className={cn(
+        "flex items-center border-t text-center text-base text-muted-foreground",
+        TILE_CLASS,
+      )}
+    >
+      <p className="w-full text-balance">
         Data from Transport for London via{" "}
         <span className="text-blue-500">tfl-ts</span>. Pass normalised rows as{" "}
         <code className="text-xs">data</code>.
@@ -230,29 +305,26 @@ export const TubeStatusBoard = ({
   }
 
   return (
-    <div className="mt-4 flex w-full flex-col gap-6">
+    <div
+      className="flex w-full flex-col gap-(--arrivals-row) text-base"
+      style={BOARD_RHYTHM_VARS}
+    >
       {!hideHeader && <TubeStatusBoardHeader />}
 
       {disruptedLines.length > 0 && (
         <div>
-          <h2 className="mb-4 text-xl font-semibold">Service Disruptions</h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <StatusSectionTitle>Service Disruptions</StatusSectionTitle>
+          <div className="mt-2 grid grid-cols-1 gap-x-4 gap-y-(--arrivals-row) md:grid-cols-2 lg:grid-cols-3">
             {disruptedLines.map((line) => {
               return (
                 <div
                   key={line.id ?? line.name}
-                  className="flex flex-col gap-0"
+                  className="flex flex-col"
                 >
-                  <h3
-                    data-line={line.id ?? undefined}
-                    className={cn("text-lg font-semibold", lineTitleClass)}
-                  >
-                    {line.name}
-                  </h3>
-                  <LineColorBar
+                  <StatusLineHeader
                     lineId={line.id}
                     modeName={line.modeName}
-                    heightClass="h-[6px]"
+                    name={line.name ?? line.id ?? "Line"}
                   />
 
                   {line.lineStatuses?.map((status, index) => {
@@ -262,20 +334,21 @@ export const TubeStatusBoard = ({
                     );
 
                     return (
-                      <div key={index} className="mt-2">
-                        <span
+                      <div key={index}>
+                        <div
                           className={cn(
-                            "mr-2 font-medium",
+                            "flex items-center font-medium",
+                            TILE_CLASS,
                             severityClasses.text,
                             severityClasses.animation,
                           )}
                         >
                           {status.statusSeverityDescription}
-                        </span>
+                        </div>
                         {status.reason && (
-                          <span className="mt-1 block text-pretty text-sm text-foreground/80">
+                          <p className="box-border min-h-(--arrivals-row) text-pretty text-base text-foreground/80">
                             {stripStatusReason(status.reason, line.name)}
-                          </span>
+                          </p>
                         )}
                       </div>
                     );
@@ -288,39 +361,31 @@ export const TubeStatusBoard = ({
       )}
 
       <div>
-        <h2 className="mb-4 text-xl font-semibold">
+        <StatusSectionTitle>
           Good Service
           {disruptedLines.length > 0 && (
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
+            <span className="ml-2 text-base font-normal text-muted-foreground">
               ({goodServiceLines.length} lines)
             </span>
           )}
-        </h2>
-        <div className="grid grid-cols-2 justify-items-stretch gap-4 md:grid-cols-3 lg:grid-cols-5">
+        </StatusSectionTitle>
+        <div className="mt-2 grid grid-cols-2 justify-items-stretch gap-x-4 gap-y-0 md:grid-cols-3 lg:grid-cols-5">
           {goodServiceLines.map((line) => {
             return (
-              <div
+              <StatusLineHeader
                 key={line.id ?? line.name}
-                className="flex flex-col"
-              >
-                <div className="flex items-start justify-between">
-                  <h3
-                    data-line={line.id ?? undefined}
-                    className={cn(
-                      "text-sm leading-tight font-semibold",
-                      lineTitleClass,
-                    )}
-                  >
-                    {line.name}
-                  </h3>
-                  {hasNightService(line.lineStatuses ?? []) && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                lineId={line.id}
+                modeName={line.modeName}
+                name={line.name ?? line.id ?? "Line"}
+                trailing={
+                  hasNightService(line.lineStatuses ?? []) ? (
+                    <div className="flex shrink-0 items-center gap-1 text-base text-muted-foreground">
                       <TrainFrontTunnel
                         data-line={line.id ?? undefined}
-                        className={cn("h-3 w-3", lineTitleClass)}
+                        className={cn("size-4", lineTitleClass)}
                         aria-hidden
                       />
-                      <span>
+                      <span className="truncate">
                         {
                           line.lineStatuses?.find(
                             (status) => status.statusSeverity === 20,
@@ -328,23 +393,21 @@ export const TubeStatusBoard = ({
                         }
                       </span>
                     </div>
-                  )}
-                </div>
-                <div className="mt-2">
-                  <LineColorBar
-                    lineId={line.id}
-                    modeName={line.modeName}
-                    heightClass="h-[6px]"
-                  />
-                </div>
-              </div>
+                  ) : null
+                }
+              />
             );
           })}
         </div>
       </div>
 
-      <div className="border-t pt-4 text-center text-sm text-muted-foreground">
-        <p className="text-balance">
+      <div
+        className={cn(
+          "flex items-center border-t text-center text-base text-muted-foreground",
+          TILE_CLASS,
+        )}
+      >
+        <p className="w-full text-balance">
           Data from Transport for London via{" "}
           <Link
             href="https://www.npmjs.com/package/tfl-ts"

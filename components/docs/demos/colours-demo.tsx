@@ -1,5 +1,4 @@
 import { ColourFormatsGrid } from "@/components/docs/colour-formats-grid";
-import { ColourTokenPins } from "@/components/docs/demos/colour-token-pins";
 import {
   getLineColourBarMode,
   LINE_COLOUR_TOKENS,
@@ -13,12 +12,19 @@ const FORMAT_LINES = LINE_COLOUR_TOKENS.map((token) => ({
   spec: token.spec,
 }));
 
-/** Foundations Colours preview — copyable formats, not the Line Badge API. */
-export default function ColoursDemo() {
+/** Foundations Colours full reference — copyable formats, not the Line Badge API. */
+export default function ColoursDemo({
+  title,
+  titleId,
+}: {
+  title?: string;
+  titleId?: string;
+}) {
   return (
-    <div className="space-y-4">
-      <ColourTokenPins />
-      <ColourFormatsGrid lines={FORMAT_LINES} />
-    </div>
+    <ColourFormatsGrid
+      lines={FORMAT_LINES}
+      title={title}
+      titleId={titleId}
+    />
   );
 }

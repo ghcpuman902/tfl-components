@@ -1,10 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ColoursInstallTabs } from "@/components/docs/colours-install-tabs";
 import ColoursDemo from "@/components/docs/demos/colours-demo";
+import ColoursPreviewDemo from "@/components/docs/demos/colours-preview-demo";
+import { BwLineStylesCompare } from "@/components/docs/demos/bw-line-styles-compare";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
 import { RelationshipBadges } from "@/components/docs/relationship-badges";
@@ -18,9 +21,19 @@ export const metadata: Metadata = {
     "Official TfL line and mode colours — install tokens, map line ids, copy HEX or OKLCH.",
 };
 
-const DATA_LINE_SNIPPET = `<span
+const DATA_LINE_SNIPPET = `// data-line resolves --line-color / --line-ink for you
+<span
   data-line="northern"
-  className="bg-[var(--line-color)] text-[var(--line-ink)]"
+  className="inline-flex items-center bg-[var(--line-color)] px-2 py-0.5 text-xs font-bold text-[var(--line-ink)]"
+>
+  Northern
+</span>
+
+// vars are just CSS — override when you need a one-off
+<span
+  data-line="northern"
+  className="inline-flex items-center bg-[var(--line-color)] px-2 py-0.5 text-xs font-bold text-[var(--line-ink)]"
+  style={{ "--line-color": "#6D2077", "--line-ink": "#fff" }}
 >
   Northern
 </span>`;
@@ -47,6 +60,9 @@ const bg = getLineColourBgClass(line.id) // "bg-tfl-line-northern"
 // ✅ Or bind dynamically without a utility class
 <span data-line={line.id} className="bg-[var(--line-color)]" />`;
 
+const CHIP_CLASS =
+  "inline-flex items-center bg-[var(--line-color)] px-2 py-0.5 text-xs font-bold text-[var(--line-ink)] tabular-nums";
+
 const TFL_COLOURS_CSS = readFileSync(
   join(process.cwd(), "app/tfl-colours.css"),
   "utf8",
@@ -62,55 +78,39 @@ export default function FoundationsColoursPage() {
         <DocsPageHeader entry={entry} />
         <RelationshipBadges usedBy={getUsedBySlugs(entry.slug)} />
 
-        <section className="space-y-3">
-          <h2 id="purpose" className="text-lg font-semibold">
-            Purpose
-          </h2>
-          <p className="max-w-prose text-muted-foreground">
-            Official line and mode colours for identity UI and diagrams. Use
-            this page to install the token layers, understand line → colour
-            mapping, and copy individual values for design or code.{" "}
-            <Link
-              href="/docs/line-badge"
-              className="text-foreground underline underline-offset-4"
-            >
-              Line Badge
-            </Link>{" "}
-            is a separate chip/bar primitive that consumes these tokens.
-          </p>
-        </section>
-
-        <section className="space-y-3">
-          <h2 id="licensing" className="text-lg font-semibold">
+        <p className="max-w-prose text-sm text-muted-foreground">
+          Values follow TfL&apos;s{" "}
+          <a
+            href="https://tfl.gov.uk/info-for/business-and-advertisers/design-standards"
+            className="text-foreground underline underline-offset-4"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            design standards
+          </a>{" "}
+          (Colour standard Issue 10). Dark tokens take those light colours and
+          apply a median day→night OKLCH delta (~+3.3% L, slight +C, hue held)
+          matching TfL Go&apos;s map convention — Go is still testing dark mode
+          and seeking feedback. Not a licence for Johnston or the{" "}
+          <Link
+            href="/docs/tfl-roundel"
+            className="text-foreground underline underline-offset-4"
+          >
+            roundel
+          </Link>
+          ; see{" "}
+          <Link
+            href="/docs/tfl-licensing"
+            className="text-foreground underline underline-offset-4"
+          >
             Licensing
-          </h2>
-          <p className="max-w-prose text-muted-foreground">
-            Official line colours are fine for accurate line identity. That is
-            not a licence for Johnston or the TfL roundel. See{" "}
-            <Link
-              href="/docs/tfl-roundel"
-              className="text-foreground underline underline-offset-4"
-            >
-              Roundel
-            </Link>{" "}
-            and{" "}
-            <Link
-              href="/docs/tfl-licensing"
-              className="text-foreground underline underline-offset-4"
-            >
-              brand licensing
-            </Link>
-            . Values follow TfL&apos;s{" "}
-            <a
-              href="https://tfl.gov.uk/info-for/business-and-advertisers/design-standards"
-              className="text-foreground underline underline-offset-4"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              design standards
-            </a>{" "}
-            (Colour standard Issue 10).
-          </p>
+          </Link>
+          .
+        </p>
+
+        <section id="preview" className="space-y-4">
+          <h2 className="text-lg font-semibold">Preview</h2>
+          <ColoursPreviewDemo />
         </section>
 
         <section id="installation" className="space-y-4">
@@ -147,25 +147,37 @@ export default function FoundationsColoursPage() {
               <code className="text-xs">data-line</code> when the id is dynamic.
             </p>
           </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <span data-line="northern" className={CHIP_CLASS}>
+              Northern
+            </span>
+            <span
+              data-line="northern"
+              className={CHIP_CLASS}
+              style={
+                {
+                  "--line-color": "#6D2077",
+                  "--line-ink": "#fff",
+                } as CSSProperties
+              }
+            >
+              Northern
+            </span>
+          </div>
+
           <SyntaxHighlightedCode
             code={DATA_LINE_SNIPPET}
             language="tsx"
             wrapperClassName="mt-0 mb-0"
           />
+
           <div className="space-y-2">
             <h3 id="tailwind" className="text-base font-medium">
               Tailwind cannot build class names dynamically
             </h3>
             <p className="max-w-prose text-sm text-muted-foreground">
-              Utilities such as{" "}
-              <code className="text-xs">bg-tfl-line-northern</code> are
-              predefined in <code className="text-xs">tfl-colours.css</code>.
-              Template strings like{" "}
-              <code className="text-xs">{"`bg-tfl-line-${id}`"}</code> are
-              invisible to the scanner and will not emit CSS. Import{" "}
-              <code className="text-xs">LINE_COLOUR_TOKENS</code> or{" "}
-              <code className="text-xs">getLineColourBgClass</code> and use the
-              complete string from the map.
+              Predefined class strings only:
             </p>
           </div>
           <SyntaxHighlightedCode
@@ -175,16 +187,8 @@ export default function FoundationsColoursPage() {
           />
         </section>
 
-        <section id="preview" className="space-y-4">
-          <div className="space-y-2">
-            <h2 className="text-lg font-semibold">Preview</h2>
-            <p className="max-w-prose text-sm text-muted-foreground">
-              Choose HEX or OKLCH, then tap a value to copy. Print (CMYK ·
-              Pantone · NCS) is always shown. Dark values use the Go night
-              method (Northern <code className="text-xs">#FCFCFC</code>).
-            </p>
-          </div>
-          <ColoursDemo />
+        <section className="space-y-4">
+          <ColoursDemo title="All formats" titleId="formats" />
         </section>
 
         <section id="adaptive" className="space-y-3">
@@ -206,9 +210,35 @@ export default function FoundationsColoursPage() {
             </li>
             <li>
               <code className="text-xs">data-tfl-colour=&quot;mono&quot;</code> —
-              app opt-in colourless mode (greys today)
+              app opt-in colourless mode (greys today); see{" "}
+              <a
+                href="#mono"
+                className="text-foreground underline underline-offset-4"
+              >
+                Mono line styles
+              </a>
             </li>
           </ul>
+        </section>
+
+        <section id="mono" className="space-y-3">
+          <h2 className="text-lg font-semibold">Mono line styles</h2>
+          <p className="max-w-prose text-sm text-muted-foreground">
+            Colour route paint vs black-and-white Tube map stroke patterns
+            (provisional reconstruction of the{" "}
+            <a
+              href="https://content.tfl.gov.uk/bw-large-print-tube-map.pdf"
+              className="text-foreground underline underline-offset-4"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              large-print B&amp;W map
+            </a>{" "}
+            key). These are the motifs{" "}
+            <code className="text-xs">data-tfl-colour=&quot;mono&quot;</code> will
+            carry once wired into strips — not yet the live CSS role tokens.
+          </p>
+          <BwLineStylesCompare />
         </section>
       </article>
     </DocsReadableWidth>

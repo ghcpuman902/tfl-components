@@ -1,5 +1,6 @@
 import { ColourTokenPins } from "@/components/docs/demos/colour-token-pins";
-import { LineBadge, LineColorBar } from "@/components/tfl/brand/line-badge";
+import { LineChipWall } from "@/components/docs/demos/line-chip-wall";
+import { LineColorBar } from "@/components/tfl/brand/line-badge";
 import { CABLE_CAR_MAP_COLOUR } from "@/lib/tfl/brand-colours";
 import {
   getLineColourBarMode,
@@ -32,16 +33,7 @@ export default function LineBadgeDemo() {
           . Cable Car chips use map red via an explicit{" "}
           <code className="text-xs">color</code> override.
         </p>
-        <div className="flex flex-wrap gap-2">
-          {DEMO_LINES.map((line) => (
-            <LineBadge
-              key={line.id}
-              lineId={line.id}
-              name={line.name}
-              color={line.mapColor}
-            />
-          ))}
-        </div>
+        <LineChipWall />
       </section>
 
       <section className="space-y-3">

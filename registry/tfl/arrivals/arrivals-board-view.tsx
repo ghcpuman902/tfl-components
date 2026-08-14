@@ -82,7 +82,7 @@ export const ARRIVALS_RHYTHM_VARS = {
 export const ARRIVALS_TILE_CLASS =
   "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden [content-visibility:auto] [contain-intrinsic-size:auto_3rem]"
 
-/** Line/route brand bar thickness — painted inside the tile via border-box. */
+/** Half of `text-base` Johnston-like x-height (~4px). */
 const LINE_BAR_BORDER_CLASS = "border-b-4"
 const TITLE_CLASS =
   "[font-synthesis:none] [font-weight:var(--tfl-title-weight,400)] [letter-spacing:var(--tfl-title-tracking,0)]"
@@ -190,7 +190,7 @@ export const ArrivalsBoardSkeleton = ({
               LINE_BAR_BORDER_CLASS
             )}
           >
-            <Skeleton className="mb-2 h-5 w-28" />
+            <Skeleton className="mb-2 h-6 w-28" />
           </div>
           {Array.from({ length: 4 }).map((_, rowIndex) => (
             <div
@@ -235,7 +235,7 @@ const GroupBody = ({
         <li
           data-slot="arrivals-row"
           className={cn(
-            "flex items-center text-sm text-muted-foreground",
+            "flex items-center text-base text-muted-foreground",
             ARRIVALS_TILE_CLASS
           )}
           aria-label={`${group.lineName}: ${ARRIVALS_LINE_EMPTY_COPY}`}
@@ -372,7 +372,7 @@ export const ArrivalsBoardView = ({
       {error ? (
         <p
           className={cn(
-            "flex items-center truncate text-sm text-destructive",
+            "flex items-center truncate text-base text-destructive",
             ARRIVALS_TILE_CLASS
           )}
           role="alert"
@@ -384,7 +384,7 @@ export const ArrivalsBoardView = ({
       {showEmpty ? (
         <p
           className={cn(
-            "flex items-center text-sm text-muted-foreground",
+            "flex items-center text-base text-muted-foreground",
             ARRIVALS_TILE_CLASS
           )}
           role="status"
