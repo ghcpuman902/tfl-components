@@ -584,7 +584,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "board-index",
     title: "Board",
     description:
-      "Leave a URL running fullscreen, with one station's arrivals and Tube status in a side slot.",
+      "The quickest way to turn an old iPad or tablet into a TfL dashboard.",
     group: "board",
     kind: "page",
     href: "/board",

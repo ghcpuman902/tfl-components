@@ -6,13 +6,49 @@ import {
   hasNightService,
   LINE_ORDER,
 } from "tfl-ts";
-import { ExternalLink, Package, TrainFrontTunnel } from "lucide-react";
+import {
+  Ban,
+  Bus,
+  CalendarClock,
+  CircleCheck,
+  CircleOff,
+  CirclePause,
+  CircleX,
+  Clock,
+  ExternalLink,
+  Gauge,
+  Info,
+  LogOut,
+  Moon,
+  OctagonPause,
+  Package,
+  PersonStanding,
+  RouteOff,
+  Split,
+  TrainFrontTunnel,
+  TriangleAlert,
+  TrendingDown,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LineColorBar } from "@/components/tfl/brand/line-badge";
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
 import type { StatusLine } from "@/lib/tfl/status-types";
+import {
+  getDisruptionStatusIconName,
+  stripStatusReason,
+  type DisruptionStatus,
+} from "@/lib/tfl/status-reason";
 
 export type { StatusLine } from "@/lib/tfl/status-types";
+export {
+  getDisruptionStatusIconName,
+  isScheduledEngineeringWork,
+  stripStatusReason,
+} from "@/lib/tfl/status-reason";
+export type {
+  DisruptionStatus,
+  DisruptionStatusIconName,
+} from "@/lib/tfl/status-reason";
 
 type Props = {
   /** Normalised line status rows from `tfl-ts` (or fixtures). Missing/`undefined` renders empty. */
@@ -22,7 +58,36 @@ type Props = {
   hideHeader?: boolean;
   /** One column — for a narrow side slot. */
   compact?: boolean;
+  /**
+   * Keep TfL's raw `reason` string, including mode prefixes such as
+   * `LONDON TRAMS:`. Default strips those prefixes.
+   */
+  rawReason?: boolean;
 };
+
+const DISRUPTION_STATUS_ICONS = {
+  Ban,
+  Bus,
+  CalendarClock,
+  CircleCheck,
+  CircleOff,
+  CirclePause,
+  CircleX,
+  Clock,
+  Gauge,
+  Info,
+  LogOut,
+  Moon,
+  OctagonPause,
+  PersonStanding,
+  RouteOff,
+  Split,
+  TriangleAlert,
+  TrendingDown,
+} as const;
+
+export const getDisruptionStatusIcon = (status: DisruptionStatus) =>
+  DISRUPTION_STATUS_ICONS[getDisruptionStatusIconName(status)];
 
 /**
  * Modes on TfL’s Tube & Rail status surface (Cable Car is listed separately).
@@ -121,13 +186,52 @@ const lineTitleClass = "tfl-dark-line-text text-[var(--line-color)]";
 const isStripedBar = (modeName?: string) =>
   modeName === "overground" || modeName === "elizabeth-line";
 
-const stripStatusReason = (reason: string, lineName?: string) =>
-  reason
-    .replace(new RegExp(`^${lineName?.toUpperCase()}( LINE)?: `, "i"), "")
-    .replace(
-      /^(Hammersmith and City Line: )|(London Overground: )|(Docklands Light Railway: )\s*/,
-      "",
-    );
+const StatusDisruptionCopy = ({
+  status,
+  lineName,
+  modeName,
+  rawReason,
+}: {
+  status: DisruptionStatus;
+  lineName?: string;
+  modeName?: string;
+  rawReason: boolean;
+}) => {
+  const severityClasses = getSeverityClasses(status.statusSeverity ?? 10, true);
+  const Icon = getDisruptionStatusIcon(status);
+  const severityLabel = status.statusSeverityDescription?.trim();
+  const reason = status.reason?.trim();
+  const text =
+    reason && !rawReason
+      ? stripStatusReason(reason, { name: lineName, modeName })
+      : reason;
+  const body = text || severityLabel || "Status update";
+  const repeatsSeverity =
+    Boolean(severityLabel) &&
+    body.toLowerCase().startsWith(severityLabel.toLowerCase());
+
+  return (
+    <p className="min-h-(--arrivals-row) text-pretty text-base text-foreground/80">
+      {repeatsSeverity || !severityLabel ? null : (
+        <span className="sr-only">{severityLabel}</span>
+      )}
+      <span
+        title={severityLabel}
+        className="mr-[0.35em] inline-block size-[1cap] align-baseline"
+      >
+        <Icon
+          className={cn(
+            "block size-full",
+            severityClasses.text,
+            severityClasses.animation,
+          )}
+          aria-hidden
+        />
+      </span>
+      {body}
+    </p>
+  );
+};
 
 const StatusLineHeader = ({
   lineId,
@@ -307,6 +411,7 @@ export const TubeStatusBoard = ({
   data,
   hideHeader = false,
   compact = false,
+  rawReason = false,
   children,
 }: Props) => {
   const lines = data ?? [];
@@ -343,32 +448,17 @@ export const TubeStatusBoard = ({
                     name={line.name ?? line.id ?? "Line"}
                   />
 
-                  {line.lineStatuses?.map((status, index) => {
-                    const severityClasses = getSeverityClasses(
-                      status.statusSeverity ?? 10,
-                      true,
-                    );
-
-                    return (
-                      <div key={index}>
-                        <div
-                          className={cn(
-                            "flex items-center font-medium",
-                            TILE_CLASS,
-                            severityClasses.text,
-                            severityClasses.animation,
-                          )}
-                        >
-                          {status.statusSeverityDescription}
-                        </div>
-                        {status.reason && (
-                          <p className="box-border min-h-(--arrivals-row) text-pretty text-base text-foreground/80">
-                            {stripStatusReason(status.reason, line.name)}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {(line.lineStatuses ?? [])
+                    .filter((status) => !isNormalService([status]))
+                    .map((status, index) => (
+                      <StatusDisruptionCopy
+                        key={index}
+                        status={status}
+                        lineName={line.name}
+                        modeName={line.modeName}
+                        rawReason={rawReason}
+                      />
+                    ))}
                 </div>
               );
             })}

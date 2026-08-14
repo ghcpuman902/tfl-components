@@ -1,3 +1,5 @@
+import { SeverityIconTable } from "@/components/docs/demos/severity-icon-table"
+
 ## Get line status
 
 ```ts
@@ -49,12 +51,29 @@ export default async function Page() {
 
 Pass `hideHeader` when the parent already has a title.
 
+### Raw TfL copy
+
+By default the board strips mode prefixes that repeat the line title (`LONDON TRAMS:`, `LONDON OVERGROUND:`, `BAKERLOO LINE:`). Pass `rawReason` to keep the original string.
+
+```tsx
+<TubeStatusBoard data={data} rawReason />
+```
+
+## Severity icons
+
+The disruption card keeps TfL's paragraph. Severity is a cap-height icon inline at the start of that paragraph, so wrapped lines run underneath it.
+
+`CalendarClock` still wins for scheduled engineering (`Planned Closure`, or `disruption.category` of `PlannedWork`). Other markers use the candidates in the table.
+
+<SeverityIconTable />
+
 ## Props
 
 | Prop | Type | Description |
 |------|------|-------------|
 | `data` | `readonly StatusLine[]` | Rows from `tfl.line.getStatus()`. Missing or `undefined` renders empty. |
 | `hideHeader` | `boolean` | Omit the board header. |
+| `rawReason` | `boolean` | Keep TfL's unstripped `reason` string. |
 | `children` | `ReactNode` | Optional slot below the status list. |
 
 Official colours come from `tfl-ts` CSS helpers inside the board. Fixtures can show severe delays without waiting for a live incident.

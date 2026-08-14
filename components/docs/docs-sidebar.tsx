@@ -236,7 +236,7 @@ export const DocsSidebar = () => {
           </SidebarGroup>
         ) : null}
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border px-2 py-3">
+      <SidebarFooter className="border-t border-sidebar-border gap-1 px-2 py-2">
         <UserTflCredentialsTrigger />
         <div className="flex items-center gap-1">
           <div className="min-w-0 flex-1">
@@ -244,7 +244,7 @@ export const DocsSidebar = () => {
           </div>
           <a
             href={`https://github.com/ghcpuman902/tfl-components/releases/tag/${APP_VERSION_LABEL}`}
-            className="shrink-0 rounded-md px-2 py-1.5 text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            className="inline-flex h-8 shrink-0 items-center rounded-md px-2 text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             target="_blank"
             rel="noreferrer"
           >

@@ -449,6 +449,11 @@
           "path": "lib/tfl/status-types.ts",
           "type": "registry:lib",
           "target": "lib/tfl/status-types.ts"
+        },
+        {
+          "path": "lib/tfl/status-reason.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-reason.ts"
         }
       ]
     },

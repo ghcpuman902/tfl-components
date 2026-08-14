@@ -243,7 +243,7 @@ export const FeedbackTrigger = () => (
   <button
     type="button"
     onClick={openFeedbackDialog}
-    className="inline-flex min-h-9 w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+    className="inline-flex h-8 w-full items-center gap-1.5 rounded-md px-2 text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
     aria-haspopup="dialog"
     aria-label="Send feedback"
   >

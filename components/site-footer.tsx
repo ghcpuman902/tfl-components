@@ -40,8 +40,8 @@ const SiteFooterStats = async () => {
 
 export const SiteFooter = () => {
   return (
-    <footer className="mt-auto border-t border-border px-4 py-6">
-      <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 text-center text-sm text-muted-foreground">
+    <footer className="mt-auto border-t border-border px-4 py-3">
+      <div className="mx-auto flex max-w-5xl flex-col items-center gap-1 text-center text-sm text-muted-foreground">
         <p>
           Open React components for London transport · press{" "}
           <kbd className="rounded border px-1 text-xs">d</kbd> for dark mode

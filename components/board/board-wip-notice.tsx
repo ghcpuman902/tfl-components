@@ -1,14 +1,14 @@
-"use client";
+"use client"
 
-import { openFeedbackDialog } from "@/lib/feedback/open";
+import { openFeedbackDialog } from "@/lib/feedback/open"
 
 export const BoardWipNotice = () => {
   const handleOpenFeedback = () => {
-    openFeedbackDialog();
-  };
+    openFeedbackDialog()
+  }
 
   return (
-    <p className="mt-3 max-w-prose text-sm text-muted-foreground">
+    <p className="mt-2 max-w-prose text-sm text-muted-foreground">
       Still in progress.{" "}
       <button
         type="button"
@@ -20,5 +20,5 @@ export const BoardWipNotice = () => {
       </button>{" "}
       if something is off.
     </p>
-  );
-};
+  )
+}
