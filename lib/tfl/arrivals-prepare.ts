@@ -1,4 +1,5 @@
-import type { RealtimePrediction } from "tfl-ts"
+import { normalizeLineId, type RealtimePrediction } from "tfl-ts"
+import { DEFAULT_MAX_ROWS } from "@/lib/tfl/arrivals-defaults"
 import {
   compareArrivalsBounds,
   formatArrivalsBoundLabel,
@@ -8,6 +9,8 @@ import {
 } from "@/lib/tfl/arrivals-bound-sort"
 import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort"
 import { compareBusRouteNames } from "@/lib/tfl/arrivals-route-sort"
+
+export { DEFAULT_MAX_ROWS } from "@/lib/tfl/arrivals-defaults"
 
 export type RailArrivalsSortBy = "timeToStation" | "source"
 export type RailArrivalsLineSortBy = "canonical" | "source"
@@ -66,8 +69,6 @@ export type ArrivalsPreparedBoard = {
   groups: ArrivalsPreparedGroup[]
   rows: ArrivalsPreparedRow[]
 }
-
-const DEFAULT_MAX_ROWS = 16
 
 export const indexArrivals = (
   data: readonly RealtimePrediction[] | undefined
@@ -333,9 +334,20 @@ export type PrepareRailArrivalsOptions = {
   sortBy?: RailArrivalsSortBy
   lineSortBy?: RailArrivalsLineSortBy
   boundSortBy?: RailArrivalsBoundSortBy
+  /**
+   * Explicit line section order. Listed lines rank by list position; unlisted
+   * lines follow, canonical among themselves. Ordering only — does not seed
+   * or hide lines. When set, overrides `lineSortBy`.
+   */
+  lineOrder?: readonly string[]
   /** Per-bound prediction cap. Does not drop later lines. Default 16. */
   maxRows?: number
 }
+
+const lineOrderRank = (
+  lineId: string,
+  order: ReadonlyMap<string, number>,
+): number | undefined => order.get(normalizeLineId(lineId))
 
 export const prepareRailArrivals = ({
   data,
@@ -343,12 +355,31 @@ export const prepareRailArrivals = ({
   sortBy = "timeToStation",
   lineSortBy = "canonical",
   boundSortBy = "compass",
+  lineOrder,
   maxRows = DEFAULT_MAX_ROWS,
 }: PrepareRailArrivalsOptions): ArrivalsPreparedBoard => {
   const indexed = indexArrivals(data)
   const buckets = collectRailLines(indexed, lines)
 
+  const explicitOrder =
+    lineOrder && lineOrder.length > 0
+      ? new Map(
+          lineOrder.map((id, index) => [normalizeLineId(id), index] as const),
+        )
+      : null
+
   buckets.sort((a, b) => {
+    if (explicitOrder) {
+      const aRank = lineOrderRank(a.lineId, explicitOrder)
+      const bRank = lineOrderRank(b.lineId, explicitOrder)
+      if (aRank !== undefined && bRank !== undefined) return aRank - bRank
+      if (aRank !== undefined) return -1
+      if (bRank !== undefined) return 1
+      return compareArrivalsLines(
+        { lineId: a.lineId, lineName: a.lineName },
+        { lineId: b.lineId, lineName: b.lineName },
+      )
+    }
     if (lineSortBy === "source") {
       return a.firstSourceIndex - b.firstSourceIndex
     }

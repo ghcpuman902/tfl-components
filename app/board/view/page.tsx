@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { BoardDisplay } from "@/components/board/board-display";
+import { getBoardStationLinesIndex } from "@/lib/tfl/board-station-lines";
+import { getBoardStationNamesIndex } from "@/lib/tfl/board-station-names";
 
 export const metadata: Metadata = {
   title: "Board",
@@ -9,5 +11,9 @@ export const metadata: Metadata = {
 };
 
 export default function BoardViewPage() {
-  return <BoardDisplay />;
+  const stationLines = getBoardStationLinesIndex();
+  const stationNames = getBoardStationNamesIndex();
+  return (
+    <BoardDisplay stationLines={stationLines} stationNames={stationNames} />
+  );
 }

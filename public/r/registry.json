@@ -659,6 +659,11 @@
           "target": "lib/tfl/arrivals-prepare.ts"
         },
         {
+          "path": "lib/tfl/arrivals-defaults.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-defaults.ts"
+        },
+        {
           "path": "lib/tfl/arrivals-line-sort.ts",
           "type": "registry:lib",
           "target": "lib/tfl/arrivals-line-sort.ts"
@@ -747,6 +752,11 @@
           "path": "lib/tfl/arrivals-prepare.ts",
           "type": "registry:lib",
           "target": "lib/tfl/arrivals-prepare.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-defaults.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-defaults.ts"
         },
         {
           "path": "lib/tfl/arrivals-line-sort.ts",

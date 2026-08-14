@@ -4,10 +4,9 @@ import {
   useMemo,
   useState,
   useSyncExternalStore,
-  type ChangeEvent,
 } from "react"
 import { ChevronDownIcon } from "lucide-react"
-import Link from "next/link"
+import { BoardConfigForm } from "@/components/board/board-config-form"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -23,48 +22,30 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
 import { useHorizontalScrollEnd } from "@/hooks/use-horizontal-scroll-end"
-import { buildBoardHref } from "@/lib/tfl/board-url-state"
+import {
+  lookupBoardStationLines,
+  type BoardStationLinesIndex,
+} from "@/lib/tfl/board-station-lines"
+import {
+  lookupBoardStationName,
+  type BoardStationNamesIndex,
+} from "@/lib/tfl/board-station-names"
+import {
+  BOARD_PRESETS,
+  DEFAULT_BOARD_PRESET_ID,
+  getBoardPreset,
+  type BoardPresetDef,
+  type BoardPresetId,
+} from "@/lib/tfl/board-presets"
+import {
+  buildBoardHref,
+  DEFAULT_BOARD_CONFIG,
+  type BoardConfig,
+} from "@/lib/tfl/board-url-state"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
 import { cn } from "@/lib/utils"
-
-type BoardPreset = {
-  id: "station" | "mixed" | "lines" | "commute"
-  title: string
-  description: string
-  available: boolean
-}
-
-const BOARD_PRESETS: readonly BoardPreset[] = [
-  {
-    id: "station",
-    title: "Station + network status",
-    description:
-      "One station's arrivals, the current time, and status for every Tube and rail line.",
-    available: true,
-  },
-  {
-    id: "mixed",
-    title: "Mixed transport",
-    description: "Combine Tube, rail, bus, DLR, and Overground in one board.",
-    available: false,
-  },
-  {
-    id: "lines",
-    title: "My lines",
-    description: "Show status for the lines you choose and leave out the rest.",
-    available: false,
-  },
-  {
-    id: "commute",
-    title: "Commute",
-    description: "Build the board around a regular journey or destination.",
-    available: false,
-  },
-]
 
 const subscribeToOrigin = () => () => undefined
 const getBrowserOrigin = () => window.location.origin
@@ -82,7 +63,7 @@ const PreviewRows = ({ count }: { count: number }) => (
   </div>
 )
 
-const PresetDiagram = ({ preset }: { preset: BoardPreset["id"] }) => {
+const PresetDiagram = ({ preset }: { preset: BoardPresetId }) => {
   if (preset === "station") {
     return (
       <div className="grid h-24 grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)] gap-1.5 rounded-lg bg-foreground p-2">
@@ -180,16 +161,22 @@ const PresetCardFeedback = () => (
   </>
 )
 
-const PresetCard = ({ preset }: { preset: BoardPreset }) => (
+const PresetCard = ({
+  preset,
+  active,
+}: {
+  preset: BoardPresetDef
+  active: boolean
+}) => (
   <li
     className="group/preset relative isolate z-0 shrink-0 snap-start px-1.5 py-3 first:pl-3 last:pr-3 hover:z-10 focus-within:z-10"
-    aria-current={preset.available ? "true" : undefined}
+    aria-current={active ? "true" : undefined}
   >
     <PresetCardFeedback />
     <Card
       className={cn(
         "relative z-10 h-full w-[82vw] max-w-84 gap-3 py-3 sm:w-80",
-        preset.available
+        active
           ? "ring-2 ring-primary"
           : "bg-muted/30 text-muted-foreground"
       )}
@@ -212,7 +199,7 @@ const PresetCard = ({ preset }: { preset: BoardPreset }) => (
         </CardDescription>
         <CardAction>
           <Badge variant={preset.available ? "default" : "secondary"}>
-            {preset.available ? "Current" : "Coming soon"}
+            {preset.available ? (active ? "Current" : "Available") : "Coming soon"}
           </Badge>
         </CardAction>
       </CardHeader>
@@ -220,7 +207,46 @@ const PresetCard = ({ preset }: { preset: BoardPreset }) => (
   </li>
 )
 
-export const BoardBuilder = () => {
+const initialBoardConfig = (): BoardConfig => ({
+  ...DEFAULT_BOARD_CONFIG,
+  stop: HOME_RAIL_STOP.id,
+  stopName: HOME_RAIL_STOP.name,
+  arrivals: {},
+})
+
+/**
+ * When the builder emits list-form `a.rows`, always co-emit `a.lines` from
+ * offline serving order so the URL does not depend on live-data fallback.
+ */
+const withCoEmittedLineOrder = (
+  config: BoardConfig,
+  stationLines: BoardStationLinesIndex,
+): BoardConfig => {
+  const rows = config.arrivals.rows
+  if (!Array.isArray(rows)) return config
+  if (config.arrivals.lineOrder?.length) return config
+
+  const serving = lookupBoardStationLines(stationLines, config.stop)
+  if (!serving?.length) return config
+
+  return {
+    ...config,
+    arrivals: {
+      ...config.arrivals,
+      lineOrder: serving.map((line) => line.lineId),
+    },
+  }
+}
+
+type BoardBuilderProps = {
+  stationLines: BoardStationLinesIndex
+  stationNames: BoardStationNamesIndex
+}
+
+export const BoardBuilder = ({
+  stationLines,
+  stationNames,
+}: BoardBuilderProps) => {
   const {
     status,
     hydrated,
@@ -232,8 +258,8 @@ export const BoardBuilder = () => {
   } = useUserTflCredentials()
   const { scrollRef, showEndFade } = useHorizontalScrollEnd<HTMLUListElement>()
 
-  const [stop, setStop] = useState<string>(HOME_RAIL_STOP.id)
-  const [stopName, setStopName] = useState<string>(HOME_RAIL_STOP.name)
+  const [presetId] = useState<BoardPresetId>(DEFAULT_BOARD_PRESET_ID)
+  const [config, setConfig] = useState<BoardConfig>(initialBoardConfig)
   const [configOpen, setConfigOpen] = useState(false)
   const origin = useSyncExternalStore(
     subscribeToOrigin,
@@ -241,27 +267,58 @@ export const BoardBuilder = () => {
     getServerOrigin
   )
 
+  const preset = getBoardPreset(presetId)
   const appKey = hydrated ? (getAppKey() ?? "") : ""
   const hasKey = Boolean(appKey)
 
-  const href = useMemo(
-    () =>
-      buildBoardHref({
-        stop: stop.trim() || undefined,
-        stopName: stopName.trim() || undefined,
-        key: appKey.trim() || undefined,
-      }),
-    [stop, stopName, appKey]
-  )
+  const href = useMemo(() => {
+    const forUrl = withCoEmittedLineOrder(config, stationLines)
+    return buildBoardHref({
+      ...forUrl,
+      stop: forUrl.stop?.trim() || undefined,
+      stopName: forUrl.stopName?.trim() || undefined,
+      key: appKey.trim() || undefined,
+    })
+  }, [config, appKey, stationLines])
 
   const absoluteUrl = origin ? `${origin}${href}` : href
 
-  const handleStopChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setStop(event.target.value)
-  }
+  const handleConfigChange = (next: Partial<BoardConfig>) => {
+    setConfig((current) => {
+      const stopChanged =
+        next.stop !== undefined && next.stop.trim() !== (current.stop ?? "")
 
-  const handleStopNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setStopName(event.target.value)
+      const merged: BoardConfig = {
+        ...current,
+        ...next,
+        arrivals: {
+          ...current.arrivals,
+          ...next.arrivals,
+        },
+      }
+
+      // Positional overrides are stop-relative — drop them on stop change.
+      // A scalar `a.rows` survives.
+      if (stopChanged) {
+        const rows = merged.arrivals.rows
+        merged.arrivals = {
+          rows: typeof rows === "number" ? rows : undefined,
+          lineOrder: undefined,
+        }
+
+        // Auto-fill the station name from the Stop ID, same as rows/lines
+        // already derive from it — but only while the field still holds the
+        // *previous* auto-filled name. A custom name the user typed in
+        // survives the stop change; clearing the field re-arms auto-fill.
+        const prevAutoName = lookupBoardStationName(stationNames, current.stop)
+        const wasAuto = !current.stopName || current.stopName === prevAutoName
+        if (wasAuto && next.stopName === undefined) {
+          merged.stopName = lookupBoardStationName(stationNames, next.stop)
+        }
+      }
+
+      return merged
+    })
   }
 
   const handleManageKey = () => {
@@ -281,8 +338,12 @@ export const BoardBuilder = () => {
             aria-label="Board layouts"
             tabIndex={0}
           >
-            {BOARD_PRESETS.map((preset) => (
-              <PresetCard key={preset.id} preset={preset} />
+            {BOARD_PRESETS.map((item) => (
+              <PresetCard
+                key={item.id}
+                preset={item}
+                active={item.id === presetId && item.available}
+              />
             ))}
           </ul>
           <div
@@ -294,6 +355,38 @@ export const BoardBuilder = () => {
           />
         </div>
       </section>
+
+      <Collapsible
+        open={configOpen}
+        onOpenChange={setConfigOpen}
+        className="rounded-xl border border-border"
+      >
+        <CollapsibleTrigger className="flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+          <span>
+            <span className="block text-lg font-semibold text-foreground">
+              Config
+            </span>
+            <span className="block text-sm text-muted-foreground">
+              Station and display settings
+            </span>
+          </span>
+          <ChevronDownIcon
+            className={cn(
+              "size-4 shrink-0 transition-transform duration-150 ease-[ease]",
+              configOpen && "rotate-180"
+            )}
+            aria-hidden
+          />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="border-t border-border">
+          <BoardConfigForm
+            config={config}
+            formSettings={preset.formSettings}
+            servingLines={lookupBoardStationLines(stationLines, config.stop)}
+            onChange={handleConfigChange}
+          />
+        </CollapsibleContent>
+      </Collapsible>
 
       <section className="space-y-3" aria-labelledby="board-preview-heading">
         <h2 id="board-preview-heading" className="text-lg font-semibold">
@@ -396,102 +489,6 @@ export const BoardBuilder = () => {
           </p>
         ) : null}
       </section>
-
-      <Collapsible
-        open={configOpen}
-        onOpenChange={setConfigOpen}
-        className="rounded-xl border border-border"
-      >
-        <CollapsibleTrigger className="flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-          <span>
-            <span className="block text-lg font-semibold text-foreground">
-              Config
-            </span>
-            <span className="block text-sm text-muted-foreground">
-              Station and display settings
-            </span>
-          </span>
-          <ChevronDownIcon
-            className={cn(
-              "size-4 shrink-0 transition-transform duration-150 ease-[ease]",
-              configOpen && "rotate-180"
-            )}
-            aria-hidden
-          />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="border-t border-border">
-          <form
-            className="grid max-w-xl gap-5 p-4"
-            onSubmit={(event) => event.preventDefault()}
-          >
-            <div className="space-y-2">
-              <Label htmlFor="board-stop">Stop ID</Label>
-              <Input
-                id="board-stop"
-                name="stop"
-                value={stop}
-                onChange={handleStopChange}
-                autoComplete="off"
-                spellCheck={false}
-                aria-describedby="board-stop-hint"
-              />
-              <p id="board-stop-hint" className="text-sm text-muted-foreground">
-                Station NaPTAN ID. Find it in{" "}
-                <Link
-                  href="/docs/explorer"
-                  className="text-foreground underline underline-offset-4"
-                >
-                  Explorer
-                </Link>
-                .
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="board-stop-name">Stop name (optional)</Label>
-              <Input
-                id="board-stop-name"
-                name="stopName"
-                value={stopName}
-                onChange={handleStopNameChange}
-                autoComplete="off"
-              />
-            </div>
-
-            <fieldset className="space-y-3" disabled>
-              <legend className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <span>Display options</span>
-                <Badge variant="secondary">Coming soon</Badge>
-              </legend>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="board-mode">Interactivity</Label>
-                  <select
-                    id="board-mode"
-                    className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm opacity-60"
-                    defaultValue="static"
-                  >
-                    <option value="static">Non-interactive</option>
-                    <option value="mouse">Mouse</option>
-                    <option value="touch">Touch</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="board-fit">Fit</Label>
-                  <select
-                    id="board-fit"
-                    className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm opacity-60"
-                    defaultValue="static"
-                  >
-                    <option value="static">Natural size</option>
-                    <option value="fill">Fill the screen</option>
-                  </select>
-                </div>
-              </div>
-            </fieldset>
-          </form>
-        </CollapsibleContent>
-      </Collapsible>
     </div>
   )
 }

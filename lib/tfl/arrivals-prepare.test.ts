@@ -270,6 +270,41 @@ describe("prepareRailArrivals", () => {
       snapshot
     )
   })
+
+  it("ranks listed lines by lineOrder and leaves unlisted after, canonical", () => {
+    const board = prepareRailArrivals({
+      data: [victoriaSouth, bakerlooNorth, centralWest],
+      lines: oxfordLines,
+      lineOrder: ["victoria", "central"],
+    })
+    assert.deepEqual(groupNames(board.groups), [
+      "Victoria",
+      "Central",
+      "Bakerloo",
+    ])
+  })
+
+  it("lineOrder does not hide or seed lines", () => {
+    const board = prepareRailArrivals({
+      data: [bakerlooNorth],
+      lines: oxfordLines,
+      lineOrder: ["victoria", "jubilee"],
+    })
+    // jubilee is not a serving line — not seeded. victoria stays (seeded empty).
+    assert.deepEqual(groupNames(board.groups), [
+      "Victoria",
+      "Central",
+      "Bakerloo",
+    ])
+    assert.equal(
+      board.groups.find((g) => g.lineId === "victoria")?.hasInformation,
+      false
+    )
+    assert.equal(
+      board.groups.find((g) => g.lineId === "bakerloo")?.hasInformation,
+      true
+    )
+  })
 })
 
 describe("prepareBusArrivals", () => {

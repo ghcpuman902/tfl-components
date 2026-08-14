@@ -134,12 +134,46 @@ const isStripedBar = (modeName?: string) =>
 const SeverityChip = ({ label }: { label: string }) => (
   <span
     className={cn(
-      "mr-[0.35em] inline-flex h-5 max-w-full shrink-0 translate-y-[-0.1em] items-center justify-center bg-foreground/5 px-1.5 align-baseline text-xs font-semibold text-foreground/60",
+      "mr-[0.35em] inline-flex h-5 max-h-lh max-w-full shrink-0 items-center justify-center bg-foreground/5 px-1.5 align-text-bottom text-xs font-semibold text-foreground/60",
       CHIP_CAP_TEXT_BOX_CLASS,
     )}
   >
     <span className="truncate">{label}</span>
   </span>
+);
+
+/** Half a tile — N lines + 1lh gap can land on the arrivals baseline. */
+const DISRUPTION_LEADING_CLASS =
+  "leading-[calc(var(--arrivals-row)/2)]";
+
+const DISRUPTION_COPY_CLASS = cn(
+  "text-pretty text-base text-foreground/80",
+  DISRUPTION_LEADING_CLASS,
+);
+
+/**
+ * Min 1lh after copy, then ceil the block to a whole `--arrivals-row`
+ * so the next line header stays on the same tile grid as arrivals.
+ */
+const DISRUPTION_SNAP_STYLE = {
+  height: "calc-size(auto, round(up, size, var(--arrivals-row)))",
+} as CSSProperties;
+
+const StatusDisruptionBlock = ({
+  announcements,
+}: {
+  announcements: readonly LineAnnouncement[];
+}) => (
+  <div
+    className={cn("box-border", DISRUPTION_LEADING_CLASS)}
+    style={DISRUPTION_SNAP_STYLE}
+  >
+    <div className="pb-[1lh]">
+      {announcements.map((announcement, index) => (
+        <StatusDisruptionCopy key={index} announcement={announcement} />
+      ))}
+    </div>
+  </div>
 );
 
 const StatusDisruptionCopy = ({
@@ -154,7 +188,7 @@ const StatusDisruptionCopy = ({
     : false;
 
   return (
-    <p className="min-h-(--arrivals-row) text-pretty text-base text-foreground/80">
+    <p className={DISRUPTION_COPY_CLASS}>
       {severityLabel ? <SeverityChip label={severityLabel} /> : null}
       {bodyIsOnlyLabel ? null : body}
     </p>
@@ -280,8 +314,8 @@ const goodServiceGridClass = (compact: boolean) =>
 
 const disruptionGridClass = (compact: boolean) =>
   compact
-    ? "mt-2 grid grid-cols-1 gap-x-4 gap-y-(--arrivals-row)"
-    : "mt-2 grid grid-cols-1 gap-x-4 gap-y-(--arrivals-row) md:grid-cols-2 lg:grid-cols-3";
+    ? "mt-2 grid grid-cols-1 gap-x-4"
+    : "mt-2 grid grid-cols-1 gap-x-4 md:grid-cols-2 lg:grid-cols-3";
 
 /**
  * Calm Good Service placeholder — every line in default `LINE_ORDER`,
@@ -391,12 +425,7 @@ export const TubeStatusBoard = ({
                     name={line.name ?? line.id ?? "Line"}
                   />
 
-                  {announcements.map((announcement, index) => (
-                    <StatusDisruptionCopy
-                      key={index}
-                      announcement={announcement}
-                    />
-                  ))}
+                  <StatusDisruptionBlock announcements={announcements} />
                 </div>
               );
             })}

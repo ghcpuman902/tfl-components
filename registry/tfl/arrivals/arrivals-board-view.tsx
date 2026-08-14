@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react"
-import type { RealtimePrediction } from "tfl-ts"
+import { normalizeLineId, type RealtimePrediction } from "tfl-ts"
 import { Loader2 } from "lucide-react"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
 import { StationName } from "@/components/tfl/station-name"
@@ -267,6 +267,21 @@ const GroupBody = ({
   )
 }
 
+/** Resolve per-line page size; falls back to the board-wide scalar. */
+export const resolveGroupPageSize = (
+  lineId: string,
+  pageSize: number | undefined,
+  pageSizeByLine: Readonly<Record<string, number>> | undefined,
+): number | undefined => {
+  if (!pageSizeByLine) return pageSize
+  const keyed = pageSizeByLine[normalizeLineId(lineId)]
+  if (typeof keyed === "number") return keyed
+  // Also allow the raw id key for callers that already normalized.
+  const raw = pageSizeByLine[lineId]
+  if (typeof raw === "number") return raw
+  return pageSize
+}
+
 export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
   mode: ArrivalsBoardMode
   prepared: ArrivalsPreparedBoard
@@ -277,6 +292,11 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
    * to show the prepared rows.
    */
   pageSize?: number
+  /**
+   * Rail only: ID-keyed rows-per-bound override. Falls back to `pageSize`
+   * for lines not listed. Each value applies to every bound on that line.
+   */
+  pageSizeByLine?: Readonly<Record<string, number>>
   /**
    * Root classes, merged over the board container (`data-slot="arrivals-board"`).
    * The root *is* the `arrivals` container, so container-query variants here
@@ -308,6 +328,7 @@ export const ArrivalsBoardView = ({
   emptyKind = "empty",
   emptyMessage,
   pageSize,
+  pageSizeByLine,
   className,
   classNames,
 }: ArrivalsBoardViewProps) => {
@@ -436,7 +457,11 @@ export const ArrivalsBoardView = ({
               <GroupBody
                 group={group}
                 mode={mode}
-                pageSize={pageSize}
+                pageSize={resolveGroupPageSize(
+                  group.lineId,
+                  pageSize,
+                  pageSizeByLine
+                )}
                 classNames={classNames}
               />
             </section>

@@ -52,7 +52,9 @@ Groups by line, then by compass bound from `platformName`. On a vertical board, 
 
 Line sections stay in canonical `LINE_ORDER`. Empty expected lines keep that slot. Pass optional `lines` for the stop's serving set so a line with no predictions still renders a muted **No information** row. When `lines[].bounds` lists the compass sides that station actually serves, those bound groups still render even if the current poll has no trains that way. Otherwise a missing side is omitted.
 
-Each bound shows `pageSize` trains, default 3. Extra pages sit in a native horizontal scroll-snap track. On hover-capable pointers, hover the bound label and its rows for quiet arrows with a `1/5` count — clicks jump instantly. On touch screens, swipe the bound rows; half-opacity page dots stay visible in place of the arrows. A short last page still occupies `pageSize` rows so paging does not jump the layout. A bound with only one page stays short and hides the pager.
+Each bound shows `pageSize` trains, default 3. Override per line with `pageSizeByLine` (ID-keyed map; falls back to `pageSize`). Extra pages sit in a native horizontal scroll-snap track. On hover-capable pointers, hover the bound label and its rows for quiet arrows with a `1/5` count — clicks jump instantly. On touch screens, swipe the bound rows; half-opacity page dots stay visible in place of the arrows. A short last page still occupies `pageSize` rows so paging does not jump the layout. A bound with only one page stays short and hides the pager.
+
+Pass `lineOrder` to pin section order by line id. Listed lines rank by list position; unlisted serving lines follow, still in canonical order among themselves. Ordering only — it does not hide lines or seed phantom sections.
 
 A completely flat rail board is a different product. It would need a compressed row that still shows line, bound, platform, destination, and countdown, not a layout switch on this component.
 
@@ -146,7 +148,9 @@ Named policies, not comparator callbacks:
 | `lineSortBy` | `canonical` (`LINE_ORDER`) | First appearance in `data`, then unused `lines` |
 | `boundSortBy` | `compass` (West→East, North→South) | First appearance within the line |
 
-`maxRows` is a per-bound cap after that order. It does not drop later lines. `pageSize` is how many trains each bound shows at once. Equal `timeToStation` keeps input order. The board does not mutate `data`.
+`maxRows` is a per-bound cap after that order. It does not drop later lines. `pageSize` is how many trains each bound shows at once; `pageSizeByLine` overrides that per line id. Equal `timeToStation` keeps input order. The board does not mutate `data`.
+
+`lineOrder` overrides `lineSortBy` when set: listed ids keep their list position, everything else follows in canonical order.
 
 Rail and bus share one vertical rhythm, so two boards side by side line up. Every block is a whole number of `--arrivals-unit` (`0.5rem`): the stop name, each line header, bound label, and arrival row are 6 units (`3rem`). Retune density by overriding the vars on a wrapper:
 
@@ -166,6 +170,7 @@ Keep polling outside the board, then update `data`. Optional `statusLabel` shows
 | `lines` | `readonly { lineId, lineName, modeName?, bounds? }[]` | Optional serving lines. Empty lines keep a "No information" row in canonical order. Optional `bounds` seeds West/East/North/South groups from station metadata. |
 | `sortBy` | `"timeToStation" \| "source"` | Arrival order within each bound. |
 | `lineSortBy` | `"canonical" \| "source"` | Line section order. |
+| `lineOrder` | `readonly string[]` | Explicit line section order by id. Listed lines first; unlisted follow canonically. Ordering only — does not hide or seed lines. Overrides `lineSortBy`. |
 | `boundSortBy` | `"compass" \| "source"` | Bound order within a line. |
 | `stopName` | `string` | Board heading. Fits via abbr/scale, same policy as destinations. |
 | `loading` / `error` | … | Loading and error presentation. Prefer a short human `error` string. |
@@ -174,5 +179,6 @@ Keep polling outside the board, then update `data`. Optional `statusLabel` shows
 | `statusLabel` | `string` | Optional poll / refresh caption. |
 | `maxRows` | `number` | Per-bound prediction cap after ordering. Does not drop later lines. Headers and empty rows do not count. |
 | `pageSize` | `number` | Visible arrivals per bound, default 3. Extra trains page via hover arrows or touch swipe. Hidden when only one page. |
+| `pageSizeByLine` | `Readonly<Record<string, number>>` | ID-keyed rows-per-bound override. Falls back to `pageSize`. Each value applies to every bound on that line. |
 | `className` | `string` | Root classes, merged over the board container. |
 | `classNames` | `{ groups?, group?, subgroups?, subgroup?, rows? }` | Layout-level class overrides for generated `data-slot` levels. |
