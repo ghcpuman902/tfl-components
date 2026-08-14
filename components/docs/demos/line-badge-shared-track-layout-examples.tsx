@@ -35,7 +35,7 @@ const FixedChipFrame = ({
 
 /** Fixed-width shared-track layout + station examples for the MDX body. */
 export const LineBadgeSharedTrackLayoutExamples = () => (
-  <div className="not-prose my-6 space-y-6">
+  <div className="not-prose my-4 space-y-6">
     <div className="grid gap-3 sm:grid-cols-2">
       <FixedChipFrame label="left" widthClass="w-56">
         <LineBadgeGroup lineIds={EXAMPLES.goldhawk} />

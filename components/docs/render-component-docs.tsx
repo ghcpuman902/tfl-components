@@ -203,7 +203,14 @@ export const renderComponentDocs = ({
         ) : null}
 
         <Suspense fallback={null}>
-          <DocsMdxSlot slug={contentSlug} />
+          {/*
+            MDX compiles to a fragment. Without a wrapper those nodes become
+            direct `article` children and pick up `space-y-14` between every
+            heading and paragraph. Keep major chrome spaced; MDX owns its own.
+          */}
+          <div className="docs-mdx [&_h2+p]:mt-3 [&_h3+p]:mt-2 [&_h4+p]:mt-2 [&_p+p]:mt-4">
+            <DocsMdxSlot slug={contentSlug} />
+          </div>
         </Suspense>
 
         {relatedLinks.length > 0 ? (
