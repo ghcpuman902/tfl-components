@@ -16,7 +16,7 @@ import {
   type GetBusArrivalsResult,
   type NearbyBusStop,
 } from "@/lib/tfl/actions";
-import { TFL_MODAL_COLOURS } from "@/lib/tfl/brand-colours";
+import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge";
 import {
   isValidLatLon,
   TRAFALGAR_SQUARE,
@@ -92,20 +92,6 @@ const formatDistance = (meters?: number): string => {
   if (meters === undefined) return "";
   if (meters < 1000) return `${Math.round(meters)}m`;
   return `${(meters / 1000).toFixed(1)}km`;
-};
-
-/** Compact TfL-style stop letter; sits inline after the stop name in the picker. */
-const StopLetterBadge = ({ letter }: { letter?: string }) => {
-  if (!letter) return null;
-  return (
-    <span
-      className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold leading-none text-white tabular-nums align-middle"
-      style={{ backgroundColor: TFL_MODAL_COLOURS.buses.hex }}
-      aria-hidden
-    >
-      {letter}
-    </span>
-  );
 };
 
 /** Shared line chip for the stop picker only. */
@@ -440,7 +426,9 @@ export const BusArrivals = () => {
                   >
                     <span className="flex items-center gap-1.5 text-sm font-medium">
                       <span className="truncate">{stop.name}</span>
-                      <StopLetterBadge letter={stop.stopLetter} />
+                      {stop.stopLetter ? (
+                        <StopLetterBadge letter={stop.stopLetter} size="sm" />
+                      ) : null}
                     </span>
                     {meta.length > 0 && (
                       <span className="mt-1 block text-xs text-muted-foreground text-pretty">

@@ -49,10 +49,10 @@ async function CycleHireDocksLive() {
 export default function CycleHireDocksDemo() {
   return (
     <div className="space-y-4">
-      <DataSourceLabel source="cached" />
       <Suspense fallback={<CycleHirePreviewFallback />}>
         <CycleHireDocksLive />
       </Suspense>
+      <DataSourceLabel source="cached" />
     </div>
   );
 }

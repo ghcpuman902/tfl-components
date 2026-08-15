@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { DataSourceLabel } from "@/components/docs/data-source-label";
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board";
 import { useArrivalsBoardUiState } from "@/lib/tfl/use-arrivals-board-ui-state";
 import type { BusArrivalsGroupBy } from "@/lib/tfl/arrivals-prepare";
@@ -16,7 +17,7 @@ const BusArrivalsLiveBoard = ({
   groupBy?: BusArrivalsGroupBy;
   showIntro?: boolean;
 }) => {
-  const { data, loading, fetchError, tick } = useDualPathArrivals({
+  const { data, loading, fetchError, fetchedAt, refresh } = useDualPathArrivals({
     stopPointId: HOME_BUS_STOP.id,
     pollMs: POLL_MS,
   });
@@ -53,7 +54,12 @@ const BusArrivalsLiveBoard = ({
             ? "No buses due at this stop right now."
             : undefined
         }
-        statusLabel={`Poll #${tick} · every ${POLL_MS / 1000}s`}
+      />
+      <DataSourceLabel
+        source="live"
+        fetchedAt={fetchedAt ?? undefined}
+        loading={loading}
+        onRefresh={refresh}
       />
     </div>
   );

@@ -21,7 +21,6 @@ export const BusArrivalsDisruptionDemo = () => {
 
   return (
     <div className="my-6 space-y-3">
-      <DataSourceLabel source="fixture" />
       <BusArrivalsBoard
         data={CAPWORTH_STREET_ARRIVALS}
         disruptions={disruptions}
@@ -29,6 +28,7 @@ export const BusArrivalsDisruptionDemo = () => {
         stopLetter="CV"
         headingLevel={2}
       />
+      <DataSourceLabel source="fixture" />
     </div>
   )
 }

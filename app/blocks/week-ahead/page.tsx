@@ -69,7 +69,6 @@ export default function WeekAheadBlockPage() {
                 independently if you only need diagrams.
               </li>
             </ul>
-            <DataSourceLabel source="cached" />
           </div>
         </article>
       </DocsReadableWidth>
@@ -78,6 +77,7 @@ export default function WeekAheadBlockPage() {
         <Suspense fallback={<WeekAheadSkeleton />}>
           <WeekAheadSection />
         </Suspense>
+        <DataSourceLabel source="cached" className="mt-3 px-4" />
       </div>
     </div>
   );

@@ -206,7 +206,7 @@ Rail and bus share one vertical rhythm, so two boards side by side line up. Ever
 </div>
 ```
 
-Keep polling outside the board, then update `data`. Optional `statusLabel` shows poll metadata.
+Keep polling outside the board, then update `data`. Freshness and refresh belong in the app chrome, not on the board.
 
 ## Props
 
@@ -222,7 +222,7 @@ Keep polling outside the board, then update `data`. Optional `statusLabel` shows
 | `loading` / `error` | … | Loading and error presentation. Prefer a short human `error` string. |
 | `emptyKind` | `"empty" \| "ended" \| "offline"` | Why the board has no sections when `error` is unset and `lines` is empty. Resolve in the app (`resolveArrivalsEmptyKind`). |
 | `emptyMessage` | `string` | Optional copy override for `emptyKind`. |
-| `statusLabel` | `string` | Optional poll / refresh caption. |
+| `statusLabel` | `string` | Optional short caption in the title row. |
 | `maxRows` | `number` | Per-bound prediction cap after ordering. Does not drop later lines. Headers and empty rows do not count. |
 | `pageSize` | `number` | Visible arrivals per bound, default 3. Extra trains page via hover arrows or touch swipe. Hidden when only one page. |
 | `pageSizeByLine` | `Readonly<Record<string, number>>` | ID-keyed rows-per-bound override. Falls back to `pageSize`. Each value applies to every bound on that line. |

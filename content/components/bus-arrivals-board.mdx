@@ -146,7 +146,7 @@ Named policies, not comparator callbacks:
 
 Same `--arrivals-unit` / `--arrivals-row` tiles as rail, so a bus board beside a rail board lines up. The stop letter is a red circle next to the stop name, not a per-row field.
 
-Keep polling outside the board, then update `data`. Optional `statusLabel` shows poll metadata.
+Keep polling outside the board, then update `data`. Freshness and refresh belong in the app chrome, not on the board.
 
 ## Props
 
@@ -162,7 +162,7 @@ Keep polling outside the board, then update `data`. Optional `statusLabel` shows
 | `loading` / `error` | … | Loading and error presentation. Prefer a short human `error` string. |
 | `emptyKind` | `"empty" \| "ended" \| "offline"` | Why the board has no rows when `error` is unset. Resolve in the app (`resolveArrivalsEmptyKind`). Night buses still run, so prefer `empty` over `ended`. |
 | `emptyMessage` | `string` | Optional copy override for `emptyKind`. |
-| `statusLabel` | `string` | Optional poll / refresh caption. |
+| `statusLabel` | `string` | Optional short caption in the title row. |
 | `maxRows` | `number` | Prediction cap after ordering. Per route when grouped, whole list when flat. Headers do not count. |
 | `pageSize` | `number` | Visible arrivals per page, default 3. Grouped: pager on the route header. Flat: trailing tile, right-aligned. Hover arrows / touch dots; hidden when only one page. |
 | `className` | `string` | Root classes, merged over the board container. |

@@ -1,5 +1,6 @@
 "use client";
 
+import { DataSourceLabel } from "@/components/docs/data-source-label";
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board";
 import {
   HOME_RAIL_LINES,
@@ -16,7 +17,7 @@ const POLL_MS = 20_000;
  * Identity (stop name) paints immediately; predictions stream in after poll.
  */
 export default function RailArrivalsBoardDemo() {
-  const { data, loading, fetchError, tick } = useDualPathArrivals({
+  const { data, loading, fetchError, fetchedAt, refresh } = useDualPathArrivals({
     stopPointId: HOME_RAIL_STOP.id,
     pollMs: POLL_MS,
   });
@@ -36,7 +37,12 @@ export default function RailArrivalsBoardDemo() {
         loading={loading}
         error={boardState.error}
         emptyKind={boardState.emptyKind}
-        statusLabel={`Poll #${tick} · every ${POLL_MS / 1000}s`}
+      />
+      <DataSourceLabel
+        source="live"
+        fetchedAt={fetchedAt ?? undefined}
+        loading={loading}
+        onRefresh={refresh}
       />
     </div>
   );

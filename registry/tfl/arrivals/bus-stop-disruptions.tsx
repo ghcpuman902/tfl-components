@@ -172,6 +172,9 @@ const DisruptedBusNumberChip = ({
  * against its neighbour with zero gap (visual spacing comes from
  * padding *inside* each button) — moving the pointer from one chip to
  * the next never crosses a dead zone that would blink the cover closed.
+ *
+ * Painted chip stays at arrival-row size (`h-5` / `text-xs` / `5ch`).
+ * Title-relative `ex` on the same node as height collapses the padding.
  */
 export const BusStopDisruptionChips = ({
   className,
@@ -213,7 +216,6 @@ export const BusStopDisruptionChips = ({
             <DisruptedBusNumberChip
               label={disruption.lineId}
               size="sm"
-              chipClassName="h-[2ex] text-[1.05ex]"
             />
           </button>
         )

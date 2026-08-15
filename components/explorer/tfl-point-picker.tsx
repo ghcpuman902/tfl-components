@@ -144,7 +144,7 @@ const PointResultOption = ({
       <span className="flex min-w-0 items-center gap-2">
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="truncate font-medium">{point.name}</span>
-          {stopLetter ? <StopLetterBadge letter={stopLetter} /> : null}
+          {stopLetter ? <StopLetterBadge letter={stopLetter} size="sm" /> : null}
         </span>
         <code className="ml-auto shrink-0 text-xs text-muted-foreground">
           {point.id}

@@ -17,7 +17,6 @@ const StatusWatchlistLive = async () => {
 /** Two-line watchlist — `compact` drops section tiles and empty Good Service. */
 export const StatusWatchlistExample = () => (
   <div className="space-y-3">
-    <DataSourceLabel source="cached" />
     <Suspense
       fallback={
         <TubeStatusBoardSkeleton compact lineIds={WATCHLIST_LINE_IDS} />
@@ -25,5 +24,6 @@ export const StatusWatchlistExample = () => (
     >
       <StatusWatchlistLive />
     </Suspense>
+    <DataSourceLabel source="cached" />
   </div>
 )

@@ -92,7 +92,6 @@ export default function MapsGeographicPage() {
           <h2 id="preview-heading" className="text-lg font-semibold">
             Preview
           </h2>
-          <DataSourceLabel source="cached" />
           <Suspense
             fallback={
               <div
@@ -103,6 +102,7 @@ export default function MapsGeographicPage() {
           >
             <MapGeographicDemo />
           </Suspense>
+          <DataSourceLabel source="cached" />
           <p className="max-w-prose text-sm text-muted-foreground">
             MapLibre GL JS on OpenFreeMap Positron (vector). No API key. Station
             names appear as you zoom.

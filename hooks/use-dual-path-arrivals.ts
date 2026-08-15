@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   withSharedTrackIdentity,
   type RealtimePrediction,
@@ -52,7 +52,8 @@ type UseDualPathArrivalsResult = {
   data: RealtimePrediction[];
   loading: boolean;
   fetchError: string | null;
-  tick: number;
+  fetchedAt: number | null;
+  refresh: () => void;
   source: DualPathSource;
 };
 
@@ -111,7 +112,13 @@ export const useDualPathArrivals = ({
   const [data, setData] = useState<RealtimePrediction[]>([]);
   const [pollError, setPollError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tick, setTick] = useState(0);
+  const [fetchedAt, setFetchedAt] = useState<number | null>(null);
+  const [refreshNonce, setRefreshNonce] = useState(0);
+
+  const refresh = useCallback(() => {
+    setLoading(true);
+    setRefreshNonce((n) => n + 1);
+  }, []);
 
   const pathKey = usingOverride
     ? `${source}:override:${pollStopKey}:${sharedTrackKey}:${familyKeys.join("|")}`
@@ -142,7 +149,7 @@ export const useDualPathArrivals = ({
       if (cancelled) return;
       setPollError(null);
       setData(arrivals);
-      setTick((n) => n + 1);
+      setFetchedAt(Date.now());
       setLoading(false);
     };
 
@@ -297,6 +304,7 @@ export const useDualPathArrivals = ({
     };
   }, [
     pathKey,
+    refreshNonce,
     pollMs,
     source,
     trimmedStop,
@@ -314,7 +322,8 @@ export const useDualPathArrivals = ({
       data: [],
       loading: false,
       fetchError: credentialError?.message ?? INVALID_KEY_FALLBACK,
-      tick,
+      fetchedAt,
+      refresh,
       source,
     };
   }
@@ -324,7 +333,8 @@ export const useDualPathArrivals = ({
       data: [],
       loading: false,
       fetchError: null,
-      tick,
+      fetchedAt,
+      refresh,
       source,
     };
   }
@@ -333,7 +343,8 @@ export const useDualPathArrivals = ({
     data,
     loading,
     fetchError: pollError,
-    tick,
+    fetchedAt,
+    refresh,
     source,
   };
 };

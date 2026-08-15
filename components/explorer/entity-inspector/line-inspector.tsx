@@ -15,7 +15,7 @@ import {
   InspectorJson,
   InspectorSection,
 } from "@/components/explorer/entity-inspector/entity-inspector"
-import { Button } from "@/components/ui/button"
+import { DataSourceLabel } from "@/components/docs/data-source-label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useExplorerKeyedQuery } from "@/hooks/use-explorer-keyed-query"
 import {
@@ -197,29 +197,6 @@ const LineInspectorDetails = ({
     <>
       <InspectorSection title="Preview">
         <div className="space-y-2">
-          {ready ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleRefreshStatus}
-                disabled={loading}
-              >
-                Refresh status
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                {statusFetchedAt
-                  ? `Live · ${new Date(statusFetchedAt).toLocaleTimeString("en-GB")}`
-                  : loading
-                    ? "Loading live status…"
-                    : hydrated
-                      ? "Cached example"
-                      : "Checking for a TfL API key…"}
-              </p>
-            </div>
-          ) : displayStatus ? (
-            <p className="text-xs text-muted-foreground">Cached example</p>
-          ) : null}
           {error ? (
             <p className="text-sm text-destructive" role="alert">
               {error}
@@ -237,6 +214,16 @@ const LineInspectorDetails = ({
                 : "Cached status not loaded for this line."}
             </p>
           )}
+          {ready ? (
+            <DataSourceLabel
+              source="live"
+              fetchedAt={statusFetchedAt ?? undefined}
+              loading={loading}
+              onRefresh={handleRefreshStatus}
+            />
+          ) : displayStatus ? (
+            <DataSourceLabel source="cached" />
+          ) : null}
         </div>
       </InspectorSection>
 

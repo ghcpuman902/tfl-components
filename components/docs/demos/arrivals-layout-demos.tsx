@@ -18,8 +18,8 @@ import {
 
 const DemoFigure = ({ children }: { children: React.ReactNode }) => (
   <div className="my-6 space-y-3">
-    <DataSourceLabel source="fixture" />
     {children}
+    <DataSourceLabel source="fixture" />
   </div>
 )
 

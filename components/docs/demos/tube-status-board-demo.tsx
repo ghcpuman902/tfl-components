@@ -35,10 +35,10 @@ async function TubeStatusBoardLive() {
 export default function TubeStatusBoardDemo() {
   return (
     <div className="space-y-4">
-      <DataSourceLabel source="cached" />
       <Suspense fallback={<TubeStatusBoardSkeleton />}>
         <TubeStatusBoardLive />
       </Suspense>
+      <DataSourceLabel source="cached" />
     </div>
   )
 }

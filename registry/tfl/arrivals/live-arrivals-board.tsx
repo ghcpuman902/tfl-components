@@ -25,7 +25,6 @@ export const LiveArrivalsBoard = ({
   const [data, setData] = useState<RealtimePrediction[]>([])
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [tick, setTick] = useState(0)
   const boardState = useArrivalsBoardUiState(data.length, fetchError, "rail")
 
   useEffect(() => {
@@ -42,7 +41,6 @@ export const LiveArrivalsBoard = ({
         } else {
           setFetchError(null)
           setData(result.arrivals)
-          setTick((n) => n + 1)
         }
       } catch {
         if (!cancelled) setFetchError("Failed to load arrivals.")
@@ -68,7 +66,6 @@ export const LiveArrivalsBoard = ({
       loading={loading}
       error={boardState.error}
       emptyKind={boardState.emptyKind}
-      statusLabel={`Poll #${tick} · every ${POLL_MS / 1000}s`}
     />
   )
 }

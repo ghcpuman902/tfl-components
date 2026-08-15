@@ -1,7 +1,8 @@
 "use client";
 
-import { Suspense, use, useEffect, useState, type ReactNode } from "react";
+import { Suspense, use, useEffect, useState } from "react";
 import type { RealtimePrediction } from "tfl-ts";
+import { DataSourceLabel } from "@/components/docs/data-source-label";
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board";
 import { resolveBusStopLetter } from "@/lib/tfl/bus-stop-letter";
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board";
@@ -278,17 +279,7 @@ const PointInspectorLive = ({
     </p>
   );
 
-  const occupancyLive = dockFetchedAt !== null;
   const displayDock = liveDock ?? cycleDock ?? null;
-
-  const previewMeta = (label: string | null, refresh: ReactNode) => (
-    <div className="flex flex-wrap items-center gap-2">
-      {refresh}
-      {label ? (
-        <p className="text-xs text-muted-foreground">{label}</p>
-      ) : null}
-    </div>
-  );
 
   const busStopDisruptions = isBus
     ? prepareBusStopDisruptions(disruptions, displayArrivals ?? [])
@@ -323,35 +314,26 @@ const PointInspectorLive = ({
     if (ready) {
       return (
         <div className="space-y-3">
-          {previewMeta(
-            arrivalsFetchedAt
-              ? `Live · ${new Date(arrivalsFetchedAt).toLocaleTimeString("en-GB")}`
-              : loading
-                ? "Loading live arrivals…"
-                : null,
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleRefreshArrivals}
-              disabled={loading}
-            >
-              Refresh arrivals
-            </Button>,
-          )}
           {error ? (
             <p className="text-sm text-destructive" role="alert">
               {error}
             </p>
           ) : null}
           {arrivalsBoard}
+          <DataSourceLabel
+            source="live"
+            fetchedAt={arrivalsFetchedAt ?? undefined}
+            loading={loading}
+            onRefresh={handleRefreshArrivals}
+          />
         </div>
       );
     }
     if (seedArrivals && arrivalsBoard) {
       return (
         <div className="space-y-3">
-          {previewMeta("Cached example", null)}
           {arrivalsBoard}
+          <DataSourceLabel source="cached" />
         </div>
       );
     }
@@ -372,21 +354,6 @@ const PointInspectorLive = ({
     if (ready) {
       return (
         <div className="space-y-3">
-          {previewMeta(
-            dockFetchedAt
-              ? `Live · ${new Date(dockFetchedAt).toLocaleTimeString("en-GB")}`
-              : loading
-                ? "Loading live occupancy…"
-                : null,
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleRefreshDock}
-              disabled={loading}
-            >
-              Refresh occupancy
-            </Button>,
-          )}
           {error ? (
             <p className="text-sm text-destructive" role="alert">
               {error}
@@ -395,14 +362,20 @@ const PointInspectorLive = ({
           {displayDock ? (
             <CycleHireDocksDetail data={[displayDock]} hideHeader />
           ) : null}
+          <DataSourceLabel
+            source="live"
+            fetchedAt={dockFetchedAt ?? undefined}
+            loading={loading}
+            onRefresh={handleRefreshDock}
+          />
         </div>
       );
     }
     if (displayDock) {
       return (
         <div className="space-y-3">
-          {previewMeta(occupancyLive ? null : "Cached example", null)}
           <CycleHireDocksDetail data={[displayDock]} hideHeader />
+          <DataSourceLabel source="cached" />
         </div>
       );
     }

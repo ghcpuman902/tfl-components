@@ -819,6 +819,11 @@
           "target": "components/tfl/arrivals/stop-letter-badge.tsx"
         },
         {
+          "path": "registry/tfl/arrivals/chip-text.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/arrivals/chip-text.ts"
+        },
+        {
           "path": "registry/tfl/arrivals/bus-stop-disruptions.tsx",
           "type": "registry:component",
           "target": "components/tfl/arrivals/bus-stop-disruptions.tsx"
@@ -926,6 +931,11 @@
           "path": "registry/tfl/arrivals/stop-letter-badge.tsx",
           "type": "registry:component",
           "target": "components/tfl/arrivals/stop-letter-badge.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/chip-text.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/arrivals/chip-text.ts"
         },
         {
           "path": "lib/tfl/client.ts",

@@ -1,6 +1,5 @@
 import type { CSSProperties } from "react"
 import { normalizeLineId, type RealtimePrediction } from "tfl-ts"
-import { Loader2 } from "lucide-react"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
 import { StationName } from "@/components/tfl/station-name"
 import {
@@ -64,7 +63,7 @@ export type ArrivalsBoardChromeProps = {
    * Prefer a short human line — raw API strings read as broken UI.
    */
   error?: string | null
-  /** Optional poll / refresh label (e.g. "Poll #3 · every 15s"). */
+  /** Optional short caption in the title row. Prefer app-chrome freshness over poll counts. */
   statusLabel?: string
   /**
    * Why the board has no rows when `error` is unset.
@@ -394,16 +393,9 @@ export const ArrivalsBoardView = ({
         {resolvedStopLetter ? (
           <StopLetterBadge letter={resolvedStopLetter} />
         ) : null}
-        {statusLabel || loading ? (
+        {statusLabel ? (
           <p className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-            {loading ? (
-              <>
-                <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                Loading…
-              </>
-            ) : (
-              statusLabel
-            )}
+            {statusLabel}
           </p>
         ) : null}
       </div>
