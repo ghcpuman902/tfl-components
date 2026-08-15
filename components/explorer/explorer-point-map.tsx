@@ -14,6 +14,8 @@ import {
   MAP_SEARCH_RADIUS_METERS,
   circleBounds,
   circlePolygon,
+  fractionOutsideCircle,
+  pointsCentroid,
 } from "@/lib/tfl/geo";
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise";
 import { CycleHireDockMarker } from "@/components/tfl/cycle-hire/cycle-hire-dock-marker";
@@ -33,6 +35,11 @@ const SEARCH_LINE_ID = "explorer-search-circle-line";
 const BUS_RED = TFL_MODAL_COLOURS.buses.hex;
 const CYCLE_MARKER_SIZE = 32;
 const CYCLE_SELECTED_SIZE = 44;
+const MARKER_Z_SELECTED = "4";
+const MARKER_Z_DEFAULT = "1";
+/** Show Search here once this share of the viewport sits outside the result circle. */
+const SEARCH_HERE_OUTSIDE_FRACTION = 0.4;
+const VIEWPORT_SAMPLE_GRID = 12;
 
 /**
  * Lucide `mars` arrow (v1.31.0) — the male-symbol pointer outside the circle.
@@ -117,6 +124,77 @@ const setSearchCircleData = (
     return;
   }
   source.setData(searchCircleCollection(lon, lat, radiusMeters));
+};
+
+const paintSearchCircle = (
+  map: maplibregl.Map,
+  options: {
+    enabled: boolean;
+    previewAtCenter: boolean;
+    searchOrigin: { lat: number; lon: number } | null | undefined;
+    points: readonly ExplorerPoint[];
+    radiusMeters: number;
+  },
+) => {
+  if (!options.enabled) {
+    setSearchCircleData(map, null, null, options.radiusMeters);
+    return;
+  }
+  if (options.previewAtCenter) {
+    const centre = map.getCenter();
+    setSearchCircleData(map, centre.lng, centre.lat, options.radiusMeters);
+    return;
+  }
+  const origin = resultCircleOrigin(options.searchOrigin, options.points);
+  if (!origin) {
+    setSearchCircleData(map, null, null, options.radiusMeters);
+    return;
+  }
+  setSearchCircleData(map, origin.lon, origin.lat, options.radiusMeters);
+};
+
+const setMarkerZIndex = (element: HTMLElement, selected: boolean) => {
+  element.style.zIndex = selected ? MARKER_Z_SELECTED : MARKER_Z_DEFAULT;
+};
+
+const resultCircleOrigin = (
+  searchOrigin: { lat: number; lon: number } | null | undefined,
+  points: readonly ExplorerPoint[],
+): { lat: number; lon: number } | null =>
+  searchOrigin ?? pointsCentroid(points);
+
+const viewportSamplePoints = (
+  map: maplibregl.Map,
+  samples = VIEWPORT_SAMPLE_GRID,
+): { lat: number; lon: number }[] => {
+  const width = map.getCanvas().clientWidth;
+  const height = map.getCanvas().clientHeight;
+  if (width < 2 || height < 2) return [];
+  const out: { lat: number; lon: number }[] = [];
+  for (let row = 0; row < samples; row++) {
+    const y = ((row + 0.5) / samples) * height;
+    for (let col = 0; col < samples; col++) {
+      const x = ((col + 0.5) / samples) * width;
+      const lngLat = map.unproject([x, y]);
+      out.push({ lat: lngLat.lat, lon: lngLat.lng });
+    }
+  }
+  return out;
+};
+
+const viewIsOutsideResultCircle = (
+  map: maplibregl.Map,
+  origin: { lat: number; lon: number } | null,
+  radiusMeters: number,
+): boolean => {
+  if (!origin) return true;
+  return (
+    fractionOutsideCircle(viewportSamplePoints(map), {
+      lat: origin.lat,
+      lon: origin.lon,
+      radiusMeters,
+    }) > SEARCH_HERE_OUTSIDE_FRACTION
+  );
 };
 
 const stationCirclePaint = (dark: boolean) =>
@@ -229,6 +307,14 @@ const addExplorerLayers = (map: maplibregl.Map, dark: boolean) => {
       source: SOURCE_ID,
       filter: ["==", ["get", "marker"], "station"],
       paint: stationCirclePaint(dark),
+      layout: {
+        "circle-sort-key": [
+          "case",
+          ["boolean", ["get", "selected"], false],
+          1,
+          0,
+        ],
+      },
     });
   }
 
@@ -401,6 +487,7 @@ const syncBusMarkers = (
     })
       .setLngLat([point.lon!, point.lat!])
       .addTo(map);
+    setMarkerZIndex(marker.getElement(), point.id === selectedId);
     markers.set(point.id, marker);
   }
 };
@@ -489,6 +576,7 @@ const syncCycleMarkers = (
       existing.point = point;
       existing.onSelect = onSelect;
       existing.marker.setLngLat([point.lon!, point.lat!]);
+      setMarkerZIndex(existing.marker.getElement(), selected);
       paintCycleMarker(existing, selected);
       continue;
     }
@@ -497,6 +585,7 @@ const syncCycleMarkers = (
     const marker = new maplibregl.Marker({ element: el, anchor: "center" })
       .setLngLat([point.lon!, point.lat!])
       .addTo(map);
+    setMarkerZIndex(el, selected);
     const entry: CycleMarkerEntry = { marker, root, point, onSelect };
     el.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -547,8 +636,13 @@ export const ExplorerPointMap = ({
   const skipStyleSwapRef = useRef(true);
   const [showSearchHere, setShowSearchHere] = useState(false);
   const [fitKeySeen, setFitKeySeen] = useState(fitSearchKey);
+  const [pointsSeen, setPointsSeen] = useState(points);
   if (fitSearchKey !== fitKeySeen) {
     setFitKeySeen(fitSearchKey);
+    if (showSearchHere) setShowSearchHere(false);
+  }
+  if (points !== pointsSeen) {
+    setPointsSeen(points);
     if (showSearchHere) setShowSearchHere(false);
   }
 
@@ -565,12 +659,12 @@ export const ExplorerPointMap = ({
   }, [points]);
 
   useEffect(() => {
-    selectedIdRef.current = selectedId;
-  }, [selectedId]);
-
-  useEffect(() => {
     showSearchHereRef.current = showSearchHere;
   }, [showSearchHere]);
+
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
 
   useEffect(() => {
     searchOriginRef.current = searchOrigin;
@@ -623,7 +717,7 @@ export const ExplorerPointMap = ({
     };
 
     const handleMove = () => {
-      if (!showSearchHereRef.current) return;
+      if (!showSearchHereRef.current || !onSearchHereRef.current) return;
       const centre = map.getCenter();
       setSearchCircleData(
         map,
@@ -641,14 +735,23 @@ export const ExplorerPointMap = ({
         return;
       }
       if (userGestureRef.current && onSearchHereRef.current) {
-        setShowSearchHere(true);
-        const centre = map.getCenter();
-        setSearchCircleData(
+        const origin = resultCircleOrigin(
+          searchOriginRef.current,
+          pointsRef.current,
+        );
+        const show = viewIsOutsideResultCircle(
           map,
-          centre.lng,
-          centre.lat,
+          origin,
           searchRadiusRef.current,
         );
+        setShowSearchHere(show);
+        paintSearchCircle(map, {
+          enabled: true,
+          previewAtCenter: show,
+          searchOrigin: searchOriginRef.current,
+          points: pointsRef.current,
+          radiusMeters: searchRadiusRef.current,
+        });
       }
       userGestureRef.current = false;
     };
@@ -676,6 +779,13 @@ export const ExplorerPointMap = ({
         onSelectRef.current,
         cycleMarkers,
       );
+      paintSearchCircle(map, {
+        enabled: Boolean(onSearchHereRef.current),
+        previewAtCenter: false,
+        searchOrigin: searchOriginRef.current,
+        points: pointsRef.current,
+        radiusMeters: searchRadiusRef.current,
+      });
       map.on("click", LAYER_ID, handlePointClick);
       map.on("click", LABEL_LAYER_ID, handlePointClick);
       map.on("click", SELECTED_LABEL_LAYER_ID, handlePointClick);
@@ -736,22 +846,13 @@ export const ExplorerPointMap = ({
         onSelectRef.current,
         cycleMarkersRef.current,
       );
-      if (showSearchHereRef.current) {
-        const centre = map.getCenter();
-        setSearchCircleData(
-          map,
-          centre.lng,
-          centre.lat,
-          searchRadiusRef.current,
-        );
-      } else if (searchOriginRef.current) {
-        setSearchCircleData(
-          map,
-          searchOriginRef.current.lon,
-          searchOriginRef.current.lat,
-          searchRadiusRef.current,
-        );
-      }
+      paintSearchCircle(map, {
+        enabled: Boolean(onSearchHereRef.current),
+        previewAtCenter: showSearchHereRef.current,
+        searchOrigin: searchOriginRef.current,
+        points: pointsRef.current,
+        radiusMeters: searchRadiusRef.current,
+      });
     };
 
     map.setStyle(openFreeMapStyleUrl(dark));
@@ -796,22 +897,14 @@ export const ExplorerPointMap = ({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
-    if (showSearchHere) {
-      const centre = map.getCenter();
-      setSearchCircleData(map, centre.lng, centre.lat, searchRadiusMeters);
-      return;
-    }
-    if (searchOrigin) {
-      setSearchCircleData(
-        map,
-        searchOrigin.lon,
-        searchOrigin.lat,
-        searchRadiusMeters,
-      );
-      return;
-    }
-    setSearchCircleData(map, null, null, searchRadiusMeters);
-  }, [showSearchHere, searchOrigin, searchRadiusMeters]);
+    paintSearchCircle(map, {
+      enabled: Boolean(onSearchHere),
+      previewAtCenter: showSearchHere,
+      searchOrigin,
+      points,
+      radiusMeters: searchRadiusMeters,
+    });
+  }, [points, searchOrigin, searchRadiusMeters, onSearchHere, showSearchHere]);
 
   useEffect(() => {
     const map = mapRef.current;

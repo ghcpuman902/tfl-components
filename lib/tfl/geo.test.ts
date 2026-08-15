@@ -4,6 +4,9 @@ import {
   MAP_SEARCH_RADIUS_METERS,
   circleBounds,
   circlePolygon,
+  distanceMeters,
+  fractionOutsideCircle,
+  pointsCentroid,
 } from "./geo";
 
 describe("circlePolygon", () => {
@@ -32,5 +35,65 @@ describe("circleBounds", () => {
     const [[west, south], [east, north]] = bounds;
     assert.ok(east > west);
     assert.ok(north > south);
+  });
+});
+
+describe("distanceMeters", () => {
+  it("is ~0 at the same point", () => {
+    assert.ok(distanceMeters(51.508, -0.128, 51.508, -0.128) < 0.01);
+  });
+});
+
+describe("pointsCentroid", () => {
+  it("averages located points", () => {
+    const centre = pointsCentroid([
+      { lat: 51.5, lon: -0.12 },
+      { lat: 51.51, lon: -0.14 },
+      {},
+    ]);
+    assert.ok(centre);
+    assert.ok(Math.abs(centre.lat - 51.505) < 1e-10);
+    assert.equal(centre.lon, -0.13);
+  });
+
+  it("returns null without coordinates", () => {
+    assert.equal(pointsCentroid([{}]), null);
+  });
+});
+
+describe("fractionOutsideCircle", () => {
+  const circle = { lat: 51.508, lon: -0.128, radiusMeters: 400 };
+
+  it("is 0 when every sample is inside", () => {
+    assert.equal(
+      fractionOutsideCircle(
+        [
+          { lat: 51.508, lon: -0.128 },
+          { lat: 51.5082, lon: -0.128 },
+        ],
+        circle,
+      ),
+      0,
+    );
+  });
+
+  it("is 1 when every sample is well outside", () => {
+    assert.equal(
+      fractionOutsideCircle([{ lat: 51.53, lon: -0.08 }], circle),
+      1,
+    );
+  });
+
+  it("reports the share outside", () => {
+    assert.equal(
+      fractionOutsideCircle(
+        [
+          { lat: 51.508, lon: -0.128 },
+          { lat: 51.53, lon: -0.08 },
+        ],
+        circle,
+      ),
+      0.5,
+    );
   });
 });

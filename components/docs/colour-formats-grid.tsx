@@ -139,12 +139,31 @@ const ColourCard = ({
         <LineColorBar
           lineId={line.id}
           modeName={line.modeName}
-          color={line.spec.hex}
           heightClass="h-1"
         />
       </div>
 
-      <div className="flex h-16 w-full overflow-hidden rounded-md border border-foreground/20 shadow-xs">
+      <CopyButton
+        label={`${line.name} print`}
+        value={row.print.value}
+        tone="print"
+        className="px-2 py-2"
+      >
+        <span className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Print
+          </span>
+          <span className="flex flex-col gap-0.5 font-mono text-[11px] leading-snug text-foreground">
+            {row.print.lines.map((lineText) => (
+              <span key={lineText} className="break-all">
+                {lineText}
+              </span>
+            ))}
+          </span>
+        </span>
+      </CopyButton>
+
+      <div className="flex h-16 w-full overflow-hidden border border-foreground/20 shadow-xs">
         <CopyButton
           label={`${line.name} light ${format}`}
           value={light.value}
@@ -199,26 +218,6 @@ const ColourCard = ({
           </span>
         </CopyButton>
       </div>
-
-      <CopyButton
-        label={`${line.name} print`}
-        value={row.print.value}
-        tone="print"
-        className="px-2 py-2"
-      >
-        <span className="flex flex-col gap-0.5">
-          <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            Print
-          </span>
-          <span className="flex flex-col gap-0.5 font-mono text-[11px] leading-snug text-foreground">
-            {row.print.lines.map((lineText) => (
-              <span key={lineText} className="break-all">
-                {lineText}
-              </span>
-            ))}
-          </span>
-        </span>
-      </CopyButton>
     </article>
   );
 };

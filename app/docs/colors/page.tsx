@@ -88,10 +88,7 @@ export default function FoundationsColoursPage() {
           >
             design standards
           </a>{" "}
-          (Colour standard Issue 10). Dark tokens take those light colours and
-          apply a median day→night OKLCH delta (~+3.3% L, slight +C, hue held)
-          matching TfL Go&apos;s map convention — Go is still testing dark mode
-          and seeking feedback. Not a licence for Johnston or the{" "}
+          (Colour standard Issue 10). Not a licence for Johnston or the{" "}
           <Link
             href="/docs/tfl-roundel"
             className="text-foreground underline underline-offset-4"
@@ -193,10 +190,17 @@ export default function FoundationsColoursPage() {
 
         <section id="adaptive" className="space-y-3">
           <h2 className="text-lg font-semibold">Adaptive modes</h2>
+          <p className="max-w-prose text-sm text-muted-foreground">
+            TfL has not published dark-mode line colours. We took screenshots of
+            the TfL Go app in light and dark appearance and measured the OKLCH
+            shift between matching line paints. Dark tokens apply that median
+            shift to the published Colour standard values: about +3.3%
+            lightness, a little more chroma, hue held.
+          </p>
           <ul className="max-w-prose list-disc space-y-2 pl-5 text-sm text-muted-foreground">
             <li>
-              <code className="text-xs">.dark</code> — brand + Go night OKLCH;
-              Northern becomes light fill / black ink
+              <code className="text-xs">.dark</code> — those derived colours.
+              Northern uses a light fill and black ink
             </li>
             <li>
               <code className="text-xs">data-tfl-northern=&quot;halo&quot;</code>{" "}

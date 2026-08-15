@@ -78,3 +78,54 @@ export const circleBounds = (
     [lon + lonDelta, lat + latDelta],
   ];
 };
+
+const toRad = (degrees: number): number => (degrees * Math.PI) / 180;
+
+/** Great-circle distance in metres. */
+export const distanceMeters = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number => {
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * 6_371_000 * Math.asin(Math.min(1, Math.sqrt(a)));
+};
+
+export const pointsCentroid = (
+  points: readonly { lat?: number; lon?: number }[],
+): { lat: number; lon: number } | null => {
+  let lat = 0;
+  let lon = 0;
+  let count = 0;
+  for (const point of points) {
+    if (typeof point.lat !== "number" || typeof point.lon !== "number") continue;
+    lat += point.lat;
+    lon += point.lon;
+    count += 1;
+  }
+  if (count === 0) return null;
+  return { lat: lat / count, lon: lon / count };
+};
+
+/** Share of samples that sit outside a metre-radius circle (0–1). */
+export const fractionOutsideCircle = (
+  samples: readonly { lat: number; lon: number }[],
+  circle: { lat: number; lon: number; radiusMeters: number },
+): number => {
+  if (samples.length === 0) return 0;
+  let outside = 0;
+  for (const sample of samples) {
+    if (
+      distanceMeters(circle.lat, circle.lon, sample.lat, sample.lon) >
+      circle.radiusMeters
+    ) {
+      outside += 1;
+    }
+  }
+  return outside / samples.length;
+};
