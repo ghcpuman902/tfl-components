@@ -98,7 +98,8 @@ export const DebugPanel = () => {
       <p className="mb-3 text-[10px] leading-snug text-white/55">
         {tune.followViewport
           ? "Camera follows viewport crop."
-          : "Camera unlocked from viewport."}
+          : "Camera unlocked from viewport."}{" "}
+        {viewport.width}×{viewport.height}
       </p>
       <div className="space-y-3">
         <RangeField
