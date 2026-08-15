@@ -23,6 +23,7 @@ export const LiveArrivalsBoard = ({
   stopName?: string
 }) => {
   const [data, setData] = useState<RealtimePrediction[]>([])
+  const [fetchedAt, setFetchedAt] = useState<number | null>(null)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const boardState = useArrivalsBoardUiState(data.length, fetchError, "rail")
@@ -41,6 +42,7 @@ export const LiveArrivalsBoard = ({
         } else {
           setFetchError(null)
           setData(result.arrivals)
+          setFetchedAt(Date.now())
         }
       } catch {
         if (!cancelled) setFetchError("Failed to load arrivals.")
@@ -62,6 +64,7 @@ export const LiveArrivalsBoard = ({
   return (
     <RailArrivalsBoard
       data={data}
+      now={fetchedAt ?? undefined}
       stopName={stopName}
       loading={loading}
       error={boardState.error}

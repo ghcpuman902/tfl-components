@@ -69,13 +69,13 @@ export const BusStopDisruptionBoundary = ({
 
 /**
  * Badge geometry per chip size — cutout is deliberately larger than the
- * badge. `inset` pulls the badge (and its matching cutout) a few px in from
- * the exact corner so it reads as sitting on the chip rather than mostly
- * hanging off it.
+ * badge. `insetX` / `insetY` pull the badge (and its matching cutout) in
+ * from the exact corner so it reads as sitting on the chip rather than
+ * mostly hanging off it.
  */
 const BADGE_GEOMETRY = {
-  sm: { badge: 14, cutout: 9, inset: 3, stroke: [2, 6] as const, dot: 2, gap: 1.5 },
-  lg: { badge: 20, cutout: 13, inset: 4, stroke: [2.5, 8] as const, dot: 2.5, gap: 2 },
+  sm: { badge: 14, cutout: 9, insetX: 0, insetY: 3, stroke: [2, 6] as const, dot: 2, gap: 1.5 },
+  lg: { badge: 20, cutout: 13, insetX: 4, insetY: 4, stroke: [2.5, 8] as const, dot: 2.5, gap: 2 },
 }
 
 /**
@@ -84,8 +84,12 @@ const BADGE_GEOMETRY = {
  * (inset) position. Whatever sits behind the chip shows through the gap
  * untouched, regardless of the surrounding background.
  */
-const cutoutMaskStyle = (radiusPx: number, insetPx: number): CSSProperties => {
-  const mask = `radial-gradient(circle at calc(100% - ${insetPx}px) ${insetPx}px, transparent ${radiusPx - 1}px, black ${radiusPx}px)`
+const cutoutMaskStyle = (
+  radiusPx: number,
+  insetXPx: number,
+  insetYPx: number
+): CSSProperties => {
+  const mask = `radial-gradient(circle at calc(100% - ${insetXPx}px) ${insetYPx}px, transparent ${radiusPx - 1}px, black ${radiusPx}px)`
   return {
     WebkitMaskImage: mask,
     maskImage: mask,
@@ -144,13 +148,13 @@ const DisruptedBusNumberChip = ({
       <BusNumberChip
         label={label}
         className={chipClassName}
-        style={cutoutMaskStyle(geometry.cutout, geometry.inset)}
+        style={cutoutMaskStyle(geometry.cutout, geometry.insetX, geometry.insetY)}
       />
       <span
         className="absolute flex -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full"
         style={{
-          top: geometry.inset,
-          right: geometry.inset,
+          top: geometry.insetY,
+          right: geometry.insetX,
           width: geometry.badge,
           height: geometry.badge,
           backgroundColor: BUS_DISRUPTION_WARNING_COLOR,
@@ -164,8 +168,10 @@ const DisruptedBusNumberChip = ({
 
 /**
  * Header trigger row — one warning chip per disrupted route, painted
- * inline after the stop name. Hover opens on desktop, tap opens on
- * touch (`onClick` fires for both); any other chip dims to `opacity-50`
+ * inline after the stop name. Mouse hover opens; tap/`click` toggles.
+ * Hover is `pointerType === "mouse"` only — touch also synthesises
+ * `mouseenter` then `click` in one gesture, and the click would toggle
+ * the cover straight back shut. Any other chip dims to `opacity-50`
  * while one is active so the open one reads as selected.
  *
  * Each trigger's hit area spans the title row height and butts up
@@ -201,12 +207,16 @@ export const BusStopDisruptionChips = ({
             )}
             aria-expanded={isActive}
             aria-label={`Route ${disruption.lineId} disruption: ${disruption.description}`}
-            onMouseEnter={() => setActiveLineId(disruption.lineId)}
-            onMouseLeave={() =>
+            onPointerEnter={(event) => {
+              if (event.pointerType !== "mouse") return
+              setActiveLineId(disruption.lineId)
+            }}
+            onPointerLeave={(event) => {
+              if (event.pointerType !== "mouse") return
               setActiveLineId((current) =>
                 current === disruption.lineId ? null : current
               )
-            }
+            }}
             onClick={() =>
               setActiveLineId((current) =>
                 current === disruption.lineId ? null : disruption.lineId

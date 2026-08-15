@@ -67,6 +67,25 @@ const SHARED_TRACK_MERGE_EXCLUDE: Readonly<
   "940GZZLUBST": ["metropolitan"],
 };
 
+/**
+ * Live-observed shared-track facts tfl-ts's static route topology doesn't
+ * encode, so `getSharedTrackSegments` never flags these stations as shared
+ * for that line pair. Confirmed by repeated live polling (not a one-off
+ * diversion): Hammersmith & City predictions — including vehicles dual-listed
+ * with District — repeatedly appear on Paddington Circle's own local-line
+ * platforms ("Inner Rail - Platform 1" / "Outer Rail - Platform 2"), the same
+ * platforms District and Circle already share there. TfL's own station page
+ * for 940GZZLUPAC shows the same District-on-Inner-Rail pattern. Without this
+ * override, H&C renders as an unmerged, duplicate-looking third section on
+ * the exact platforms already shown under Circle + District — see
+ * docs/arrivals-shared-platforms.md.
+ */
+const SHARED_TRACK_MERGE_INCLUDE: Readonly<
+  Record<string, readonly string[]>
+> = {
+  "940GZZLUPAC": ["hammersmith-city"],
+};
+
 const SHARED_TRACK_MERGE_PAGE_SIZE = RAIL_ARRIVALS_MERGED_PAGE_SIZE;
 
 const sortLineIds = (ids: readonly string[]): string[] =>
@@ -134,6 +153,20 @@ const buildSharedTrackTables = (): SharedTrackTables => {
       families.push(familyIds);
       familiesByStation.set(stationId, families);
     }
+  }
+
+  for (const [stationId, extra] of Object.entries(SHARED_TRACK_MERGE_INCLUDE)) {
+    const merge = mergeByStation.get(stationId) ?? new Set<string>();
+    for (const id of extra) merge.add(id);
+    mergeByStation.set(stationId, merge);
+
+    const identity = identityByStation.get(stationId) ?? new Set<string>();
+    for (const id of extra) identity.add(id);
+    identityByStation.set(stationId, identity);
+
+    // Replace the auto-derived family (e.g. plain Circle/District) with the
+    // superset — one family per station, matching the Liverpool Street shape.
+    familiesByStation.set(stationId, [sortLineIds([...identity])]);
   }
 
   const groups: Record<string, readonly BoardStationLineGroup[]> = {};

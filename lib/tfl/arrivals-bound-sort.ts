@@ -27,20 +27,49 @@ export const COMPASS_BOUND_RE =
   /^(northbound|southbound|eastbound|westbound)\b/i;
 
 /**
- * Cleaned platform letter or number from a TfL `platformName`.
- * Drops the compass prefix, the word "Platform", and the literal "Unknown".
+ * Sub-surface loop wording where compass direction is ambiguous (the shared
+ * Circle/Hammersmith & City stretch through Paddington, Bayswater, and
+ * Notting Hill Gate — confirmed network-wide, see
+ * docs/arrivals-shared-platforms.md). TfL's own boards use this instead of a
+ * compass bound: "Inner Rail - Platform 1" / "Outer Rail - Platform 2".
+ */
+export const RAIL_DESIGNATION_RE = /^(inner|outer)\s+rail\b/i;
+
+export type ArrivalsRailDesignation = "inner" | "outer";
+
+export const parseArrivalsRailDesignation = (
+  platformName?: string,
+): ArrivalsRailDesignation | null => {
+  if (!platformName) return null;
+  const match = platformName.match(RAIL_DESIGNATION_RE);
+  return (match?.[1]?.toLowerCase() as ArrivalsRailDesignation | undefined) ?? null;
+};
+
+/** A bare platform letter/number token, e.g. "1", "12", "A" — not a phrase. */
+const BARE_PLATFORM_TOKEN_RE = /^[a-z0-9]{1,3}$/i;
+/** Pulls the number/letter out of a "... Platform N" phrase anywhere in the string. */
+const PLATFORM_WORD_TOKEN_RE = /\bplatform\s+([a-z0-9]+)/i;
+
+/**
+ * Cleaned platform letter or number from a TfL `platformName`, for the
+ * compact per-row platform chip. Drops compass/rail-designation prefixes and
+ * the literal "Unknown". Descriptive-only labels with no platform number
+ * (e.g. Chesham's "North / South") return null — there's nothing short
+ * enough for a chip; `formatBoundHeading` still shows the full text.
  */
 export const parseArrivalsPlatformLabel = (
   platformName?: string,
 ): string | null => {
   if (!platformName) return null;
   if (/\bunknown\b/i.test(platformName)) return null;
-  const stripped = platformName
+  const withoutBound = platformName
     .replace(COMPASS_BOUND_RE, "")
-    .replace(/^\s*[-–—:]\s*/, "")
-    .replace(/^platform\s+/i, "")
+    .replace(RAIL_DESIGNATION_RE, "")
     .trim();
-  return stripped || null;
+  const wordToken = withoutBound.match(PLATFORM_WORD_TOKEN_RE)?.[1];
+  if (wordToken) return wordToken;
+  const bareToken = withoutBound.replace(/^\s*[-–—:]\s*/, "").trim();
+  return BARE_PLATFORM_TOKEN_RE.test(bareToken) ? bareToken : null;
 };
 
 export const normalizeArrivalsBoundId = (
@@ -67,6 +96,11 @@ export const parseCompassBoundId = (
 export const isUnknownArrivalsPlatform = (platformName?: string): boolean =>
   Boolean(platformName && /\bunknown\b/i.test(platformName));
 
+/** Display label for a rail designation: `inner` → `Inner Rail`. */
+export const formatArrivalsRailDesignationLabel = (
+  designation: ArrivalsRailDesignation,
+): string => (designation === "inner" ? "Inner Rail" : "Outer Rail");
+
 /** Heading for a platform-only subgroup: `A` → `Platform A`. */
 export const formatPlatformHeading = (platformLabel: string): string =>
   `Platform ${platformLabel}`;
@@ -75,6 +109,8 @@ export type FormatBoundHeadingInput = {
   boundId?: ArrivalsBoundId | null;
   /** Cleaned platform letter/number, when it belongs in the heading. */
   platformLabel?: string | null;
+  /** Inner/Outer Rail qualifier, when the platform carries one. */
+  railDesignation?: ArrivalsRailDesignation | null;
   /** Live predictions with unknown/missing platform. */
   unknown?: boolean;
 };
@@ -84,6 +120,7 @@ export type FormatBoundHeadingInput = {
  * small diff — this default is direction + platform when both exist.
  *
  * - `"Eastbound · Platform 1"`
+ * - `"Inner Rail · Platform 1"`
  * - `"Platform A"`
  * - `"Westbound"` (seeded empty bound, or platforms vary inside the bound)
  * - `"Platform to be confirmed"`
@@ -91,10 +128,15 @@ export type FormatBoundHeadingInput = {
 export const formatBoundHeading = ({
   boundId,
   platformLabel,
+  railDesignation,
   unknown = false,
 }: FormatBoundHeadingInput): string | null => {
   if (unknown) return ARRIVALS_PLATFORM_UNKNOWN_HEADING;
-  const direction = boundId ? formatArrivalsBoundLabel(boundId) : null;
+  const direction = boundId
+    ? formatArrivalsBoundLabel(boundId)
+    : railDesignation
+      ? formatArrivalsRailDesignationLabel(railDesignation)
+      : null;
   const platform = platformLabel ? formatPlatformHeading(platformLabel) : null;
   if (direction && platform) return `${direction} · ${platform}`;
   return direction ?? platform;

@@ -5,11 +5,13 @@ import {
   arrivalsBoundOrderKey,
   compareArrivalsBounds,
   formatArrivalsBoundLabel,
+  formatArrivalsRailDesignationLabel,
   formatBoundHeading,
   formatPlatformHeading,
   isUnknownArrivalsPlatform,
   normalizeArrivalsBoundId,
   parseArrivalsPlatformLabel,
+  parseArrivalsRailDesignation,
   parseCompassBoundId,
 } from "@/lib/tfl/arrivals-bound-sort";
 
@@ -48,6 +50,52 @@ describe("parseArrivalsPlatformLabel", () => {
     assert.equal(parseArrivalsPlatformLabel("Platform Unknown"), null);
     assert.equal(parseArrivalsPlatformLabel("Unknown"), null);
     assert.equal(parseArrivalsPlatformLabel(undefined), null);
+  });
+
+  it("extracts the bare number from Inner/Outer Rail wording without doubling Platform", () => {
+    // Paddington, Bayswater, Notting Hill Gate — the shared Circle/H&C stretch
+    // where compass direction is ambiguous. Confirmed network-wide via a live
+    // survey of every Circle/District/H&C/Metropolitan station.
+    assert.equal(parseArrivalsPlatformLabel("Inner Rail - Platform 1"), "1");
+    assert.equal(parseArrivalsPlatformLabel("Outer Rail - Platform 2"), "2");
+  });
+
+  it("extracts a Platform N token from other descriptive labels", () => {
+    // Chalfont & Latimer's Metropolitan branch platform — same double-Platform
+    // risk as Inner/Outer Rail, fixed by the same general rule.
+    assert.equal(
+      parseArrivalsPlatformLabel("Chesham Branch - Platform 3"),
+      "3",
+    );
+  });
+
+  it("returns null for a descriptive label with no platform number", () => {
+    // Chesham's single-platform terminus: TfL sends "North / South" instead
+    // of a platform number. Nothing short enough for a chip; the bound
+    // heading still shows the raw text via formatBoundHeading.
+    assert.equal(parseArrivalsPlatformLabel("North / South"), null);
+  });
+});
+
+describe("parseArrivalsRailDesignation", () => {
+  it("reads Inner/Outer Rail from platformName", () => {
+    assert.equal(
+      parseArrivalsRailDesignation("Inner Rail - Platform 1"),
+      "inner",
+    );
+    assert.equal(
+      parseArrivalsRailDesignation("Outer Rail - Platform 2"),
+      "outer",
+    );
+    assert.equal(parseArrivalsRailDesignation("Platform 3"), null);
+    assert.equal(parseArrivalsRailDesignation(undefined), null);
+  });
+});
+
+describe("formatArrivalsRailDesignationLabel", () => {
+  it("title-cases the designation", () => {
+    assert.equal(formatArrivalsRailDesignationLabel("inner"), "Inner Rail");
+    assert.equal(formatArrivalsRailDesignationLabel("outer"), "Outer Rail");
   });
 });
 
@@ -93,6 +141,17 @@ describe("formatBoundHeading", () => {
     assert.equal(
       formatBoundHeading({ unknown: true }),
       ARRIVALS_PLATFORM_UNKNOWN_HEADING,
+    );
+  });
+
+  it("joins the rail designation and platform, matching house middot style", () => {
+    assert.equal(
+      formatBoundHeading({ platformLabel: "1", railDesignation: "inner" }),
+      "Inner Rail · Platform 1",
+    );
+    assert.equal(
+      formatBoundHeading({ platformLabel: "2", railDesignation: "outer" }),
+      "Outer Rail · Platform 2",
     );
   });
 });

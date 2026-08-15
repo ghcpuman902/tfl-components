@@ -102,14 +102,19 @@ describe("lookupBoardStationLineGroups", () => {
     ]);
   });
 
-  it("merges Circle and H&C on the Hammersmith branch, Circle and District at Paddington Circle", () => {
+  it("merges Circle and H&C on the Hammersmith branch, and all three at Paddington Circle", () => {
     assert.deepEqual(lookupBoardStationLineGroups("940GZZLUPAH")?.[0]?.lines, [
       "circle",
       "hammersmith-city",
     ]);
+    // H&C (sometimes dual-listed with District) repeatedly surfaces on
+    // Paddington Circle's own platforms in live data even though tfl-ts's
+    // static topology doesn't mark this pair as shared-track — see the
+    // curated override in board-station-lines.ts.
     assert.deepEqual(lookupBoardStationLineGroups("940GZZLUPAC")?.[0]?.lines, [
       "district",
       "circle",
+      "hammersmith-city",
     ]);
   });
 
@@ -157,7 +162,7 @@ describe("lookupSharedTrackLineIds", () => {
     assert.deepEqual(lookupSharedTrackLineIds("940GZZLUKSX"), identity);
   });
 
-  it("reconciles Circle and District at Victoria and Paddington Circle", () => {
+  it("reconciles Circle and District at Victoria, and all three at Paddington Circle", () => {
     assert.deepEqual(lookupSharedTrackLineIds("940GZZLUVIC"), [
       "district",
       "circle",
@@ -165,10 +170,11 @@ describe("lookupSharedTrackLineIds", () => {
     assert.deepEqual(lookupSharedTrackLineIds("940GZZLUPAC"), [
       "district",
       "circle",
+      "hammersmith-city",
     ]);
   });
 
-  it("keeps Circle/District as its own family, not mixed into H&C/Met", () => {
+  it("keeps Circle/District as its own family at Victoria, not mixed into H&C/Met", () => {
     const families = lookupSharedTrackFamilies("940GZZLUVIC");
     assert.ok(families);
     assert.deepEqual(families, [["district", "circle"]]);
@@ -177,5 +183,11 @@ describe("lookupSharedTrackLineIds", () => {
     assert.deepEqual(livst, [
       ["circle", "hammersmith-city", "metropolitan"],
     ]);
+  });
+
+  it("replaces the auto-derived family at Paddington Circle with the curated superset", () => {
+    const families = lookupSharedTrackFamilies("940GZZLUPAC");
+    assert.ok(families);
+    assert.deepEqual(families, [["district", "circle", "hammersmith-city"]]);
   });
 });

@@ -32,6 +32,17 @@ export const isDemoStopArrivalsId = (stopPointId: string): boolean =>
 export async function getCachedStopArrivals(
   stopPointId: string,
 ): Promise<RealtimePrediction[]> {
+  return getCachedStopArrivalsById(stopPointId.trim());
+}
+
+/**
+ * Inner `"use cache"` so the trimmed id is the only argument — and therefore
+ * the cache key. A shared entry across stops would paint the previous station
+ * for `cacheLife.stale` (~15s) after the Board URL changes.
+ */
+async function getCachedStopArrivalsById(
+  stopPointId: string,
+): Promise<RealtimePrediction[]> {
   "use cache";
   cacheLife({ stale: 15, revalidate: 20, expire: 60 });
   cacheTag("tfl-stop-arrivals", `tfl-stop-arrivals-${stopPointId}`);

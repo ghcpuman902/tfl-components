@@ -37,6 +37,14 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
    * line chip. Groups with fewer than two ids are ignored.
    */
   lineGroups?: readonly RailArrivalsLineGroup[]
+  /**
+   * Current time (ms) — drops predictions whose `timeToLive` has already
+   * expired (Weaver/Elizabeth line "self-destination" rows that keep
+   * counting up after the train has effectively already arrived; see
+   * `docs/arrivals-shared-platforms.md`). Pass `Date.now()` captured
+   * alongside `data` at fetch time. Omit to skip this filter.
+   */
+  now?: number
   /** Arrival order within each bound. Default `timeToStation`. */
   sortBy?: RailArrivalsSortBy
   /** Line section order. Default `canonical` (`LINE_ORDER`). */
@@ -104,6 +112,7 @@ export const RailArrivalsBoard = ({
   data,
   lines,
   lineGroups,
+  now,
   sortBy = "timeToStation",
   lineSortBy = "canonical",
   lineOrder,
@@ -132,6 +141,7 @@ export const RailArrivalsBoard = ({
     data: rows,
     lines,
     lineGroups,
+    now,
     sortBy,
     lineSortBy,
     lineOrder,

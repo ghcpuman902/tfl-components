@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
 import {
   TubeStatusBoard,
@@ -26,7 +26,6 @@ import {
   type BoardStationNamesIndex,
 } from "@/lib/tfl/board-station-names"
 import {
-  DEFAULT_BOARD_CONFIG,
   normalizeBoardHash,
   parseBoardConfig,
   type BoardConfig,
@@ -42,30 +41,49 @@ const replaceHashIfNeeded = (nextHash: string) => {
   if (window.location.hash === nextHash) return
   const url = `${window.location.pathname}${window.location.search}${nextHash}`
   window.history.replaceState(window.history.state, "", url)
+  // replaceState does not fire hashchange/popstate.
+  for (const listener of boardHashListeners) listener()
 }
+
+const boardHashListeners = new Set<() => void>()
+
+const subscribeToBoardHash = (onStoreChange: () => void) => {
+  boardHashListeners.add(onStoreChange)
+  window.addEventListener("hashchange", onStoreChange)
+  window.addEventListener("popstate", onStoreChange)
+  return () => {
+    boardHashListeners.delete(onStoreChange)
+    window.removeEventListener("hashchange", onStoreChange)
+    window.removeEventListener("popstate", onStoreChange)
+  }
+}
+
+const getBoardHash = () => window.location.hash
+const getServerBoardHash = () => ""
 
 const useBoardConfigFromHash = (
   stationNames: BoardStationNamesIndex,
 ): { config: BoardConfig; ready: boolean } => {
-  const [config, setConfig] = useState<BoardConfig>(DEFAULT_BOARD_CONFIG)
+  const hash = useSyncExternalStore(
+    subscribeToBoardHash,
+    getBoardHash,
+    getServerBoardHash,
+  )
   const [ready, setReady] = useState(false)
 
+  const config = useMemo((): BoardConfig => {
+    const parsed = parseBoardConfig(hash)
+    const autoName = lookupBoardStationName(stationNames, parsed.stop)
+    const stopName = resolveBoardStopNameOverride(parsed.stopName, autoName)
+    return { ...parsed, stopName }
+  }, [hash, stationNames])
+
   useEffect(() => {
-    const read = () => {
-      const parsed = parseBoardConfig(window.location.hash)
-      const autoName = lookupBoardStationName(stationNames, parsed.stop)
-      const stopName = resolveBoardStopNameOverride(parsed.stopName, autoName)
-      const next: BoardConfig = { ...parsed, stopName }
-      setConfig(next)
-      setReady(true)
-      replaceHashIfNeeded(
-        normalizeBoardHash(window.location.hash, { stopName }),
-      )
-    }
-    read()
-    window.addEventListener("hashchange", read)
-    return () => window.removeEventListener("hashchange", read)
-  }, [stationNames])
+    setReady(true)
+    replaceHashIfNeeded(
+      normalizeBoardHash(hash, { stopName: config.stopName }),
+    )
+  }, [hash, config.stopName])
 
   return { config, ready }
 }
@@ -196,6 +214,7 @@ export const BoardDisplay = ({
             stopPointId={stopId || undefined}
             headingLevel={2}
             data={arrivals.data}
+            now={arrivals.fetchedAt ?? undefined}
             lines={arrivalsProps.lines}
             lineGroups={lineGroups}
             lineOrder={arrivalsProps.lineOrder}

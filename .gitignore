@@ -47,6 +47,3 @@ PUSH_NOTES.md
 VERCEL_PRIVATE_NOTES.md
 scratch/
 .env*
-
-# arrivals investigation snapshots (scripts/probe-arrivals.ts output)
-/scratch/arrivals-probe/

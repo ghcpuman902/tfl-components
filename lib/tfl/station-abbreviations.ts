@@ -31,6 +31,15 @@ export const STATION_ABBREVIATION_ENTRIES: readonly StationAbbreviationEntry[] =
     { full: "Junction", short: "Jct", findCompletion: "unction" },
     { full: "Bridge", short: "Br", findCompletion: "idge" },
     { full: "Central", short: "Ctrl", findCompletion: "entral" },
+    /**
+     * Not a station name — TfL's generic Circle-loop instruction, shown as an
+     * arrivals row destination via `StationName` (see arrivals-bound-group's
+     * `ArrivalRowItem`). Shares this table only for the shrink + find-in-page
+     * machinery; `findCompletion` is empty because the per-token find trick
+     * assumes a single-word short form and this one is two words — the outer
+     * `FindableText` copy still makes the full phrase findable.
+     */
+    { full: "Check Front of Train", short: "Check Front", findCompletion: "" },
   ] as const;
 
 /** `and` → `&` (not a find-completion pair — handled via aliases). */

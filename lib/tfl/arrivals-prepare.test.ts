@@ -4,6 +4,7 @@ import type { RealtimePrediction } from "tfl-ts"
 import { ARRIVALS_PLATFORM_UNKNOWN_HEADING } from "@/lib/tfl/arrivals-empty"
 import {
   chunkBoundPages,
+  isExpiredArrivalPrediction,
   prepareBusArrivals,
   prepareRailArrivals,
   sliceBoundPage,
@@ -391,6 +392,38 @@ describe("prepareRailArrivals", () => {
     assert.equal(north?.kind, "compass")
   })
 
+  it("hoists Inner/Outer Rail platforms with the qualifier, not a bare compass, and no double Platform", () => {
+    // Paddington Circle / Bayswater / Notting Hill Gate: compass direction is
+    // ambiguous on this shared Circle/H&C stretch, so TfL uses Inner/Outer
+    // Rail instead of Westbound/Eastbound.
+    const inner = prediction({
+      id: "pac-inner",
+      lineId: "hammersmith-city",
+      lineName: "Hammersmith & City",
+      platformName: "Inner Rail - Platform 1",
+      timeToStation: 90,
+    })
+    const outer = prediction({
+      id: "pac-outer",
+      lineId: "circle",
+      lineName: "Circle",
+      platformName: "Outer Rail - Platform 2",
+      timeToStation: 60,
+    })
+    const board = prepareRailArrivals({
+      data: [inner, outer],
+      lineGroups: [{ lines: ["circle", "hammersmith-city"] }],
+    })
+    const bounds = board.groups[0]?.bounds ?? []
+    const innerBound = bounds.find((b) => b.railDesignation === "inner")
+    const outerBound = bounds.find((b) => b.railDesignation === "outer")
+    assert.equal(innerBound?.label, "Inner Rail · Platform 1")
+    assert.equal(innerBound?.platformLabel, "1")
+    assert.equal(innerBound?.platformUniform, true)
+    assert.equal(outerBound?.label, "Outer Rail · Platform 2")
+    assert.equal(outerBound?.platformLabel, "2")
+  })
+
   it("keeps the compass heading and does not hoist when platforms vary", () => {
     const platform1 = prediction({
       id: "c-p1",
@@ -669,6 +702,62 @@ describe("prepareRailArrivals", () => {
     assert.deepEqual(groupNames(board.groups), ["Central", "Bakerloo"])
   })
 
+  it("drops predictions whose timeToLive has already expired when now is given", () => {
+    // Live pattern on Weaver at Liverpool Street / Elizabeth line at
+    // Paddington: a "self-destination" row (destination == this station,
+    // no direction) reports timeToLive ~1 minute in the past while
+    // timeToStation keeps counting up for the next scheduled slot.
+    const now = Date.parse("2026-08-15T21:00:00Z")
+    const selfDestination = {
+      ...prediction({
+        id: "weaver-self",
+        lineId: "weaver",
+        lineName: "Weaver",
+        modeName: "overground",
+        platformName: "Platform 1",
+        towards: "",
+        timeToStation: 600,
+      }),
+      destinationName: "London Liverpool Street Rail Station",
+      timeToLive: "2026-08-15T20:59:10Z",
+    }
+    const liveDeparture = {
+      ...prediction({
+        id: "weaver-live",
+        lineId: "weaver",
+        lineName: "Weaver",
+        modeName: "overground",
+        platformName: "Platform 7",
+        timeToStation: 90,
+      }),
+      timeToLive: "2026-08-15T21:03:00Z",
+    }
+    const noTimeToLive = prediction({
+      id: "weaver-no-ttl",
+      lineId: "weaver",
+      lineName: "Weaver",
+      platformName: "Platform Unknown",
+      timeToStation: 45,
+    })
+
+    const filtered = prepareRailArrivals({
+      data: [selfDestination, liveDeparture, noTimeToLive],
+      now,
+    })
+    assert.deepEqual(
+      idsOf(filtered.rows).sort(),
+      ["weaver-live", "weaver-no-ttl"].sort()
+    )
+
+    const unfiltered = prepareRailArrivals({
+      data: [selfDestination, liveDeparture, noTimeToLive],
+    })
+    assert.deepEqual(
+      idsOf(unfiltered.rows).sort(),
+      ["weaver-no-ttl", "weaver-live", "weaver-self"].sort()
+    )
+  })
+
   it("lineOrder does not hide or seed lines", () => {
     const board = prepareRailArrivals({
       data: [bakerlooNorth],
@@ -689,6 +778,52 @@ describe("prepareRailArrivals", () => {
       board.groups.find((g) => g.lineId === "bakerloo")?.hasInformation,
       true
     )
+  })
+})
+
+describe("isExpiredArrivalPrediction", () => {
+  const now = Date.parse("2026-08-15T21:00:00Z")
+
+  it("is expired once timeToLive has passed", () => {
+    const arrival = prediction({
+      id: "expired",
+      lineId: "weaver",
+      lineName: "Weaver",
+      timeToStation: 600,
+    })
+    assert.equal(
+      isExpiredArrivalPrediction(
+        { ...arrival, timeToLive: "2026-08-15T20:59:00Z" },
+        now
+      ),
+      true
+    )
+  })
+
+  it("is not expired while timeToLive is still ahead", () => {
+    const arrival = prediction({
+      id: "live",
+      lineId: "weaver",
+      lineName: "Weaver",
+      timeToStation: 45,
+    })
+    assert.equal(
+      isExpiredArrivalPrediction(
+        { ...arrival, timeToLive: "2026-08-15T21:20:00Z" },
+        now
+      ),
+      false
+    )
+  })
+
+  it("never drops a row with no timeToLive at all", () => {
+    const arrival = prediction({
+      id: "no-ttl",
+      lineId: "central",
+      lineName: "Central",
+      timeToStation: 30,
+    })
+    assert.equal(isExpiredArrivalPrediction(arrival, now), false)
   })
 })
 

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  arrivalsBelongToStops,
   selectArrivalsDataPath,
   shouldPausePollingForVisibility,
 } from "./dual-path-arrivals";
@@ -30,5 +31,31 @@ describe("shouldPausePollingForVisibility", () => {
 
   it("does not pause when visible", () => {
     assert.equal(shouldPausePollingForVisibility("visible"), false);
+  });
+});
+
+describe("arrivalsBelongToStops", () => {
+  it("accepts an empty payload", () => {
+    assert.equal(arrivalsBelongToStops([], ["940GZZLULVT"]), true);
+  });
+
+  it("accepts a hub sibling naptan", () => {
+    assert.equal(
+      arrivalsBelongToStops(
+        [{ naptanId: "910GLIVST" }],
+        ["940GZZLULVT", "910GLIVST"],
+      ),
+      true,
+    );
+  });
+
+  it("rejects a payload from a different stop", () => {
+    assert.equal(
+      arrivalsBelongToStops(
+        [{ naptanId: "940GZZLUOXC" }],
+        ["940GZZLULVT", "910GLIVST"],
+      ),
+      false,
+    );
   });
 });

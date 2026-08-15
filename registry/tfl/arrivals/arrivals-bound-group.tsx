@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react"
-import { Play } from "lucide-react"
+import { Play, RotateCcw, RotateCw } from "lucide-react"
 import type { PredictionWithSharedTrackIdentity } from "tfl-ts"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
 import {
@@ -24,7 +24,13 @@ import {
 import { LineName } from "@/components/tfl/brand/line-name"
 import { StationName } from "@/components/tfl/station-name"
 import { ARRIVALS_LINE_EMPTY_COPY } from "@/lib/tfl/arrivals-empty"
-import { parseArrivalsPlatformLabel } from "@/lib/tfl/arrivals-bound-sort"
+import {
+  formatArrivalsRailDesignationLabel,
+  isUnknownArrivalsPlatform,
+  parseArrivalsPlatformLabel,
+  type ArrivalsRailDesignation,
+} from "@/lib/tfl/arrivals-bound-sort"
+import { resolveArrivalsDestinationText } from "@/lib/tfl/arrivals-destination-text"
 import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort"
 import { getLineNameTiers, joinLineNames } from "@/lib/tfl/line-names"
 import {
@@ -75,7 +81,19 @@ const LIST_RESET_CLASS = "m-0 ml-0 list-none space-y-0 p-0 [&>li]:mt-0"
 /** Pull the brand bar into the tile without shrinking the title box. */
 const LINE_BAR_PULL_CLASS = "pointer-events-none -mt-1"
 
-export const formatArrivalsCountdown = (seconds?: number): string => {
+/**
+ * A `Platform Unknown` mainline row (Weaver not yet platformed) reports a
+ * fixed ~45s `timeToStation` no matter how far away the train really is —
+ * confirmed against `timeToLive` on live Liverpool Street data, real gaps
+ * up to 98 minutes. "Due"/"X min" would be a fabricated countdown; TfL
+ * hasn't allocated a platform yet, so there's no live position to count
+ * down from. See docs/arrivals-shared-platforms.md.
+ */
+export const formatArrivalsCountdown = (
+  seconds?: number,
+  options?: { platformName?: string }
+): string => {
+  if (isUnknownArrivalsPlatform(options?.platformName)) return "Scheduled"
   if (seconds === undefined || seconds < 0) return "-"
   if (seconds < 60) return "Due"
   return `${Math.floor(seconds / 60)} min`
@@ -100,7 +118,7 @@ export const ArrivalRowItem = ({
   /** Platform already lives in the subgroup heading — omit the row chip. */
   hoistPlatform?: boolean
 }) => {
-  const destination =
+  const rawDestination =
     usableTflText(row.arrival.towards) ||
     usableTflText(row.arrival.destinationName) ||
     "Unknown"
@@ -111,7 +129,10 @@ export const ArrivalRowItem = ({
   const tagged = row.arrival as PredictionWithSharedTrackIdentity
   const rawLineId = row.arrival.lineId?.trim() || ""
   const identity = tagged.sharedTrackIdentity
-  const canonicalLineId = identity?.canonicalLineId?.trim()
+  const canonicalLineId =
+    identity?.confidence === "exclusive-segment"
+      ? identity.canonicalLineId.trim()
+      : undefined
   const lineId = canonicalLineId || rawLineId
   const remapped = Boolean(canonicalLineId) && canonicalLineId !== rawLineId
   const sharedChipIds =
@@ -150,7 +171,19 @@ export const ArrivalRowItem = ({
     mode === "bus"
       ? (row.arrival.lineName ?? row.arrival.lineId ?? "").trim() || null
       : null
-  const countdown = formatArrivalsCountdown(row.arrival.timeToStation)
+  // TfL sometimes repeats the line name as the destination ("Circle Line" on
+  // the Circle line) or sends a generic instruction ("Check Front of
+  // Train") — both are already implied by the line heading/chip. Prefer
+  // `currentLocation` ("At South Kensington Platform 1") when present; see
+  // docs/arrivals-shared-platforms.md.
+  const destination = resolveArrivalsDestinationText({
+    destination: rawDestination,
+    lineName: sharedChipLabel ?? lineTiers?.full ?? routeLabel,
+    currentLocation: usableTflText(row.arrival.currentLocation),
+  })
+  const countdown = formatArrivalsCountdown(row.arrival.timeToStation, {
+    platformName: row.arrival.platformName,
+  })
   const rowLabel = [
     platformNumber ? `Platform ${platformNumber}` : null,
     sharedChipLabel ??
@@ -558,6 +591,61 @@ const boundDataAttr = (bound: ArrivalsPreparedBound): string | undefined => {
   return undefined
 }
 
+/** Inner Rail = anticlockwise, Outer Rail = clockwise (LU convention). */
+const RAIL_DESIGNATION_ICON: Record<
+  ArrivalsRailDesignation,
+  typeof RotateCcw
+> = {
+  inner: RotateCcw,
+  outer: RotateCw,
+}
+
+/**
+ * Bound heading label. Plain text normally; Inner/Outer Rail bounds
+ * (Paddington / Bayswater / Notting Hill Gate's shared Circle/H&C stretch —
+ * see docs/arrivals-shared-platforms.md) step through a width ladder so the
+ * qualifier still fits when the line section is narrow:
+ * "Inner Rail · Platform 1" → "Inner Rail · P1" → (icon) "P1".
+ * Same CSS-only, `@container/arrivals-group`-driven pattern as PlatformChip —
+ * aria-label carries the full text; each visual tier is `aria-hidden`.
+ */
+const BoundHeadingLabel = ({ bound }: { bound: ArrivalsPreparedBound }) => {
+  if (!bound.railDesignation || !bound.platformLabel || !bound.label) {
+    return <span className="min-w-0 flex-1 truncate pr-2">{bound.label}</span>
+  }
+  const Icon = RAIL_DESIGNATION_ICON[bound.railDesignation]
+  const designationLabel = formatArrivalsRailDesignationLabel(
+    bound.railDesignation
+  )
+  const compactPlatform = `P${bound.platformLabel}`
+  return (
+    <span
+      className="flex min-w-0 flex-1 items-center gap-1 pr-2"
+      aria-label={bound.label}
+    >
+      <span
+        className="flex items-center gap-1 @min-[10rem]/arrivals-group:hidden"
+        aria-hidden
+      >
+        <Icon className="size-3.5 shrink-0" />
+        <span className="tabular-nums">{compactPlatform}</span>
+      </span>
+      <span
+        className="hidden truncate whitespace-nowrap @min-[10rem]/arrivals-group:inline @min-[16rem]/arrivals-group:hidden"
+        aria-hidden
+      >
+        {designationLabel} · {compactPlatform}
+      </span>
+      <span
+        className="hidden truncate whitespace-nowrap @min-[16rem]/arrivals-group:inline"
+        aria-hidden
+      >
+        {bound.label}
+      </span>
+    </span>
+  )
+}
+
 export const ArrivalsBoundGroup = ({
   bound,
   mode,
@@ -596,7 +684,7 @@ export const ArrivalsBoundGroup = ({
             ROW_RULE_CLASS
           )}
         >
-          <span className="min-w-0 flex-1 truncate pr-2">{bound.label}</span>
+          <BoundHeadingLabel bound={bound} />
           {showPager ? (
             <BoundPager
               label={bound.label}

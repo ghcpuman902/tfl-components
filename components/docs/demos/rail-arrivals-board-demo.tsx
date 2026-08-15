@@ -32,6 +32,7 @@ export default function RailArrivalsBoardDemo() {
       </p>
       <RailArrivalsBoard
         data={data}
+        now={fetchedAt ?? undefined}
         lines={HOME_RAIL_LINES}
         stopName={HOME_RAIL_STOP.name}
         loading={loading}

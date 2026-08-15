@@ -10,8 +10,10 @@ import {
   formatBoundHeading,
   normalizeArrivalsBoundId,
   parseArrivalsPlatformLabel,
+  parseArrivalsRailDesignation,
   parseCompassBoundId,
   type ArrivalsBoundId,
+  type ArrivalsRailDesignation,
 } from "@/lib/tfl/arrivals-bound-sort"
 import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort"
 import { compareBusRouteNames } from "@/lib/tfl/arrivals-route-sort"
@@ -61,6 +63,8 @@ export type ArrivalsPreparedBound = {
   boundId: ArrivalsBoundId | null
   /** Cleaned platform letter/number hoisted into the heading, when uniform. */
   platformLabel: string | null
+  /** Inner/Outer Rail qualifier, when the platform carries one (Paddington/Bayswater/Notting Hill Gate Circle/H&C). */
+  railDesignation: ArrivalsRailDesignation | null
   /**
    * True when every row in this bound shares one known platform — hoist it
    * into the heading and omit the per-row chip.
@@ -107,6 +111,27 @@ export const indexArrivals = (
 ): IndexedArrival[] =>
   (data ?? []).map((arrival, sourceIndex) => ({ arrival, sourceIndex }))
 
+/**
+ * TfL's own field: "the expiry time for the prediction". Confirmed live on
+ * Weaver at Liverpool Street and Elizabeth line at Paddington — a
+ * "self-destination" row (destination equals the station you're standing
+ * at, no direction) reports `timeToLive` a fixed ~1 minute in the past while
+ * `timeToStation` keeps counting up for up to two hours. TfL is telling the
+ * client this record already expired; `timeToStation` is a stale leftover.
+ * Underground rows never trip this — their `timeToLive` always tracks
+ * `expectedArrival` exactly, so it's never "expired" before the train has
+ * actually arrived. See docs/arrivals-shared-platforms.md.
+ */
+export const isExpiredArrivalPrediction = (
+  arrival: RealtimePrediction,
+  now: number
+): boolean => {
+  const timeToLive = arrival.timeToLive
+  if (!timeToLive) return false
+  const expiry = Date.parse(timeToLive)
+  return Number.isFinite(expiry) && expiry < now
+}
+
 export const compareIndexedByTime = (
   a: IndexedArrival,
   b: IndexedArrival
@@ -150,12 +175,12 @@ export const arrivalCanonicalLineId = (
   arrival: RealtimePrediction,
 ): string => {
   const tagged = arrival as PredictionWithSharedTrackIdentity
-  return (
-    tagged.sharedTrackIdentity?.canonicalLineId ||
-    arrival.lineId ||
-    arrival.lineName ||
-    "unknown"
-  )
+  const identity = tagged.sharedTrackIdentity
+  const canonicalLineId =
+    identity?.confidence === "exclusive-segment"
+      ? identity.canonicalLineId
+      : undefined
+  return canonicalLineId || arrival.lineId || arrival.lineName || "unknown"
 }
 
 const lineKeyOf = (arrival: RealtimePrediction): string =>
@@ -263,6 +288,7 @@ const EMPTY_BOUND = (): ArrivalsPreparedBound => ({
   kind: "none",
   boundId: null,
   platformLabel: null,
+  railDesignation: null,
   platformUniform: false,
   seededEmpty: true,
   rows: [],
@@ -485,6 +511,7 @@ type BoundKind = ArrivalsBoundKind
 type BoundBucket = {
   kind: BoundKind
   boundId: ArrivalsBoundId | null
+  railDesignation: ArrivalsRailDesignation | null
   platformLabels: Set<string>
   items: IndexedArrival[]
   firstSourceIndex: number
@@ -496,21 +523,34 @@ const classifyArrivalBound = (
   kind: Exclude<BoundKind, "none">
   boundId: ArrivalsBoundId | null
   platformLabel: string | null
+  railDesignation: ArrivalsRailDesignation | null
 } => {
   const boundId = parseCompassBoundId(platformName)
   const platformLabel = parseArrivalsPlatformLabel(platformName)
-  if (boundId) return { kind: "compass", boundId, platformLabel }
-  if (platformLabel) return { kind: "platform", boundId: null, platformLabel }
-  return { kind: "unknown", boundId: null, platformLabel: null }
+  const railDesignation = boundId
+    ? null
+    : parseArrivalsRailDesignation(platformName)
+  if (boundId) {
+    return { kind: "compass", boundId, platformLabel, railDesignation: null }
+  }
+  if (platformLabel) {
+    return { kind: "platform", boundId: null, platformLabel, railDesignation }
+  }
+  return { kind: "unknown", boundId: null, platformLabel: null, railDesignation: null }
 }
 
 const boundBucketKey = (
   kind: BoundKind,
   boundId: ArrivalsBoundId | null,
   platformLabel: string | null,
+  railDesignation: ArrivalsRailDesignation | null,
 ): string => {
   if (kind === "compass" && boundId) return `compass:${boundId}`
-  if (kind === "platform" && platformLabel) return `platform:${platformLabel}`
+  if (kind === "platform" && platformLabel) {
+    return railDesignation
+      ? `platform:${railDesignation}:${platformLabel}`
+      : `platform:${platformLabel}`
+  }
   if (kind === "unknown") return "unknown"
   return "none"
 }
@@ -527,6 +567,7 @@ const collectRailBounds = (
     key: string,
     kind: BoundKind,
     boundId: ArrivalsBoundId | null,
+    railDesignation: ArrivalsRailDesignation | null,
     sourceIndex: number,
   ): BoundBucket => {
     const existing = byBound.get(key)
@@ -534,6 +575,7 @@ const collectRailBounds = (
     const bucket: BoundBucket = {
       kind,
       boundId,
+      railDesignation,
       platformLabels: new Set(),
       items: [],
       firstSourceIndex: sourceIndex,
@@ -548,11 +590,13 @@ const collectRailBounds = (
       classified.kind,
       classified.boundId,
       classified.platformLabel,
+      classified.railDesignation,
     )
     const bucket = ensure(
       key,
       classified.kind,
       classified.boundId,
+      classified.railDesignation,
       item.sourceIndex,
     )
     bucket.items.push(item)
@@ -562,9 +606,9 @@ const collectRailBounds = (
   }
 
   for (const [boundIndex, boundId] of expectedBounds.entries()) {
-    const key = boundBucketKey("compass", boundId, null)
+    const key = boundBucketKey("compass", boundId, null, null)
     if (byBound.has(key)) continue
-    ensure(key, "compass", boundId, items.length + boundIndex)
+    ensure(key, "compass", boundId, null, items.length + boundIndex)
   }
 
   if (byBound.size === 0) {
@@ -597,6 +641,7 @@ const collectRailBounds = (
     const label = formatBoundHeading({
       boundId: bucket.boundId,
       platformLabel: hoistPlatform ? platformLabel : null,
+      railDesignation: bucket.railDesignation,
       unknown: bucket.kind === "unknown",
     })
     return {
@@ -605,6 +650,7 @@ const collectRailBounds = (
       kind: bucket.kind,
       boundId: bucket.boundId,
       platformLabel: hoistPlatform ? platformLabel : null,
+      railDesignation: bucket.railDesignation,
       platformUniform: hoistPlatform && platformLabel !== null,
       seededEmpty: bucket.items.length === 0,
       rows: sortIndexed(bucket.items, sortBy).map(toRow),
@@ -629,6 +675,15 @@ export type PrepareRailArrivalsOptions = {
    * or hide lines. When set, overrides `lineSortBy`.
    */
   lineOrder?: readonly string[]
+  /**
+   * Current time (ms) — drops any prediction whose `timeToLive` has already
+   * expired (see `isExpiredArrivalPrediction`). Omit to skip this filter,
+   * e.g. static demos with no live "now". Live callers should pass
+   * `Date.now()` captured alongside `data` at fetch time, not a default
+   * evaluated wherever this runs — see
+   * `.cursor/rules/nextjs-cache-components-time.mdc`.
+   */
+  now?: number
   /** Per-bound prediction cap. Does not drop later lines. Default 16. */
   maxRows?: number
 }
@@ -654,9 +709,12 @@ export const prepareRailArrivals = ({
   lineSortBy = "canonical",
   boundSortBy = "compass",
   lineOrder,
+  now,
   maxRows = DEFAULT_MAX_ROWS,
 }: PrepareRailArrivalsOptions): ArrivalsPreparedBoard => {
-  const indexed = indexArrivals(data)
+  const indexed = indexArrivals(data).filter(
+    (item) => now === undefined || !isExpiredArrivalPrediction(item.arrival, now)
+  )
   const buckets = collectRailLines(indexed, lines, lineGroups)
 
   const explicitOrder =
@@ -791,6 +849,7 @@ export const prepareBusArrivals = ({
           kind: "none",
           boundId: null,
           platformLabel: null,
+          railDesignation: null,
           platformUniform: false,
           seededEmpty: rows.length === 0,
           rows,

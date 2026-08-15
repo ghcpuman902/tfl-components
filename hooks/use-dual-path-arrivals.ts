@@ -6,6 +6,7 @@ import {
   type RealtimePrediction,
 } from "tfl-ts";
 import {
+  arrivalsBelongToStops,
   selectArrivalsDataPath,
   shouldPausePollingForVisibility,
   type DualPathSource,
@@ -114,6 +115,18 @@ export const useDualPathArrivals = ({
   const [loading, setLoading] = useState(true);
   const [fetchedAt, setFetchedAt] = useState<number | null>(null);
   const [refreshNonce, setRefreshNonce] = useState(0);
+  // Heading can update from the URL before the poller restarts. Drop the
+  // previous stop's rows in the same render so we never paint them as the
+  // new station (site-cache SWR can take ~15s to catch up).
+  const stopIdentity = `${trimmedStop}|${pollStopKey}`;
+  const [appliedStopIdentity, setAppliedStopIdentity] = useState(stopIdentity);
+  if (appliedStopIdentity !== stopIdentity) {
+    setAppliedStopIdentity(stopIdentity);
+    setData([]);
+    setPollError(null);
+    setFetchedAt(null);
+    setLoading(Boolean(trimmedStop) && !isInvalid);
+  }
 
   const refresh = useCallback(() => {
     setLoading(true);
@@ -132,6 +145,11 @@ export const useDualPathArrivals = ({
       setLoading(false);
       return;
     }
+
+    const stopForThisPoll = trimmedStop;
+    const idsForThisPoll = pollStopKey.split(",").filter(Boolean);
+    const familiesForThisPoll = familiesToApply;
+    const lineIdsForThisPoll = sharedTrackIds;
 
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -157,12 +175,12 @@ export const useDualPathArrivals = ({
       stopArrivals: RealtimePrediction[],
       fetchNetwork: () => Promise<RealtimePrediction[] | null>,
     ): Promise<RealtimePrediction[]> => {
-      if (familiesToApply.length === 0) return stopArrivals;
+      if (familiesForThisPoll.length === 0) return stopArrivals;
       try {
         const network = await fetchNetwork();
         if (!network) return stopArrivals;
         let tagged = stopArrivals;
-        for (const family of familiesToApply) {
+        for (const family of familiesForThisPoll) {
           tagged = withSharedTrackIdentity(tagged, family, network);
         }
         return tagged;
@@ -178,24 +196,30 @@ export const useDualPathArrivals = ({
       setLoading(false);
     };
 
-    const scheduleSitePoll = () => {
+    const scheduleSitePoll = (delayMs = pollMs) => {
       clearTimer();
       if (cancelled || paused) return;
       timer = setTimeout(() => {
         void runSiteLoad();
-      }, pollMs);
+      }, delayMs);
     };
 
     const runSiteLoad = async () => {
       if (cancelled || paused) return;
       try {
-        const result = await getStopArrivalsAction(trimmedStop);
+        const result = await getStopArrivalsAction(stopForThisPoll);
         if (cancelled || paused) return;
         if (!result.ok) {
           applyFailure(result.error);
+        } else if (
+          !arrivalsBelongToStops(result.arrivals, idsForThisPoll)
+        ) {
+          // Wrong-stop cache hit — retry shortly instead of painting it.
+          scheduleSitePoll(1_000);
+          return;
         } else {
           const tagged = await tagStopArrivals(result.arrivals, async () => {
-            const lineResult = await getLineArrivalsAction(sharedTrackIds);
+            const lineResult = await getLineArrivalsAction(lineIdsForThisPoll);
             return lineResult.ok ? lineResult.arrivals : null;
           });
           if (cancelled || paused) return;
@@ -203,9 +227,8 @@ export const useDualPathArrivals = ({
         }
       } catch {
         applyFailure("Failed to load arrivals.");
-      } finally {
-        if (!cancelled && !paused) scheduleSitePoll();
       }
+      if (!cancelled && !paused) scheduleSitePoll();
     };
 
     const resolveUserKey = (): string | null =>
@@ -226,15 +249,16 @@ export const useDualPathArrivals = ({
 
         stopPoll = client.realtime.pollArrivals(
           {
-            stopPointIds: pollStopIds,
+            stopPointIds: idsForThisPoll,
             sortBy: "timeToStation",
             intervalMs: pollMs,
             immediate: true,
           },
           (arrivals) => {
             if (cancelled || paused) return;
+            if (!arrivalsBelongToStops(arrivals, idsForThisPoll)) return;
             void tagStopArrivals(arrivals, async () =>
-              client.line.getArrivals({ lineIds: sharedTrackIds }),
+              client.line.getArrivals({ lineIds: lineIdsForThisPoll }),
             ).then((tagged) => {
               if (cancelled || paused) return;
               applySuccess(tagged);

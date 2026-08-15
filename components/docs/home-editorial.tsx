@@ -87,6 +87,7 @@ async function HomeDeparturesPanel() {
     <DemoFrame caption={["Cached TfL data", ageLabel]} style={ARRIVALS_RHYTHM}>
       <RailArrivalsBoard
         data={payload.arrivals}
+        now={payload.fetchedAt}
         lines={HOME_RAIL_LINES}
         stopName={payload.stopName}
         headingLevel={2}

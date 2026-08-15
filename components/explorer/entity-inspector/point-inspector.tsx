@@ -298,6 +298,7 @@ const PointInspectorLive = ({
     ) : (
       <RailArrivalsBoard
         data={displayArrivals}
+        now={arrivalsFetchedAt ?? undefined}
         stopName={point.name}
         lines={lineIds.map((lineId) => ({
           lineId,
