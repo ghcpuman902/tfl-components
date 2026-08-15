@@ -52,6 +52,8 @@ export const emptyStationIndex = (): StationIndex => ({
  * Merge a stop into an accumulating index keyed by Naptan.
  * Same display name with a different ID becomes an alias on the first record
  * when `mergeHomonyms` is true; otherwise a separate record is kept.
+ * For serving lines and arrivals fetch targets use `STATION_HUBS` via
+ * `station-catalog.ts`, not this name merge.
  */
 export const upsertStationRecord = (
   index: {

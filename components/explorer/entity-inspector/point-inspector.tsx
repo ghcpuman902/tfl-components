@@ -13,13 +13,15 @@ import {
   InspectorJson,
 } from "@/components/explorer/entity-inspector/entity-inspector";
 import { useExplorerKeyedQuery } from "@/hooks/use-explorer-keyed-query";
+import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort";
+import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types";
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise";
 import {
   cachedArrivalsForPoint,
   type ExplorerCachedArrivals,
 } from "@/lib/tfl/explorer/selection";
 import { buildExplorerHref } from "@/lib/tfl/explorer-url-state";
-import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types";
+import { getLineNameTiers, railLineModeName } from "@/lib/tfl/line-names";
 
 type PointInspectorProps = {
   point: ExplorerPoint;
@@ -103,12 +105,17 @@ const PointInspectorLive = ({
       Boolean(point.stopLetter || point.smsCode));
   const isBike = point.kind === "bikePoint";
   const seedArrivals = cachedArrivalsForPoint(cachedArrivals, point);
+  const pollStopIds =
+    point.arrivalsStopIds?.length ? point.arrivalsStopIds : [point.id];
+  const pollStopKey = pollStopIds.join(",");
+  const isHub = (point.hubMembers?.length ?? 0) > 1;
 
   useEffect(() => {
     if (!hydrated || !ready) return;
 
     let cancelled = false;
     const pointId = point.id;
+    const stopPointIds = pollStopKey.split(",").filter(Boolean);
 
     const load = async () => {
       if (isBike) {
@@ -123,7 +130,7 @@ const PointInspectorLive = ({
 
       const result = await runKeyed(async (client) =>
         client.stopPoint.getArrivals({
-          stopPointIds: [pointId],
+          stopPointIds,
           sortBy: "timeToStation",
         }),
       );
@@ -136,12 +143,12 @@ const PointInspectorLive = ({
     return () => {
       cancelled = true;
     };
-  }, [hydrated, ready, point.id, isBike, runKeyed]);
+  }, [hydrated, ready, point.id, pollStopKey, isBike, runKeyed]);
 
   const handleRefreshArrivals = async () => {
     const result = await runKeyed(async (client) =>
       client.stopPoint.getArrivals({
-        stopPointIds: [point.id],
+        stopPointIds: [...pollStopIds],
         sortBy: "timeToStation",
       }),
     );
@@ -165,6 +172,9 @@ const PointInspectorLive = ({
     <div>
       <CopyableField label="ID" value={point.id} />
       <CopyableField label="Name" value={point.name} />
+      {isHub && point.hubId ? (
+        <CopyableField label="Hub" value={point.hubId} />
+      ) : null}
       {point.smsCode ? (
         <CopyableField label="SMS code" value={point.smsCode} />
       ) : null}
@@ -184,26 +194,59 @@ const PointInspectorLive = ({
       {point.towards ? (
         <CopyableField label="Towards" value={point.towards} />
       ) : null}
+      {isHub ? (
+        <div className="pt-3">
+          <p className="text-xs text-muted-foreground">
+            StopPoints in this hub. Poll each id that carries the line you want.
+          </p>
+          {point.hubMembers?.map((member) => (
+            <CopyableField
+              key={member.id}
+              label={member.name}
+              value={member.id}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 
-  const relationships = point.lineIds?.length ? (
+  const lineIds = [...(point.lineIds ?? [])].sort((a, b) =>
+    compareArrivalsLines(
+      { lineId: a, lineName: getLineNameTiers(a).full },
+      { lineId: b, lineName: getLineNameTiers(b).full },
+    ),
+  );
+
+  const stopIdForLine = (lineId: string): string | undefined =>
+    point.hubMembers?.find((member) => member.lineIds.includes(lineId))?.id;
+
+  const relationships = lineIds.length ? (
     <ul className="space-y-1" role="list">
-      {point.lineIds.map((lineId) => {
+      {lineIds.map((lineId) => {
         const isBusLine = /^\d/.test(lineId) || lineId.length <= 3;
         const href = buildExplorerHref({
           kind: "lines",
           domain: isBusLine ? "bus" : "tube-rail",
           id: lineId,
         });
+        const memberId = stopIdForLine(lineId);
         return (
-          <li key={lineId}>
+          <li
+            key={lineId}
+            className="flex items-baseline gap-3 border-b border-border py-1.5 last:border-0"
+          >
             <a
               href={href}
-              className="font-mono text-sm underline-offset-4 hover:underline"
+              className="min-w-0 truncate text-sm underline-offset-4 hover:underline"
             >
-              {lineId}
+              {getLineNameTiers(lineId).full}
             </a>
+            {memberId ? (
+              <code className="ml-auto shrink-0 text-xs text-muted-foreground">
+                {memberId}
+              </code>
+            ) : null}
           </li>
         );
       })}
@@ -240,10 +283,10 @@ const PointInspectorLive = ({
       <RailArrivalsBoard
         data={displayArrivals}
         stopName={point.name}
-        lines={point.lineIds?.map((lineId) => ({
+        lines={lineIds.map((lineId) => ({
           lineId,
-          lineName: lineId,
-          modeName: point.modes?.[0],
+          lineName: getLineNameTiers(lineId).full,
+          modeName: railLineModeName(lineId),
         }))}
         headingLevel={2}
         maxRows={8}
@@ -366,7 +409,7 @@ const PointInspectorLive = ({
       {!isBike ? (
         <CodeSnippet
           title="stopPoint.getArrivals"
-          code={`await client.stopPoint.getArrivals({\n  stopPointIds: ["${point.id}"],\n  sortBy: "timeToStation",\n})`}
+          code={`await client.stopPoint.getArrivals({\n  stopPointIds: ${JSON.stringify(pollStopIds)},\n  sortBy: "timeToStation",\n})`}
         />
       ) : null}
       {!isBike ? (
@@ -381,7 +424,13 @@ const PointInspectorLive = ({
   return (
     <EntityInspectorShell
       title={point.name}
-      subtitle={point.kind === "bikePoint" ? "BikePoint" : "StopPoint"}
+      subtitle={
+        point.kind === "bikePoint"
+          ? "BikePoint"
+          : isHub
+            ? "Station hub"
+            : "StopPoint"
+      }
       identity={identity}
       preview={preview}
       relationships={relationships}
@@ -396,6 +445,10 @@ const PointInspectorLive = ({
                   kind: point.kind,
                   modes: point.modes,
                   lineIds: point.lineIds,
+                  hubId: point.hubId,
+                  hubMembers: point.hubMembers,
+                  arrivalsStopIds: pollStopIds,
+                  aliasIds: point.aliasIds,
                   zone: point.zone,
                   lat: point.lat,
                   lon: point.lon,

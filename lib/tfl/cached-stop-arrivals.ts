@@ -1,5 +1,9 @@
 import { cacheLife, cacheTag } from "next/cache";
 import type { RealtimePrediction } from "tfl-ts";
+import {
+  getBoardArrivalsStopIdsIndex,
+  lookupBoardArrivalsStopIds,
+} from "@/lib/tfl/board-arrivals-stop-ids";
 import { getTflClient } from "@/lib/tfl/client";
 import { HOME_BUS_STOP, HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops";
 
@@ -28,8 +32,12 @@ export async function getCachedStopArrivals(
   cacheTag("tfl-stop-arrivals", `tfl-stop-arrivals-${stopPointId}`);
 
   const client = getTflClient();
+  const stopPointIds = lookupBoardArrivalsStopIds(
+    getBoardArrivalsStopIdsIndex(),
+    stopPointId,
+  );
   return client.stopPoint.getArrivals({
-    stopPointIds: [stopPointId],
+    stopPointIds: stopPointIds.length > 0 ? stopPointIds : [stopPointId],
     sortBy: "timeToStation",
   });
 }

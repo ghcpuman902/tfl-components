@@ -22,6 +22,32 @@ const data = await tfl.stopPoint.getArrivals({
 
 `getArrivals` returns `RealtimePrediction[]`. Pass that array straight through. The board sorts it.
 
+Elizabeth line and Overground often send `towards: ""`. Use `getNormalizedArrivals` from tfl-ts 2.7, or keep `getArrivals` and fall through to `destinationName` the way this board does.
+
+### One station, several StopPoint ids
+
+A physical interchange is often more than one StopPoint. Liverpool Street's Underground id (`940GZZLULVT`) never returns Elizabeth line or Weaver predictions. Those live on the rail sibling (`910GLIVST`). Polling the interchange hub id (`HUBLST`) returns nothing.
+
+Resolve the ids that actually carry the lines you want, then fetch those:
+
+```ts
+import { STATION_HUBS, resolveArrivalsStopIds } from "tfl-ts"
+
+const hub = STATION_HUBS["940GZZLULVT"]
+const stopPointIds = hub
+  ? resolveArrivalsStopIds(hub, ["central", "elizabeth", "weaver"])
+  : ["940GZZLULVT"]
+
+const data = await tfl.stopPoint.getArrivals({
+  stopPointIds,
+  sortBy: "timeToStation",
+})
+```
+
+`resolveArrivalsStopId(hub, lineId)` is the per-line form. It returns `undefined` when that hub does not carry the line. Do not poll National Rail operator ids (c2c, South Western Railway). TfL's Arrivals API has no live predictions for them.
+
+This site's Board builder expands siblings for you. A library install still has to do it in the app, because the board only renders the rows you pass in.
+
 Bus has its own board, [`BusArrivalsBoard`](/docs/bus-arrivals). The two share row chrome, chips, and the tile rhythm, not the high-level API. Fetching, caching, and polling stay in the app.
 
 On this docs site, the live preview polls with the site key until you paste a TfL API key in the docs sidebar. With your key set, the preview requests TfL from the browser against your quota. That browser key is not `TFL_APP_KEY`. Keep production keys on the server.
@@ -48,7 +74,7 @@ export default function Page({ data }) {
 
 ## Line, then bound
 
-Groups by line, then by compass bound from `platformName`. On a vertical board, West sits above East and North above South. Bound labels match the line-name size. Each row leads with a [`PlatformChip`](/docs/platform-chip), then destination and countdown. Destinations use [`StationName`](/docs/station-name-labels). Hairlines inside a line group share one weight, including under bound titles.
+Groups by line, then by compass bound from `platformName`. On a vertical board, West sits above East and North above South. Bound labels match the line-name size. When a line has no compass prefix, as on Elizabeth line and Overground, the board groups by platform letter or number so paging still works. Each row leads with a [`PlatformChip`](/docs/platform-chip), then destination and countdown. Destinations use [`StationName`](/docs/station-name-labels). Hairlines inside a line group share one weight, including under bound titles. Literal `Platform Unknown` is dropped, not shown as a chip.
 
 Line sections stay in canonical `LINE_ORDER`. Empty expected lines keep that slot. Pass optional `lines` for the stop's serving set so a line with no predictions still renders a muted **No information** row. When `lines[].bounds` lists the compass sides that station actually serves, those bound groups still render even if the current poll has no trains that way. Otherwise a missing side is omitted.
 

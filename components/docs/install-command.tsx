@@ -68,7 +68,7 @@ export const InstallCommand = ({
 
           return (
             <TabsContent key={pm.id} value={pm.id} className="relative">
-              <pre className="overflow-x-auto bg-muted/50 p-4 pr-14 text-xs leading-relaxed text-foreground">
+              <pre className="overflow-x-auto overflow-y-hidden bg-muted/50 p-4 pr-14 text-xs leading-relaxed text-foreground">
                 <code>{command}</code>
               </pre>
               <Button

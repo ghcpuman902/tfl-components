@@ -1,5 +1,6 @@
 import { getStationCatalog } from "@/lib/tfl/station-catalog";
 import type { ExplorerTubeRailPoint } from "@/lib/tfl/explorer/common";
+import { getExplorerHubMembership } from "@/lib/tfl/explorer/hub-membership";
 import tubeGeometry from "@/data/geography/tube-geometry.json";
 import elizabethGeometry from "@/data/geography/elizabeth-geometry.json";
 import overgroundGeometry from "@/data/geography/overground-geometry.json";
@@ -77,10 +78,20 @@ const buildExplorerTubeRailPoints = (): ExplorerTubeRailPoint[] => {
       geoLookup.get(station.id) ??
       station.aliasIds.map((alias) => geoLookup.get(alias)).find(Boolean);
 
+    const membership = getExplorerHubMembership(station.id);
+    const hubFields = membership?.isHub
+      ? {
+          hubId: membership.hubId,
+          hubMembers: membership.members,
+          arrivalsStopIds: membership.arrivalsStopIds,
+        }
+      : {};
+
     return {
       ...station,
       lat: geo?.lat,
       lon: geo?.lon,
+      ...hubFields,
     };
   });
 };
@@ -89,7 +100,8 @@ let pointsMemo: ExplorerTubeRailPoint[] | undefined;
 
 /**
  * Tube & rail Points seed dataset — hard-cached topology.
- * Identity from tfl-ts `LINE_STATION_SEQUENCES`; coords from bundled geography.
+ * Identity from tfl-ts `LINE_STATION_SEQUENCES` plus `STATION_HUBS`
+ * (sibling StopPoints / arrivals ids). Coords from bundled geography.
  * Zone is not in that snapshot — omit it from the seed list.
  */
 export const getExplorerTubeRailPoints = (): ExplorerTubeRailPoint[] => {

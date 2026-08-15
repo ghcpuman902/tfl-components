@@ -144,21 +144,19 @@ export const SyntaxHighlightedCode = ({
       {showCopy ? (
         <button
           type="button"
+          data-slot="button"
           data-mdx-copy
           data-copied="false"
           aria-label="Copy code"
           className={cn(
-            "group/copy absolute top-2 right-2 z-10 inline-flex size-8 items-center justify-center rounded-lg border border-border/60 bg-background text-foreground shadow-xs",
-            "opacity-100 transition-[opacity,background-color,transform] duration-150 ease",
-            "sm:opacity-0 sm:group-hover/code:opacity-100 sm:focus-visible:opacity-100",
-            "hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            "motion-safe:active:scale-[0.97]",
-            "motion-reduce:transition-opacity motion-reduce:active:scale-100",
+            "group/button absolute top-2 right-2 z-10 inline-flex size-7 shrink-0 items-center justify-center rounded-[min(var(--radius-md),12px)] border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none",
+            "hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px dark:hover:bg-muted/50",
+            "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
           )}
         >
-          <span className="relative size-3.5 shrink-0" aria-hidden>
-            <CopyIcon className="absolute inset-0 size-3.5 transition-opacity duration-150 ease group-data-[copied=true]/copy:opacity-0" />
-            <CheckIcon className="absolute inset-0 size-3.5 opacity-0 transition-opacity duration-150 ease group-data-[copied=true]/copy:opacity-100" />
+          <span className="relative size-4 shrink-0" aria-hidden>
+            <CopyIcon className="absolute inset-0 size-4 transition-opacity group-data-[copied=true]/button:opacity-0" />
+            <CheckIcon className="absolute inset-0 size-4 opacity-0 transition-opacity group-data-[copied=true]/button:opacity-100" />
           </span>
         </button>
       ) : null}
@@ -177,7 +175,7 @@ export const SyntaxHighlightedCode = ({
       >
         <pre
           className={cn(
-            "block w-full overflow-x-auto rounded-lg bg-muted py-3 pr-14 pl-4 text-sm leading-normal",
+            "block w-full overflow-x-auto overflow-y-hidden rounded-lg bg-muted py-3 pr-14 pl-4 text-sm leading-normal",
             isPeek && "rounded-none bg-transparent",
             preClassName,
           )}
@@ -257,7 +255,7 @@ export const MdxSyntaxPre = ({
     return (
       <pre
         className={cn(
-          "mb-4 mt-6 block w-full overflow-x-auto rounded-lg bg-muted p-4 text-sm",
+          "mb-4 mt-6 block w-full overflow-x-auto overflow-y-hidden rounded-lg bg-muted p-4 text-sm",
           className,
         )}
       >

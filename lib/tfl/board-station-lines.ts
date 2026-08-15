@@ -11,25 +11,8 @@ import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort";
 import type { ArrivalsBoundId } from "@/lib/tfl/arrivals-bound-sort";
 import type { RailArrivalsLine } from "@/lib/tfl/arrivals-prepare";
 import { HOME_RAIL_LINES, HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops";
-import { getLineNameTiers } from "@/lib/tfl/line-names";
+import { getLineNameTiers, railLineModeName } from "@/lib/tfl/line-names";
 import { getStationCatalog } from "@/lib/tfl/station-catalog";
-
-const OVERGROUND_LINE_IDS = new Set([
-  "liberty",
-  "lioness",
-  "mildmay",
-  "suffragette",
-  "weaver",
-  "windrush",
-]);
-
-export const railLineModeName = (lineId: string): string => {
-  if (lineId === "elizabeth") return "elizabeth-line";
-  if (OVERGROUND_LINE_IDS.has(lineId)) return "overground";
-  if (lineId === "dlr") return "dlr";
-  if (lineId === "tram") return "tram";
-  return "tube";
-};
 
 /**
  * Curated compass-bound metadata per stop. Membership still comes from the

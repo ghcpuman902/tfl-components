@@ -21,6 +21,13 @@ export type ExplorerTubeRailPoint = {
   zone?: string;
   lat?: number;
   lon?: number;
+  hubId?: string;
+  hubMembers?: {
+    id: string;
+    name: string;
+    lineIds: string[];
+  }[];
+  arrivalsStopIds?: string[];
 };
 
 export type ExplorerBusPoint = NearbyBusStop;

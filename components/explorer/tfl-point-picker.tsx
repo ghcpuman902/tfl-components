@@ -101,6 +101,9 @@ const PointResultOption = ({
   onSelect,
 }: PointResultOptionProps) => {
   const meta = [
+    point.hubMembers && point.hubMembers.length > 1
+      ? `${point.hubMembers.length} StopPoints`
+      : null,
     point.stopLetter ? `Stop ${point.stopLetter}` : null,
     point.towards ? `towards ${point.towards}` : null,
     point.distanceMeters !== undefined

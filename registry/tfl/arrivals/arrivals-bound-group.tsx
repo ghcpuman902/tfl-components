@@ -15,7 +15,7 @@ import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
 import { LineColorBar } from "@/components/tfl/brand/line-badge"
 import { StationName } from "@/components/tfl/station-name"
 import { ARRIVALS_LINE_EMPTY_COPY } from "@/lib/tfl/arrivals-empty"
-import { COMPASS_BOUND_RE } from "@/lib/tfl/arrivals-bound-sort"
+import { parseArrivalsPlatformLabel } from "@/lib/tfl/arrivals-bound-sort"
 import {
   chunkBoundPages,
   type ArrivalsPreparedBound,
@@ -71,17 +71,7 @@ export const formatArrivalsCountdown = (seconds?: number): string => {
 
 export const getArrivalsPlatformNumber = (
   platformName?: string
-): string | null => {
-  if (!platformName) return null
-  const digit = platformName.match(/(\d+)\s*$/)
-  if (digit?.[1]) return digit[1]
-  const stripped = platformName
-    .replace(COMPASS_BOUND_RE, "")
-    .replace(/^\s*[-–—:]\s*/, "")
-    .replace(/^platform\s+/i, "")
-    .trim()
-  return stripped || null
-}
+): string | null => parseArrivalsPlatformLabel(platformName)
 
 export const ArrivalRowItem = ({
   row,
@@ -93,7 +83,9 @@ export const ArrivalRowItem = ({
   showRule: boolean
 }) => {
   const destination =
-    row.arrival.towards ?? row.arrival.destinationName ?? "Unknown"
+    row.arrival.towards?.trim() ||
+    row.arrival.destinationName?.trim() ||
+    "Unknown"
   const platformNumber =
     mode === "rail" ? getArrivalsPlatformNumber(row.arrival.platformName) : null
   const routeLabel =

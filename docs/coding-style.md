@@ -80,6 +80,12 @@ Use `variant` only when the **same board chrome** paints differently. Rail and b
 
 Canonical example: `registry/tfl/cycle-hire/` (`CycleHireDocks`, `.Map`, `.Detail`).
 
+### Station hubs and arrivals StopPoints
+
+A physical interchange is often several StopPoint ids. Catalogue membership and arrivals fetch targets from tfl-ts `STATION_HUBS`, not from matching display names. Poll only lines in `LINE_STATION_SEQUENCES`; National Rail operator ids in a hub return empty predictions.
+
+Agent rule: [`.cursor/rules/station-hubs.mdc`](../.cursor/rules/station-hubs.mdc). User-facing gotcha: [Tube & Rail Arrivals](/docs/tube-rail-arrivals#one-station-several-stoppoint-ids). Full traps table: tfl-ts skill.
+
 ### Domain board skeletons
 
 Suspense fallbacks for data-aware boards should look like the **product at rest**:

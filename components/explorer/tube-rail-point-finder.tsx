@@ -8,6 +8,7 @@ import {
   useExplorerKeyedQuery,
 } from "@/hooks/use-explorer-keyed-query";
 import {
+  collapseExplorerPointsToHubs,
   normaliseStopPoint,
   type ExplorerPoint,
 } from "@/lib/tfl/explorer-point-normalise";
@@ -43,6 +44,8 @@ const filterCachedPoints = (
     (point) =>
       point.name.toLowerCase().includes(q) ||
       point.id.toLowerCase().includes(q) ||
+      point.hubId?.toLowerCase().includes(q) ||
+      point.aliasIds?.some((alias) => alias.toLowerCase().includes(q)) ||
       point.lineIds?.some((lineId) => lineId.toLowerCase().includes(q)) ||
       point.modes?.some((mode) => mode.toLowerCase().includes(q)),
   );
@@ -104,8 +107,9 @@ export const TubeRailPointFinder = ({
     });
 
     if (result.ok) {
-      setLivePoints(result.data);
-      if (result.data[0]) onSelect(result.data[0]);
+      const collapsed = collapseExplorerPointsToHubs(result.data, initialPoints);
+      setLivePoints(collapsed);
+      if (collapsed[0]) onSelect(collapsed[0]);
     }
   };
 
@@ -128,8 +132,12 @@ export const TubeRailPointFinder = ({
       });
 
       if (result.ok) {
-        setLivePoints(result.data);
-        if (result.data[0]) onSelect(result.data[0]);
+        const collapsed = collapseExplorerPointsToHubs(
+          result.data,
+          initialPoints,
+        );
+        setLivePoints(collapsed);
+        if (collapsed[0]) onSelect(collapsed[0]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not read location.");

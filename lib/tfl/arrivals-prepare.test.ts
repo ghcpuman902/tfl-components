@@ -284,6 +284,82 @@ describe("prepareRailArrivals", () => {
     ])
   })
 
+  it("groups Elizabeth line letter platforms when there is no compass prefix", () => {
+    const platformA = prediction({
+      id: "elz-a",
+      lineId: "elizabeth",
+      lineName: "Elizabeth line",
+      modeName: "elizabeth-line",
+      platformName: "A",
+      towards: "",
+      timeToStation: 90,
+    })
+    const platformB = prediction({
+      id: "elz-b",
+      lineId: "elizabeth",
+      lineName: "Elizabeth line",
+      modeName: "elizabeth-line",
+      platformName: "B",
+      towards: "",
+      timeToStation: 40,
+    })
+    const board = prepareRailArrivals({ data: [platformA, platformB] })
+    assert.deepEqual(boundLabels(board.groups), [
+      "Elizabeth line:A",
+      "Elizabeth line:B",
+    ])
+    assert.deepEqual(idsOf(board.groups[0]?.bounds[0]?.rows ?? []), ["elz-a"])
+    assert.deepEqual(idsOf(board.groups[0]?.bounds[1]?.rows ?? []), ["elz-b"])
+  })
+
+  it("groups Overground numbered platforms when there is no compass prefix", () => {
+    const platform1 = prediction({
+      id: "wdr-1",
+      lineId: "windrush",
+      lineName: "Windrush",
+      modeName: "overground",
+      platformName: "1",
+      towards: "",
+      timeToStation: 120,
+    })
+    const platform2 = prediction({
+      id: "wdr-2",
+      lineId: "windrush",
+      lineName: "Windrush",
+      modeName: "overground",
+      platformName: "2",
+      towards: "",
+      timeToStation: 30,
+    })
+    const board = prepareRailArrivals({ data: [platform1, platform2] })
+    assert.deepEqual(boundLabels(board.groups), [
+      "Windrush:1",
+      "Windrush:2",
+    ])
+  })
+
+  it("still prefers compass bounds over a platform number", () => {
+    const board = prepareRailArrivals({
+      data: [bakerlooNorth, bakerlooSouth],
+    })
+    assert.deepEqual(boundLabels(board.groups), [
+      "Bakerloo:Northbound",
+      "Bakerloo:Southbound",
+    ])
+  })
+
+  it("does not group literal Platform Unknown", () => {
+    const unknown = prediction({
+      id: "unk",
+      lineId: "central",
+      lineName: "Central",
+      platformName: "Platform Unknown",
+      timeToStation: 20,
+    })
+    const board = prepareRailArrivals({ data: [unknown] })
+    assert.deepEqual(boundLabels(board.groups), ["Central:none"])
+  })
+
   it("lineOrder does not hide or seed lines", () => {
     const board = prepareRailArrivals({
       data: [bakerlooNorth],

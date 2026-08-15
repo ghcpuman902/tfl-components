@@ -5,6 +5,12 @@
 
 export type ExplorerPointKind = "stopPoint" | "bikePoint";
 
+export type ExplorerHubMember = {
+  id: string;
+  name: string;
+  lineIds: string[];
+};
+
 export type ExplorerPoint = {
   id: string;
   name: string;
@@ -22,6 +28,12 @@ export type ExplorerPoint = {
   eBikes?: number;
   spaces?: number;
   aliasIds?: string[];
+  /** Interchange id when this row is a multi-StopPoint hub. */
+  hubId?: string;
+  /** Sibling StopPoints that carry TfL arrivals. Omitted for a single StopPoint. */
+  hubMembers?: ExplorerHubMember[];
+  /** Ids to poll for arrivals. Omitted when it is just `[id]`. */
+  arrivalsStopIds?: string[];
 };
 
 /** Five-digit SMS code for London bus stops. */
@@ -134,6 +146,9 @@ type RailCatalogLike = {
   zone?: string;
   lat?: number;
   lon?: number;
+  hubId?: string;
+  hubMembers?: ExplorerHubMember[];
+  arrivalsStopIds?: string[];
 };
 
 /** Normalise a Tube & rail catalog station into ExplorerPoint. */
@@ -149,4 +164,32 @@ export const normaliseRailPoint = (
   lineIds: station.lines,
   zone: station.zone,
   aliasIds: station.aliasIds,
+  hubId: station.hubId,
+  hubMembers: station.hubMembers,
+  arrivalsStopIds: station.arrivalsStopIds,
 });
+
+/**
+ * Collapse live Search / Locate hits onto catalog hub rows when we already
+ * know the interchange. Unmatched hits stay as TfL returned them.
+ */
+export const collapseExplorerPointsToHubs = (
+  points: readonly ExplorerPoint[],
+  catalog: readonly ExplorerPoint[] = [],
+): ExplorerPoint[] => {
+  const seen = new Set<string>();
+  const out: ExplorerPoint[] = [];
+
+  for (const point of points) {
+    const catalogHit = catalog.find(
+      (row) =>
+        row.id === point.id || row.aliasIds?.includes(point.id) === true,
+    );
+    const key = catalogHit?.hubId ?? catalogHit?.id ?? point.id;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(catalogHit ?? point);
+  }
+
+  return out;
+};

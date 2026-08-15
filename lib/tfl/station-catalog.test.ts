@@ -42,14 +42,28 @@ describe("buildStationCatalog", () => {
     assert.ok(oxford.lines.includes("victoria"));
   });
 
-  it("merges homonyms onto one record with alias ids", () => {
+  it("merges interchange siblings from STATION_HUBS, not display names", () => {
     const hammersmith = byName.get("Hammersmith");
     assert.ok(hammersmith);
     assert.ok(hammersmith.aliasIds.length >= 1);
+    assert.ok(hammersmith.lines.includes("district"));
+    assert.ok(hammersmith.lines.includes("hammersmith-city"));
+  });
+
+  it("keeps Liverpool Street as one station with tube and Elizabeth line", () => {
+    const liverpool =
+      byId.get("940GZZLULVT") ??
+      byId.get("910GLIVST") ??
+      byName.get("Liverpool Street");
+    assert.ok(liverpool);
+    assert.equal(liverpool.displayName, "Liverpool Street");
+    assert.ok(liverpool.lines.includes("central"));
+    assert.ok(liverpool.lines.includes("elizabeth"));
     assert.ok(
-      hammersmith.lines.includes("district") ||
-        hammersmith.lines.includes("piccadilly") ||
-        hammersmith.lines.includes("hammersmith-city"),
+      liverpool.aliasIds.includes("910GLIVST") ||
+        liverpool.aliasIds.includes("940GZZLULVT") ||
+        liverpool.id === "910GLIVST" ||
+        liverpool.id === "940GZZLULVT",
     );
   });
 

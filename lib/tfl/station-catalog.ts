@@ -1,10 +1,10 @@
-import { LINE_STATION_SEQUENCES } from "tfl-ts";
-import { formatStationName } from "@/lib/tfl/diagram-station";
 import {
-  stationLabelKey,
-  upsertStationRecord,
-  type StationRecord,
-} from "@/lib/tfl/station-index";
+  LINE_STATION_SEQUENCES,
+  STATION_HUBS,
+  type StationHubInfo,
+} from "tfl-ts";
+import { formatStationName } from "@/lib/tfl/diagram-station";
+import { stationLabelKey } from "@/lib/tfl/station-index";
 
 export const STATION_CATALOG_MODES = [
   { id: "tube", label: "Tube" },
@@ -30,23 +30,41 @@ const CATALOG_MODE_IDS = new Set<string>(
   STATION_CATALOG_MODES.map((mode) => mode.id),
 );
 
-const toCatalogStation = (record: StationRecord): CatalogStation => ({
-  id: record.id,
-  aliasIds: record.aliasIds,
-  name: record.name,
-  displayName: record.displayName,
-  modes: [...record.modeIds].sort() as StationCatalogModeId[],
-  lines: [...record.lineIds].sort(),
-});
+const CATALOG_LINE_IDS = new Set(Object.keys(LINE_STATION_SEQUENCES));
+
+type HubAccumulator = {
+  hub: StationHubInfo | undefined;
+  primaryId: string;
+  primaryName: string;
+  aliasIds: Set<string>;
+  lineIds: Set<string>;
+  modeIds: Set<StationCatalogModeId>;
+};
+
+const hubKeyOf = (stationId: string, hub: StationHubInfo | undefined): string =>
+  hub?.hubId ?? stationId;
+
+const toCatalogStation = (group: HubAccumulator): CatalogStation => {
+  const aliasIds = [...group.aliasIds]
+    .filter((id) => id !== group.primaryId)
+    .sort();
+  return {
+    id: group.primaryId,
+    aliasIds,
+    name: group.primaryName,
+    displayName: formatStationName(group.primaryName),
+    modes: [...group.modeIds].sort() as StationCatalogModeId[],
+    lines: [...group.lineIds].sort(),
+  };
+};
 
 /**
  * Deduplicated A–Z station catalogue for Tube, Elizabeth line, DLR,
- * Overground, and Tram — built from tfl-ts `LINE_STATION_SEQUENCES`
- * (offline topology; refresh by bumping tfl-ts).
+ * Overground, and Tram. Membership comes from tfl-ts `STATION_HUBS`
+ * (interchange graph) plus `LINE_STATION_SEQUENCES` (serving lines).
  */
 export const buildStationCatalog = (): CatalogStation[] => {
-  const byId = new Map<string, StationRecord>();
-  const byDisplayKey = new Map<string, string>();
+  const groups = new Map<string, HubAccumulator>();
 
   for (const sequence of Object.values(LINE_STATION_SEQUENCES)) {
     if (!CATALOG_MODE_IDS.has(sequence.modeName)) continue;
@@ -56,26 +74,38 @@ export const buildStationCatalog = (): CatalogStation[] => {
       const rawName = stop.name.trim();
       if (!rawName) continue;
       const id = stop.id.trim() || rawName;
-      upsertStationRecord(
-        { byId, byDisplayKey },
-        {
-          id,
-          name: rawName,
-          lineId: sequence.lineId,
-          modeId,
-        },
-        { mergeHomonyms: true },
-      );
+      const hub = STATION_HUBS[id];
+      const key = hubKeyOf(id, hub);
+      const existing = groups.get(key);
+
+      if (!existing) {
+        const aliasIds = new Set<string>();
+        if (hub?.hubId && hub.hubId !== id) aliasIds.add(hub.hubId);
+        groups.set(key, {
+          hub,
+          primaryId: id,
+          primaryName: rawName,
+          aliasIds,
+          lineIds: new Set([sequence.lineId]),
+          modeIds: new Set([modeId]),
+        });
+        continue;
+      }
+
+      if (id !== existing.primaryId) existing.aliasIds.add(id);
+      existing.lineIds.add(sequence.lineId);
+      existing.modeIds.add(modeId);
     }
   }
 
-  const seen = new Set<string>();
-  const stations: CatalogStation[] = [];
-  for (const record of byId.values()) {
-    if (seen.has(record.id)) continue;
-    seen.add(record.id);
-    stations.push(toCatalogStation(record));
+  for (const group of groups.values()) {
+    if (!group.hub) continue;
+    for (const lineId of Object.keys(group.hub.lineMemberIds)) {
+      if (CATALOG_LINE_IDS.has(lineId)) group.lineIds.add(lineId);
+    }
   }
+
+  const stations = [...groups.values()].map(toCatalogStation);
 
   return stations.sort((a, b) =>
     a.displayName.localeCompare(b.displayName, "en-GB", {

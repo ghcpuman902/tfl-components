@@ -5,6 +5,7 @@ import {
   compareArrivalsBounds,
   formatArrivalsBoundLabel,
   normalizeArrivalsBoundId,
+  parseArrivalsPlatformLabel,
   parseCompassBoundId,
 } from "@/lib/tfl/arrivals-bound-sort";
 
@@ -27,6 +28,22 @@ describe("parseCompassBoundId", () => {
       "eastbound",
     );
     assert.equal(parseCompassBoundId("Platform 3"), null);
+  });
+});
+
+describe("parseArrivalsPlatformLabel", () => {
+  it("strips compass prefixes and the word Platform", () => {
+    assert.equal(parseArrivalsPlatformLabel("Westbound - Platform 1"), "1");
+    assert.equal(parseArrivalsPlatformLabel("Platform 3"), "3");
+    assert.equal(parseArrivalsPlatformLabel("A"), "A");
+    assert.equal(parseArrivalsPlatformLabel("B"), "B");
+    assert.equal(parseArrivalsPlatformLabel("PA"), "PA");
+  });
+
+  it("drops TfL's literal Unknown", () => {
+    assert.equal(parseArrivalsPlatformLabel("Platform Unknown"), null);
+    assert.equal(parseArrivalsPlatformLabel("Unknown"), null);
+    assert.equal(parseArrivalsPlatformLabel(undefined), null);
   });
 });
 

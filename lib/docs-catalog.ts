@@ -356,6 +356,21 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     usesFoundations: ["colours", "tfl-roundel"],
   },
   {
+    slug: "bus-disruptions",
+    title: "Bus disruption information",
+    description:
+      "Route-level disruption summaries for use with or without a bus arrivals board. Component boundary still under design.",
+    group: "interfaces",
+    kind: "placeholder",
+    href: "/docs/bus-disruptions",
+    sidebarSection: "components",
+    sidebarOrder: 35,
+    preferred: true,
+    modeMarker: "bus",
+    layer: "data-aware",
+    comingSoon: true,
+  },
+  {
     slug: "river-bus-arrivals",
     title: "River bus arrivals",
     description: "River bus pier departures. Coming soon.",
@@ -604,7 +619,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "board-index",
     title: "Board",
     description:
-      "The quickest way to turn an old iPad or tablet into a TfL dashboard.",
+      "An experimental full-screen TfL display configured through one URL.",
     group: "board",
     kind: "page",
     href: "/board",
@@ -695,10 +710,11 @@ export const getSidebarEntries = (
     (entry) => entry.sidebarSection === section && !entry.comingSoon,
   ).sort((a, b) => a.sidebarOrder - b.sidebarOrder);
 
-/** Catalogue rows for `/docs/components` (preferred + rendering parts). */
+/** Catalogue rows include named future surfaces; the persistent sidebar does not. */
 export const getCatalogueEntries = (): DocsEntry[] =>
-  getSidebarEntries("components");
-
+  DOCS_ENTRIES.filter(
+    (entry) => entry.sidebarSection === "components",
+  ).sort((a, b) => a.sidebarOrder - b.sidebarOrder);
 
 /** Matches DocsSidebar: get-started top → components → Troubleshoot / licensing tail → primitives. */
 export const GET_STARTED_BOTTOM_FROM = 190;
@@ -751,13 +767,13 @@ export const layerBadgeLabel = (
   return "Data-aware";
 };
 
-/** Single hero badge — layer when present, otherwise kind. */
+/** Single hero badge — coming-soon status, then layer, then kind. */
 export const entryBadgeLabel = (entry: DocsEntry): string | null => {
+  if (entry.kind === "placeholder") return "Coming soon";
   if (entry.layer) return layerBadgeLabel(entry.layer);
   if (entry.kind === "tool") return "Tool";
   if (entry.kind === "block") return "Block";
   if (entry.kind === "draft") return "Draft";
-  if (entry.kind === "placeholder") return "Coming soon";
   return null;
 };
 

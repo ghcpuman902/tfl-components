@@ -19,6 +19,11 @@ const INVALID_KEY_FALLBACK =
 
 type UseDualPathArrivalsOptions = {
   stopPointId: string;
+  /**
+   * Extra StopPoint ids to poll with the user key (hub siblings).
+   * The site-key path still uses `stopPointId` alone (demo allowlist).
+   */
+  stopPointIds?: readonly string[];
   pollMs?: number;
   /**
    * When set, ignore stored credentials and use this key for the user path.
@@ -43,6 +48,7 @@ type UseDualPathArrivalsResult = {
  */
 export const useDualPathArrivals = ({
   stopPointId,
+  stopPointIds,
   pollMs = DEFAULT_POLL_MS,
   appKeyOverride,
 }: UseDualPathArrivalsOptions): UseDualPathArrivalsResult => {
@@ -57,6 +63,14 @@ export const useDualPathArrivals = ({
     : selectArrivalsDataPath(status);
   const isInvalid = !usingOverride && status === "invalid";
   const trimmedStop = stopPointId.trim();
+  const pollStopIds = [
+    ...new Set(
+      (stopPointIds?.length ? stopPointIds : [trimmedStop])
+        .map((id) => id.trim())
+        .filter(Boolean),
+    ),
+  ];
+  const pollStopKey = pollStopIds.join(",");
 
   const [data, setData] = useState<RealtimePrediction[]>([]);
   const [pollError, setPollError] = useState<string | null>(null);
@@ -64,8 +78,8 @@ export const useDualPathArrivals = ({
   const [tick, setTick] = useState(0);
 
   const pathKey = usingOverride
-    ? `${source}:override:${trimmedStop}`
-    : `${source}:${status}:${trimmedStop}`;
+    ? `${source}:override:${pollStopKey}`
+    : `${source}:${status}:${pollStopKey}`;
 
   useEffect(() => {
     if (isInvalid) return;
@@ -146,7 +160,7 @@ export const useDualPathArrivals = ({
 
         stopPoll = client.realtime.pollArrivals(
           {
-            stopPointIds: [trimmedStop],
+            stopPointIds: pollStopIds,
             sortBy: "timeToStation",
             intervalMs: pollMs,
             immediate: true,
@@ -222,6 +236,7 @@ export const useDualPathArrivals = ({
     pollMs,
     source,
     trimmedStop,
+    pollStopKey,
     isInvalid,
     usingOverride,
     overrideKey,

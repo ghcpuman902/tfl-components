@@ -153,6 +153,24 @@ const resolveLineId = (lineId: string): string => {
   return DATA_LINE_ALIASES[key] ?? key;
 };
 
+const OVERGROUND_LINE_IDS = new Set([
+  "liberty",
+  "lioness",
+  "mildmay",
+  "suffragette",
+  "weaver",
+  "windrush",
+]);
+
+/** Mode name for rail arrivals chrome (brand bars, empty groups). */
+export const railLineModeName = (lineId: string): string => {
+  if (lineId === "elizabeth") return "elizabeth-line";
+  if (OVERGROUND_LINE_IDS.has(lineId)) return "overground";
+  if (lineId === "dlr") return "dlr";
+  if (lineId === "tram") return "tram";
+  return "tube";
+};
+
 const deriveShortCode = (name: string): string => {
   const letters = name.replace(/[^A-Za-z]/g, "").toUpperCase();
   if (letters.length >= 3) return letters.slice(0, 3);

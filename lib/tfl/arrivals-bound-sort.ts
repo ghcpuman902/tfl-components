@@ -21,6 +21,23 @@ const BOUND_ID_SET = new Set<string>(ARRIVALS_BOUND_IDS);
 export const COMPASS_BOUND_RE =
   /^(northbound|southbound|eastbound|westbound)\b/i;
 
+/**
+ * Cleaned platform letter or number from a TfL `platformName`.
+ * Drops the compass prefix, the word "Platform", and the literal "Unknown".
+ */
+export const parseArrivalsPlatformLabel = (
+  platformName?: string,
+): string | null => {
+  if (!platformName) return null;
+  if (/\bunknown\b/i.test(platformName)) return null;
+  const stripped = platformName
+    .replace(COMPASS_BOUND_RE, "")
+    .replace(/^\s*[-–—:]\s*/, "")
+    .replace(/^platform\s+/i, "")
+    .trim();
+  return stripped || null;
+};
+
 export const normalizeArrivalsBoundId = (
   value: string,
 ): ArrivalsBoundId | null => {

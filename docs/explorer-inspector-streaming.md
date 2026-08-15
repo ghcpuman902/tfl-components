@@ -51,6 +51,7 @@ Canonical: `LineInspector`, `PointInspectorDeferred`.
 
 - **Inbound / outbound** live with the stop sequence they control (Relationships), not in Identity.
 - Seed arrivals are a promise **only for the default-selected seed**. Other points use the visitor key; identity still paints from the list/search hit.
+- Tube & rail identity may list hub sibling StopPoints from static `STATION_HUBS`. Preview arrivals poll every sibling that carries a TfL prediction line (`arrivalsStopIds` on the catalog row).
 - Cycle occupancy on featured docks is already on the seed row — treat it as identity-adjacent; do not block Identity on a second fetch.
 
 ## Anti-patterns

@@ -1,0 +1,27 @@
+---
+description: Poll the StopPoint that carries the line. Do not merge stations by display name.
+globs: lib/tfl/station-*.ts,lib/tfl/board-arrivals-*.ts,lib/tfl/board-station-*.ts,lib/tfl/cached-stop-arrivals.ts,lib/tfl/explorer/**/*,hooks/use-dual-path-arrivals.ts,components/board/**/*,components/explorer/**/*,registry/tfl/arrivals/**/*,content/components/*arrivals*.mdx
+alwaysApply: false
+---
+
+# Station hubs and arrivals StopPoints
+
+A physical station is often several TfL StopPoints. Membership and fetch targets come from tfl-ts `STATION_HUBS`, not from matching display names.
+
+Canonical traps: tfl-ts skill (`.claude/skills/tfl-ts/SKILL.md` in the tfl-ts package). Do not copy that essay here.
+
+## Do
+
+- Catalogue lines/aliases from `STATION_HUBS` + `LINE_STATION_SEQUENCES`.
+- Poll with `resolveArrivalsStopId(hub, lineId)` or `resolveArrivalsStopIds(hub, tflLineIds)`.
+- Restrict `tflLineIds` to keys of `LINE_STATION_SEQUENCES`. National Rail operators in a hub are topology only; polling them returns `[]`.
+- Fall through blank `towards` to `destinationName` (`getNormalizedArrivals`, or the same fallback in the board).
+- Explorer Tube & rail identity lists hub sibling StopPoints from static `STATION_HUBS`. Arrivals poll every sibling that carries a TfL prediction line.
+
+## Don’t
+
+- Merge two Naptans because they share a name (`mergeHomonyms` is for diagram label packing only).
+- Poll a hub interchange id (`HUBLST`) expecting arrivals. `resolveArrivalsStopId` returns `undefined` when the line is not on that hub, not the hub id.
+- Assume the Underground id at an interchange also carries Elizabeth line / Overground.
+
+Liverpool Street: `940GZZLULVT` (tube) and `910GLIVST` (Elizabeth + Weaver). Waterloo: do not poll `910GWATRLMN` for Bakerloo.

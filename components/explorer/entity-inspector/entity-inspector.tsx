@@ -92,29 +92,28 @@ export const CodeSnippet = ({ title, code }: CodeSnippetProps) => {
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
+      window.setTimeout(() => setCopied(false), 2000);
     } catch {
       // ignore
     }
   };
 
   return (
-    <div className="space-y-1.5 rounded-lg border border-border bg-muted/30 p-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-medium text-muted-foreground">{title}</p>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          onClick={handleCopy}
-          aria-label={`Copy ${title}`}
-        >
-          {copied ? "Copied" : "Copy"}
-        </Button>
-      </div>
-      <pre className="scrollbar-thin overflow-x-auto overscroll-contain text-xs leading-relaxed">
+    <div className="relative rounded-lg border border-border bg-muted/30 p-3">
+      <p className="pr-10 text-xs font-medium text-muted-foreground">{title}</p>
+      <pre className="mt-1.5 overflow-x-auto overflow-y-hidden text-xs leading-relaxed">
         <code>{code}</code>
       </pre>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        className="absolute top-2 right-2"
+        onClick={handleCopy}
+        aria-label={copied ? "Copied" : `Copy ${title}`}
+      >
+        {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
+      </Button>
     </div>
   );
 };
@@ -124,7 +123,7 @@ type InspectorJsonProps = {
 };
 
 export const InspectorJson = ({ value }: InspectorJsonProps) => (
-  <pre className="scrollbar-thin overflow-x-auto overscroll-contain rounded-lg border border-border bg-muted/30 p-3 text-xs">
+  <pre className="overflow-x-auto overflow-y-hidden rounded-lg border border-border bg-muted/30 p-3 text-xs">
     {JSON.stringify(value, null, 2)}
   </pre>
 );

@@ -9,7 +9,8 @@ export const BoardWipNotice = () => {
 
   return (
     <p className="mt-2 max-w-prose text-sm text-muted-foreground">
-      Still in progress.{" "}
+      Experimental interactive preview. Unattended rotation and fixed-height
+      panels are not ready yet.{" "}
       <button
         type="button"
         onClick={handleOpenFeedback}

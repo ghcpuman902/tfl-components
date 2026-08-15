@@ -10,6 +10,10 @@ import { useBoardStatus } from "@/hooks/use-board-status";
 import { useDualPathArrivals } from "@/hooks/use-dual-path-arrivals";
 import { resolveArrivalsProps } from "@/lib/tfl/board-config-resolve";
 import {
+  lookupBoardArrivalsStopIds,
+  type BoardArrivalsStopIdsIndex,
+} from "@/lib/tfl/board-arrivals-stop-ids";
+import {
   lookupBoardStationLines,
   type BoardStationLinesIndex,
 } from "@/lib/tfl/board-station-lines";
@@ -57,11 +61,14 @@ type BoardDisplayProps = {
   stationLines: BoardStationLinesIndex;
   /** Server-built compact stop → display name index. */
   stationNames: BoardStationNamesIndex;
+  /** Server-built stop → hub sibling ids to poll for arrivals. */
+  arrivalsStopIds: BoardArrivalsStopIdsIndex;
 };
 
 export const BoardDisplay = ({
   stationLines,
   stationNames,
+  arrivalsStopIds,
 }: BoardDisplayProps) => {
   const { config, ready } = useBoardConfigFromHash();
   const appKey = config.key ?? null;
@@ -78,8 +85,13 @@ export const BoardDisplay = ({
     appKey,
     enabled: ready,
   });
+  const pollStopIds = useMemo(
+    () => lookupBoardArrivalsStopIds(arrivalsStopIds, stopId),
+    [arrivalsStopIds, stopId],
+  );
   const arrivals = useDualPathArrivals({
     stopPointId: ready ? stopId : "",
+    stopPointIds: ready ? pollStopIds : [],
     appKeyOverride: ready ? appKey : null,
   });
 

@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { getTflClient } from "@/lib/tfl/client";
+import { lookupExplorerArrivalsStopIds } from "@/lib/tfl/explorer/hub-membership";
 import type { ExplorerCachedArrivals } from "@/lib/tfl/explorer/selection";
 
 export type { ExplorerCachedArrivals };
@@ -19,8 +20,9 @@ export async function getExplorerCachedArrivals(
   const fetchedAt = Date.now();
   try {
     const client = getTflClient();
+    const stopPointIds = lookupExplorerArrivalsStopIds(stopPointId);
     const arrivals = await client.stopPoint.getArrivals({
-      stopPointIds: [stopPointId],
+      stopPointIds: stopPointIds.length > 0 ? stopPointIds : [stopPointId],
       sortBy: "timeToStation",
     });
     return { stopPointId, stopName, arrivals, fetchedAt };

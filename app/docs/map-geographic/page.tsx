@@ -220,6 +220,18 @@ export default function MapsGeographicPage() {
           />
         </section>
 
+        <section className="space-y-3" aria-labelledby="map-next-heading">
+          <h2 id="map-next-heading" className="text-lg font-semibold">
+            Coming next
+          </h2>
+          <p className="max-w-prose text-muted-foreground">
+            Bus route geometry and live bus or train positions belong here as
+            optional geographic layers, not as separate mode-specific map
+            products. Data coverage, freshness, vehicle identity, and stale
+            positions still need investigation before those layers can ship.
+          </p>
+        </section>
+
         <section className="space-y-8" aria-labelledby="vendors-heading">
           <div className="space-y-2">
             <h2 id="vendors-heading" className="text-lg font-semibold">

@@ -8,7 +8,7 @@ import { getBoardStationNamesIndex } from "@/lib/tfl/board-station-names"
 export const metadata: Metadata = {
   title: "Board",
   description:
-    "The quickest way to turn an old iPad or tablet into a TfL dashboard.",
+    "An experimental full-screen TfL display configured through one URL.",
 }
 
 export default function BoardBuilderPage() {
@@ -21,7 +21,7 @@ export default function BoardBuilderPage() {
         <header>
           <h1 className="tfl-title text-3xl text-foreground">Board</h1>
           <p className="mt-2 max-w-prose text-lg text-muted-foreground">
-            The quickest way to turn an old iPad or tablet into a TfL dashboard.
+            Configure an experimental full-screen TfL display through one URL.
           </p>
           <BoardWipNotice />
         </header>

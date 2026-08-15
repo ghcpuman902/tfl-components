@@ -99,6 +99,18 @@ Docs are read by humans **and** coding agents.
 - Cross-link layers (Interface ↔ Primitive ↔ Foundations ↔ Maps) instead of duplicating trees.
 - State licensing / trademark constraints early on Foundations / identity pages.
 
+### TfL API design learning (what goes where)
+
+The Unified API is full of traps. Teach the ones that change what a consumer **fetches or renders**. Investigation notes stay in tfl-ts.
+
+| Audience | Place | Include | Leave out |
+|---|---|---|---|
+| Someone installing a board | Interface MDX, under **Getting the data** | One concrete gotcha + the `tfl-ts` call that avoids it | Hub generator, crawl, topology essays |
+| Agent in this repo | Short `.cursor/rules` + pointer to the tfl-ts skill | Hard invariant (do / don't) | Restating the skill |
+| tfl-ts consumers | tfl-ts `SKILL.md` + CHANGELOG | Traps table, ids, empty-array behaviour | How this site's Board URL encodes stops |
+
+Rule of thumb: if a reader who copies the snippet would still poll the wrong StopPoint or paint `Unknown`, the page is missing a sentence. If the sentence only proves we reverse-engineered TfL, it belongs in tfl-ts.
+
 ## Nav and discovery
 
 Navigation answers: *What is the developer trying to understand, render, or build?*

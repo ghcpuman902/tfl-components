@@ -4,6 +4,7 @@ import {
   compareArrivalsBounds,
   formatArrivalsBoundLabel,
   normalizeArrivalsBoundId,
+  parseArrivalsPlatformLabel,
   parseCompassBoundId,
   type ArrivalsBoundId,
 } from "@/lib/tfl/arrivals-bound-sort"
@@ -259,8 +260,11 @@ const collectRailLines = (
   return [...byLine.values()]
 }
 
-const boundLabelOf = (boundId: ArrivalsBoundId | null): string | null =>
-  boundId ? formatArrivalsBoundLabel(boundId) : null
+const boundLabelOf = (platformName?: string): string | null => {
+  const boundId = parseCompassBoundId(platformName)
+  if (boundId) return formatArrivalsBoundLabel(boundId)
+  return parseArrivalsPlatformLabel(platformName)
+}
 
 const collectRailBounds = (
   items: readonly IndexedArrival[],
@@ -279,7 +283,7 @@ const collectRailBounds = (
 
   for (const item of items) {
     const boundId = parseCompassBoundId(item.arrival.platformName)
-    const label = boundLabelOf(boundId)
+    const label = boundLabelOf(item.arrival.platformName)
     const existing = byBound.get(label)
     if (existing) {
       existing.items.push(item)
