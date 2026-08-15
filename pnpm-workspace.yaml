@@ -3,4 +3,4 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
 minimumReleaseAgeExclude:
-  - tfl-ts@2.5.0 || 2.6.0 || 2.6.2 || 2.7.0
+  - tfl-ts@2.5.0 || 2.6.0 || 2.6.2 || 2.7.0 || 2.8.0 || 2.9.0
