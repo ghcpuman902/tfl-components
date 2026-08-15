@@ -37,10 +37,15 @@ type UseDualPathArrivalsOptions = {
    */
   appKeyOverride?: string | null;
   /**
-   * Curated shared-track line ids. When set, poll network-wide arrivals for
-   * those lines and tag stop rows with `sharedTrackIdentity`.
+   * Union of shared-track line ids to poll network-wide.
+   * Tagging uses `sharedTrackFamilies` when set, else this list as one family.
    */
   sharedTrackLineIds?: readonly string[];
+  /**
+   * Separate identity families (Circle/H&C/Met vs Circle/District).
+   * Applied in order; exclusive-segment is never downgraded to ambiguous.
+   */
+  sharedTrackFamilies?: readonly (readonly string[])[];
 };
 
 type UseDualPathArrivalsResult = {
@@ -63,6 +68,7 @@ export const useDualPathArrivals = ({
   pollMs = DEFAULT_POLL_MS,
   appKeyOverride,
   sharedTrackLineIds,
+  sharedTrackFamilies,
 }: UseDualPathArrivalsOptions): UseDualPathArrivalsResult => {
   const { status, getAppKey, markInvalid, error: credentialError } =
     useUserTflCredentials();
@@ -91,6 +97,16 @@ export const useDualPathArrivals = ({
     .sort()
     .join(",");
   const sharedTrackIds = sharedTrackKey ? sharedTrackKey.split(",") : [];
+  const familyKeys = (sharedTrackFamilies ?? [])
+    .map((family) =>
+      [...new Set(family.map((id) => id.trim()).filter(Boolean))].sort().join(","),
+    )
+    .filter((key) => key.includes(","));
+  const familiesToApply = familyKeys.length
+    ? familyKeys.map((key) => key.split(","))
+    : sharedTrackIds.length >= 2
+      ? [sharedTrackIds]
+      : [];
 
   const [data, setData] = useState<RealtimePrediction[]>([]);
   const [pollError, setPollError] = useState<string | null>(null);
@@ -98,8 +114,8 @@ export const useDualPathArrivals = ({
   const [tick, setTick] = useState(0);
 
   const pathKey = usingOverride
-    ? `${source}:override:${pollStopKey}:${sharedTrackKey}`
-    : `${source}:${status}:${pollStopKey}:${sharedTrackKey}`;
+    ? `${source}:override:${pollStopKey}:${sharedTrackKey}:${familyKeys.join("|")}`
+    : `${source}:${status}:${pollStopKey}:${sharedTrackKey}:${familyKeys.join("|")}`;
 
   useEffect(() => {
     if (isInvalid) return;
@@ -134,11 +150,15 @@ export const useDualPathArrivals = ({
       stopArrivals: RealtimePrediction[],
       fetchNetwork: () => Promise<RealtimePrediction[] | null>,
     ): Promise<RealtimePrediction[]> => {
-      if (sharedTrackIds.length < 2) return stopArrivals;
+      if (familiesToApply.length === 0) return stopArrivals;
       try {
         const network = await fetchNetwork();
         if (!network) return stopArrivals;
-        return withSharedTrackIdentity(stopArrivals, sharedTrackIds, network);
+        let tagged = stopArrivals;
+        for (const family of familiesToApply) {
+          tagged = withSharedTrackIdentity(tagged, family, network);
+        }
+        return tagged;
       } catch {
         return stopArrivals;
       }

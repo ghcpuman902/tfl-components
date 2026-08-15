@@ -6,6 +6,7 @@ import {
   getBoardStationLinesIndex,
   lookupBoardStationLineGroups,
   lookupBoardStationLines,
+  lookupSharedTrackFamilies,
   lookupSharedTrackLineIds,
 } from "./board-station-lines";
 
@@ -101,16 +102,32 @@ describe("lookupBoardStationLineGroups", () => {
     ]);
   });
 
-  it("merges Circle and H&C on the Hammersmith branch, not Paddington Circle/District", () => {
+  it("merges Circle and H&C on the Hammersmith branch, Circle and District at Paddington Circle", () => {
     assert.deepEqual(lookupBoardStationLineGroups("940GZZLUPAH")?.[0]?.lines, [
       "circle",
       "hammersmith-city",
     ]);
-    assert.equal(lookupBoardStationLineGroups("940GZZLUPAC"), undefined);
+    assert.deepEqual(lookupBoardStationLineGroups("940GZZLUPAC")?.[0]?.lines, [
+      "district",
+      "circle",
+    ]);
   });
 
-  it("does not merge exclusive Circle stations", () => {
-    assert.equal(lookupBoardStationLineGroups("940GZZLUVIC"), undefined);
+  it("merges Circle and District on the southern loop", () => {
+    for (const stopId of ["940GZZLUVIC", "940GZZLUTWH", "940GZZLUSKS"]) {
+      assert.deepEqual(
+        lookupBoardStationLineGroups(stopId)?.[0]?.lines,
+        ["district", "circle"],
+        stopId,
+      );
+    }
+  });
+
+  it("merges District and H&C at Aldgate East", () => {
+    assert.deepEqual(lookupBoardStationLineGroups("940GZZLUADE")?.[0]?.lines, [
+      "district",
+      "hammersmith-city",
+    ]);
   });
 });
 
@@ -140,8 +157,25 @@ describe("lookupSharedTrackLineIds", () => {
     assert.deepEqual(lookupSharedTrackLineIds("940GZZLUKSX"), identity);
   });
 
-  it("does not reconcile Paddington Circle/District or exclusive Circle", () => {
-    assert.equal(lookupSharedTrackLineIds("940GZZLUPAC"), undefined);
-    assert.equal(lookupSharedTrackLineIds("940GZZLUVIC"), undefined);
+  it("reconciles Circle and District at Victoria and Paddington Circle", () => {
+    assert.deepEqual(lookupSharedTrackLineIds("940GZZLUVIC"), [
+      "district",
+      "circle",
+    ]);
+    assert.deepEqual(lookupSharedTrackLineIds("940GZZLUPAC"), [
+      "district",
+      "circle",
+    ]);
+  });
+
+  it("keeps Circle/District as its own family, not mixed into H&C/Met", () => {
+    const families = lookupSharedTrackFamilies("940GZZLUVIC");
+    assert.ok(families);
+    assert.deepEqual(families, [["district", "circle"]]);
+    const livst = lookupSharedTrackFamilies("940GZZLULVT");
+    assert.ok(livst);
+    assert.deepEqual(livst, [
+      ["circle", "hammersmith-city", "metropolitan"],
+    ]);
   });
 });

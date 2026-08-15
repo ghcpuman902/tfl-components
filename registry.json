@@ -476,6 +476,11 @@
           "target": "lib/tfl/status-reason.ts"
         },
         {
+          "path": "lib/tfl/status-board.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-board.ts"
+        },
+        {
           "path": "registry/tfl/arrivals/chip-text.ts",
           "type": "registry:lib",
           "target": "components/tfl/arrivals/chip-text.ts"

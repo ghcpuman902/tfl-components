@@ -131,7 +131,7 @@ export type LineBadgeGroupAlign = "left" | "right" | "center";
 export type LineBadgeGroupStripes = "auto" | "under";
 /**
  * `label` (default) — TfL blue plate over the colour stack.
- * `codes` — one 3-letter abbr per stripe; no plate. Fits an arrivals row.
+ * `codes` — same-height stripe stack; 3-letter abbrs take turns (CSS).
  */
 export type LineBadgeGroupVariant = "label" | "codes";
 
@@ -143,7 +143,7 @@ export type LineBadgeGroupProps = {
   className?: string;
   /**
    * `label` (default) — blue plate + shared name.
-   * `codes` — stacked 3-letter abbrs, one per stripe (arrivals row chip).
+   * `codes` — stripe stack at chip height; one 3-letter abbr at a time.
    */
   variant?: LineBadgeGroupVariant;
   /**
@@ -204,24 +204,46 @@ export const LineBadgeGroup = ({
   const noPlate = stripes === "under";
 
   if (variant === "codes") {
+    const shorts = ids.map((id, index) =>
+      getLineNameTiers(id, names?.[index]).short,
+    );
+    const codeCount = Math.min(Math.max(shorts.length, 1), 3);
+
     return (
       <span
         className={cn(
-          "inline-flex h-10 w-10 shrink-0 flex-col overflow-hidden text-[0.625rem] font-bold tabular-nums",
+          "tfl-line-codes relative inline-flex h-5 shrink-0 items-center overflow-hidden text-xs font-bold tabular-nums",
           className,
         )}
+        style={{ "--codes-count": codeCount } as CSSProperties}
+        data-codes={codeCount}
         aria-label={ariaLabel}
         role="img"
       >
-        {ids.map((id, index) => (
-          <span
-            key={id}
-            data-line={id}
-            className="flex min-h-0 min-w-0 flex-1 items-center justify-center bg-[var(--line-color)] px-0.5 text-[var(--line-ink)] leading-none [text-box:trim-both_cap_alphabetic]"
-          >
-            {getLineNameTiers(id, names?.[index]).short}
-          </span>
-        ))}
+        <span className="absolute inset-0 flex flex-col" aria-hidden>
+          {ids.map((id) => (
+            <span
+              key={id}
+              data-line={id}
+              className="min-h-0 min-w-0 flex-1 bg-[var(--line-color)]"
+            />
+          ))}
+        </span>
+        <span
+          className="relative z-10 grid px-1.5 leading-5 text-white"
+          aria-hidden
+        >
+          {shorts.map((code, index) => (
+            <span
+              key={`${ids[index]}-${code}`}
+              data-code={code}
+              className="col-start-1 row-start-1 text-center leading-none [text-box:trim-both_cap_alphabetic]"
+              style={{ "--code-index": index } as CSSProperties}
+            >
+              {code}
+            </span>
+          ))}
+        </span>
       </span>
     );
   }

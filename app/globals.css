@@ -228,3 +228,58 @@ html[data-tfl-type-profile="johnston-compatible"] {
 .tfl-dark-line-text {
   color: var(--line-color);
 }
+
+/*
+ * LineBadgeGroup variant="codes": one 3-letter abbr at a time on the stripe
+ * stack. Duration is N × --codes-hold; each item is delayed by its index.
+ * Visible window must stay ≤ 1/N so two codes never overlap.
+ */
+@keyframes tfl-line-code-cycle-2 {
+  0%,
+  42% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes tfl-line-code-cycle-3 {
+  0%,
+  26% {
+    opacity: 1;
+  }
+  33%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.tfl-line-codes {
+  --codes-hold: 1.8s;
+}
+
+.tfl-line-codes [data-code] {
+  animation-duration: calc(var(--codes-count) * var(--codes-hold));
+  animation-iteration-count: infinite;
+  animation-timing-function: ease;
+  animation-delay: calc(var(--code-index) * var(--codes-hold));
+}
+
+.tfl-line-codes[data-codes="2"] [data-code] {
+  animation-name: tfl-line-code-cycle-2;
+}
+
+.tfl-line-codes[data-codes="3"] [data-code] {
+  animation-name: tfl-line-code-cycle-3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tfl-line-codes [data-code] {
+    animation: none;
+  }
+  .tfl-line-codes [data-code]:not(:first-child) {
+    opacity: 0;
+  }
+}

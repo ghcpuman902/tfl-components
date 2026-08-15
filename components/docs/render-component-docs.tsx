@@ -1,42 +1,44 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { Suspense, type ComponentType } from "react";
-import { DocsPageHeader } from "@/components/docs/docs-page-header";
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { InstallCommand } from "@/components/docs/install-command";
-import { CompactInstallButton } from "@/components/docs/compact-install-button";
-import { RelationshipBadges } from "@/components/docs/relationship-badges";
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
+import { Suspense, type ComponentType } from "react"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
+import { InstallCommand } from "@/components/docs/install-command"
+import { CompactInstallButton } from "@/components/docs/compact-install-button"
+import { RelationshipBadges } from "@/components/docs/relationship-badges"
 import {
   getContentAssetSlug,
   getDocsEntry,
   getUsedBySlugs,
   type DocsEntry,
-} from "@/lib/docs-catalog";
-import { loadComponentDemo } from "@/lib/load-component-demo";
-import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code";
-import { TubeStatusBoardSkeleton } from "@/components/tfl/status/tube-status-board";
-import { RailArrivalsBoardSkeleton } from "@/components/tfl/arrivals/rail-arrivals-board";
-import { BusArrivalsBoardSkeleton } from "@/components/tfl/arrivals/bus-arrivals-board";
-import { CycleHireDocksBoardSkeleton } from "@/components/tfl/cycle-hire/cycle-hire-docks";
-import { HOME_BUS_STOP, HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops";
+} from "@/lib/docs-catalog"
+import { loadComponentDemo } from "@/lib/load-component-demo"
+import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code"
+import { TubeStatusBoardSkeleton } from "@/components/tfl/status/tube-status-board"
+import { RailArrivalsBoardSkeleton } from "@/components/tfl/arrivals/rail-arrivals-board"
+import { BusArrivalsBoardSkeleton } from "@/components/tfl/arrivals/bus-arrivals-board"
+import { CycleHireDocksBoardSkeleton } from "@/components/tfl/cycle-hire/cycle-hire-docks"
+import { HOME_BUS_STOP, HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
 
-type RelatedLink = { href: string; label: string };
+type RelatedLink = { href: string; label: string }
 
 type RenderComponentDocsOptions = {
   /** Catalog slug (also MDX / demo filename). */
-  slug: string;
+  slug: string
   /** Extra related links under the MDX body. */
-  relatedLinks?: readonly RelatedLink[];
+  relatedLinks?: readonly RelatedLink[]
   /** Compact get-data → render example for data-aware pages. */
-  getDataExample?: string;
-};
+  getDataExample?: string
+}
 
 const PREVIEW_SNIPPETS: Record<string, string> = {
-  "tube-status-board": `const data = sortLinesBySeverityAndOrder(
+  "tube-status-board": `const fetchedAt = Date.now()
+const data = sortLinesBySeverityAndOrder(
   await tfl.line.getStatus({ modes: ["tube", "elizabeth-line"] }),
+  { now: fetchedAt },
 )
 
-<TubeStatusBoard data={data} />`,
+<TubeStatusBoard data={data} now={fetchedAt} />`,
   "arrivals-board": `const data = await tfl.stopPoint.getArrivals({
   stopPointIds: ["940GZZLUOXC"],
   sortBy: "timeToStation",
@@ -72,88 +74,84 @@ const PREVIEW_SNIPPETS: Record<string, string> = {
 
 <LineName lineId="hammersmith-city" />
 <LineName lineIds={["circle", "hammersmith-city", "metropolitan"]} group />`,
-};
+}
 
 const RailDocsPreviewFallback = () => (
   <RailArrivalsBoardSkeleton stopName={HOME_RAIL_STOP.name} />
-);
+)
 
 const BusDocsPreviewFallback = () => (
   <BusArrivalsBoardSkeleton
     stopName={HOME_BUS_STOP.name}
     stopLetter={HOME_BUS_STOP.stopLetter}
   />
-);
+)
 
 const PREVIEW_FALLBACKS: Record<string, ComponentType> = {
   "tube-status-board": TubeStatusBoardSkeleton,
   "rail-arrivals-board": RailDocsPreviewFallback,
   "bus-arrivals-board": BusDocsPreviewFallback,
   "cycle-hire-docks": CycleHireDocksBoardSkeleton,
-};
+}
 
 const DocsPreviewFallback = ({ slug }: { slug: string }) => {
-  const Fallback = PREVIEW_FALLBACKS[slug];
-  if (!Fallback) return null;
-  return <Fallback />;
-};
+  const Fallback = PREVIEW_FALLBACKS[slug]
+  if (!Fallback) return null
+  return <Fallback />
+}
 
 const DocsDemoSlot = async ({ slug }: { slug: string }) => {
-  const Demo = await loadComponentDemo(slug);
-  if (!Demo) return null;
-  return <Demo />;
-};
+  const Demo = await loadComponentDemo(slug)
+  if (!Demo) return null
+  return <Demo />
+}
 
 const DocsMdxSlot = async ({ slug }: { slug: string }) => {
-  let MDXPage: React.ComponentType<{ className?: string }> | null = null;
+  let MDXPage: React.ComponentType<{ className?: string }> | null = null
   try {
-    const mod = await import(`@/content/components/${slug}.mdx`);
-    MDXPage = mod.default;
+    const mod = await import(`@/content/components/${slug}.mdx`)
+    MDXPage = mod.default
   } catch {
     if (slug === "bus-arrivals-board") {
       try {
-        const mod = await import(
-          `@/content/components/rail-arrivals-board.mdx`
-        );
-        MDXPage = mod.default;
+        const mod = await import(`@/content/components/rail-arrivals-board.mdx`)
+        MDXPage = mod.default
       } catch {
-        MDXPage = null;
+        MDXPage = null
       }
     }
   }
 
-  if (!MDXPage) return null;
+  if (!MDXPage) return null
 
-  return <MDXPage />;
-};
+  return <MDXPage />
+}
 
 export const componentDocsMetadata = async (
-  slug: string,
+  slug: string
 ): Promise<Metadata> => {
-  const entry = getDocsEntry(slug);
+  const entry = getDocsEntry(slug)
   if (!entry || entry.kind !== "component") {
-    return { title: "Not found" };
+    return { title: "Not found" }
   }
   return {
     title: entry.title,
     description: entry.description,
-  };
-};
+  }
+}
 
 export const renderComponentDocs = ({
   slug,
   relatedLinks = [],
   getDataExample,
 }: RenderComponentDocsOptions) => {
-  const entry = getDocsEntry(slug);
-  if (!entry || entry.kind !== "component") notFound();
+  const entry = getDocsEntry(slug)
+  if (!entry || entry.kind !== "component") notFound()
 
-  const contentSlug = getContentAssetSlug(slug);
+  const contentSlug = getContentAssetSlug(slug)
   const snippet =
-    getDataExample ??
-    PREVIEW_SNIPPETS[contentSlug] ??
-    PREVIEW_SNIPPETS[slug];
-  const usedBy = getUsedBySlugs(entry.slug);
+    getDataExample ?? PREVIEW_SNIPPETS[contentSlug] ?? PREVIEW_SNIPPETS[slug]
+  const usedBy = getUsedBySlugs(entry.slug)
 
   return (
     <DocsReadableWidth>
@@ -235,5 +233,5 @@ export const renderComponentDocs = ({
         ) : null}
       </article>
     </DocsReadableWidth>
-  );
-};
+  )
+}

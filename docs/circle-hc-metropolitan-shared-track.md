@@ -16,11 +16,11 @@ These are wrong regardless of grouping preference.
 
 4. **Canonical paint when exclusive-segment evidence exists.** One extra cached call — `GET /Line/circle,hammersmith-city,metropolitan/Arrivals` — plus static `LINE_STATION_SEQUENCES`. If the vehicle also appears at a Circle-only station (Victoria, Westminster, Cannon Street, …), every stop row for that vehicle paints Circle. Same for H&C-only (Aldgate East, Whitechapel) and Metropolitan-only (Amersham, …).
 5. **Transparency when canonical ≠ raw.** No extra chip. `title` and `aria-label` name TfL's raw label. Example: “TfL currently labels this arrival Hammersmith & City on this platform; it's running the Circle line loop.”
-6. **Every shared-track station.** Identity uses the three-line set at every Circle / H&C / Met shared naptan. `lineGroups` merges the lines that actually share platforms there. Baker Street merges Circle + H&C only — Metropolitan uses different platforms. Paddington Circle/District (`940GZZLUPAC`) does not inherit the H&C-branch merge.
+6. **Every shared-track station, as separate families.** Circle / H&C / Met stay one family. Circle / District is a second family (southern loop, Paddington Circle, Victoria). District / H&C is a third (Aldgate East and the east end). Do not put District in the same exclusive-segment set as H&C / Met — Victoria would become shared and Circle loop trains would lose exclusive evidence. Baker Street merges Circle + H&C only. Paddington Circle (`940GZZLUPAC`) merges Circle + District; the H&C-branch stop (`940GZZLUPAH`) stays Circle + H&C.
 
 ## Grouping vs identity
 
-`lineGroups` merges the lines that share platforms at that stop (three at Liverpool Street / King's Cross / Farringdon; Circle + H&C at Baker Street and on the Hammersmith branch; Circle + Met at Aldgate). Identity reconciliation only changes which **line chip / colour** a row uses inside that section (and which section it would join if `lineGroups` were off). Exclusive-segment rows keep a single `LineBadge`. Ambiguous 2–3 line vehicles use `LineBadgeGroup variant="codes"` (stacked 3-letter abbrs).
+`lineGroups` merges the lines that share platforms at that stop (three at Liverpool Street / King's Cross / Farringdon; Circle + H&C at Baker Street and on the Hammersmith branch; Circle + Met at Aldgate; Circle + District on the southern loop; District + H&C at Aldgate East). Identity reconciliation only changes which **line chip / colour** a row uses inside that section (and which section it would join if `lineGroups` were off). Exclusive-segment rows keep a single `LineBadge`. Ambiguous 2–3 line vehicles use `LineBadgeGroup variant="codes"` (stripe stack, one 3-letter abbr at a time).
 
 ## Test vehicles
 

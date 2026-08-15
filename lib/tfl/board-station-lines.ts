@@ -6,10 +6,10 @@
  * membership list. Line IDs are sorted canonically — the catalog sorts
  * alphabetically and must not leak into positional URL mapping.
  *
- * Shared-track merge + identity come from tfl-ts `getSharedTrackSegments`
- * (Circle / H&C / Metropolitan). Baker Street excludes Metropolitan from the
- * merge — those platforms are separate — but still reconciles the three-line
- * identity set.
+ * Shared-track merge + identity come from tfl-ts `getSharedTrackSegments`.
+ * Families stay separate so Circle exclusive-segment evidence (Cannon Street)
+ * is not wiped by adding District (which shares Victoria). Baker Street
+ * excludes Metropolitan from the merge — those platforms are separate.
  */
 
 import { getSharedTrackSegments } from "tfl-ts";
@@ -48,6 +48,17 @@ export const SUBSURFACE_SHARED_TRACK_LINES = [
   "metropolitan",
 ] as const;
 
+/**
+ * Separate families so exclusive-segment maps stay honest.
+ * Circle + District must not sit in the same set as H&C / Met — Victoria
+ * would become "shared" and Circle loop trains would lose exclusive evidence.
+ */
+export const SHARED_TRACK_IDENTITY_FAMILIES = [
+  SUBSURFACE_SHARED_TRACK_LINES,
+  ["circle", "district"],
+  ["district", "hammersmith-city"],
+] as const;
+
 /** Metropolitan uses different platforms here — merge Circle + H&C only. */
 const SHARED_TRACK_MERGE_EXCLUDE: Readonly<
   Record<string, readonly string[]>
@@ -65,13 +76,15 @@ const sortLineIds = (ids: readonly string[]): string[] =>
     ),
   );
 
-const SHARED_TRACK_SEGMENTS = getSharedTrackSegments(
-  SUBSURFACE_SHARED_TRACK_LINES,
-);
+const ALL_SHARED_TRACK_LINES = sortLineIds([
+  ...new Set(SHARED_TRACK_IDENTITY_FAMILIES.flat()),
+]);
 
-/** Every naptan on Circle, H&C, or Metropolitan — used to block hub-alias leaks. */
-const SUBSURFACE_NAPTAN_IDS = new Set(
-  SHARED_TRACK_SEGMENTS.linesByStation.keys(),
+const ALL_SHARED_TRACK_SEGMENTS = getSharedTrackSegments(ALL_SHARED_TRACK_LINES);
+
+/** Every naptan on any shared-track family line — blocks hub-alias leaks. */
+const SHARED_TRACK_NAPTAN_IDS = new Set(
+  ALL_SHARED_TRACK_SEGMENTS.linesByStation.keys(),
 );
 
 const attachSafeAliases = <T,>(table: Record<string, T>): void => {
@@ -83,54 +96,86 @@ const attachSafeAliases = <T,>(table: Record<string, T>): void => {
     if (!station) continue;
     for (const alias of [station.id, ...station.aliasIds]) {
       if (alias in table) continue;
-      if (SUBSURFACE_NAPTAN_IDS.has(alias)) continue;
+      if (SHARED_TRACK_NAPTAN_IDS.has(alias)) continue;
       table[alias] = table[key];
     }
   }
 };
 
-const buildSharedTrackLineGroups = (): Record<
-  string,
-  readonly BoardStationLineGroup[]
-> => {
-  const table: Record<string, readonly BoardStationLineGroup[]> = {};
-  for (const stationId of SHARED_TRACK_SEGMENTS.shared) {
-    const serving = SHARED_TRACK_SEGMENTS.linesByStation.get(stationId) ?? [];
-    const exclude = new Set(SHARED_TRACK_MERGE_EXCLUDE[stationId] ?? []);
-    const lines = sortLineIds(serving.filter((id) => !exclude.has(id)));
-    if (lines.length < 2) continue;
-    table[stationId] = [
-      {
-        lines,
-        pageSize: SHARED_TRACK_MERGE_PAGE_SIZE,
-      },
-    ];
-  }
-  attachSafeAliases(table);
-  return table;
+type SharedTrackTables = {
+  groups: Record<string, readonly BoardStationLineGroup[]>;
+  identity: Record<string, readonly string[]>;
+  families: Record<string, readonly (readonly string[])[]>;
 };
 
-const buildSharedTrackLineSets = (): Record<string, readonly string[]> => {
-  const table: Record<string, readonly string[]> = {};
-  const identity = sortLineIds(SUBSURFACE_SHARED_TRACK_LINES);
-  for (const stationId of SHARED_TRACK_SEGMENTS.shared) {
-    table[stationId] = identity;
+const buildSharedTrackTables = (): SharedTrackTables => {
+  const mergeByStation = new Map<string, Set<string>>();
+  const identityByStation = new Map<string, Set<string>>();
+  const familiesByStation = new Map<string, string[][]>();
+
+  for (const family of SHARED_TRACK_IDENTITY_FAMILIES) {
+    const segments = getSharedTrackSegments(family);
+    const familyIds = sortLineIds(family);
+    for (const stationId of segments.shared) {
+      const serving = segments.linesByStation.get(stationId) ?? [];
+      const exclude = new Set(SHARED_TRACK_MERGE_EXCLUDE[stationId] ?? []);
+      const merge = mergeByStation.get(stationId) ?? new Set<string>();
+      for (const id of serving) {
+        if (!exclude.has(id)) merge.add(id);
+      }
+      mergeByStation.set(stationId, merge);
+
+      const identity = identityByStation.get(stationId) ?? new Set<string>();
+      for (const id of familyIds) identity.add(id);
+      identityByStation.set(stationId, identity);
+
+      const families = familiesByStation.get(stationId) ?? [];
+      families.push(familyIds);
+      familiesByStation.set(stationId, families);
+    }
   }
-  attachSafeAliases(table);
-  return table;
+
+  const groups: Record<string, readonly BoardStationLineGroup[]> = {};
+  const identity: Record<string, readonly string[]> = {};
+  const families: Record<string, readonly (readonly string[])[]> = {};
+
+  for (const [stationId, lines] of mergeByStation) {
+    const sorted = sortLineIds([...lines]);
+    if (sorted.length < 2) continue;
+    groups[stationId] = [
+      { lines: sorted, pageSize: SHARED_TRACK_MERGE_PAGE_SIZE },
+    ];
+  }
+  for (const [stationId, lines] of identityByStation) {
+    identity[stationId] = sortLineIds([...lines]);
+  }
+  for (const [stationId, familyList] of familiesByStation) {
+    families[stationId] = familyList;
+  }
+
+  attachSafeAliases(groups);
+  attachSafeAliases(identity);
+  attachSafeAliases(families);
+  return { groups, identity, families };
 };
+
+const SHARED_TRACK_TABLES = buildSharedTrackTables();
 
 export const BOARD_STATION_LINE_GROUPS: Readonly<
   Record<string, readonly BoardStationLineGroup[]>
-> = buildSharedTrackLineGroups();
+> = SHARED_TRACK_TABLES.groups;
 
 /**
- * Line sets for exclusive-segment identity reconciliation at every shared
- * Circle / H&C / Met station (same three-line network poll).
+ * Union of identity families at this stop — the network-wide poll.
+ * Apply each family separately via `lookupSharedTrackFamilies`.
  */
 export const SHARED_TRACK_LINE_SETS: Readonly<
   Record<string, readonly string[]>
-> = buildSharedTrackLineSets();
+> = SHARED_TRACK_TABLES.identity;
+
+export const SHARED_TRACK_FAMILIES_BY_STOP: Readonly<
+  Record<string, readonly (readonly string[])[]>
+> = SHARED_TRACK_TABLES.families;
 
 export type BoardStationLinesIndex = Readonly<
   Record<string, readonly RailArrivalsLine[]>
@@ -225,7 +270,7 @@ const lookupCuratedStopTable = <T>(
   if (direct) return direct;
   // A subsurface naptan missing from the table is a deliberate miss
   // (Paddington Circle/District must not inherit the H&C-branch merge).
-  if (SUBSURFACE_NAPTAN_IDS.has(id)) return undefined;
+  if (SHARED_TRACK_NAPTAN_IDS.has(id)) return undefined;
 
   const station = getStationCatalog().find(
     (row) => row.id === id || row.aliasIds.includes(id),
@@ -248,8 +293,14 @@ export const lookupBoardStationLineGroups = (
 ): readonly BoardStationLineGroup[] | undefined =>
   lookupCuratedStopTable(BOARD_STATION_LINE_GROUPS, stopId);
 
-/** Line ids to reconcile on shared subsurface track at this stop. */
+/** Line ids to reconcile on shared track at this stop (union of families). */
 export const lookupSharedTrackLineIds = (
   stopId: string | undefined,
 ): readonly string[] | undefined =>
   lookupCuratedStopTable(SHARED_TRACK_LINE_SETS, stopId);
+
+/** Per-family line sets so exclusive-segment maps stay honest. */
+export const lookupSharedTrackFamilies = (
+  stopId: string | undefined,
+): readonly (readonly string[])[] | undefined =>
+  lookupCuratedStopTable(SHARED_TRACK_FAMILIES_BY_STOP, stopId);

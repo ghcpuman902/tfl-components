@@ -3,32 +3,41 @@ import { StatusAnnouncementsExample } from "@/components/docs/demos/status-annou
 ## Get line status
 
 ```ts
-import TflClient, { sortLinesBySeverityAndOrder } from "tfl-ts"
+import TflClient, {
+  sortLinesBySeverityAndOrder,
+  getWorstCurrentStatus,
+} from "tfl-ts"
 
 const tfl = new TflClient({
   appKey: process.env.TFL_APP_KEY!,
 })
 
+const fetchedAt = Date.now()
 const data = sortLinesBySeverityAndOrder(
   await tfl.line.getStatus({
     modes: ["tube", "elizabeth-line", "dlr", "tram", "overground"],
   }),
+  { now: fetchedAt },
 )
 ```
 
-`data` is the public `tfl.line.getStatus()` row type, aliased here as `StatusLine`. Sort before you pass it in. The board does not fetch.
+`data` is the public `tfl.line.getStatus()` row type, aliased here as `StatusLine`. Fetch-time sort is a hint only — the board partitions and sorts again. Pass `now={fetchedAt}` so validity windows do not call `Date.now()` in the RSC shell. The board does not fetch.
 
-On this docs site, `getCachedLineStatuses` in `@/lib/tfl/status-data` wraps the same call with Cache Components.
+Read `getWorstCurrentStatus(line.lineStatuses, { now: fetchedAt })`, not `lineStatuses[0]`.
+
+On this docs site, `getCachedLineStatuses` in `@/lib/tfl/status-data` wraps the same call with Cache Components and returns `{ data, fetchedAt }`.
 
 ## Render
 
 ```tsx
 import { TubeStatusBoard } from "@/components/tfl/status/tube-status-board"
 
-export default function Page({ data }) {
-  return <TubeStatusBoard data={data} />
+export default function Page({ data, fetchedAt }) {
+  return <TubeStatusBoard data={data} now={fetchedAt} />
 }
 ```
+
+The live board has two sections: **Service Disruptions** then **Good Service**. Timetable-closed lines (Waterloo & City weekends, end of traffic day) stay in Disruptions, sorted last after incidents and planned engineering — not a separate group, and not under Good Service. Week ahead still highlights Waterloo & City on Saturday.
 
 Good Service titles auto-abbreviate at narrow grid widths (full → middle → 3-letter code) via [`Line title`](/docs/line-title). Tier data lives in `lib/tfl/line-names.ts`.
 
@@ -44,8 +53,8 @@ import {
 import { getCachedLineStatuses } from "@/lib/tfl/status-data"
 
 export default async function Page() {
-  const data = await getCachedLineStatuses(DEFAULT_STATUS_LINE_IDS)
-  return <TubeStatusBoard data={data} />
+  const { data, fetchedAt } = await getCachedLineStatuses(DEFAULT_STATUS_LINE_IDS)
+  return <TubeStatusBoard data={data} now={fetchedAt} />
 }
 ```
 
@@ -59,26 +68,27 @@ TfL returns an array of `lineStatuses` per line. A single story can appear two o
 
 By default it:
 
-1. Keeps rows TfL marks as valid now (`validityPeriods[].isNow`). Rows with no validity window are live and always kept. Future planned work is the Week ahead Block's job — a line whose only announcement is future reads as Good Service.
-2. Collapses equal paragraphs, or one paragraph that fully contains another, into the longer text painted at the worse severity.
-3. Strips mode / line prefixes that repeat the card title (`LONDON TRAMS:`, `BAKERLOO LINE:`).
+1. Keeps operative rows from tfl-ts `getCurrentLineStatuses` (RealTime first, then PlannedWork / Information whose window overlaps `now`). `isNow` is not a clock — a tram Part Closure can be in force today with `isNow: false`. Future windows are Week ahead's job.
+2. Drops the standing hours notice when a RealTime `Service Closed` row is on the card (Waterloo & City → one line of “resumes Monday”).
+3. Collapses equal paragraphs, or one paragraph that fully contains another, into the longer text painted at the worse severity.
+4. Strips mode / line prefixes that repeat the card title (`LONDON TRAMS:`, `BAKERLOO LINE:`).
 
-Each disruption shows a gray platform-style severity chip (`Severe Delays`, `Part Closure`, …) inline at the start of TfL's paragraph.
+Each disruption shows a gray platform-style severity chip (`Severe Delays`, `Part Closure`, …) inline at the start of TfL's paragraph. Timetable-closed copy is the same chip, quieter, at the bottom of that list.
 
 Each step is opt-out:
 
 ```tsx
 {/* Keep future windows too */}
-<TubeStatusBoard data={data} currentOnly={false} />
+<TubeStatusBoard data={data} now={fetchedAt} currentOnly={false} />
 
 {/* Show every TfL paragraph even when one contains another */}
-<TubeStatusBoard data={data} dedupe={false} />
+<TubeStatusBoard data={data} now={fetchedAt} dedupe={false} />
 
 {/* Keep LONDON TRAMS: prefixes */}
-<TubeStatusBoard data={data} rawReason />
+<TubeStatusBoard data={data} now={fetchedAt} rawReason />
 
 {/* TfL's array verbatim */}
-<TubeStatusBoard data={data} currentOnly={false} dedupe={false} rawReason />
+<TubeStatusBoard data={data} now={fetchedAt} currentOnly={false} dedupe={false} rawReason />
 ```
 
 <StatusAnnouncementsExample />
@@ -88,9 +98,10 @@ Each step is opt-out:
 | Prop | Type | Description |
 |------|------|-------------|
 | `data` | `readonly StatusLine[]` | Rows from `tfl.line.getStatus()`. Missing or `undefined` renders empty. |
+| `now` | `number` | Clock for validity windows. Pass cache `fetchedAt`. |
 | `hideHeader` | `boolean` | Omit the board header. |
 | `compact` | `boolean` | One column — for a narrow side slot. |
-| `currentOnly` | `boolean` | Keep only TfL `isNow` announcements (default `true`). |
+| `currentOnly` | `boolean` | Keep operative announcements, not `isNow` (default `true`). |
 | `dedupe` | `boolean` | Collapse equal or contained paragraphs (default `true`). |
 | `rawReason` | `boolean` | Keep TfL's unstripped `reason` string (default `false`). |
 | `children` | `ReactNode` | Optional slot below the status list. |

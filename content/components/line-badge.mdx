@@ -4,7 +4,7 @@ import { LineBadgeSharedTrackLayoutExamples } from "@/components/docs/demos/line
 
 Filled chips and colour bars that paint official line colours. Tokens come from [Colours](/docs/colors) — install `tfl-colours` first (or let this package pull it).
 
-Single-line chips use one brand fill. Shared-track groups (`LineBadgeGroup`) float a TfL blue label over a full-bleed colour stack — prefer ≤3 lines. Arrivals rows that must name two or three lines use `variant="codes"`: each stripe carries that line’s 3-letter abbr. Board headers live on [Line title](/docs/line-title).
+Single-line chips use one brand fill. Shared-track groups (`LineBadgeGroup`) float a TfL blue label over a full-bleed colour stack — prefer ≤3 lines. Arrivals rows that must name two or three lines use `variant="codes"`: the same stripe stack, one 3-letter abbr at a time (CSS cycle; width is the widest code). Board headers live on [Line title](/docs/line-title).
 
 ## Installation
 
@@ -44,7 +44,7 @@ export default function Page() {
 
 ## Shared-track colour layout
 
-Full-bleed colour stack behind a TfL blue shrink-wrap plate. Stripes fill the **open** side of `align`. Drop the plate with `stripes="under"`. On an arrivals row, `variant="codes"` stacks each line’s 3-letter abbr on its stripe — there is not enough width for two or three codes side by side.
+Full-bleed colour stack behind a TfL blue shrink-wrap plate. Stripes fill the **open** side of `align`. Drop the plate with `stripes="under"`. On an arrivals row, `variant="codes"` keeps that stripe stack at chip height and cycles one 3-letter abbr at a time — not `CIR/H&C/MET` and not a taller per-stripe stack.
 
 <LineBadgeSharedTrackLayoutExamples />
 
@@ -84,7 +84,7 @@ Opt a single-line chip into the name ladder with `fit="shrink"`. Board header ti
 |------|------|-------------|
 | `lineIds` | `string[]` | Member line ids. Prefer ≤3. |
 | `names` | `string[]` | Optional per-id overrides. |
-| `variant` | `"label" \| "codes"` | `label` (default) is the blue-plate chip. `codes` stacks each line’s 3-letter abbr on its stripe — use on arrivals rows. |
+| `variant` | `"label" \| "codes"` | `label` (default) is the blue-plate chip. `codes` keeps the stripe stack and CSS-cycles one 3-letter abbr — use on arrivals rows. |
 | `align` | `"left" \| "right" \| "center"` | Label alignment (default `left`). Ignored for `codes`. |
 | `stripes` | `"auto" \| "under"` | `auto` shrink-wraps a TfL blue plate; `under` paints text on stripes with no plate. Ignored for `codes`. |
 | `className` | `string` | Merge classes; `text-*` / `justify-*` can set align when `align` is omitted. |

@@ -25,7 +25,7 @@ Canonical example: `TubeStatusBoardSkeleton` in `registry/tfl/status/tube-status
 
 1. **Which TfL surface?** Match the official grouping. Tube & Rail = `tube` + `elizabeth-line` + `dlr` + `tram` + `overground`. Cable Car is separate — do not mix in by default.
 2. **Know line identity without fetch?** Yes → paint real lines in default order (`LINE_ORDER`). No → generic chrome only.
-3. **Know live severity?** No → one calm section (e.g. Good Service for all). Yes → split with `isNormalService`.
+3. **Know live severity?** No → one calm section (e.g. Good Service for all). Yes → split disruptions / good service with `getStatusKind` (not `isNow`). Closed stays in Disruptions, sorted last.
 4. **Brand loudness?** Skeleton → real titles/bars with `saturate-0` (or equivalent mute). Live → full saturation + severity styling.
 
 ## Docs / Suspense wiring

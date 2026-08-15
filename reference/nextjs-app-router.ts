@@ -7,13 +7,12 @@
  *
  * Data → UI contract (framework-agnostic):
  *   1. line.getStatus for tube + rail modes
- *   2. sortLinesBySeverityAndOrder
- *   3. partition with isNormalService (disruptions vs good service)
- *   4. brand titles/bars with getLineInlineStyles + getLineCssProps
- *   5. night badge via hasNightService; severity copy from statusSeverityDescription
+ *   2. sortLinesBySeverityAndOrder({ now: fetchedAt })
+ *   3. read getWorstCurrentStatus / getStatusKind — not lineStatuses[0]
+ *   4. live board: disruptions (closed sorted last) then good service
+ *   5. brand titles/bars with getLineInlineStyles + getLineCssProps
  *
- * Live reference UI: https://manglekuo.com/showcase/tfl-ts
- * Clone-local HTML board: pnpm run playground → /status
+ * Live reference UI: https://tfl.manglekuo.com/docs/tube-rail-status
  *
  * Prerequisites in YOUR app:
  *   pnpm add tfl-ts
@@ -25,8 +24,8 @@ import TflClient, {
   getLineInlineStyles,
   getLineCssProps,
   getSeverityClasses,
-  isNormalService,
-  hasNightService,
+  getStatusKind,
+  getWorstCurrentStatus,
 } from 'tfl-ts';
 
 /** ISR-friendly: line status changes on disruptions — ~60s is enough. */
@@ -45,16 +44,29 @@ const stripStatusReason = (reason: string, lineName?: string) =>
 
 const getLineStatuses = async () => {
   const client = new TflClient();
+  const fetchedAt = Date.now();
   const statuses = await client.line.getStatus({
     modes: ['tube', 'elizabeth-line', 'dlr', 'tram', 'overground'],
   });
-  return sortLinesBySeverityAndOrder(statuses);
+  return {
+    lines: sortLinesBySeverityAndOrder(statuses, { now: fetchedAt }),
+    fetchedAt,
+  };
+};
+
+const sectionForLine = (
+  line: { lineStatuses?: Parameters<typeof getWorstCurrentStatus>[0] },
+  fetchedAt: number,
+) => {
+  const worst = getWorstCurrentStatus(line.lineStatuses, { now: fetchedAt });
+  const kind = getStatusKind(worst ?? 10);
+  return kind === 'good' || kind === 'info' ? 'goodService' : 'disruptions';
 };
 
 export default async function StatusPage() {
-  const sorted = await getLineStatuses();
-  const disrupted = sorted.filter((line) => !isNormalService(line.lineStatuses ?? []));
-  const goodService = sorted.filter((line) => isNormalService(line.lineStatuses ?? []));
+  const { lines, fetchedAt } = await getLineStatuses();
+  const disrupted = lines.filter((line) => sectionForLine(line, fetchedAt) === 'disruptions');
+  const goodService = lines.filter((line) => sectionForLine(line, fetchedAt) === 'goodService');
 
   return (
     <main className="mx-auto max-w-4xl p-6 space-y-8">
@@ -91,21 +103,25 @@ export default async function StatusPage() {
                     )}
                   </div>
 
-                  {line.lineStatuses?.map((status, index) => {
-                    const severity = getSeverityClasses(status.statusSeverity ?? 10, true);
+                  {(() => {
+                    const worst = getWorstCurrentStatus(line.lineStatuses, {
+                      now: fetchedAt,
+                    });
+                    if (!worst) return null;
+                    const severity = getSeverityClasses(worst.statusSeverity ?? 10, true);
                     return (
-                      <div key={index} className="mt-2">
+                      <div className="mt-2">
                         <span className={`font-medium ${severity.text} ${severity.animation}`}>
-                          {status.statusSeverityDescription}
+                          {worst.statusSeverityDescription}
                         </span>
-                        {status.reason && (
+                        {worst.reason && (
                           <span className="mt-1 block text-sm text-neutral-600">
-                            {stripStatusReason(status.reason, line.name)}
+                            {stripStatusReason(worst.reason, line.name)}
                           </span>
                         )}
                       </div>
                     );
-                  })}
+                  })()}
                 </li>
               );
             })}
@@ -119,7 +135,6 @@ export default async function StatusPage() {
           {goodService.map((line) => {
             const styles = getLineInlineStyles(line.id ?? '');
             const cssProps = getLineCssProps(line.id ?? '');
-            const night = hasNightService(line.lineStatuses ?? []);
 
             return (
               <li
@@ -134,14 +149,6 @@ export default async function StatusPage() {
                   >
                     {line.name}
                   </h3>
-                  {night && (
-                    <span className="text-xs text-neutral-500">
-                      {
-                        line.lineStatuses?.find((s) => s.statusSeverity === 20)
-                          ?.statusSeverityDescription
-                      }
-                    </span>
-                  )}
                 </div>
                 <div className="relative h-[4px] w-full">
                   <div

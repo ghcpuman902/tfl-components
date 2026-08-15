@@ -115,7 +115,7 @@ export default function LineBadgeDemo() {
               lineIds={["circle", "hammersmith-city", "metropolitan"]}
             />
             <p className="text-xs text-muted-foreground">
-              Row codes — one 3-letter abbr per stripe
+              Row codes — stripe stack, one 3-letter abbr at a time
             </p>
           </div>
         </DocsResizeFrame>

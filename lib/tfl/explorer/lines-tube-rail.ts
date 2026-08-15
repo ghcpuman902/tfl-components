@@ -1,13 +1,13 @@
-import { LINE_STATION_SEQUENCES } from "tfl-ts";
-import { cacheLife, cacheTag } from "next/cache";
-import { getTflClient } from "@/lib/tfl/client";
+import { LINE_STATION_SEQUENCES } from "tfl-ts"
+import { cacheLife, cacheTag } from "next/cache"
+import { getTflClient } from "@/lib/tfl/client"
 import type {
   ExplorerLineDetailsPayload,
   ExplorerLineRoute,
   ExplorerLineSummary,
-} from "@/lib/tfl/explorer/common";
-import type { ExplorerDirection } from "@/lib/tfl/explorer-url-state";
-import { getCachedLineStatuses } from "@/lib/tfl/status-data";
+} from "@/lib/tfl/explorer/common"
+import type { ExplorerDirection } from "@/lib/tfl/explorer-url-state"
+import { getCachedLineStatuses } from "@/lib/tfl/status-data"
 
 const TUBE_RAIL_MODE_IDS = [
   "tube",
@@ -15,26 +15,26 @@ const TUBE_RAIL_MODE_IDS = [
   "dlr",
   "overground",
   "tram",
-] as const;
+] as const
 
 /**
  * Tube & rail line directory from tfl-ts `LINE_STATION_SEQUENCES`.
  * Offline topology — no TfL round-trip.
  */
 export const getExplorerTubeRailLines = (): ExplorerLineSummary[] => {
-  const lines: ExplorerLineSummary[] = [];
+  const lines: ExplorerLineSummary[] = []
   for (const modeId of TUBE_RAIL_MODE_IDS) {
     for (const sequence of Object.values(LINE_STATION_SEQUENCES)) {
-      if (sequence.modeName !== modeId) continue;
+      if (sequence.modeName !== modeId) continue
       lines.push({
         id: sequence.lineId,
         name: sequence.lineName,
         modeName: sequence.modeName,
-      });
+      })
     }
   }
-  return lines;
-};
+  return lines
+}
 
 /**
  * Cached route sequence for a line + direction.
@@ -42,17 +42,17 @@ export const getExplorerTubeRailLines = (): ExplorerLineSummary[] => {
  */
 export async function getExplorerLineRoute(
   lineId: string,
-  direction: ExplorerDirection,
+  direction: ExplorerDirection
 ): Promise<ExplorerLineRoute> {
-  "use cache";
-  cacheLife({ revalidate: 300 });
-  cacheTag("tfl-route", `tfl-route-${lineId}-${direction}`);
+  "use cache"
+  cacheLife({ revalidate: 300 })
+  cacheTag("tfl-route", `tfl-route-${lineId}-${direction}`)
 
-  const client = getTflClient();
+  const client = getTflClient()
   const [lines, sequence] = await Promise.all([
     client.line.get({ lineIds: [lineId] }),
     client.line.getRouteSequence({ id: lineId, direction }),
-  ]);
+  ])
 
   return {
     line: lines[0]
@@ -64,7 +64,7 @@ export async function getExplorerLineRoute(
       : { id: lineId },
     stops:
       sequence.stopPointSequences?.flatMap((seq) => seq.stopPoint ?? []) ?? [],
-  };
+  }
 }
 
 /**
@@ -73,21 +73,21 @@ export async function getExplorerLineRoute(
  */
 export async function getExplorerLineDetails(
   lineId: string,
-  direction: ExplorerDirection,
+  direction: ExplorerDirection
 ): Promise<ExplorerLineDetailsPayload> {
-  "use cache";
-  cacheLife({ revalidate: 60 });
-  cacheTag("tfl-line-details", `tfl-line-details-${lineId}-${direction}`);
+  "use cache"
+  cacheLife({ revalidate: 60 })
+  cacheTag("tfl-line-details", `tfl-line-details-${lineId}-${direction}`)
 
-  const [route, statuses] = await Promise.all([
+  const [route, payload] = await Promise.all([
     getExplorerLineRoute(lineId, direction),
     getCachedLineStatuses([lineId]),
-  ]);
+  ])
 
   return {
     lineId,
     direction,
     route,
-    status: statuses[0] ?? null,
-  };
+    status: payload.data[0] ?? null,
+  }
 }

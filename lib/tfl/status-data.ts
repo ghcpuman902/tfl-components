@@ -1,9 +1,9 @@
-import { cacheLife, cacheTag } from "next/cache";
-import { sortLinesBySeverityAndOrder } from "tfl-ts";
-import { getTflClient } from "@/lib/tfl/client";
-import type { StatusLine } from "@/lib/tfl/status-types";
+import { cacheLife, cacheTag } from "next/cache"
+import { sortLinesBySeverityAndOrder } from "tfl-ts"
+import { getTflClient } from "@/lib/tfl/client"
+import type { StatusLine } from "@/lib/tfl/status-types"
 
-export type { StatusLine } from "@/lib/tfl/status-types";
+export type { StatusLine } from "@/lib/tfl/status-types"
 
 /**
  * Modes on TfL’s Tube & Rail status surface (Cable Car is listed separately).
@@ -15,32 +15,43 @@ export const CACHED_STATUS_MODES = [
   "dlr",
   "tram",
   "overground",
-] as const;
+] as const
+
+export type CachedLineStatusesPayload = {
+  data: StatusLine[]
+  /** Clock for tfl-ts current-row helpers. Stamped inside `"use cache"`. */
+  fetchedAt: number
+}
 
 /**
  * Site/demo fetch for status boards — keep out of the reusable component.
- * Prefer passing the result as `data` into `TubeStatusBoard`.
+ * Prefer passing `data` and `now={fetchedAt}` into `TubeStatusBoard`.
  * With no `lineIds`, fetches TfL Tube & Rail modes (excludes Cable Car).
  * Soft-fails to `[]` on TfL errors so a quota/outage spike does not crash the page.
  */
 export async function getCachedLineStatuses(
-  lineIds?: readonly string[],
-): Promise<StatusLine[]> {
-  "use cache";
-  cacheLife({ revalidate: 60 });
-  cacheTag("tfl-line-status");
+  lineIds?: readonly string[]
+): Promise<CachedLineStatusesPayload> {
+  "use cache"
+  cacheLife({ revalidate: 60 })
+  cacheTag("tfl-line-status")
+
+  const fetchedAt = Date.now()
 
   try {
-    const client = getTflClient();
+    const client = getTflClient()
     const lineStatuses = await client.line.getStatus(
       lineIds && lineIds.length > 0
         ? { lineIds: [...lineIds] }
         : {
             modes: [...CACHED_STATUS_MODES],
-          },
-    );
-    return sortLinesBySeverityAndOrder(lineStatuses);
+          }
+    )
+    return {
+      data: sortLinesBySeverityAndOrder(lineStatuses, { now: fetchedAt }),
+      fetchedAt,
+    }
   } catch {
-    return [];
+    return { data: [], fetchedAt }
   }
 }
