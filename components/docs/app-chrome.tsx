@@ -22,7 +22,10 @@ const isDocsPath = (pathname: string) =>
   pathname.startsWith("/explore/");
 
 const isChromelessPath = (pathname: string) =>
-  pathname === "/board/view" || pathname.startsWith("/board/view/");
+  pathname === "/board/view" ||
+  pathname.startsWith("/board/view/") ||
+  pathname === "/drafts/hero-3d" ||
+  pathname.startsWith("/drafts/hero-3d/");
 
 /** Header-only shell — safe for Suspense fallback (no URL hooks). */
 const AppChromeShell = ({
