@@ -32,7 +32,7 @@ export const CyclePointFinder = ({
   onViewChange,
   initialQuery = "",
   initialPoints = [],
-  emptyMessage = "Select a cached dock, or Search / Locate with your TfL API key.",
+  emptyMessage = "No matching docks.",
 }: CyclePointFinderProps) => {
   const { loading, error, setError, runKeyed } = useExplorerKeyedQuery();
   const [points, setPoints] = useState<ExplorerPoint[]>(() => [...initialPoints]);

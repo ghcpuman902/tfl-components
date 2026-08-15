@@ -79,11 +79,18 @@ const useBoardConfigFromHash = (
   }, [hash, stationNames])
 
   useEffect(() => {
-    setReady(true)
-    replaceHashIfNeeded(
-      normalizeBoardHash(hash, { stopName: config.stopName }),
-    )
-  }, [hash, config.stopName])
+    // Hydration uses getServerBoardHash (""). Always rewrite from the live
+    // fragment — using the render snapshot would strip #stop=…&key=….
+    const liveHash = window.location.hash
+    const parsed = parseBoardConfig(liveHash)
+    const autoName = lookupBoardStationName(stationNames, parsed.stop)
+    const stopName = resolveBoardStopNameOverride(parsed.stopName, autoName)
+    replaceHashIfNeeded(normalizeBoardHash(liveHash, { stopName }))
+  }, [hash, stationNames])
+
+  useEffect(() => {
+    if (hash === window.location.hash) setReady(true)
+  }, [hash])
 
   return { config, ready }
 }

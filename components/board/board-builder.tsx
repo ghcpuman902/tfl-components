@@ -379,31 +379,32 @@ export const BoardBuilder = ({
             segments={segments}
             onChange={handleConfigChange}
           />
-          <div className="flex items-stretch gap-3 border-t border-border p-4">
-            <BoardUrlLegend
-              path={legendPath}
-              segments={segments}
-              className="min-w-0 flex-1"
-            />
-            <div className="flex shrink-0 flex-col gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                data-copy-text={absoluteUrl}
-                aria-label="Copy board URL"
-              >
-                Copy URL
-              </Button>
-              <Button
-                nativeButton={false}
-                render={<a href={href} target="_blank" rel="noreferrer" />}
-              >
-                Open board
-              </Button>
-            </div>
-          </div>
         </CollapsibleContent>
       </Collapsible>
+
+      <div className="flex items-stretch gap-3 rounded-xl border border-border p-4">
+        <BoardUrlLegend
+          path={legendPath}
+          segments={segments}
+          className="min-w-0 flex-1"
+        />
+        <div className="flex shrink-0 flex-col gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            data-copy-text={absoluteUrl}
+            aria-label="Copy board URL"
+          >
+            Copy URL
+          </Button>
+          <Button
+            nativeButton={false}
+            render={<a href={href} target="_blank" rel="noreferrer" />}
+          >
+            Open board
+          </Button>
+        </div>
+      </div>
 
       <section className="space-y-3" aria-labelledby="board-preview-heading">
         <h2 id="board-preview-heading" className="text-lg font-semibold">

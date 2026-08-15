@@ -110,7 +110,7 @@ export const SiteHeader = ({
                   href={link.href}
                   className={cn(
                     "shrink-0 px-1.5 py-2",
-                    isNew && newMarkerParentClassName("pr-6 after:top-0.5"),
+                    isNew && newMarkerParentClassName("pr-6 after:-top-1"),
                     active
                       ? "font-medium text-foreground"
                       : "text-muted-foreground hover:text-foreground"

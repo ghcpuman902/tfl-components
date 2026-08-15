@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   CABLE_CAR_DIAGRAM_COLOR,
   resolveDiagramLineColor,
+  resolveDiagramLineCssColor,
   resolveRouteTrackStyle,
   routeTrackHeightUnits,
   routeTrackRailCount,
@@ -35,6 +36,13 @@ describe("route-track", () => {
   it("keeps Tube corridors solid", () => {
     assert.equal(resolveRouteTrackStyle("victoria"), "solid");
     assert.equal(routeTrackHeightUnits("solid"), 1);
+  });
+
+  it("resolves theme-aware CSS vars for known lines", () => {
+    assert.equal(resolveDiagramLineCssColor("victoria"), "var(--tfl-line-victoria)");
+    assert.equal(resolveDiagramLineCssColor("northern"), "var(--tfl-line-northern)");
+    assert.equal(resolveDiagramLineCssColor("elizabeth"), "var(--tfl-mode-elizabeth)");
+    assert.equal(resolveDiagramLineCssColor("london-cable-car"), null);
   });
 
   it("lists simple non-branch demo lines", () => {

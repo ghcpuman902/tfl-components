@@ -38,6 +38,7 @@ import {
   explorerPaneClassName,
   explorerPaneItemClassName,
   explorerResultsPaneClassName,
+  explorerSplitFillClassName,
 } from "@/components/explorer/explorer-split";
 import { Button } from "@/components/ui/button";
 import {
@@ -233,7 +234,13 @@ export const TfLPointPicker = ({
   const paneClassName = cn(explorerPaneClassName, explorerResultsPaneClassName);
 
   return (
-    <div className={cn("flex min-h-0 min-w-0 flex-col gap-3 lg:h-full", className)}>
+    <div
+      className={cn(
+        "flex min-h-0 min-w-0 flex-col gap-3",
+        explorerSplitFillClassName,
+        className,
+      )}
+    >
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-2 sm:h-9 sm:flex-row sm:items-stretch"
@@ -354,7 +361,7 @@ export const TfLPointPicker = ({
           onKeyDown={handleListKeyDown}
           className={cn(
             paneClassName,
-            "space-y-1 overflow-y-auto overscroll-y-auto p-1 scrollbar-thin lg:overscroll-contain",
+            "space-y-1 overflow-y-auto overscroll-y-auto p-1 scrollbar-thin",
           )}
         >
           {points.map((point, index) => (

@@ -31,16 +31,12 @@ const toPoint = (stop: ExplorerBusPoint): ExplorerPoint => ({
 type PointsBusFindProps = {
   state: ExplorerState;
   stops: readonly ExplorerBusPoint[];
-  label: string;
-  radiusMeters: number;
   cachedArrivalsPromise?: Promise<ExplorerCachedArrivals | null>;
 };
 
 export const PointsBusFind = ({
   state,
   stops,
-  label,
-  radiusMeters,
   cachedArrivalsPromise,
 }: PointsBusFindProps) => {
   const router = useRouter();
@@ -51,33 +47,28 @@ export const PointsBusFind = ({
   );
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground text-pretty">
-        Cached example within {radiusMeters}m of {label}.
-      </p>
-      <ExplorerSplit
-        lead={
-          <BusPointFinder
-            selectedId={selected?.id ?? state.id}
-            view={state.view}
-            onViewChange={(view) =>
-              router.push(buildExplorerHref({ view }, state), { scroll: false })
-            }
-            initialQuery={state.q}
-            initialPoints={initialPoints}
-            onSelect={handleSelectPoint}
+    <ExplorerSplit
+      lead={
+        <BusPointFinder
+          selectedId={selected?.id ?? state.id}
+          view={state.view}
+          onViewChange={(view) =>
+            router.push(buildExplorerHref({ view }, state), { scroll: false })
+          }
+          initialQuery={state.q}
+          initialPoints={initialPoints}
+          onSelect={handleSelectPoint}
+        />
+      }
+      inspector={
+        selected ? (
+          <PointInspectorDeferred
+            point={selected}
+            cachedArrivalsPromise={cachedArrivalsPromise}
+            detailsPending={detailsPending}
           />
-        }
-        inspector={
-          selected ? (
-            <PointInspectorDeferred
-              point={selected}
-              cachedArrivalsPromise={cachedArrivalsPromise}
-              detailsPending={detailsPending}
-            />
-          ) : null
-        }
-      />
-    </div>
+        ) : null
+      }
+    />
   );
 };

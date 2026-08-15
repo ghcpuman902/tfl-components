@@ -135,7 +135,7 @@ export default function DocsIntroductionPage() {
             <h2
               id="hosted-url"
               className={newMarkerParentClassName(
-                "inline-block pr-8 text-lg font-semibold after:top-0.5 after:text-sm"
+                "inline-block pr-8 text-lg font-semibold after:-top-1 after:text-sm"
               )}
             >
               Board

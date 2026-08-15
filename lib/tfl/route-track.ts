@@ -102,6 +102,22 @@ export const routeTrackHeightUnits = (style: RouteTrackStyle): number => {
 };
 
 /**
+ * Theme-aware CSS variable for a line id (picks up `.dark` tokens).
+ * Cable car stays hex — diagram red is not the mode token.
+ */
+export const resolveDiagramLineCssColor = (lineId: string): string | null => {
+  const id = lineId.toLowerCase();
+  if (CABLE_CAR_LINE_IDS.has(id)) return null;
+  if (UNDERGROUND_COLOR_BY_ID[id]) return `var(--tfl-line-${id})`;
+  if (id === "overground") return "var(--tfl-mode-overground)";
+  if (OVERGROUND_COLOR_BY_ID[id]) return `var(--tfl-line-${id})`;
+  if (ELIZABETH_LINE_IDS.has(id)) return "var(--tfl-mode-elizabeth)";
+  if (id === "dlr") return "var(--tfl-mode-dlr)";
+  if (id === "tram") return "var(--tfl-mode-trams)";
+  return null;
+};
+
+/**
  * Diagram paint colour for a line id. Prefers Issue 4 brand tokens; cable car
  * uses map red (not the purple modal / roundel colour).
  */

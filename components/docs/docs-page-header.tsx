@@ -63,7 +63,7 @@ export const DocsPageHeader = ({
           <h1
             className={cn(
               "tfl-title text-3xl text-foreground",
-              isNew && newMarkerParentClassName("inline-block pr-7 after:top-1"),
+              isNew && newMarkerParentClassName("inline-block pr-7 after:-top-1"),
             )}
           >
             {entry.title}

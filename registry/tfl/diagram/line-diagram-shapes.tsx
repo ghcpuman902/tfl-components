@@ -155,8 +155,7 @@ export const DiagramInterchangeCircle = ({
         cx={cx}
         cy={cy}
         r={outer - stroke / 2}
-        fill="#fff"
-        stroke="#000"
+        className="fill-white stroke-black dark:fill-black dark:stroke-white"
         strokeWidth={stroke}
       />
     </svg>
@@ -189,16 +188,14 @@ export const DiagramInterchangeDumbbell = ({
         cx={cx}
         cy={cy1}
         r={outer - stroke / 2}
-        fill="#fff"
-        stroke="#000"
+        className="fill-white stroke-black dark:fill-black dark:stroke-white"
         strokeWidth={stroke}
       />
       <circle
         cx={cx}
         cy={cy2}
         r={outer - stroke / 2}
-        fill="#fff"
-        stroke="#000"
+        className="fill-white stroke-black dark:fill-black dark:stroke-white"
         strokeWidth={stroke}
       />
       <rect
@@ -206,14 +203,14 @@ export const DiagramInterchangeDumbbell = ({
         y={cy1}
         width={neckW}
         height={cy2 - cy1}
-        fill="#000"
+        className="fill-black dark:fill-white"
       />
       <rect
         x={cx - gap / 2}
         y={cy1 - 1}
         width={gap}
         height={cy2 - cy1 + 2}
-        fill="#fff"
+        className="fill-white dark:fill-black"
       />
     </svg>
   );

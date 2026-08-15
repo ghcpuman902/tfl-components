@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
+import { WipNotice } from "@/components/docs/wip-notice";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
 import { RelationshipBadges } from "@/components/docs/relationship-badges";
 import { DataSourceLabel } from "@/components/docs/data-source-label";
@@ -22,7 +23,14 @@ export default function WeekAheadBlockPage() {
     <div className="w-full min-w-0 space-y-8">
       <DocsReadableWidth>
         <article className="space-y-6">
-          <DocsPageHeader entry={entry} />
+          <DocsPageHeader
+            entry={entry}
+            notice={
+              <WipNotice className="mt-3">
+                This section is a work in progress. More blocks will follow.
+              </WipNotice>
+            }
+          />
           <RelationshipBadges
             builtWith={entry.builtWith}
             usesFoundations={entry.usesFoundations}

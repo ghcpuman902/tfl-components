@@ -1,16 +1,24 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
 import maplibregl, { type ExpressionSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { cn } from "@/lib/utils";
+import { mapLineColorForBasemap } from "@/lib/tfl/dark-line-colours";
 import type {
   TransitGeometryBundle,
   TransitMode,
 } from "@/lib/tfl/geography-types";
 import {
   TRANSIT_GEOMETRY_PUBLIC_ASSETS,
-  OPENFREEMAP_POSITRON_STYLE_URL,
+  openFreeMapStyleUrl,
   OSM_TRANSIT_GEOMETRY_CREDIT,
   type TransitGeometryMode,
 } from "@/lib/tfl/geography-credits";
@@ -48,11 +56,46 @@ type TflGeographicMapProps = {
   className?: string;
 };
 
+const subscribeDocumentDark = (onStoreChange: () => void) => {
+  const observer = new MutationObserver(onStoreChange);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+  return () => observer.disconnect();
+};
+
+const getDocumentDark = () =>
+  document.documentElement.classList.contains("dark");
+
+const useDocumentDark = () =>
+  useSyncExternalStore(subscribeDocumentDark, getDocumentDark, () => false);
+
+const STATION_FILL = { light: "#ffffff", dark: "#111827" } as const;
+const STATION_STROKE = { light: "#111827", dark: "#ffffff" } as const;
+const LINE_CASING = { light: "#ffffff", dark: "#111827" } as const;
+
 const asFeatureCollection = (
   collection: TransitGeometryBundle["lines"] | TransitGeometryBundle["stations"],
 ) => ({
   type: "FeatureCollection" as const,
   features: collection.features ?? [],
+});
+
+const remapLineCollection = (
+  collection: TransitGeometryBundle["lines"],
+  dark: boolean,
+) => ({
+  type: "FeatureCollection" as const,
+  features: (collection.features ?? []).map((feature) => {
+    const props = feature.properties;
+    if (!props?.color) return feature;
+    const next = mapLineColorForBasemap(props.color, dark);
+    return {
+      ...feature,
+      properties: { ...props, color: next },
+    };
+  }),
 });
 
 const LINE_LAYOUT = {
@@ -142,12 +185,15 @@ const addTransitLayers = (
   bundles: { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[],
   showLines: boolean,
   showStations: boolean,
+  dark: boolean,
 ) => {
+  const tone = dark ? "dark" : "light";
+
   for (const { mode, bundle } of bundles) {
     if (showLines) {
       map.addSource(`${mode}-lines`, {
         type: "geojson",
-        data: asFeatureCollection(bundle.lines),
+        data: remapLineCollection(bundle.lines, dark),
       });
     }
     if (showStations) {
@@ -166,7 +212,7 @@ const addTransitLayers = (
         source: `${mode}-lines`,
         layout: LINE_LAYOUT,
         paint: {
-          "line-color": "#ffffff",
+          "line-color": LINE_CASING[tone],
           "line-width": LINE_WIDTH,
           "line-opacity": 0.92,
         },
@@ -200,9 +246,9 @@ const addTransitLayers = (
         minzoom: 10,
         paint: {
           "circle-radius": STATION_RADIUS,
-          "circle-color": "#ffffff",
+          "circle-color": STATION_FILL[tone],
           "circle-stroke-width": 1.4,
-          "circle-stroke-color": "#111827",
+          "circle-stroke-color": STATION_STROKE[tone],
           "circle-opacity": 0.98,
         },
       });
@@ -225,8 +271,8 @@ const addTransitLayers = (
           "text-padding": 2,
         },
         paint: {
-          "text-color": "#111827",
-          "text-halo-color": "#ffffff",
+          "text-color": STATION_STROKE[tone],
+          "text-halo-color": STATION_FILL[tone],
           "text-halo-width": 1.6,
         },
       });
@@ -235,7 +281,7 @@ const addTransitLayers = (
 };
 
 /**
- * Free geographic map — MapLibre GL JS over OpenFreeMap vector Positron.
+ * Free geographic map — MapLibre GL JS over OpenFreeMap Positron / Dark.
  * No API key. Station names render from the geometry `label` / `name` fields.
  *
  * Renders unique-track OSM transit geometry by default (spine + leftover
@@ -260,6 +306,11 @@ export const TflGeographicMap = ({
 }: TflGeographicMapProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const bundlesRef = useRef<
+    { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[] | null
+  >(null);
+  const skipStyleSwapRef = useRef(true);
+  const dark = useDocumentDark();
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
     "loading",
   );
@@ -313,7 +364,7 @@ export const TflGeographicMap = ({
 
     const map = new maplibregl.Map({
       container,
-      style: OPENFREEMAP_POSITRON_STYLE_URL,
+      style: openFreeMapStyleUrl(dark),
       center,
       zoom,
       attributionControl: { compact: true },
@@ -331,10 +382,11 @@ export const TflGeographicMap = ({
     map.on("load", async () => {
       try {
         prepareBasemapForTransit(map);
-        const bundles = await loadGeometry();
+        const bundles = bundlesRef.current ?? (await loadGeometry());
         if (cancelled) return;
+        bundlesRef.current = bundles;
 
-        addTransitLayers(map, bundles, showLines, showStations);
+        addTransitLayers(map, bundles, showLines, showStations, dark);
         setStatus("ready");
       } catch {
         if (!cancelled) setStatus("error");
@@ -346,7 +398,31 @@ export const TflGeographicMap = ({
       map.remove();
       mapRef.current = null;
     };
+    // Initial style comes from first `dark` snapshot; swaps happen below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center, zoom, showNavigation, showLines, showStations, loadGeometry]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (skipStyleSwapRef.current) {
+      skipStyleSwapRef.current = false;
+      return;
+    }
+
+    const applyOverlays = () => {
+      const bundles = bundlesRef.current;
+      if (!bundles) return;
+      prepareBasemapForTransit(map);
+      addTransitLayers(map, bundles, showLines, showStations, dark);
+    };
+
+    map.setStyle(openFreeMapStyleUrl(dark));
+    map.once("style.load", applyOverlays);
+    return () => {
+      map.off("style.load", applyOverlays);
+    };
+  }, [dark, showLines, showStations]);
 
   return (
     <div

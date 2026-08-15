@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SectionHub } from "@/components/docs/section-hub";
+import { WipNotice } from "@/components/docs/wip-notice";
 import { getDocsEntry } from "@/lib/docs-catalog";
 
 export const metadata: Metadata = {
@@ -16,6 +17,11 @@ export default function BlocksIndexPage() {
   return (
     <SectionHub
       entry={entry}
+      banner={
+        <WipNotice>
+          This section is a work in progress. More blocks will follow.
+        </WipNotice>
+      }
       purpose="Blocks are composition pages outside the reusable component catalog. They demonstrate how data-aware components and rendering primitives combine into a useful mini-app (similar to shadcn Blocks). A Block is not a single installable component API."
       relatedHrefs={[
         { href: "/docs/components", label: "Components catalogue" },

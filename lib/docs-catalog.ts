@@ -221,7 +221,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "explore-index",
     title: "Explorer",
     description:
-      "Open a Point or Line from a cached example, then search live with your own TfL key.",
+      "Explore how TfL stations, stops, docks, and lines relate.",
     group: "explore",
     kind: "page",
     href: "/docs/explorer",

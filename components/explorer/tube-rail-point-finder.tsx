@@ -58,7 +58,7 @@ export const TubeRailPointFinder = ({
   onViewChange,
   initialQuery = "",
   initialPoints = [],
-  emptyMessage = "Filter the cached catalog locally, or Search / Locate with your TfL API key.",
+  emptyMessage = "No matching stations.",
 }: TubeRailPointFinderProps) => {
   const { loading, error, setError, runKeyed } = useExplorerKeyedQuery();
   const [livePoints, setLivePoints] = useState<ExplorerPoint[] | null>(null);

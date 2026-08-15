@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { Suspense, type ComponentType } from "react"
+import { Suspense, type ComponentType, type ReactNode } from "react"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { InstallCommand } from "@/components/docs/install-command"
@@ -29,6 +29,8 @@ type RenderComponentDocsOptions = {
   relatedLinks?: readonly RelatedLink[]
   /** Compact get-data → render example for data-aware pages. */
   getDataExample?: string
+  /** Optional WIP / caveat under the one-sentence intro. */
+  notice?: ReactNode
 }
 
 const PREVIEW_SNIPPETS: Record<string, string> = {
@@ -144,6 +146,7 @@ export const renderComponentDocs = ({
   slug,
   relatedLinks = [],
   getDataExample,
+  notice,
 }: RenderComponentDocsOptions) => {
   const entry = getDocsEntry(slug)
   if (!entry || entry.kind !== "component") notFound()
@@ -156,7 +159,7 @@ export const renderComponentDocs = ({
   return (
     <DocsReadableWidth>
       <article className="space-y-14">
-        <DocsPageHeader entry={entry as DocsEntry} />
+        <DocsPageHeader entry={entry as DocsEntry} notice={notice} />
         <RelationshipBadges
           builtWith={entry.builtWith}
           usesFoundations={entry.usesFoundations}

@@ -18,7 +18,7 @@ export type DiagramStationMarkerProps = {
  * Shared stop marker for vertical / journey diagrams.
  * - tick-right: mid-route dash on the label side of the route only
  * - tick-both: terminal crossbar (both sides)
- * - ring: interchange / journey stop (white fill, black outline)
+ * - ring: interchange / journey stop (white fill / black outline; inverted in dark)
  */
 export const DiagramStationMarker = ({
   kind,
@@ -41,13 +41,11 @@ export const DiagramStationMarker = ({
     >
       {kind === "ring" ? (
         <span
-          className="box-border block rounded-full bg-white"
+          className="box-border block rounded-full border-solid bg-white dark:bg-black border-black dark:border-white"
           style={{
             width: m.ringOuter,
             height: m.ringOuter,
             borderWidth: m.ringStroke,
-            borderStyle: "solid",
-            borderColor: "#000",
           }}
           aria-hidden
         />

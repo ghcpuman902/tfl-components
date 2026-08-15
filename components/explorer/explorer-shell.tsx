@@ -181,11 +181,6 @@ export const ExplorerShell = ({ state, children }: ExplorerShellProps) => {
         </Tabs>
       </div>
 
-      <p className="text-sm text-pretty text-muted-foreground">
-        Cached examples load for free. Search and Locate use your TfL API key.
-        Typing in the box does not spend quota.
-      </p>
-
       {children}
     </div>
   );

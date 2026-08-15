@@ -7,6 +7,7 @@ import {
   ExplorerSplit,
   explorerPaneClassName,
   explorerResultsPaneClassName,
+  explorerSplitFillClassName,
 } from "@/components/explorer/explorer-split";
 import { useOptimisticLine } from "@/components/explorer/use-optimistic-selection";
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip";
@@ -70,7 +71,12 @@ export const LinesBusPanel = ({
   return (
     <ExplorerSplit
       lead={
-        <div className="flex min-h-0 min-w-0 flex-col gap-3 lg:h-full">
+        <div
+          className={cn(
+            "flex min-h-0 min-w-0 flex-col gap-3",
+            explorerSplitFillClassName,
+          )}
+        >
           <form onSubmit={handleFilterSubmit}>
             <InputGroup className="h-9 min-w-0">
               <InputGroupAddon align="inline-start">
@@ -105,7 +111,7 @@ export const LinesBusPanel = ({
               className={cn(
                 explorerPaneClassName,
                 explorerResultsPaneClassName,
-                "overflow-y-auto overscroll-y-auto p-3 scrollbar-thin lg:overscroll-contain",
+                "overflow-y-auto overscroll-y-auto p-3 scrollbar-thin",
               )}
             >
               <ul

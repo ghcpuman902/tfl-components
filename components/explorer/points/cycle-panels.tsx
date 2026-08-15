@@ -19,15 +19,11 @@ import type { ExplorerCyclePoint } from "@/lib/tfl/explorer/common";
 type PointsCycleFindProps = {
   state: ExplorerState;
   docks: readonly ExplorerCyclePoint[];
-  label: string;
-  radiusMeters: number;
 };
 
 export const PointsCycleFind = ({
   state,
   docks,
-  label,
-  radiusMeters,
 }: PointsCycleFindProps) => {
   const router = useRouter();
   const initialPoints = useMemo(
@@ -44,29 +40,24 @@ export const PointsCycleFind = ({
   const selectedDock = docks.find((dock) => dock.id === selected?.id) ?? null;
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground text-pretty">
-        Cached central-London example near {label}, {radiusMeters}m.
-      </p>
-      <ExplorerSplit
-        lead={
-          <CyclePointFinder
-            selectedId={selected?.id ?? state.id}
-            view={state.view}
-            onViewChange={(view) =>
-              router.push(buildExplorerHref({ view }, state), { scroll: false })
-            }
-            initialQuery={state.q}
-            initialPoints={initialPoints}
-            onSelect={handleSelectPoint}
-          />
-        }
-        inspector={
-          selected ? (
-            <PointInspector point={selected} cycleDock={selectedDock} />
-          ) : null
-        }
-      />
-    </div>
+    <ExplorerSplit
+      lead={
+        <CyclePointFinder
+          selectedId={selected?.id ?? state.id}
+          view={state.view}
+          onViewChange={(view) =>
+            router.push(buildExplorerHref({ view }, state), { scroll: false })
+          }
+          initialQuery={state.q}
+          initialPoints={initialPoints}
+          onSelect={handleSelectPoint}
+        />
+      }
+      inspector={
+        selected ? (
+          <PointInspector point={selected} cycleDock={selectedDock} />
+        ) : null
+      }
+    />
   );
 };

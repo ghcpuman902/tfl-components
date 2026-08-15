@@ -286,7 +286,7 @@ type BranchStripMarkerProps = {
 
 /**
  * Markers match StraightStrip / DiagramStationMarker:
- * - interchange → white ring (Ø 3x)
+ * - interchange → ring (Ø 3x; white/black, inverted in dark)
  * - terminus → filled end bar (perpendicular to local track)
  * - stop → cross-tick or tick-right
  */
@@ -305,8 +305,7 @@ const BranchStripMarker = ({
         cx={point.x}
         cy={point.y}
         r={ringOuter}
-        fill="#fff"
-        stroke="#000"
+        className="fill-white stroke-black dark:fill-black dark:stroke-white"
         strokeWidth={ringStroke}
       />
     );

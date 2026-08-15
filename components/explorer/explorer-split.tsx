@@ -11,15 +11,22 @@ export const explorerPaneClassName = "rounded-xl border border-border";
 export const explorerPaneItemClassName =
   "rounded-[calc(var(--radius-xl)-0.25rem)]";
 
-/** Shared desktop height so finder and inspector cards align. */
-export const explorerSplitHeightClassName = "lg:h-[min(40rem,70svh)]";
+/**
+ * Two columns when *this* pane is wide enough — docs sidebar / TOC can wrap
+ * the inspector under the finder before the viewport hits `lg`.
+ */
+export const explorerSplitFillClassName = "@min-[48rem]/explorer:h-full";
+
+/** Shared height so finder and inspector cards align when side by side. */
+export const explorerSplitHeightClassName =
+  "@min-[48rem]/explorer:h-[min(40rem,70svh)]";
 
 /**
- * Results list / map: capped when stacked, fills the split column at `lg`.
- * `lg:h-0` + `flex-1` avoids a leftover used height when shrinking below `lg`.
+ * Results list / map: capped when the inspector wraps under, fills the split
+ * column when two panes fit. `h-0` + `flex-1` drops the stacked used height.
  */
 export const explorerResultsPaneClassName =
-  "h-112 min-h-0 min-w-0 max-sm:h-[calc(100svh/3)] lg:h-0 lg:flex-1";
+  "h-112 min-h-0 min-w-0 max-sm:h-[calc(100svh/3)] @min-[48rem]/explorer:h-0 @min-[48rem]/explorer:flex-1 @min-[48rem]/explorer:overscroll-contain";
 
 type ExplorerSplitProps = {
   lead: ReactNode;
@@ -28,22 +35,24 @@ type ExplorerSplitProps = {
 };
 
 /**
- * Pair a finder and inspector at equal height on large screens.
- * Height lives on the grid so stacked layouts do not keep a desktop used height.
+ * Pair a finder and inspector at equal height when they sit side by side.
+ * Height lives on the grid so a wrapped inspector does not keep a used height.
  */
 export const ExplorerSplit = ({
   lead,
   inspector,
   className,
 }: ExplorerSplitProps) => (
-  <div
-    className={cn(
-      "grid min-w-0 gap-6 lg:grid-cols-2 lg:items-stretch",
-      explorerSplitHeightClassName,
-      className,
-    )}
-  >
-    <div className="flex min-h-0 min-w-0 flex-col">{lead}</div>
-    <div className="min-h-0 min-w-0">{inspector}</div>
+  <div className="@container/explorer min-w-0">
+    <div
+      className={cn(
+        "grid min-w-0 gap-6 @min-[48rem]/explorer:grid-cols-2 @min-[48rem]/explorer:items-stretch",
+        explorerSplitHeightClassName,
+        className,
+      )}
+    >
+      <div className="flex min-h-0 min-w-0 flex-col">{lead}</div>
+      <div className="min-h-0 min-w-0">{inspector}</div>
+    </div>
   </div>
 );

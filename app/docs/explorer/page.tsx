@@ -32,7 +32,7 @@ import {
 export const metadata: Metadata = {
   title: "Explorer",
   description:
-    "Open a Point or Line from a cached example, then search live with your own TfL key.",
+    "Explore how TfL stations, stops, docks, and lines relate.",
 };
 
 type PageProps = {
@@ -101,8 +101,6 @@ async function ExplorerActivePanelAsync({ state }: { state: ExplorerState }) {
       <PointsBusFind
         state={state}
         stops={featured.stops}
-        label={featured.label}
-        radiusMeters={featured.radiusMeters}
         cachedArrivalsPromise={cachedArrivalsPromise}
       />
     );
@@ -111,12 +109,7 @@ async function ExplorerActivePanelAsync({ state }: { state: ExplorerState }) {
   if (state.kind === "points" && state.domain === "cycle") {
     const featured = await getExplorerFeaturedCycleHireDocks();
     return (
-      <PointsCycleFind
-        state={state}
-        docks={featured.docks}
-        label={featured.label}
-        radiusMeters={featured.radiusMeters}
-      />
+      <PointsCycleFind state={state} docks={featured.docks} />
     );
   }
 
@@ -170,7 +163,7 @@ export default function DocsExplorerPage({ searchParams }: PageProps) {
         <section className="space-y-2">
           <p className="max-w-prose text-muted-foreground text-pretty">
             Points are stations, stops, and docks. Lines are the routes that
-            serve them. Click one and the inspector opens on a cached example.
+            serve them.
           </p>
         </section>
 

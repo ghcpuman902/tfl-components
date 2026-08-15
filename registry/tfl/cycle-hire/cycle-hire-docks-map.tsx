@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
 import maplibregl from "maplibre-gl";
@@ -22,9 +22,24 @@ import {
 } from "@/components/tfl/cycle-hire/cycle-hire-map-camera";
 import { StationName } from "@/components/tfl/station-name";
 
-/** OpenFreeMap vector Positron — no API key. Inlined so the registry stays self-contained. */
+/** OpenFreeMap vector styles — inlined so the registry stays self-contained. */
 const OPENFREEMAP_POSITRON_STYLE_URL =
   "https://tiles.openfreemap.org/styles/positron";
+const OPENFREEMAP_DARK_STYLE_URL =
+  "https://tiles.openfreemap.org/styles/dark";
+const openFreeMapStyleUrl = (dark: boolean) =>
+  dark ? OPENFREEMAP_DARK_STYLE_URL : OPENFREEMAP_POSITRON_STYLE_URL;
+
+const subscribeDocumentDark = (onStoreChange: () => void) => {
+  const observer = new MutationObserver(onStoreChange);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+  return () => observer.disconnect();
+};
+const getDocumentDark = () =>
+  document.documentElement.classList.contains("dark");
 const LONDON_CENTER: [number, number] = [-0.08, 51.507];
 const FALLBACK_ZOOM = 13;
 const SINGLE_DOCK_ZOOM = 15;
@@ -192,6 +207,12 @@ export const CycleHireDocksMap = ({
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<MarkerEntry[]>([]);
   const hasFittedRef = useRef(false);
+  const skipStyleSwapRef = useRef(true);
+  const dark = useSyncExternalStore(
+    subscribeDocumentDark,
+    getDocumentDark,
+    () => false,
+  );
 
   useEffect(() => {
     const container = containerRef.current;
@@ -199,7 +220,7 @@ export const CycleHireDocksMap = ({
 
     const map = new maplibregl.Map({
       container,
-      style: OPENFREEMAP_POSITRON_STYLE_URL,
+      style: openFreeMapStyleUrl(dark),
       center: LONDON_CENTER,
       zoom: FALLBACK_ZOOM,
       attributionControl: { compact: true },
@@ -224,7 +245,19 @@ export const CycleHireDocksMap = ({
       mapRef.current = null;
       hasFittedRef.current = false;
     };
+    // Initial style from first `dark` snapshot; swaps happen below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showNavigation]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (skipStyleSwapRef.current) {
+      skipStyleSwapRef.current = false;
+      return;
+    }
+    map.setStyle(openFreeMapStyleUrl(dark));
+  }, [dark]);
 
   useEffect(() => {
     const map = mapRef.current;

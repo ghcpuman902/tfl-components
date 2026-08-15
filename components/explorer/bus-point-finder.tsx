@@ -91,7 +91,7 @@ export const BusPointFinder = ({
   onViewChange,
   initialQuery = "",
   initialPoints = [],
-  emptyMessage = "Select a cached stop, or Search / Locate with your TfL API key.",
+  emptyMessage = "No matching stops.",
 }: BusPointFinderProps) => {
   const { loading, error, setError, runKeyed } = useExplorerKeyedQuery();
   const [livePoints, setLivePoints] = useState<ExplorerPoint[] | null>(null);

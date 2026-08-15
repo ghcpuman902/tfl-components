@@ -88,6 +88,13 @@ export const TFL_STATION_ENRICHMENT_CREDIT: GeographyCredit = {
 export const OPENFREEMAP_POSITRON_STYLE_URL =
   "https://tiles.openfreemap.org/styles/positron" as const;
 
+/** OpenFreeMap dark — pair to Positron for theme-aware maps. */
+export const OPENFREEMAP_DARK_STYLE_URL =
+  "https://tiles.openfreemap.org/styles/dark" as const;
+
+export const openFreeMapStyleUrl = (dark: boolean): string =>
+  dark ? OPENFREEMAP_DARK_STYLE_URL : OPENFREEMAP_POSITRON_STYLE_URL;
+
 export const OPENFREEMAP_BASEMAP_CREDIT: GeographyCredit = {
   id: "openfreemap-positron",
   title: "OpenFreeMap Positron basemap",

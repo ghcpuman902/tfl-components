@@ -110,6 +110,14 @@ export type NightOklchDelta = {
   dH: number;
 };
 
+/** Remap a baked GeoJSON line hex for the current basemap. */
+export const mapLineColorForBasemap = (hex: string, dark: boolean): string => {
+  if (!dark) return hex;
+  const n = hex.replace("#", "").toUpperCase();
+  if (n === "000000" || n === "000") return NORTHERN_DARK_HEX;
+  return applyBrandNightMethod(hex);
+};
+
 /** Apply OKLCH night delta to a brand hex (or any sRGB hex). */
 export const applyBrandNightMethod = (
   brandHex: string,

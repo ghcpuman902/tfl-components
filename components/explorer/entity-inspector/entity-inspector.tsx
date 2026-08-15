@@ -2,7 +2,10 @@
 
 import { useState, type ReactNode } from "react";
 import { Check, Copy } from "lucide-react";
-import { explorerPaneClassName } from "@/components/explorer/explorer-split";
+import {
+  explorerPaneClassName,
+  explorerSplitFillClassName,
+} from "@/components/explorer/explorer-split";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -153,10 +156,11 @@ export const EntityInspectorShell = ({
   <article
     className={cn(
       explorerPaneClassName,
-      "flex min-h-0 min-w-0 flex-col lg:h-full",
+      "flex min-h-0 min-w-0 flex-col",
+      explorerSplitFillClassName,
     )}
   >
-    <ScrollArea className="min-h-0 lg:h-full">
+    <ScrollArea className={cn("min-h-0", explorerSplitFillClassName)}>
       <div className="space-y-6 p-4">
         <header className="space-y-1">
           <h2 className="text-lg font-semibold text-balance">{title}</h2>

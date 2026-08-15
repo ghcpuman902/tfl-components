@@ -8,6 +8,7 @@ import type { DiagramSegment, DiagramStation } from "@/lib/tfl/diagram-station";
 import type { LineSchematic } from "@/lib/tfl/line-schematic";
 import {
   resolveDiagramLineColor,
+  resolveDiagramLineCssColor,
   resolveRouteTrackStyle,
   type RouteTrackStyle,
 } from "@/lib/tfl/route-track";
@@ -94,7 +95,10 @@ export const LineStrip = ({
   trackStyle: trackStyleProp,
 }: LineStripProps) => {
   const color =
-    lineColorProp ?? spine?.lineColor ?? resolveDiagramLineColor(lineId);
+    lineColorProp ??
+    resolveDiagramLineCssColor(lineId) ??
+    spine?.lineColor ??
+    resolveDiagramLineColor(lineId);
   const name = lineNameProp ?? spine?.lineName ?? lineId;
   const trackStyle = trackStyleProp ?? resolveRouteTrackStyle(lineId);
   const orientation: LineStripOrientation =

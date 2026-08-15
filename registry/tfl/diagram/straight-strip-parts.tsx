@@ -243,15 +243,14 @@ export const StraightStripStationColumn = ({
       {isInterchange ? (
         <span
           className={cn(
-            "box-border block rounded-full",
-            !outOfUse && "bg-white",
+            "box-border block rounded-full border-solid",
+            !outOfUse && "bg-white dark:bg-black border-black dark:border-white",
           )}
           style={{
             width: m.ringOuter,
             height: m.ringOuter,
             borderWidth: m.ringStroke,
-            borderStyle: "solid",
-            borderColor: outOfUse ? OUT_OF_USE_LINE_COLOR : "#000",
+            borderColor: outOfUse ? OUT_OF_USE_LINE_COLOR : undefined,
             backgroundColor: outOfUse ? OUT_OF_USE_LINE_COLOR : undefined,
           }}
           aria-hidden
