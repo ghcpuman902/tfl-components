@@ -23,7 +23,7 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
     description:
       "One station's arrivals, the current time, and status for every Tube and rail line.",
     available: true,
-    formSettings: ["stop", "stopName", "arrivalsRows"],
+    formSettings: ["stop", "stopName", "arrivalsLines", "arrivalsRows"],
   },
   {
     id: "mixed",

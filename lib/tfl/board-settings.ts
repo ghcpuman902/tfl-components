@@ -117,7 +117,7 @@ export const BOARD_SETTINGS = {
     scope: "shell",
     defaultValue: undefined as string | undefined,
     parse: parseOptionalString,
-    serialize: (value: string) => value,
+    serialize: (value: string | undefined) => value ?? "",
     isDefault: (value: string | undefined) => !value,
     url: true,
     form: true,
@@ -134,7 +134,7 @@ export const BOARD_SETTINGS = {
     scope: "shell",
     defaultValue: undefined as string | undefined,
     parse: parseOptionalString,
-    serialize: (value: string) => value,
+    serialize: (value: string | undefined) => value ?? "",
     isDefault: (value: string | undefined) => !value,
     url: true,
     form: true,
@@ -185,10 +185,6 @@ export const BOARD_SETTINGS = {
     },
   } satisfies ScalarSetting<BoardFitMode>,
 
-  /**
-   * Rows visible per bound. Scalar broadcasts; comma list maps by effective
-   * line order. The Config form exposes both "All lines" and "Per line".
-   */
   arrivalsRows: {
     kind: "scalar",
     param: "a.rows",
@@ -209,16 +205,15 @@ export const BOARD_SETTINGS = {
     url: true,
     form: true,
     ui: {
-      label: "Rows per bound",
-      help: "How many arrivals each compass bound shows at once. Use one value for every line, or a value per serving line. 0 shows every row (no pager).",
-      control: "number",
+      label: "Rows per line",
+      help: "One number for every line, or a comma list matched to line order. 0 shows every row.",
+      control: "text",
     },
   } satisfies ScalarSetting<number>,
 
   /**
    * Explicit line order for positional `a.rows` and section order.
-   * Ordering only — does not filter. Written by the per-line rows control;
-   * no dedicated form field of its own.
+   * Ordering only — does not filter. Blank uses canonical serving order.
    */
   arrivalsLines: {
     kind: "list",
@@ -229,7 +224,12 @@ export const BOARD_SETTINGS = {
     serializeItem: serializeLineIdItem,
     isDefault: (value: readonly string[]) => value.length === 0,
     url: true,
-    form: false,
+    form: true,
+    ui: {
+      label: "Line order (optional)",
+      help: "Comma-separated line ids. Blank uses the station’s default order.",
+      control: "text",
+    },
   } satisfies ListSetting<readonly string[]>,
 } as const;
 

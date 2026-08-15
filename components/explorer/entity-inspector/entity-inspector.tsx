@@ -152,7 +152,10 @@ export const EntityInspectorShell = ({
   details,
 }: EntityInspectorShellProps) => (
   <article
-    className={cn(explorerPaneClassName, "flex min-h-0 flex-col lg:h-full")}
+    className={cn(
+      explorerPaneClassName,
+      "flex min-h-0 min-w-0 flex-col lg:h-full",
+    )}
   >
     <ScrollArea className="min-h-0 lg:h-full">
       <div className="space-y-6 p-4">

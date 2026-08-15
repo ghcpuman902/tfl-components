@@ -14,6 +14,13 @@ export const explorerPaneItemClassName =
 /** Shared desktop height so finder and inspector cards align. */
 export const explorerSplitHeightClassName = "lg:h-[min(40rem,70svh)]";
 
+/**
+ * Results list / map: capped when stacked, fills the split column at `lg`.
+ * `lg:h-0` + `flex-1` avoids a leftover used height when shrinking below `lg`.
+ */
+export const explorerResultsPaneClassName =
+  "h-112 min-h-0 min-w-0 max-sm:h-[calc(100svh/3)] lg:h-0 lg:flex-1";
+
 type ExplorerSplitProps = {
   lead: ReactNode;
   inspector: ReactNode;
@@ -22,7 +29,7 @@ type ExplorerSplitProps = {
 
 /**
  * Pair a finder and inspector at equal height on large screens.
- * Both columns share `explorerSplitHeightClassName` and scroll internally.
+ * Height lives on the grid so stacked layouts do not keep a desktop used height.
  */
 export const ExplorerSplit = ({
   lead,
@@ -31,20 +38,12 @@ export const ExplorerSplit = ({
 }: ExplorerSplitProps) => (
   <div
     className={cn(
-      "grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch",
+      "grid min-w-0 gap-6 lg:grid-cols-2 lg:items-stretch",
+      explorerSplitHeightClassName,
       className,
     )}
   >
-    <div
-      className={cn(
-        "flex min-h-0 flex-col",
-        explorerSplitHeightClassName,
-      )}
-    >
-      {lead}
-    </div>
-    <div className={cn("min-h-0 min-w-0", explorerSplitHeightClassName)}>
-      {inspector}
-    </div>
+    <div className="flex min-h-0 min-w-0 flex-col">{lead}</div>
+    <div className="min-h-0 min-w-0">{inspector}</div>
   </div>
 );

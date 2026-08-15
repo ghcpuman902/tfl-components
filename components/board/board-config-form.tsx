@@ -1,71 +1,120 @@
 "use client"
 
 import Link from "next/link"
-import { useId, type ChangeEvent } from "react"
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+} from "react"
+import {
+  BoardSegmentBadge,
+  boardSegmentIndex,
+} from "@/components/board/board-url-legend"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RAIL_ARRIVALS_DEFAULT_PAGE_SIZE } from "@/lib/tfl/arrivals-defaults"
 import type { RailArrivalsLine } from "@/lib/tfl/arrivals-prepare"
+import { resolveEffectiveLineOrder } from "@/lib/tfl/board-config-resolve"
 import {
-  BOARD_ROWS_MAX,
   BOARD_SETTINGS,
+  parseArrivalsLines,
+  parseArrivalsRows,
+  serializeArrivalsLines,
   type BoardSettingId,
 } from "@/lib/tfl/board-settings"
-import type { BoardConfig } from "@/lib/tfl/board-url-state"
-import { cn } from "@/lib/utils"
-
-type RowsMode = "all" | "per-line"
+import {
+  type BoardConfig,
+  type BoardHrefSegment,
+} from "@/lib/tfl/board-url-state"
+import { getLineNameTiers } from "@/lib/tfl/line-names"
 
 type BoardConfigFormProps = {
   config: BoardConfig
   formSettings: readonly BoardSettingId[]
-  /** Offline serving lines for the current stop — drives per-line rows. */
+  /** Offline serving lines for the current stop — drives rows preview. */
   servingLines?: readonly RailArrivalsLine[]
+  /** Live URL segments for circled field badges (same list as Launch legend). */
+  segments?: readonly BoardHrefSegment[]
   onChange: (next: Partial<BoardConfig>) => void
 }
 
-const clampRows = (n: number): number =>
-  Math.min(Math.max(0, n), BOARD_ROWS_MAX)
+/** Keep digits and commas only — `a.rows` shape. */
+const normalizeRowsDraft = (raw: string): string =>
+  raw.replace(/[^0-9,]/g, "")
 
-const parseRowsInput = (raw: string): number | undefined => {
-  const trimmed = raw.trim()
-  if (!trimmed) return undefined
-  if (!/^\d+$/.test(trimmed)) return undefined
-  return clampRows(Number(trimmed))
+/** Keep line-id characters and commas — `a.lines` shape. */
+const normalizeLinesDraft = (raw: string): string =>
+  raw.toLowerCase().replace(/[^a-z0-9,-]/g, "")
+
+const rowsDraftFromConfig = (
+  rows: BoardConfig["arrivals"]["rows"],
+): string => {
+  if (rows === undefined) return ""
+  if (typeof rows === "number") return String(rows)
+  return rows
+    .map((item) => (item === undefined ? "" : String(item)))
+    .join(",")
 }
 
-const resolveRowsMode = (
-  config: BoardConfig,
+const linesDraftFromConfig = (
+  lineOrder: BoardConfig["arrivals"]["lineOrder"],
+): string => serializeArrivalsLines(lineOrder) ?? ""
+
+const lineDisplayName = (
+  lineId: string,
   servingLines: readonly RailArrivalsLine[] | undefined,
-): RowsMode => {
-  if (Array.isArray(config.arrivals.rows)) return "per-line"
-  if (config.arrivals.lineOrder?.length && servingLines?.length) {
-    return "per-line"
-  }
-  return "all"
+): string => {
+  const fromServing = servingLines?.find((line) => line.lineId === lineId)
+  if (fromServing?.lineName) return fromServing.lineName
+  return getLineNameTiers(lineId).full
 }
 
 /**
- * Build the positional list aligned to `servingLines` / explicit `lineOrder`.
- * Missing slots use the component default so the URL stays a complete zip.
+ * Live zip of effective line order × rows values, e.g.
+ * `central: max 2, victoria: max 3, bakerloo: max 2`.
  */
-const rowsListForLines = (
+const buildRowsPreview = (
   config: BoardConfig,
-  lineIds: readonly string[],
-): number[] => {
+  servingLines: readonly RailArrivalsLine[] | undefined,
+): string | null => {
+  if (!servingLines?.length) return null
+
+  const order = resolveEffectiveLineOrder(config, servingLines)
+  if (order.length === 0) return null
+
   const rows = config.arrivals.rows
-  if (typeof rows === "number") {
-    return lineIds.map(() => rows)
-  }
-  if (Array.isArray(rows)) {
-    return lineIds.map((_, index) => {
-      const value = rows[index]
-      return value === undefined ? RAIL_ARRIVALS_DEFAULT_PAGE_SIZE : value
+  return order
+    .map((lineId, index) => {
+      const name = lineDisplayName(lineId, servingLines)
+      let max = RAIL_ARRIVALS_DEFAULT_PAGE_SIZE
+      if (typeof rows === "number") {
+        max = rows
+      } else if (Array.isArray(rows) && rows[index] !== undefined) {
+        max = rows[index] as number
+      }
+      return `${name}: max ${max}`
     })
-  }
-  return lineIds.map(() => RAIL_ARRIVALS_DEFAULT_PAGE_SIZE)
+    .join(", ")
 }
+
+const FieldLabel = ({
+  htmlFor,
+  setting,
+  segments,
+  children,
+}: {
+  htmlFor: string
+  setting: BoardSettingId
+  segments: readonly BoardHrefSegment[]
+  children: string
+}) => (
+  <Label htmlFor={htmlFor} className="flex items-center gap-1.5">
+    <BoardSegmentBadge index={boardSegmentIndex(segments, setting)} />
+    <span>{children}</span>
+  </Label>
+)
 
 /**
  * Selective Config form — only renders settings allowlisted by the active
@@ -76,12 +125,27 @@ export const BoardConfigForm = ({
   config,
   formSettings,
   servingLines,
+  segments = [],
   onChange,
 }: BoardConfigFormProps) => {
-  const rowsModeId = useId()
-  const rowsMode = resolveRowsMode(config, servingLines)
-  const lineIds = (servingLines ?? []).map((line) => line.lineId)
-  const perLineValues = rowsListForLines(config, lineIds)
+  const [rowsDraft, setRowsDraft] = useState(() =>
+    rowsDraftFromConfig(config.arrivals.rows),
+  )
+  const [linesDraft, setLinesDraft] = useState(() =>
+    linesDraftFromConfig(config.arrivals.lineOrder),
+  )
+
+  // Stop change clears positional arrivals settings — reset drafts to match.
+  useEffect(() => {
+    setRowsDraft(rowsDraftFromConfig(config.arrivals.rows))
+    setLinesDraft(linesDraftFromConfig(config.arrivals.lineOrder))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only reset on stop change
+  }, [config.stop])
+
+  const rowsPreview = useMemo(
+    () => buildRowsPreview(config, servingLines),
+    [config, servingLines],
+  )
 
   const handleStopChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange({ stop: event.target.value })
@@ -91,72 +155,36 @@ export const BoardConfigForm = ({
     onChange({ stopName: event.target.value })
   }
 
-  const handleRowsModeChange = (mode: RowsMode) => {
-    if (mode === "all") {
-      const scalar =
-        typeof config.arrivals.rows === "number"
-          ? config.arrivals.rows
-          : Array.isArray(config.arrivals.rows)
-            ? (config.arrivals.rows.find(
-                (value): value is number => typeof value === "number",
-              ) ?? RAIL_ARRIVALS_DEFAULT_PAGE_SIZE)
-            : RAIL_ARRIVALS_DEFAULT_PAGE_SIZE
+  const handleLinesChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const draft = normalizeLinesDraft(event.target.value)
+    setLinesDraft(draft)
+    onChange({
+      arrivals: {
+        ...config.arrivals,
+        lineOrder: parseArrivalsLines(draft || null),
+      },
+    })
+  }
+
+  const handleRowsChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const draft = normalizeRowsDraft(event.target.value)
+    setRowsDraft(draft)
+    if (!draft) {
       onChange({
         arrivals: {
           ...config.arrivals,
-          rows: scalar,
-          lineOrder: undefined,
+          rows: undefined,
         },
       })
       return
     }
-
-    if (!servingLines?.length) return
-
-    const list = rowsListForLines(config, lineIds)
     onChange({
       arrivals: {
         ...config.arrivals,
-        rows: list,
-        lineOrder: lineIds,
+        rows: parseArrivalsRows(draft),
       },
     })
   }
-
-  const handleScalarRowsChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const parsed = parseRowsInput(event.target.value)
-    if (parsed === undefined && event.target.value.trim() !== "") return
-    onChange({
-      arrivals: {
-        ...config.arrivals,
-        rows: parsed,
-        lineOrder: undefined,
-      },
-    })
-  }
-
-  const handlePerLineRowsChange = (lineIndex: number, raw: string) => {
-    if (!servingLines?.length) return
-    const parsed = parseRowsInput(raw)
-    if (parsed === undefined && raw.trim() !== "") return
-
-    const next = [...rowsListForLines(config, lineIds)]
-    next[lineIndex] =
-      parsed === undefined ? RAIL_ARRIVALS_DEFAULT_PAGE_SIZE : parsed
-
-    onChange({
-      arrivals: {
-        ...config.arrivals,
-        rows: next,
-        lineOrder: lineIds,
-      },
-    })
-  }
-
-  const scalarRowsValue =
-    typeof config.arrivals.rows === "number"
-      ? config.arrivals.rows
-      : RAIL_ARRIVALS_DEFAULT_PAGE_SIZE
 
   return (
     <form
@@ -165,7 +193,9 @@ export const BoardConfigForm = ({
     >
       {formSettings.includes("stop") ? (
         <div className="space-y-2">
-          <Label htmlFor="board-stop">{BOARD_SETTINGS.stop.ui?.label}</Label>
+          <FieldLabel htmlFor="board-stop" setting="stop" segments={segments}>
+            {BOARD_SETTINGS.stop.ui?.label ?? "Stop ID"}
+          </FieldLabel>
           <Input
             id="board-stop"
             name="stop"
@@ -190,9 +220,13 @@ export const BoardConfigForm = ({
 
       {formSettings.includes("stopName") ? (
         <div className="space-y-2">
-          <Label htmlFor="board-stop-name">
-            {BOARD_SETTINGS.stopName.ui?.label}
-          </Label>
+          <FieldLabel
+            htmlFor="board-stop-name"
+            setting="stopName"
+            segments={segments}
+          >
+            {BOARD_SETTINGS.stopName.ui?.label ?? "Stop name (optional)"}
+          </FieldLabel>
           <Input
             id="board-stop-name"
             name="stopName"
@@ -211,103 +245,68 @@ export const BoardConfigForm = ({
         </div>
       ) : null}
 
-      {formSettings.includes("arrivalsRows") ? (
-        <fieldset className="space-y-3">
-          <legend className="text-sm font-medium text-foreground">
-            {BOARD_SETTINGS.arrivalsRows.ui?.label}
-          </legend>
-
-          <div
-            className="flex flex-wrap gap-2"
-            role="group"
-            aria-label="Rows per bound mode"
+      {formSettings.includes("arrivalsLines") ? (
+        <div className="space-y-2">
+          <FieldLabel
+            htmlFor="board-lines"
+            setting="arrivalsLines"
+            segments={segments}
           >
-            <button
-              type="button"
-              id={`${rowsModeId}-all`}
-              aria-pressed={rowsMode === "all"}
-              onClick={() => handleRowsModeChange("all")}
-              className={cn(
-                "h-8 rounded-lg border px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-                rowsMode === "all"
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-input bg-transparent text-foreground hover:bg-muted"
-              )}
-            >
-              All lines
-            </button>
-            <button
-              type="button"
-              id={`${rowsModeId}-per-line`}
-              aria-pressed={rowsMode === "per-line"}
-              disabled={!servingLines?.length}
-              onClick={() => handleRowsModeChange("per-line")}
-              className={cn(
-                "h-8 rounded-lg border px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-                rowsMode === "per-line"
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-input bg-transparent text-foreground hover:bg-muted",
-                !servingLines?.length && "cursor-not-allowed opacity-50"
-              )}
-            >
-              Per line
-            </button>
-          </div>
-
-          {rowsMode === "all" ? (
-            <div className="space-y-2">
-              <Label htmlFor="board-rows" className="sr-only">
-                Rows for every line
-              </Label>
-              <Input
-                id="board-rows"
-                name="a.rows"
-                type="number"
-                min={0}
-                max={BOARD_ROWS_MAX}
-                step={1}
-                value={scalarRowsValue}
-                onChange={handleScalarRowsChange}
-                aria-describedby="board-rows-hint"
-              />
-            </div>
-          ) : servingLines?.length ? (
-            <div className="grid gap-3" role="group" aria-label="Rows per line">
-              {servingLines.map((line, index) => {
-                const inputId = `board-rows-${line.lineId}`
-                return (
-                  <div
-                    key={line.lineId}
-                    className="grid grid-cols-[minmax(0,1fr)_5.5rem] items-center gap-3"
-                  >
-                    <Label htmlFor={inputId} className="min-w-0 truncate">
-                      {line.lineName}
-                    </Label>
-                    <Input
-                      id={inputId}
-                      name={`a.rows.${line.lineId}`}
-                      type="number"
-                      min={0}
-                      max={BOARD_ROWS_MAX}
-                      step={1}
-                      value={perLineValues[index] ?? RAIL_ARRIVALS_DEFAULT_PAGE_SIZE}
-                      onChange={(event) =>
-                        handlePerLineRowsChange(index, event.target.value)
-                      }
-                      aria-label={`${line.lineName} rows per bound`}
-                    />
-                  </div>
-                )
-              })}
-            </div>
-          ) : null}
-
-          <p id="board-rows-hint" className="text-sm text-muted-foreground">
-            {servingLines?.length
-              ? "All lines uses one value for every bound. Per line maps each number to a serving line in order (and writes line order into the URL)."
-              : "Enter a stop with known Tube or rail lines to set rows per line. 0 shows every row (no pager)."}
+            {BOARD_SETTINGS.arrivalsLines.ui?.label ?? "Line order (optional)"}
+          </FieldLabel>
+          <Input
+            id="board-lines"
+            name="a.lines"
+            value={linesDraft}
+            onChange={handleLinesChange}
+            autoComplete="off"
+            spellCheck={false}
+            placeholder={
+              servingLines?.length
+                ? servingLines.map((line) => line.lineId).join(",")
+                : "central,victoria,bakerloo"
+            }
+            aria-describedby="board-lines-hint"
+          />
+          <p id="board-lines-hint" className="text-sm text-muted-foreground">
+            {BOARD_SETTINGS.arrivalsLines.ui?.help}
           </p>
-        </fieldset>
+        </div>
+      ) : null}
+
+      {formSettings.includes("arrivalsRows") ? (
+        <div className="space-y-2">
+          <FieldLabel
+            htmlFor="board-rows"
+            setting="arrivalsRows"
+            segments={segments}
+          >
+            {BOARD_SETTINGS.arrivalsRows.ui?.label ?? "Rows per line"}
+          </FieldLabel>
+          <Input
+            id="board-rows"
+            name="a.rows"
+            value={rowsDraft}
+            onChange={handleRowsChange}
+            autoComplete="off"
+            spellCheck={false}
+            inputMode="numeric"
+            placeholder={String(RAIL_ARRIVALS_DEFAULT_PAGE_SIZE)}
+            aria-describedby={
+              rowsPreview
+                ? "board-rows-preview board-rows-hint"
+                : "board-rows-hint"
+            }
+          />
+          {rowsPreview ? (
+            <p id="board-rows-preview" className="text-sm text-foreground">
+              {rowsPreview}
+            </p>
+          ) : null}
+          <p id="board-rows-hint" className="text-sm text-muted-foreground">
+            {BOARD_SETTINGS.arrivalsRows.ui?.help}
+          </p>
+        </div>
       ) : null}
 
       <fieldset className="space-y-3" disabled>

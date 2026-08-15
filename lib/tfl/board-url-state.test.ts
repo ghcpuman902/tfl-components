@@ -4,6 +4,7 @@ import {
   BOARD_VIEW_PATH,
   DEFAULT_BOARD_CONFIG,
   buildBoardHref,
+  describeBoardHrefSegments,
   parseBoardConfig,
 } from "./board-url-state";
 
@@ -203,5 +204,66 @@ describe("buildBoardHref", () => {
     assert.equal(parsed.stop, original.stop);
     assert.deepEqual(parsed.arrivals.rows, [6, undefined, 2]);
     assert.deepEqual(parsed.arrivals.lineOrder, original.arrivals.lineOrder);
+  });
+});
+
+describe("describeBoardHrefSegments", () => {
+  it("returns an empty list for defaults", () => {
+    assert.deepEqual(describeBoardHrefSegments({}), []);
+  });
+
+  it("omits default mode, fit, and scalar a.rows", () => {
+    assert.deepEqual(
+      describeBoardHrefSegments({
+        stop: "940GZZLUOXC",
+        mode: "static",
+        fit: "static",
+        arrivals: { rows: 3 },
+      }),
+      [{ setting: "stop", text: "stop=940GZZLUOXC" }],
+    );
+  });
+
+  it("lists segments in href order with literal commas", () => {
+    const segments = describeBoardHrefSegments({
+      stop: "940GZZLUOXC",
+      stopName: "Oxford Circus",
+      mode: "mouse",
+      fit: "fill",
+      arrivals: {
+        rows: [6, 2, 2],
+        lineOrder: ["victoria", "central", "bakerloo"],
+      },
+      key: "abc123",
+    });
+    assert.deepEqual(
+      segments.map((segment) => segment.setting),
+      ["stop", "stopName", "mode", "fit", "arrivalsRows", "arrivalsLines", "key"],
+    );
+    assert.deepEqual(
+      segments.map((segment) => segment.text),
+      [
+        "stop=940GZZLUOXC",
+        "stopName=Oxford+Circus",
+        "mode=mouse",
+        "fit=fill",
+        "a.rows=6,2,2",
+        "a.lines=victoria,central,bakerloo",
+        "key=abc123",
+      ],
+    );
+  });
+
+  it("matches buildBoardHref hash exactly", () => {
+    const next = {
+      stop: "940GZZLUOXC",
+      arrivals: { rows: 0 as const, lineOrder: ["central"] as const },
+      key: "secret",
+    };
+    const segments = describeBoardHrefSegments(next);
+    const fromSegments = `${BOARD_VIEW_PATH}#${segments
+      .map((segment) => segment.text)
+      .join("&")}`;
+    assert.equal(fromSegments, buildBoardHref(next));
   });
 });

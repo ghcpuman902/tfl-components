@@ -18,6 +18,7 @@ import {
   serializeArrivalsRows,
   type BoardFitMode,
   type BoardInteractionMode,
+  type BoardSettingId,
 } from "@/lib/tfl/board-settings";
 
 export const BOARD_PATH = "/board";
@@ -48,6 +49,16 @@ export const DEFAULT_BOARD_CONFIG: BoardConfig = {
   mode: BOARD_SETTINGS.mode.defaultValue,
   fit: BOARD_SETTINGS.fit.defaultValue,
   arrivals: {},
+};
+
+/**
+ * One hash-fragment param that will appear in the shareable URL.
+ * `setting` maps back to the Config form field (or the key slot).
+ * `text` is the literal `param=value` slice (commas already decoded).
+ */
+export type BoardHrefSegment = {
+  setting: BoardSettingId | "key";
+  text: string;
 };
 
 const paramsFromInput = (
@@ -91,11 +102,105 @@ export const parseBoardConfig = (
 };
 
 /**
- * Post-process URLSearchParams.toString() so commas stay literal in the
- * fragment (legal and more readable than `%2C`).
+ * Encode a param=value pair the same way `URLSearchParams` would, then leave
+ * commas literal so list values stay readable in the fragment.
  */
-const decodeCommaEncoding = (hash: string): string =>
-  hash.replace(/%2C/gi, ",");
+const encodeSegment = (param: string, value: string): string =>
+  new URLSearchParams({ [param]: value }).toString().replace(/%2C/gi, ",");
+
+const mergeBoardConfig = (
+  next: Partial<BoardConfig>,
+  base: BoardConfig,
+): BoardConfig => ({
+  ...base,
+  ...next,
+  arrivals: {
+    ...base.arrivals,
+    ...next.arrivals,
+  },
+});
+
+/**
+ * Ordered hash segments that will appear in the shareable URL.
+ * Same omit-default rules as `buildBoardHref` — shared so the Config legend
+ * and the Launch URL never drift.
+ */
+export const describeBoardHrefSegments = (
+  next: Partial<BoardConfig> = {},
+  base: BoardConfig = DEFAULT_BOARD_CONFIG,
+): BoardHrefSegment[] => {
+  const merged = mergeBoardConfig(next, base);
+  const segments: BoardHrefSegment[] = [];
+
+  if (merged.stop) {
+    segments.push({
+      setting: "stop",
+      text: encodeSegment(BOARD_SETTINGS.stop.param, merged.stop),
+    });
+  }
+  if (merged.stopName) {
+    segments.push({
+      setting: "stopName",
+      text: encodeSegment(BOARD_SETTINGS.stopName.param, merged.stopName),
+    });
+  }
+  if (!BOARD_SETTINGS.mode.isDefault(merged.mode)) {
+    segments.push({
+      setting: "mode",
+      text: encodeSegment(BOARD_SETTINGS.mode.param, merged.mode),
+    });
+  }
+  if (!BOARD_SETTINGS.fit.isDefault(merged.fit)) {
+    segments.push({
+      setting: "fit",
+      text: encodeSegment(BOARD_SETTINGS.fit.param, merged.fit),
+    });
+  }
+
+  // Scalar default (number 3) is omitted; list form serializes when present.
+  if (merged.arrivals.rows !== undefined) {
+    if (typeof merged.arrivals.rows === "number") {
+      const rowsSerialized = serializeArrivalsRows(merged.arrivals.rows);
+      if (rowsSerialized !== undefined) {
+        segments.push({
+          setting: "arrivalsRows",
+          text: encodeSegment(
+            BOARD_SETTINGS.arrivalsRows.param,
+            rowsSerialized,
+          ),
+        });
+      }
+    } else {
+      const listSerialized = serializeArrivalsRows(merged.arrivals.rows);
+      if (listSerialized !== undefined) {
+        segments.push({
+          setting: "arrivalsRows",
+          text: encodeSegment(
+            BOARD_SETTINGS.arrivalsRows.param,
+            listSerialized,
+          ),
+        });
+      }
+    }
+  }
+
+  const linesSerialized = serializeArrivalsLines(merged.arrivals.lineOrder);
+  if (linesSerialized !== undefined) {
+    segments.push({
+      setting: "arrivalsLines",
+      text: encodeSegment(BOARD_SETTINGS.arrivalsLines.param, linesSerialized),
+    });
+  }
+
+  if (merged.key) {
+    segments.push({
+      setting: "key",
+      text: encodeSegment("key", merged.key),
+    });
+  }
+
+  return segments;
+};
 
 /**
  * Build a shareable `/board/view#…` href.
@@ -106,50 +211,7 @@ export const buildBoardHref = (
   next: Partial<BoardConfig> = {},
   base: BoardConfig = DEFAULT_BOARD_CONFIG,
 ): string => {
-  const merged: BoardConfig = {
-    ...base,
-    ...next,
-    arrivals: {
-      ...base.arrivals,
-      ...next.arrivals,
-    },
-  };
-
-  const params = new URLSearchParams();
-
-  if (merged.stop) params.set("stop", merged.stop);
-  if (merged.stopName) params.set("stopName", merged.stopName);
-  if (!BOARD_SETTINGS.mode.isDefault(merged.mode)) {
-    params.set("mode", merged.mode);
-  }
-  if (!BOARD_SETTINGS.fit.isDefault(merged.fit)) {
-    params.set("fit", merged.fit);
-  }
-
-  const rowsSerialized = serializeArrivalsRows(
-    merged.arrivals.rows ?? BOARD_SETTINGS.arrivalsRows.defaultValue,
-  );
-  // Scalar default (number 3) is omitted; list form always serializes when present.
-  if (merged.arrivals.rows !== undefined) {
-    if (typeof merged.arrivals.rows === "number") {
-      if (rowsSerialized !== undefined) {
-        params.set("a.rows", rowsSerialized);
-      }
-    } else {
-      const listSerialized = serializeArrivalsRows(merged.arrivals.rows);
-      if (listSerialized !== undefined) {
-        params.set("a.rows", listSerialized);
-      }
-    }
-  }
-
-  const linesSerialized = serializeArrivalsLines(merged.arrivals.lineOrder);
-  if (linesSerialized !== undefined) {
-    params.set("a.lines", linesSerialized);
-  }
-
-  if (merged.key) params.set("key", merged.key);
-
-  const hash = decodeCommaEncoding(params.toString());
-  return hash ? `${BOARD_VIEW_PATH}#${hash}` : BOARD_VIEW_PATH;
+  const segments = describeBoardHrefSegments(next, base);
+  if (segments.length === 0) return BOARD_VIEW_PATH;
+  return `${BOARD_VIEW_PATH}#${segments.map((segment) => segment.text).join("&")}`;
 };

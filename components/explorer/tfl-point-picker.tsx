@@ -37,6 +37,7 @@ import { List, Loader2, LocateFixed, Map as MapIcon, Search } from "lucide-react
 import {
   explorerPaneClassName,
   explorerPaneItemClassName,
+  explorerResultsPaneClassName,
 } from "@/components/explorer/explorer-split";
 import { Button } from "@/components/ui/button";
 import {
@@ -204,8 +205,10 @@ export const TfLPointPicker = ({
 
   const showMap = view === "map" && renderMap;
 
+  const paneClassName = cn(explorerPaneClassName, explorerResultsPaneClassName);
+
   return (
-    <div className={cn("flex h-full min-h-0 flex-col gap-3", className)}>
+    <div className={cn("flex min-h-0 min-w-0 flex-col gap-3 lg:h-full", className)}>
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-2 sm:h-9 sm:flex-row sm:items-stretch"
@@ -296,51 +299,45 @@ export const TfLPointPicker = ({
         </p>
       ) : null}
 
-      <div
-        className="h-112 min-h-0 lg:h-auto lg:min-h-0 lg:flex-1"
-        aria-live="polite"
-        aria-busy={loading}
-      >
-        {showMap ? (
-          renderMap({
-            points,
-            selectedId,
-            onSelect,
-            className: cn(explorerPaneClassName, "h-full min-h-0"),
-          })
-        ) : points.length === 0 && !loading ? (
-          <div
-            className={cn(
-              explorerPaneClassName,
-              "flex h-full items-center p-4",
-            )}
-          >
-            <p className="text-sm text-muted-foreground">{emptyMessage}</p>
-          </div>
-        ) : (
-          <ul
-            id={listId}
-            role="listbox"
-            aria-label="Point results"
-            tabIndex={0}
-            onKeyDown={handleListKeyDown}
-            className={cn(
-              explorerPaneClassName,
-              "h-full space-y-1 overflow-y-auto overscroll-contain p-1 scrollbar-thin",
-            )}
-          >
-            {points.map((point, index) => (
-              <PointResultOption
-                key={point.id}
-                point={point}
-                selected={point.id === selectedId}
-                active={index === resolvedActiveIndex}
-                onSelect={onSelect}
-              />
-            ))}
-          </ul>
-        )}
-      </div>
+      {showMap ? (
+        renderMap({
+          points,
+          selectedId,
+          onSelect,
+          className: paneClassName,
+        })
+      ) : points.length === 0 && !loading ? (
+        <div
+          className={cn(paneClassName, "flex items-center p-4")}
+          aria-live="polite"
+          aria-busy={loading}
+        >
+          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+        </div>
+      ) : (
+        <ul
+          id={listId}
+          role="listbox"
+          aria-label="Point results"
+          tabIndex={0}
+          aria-busy={loading}
+          onKeyDown={handleListKeyDown}
+          className={cn(
+            paneClassName,
+            "space-y-1 overflow-y-auto overscroll-y-auto p-1 scrollbar-thin lg:overscroll-contain",
+          )}
+        >
+          {points.map((point, index) => (
+            <PointResultOption
+              key={point.id}
+              point={point}
+              selected={point.id === selectedId}
+              active={index === resolvedActiveIndex}
+              onSelect={onSelect}
+            />
+          ))}
+        </ul>
+      )}
     </div>
   );
 };

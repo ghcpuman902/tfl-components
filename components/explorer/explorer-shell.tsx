@@ -40,10 +40,10 @@ const domainTilesForKind = (kind: ExplorerKind): readonly DomainTile[] => {
 };
 
 const KIND_TRIGGER_CLASS =
-  "group relative flex aspect-video w-full cursor-pointer flex-col overflow-hidden rounded-(--explorer-radius) border-0 bg-muted p-0 text-left opacity-55 saturate-50 shadow-none transition-[opacity,filter,box-shadow] duration-300 hover:opacity-80 hover:saturate-75 hover:shadow-lg data-active:bg-muted data-active:opacity-100 data-active:saturate-100 data-active:shadow-xl data-active:hover:opacity-100 data-active:hover:saturate-100 dark:data-active:bg-muted [&_svg]:size-full [&_svg]:max-w-none [&_svg]:shrink-0";
+  "group relative flex aspect-[4/5] w-full cursor-pointer flex-col overflow-hidden rounded-(--explorer-radius) border-0 bg-muted p-0 text-left opacity-55 saturate-50 shadow-none transition-[opacity,filter,box-shadow] duration-300 hover:opacity-80 hover:saturate-75 hover:shadow-lg data-active:bg-muted data-active:opacity-100 data-active:saturate-100 data-active:shadow-xl data-active:hover:opacity-100 data-active:hover:saturate-100 sm:aspect-video dark:data-active:bg-muted [&_svg]:size-full [&_svg]:max-w-none [&_svg]:shrink-0";
 
 const DOMAIN_TILE_TRIGGER_CLASS =
-  "relative z-0 h-auto min-h-16 w-full cursor-pointer justify-start gap-3 rounded-t-(--explorer-radius) rounded-b-none border border-transparent bg-transparent px-3 py-3 text-left text-sm font-semibold whitespace-normal shadow-none after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-0.5 after:z-10 after:h-0.5 after:bg-transparent after:opacity-100 after:transition-none hover:border-border hover:border-b-transparent hover:bg-background/70 hover:text-foreground hover:after:bg-background/70 focus-visible:ring-2 focus-visible:ring-ring/50 group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:-bottom-0.5 group-data-horizontal/tabs:after:h-0.5 data-active:z-10 data-active:-mb-0.5 data-active:border-border data-active:border-b-transparent data-active:bg-background data-active:text-foreground data-active:shadow-none data-active:after:bg-background data-active:hover:border-border data-active:hover:border-b-transparent data-active:hover:bg-background data-active:hover:after:bg-background dark:data-active:bg-background dark:data-active:after:bg-background dark:data-active:shadow-none group-data-[variant=default]/tabs-list:data-active:shadow-none disabled:cursor-not-allowed disabled:hover:border-transparent disabled:hover:bg-transparent disabled:hover:after:bg-transparent sm:min-h-[4.5rem] sm:px-4 sm:py-4 sm:text-base";
+  "relative z-0 h-auto min-h-0 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-t-(--explorer-radius) rounded-b-none border border-transparent bg-transparent px-1 py-2 text-center text-[11px] font-semibold whitespace-normal shadow-none after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-0.5 after:z-10 after:h-0.5 after:bg-transparent after:opacity-100 after:transition-none hover:border-border hover:border-b-transparent hover:bg-background/70 hover:text-foreground hover:after:bg-background/70 focus-visible:ring-2 focus-visible:ring-ring/50 group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:-bottom-0.5 group-data-horizontal/tabs:after:h-0.5 data-active:z-10 data-active:-mb-0.5 data-active:border-border data-active:border-b-transparent data-active:bg-background data-active:text-foreground data-active:shadow-none data-active:after:bg-background data-active:hover:border-border data-active:hover:border-b-transparent data-active:hover:bg-background data-active:hover:after:bg-background dark:data-active:bg-background dark:data-active:after:bg-background dark:data-active:shadow-none group-data-[variant=default]/tabs-list:data-active:shadow-none disabled:cursor-not-allowed disabled:hover:border-transparent disabled:hover:bg-transparent disabled:hover:after:bg-transparent sm:min-h-[4.5rem] sm:flex-row sm:items-center sm:justify-start sm:gap-3 sm:px-4 sm:py-4 sm:text-left sm:text-base";
 
 const DomainTileLabel = ({
   roundel,
@@ -58,7 +58,7 @@ const DomainTileLabel = ({
     <TfLRoundel
       variant={roundel}
       text=""
-      className="pointer-events-none size-8 shrink-0 sm:size-10"
+      className="pointer-events-none size-7 shrink-0 sm:size-10"
       aria-hidden
     />
     <span className="min-w-0 leading-tight">
@@ -112,14 +112,14 @@ export const ExplorerShell = ({ state, children }: ExplorerShellProps) => {
         >
           <TabsList
             aria-label="Explorer kind"
-            className="grid h-auto w-full grid-cols-1 gap-4 bg-transparent p-0 group-data-horizontal/tabs:h-auto sm:grid-cols-2"
+            className="grid h-auto w-full grid-cols-2 gap-3 bg-transparent p-0 group-data-horizontal/tabs:h-auto sm:gap-4"
           >
             <TabsTrigger value="points" className={KIND_TRIGGER_CLASS}>
               <div className="absolute inset-0 size-full overflow-hidden rounded-[inherit]">
                 <PointsSvgArt />
               </div>
-              <div className="absolute bottom-4 left-5 z-10">
-                <span className="text-2xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] sm:text-3xl">
+              <div className="absolute bottom-3 left-3 z-10 sm:bottom-4 sm:left-5">
+                <span className="text-xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] sm:text-3xl">
                   {kindLabel("points")}
                 </span>
               </div>
@@ -129,8 +129,8 @@ export const ExplorerShell = ({ state, children }: ExplorerShellProps) => {
               <div className="absolute inset-0 size-full overflow-hidden rounded-[inherit]">
                 <LinesKindArt />
               </div>
-              <div className="absolute bottom-4 left-5 z-10">
-                <span className="text-2xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] sm:text-3xl">
+              <div className="absolute bottom-3 left-3 z-10 sm:bottom-4 sm:left-5">
+                <span className="text-xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] sm:text-3xl">
                   {kindLabel("lines")}
                 </span>
               </div>
@@ -158,8 +158,8 @@ export const ExplorerShell = ({ state, children }: ExplorerShellProps) => {
           <TabsList
             aria-label="Explorer domain"
             className={cn(
-              "grid h-auto w-full grid-cols-2 gap-0 rounded-(--explorer-radius) border-b border-border bg-muted p-0 shadow-none group-data-horizontal/tabs:h-auto",
-              domainTiles.length >= 4 ? "sm:grid-cols-4" : "sm:grid-cols-3",
+              "grid h-auto w-full gap-0 rounded-(--explorer-radius) border-b border-border bg-muted p-0 shadow-none group-data-horizontal/tabs:h-auto",
+              domainTiles.length >= 4 ? "grid-cols-4" : "grid-cols-3",
             )}
           >
             {domainTiles.map((tile) => (

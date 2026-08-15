@@ -7,6 +7,7 @@ import {
 } from "react"
 import { ChevronDownIcon } from "lucide-react"
 import { BoardConfigForm } from "@/components/board/board-config-form"
+import { BoardUrlLegend } from "@/components/board/board-url-legend"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -40,7 +41,9 @@ import {
   type BoardPresetId,
 } from "@/lib/tfl/board-presets"
 import {
+  BOARD_VIEW_PATH,
   buildBoardHref,
+  describeBoardHrefSegments,
   DEFAULT_BOARD_CONFIG,
   type BoardConfig,
 } from "@/lib/tfl/board-url-state"
@@ -214,30 +217,6 @@ const initialBoardConfig = (): BoardConfig => ({
   arrivals: {},
 })
 
-/**
- * When the builder emits list-form `a.rows`, always co-emit `a.lines` from
- * offline serving order so the URL does not depend on live-data fallback.
- */
-const withCoEmittedLineOrder = (
-  config: BoardConfig,
-  stationLines: BoardStationLinesIndex,
-): BoardConfig => {
-  const rows = config.arrivals.rows
-  if (!Array.isArray(rows)) return config
-  if (config.arrivals.lineOrder?.length) return config
-
-  const serving = lookupBoardStationLines(stationLines, config.stop)
-  if (!serving?.length) return config
-
-  return {
-    ...config,
-    arrivals: {
-      ...config.arrivals,
-      lineOrder: serving.map((line) => line.lineId),
-    },
-  }
-}
-
 type BoardBuilderProps = {
   stationLines: BoardStationLinesIndex
   stationNames: BoardStationNamesIndex
@@ -271,17 +250,27 @@ export const BoardBuilder = ({
   const appKey = hydrated ? (getAppKey() ?? "") : ""
   const hasKey = Boolean(appKey)
 
-  const href = useMemo(() => {
-    const forUrl = withCoEmittedLineOrder(config, stationLines)
-    return buildBoardHref({
-      ...forUrl,
-      stop: forUrl.stop?.trim() || undefined,
-      stopName: forUrl.stopName?.trim() || undefined,
+  const forUrl = useMemo(
+    () => ({
+      ...config,
+      stop: config.stop?.trim() || undefined,
+      stopName: config.stopName?.trim() || undefined,
       key: appKey.trim() || undefined,
-    })
-  }, [config, appKey, stationLines])
+    }),
+    [config, appKey],
+  )
+
+  const href = useMemo(() => buildBoardHref(forUrl), [forUrl])
+
+  const segments = useMemo(
+    () => describeBoardHrefSegments(forUrl),
+    [forUrl],
+  )
 
   const absoluteUrl = origin ? `${origin}${href}` : href
+  const legendPath = origin
+    ? `${origin}${BOARD_VIEW_PATH}`
+    : BOARD_VIEW_PATH
 
   const handleConfigChange = (next: Partial<BoardConfig>) => {
     setConfig((current) => {
@@ -383,8 +372,32 @@ export const BoardBuilder = ({
             config={config}
             formSettings={preset.formSettings}
             servingLines={lookupBoardStationLines(stationLines, config.stop)}
+            segments={segments}
             onChange={handleConfigChange}
           />
+          <div className="flex items-stretch gap-3 border-t border-border p-4">
+            <BoardUrlLegend
+              path={legendPath}
+              segments={segments}
+              className="min-w-0 flex-1"
+            />
+            <div className="flex shrink-0 flex-col gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                data-copy-text={absoluteUrl}
+                aria-label="Copy board URL"
+              >
+                Copy URL
+              </Button>
+              <Button
+                nativeButton={false}
+                render={<a href={href} target="_blank" rel="noreferrer" />}
+              >
+                Open board
+              </Button>
+            </div>
+          </div>
         </CollapsibleContent>
       </Collapsible>
 
@@ -406,33 +419,6 @@ export const BoardBuilder = ({
             aria-label="Loading board preview"
           />
         )}
-      </section>
-
-      <section className="space-y-3" aria-labelledby="board-launch-heading">
-        <h2 id="board-launch-heading" className="text-lg font-semibold">
-          Launch
-        </h2>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <code className="min-w-0 flex-1 overflow-x-auto rounded-md bg-muted px-3 py-2 text-xs break-all text-foreground">
-            {absoluteUrl}
-          </code>
-          <div className="flex shrink-0 gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              data-copy-text={absoluteUrl}
-              aria-label="Copy board URL"
-            >
-              Copy URL
-            </Button>
-            <Button
-              nativeButton={false}
-              render={<a href={href} target="_blank" rel="noreferrer" />}
-            >
-              Open board
-            </Button>
-          </div>
-        </div>
       </section>
 
       <section
