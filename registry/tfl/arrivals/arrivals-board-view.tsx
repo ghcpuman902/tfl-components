@@ -4,6 +4,12 @@ import { Loader2 } from "lucide-react"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
 import { StationName } from "@/components/tfl/station-name"
 import {
+  BusStopDisruptionBoundary,
+  BusStopDisruptionChips,
+  BusStopDisruptionCover,
+  type BusStopDisruption,
+} from "@/components/tfl/arrivals/bus-stop-disruptions"
+import {
   ARRIVALS_EMPTY_COPY,
   ARRIVALS_LINE_EMPTY_COPY,
   type ArrivalsEmptyKind,
@@ -12,6 +18,7 @@ import type {
   ArrivalsPreparedBoard,
   ArrivalsPreparedGroup,
 } from "@/lib/tfl/arrivals-prepare"
+import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -91,15 +98,7 @@ const TITLE_CLASS =
 
 const LIST_RESET_CLASS = "m-0 ml-0 list-none space-y-0 p-0 [&>li]:mt-0"
 
-/** Single-letter stop badge from bus `platformName` (e.g. "G"). */
-export const getBusStopLetterFromPlatform = (
-  platformName?: string
-): string | null => {
-  if (!platformName) return null
-  const letter = platformName.trim()
-  if (/^[A-Za-z]$/.test(letter)) return letter.toUpperCase()
-  return null
-}
+export { getBusStopLetterFromPlatform, resolveBusStopLetter } from "@/lib/tfl/bus-stop-letter"
 
 /** Explicit `stopName` wins; otherwise the first non-empty `stationName` on `data`. */
 export const resolveArrivalsHeading = (
@@ -115,28 +114,7 @@ export const resolveArrivalsHeading = (
   return undefined
 }
 
-export const resolveBusStopLetter = (
-  stopLetter: string | undefined,
-  rows: readonly RealtimePrediction[]
-): string | null => {
-  const fromProp = stopLetter?.trim().toUpperCase()
-  if (fromProp) return fromProp
-  for (const row of rows) {
-    const letter = getBusStopLetterFromPlatform(row.platformName)
-    if (letter) return letter
-  }
-  return null
-}
-
-const StopLetterBadge = ({ letter }: { letter: string }) => (
-  <span
-    data-line="buses"
-    className="relative -top-px inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--line-color)] align-middle text-[11px] leading-none font-bold text-[var(--line-ink)]"
-    aria-label={`Stop ${letter}`}
-  >
-    {letter}
-  </span>
-)
+export { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
 
 export const ArrivalsBoardSkeleton = ({
   mode = "rail",
@@ -158,7 +136,7 @@ export const ArrivalsBoardSkeleton = ({
     aria-label="Loading arrivals"
   >
     <div
-      className={cn("flex min-w-0 items-center gap-x-3", ARRIVALS_TILE_CLASS)}
+      className={cn("flex min-w-0 items-center gap-x-3 text-3xl", ARRIVALS_TILE_CLASS)}
     >
       {stopName ? (
         <>
@@ -167,7 +145,12 @@ export const ArrivalsBoardSkeleton = ({
             className="size-[var(--arrivals-row)] shrink-0"
             aria-hidden
           />
-          <p className={cn("min-w-0 flex-1 text-3xl", TITLE_CLASS)}>
+          <p
+            className={cn(
+              "min-w-0 flex-1 text-3xl",
+              TITLE_CLASS
+            )}
+          >
             <span className="block min-w-0">
               <StationName
                 name={stopName}
@@ -302,6 +285,13 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
   prepared: ArrivalsPreparedBoard
   resolvedStopLetter?: string | null
   /**
+   * Bus only. Per-route disruption warnings — build with
+   * `prepareBusStopDisruptions` from `stopPoint.getDisruption` output.
+   * Renders a warning chip per route in the header; hover/tap covers the
+   * rows below with that route's description.
+   */
+  disruptions?: readonly BusStopDisruption[]
+  /**
    * Visible arrivals per page. Rail: per compass bound. Bus grouped: per
    * route. Bus flat: the whole list, with a trailing pager tile. Omit or `0`
    * to show the prepared rows.
@@ -336,6 +326,7 @@ export const ArrivalsBoardView = ({
   prepared,
   stopName,
   resolvedStopLetter,
+  disruptions = [],
   headingLevel = 1,
   loading = false,
   error = null,
@@ -361,8 +352,12 @@ export const ArrivalsBoardView = ({
       className={cn("@container/arrivals w-full space-y-2", className)}
       style={ARRIVALS_RHYTHM_VARS}
     >
+      <BusStopDisruptionBoundary disruptions={mode === "bus" ? disruptions : []}>
       <div
-        className={cn("flex min-w-0 items-center gap-x-3", ARRIVALS_TILE_CLASS)}
+        className={cn(
+          "flex min-w-0 items-center gap-x-3 text-3xl",
+          ARRIVALS_TILE_CLASS
+        )}
       >
         <TfLRoundel
           variant={mode === "bus" ? "buses" : "underground"}
@@ -371,7 +366,10 @@ export const ArrivalsBoardView = ({
         />
         {stopName ? (
           <TitleTag
-            className={cn("min-w-0 flex-1 text-3xl", TITLE_CLASS)}
+            className={cn(
+              "flex h-full min-w-0 flex-1 items-center gap-x-1.5",
+              TITLE_CLASS
+            )}
             aria-label={stopName}
           >
             <span className="block min-w-0" aria-hidden="true">
@@ -384,34 +382,32 @@ export const ArrivalsBoardView = ({
                 className="justify-center leading-8"
               />
             </span>
+            {mode === "bus" ? <BusStopDisruptionChips /> : null}
           </TitleTag>
         ) : loading ? (
           <Skeleton className="h-8 w-56 max-w-full" />
         ) : (
-          <TitleTag className={cn("min-w-0 flex-1 text-3xl", TITLE_CLASS)}>
+          <TitleTag className={cn("min-w-0 flex-1", TITLE_CLASS)}>
             <span className="sr-only">Arrivals</span>
           </TitleTag>
         )}
-        {resolvedStopLetter || statusLabel || loading ? (
-          <div className="flex shrink-0 items-center gap-x-2">
-            {resolvedStopLetter ? (
-              <StopLetterBadge letter={resolvedStopLetter} />
-            ) : null}
-            {statusLabel || loading ? (
-              <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                {loading ? (
-                  <>
-                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                    Loading…
-                  </>
-                ) : (
-                  statusLabel
-                )}
-              </p>
-            ) : null}
-          </div>
+        {resolvedStopLetter ? (
+          <StopLetterBadge letter={resolvedStopLetter} />
+        ) : null}
+        {statusLabel || loading ? (
+          <p className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+            {loading ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                Loading…
+              </>
+            ) : (
+              statusLabel
+            )}
+          </p>
         ) : null}
       </div>
+      <BusStopDisruptionCover />
 
       {error ? (
         <p
@@ -496,6 +492,7 @@ export const ArrivalsBoardView = ({
           ))}
         </div>
       )}
+      </BusStopDisruptionBoundary>
     </div>
   )
 }

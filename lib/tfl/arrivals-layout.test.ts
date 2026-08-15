@@ -121,6 +121,47 @@ describe("arrivals board layout API", () => {
     assert.ok(html.includes("No information"))
   })
 
+  it("uses a fixed 5ch box for mixed-line identity chips", () => {
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: [
+          prediction({
+            id: "cir-e",
+            lineId: "circle",
+            lineName: "Circle",
+            modeName: "tube",
+            platformName: "Eastbound - Platform 1",
+            towards: "Edgware Road (Circle)",
+            timeToStation: 120,
+          }),
+          {
+            ...prediction({
+              id: "hc-met",
+              lineId: "hammersmith-city",
+              lineName: "Hammersmith & City",
+              modeName: "tube",
+              platformName: "Westbound - Platform 2",
+              towards: "Check Front of Train",
+              timeToStation: 80,
+            }),
+            sharedTrackIdentity: {
+              confidence: "ambiguous",
+              rawLineId: "hammersmith-city",
+              rawLineIds: ["hammersmith-city", "metropolitan"],
+            },
+          } as RealtimePrediction,
+        ],
+        lineGroups: [
+          { lines: ["circle", "hammersmith-city", "metropolitan"] },
+        ],
+        stopName: "Liverpool Street",
+      }),
+    )
+    assert.ok(html.includes("w-[5ch]"), html)
+    assert.ok(html.includes("tfl-line-codes"), html)
+    assert.ok(html.includes("CIR"), html)
+  })
+
   it("keeps the default vertical arrangement classes", () => {
     const html = renderToStaticMarkup(
       createElement(RailArrivalsBoard, {

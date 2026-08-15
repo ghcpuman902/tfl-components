@@ -22,6 +22,10 @@ describe("readStopLetter", () => {
   it("ignores long indicators", () => {
     assert.equal(readStopLetter(undefined, "Stand 12"), undefined);
   });
+
+  it("drops compass arrows instead of slicing to ->", () => {
+    assert.equal(readStopLetter("->W", "->W"), undefined);
+  });
 });
 
 describe("readTowards", () => {
@@ -30,6 +34,10 @@ describe("readTowards", () => {
       readTowards([{ key: "Towards", value: " Oxford Circus " }]),
       "Oxford Circus",
     );
+  });
+
+  it("drops a literal null towards", () => {
+    assert.equal(readTowards([{ key: "Towards", value: "null" }]), undefined);
   });
 });
 
@@ -46,6 +54,7 @@ describe("isBoardableBusStopId", () => {
   it("accepts 490… ids", () => {
     assert.equal(isBoardableBusStopId("490000091G"), true);
     assert.equal(isBoardableBusStopId("HUBLBG"), false);
+    assert.equal(isBoardableBusStopId("490G00014016"), false);
   });
 });
 
@@ -84,6 +93,15 @@ describe("mapStopPoint", () => {
       lon: -0.128,
       smsCode: "53240",
     });
+  });
+
+  it("reads towards from a search hit field", () => {
+    const mapped = mapStopPoint({
+      id: "490000251E",
+      commonName: "Wapping Station",
+      towards: "Limehouse",
+    });
+    assert.equal(mapped?.towards, "Limehouse");
   });
 
   it("returns null without id", () => {

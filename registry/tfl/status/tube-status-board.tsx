@@ -30,7 +30,11 @@ type Props = {
   children?: ReactNode
   /** When true, omit the page header (useful inside a layout that already has one). */
   hideHeader?: boolean
-  /** One column — for a narrow side slot. */
+  /**
+   * Watchlist mode: one column, no section title tiles, no attribution
+   * footer. Pass only the lines you care about as `data`. Empty Good
+   * Service is omitted — you will not see "Good Service (0 lines)".
+   */
   compact?: boolean
   /**
    * Clock for validity windows and tfl-ts current-row helpers.
@@ -118,6 +122,8 @@ const BOARD_RHYTHM_VARS = {
   "--arrivals-row": "calc(var(--arrivals-unit) * 6)",
 } as CSSProperties
 
+const BOARD_ROOT_CLASS = "flex w-full flex-col text-base @container/status"
+
 const TILE_CLASS =
   "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden"
 
@@ -139,22 +145,13 @@ const SeverityChip = ({ label }: { label: string }) => (
   </span>
 )
 
-/** Half a tile so wrapping copy lands on the arrivals baseline. */
+/** Half-tile leading — wrapping copy stays on the arrivals baseline without snapping the block to a whole tile. */
 const DISRUPTION_LEADING_CLASS = "leading-[calc(var(--arrivals-row)/2)]"
 
 const DISRUPTION_COPY_CLASS = cn(
   "text-base text-pretty text-foreground/80",
   DISRUPTION_LEADING_CLASS
 )
-
-/**
- * Ceil copy to a whole `--arrivals-row` so the next line header stays on
- * the arrivals tile grid. Leading is half a tile, so leftover is 0–2lh —
- * enough gap without a separate min padding.
- */
-const DISRUPTION_SNAP_STYLE = {
-  height: "calc-size(auto, round(up, size, var(--arrivals-row)))",
-} as CSSProperties
 
 const StatusDisruptionBlock = ({
   announcements,
@@ -163,10 +160,7 @@ const StatusDisruptionBlock = ({
   announcements: readonly LineAnnouncement[]
   quiet?: boolean
 }) => (
-  <div
-    className={cn("box-border", DISRUPTION_LEADING_CLASS)}
-    style={DISRUPTION_SNAP_STYLE}
-  >
+  <div className={DISRUPTION_LEADING_CLASS}>
     {announcements.map((announcement, index) => (
       <StatusDisruptionCopy
         key={index}
@@ -209,7 +203,7 @@ const StatusLineHeader = ({
   name: string
   trailing?: ReactNode
 }) => (
-  <>
+  <div className="min-w-0">
     <header
       data-line={lineId}
       className={cn("relative flex items-center", TILE_CLASS)}
@@ -227,7 +221,7 @@ const StatusLineHeader = ({
     <div className={LINE_BAR_PULL_CLASS} aria-hidden>
       <LineColorBar lineId={lineId} modeName={modeName} heightClass="h-1" />
     </div>
-  </>
+  </div>
 )
 
 const StatusSectionTitle = ({ children }: { children: ReactNode }) => (
@@ -240,6 +234,19 @@ const StatusSectionTitle = ({ children }: { children: ReactNode }) => (
     {children}
   </h2>
 )
+
+const StatusSectionHeading = ({
+  compact,
+  children,
+}: {
+  compact: boolean
+  children: ReactNode
+}) =>
+  compact ? (
+    <h2 className="sr-only">{children}</h2>
+  ) : (
+    <StatusSectionTitle>{children}</StatusSectionTitle>
+  )
 
 /** Static board chrome — no status data required. */
 export const TubeStatusBoardHeader = () => (
@@ -284,19 +291,24 @@ export const TubeStatusBoardHeader = () => (
 type SkeletonProps = {
   /** Line IDs to paint (defaults to `LINE_ORDER` Tube & Rail set). */
   lineIds?: readonly string[]
-  /** One column — for a narrow side slot. */
+  /**
+   * Watchlist mode: one column, no section title tile, no attribution
+   * footer. Pass the same `lineIds` you will fetch.
+   */
   compact?: boolean
 }
 
+/** Titles-only — denser than disruptions. Queries `@container/status`, not the viewport. */
 const goodServiceGridClass = (compact: boolean) =>
   compact
     ? "mt-2 grid grid-cols-1 justify-items-stretch gap-x-4 gap-y-0"
-    : "mt-2 grid grid-cols-2 justify-items-stretch gap-x-4 gap-y-0 md:grid-cols-3 lg:grid-cols-5"
+    : "mt-2 grid grid-cols-2 justify-items-stretch gap-x-4 gap-y-0 @min-[30rem]/status:grid-cols-3 @min-[45rem]/status:grid-cols-5"
 
+/** Prose needs width — fewer columns than Good Service at the same board width. */
 const disruptionGridClass = (compact: boolean) =>
   compact
     ? "mt-2 grid grid-cols-1 gap-x-4"
-    : "mt-2 grid grid-cols-1 gap-x-4 md:grid-cols-2 lg:grid-cols-3"
+    : "mt-2 grid grid-cols-1 gap-x-4 @min-[30rem]/status:grid-cols-2 @min-[45rem]/status:grid-cols-3"
 
 /**
  * Calm loading placeholder — every line in default `LINE_ORDER`,
@@ -307,13 +319,15 @@ export const TubeStatusBoardSkeleton = ({
   compact = false,
 }: SkeletonProps) => (
   <div
-    className="flex w-full flex-col text-base"
+    className={BOARD_ROOT_CLASS}
     style={BOARD_RHYTHM_VARS}
     aria-busy
     aria-label="Loading line status"
   >
     <div>
-      <StatusSectionTitle>Checking the lines...</StatusSectionTitle>
+      <StatusSectionHeading compact={compact}>
+        Checking the lines...
+      </StatusSectionHeading>
       <div className={goodServiceGridClass(compact)}>
         {lineIds.map((lineId) => {
           const label = getLineNameTiers(lineId).full
@@ -331,18 +345,20 @@ export const TubeStatusBoardSkeleton = ({
       </div>
     </div>
 
-    <div
-      className={cn(
-        "flex items-center border-t text-center text-base text-muted-foreground",
-        TILE_CLASS
-      )}
-    >
-      <p className="w-full text-balance">
-        Data from Transport for London via{" "}
-        <span className="text-blue-500">tfl-ts</span>. Pass normalised rows as{" "}
-        <code className="text-xs">data</code>.
-      </p>
-    </div>
+    {compact ? null : (
+      <div
+        className={cn(
+          "flex items-center border-t text-center text-base text-muted-foreground",
+          TILE_CLASS
+        )}
+      >
+        <p className="w-full text-balance">
+          Data from Transport for London via{" "}
+          <span className="text-blue-500">tfl-ts</span>. Pass normalised rows as{" "}
+          <code className="text-xs">data</code>.
+        </p>
+      </div>
+    )}
   </div>
 )
 
@@ -369,7 +385,7 @@ export const TubeStatusBoard = ({
   })
 
   return (
-    <div className="flex w-full flex-col text-base" style={BOARD_RHYTHM_VARS}>
+    <div className={BOARD_ROOT_CLASS} style={BOARD_RHYTHM_VARS}>
       {!hideHeader && (
         <div className="mb-[var(--arrivals-row)]">
           <TubeStatusBoardHeader />
@@ -378,7 +394,9 @@ export const TubeStatusBoard = ({
 
       {disruptions.length > 0 && (
         <div>
-          <StatusSectionTitle>Service Disruptions</StatusSectionTitle>
+          <StatusSectionHeading compact={compact}>
+            Service Disruptions
+          </StatusSectionHeading>
           <div className={disruptionGridClass(compact)}>
             {disruptions.map(({ line, announcements, kind }) => {
               return (
@@ -400,55 +418,59 @@ export const TubeStatusBoard = ({
         </div>
       )}
 
-      <div>
-        <StatusSectionTitle>
-          Good Service
-          {disruptions.length > 0 && (
-            <span className="ml-2 text-base font-normal text-muted-foreground">
-              ({goodService.length} lines)
-            </span>
-          )}
-        </StatusSectionTitle>
-        <div className={goodServiceGridClass(compact)}>
-          {goodService.map(({ line, announcements }) => {
-            const infoLabel =
-              announcements[0]?.statusSeverityDescription?.trim()
-            return (
-              <StatusLineHeader
-                key={line.id ?? line.name}
-                lineId={line.id}
-                modeName={line.modeName}
-                name={line.name ?? line.id ?? "Line"}
-                trailing={
-                  infoLabel ? (
-                    <span className="max-w-[40%] truncate text-base text-muted-foreground">
-                      {infoLabel}
-                    </span>
-                  ) : null
-                }
-              />
-            )
-          })}
+      {goodService.length > 0 && (
+        <div>
+          <StatusSectionHeading compact={compact}>
+            Good Service
+            {!compact && disruptions.length > 0 ? (
+              <span className="ml-2 text-base font-normal text-muted-foreground">
+                ({goodService.length} lines)
+              </span>
+            ) : null}
+          </StatusSectionHeading>
+          <div className={goodServiceGridClass(compact)}>
+            {goodService.map(({ line, announcements }) => {
+              const infoLabel =
+                announcements[0]?.statusSeverityDescription?.trim()
+              return (
+                <StatusLineHeader
+                  key={line.id ?? line.name}
+                  lineId={line.id}
+                  modeName={line.modeName}
+                  name={line.name ?? line.id ?? "Line"}
+                  trailing={
+                    infoLabel ? (
+                      <span className="max-w-[40%] truncate text-base text-muted-foreground">
+                        {infoLabel}
+                      </span>
+                    ) : null
+                  }
+                />
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div
-        className={cn(
-          "flex items-center border-t text-center text-base text-muted-foreground",
-          TILE_CLASS
-        )}
-      >
-        <p className="w-full text-balance">
-          Data from Transport for London via{" "}
-          <Link
-            href="https://www.npmjs.com/package/tfl-ts"
-            className="text-blue-500 hover:underline"
-          >
-            tfl-ts
-          </Link>
-          . Pass normalised rows as <code className="text-xs">data</code>.
-        </p>
-      </div>
+      {compact ? null : (
+        <div
+          className={cn(
+            "flex items-center border-t text-center text-base text-muted-foreground",
+            TILE_CLASS
+          )}
+        >
+          <p className="w-full text-balance">
+            Data from Transport for London via{" "}
+            <Link
+              href="https://www.npmjs.com/package/tfl-ts"
+              className="text-blue-500 hover:underline"
+            >
+              tfl-ts
+            </Link>
+            . Pass normalised rows as <code className="text-xs">data</code>.
+          </p>
+        </div>
+      )}
 
       {children}
     </div>

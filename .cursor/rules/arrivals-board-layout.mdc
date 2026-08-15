@@ -53,7 +53,7 @@ Boards are single-column by default; consumers arrange groups/bounds via `classN
 
 ## Rail vs bus rows
 
-- Rail: platform chip only when platforms **vary** inside the bound (compact `P{n}`). When every row shares one platform, hoist it into the bound heading (`Eastbound · Platform 1` or `Platform A`) and omit the row chip. Mixed-line (`lineGroups`) sections add a line chip before the destination. One identity → `LineBadge` (3-letter). A train listed on 2–3 lines → `LineBadgeGroup variant="codes"` (same-height stripe stack; CSS-cycles one 3-letter abbr). The codes chip must fit inside `--arrivals-row` (48px) at normal chip height (`h-5`).
+- Rail: platform chip only when platforms **vary** inside the bound (compact `P{n}`). When every row shares one platform, hoist it into the bound heading (`Eastbound · Platform 1` or `Platform A`) and omit the row chip. Mixed-line (`lineGroups`) sections add a line chip before the destination. One identity → `LineBadge` (3-letter). A train listed on 2–3 lines → `LineBadgeGroup variant="codes"` (same-height stripe stack; CSS-cycles one 3-letter abbr). Both line chips use a fixed `w-[5ch]` box (`ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS`), same as `BusNumberChip`, so CIR / H&C / MET and the stacked codes chip align. The codes chip must fit inside `--arrivals-row` (48px) at normal chip height (`h-5`).
 - Bus: `BusNumberChip` per row (bus red); stop letter on the header only.
 - Both chips: keep normal casing (`Platform 4`, route codes as given). Center with `[text-box:trim-both_cap_alphabetic]` (`CHIP_CAP_TEXT_BOX_CLASS`) — uppercase/cap metrics for the box, not `ex` trim. Do not force `uppercase` paint.
 - Bound labels (Northbound…) match line-name size; same hairline weight as arrival rows inside a line group.

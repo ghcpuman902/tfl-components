@@ -47,6 +47,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { cn } from "@/lib/utils";
+import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge";
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise";
 import type { ExplorerView } from "@/lib/tfl/explorer-url-state";
 
@@ -75,6 +76,8 @@ export type TfLPointPickerProps = {
   searchPlaceholder?: string;
   searchValue?: string;
   onSearchValueChange?: (value: string) => void;
+  /** Metres from a geo target. Bus name search leaves this off. */
+  showDistance?: boolean;
   className?: string;
 };
 
@@ -92,6 +95,7 @@ type PointResultOptionProps = {
   selected: boolean;
   active: boolean;
   onSelect: (point: ExplorerPoint) => void;
+  showDistance: boolean;
 };
 
 const PointResultOption = ({
@@ -99,14 +103,16 @@ const PointResultOption = ({
   selected,
   active,
   onSelect,
+  showDistance,
 }: PointResultOptionProps) => {
+  const isBus = point.modes?.includes("bus") ?? false;
+  const stopLetter = isBus ? point.stopLetter : undefined;
   const meta = [
     point.hubMembers && point.hubMembers.length > 1
       ? `${point.hubMembers.length} StopPoints`
       : null,
-    point.stopLetter ? `Stop ${point.stopLetter}` : null,
     point.towards ? `towards ${point.towards}` : null,
-    point.distanceMeters !== undefined
+    showDistance && point.distanceMeters !== undefined
       ? formatDistance(point.distanceMeters)
       : null,
     point.bikes !== undefined ? `${point.bikes} bikes` : null,
@@ -119,6 +125,13 @@ const PointResultOption = ({
       aria-selected={selected}
       tabIndex={active ? 0 : -1}
       onClick={() => onSelect(point)}
+      aria-label={[
+        point.name,
+        stopLetter ? `stop ${stopLetter}` : null,
+        point.towards ? `towards ${point.towards}` : null,
+      ]
+        .filter(Boolean)
+        .join(", ")}
       className={cn(
         "flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors",
         "[content-visibility:auto] [contain-intrinsic-size:auto_3.25rem]",
@@ -128,8 +141,11 @@ const PointResultOption = ({
         active && !selected && "bg-muted/40",
       )}
     >
-      <span className="flex min-w-0 items-baseline gap-2">
-        <span className="truncate font-medium">{point.name}</span>
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span className="truncate font-medium">{point.name}</span>
+          {stopLetter ? <StopLetterBadge letter={stopLetter} /> : null}
+        </span>
         <code className="ml-auto shrink-0 text-xs text-muted-foreground">
           {point.id}
         </code>
@@ -157,6 +173,7 @@ export const TfLPointPicker = ({
   searchPlaceholder = "Search by name or ID",
   searchValue,
   onSearchValueChange,
+  showDistance = true,
   className,
 }: TfLPointPickerProps) => {
   const listId = useId();
@@ -165,6 +182,9 @@ export const TfLPointPicker = ({
 
   const query = searchValue ?? internalQuery;
   const setQuery = onSearchValueChange ?? setInternalQuery;
+  const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
+  const trimmedQuery = query.trim();
+  const canSearch = trimmedQuery.length > 0 && trimmedQuery !== submittedQuery && !loading;
 
   const selectedIndex = points.findIndex((point) => point.id === selectedId);
   const [activeIndex, setActiveIndex] = useState(
@@ -177,6 +197,8 @@ export const TfLPointPicker = ({
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
+    if (!canSearch) return;
+    setSubmittedQuery(trimmedQuery);
     onSearchSubmit(query);
   };
 
@@ -250,7 +272,12 @@ export const TfLPointPicker = ({
         </InputGroup>
 
         <div className="flex h-9 shrink-0 items-stretch gap-2">
-          <Button type="submit" size="lg" disabled={loading} aria-busy={loading}>
+          <Button
+            type="submit"
+            size="lg"
+            disabled={!canSearch}
+            aria-busy={loading}
+          >
             {loading ? (
               <>
                 <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -337,6 +364,7 @@ export const TfLPointPicker = ({
               selected={point.id === selectedId}
               active={index === resolvedActiveIndex}
               onSelect={onSelect}
+              showDistance={showDistance}
             />
           ))}
         </ul>

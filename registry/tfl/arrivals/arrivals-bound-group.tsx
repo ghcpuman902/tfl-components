@@ -11,6 +11,10 @@ import {
 import { Play } from "lucide-react"
 import type { PredictionWithSharedTrackIdentity } from "tfl-ts"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
+import {
+  ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
+  CHIP_CAP_TEXT_BOX_CLASS,
+} from "@/components/tfl/arrivals/chip-text"
 import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
 import {
   LineBadge,
@@ -29,6 +33,7 @@ import {
   type ArrivalsPreparedGroup,
   type ArrivalsPreparedRow,
 } from "@/lib/tfl/arrivals-prepare"
+import { usableTflText } from "@/lib/tfl/bus-stop-letter"
 import { cn } from "@/lib/utils"
 
 type ArrivalsBoardMode = "rail" | "bus"
@@ -96,8 +101,8 @@ export const ArrivalRowItem = ({
   hoistPlatform?: boolean
 }) => {
   const destination =
-    row.arrival.towards?.trim() ||
-    row.arrival.destinationName?.trim() ||
+    usableTflText(row.arrival.towards) ||
+    usableTflText(row.arrival.destinationName) ||
     "Unknown"
   const platformNumber =
     mode === "rail" && !hoistPlatform
@@ -167,7 +172,11 @@ export const ArrivalRowItem = ({
     <LineBadge
       lineId={lineId}
       name={lineChipLabel}
-      className="max-w-18 truncate"
+      className={cn(
+        "h-5 justify-center px-0",
+        ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
+        CHIP_CAP_TEXT_BOX_CLASS,
+      )}
     />
   ) : null
 

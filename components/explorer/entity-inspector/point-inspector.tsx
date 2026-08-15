@@ -3,6 +3,7 @@
 import { Suspense, use, useEffect, useState, type ReactNode } from "react";
 import type { RealtimePrediction } from "tfl-ts";
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board";
+import { resolveBusStopLetter } from "@/lib/tfl/bus-stop-letter";
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board";
 import { CycleHireDocksDetail } from "@/components/tfl/cycle-hire/cycle-hire-docks";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,10 @@ import {
 } from "@/components/explorer/entity-inspector/entity-inspector";
 import { useExplorerKeyedQuery } from "@/hooks/use-explorer-keyed-query";
 import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort";
+import {
+  prepareBusStopDisruptions,
+  type RawBusStopDisruption,
+} from "@/lib/tfl/bus-stop-disruptions";
 import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types";
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise";
 import {
@@ -94,6 +99,7 @@ const PointInspectorLive = ({
   const [arrivalsFetchedAt, setArrivalsFetchedAt] = useState<number | null>(
     null,
   );
+  const [disruptions, setDisruptions] = useState<RawBusStopDisruption[]>([]);
   const [liveDock, setLiveDock] = useState<CycleHireDock | null>(
     cycleDock ?? null,
   );
@@ -109,6 +115,10 @@ const PointInspectorLive = ({
     point.arrivalsStopIds?.length ? point.arrivalsStopIds : [point.id];
   const pollStopKey = pollStopIds.join(",");
   const isHub = (point.hubMembers?.length ?? 0) > 1;
+  const displayArrivals = arrivals ?? seedArrivals?.arrivals ?? null;
+  const resolvedStopLetter = isBus
+    ? resolveBusStopLetter(point.stopLetter, displayArrivals ?? [])
+    : (point.stopLetter ?? null);
 
   useEffect(() => {
     if (!hydrated || !ready) return;
@@ -128,14 +138,19 @@ const PointInspectorLive = ({
         return;
       }
 
-      const result = await runKeyed(async (client) =>
-        client.stopPoint.getArrivals({
-          stopPointIds,
-          sortBy: "timeToStation",
-        }),
-      );
+      const result = await runKeyed(async (client) => {
+        const [predictions, stopDisruptions] = await Promise.all([
+          client.stopPoint.getArrivals({
+            stopPointIds,
+            sortBy: "timeToStation",
+          }),
+          isBus ? client.stopPoint.getDisruption({ stopPointIds }) : [],
+        ]);
+        return { predictions, stopDisruptions };
+      });
       if (cancelled || !result.ok) return;
-      setArrivals(result.data);
+      setArrivals(result.data.predictions);
+      setDisruptions(result.data.stopDisruptions);
       setArrivalsFetchedAt(Date.now());
     };
 
@@ -143,17 +158,23 @@ const PointInspectorLive = ({
     return () => {
       cancelled = true;
     };
-  }, [hydrated, ready, point.id, pollStopKey, isBike, runKeyed]);
+  }, [hydrated, ready, point.id, pollStopKey, isBike, isBus, runKeyed]);
 
   const handleRefreshArrivals = async () => {
-    const result = await runKeyed(async (client) =>
-      client.stopPoint.getArrivals({
-        stopPointIds: [...pollStopIds],
-        sortBy: "timeToStation",
-      }),
-    );
+    const stopPointIds = [...pollStopIds];
+    const result = await runKeyed(async (client) => {
+      const [predictions, stopDisruptions] = await Promise.all([
+        client.stopPoint.getArrivals({
+          stopPointIds,
+          sortBy: "timeToStation",
+        }),
+        isBus ? client.stopPoint.getDisruption({ stopPointIds }) : [],
+      ]);
+      return { predictions, stopDisruptions };
+    });
     if (result.ok) {
-      setArrivals(result.data);
+      setArrivals(result.data.predictions);
+      setDisruptions(result.data.stopDisruptions);
       setArrivalsFetchedAt(Date.now());
     }
   };
@@ -178,8 +199,8 @@ const PointInspectorLive = ({
       {point.smsCode ? (
         <CopyableField label="SMS code" value={point.smsCode} />
       ) : null}
-      {point.stopLetter ? (
-        <CopyableField label="Stop letter" value={point.stopLetter} />
+      {resolvedStopLetter ? (
+        <CopyableField label="Stop letter" value={resolvedStopLetter} />
       ) : null}
       {point.zone ? <CopyableField label="Zone" value={point.zone} /> : null}
       {point.modes?.length ? (
@@ -257,7 +278,6 @@ const PointInspectorLive = ({
     </p>
   );
 
-  const displayArrivals = arrivals ?? seedArrivals?.arrivals ?? null;
   const occupancyLive = dockFetchedAt !== null;
   const displayDock = liveDock ?? cycleDock ?? null;
 
@@ -270,12 +290,17 @@ const PointInspectorLive = ({
     </div>
   );
 
+  const busStopDisruptions = isBus
+    ? prepareBusStopDisruptions(disruptions, displayArrivals ?? [])
+    : [];
+
   const arrivalsBoard = displayArrivals ? (
     isBus ? (
       <BusArrivalsBoard
         data={displayArrivals}
+        disruptions={busStopDisruptions}
         stopName={point.name}
-        stopLetter={point.stopLetter}
+        stopLetter={resolvedStopLetter ?? undefined}
         headingLevel={2}
         maxRows={8}
       />
@@ -452,7 +477,7 @@ const PointInspectorLive = ({
                   zone: point.zone,
                   lat: point.lat,
                   lon: point.lon,
-                  stopLetter: point.stopLetter,
+                  stopLetter: resolvedStopLetter ?? point.stopLetter,
                   smsCode: point.smsCode,
                   towards: point.towards,
                   bikes: displayDock?.bikes ?? point.bikes,

@@ -476,6 +476,11 @@
           "target": "lib/tfl/status-reason.ts"
         },
         {
+          "path": "lib/tfl/status-board.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-board.ts"
+        },
+        {
           "path": "registry/tfl/arrivals/chip-text.ts",
           "type": "registry:lib",
           "target": "components/tfl/arrivals/chip-text.ts"
@@ -654,6 +659,11 @@
           "target": "components/tfl/arrivals/arrivals-bound-group.tsx"
         },
         {
+          "path": "registry/tfl/arrivals/chip-text.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/arrivals/chip-text.ts"
+        },
+        {
           "path": "lib/tfl/arrivals-prepare.ts",
           "type": "registry:lib",
           "target": "lib/tfl/arrivals-prepare.ts"
@@ -682,6 +692,26 @@
           "path": "lib/tfl/arrivals-empty.ts",
           "type": "registry:lib",
           "target": "lib/tfl/arrivals-empty.ts"
+        },
+        {
+          "path": "lib/tfl/bus-stop-letter.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/bus-stop-letter.ts"
+        },
+        {
+          "path": "registry/tfl/arrivals/stop-letter-badge.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/stop-letter-badge.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/bus-stop-disruptions.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/bus-stop-disruptions.tsx"
+        },
+        {
+          "path": "lib/tfl/bus-stop-disruptions.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/bus-stop-disruptions.ts"
         },
         {
           "path": "components/tfl/station-name.tsx",
@@ -779,6 +809,26 @@
           "target": "lib/tfl/arrivals-empty.ts"
         },
         {
+          "path": "lib/tfl/bus-stop-letter.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/bus-stop-letter.ts"
+        },
+        {
+          "path": "registry/tfl/arrivals/stop-letter-badge.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/stop-letter-badge.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/bus-stop-disruptions.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/bus-stop-disruptions.tsx"
+        },
+        {
+          "path": "lib/tfl/bus-stop-disruptions.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/bus-stop-disruptions.ts"
+        },
+        {
           "path": "components/tfl/station-name.tsx",
           "type": "registry:component",
           "target": "components/tfl/station-name.tsx"
@@ -866,6 +916,16 @@
           "path": "lib/tfl/arrivals-empty.ts",
           "type": "registry:lib",
           "target": "lib/tfl/arrivals-empty.ts"
+        },
+        {
+          "path": "lib/tfl/bus-stop-letter.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/bus-stop-letter.ts"
+        },
+        {
+          "path": "registry/tfl/arrivals/stop-letter-badge.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/stop-letter-badge.tsx"
         },
         {
           "path": "lib/tfl/client.ts",

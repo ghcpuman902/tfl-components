@@ -1,4 +1,5 @@
 import { StatusAnnouncementsExample } from "@/components/docs/demos/status-announcements-example"
+import { StatusWatchlistExample } from "@/components/docs/demos/status-watchlist-example"
 
 ## Get line status
 
@@ -37,9 +38,9 @@ export default function Page({ data, fetchedAt }) {
 }
 ```
 
-The live board has two sections: **Service Disruptions** then **Good Service**. Timetable-closed lines (Waterloo & City weekends, end of traffic day) stay in Disruptions, sorted last after incidents and planned engineering — not a separate group, and not under Good Service. Week ahead still highlights Waterloo & City on Saturday.
+The live board has two sections: **Service Disruptions** then **Good Service**. Timetable-closed lines (Waterloo & City weekends, end of traffic day) stay in Disruptions, sorted last after incidents and planned engineering — not a separate group, and not under Good Service. Week ahead still highlights Waterloo & City on Saturday. An empty Good Service group is omitted — a filtered fetch that returns only disrupted lines will not paint `Good Service (0 lines)`.
 
-Good Service titles auto-abbreviate at narrow grid widths (full → middle → 3-letter code) via [`Line title`](/docs/line-title). Tier data lives in `lib/tfl/line-names.ts`.
+Columns follow the board's own width, not the viewport: Disruptions stay 1 / 2 / 3 so the reason copy can breathe; Good Service is 2 / 3 / 5 because those rows are titles only. Good Service titles auto-abbreviate at narrow grid widths (full → middle → 3-letter code) via [`Line title`](/docs/line-title). Tier data lives in `lib/tfl/line-names.ts`. `compact` is the exception: one column, and the section title tiles stay off.
 
 ## Variations
 
@@ -61,6 +62,25 @@ export default async function Page() {
 ### Hide header
 
 Pass `hideHeader` when the parent already has a title.
+
+### One or two lines
+
+The board paints whatever you pass as `data`. Filter at the fetch — do not load the whole network and hide rows afterwards.
+
+`compact` is the watchlist layout: one column, no **Service Disruptions** / **Good Service** title tiles, no attribution footer. Pair it with `hideHeader` when the parent already names the lines.
+
+```tsx
+const { data, fetchedAt } = await getCachedLineStatuses([
+  "victoria",
+  "northern",
+])
+
+return <TubeStatusBoard data={data} now={fetchedAt} compact hideHeader />
+```
+
+Same call with `tfl.line.getStatus({ lineIds: ["victoria", "northern"] })` in the app layer. The board does not fetch.
+
+<StatusWatchlistExample />
 
 ## Announcements
 
@@ -100,7 +120,7 @@ Each step is opt-out:
 | `data` | `readonly StatusLine[]` | Rows from `tfl.line.getStatus()`. Missing or `undefined` renders empty. |
 | `now` | `number` | Clock for validity windows. Pass cache `fetchedAt`. |
 | `hideHeader` | `boolean` | Omit the board header. |
-| `compact` | `boolean` | One column — for a narrow side slot. |
+| `compact` | `boolean` | Watchlist: one column, no section title tiles, no footer. Pass only the lines you want. |
 | `currentOnly` | `boolean` | Keep operative announcements, not `isNow` (default `true`). |
 | `dedupe` | `boolean` | Collapse equal or contained paragraphs (default `true`). |
 | `rawReason` | `boolean` | Keep TfL's unstripped `reason` string (default `false`). |

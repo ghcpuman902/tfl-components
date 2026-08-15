@@ -3,6 +3,7 @@ import {
   BusRouteColumnsDemo,
   BusFlatDemo,
 } from "@/components/docs/demos/arrivals-layout-demos"
+import { BusArrivalsDisruptionDemo } from "@/components/docs/demos/bus-arrivals-disruption-demo"
 
 ## Get predictions
 
@@ -57,6 +58,37 @@ Pass `groupBy="route"` when you want route sections. The homepage proof board do
   groupBy="route"
 />
 ```
+
+## Disruptions
+
+`getArrivals` alone can't tell you a stop is in trouble — the raw prediction has no disruption field at all, and a fully-diverted route just vanishes from the list with no explanation. That signal lives in a separate call, `stopPoint.getDisruption`:
+
+```ts
+const disruptedPoints = await tfl.stopPoint.getDisruption({
+  stopPointIds: [stopId],
+})
+```
+
+Pass the result and your `data` through `prepareBusStopDisruptions` to get per-route warnings:
+
+```tsx
+import { prepareBusStopDisruptions } from "@/lib/tfl/bus-stop-disruptions"
+
+<BusArrivalsBoard
+  data={data}
+  disruptions={prepareBusStopDisruptions(disruptedPoints, data)}
+  stopName={stop.commonName}
+  stopLetter={stop.stopLetter}
+/>
+```
+
+The gotcha: checked against live TfL data, `concernedLines` is almost never populated for bus closures — the affected route, when named at all, is buried in the free-text `description` ("Route 164 is on diversion…"). `prepareBusStopDisruptions` parses that, and falls back to fanning a route-less "Bus Stop Closed" message out to every route currently in `data` — the whole physical stop is affected, not one route more than another.
+
+The board paints one warning chip per disrupted route, inline after the stop name. Hover (desktop) or tap (touch) a chip to cover the rows below with that route's description; other chips dim while one is open.
+
+<BusArrivalsDisruptionDemo />
+
+Below, Capworth Street's stop-point disruption is a route-less "Bus Stop Closed" — so both 58 and 158 get the warning, even though TfL is still happily predicting arrivals for either one.
 
 ## Arrangements
 
@@ -121,6 +153,7 @@ Keep polling outside the board, then update `data`. Optional `statusLabel` shows
 | Prop | Type | Description |
 |------|------|-------------|
 | `data` | `readonly RealtimePrediction[]` | Normalised arrivals from `tfl-ts`. Missing or `undefined` renders empty. |
+| `disruptions` | `readonly BusStopDisruption[]` | Per-route warnings from `prepareBusStopDisruptions`. Renders a warning chip per route; hover/tap covers the rows with the description. |
 | `groupBy` | `"none" \| "route"` | Flat list, default, or route sections. |
 | `sortBy` | `"timeToStation" \| "source"` | Arrival order. |
 | `groupSortBy` | `"route" \| "source"` | Route-group order when grouped. |

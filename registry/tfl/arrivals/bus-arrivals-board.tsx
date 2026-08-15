@@ -7,6 +7,7 @@ import {
   type ArrivalsBoardChromeProps,
   type ArrivalsBoardClassNames,
 } from "@/components/tfl/arrivals/arrivals-board-view"
+import type { BusStopDisruption } from "@/components/tfl/arrivals/bus-stop-disruptions"
 import {
   prepareBusArrivals,
   type BusArrivalsGroupBy,
@@ -20,6 +21,12 @@ export type BusArrivalsBoardProps = ArrivalsBoardChromeProps & {
    * Missing/`undefined` treated as an empty list. The board sorts this itself.
    */
   data?: readonly RealtimePrediction[]
+  /**
+   * Per-route disruption warnings for this stop. Build with
+   * `prepareBusStopDisruptions` from `stopPoint.getDisruption` output —
+   * fetching stays in your app/demo, same as `data`.
+   */
+  disruptions?: readonly BusStopDisruption[]
   /**
    * `none` (default) is one flat list in arrival-time order, route chip on
    * every row. `route` groups by route with natural numeric headers.
@@ -78,6 +85,7 @@ export const BusArrivalsBoardSkeleton = ({
  */
 export const BusArrivalsBoard = ({
   data,
+  disruptions,
   groupBy = "none",
   sortBy = "timeToStation",
   groupSortBy = "route",
@@ -116,6 +124,7 @@ export const BusArrivalsBoard = ({
       mode="bus"
       prepared={prepared}
       resolvedStopLetter={resolvedStopLetter}
+      disruptions={disruptions}
       stopLetter={stopLetter}
       loading={loading}
       error={error}
@@ -129,6 +138,8 @@ export const BusArrivalsBoard = ({
 }
 
 export type { ArrivalsBoardClassNames }
+export type { BusStopDisruption }
+export { prepareBusStopDisruptions } from "@/lib/tfl/bus-stop-disruptions"
 export type {
   BusArrivalsGroupBy,
   BusArrivalsGroupSortBy,

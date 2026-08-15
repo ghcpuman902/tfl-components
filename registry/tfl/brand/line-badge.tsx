@@ -132,6 +132,7 @@ export type LineBadgeGroupStripes = "auto" | "under";
 /**
  * `label` (default) — TfL blue plate over the colour stack.
  * `codes` — same-height stripe stack; 3-letter abbrs take turns (CSS).
+ * Fixed `5ch` so it aligns with `BusNumberChip` and single-line code chips.
  */
 export type LineBadgeGroupVariant = "label" | "codes";
 
@@ -143,7 +144,8 @@ export type LineBadgeGroupProps = {
   className?: string;
   /**
    * `label` (default) — blue plate + shared name.
-   * `codes` — stripe stack at chip height; one 3-letter abbr at a time.
+   * `codes` — stripe stack at chip height; one 3-letter abbr at a time
+   * in a fixed `5ch` box.
    */
   variant?: LineBadgeGroupVariant;
   /**
@@ -212,7 +214,7 @@ export const LineBadgeGroup = ({
     return (
       <span
         className={cn(
-          "tfl-line-codes relative inline-flex h-5 shrink-0 items-center overflow-hidden text-xs font-bold tabular-nums",
+          "tfl-line-codes relative inline-flex h-5 w-[5ch] shrink-0 items-center justify-center overflow-hidden text-xs font-bold tabular-nums",
           className,
         )}
         style={{ "--codes-count": codeCount } as CSSProperties}
@@ -230,7 +232,7 @@ export const LineBadgeGroup = ({
           ))}
         </span>
         <span
-          className="relative z-10 grid px-1.5 leading-5 text-white"
+          className="relative z-10 grid w-full justify-items-center leading-5 text-white"
           aria-hidden
         >
           {shorts.map((code, index) => (

@@ -209,13 +209,12 @@ export const BoardDisplay = ({
         <section className="min-w-0 md:col-span-1" aria-label="Line status">
           {!ready ||
           (status.loading && status.data.length === 0 && !status.error) ? (
-            <TubeStatusBoardSkeleton compact />
+            <TubeStatusBoardSkeleton />
           ) : (
             <TubeStatusBoard
               data={status.data}
               now={status.fetchedAt ?? undefined}
               hideHeader
-              compact
             />
           )}
           {status.error ? (

@@ -2,6 +2,9 @@ import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
 import { DataSourceLabel } from "@/components/docs/data-source-label"
 import {
+  LIVERPOOL_STREET_ARRIVALS,
+  LIVERPOOL_STREET_LINE_GROUPS,
+  LIVERPOOL_STREET_LINES,
   OXFORD_CIRCUS_ARRIVALS,
   OXFORD_CIRCUS_LINES,
   TRAFALGAR_SQUARE_ARRIVALS,
@@ -20,19 +23,25 @@ const DemoFigure = ({ children }: { children: React.ReactNode }) => (
   </div>
 )
 
-/** 1. Default: every line and bound in one vertical stack. */
-export const RailVerticalDemo = () => (
+/** Shared-track merge: Circle / H&C / Met at Liverpool Street. */
+export const RailSharedTrackGroupDemo = () => (
   <DemoFigure>
     <RailArrivalsBoard
-      data={OXFORD_CIRCUS_ARRIVALS}
-      lines={OXFORD_CIRCUS_LINES}
-      stopName="Oxford Circus"
+      data={LIVERPOOL_STREET_ARRIVALS}
+      lines={LIVERPOOL_STREET_LINES}
+      lineGroups={LIVERPOOL_STREET_LINE_GROUPS}
+      pageSizeByLine={{
+        circle: 6,
+        "hammersmith-city": 6,
+        metropolitan: 6,
+      }}
+      stopName="Liverpool Street"
       headingLevel={2}
     />
   </DemoFigure>
 )
 
-/** 2. Line sections side by side once the board is wide enough. */
+/** Line sections side by side once the board is wide enough. */
 export const RailLineColumnsDemo = () => (
   <DemoFigure>
     <RailArrivalsBoard

@@ -51,6 +51,18 @@ describe("normaliseStopPoint", () => {
     });
   });
 
+  it("reads towards from a search hit and drops arrow letters", () => {
+    const point = normaliseStopPoint({
+      id: "490012020A",
+      commonName: "St George's Town Hall / Shadwell Stn",
+      stopLetter: "->W",
+      towards: "Wapping",
+      modes: ["bus"],
+    });
+    assert.equal(point?.towards, "Wapping");
+    assert.equal(point?.stopLetter, undefined);
+  });
+
   it("returns null without id", () => {
     assert.equal(normaliseStopPoint({ commonName: "Nowhere" }), null);
   });

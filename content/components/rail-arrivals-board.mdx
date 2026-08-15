@@ -1,5 +1,5 @@
 import {
-  RailVerticalDemo,
+  RailSharedTrackGroupDemo,
   RailLineColumnsDemo,
   RailBoundColumnsDemo,
   RailLineAndBoundColumnsDemo,
@@ -76,9 +76,7 @@ export default function Page({ data }) {
 
 ## Line, then bound
 
-Groups by line, then by compass bound from `platformName`. On a vertical board, West sits above East and North above South. Bound labels match the line-name size. When direction and platform are 1:1, the heading is `Eastbound · Platform 1` and the row does not repeat a platform chip. When a line has no compass prefix, as on Elizabeth line and Overground, the board groups by platform and spells the heading out (`Platform A`). Destinations use [`StationName`](/docs/station-name-labels). Hairlines inside a line group share one weight, including under bound titles. Literal `Platform Unknown` becomes a **Platform to be confirmed** subgroup — it is not a blank heading and not a chip.
-
-Pass `lineGroups` to merge lines that share platforms (for example Circle, Hammersmith & City, and Metropolitan at Liverpool Street). The section header uses the Line title **Shared-track group** treatment: foreground `LineName` plus a segmented brand bar, not a single line colour. Mixed-line rows lead with a line chip — a single `LineBadge` when the train has one identity, or `LineBadgeGroup variant="codes"` when TfL lists it on two or three lines. The component does not infer merges from co-occurring line ids. This site’s Board derives the table from shared-track topology (Baker Street excludes Metropolitan); a library install passes `lineGroups` from the app.
+Groups by line, then by compass bound from `platformName`. Default order is West above East and North above South — the live preview at the top of this page. Bound labels match the line-name size. When direction and platform are 1:1, the heading is `Eastbound · Platform 1` and the row does not repeat a platform chip. When a line has no compass prefix, as on Elizabeth line and Overground, the board groups by platform and spells the heading out (`Platform A`). Destinations use [`StationName`](/docs/station-name-labels). Hairlines inside a line group share one weight, including under bound titles. Literal `Platform Unknown` becomes a **Platform to be confirmed** subgroup — it is not a blank heading and not a chip.
 
 Line sections stay in canonical `LINE_ORDER`. Empty expected lines keep that slot. Pass optional `lines` for the stop's serving set so a line with no predictions still renders a muted **No information** row. When `lines[].bounds` lists the compass sides that station actually serves, those bound groups still render even if the current poll has no trains that way. Otherwise a missing side is omitted.
 
@@ -88,9 +86,35 @@ Pass `lineOrder` to pin section order by line id. Listed lines rank by list posi
 
 A completely flat rail board is a different product. It would need a compressed row that still shows line, bound, platform, destination, and countdown, not a layout switch on this component.
 
+## Shared-track groups
+
+Pass `lineGroups` to merge lines that share platforms. Liverpool Street is the usual example: Circle, Hammersmith & City, and Metropolitan become one section. Central stays its own section — those platforms are separate, so those rows have no line chip.
+
+The merged header uses the Line title **Shared-track group** treatment: foreground `LineName` plus a segmented brand bar, not a single line colour. Mixed-line rows lead with a line chip — a single `LineBadge` when the train has one identity, or `LineBadgeGroup variant="codes"` when TfL lists it on two or three lines. Both chips use a fixed `5ch` box, same as the bus route chip, so CIR, H&C, MET, and the stacked codes chip line up. The component does not infer merges from co-occurring line ids. This site’s Board derives the table from shared-track topology (Baker Street excludes Metropolitan); a library install passes `lineGroups` from the app.
+
+<RailSharedTrackGroupDemo />
+
+```tsx
+<RailArrivalsBoard
+  data={data}
+  stopName="Liverpool Street"
+  lines={lines}
+  lineGroups={[
+    { lines: ["circle", "hammersmith-city", "metropolitan"] },
+  ]}
+  pageSizeByLine={{
+    circle: 6,
+    "hammersmith-city": 6,
+    metropolitan: 6,
+  }}
+/>
+```
+
+Merged sections default to twice the usual `pageSize` (3 → 6) so the first page is not three trains to the same destination. Tag arrivals with tfl-ts `withSharedTrackIdentity` in the app if you want remapped or stacked-code rows.
+
 ## Arrangements
 
-The default board is one vertical stack at every width. Arrangement is CSS. The board root is a container named `arrivals`, and each line section is a container named `arrivals-group`. Pass `className` for the root and `classNames` for the generated levels. No JavaScript layout config, no resize listeners, no extra wrappers.
+The default is one vertical stack at every width — the live preview at the top of this page. Arrangement is CSS. The board root is a container named `arrivals`, and each line section is a container named `arrivals-group`. Pass `className` for the root and `classNames` for the generated levels. No JavaScript layout config, no resize listeners, no extra wrappers.
 
 | `classNames` key | `data-slot` | Level |
 |-----|-----|-----|
@@ -103,14 +127,6 @@ The default board is one vertical stack at every width. Arrangement is CSS. The 
 | | `arrivals-row` | Each arrival or empty-state row tile |
 
 Bound columns must respond to their own line section, so query `/arrivals-group` on `subgroups`, not `/arrivals`. A wide board of narrow line columns keeps bounds stacked. Below your breakpoints every arrangement returns to the single-column stack. The fixed tile rhythm is unchanged.
-
-### Vertical
-
-<RailVerticalDemo />
-
-```tsx
-<RailArrivalsBoard data={data} stopName="Oxford Circus" lines={lines} />
-```
 
 ### Line columns
 

@@ -20,6 +20,7 @@ import {
 } from "@/lib/tfl/bus-stop-shape";
 import type { ExplorerView } from "@/lib/tfl/explorer-url-state";
 import { truncateLatLon } from "@/lib/tfl/geo";
+import type TflClient from "tfl-ts";
 
 type BusPointFinderProps = {
   selectedId?: string | null;
@@ -51,6 +52,38 @@ const toExplorerPoint = (
   };
 };
 
+const enrichBoardableStops = async (
+  client: TflClient,
+  stops: ExplorerPoint[],
+): Promise<ExplorerPoint[]> => {
+  if (stops.length === 0) return stops;
+  try {
+    const details = await client.stopPoint.get(stops.map((stop) => stop.id));
+    const list = Array.isArray(details) ? details : [details];
+    const byId = new Map(
+      list
+        .map((detail) => toExplorerPoint(mapStopPoint(detail)))
+        .filter((point): point is ExplorerPoint => point !== null)
+        .map((point) => [point.id, point] as const),
+    );
+    return stops.map((stop) => {
+      const detail = byId.get(stop.id);
+      if (!detail) return stop;
+      return {
+        ...stop,
+        stopLetter: stop.stopLetter ?? detail.stopLetter,
+        towards: stop.towards ?? detail.towards,
+        lineIds: stop.lineIds?.length ? stop.lineIds : detail.lineIds,
+        smsCode: stop.smsCode ?? detail.smsCode,
+        lat: stop.lat ?? detail.lat,
+        lon: stop.lon ?? detail.lon,
+      };
+    });
+  } catch {
+    return stops;
+  }
+};
+
 export const BusPointFinder = ({
   selectedId,
   onSelect,
@@ -61,8 +94,14 @@ export const BusPointFinder = ({
   emptyMessage = "Select a cached stop, or Search / Locate with your TfL API key.",
 }: BusPointFinderProps) => {
   const { loading, error, setError, runKeyed } = useExplorerKeyedQuery();
-  const [points, setPoints] = useState<ExplorerPoint[]>(() => [...initialPoints]);
+  const [livePoints, setLivePoints] = useState<ExplorerPoint[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
+
+  const points = livePoints ?? initialPoints;
+
+  const handleSearchValueChange = (next: string) => {
+    setQuery(next);
+  };
 
   const handleSearchSubmit = async (nextQuery: string) => {
     const trimmed = nextQuery.trim();
@@ -104,6 +143,7 @@ export const BusPointFinder = ({
               id: match.id,
               commonName: match.name ?? match.stationName,
               indicator: match.platformName,
+              towards: match.towards,
               lines: match.lines,
               lat: match.lat,
               lon: match.lon,
@@ -112,7 +152,9 @@ export const BusPointFinder = ({
         )
         .filter((point): point is ExplorerPoint => point !== null);
 
-      if (boardable.length > 0) return boardable.slice(0, 12);
+      if (boardable.length > 0) {
+        return enrichBoardableStops(client, boardable.slice(0, 12));
+      }
 
       const expandable = matches.find(
         (match) =>
@@ -135,7 +177,7 @@ export const BusPointFinder = ({
     });
 
     if (result.ok) {
-      setPoints(result.data);
+      setLivePoints(result.data);
       if (result.data[0]) onSelect(result.data[0]);
       else if (result.data.length === 0) {
         setError("No bus stops matched that search.");
@@ -161,7 +203,7 @@ export const BusPointFinder = ({
       });
 
       if (result.ok) {
-        setPoints(result.data);
+        setLivePoints(result.data);
         if (result.data[0]) onSelect(result.data[0]);
       }
     } catch (err) {
@@ -183,7 +225,8 @@ export const BusPointFinder = ({
       onViewChange={onViewChange}
       searchPlaceholder="Search bus stops or SMS code"
       searchValue={query}
-      onSearchValueChange={setQuery}
+      onSearchValueChange={handleSearchValueChange}
+      showDistance={false}
       renderMap={(props) => <ExplorerPointMapLazy {...props} />}
     />
   );

@@ -3,6 +3,9 @@
  * Domain-specific optional fields are explicit — no `any`.
  */
 
+import { readStopLetter as readPaintedStopLetter } from "@/lib/tfl/bus-stop-letter";
+import { usableTflText } from "@/lib/tfl/bus-stop-letter";
+
 export type ExplorerPointKind = "stopPoint" | "bikePoint";
 
 export type ExplorerHubMember = {
@@ -52,6 +55,7 @@ type StopLike = {
   stopLetter?: string;
   indicator?: string;
   platformName?: string;
+  towards?: string;
   distance?: number;
   additionalProperties?: Array<{ key?: string; value?: string }>;
 };
@@ -66,17 +70,8 @@ const readProp = (
   return value?.trim() || undefined;
 };
 
-const readStopLetter = (stop: StopLike): string | undefined => {
-  const fromLetter = stop.stopLetter?.trim();
-  if (fromLetter) return fromLetter.slice(0, 2).toUpperCase();
-  const fromIndicator = (stop.indicator ?? stop.platformName)
-    ?.replace(/^stop\s+/i, "")
-    .trim();
-  if (fromIndicator && fromIndicator.length <= 2) {
-    return fromIndicator.toUpperCase();
-  }
-  return undefined;
-};
+const readStopLetter = (stop: StopLike): string | undefined =>
+  readPaintedStopLetter(stop.stopLetter, stop.indicator ?? stop.platformName);
 
 /** Normalise a StopPoint / search match into ExplorerPoint. */
 export const normaliseStopPoint = (stop: StopLike): ExplorerPoint | null => {
@@ -100,7 +95,9 @@ export const normaliseStopPoint = (stop: StopLike): ExplorerPoint | null => {
     lineIds,
     stopLetter: readStopLetter(stop),
     smsCode: readProp(stop.additionalProperties, "SmsCode"),
-    towards: readProp(stop.additionalProperties, "Towards"),
+    towards:
+      usableTflText(stop.towards) ||
+      usableTflText(readProp(stop.additionalProperties, "Towards")),
     distanceMeters: typeof stop.distance === "number" ? stop.distance : undefined,
   };
 };

@@ -3,7 +3,10 @@
  * Plain module (not `"use server"`).
  */
 
+import { readStopLetter, usableTflText } from "@/lib/tfl/bus-stop-letter";
+
 export type AdditionalProperty = { key?: string; value?: string };
+export { readStopLetter } from "@/lib/tfl/bus-stop-letter";
 
 export type NearbyBusStop = {
   id: string;
@@ -24,20 +27,7 @@ export const readTowards = (
   const value = properties?.find(
     (prop) => prop.key?.toLowerCase() === "towards",
   )?.value;
-  return value?.trim() || undefined;
-};
-
-export const readStopLetter = (
-  stopLetter?: string,
-  indicator?: string,
-): string | undefined => {
-  const fromLetter = stopLetter?.trim();
-  if (fromLetter) return fromLetter.slice(0, 2).toUpperCase();
-  const fromIndicator = indicator?.replace(/^stop\s+/i, "").trim();
-  if (fromIndicator && fromIndicator.length <= 2) {
-    return fromIndicator.toUpperCase();
-  }
-  return undefined;
+  return usableTflText(value);
 };
 
 export const readSmsCode = (
@@ -63,6 +53,7 @@ export const mapStopPoint = (stop: {
   name?: string;
   indicator?: string;
   stopLetter?: string;
+  towards?: string;
   distance?: number;
   lat?: number;
   lon?: number;
@@ -76,7 +67,7 @@ export const mapStopPoint = (stop: {
     name: (stop.commonName ?? stop.name)?.trim() || "Unknown stop",
     indicator: stop.indicator,
     stopLetter: readStopLetter(stop.stopLetter, stop.indicator),
-    towards: readTowards(stop.additionalProperties),
+    towards: usableTflText(stop.towards) || readTowards(stop.additionalProperties),
     distance: stop.distance,
     lines: stop.lines
       ?.map((line) => line.name ?? line.id)
