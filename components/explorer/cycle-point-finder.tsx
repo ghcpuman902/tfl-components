@@ -12,7 +12,7 @@ import {
   type ExplorerPoint,
 } from "@/lib/tfl/explorer-point-normalise";
 import type { ExplorerView } from "@/lib/tfl/explorer-url-state";
-import { truncateLatLon } from "@/lib/tfl/geo";
+import { MAP_SEARCH_RADIUS_METERS, truncateLatLon } from "@/lib/tfl/geo";
 
 type CyclePointFinderProps = {
   selectedId?: string | null;
@@ -37,6 +37,11 @@ export const CyclePointFinder = ({
   const { loading, error, setError, runKeyed } = useExplorerKeyedQuery();
   const [points, setPoints] = useState<ExplorerPoint[]>(() => [...initialPoints]);
   const [query, setQuery] = useState(initialQuery);
+  const [fitSearchKey, setFitSearchKey] = useState(0);
+  const [searchOrigin, setSearchOrigin] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
 
   const handleSearchSubmit = async (nextQuery: string) => {
     const trimmed = nextQuery.trim();
@@ -67,7 +72,7 @@ export const CyclePointFinder = ({
         const nearby = await client.bikePoint.getByRadius({
           lat,
           lon,
-          radius: 500,
+          radius: MAP_SEARCH_RADIUS_METERS,
         });
         return nearby.places
           .map((dock) => normaliseBikePoint(dock))
@@ -82,6 +87,28 @@ export const CyclePointFinder = ({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not read location.");
     }
+  };
+
+  const handleSearchHere = async (center: { lat: number; lon: number }) => {
+    const { lat, lon } = truncateLatLon(center.lat, center.lon);
+    const result = await runKeyed(async (client) => {
+      const nearby = await client.bikePoint.getByRadius({
+        lat,
+        lon,
+        radius: MAP_SEARCH_RADIUS_METERS,
+      });
+      return nearby.places
+        .map((dock) => normaliseBikePoint(dock))
+        .filter((point): point is ExplorerPoint => point !== null)
+        .slice(0, 25);
+    });
+
+    if (!result.ok) return;
+    setPoints(result.data);
+    setSearchOrigin({ lat, lon });
+    setFitSearchKey((key) => key + 1);
+    if (result.data[0]) onSelect(result.data[0]);
+    else setError("No docks in this area.");
   };
 
   return (
@@ -99,7 +126,16 @@ export const CyclePointFinder = ({
       searchPlaceholder="Search cycle hire docks"
       searchValue={query}
       onSearchValueChange={setQuery}
-      renderMap={(props) => <ExplorerPointMapLazy {...props} />}
+      renderMap={(props) => (
+        <ExplorerPointMapLazy
+          {...props}
+          onSearchHere={handleSearchHere}
+          searchRadiusMeters={MAP_SEARCH_RADIUS_METERS}
+          searchHereLoading={loading}
+          fitSearchKey={fitSearchKey}
+          searchOrigin={searchOrigin}
+        />
+      )}
     />
   );
 };

@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  compassPointToDegrees,
   isBoardableBusStopId,
   isBusStop,
   mapStopPoint,
   mapStopsFromGeoResponse,
+  readBearingDegrees,
   readSmsCode,
   readStopLetter,
   readTowards,
@@ -38,6 +40,37 @@ describe("readTowards", () => {
 
   it("drops a literal null towards", () => {
     assert.equal(readTowards([{ key: "Towards", value: "null" }]), undefined);
+  });
+});
+
+describe("compassPointToDegrees", () => {
+  it("maps compass points and arrows", () => {
+    assert.equal(compassPointToDegrees("N"), 0);
+    assert.equal(compassPointToDegrees("NE"), 45);
+    assert.equal(compassPointToDegrees("->W"), 270);
+    assert.equal(compassPointToDegrees("90"), 90);
+  });
+
+  it("ignores painted stop letters", () => {
+    assert.equal(compassPointToDegrees("Stop G"), undefined);
+    assert.equal(compassPointToDegrees("RG"), undefined);
+  });
+});
+
+describe("readBearingDegrees", () => {
+  it("prefers CompassPoint over an arrow indicator", () => {
+    assert.equal(
+      readBearingDegrees(
+        [{ key: "CompassPoint", value: "S" }],
+        "->W",
+        "->W",
+      ),
+      180,
+    );
+  });
+
+  it("falls back to a compass indicator", () => {
+    assert.equal(readBearingDegrees(undefined, "->E"), 90);
   });
 });
 
@@ -79,6 +112,7 @@ describe("mapStopPoint", () => {
       additionalProperties: [
         { key: "Towards", value: "Marble Arch" },
         { key: "SmsCode", value: "53240" },
+        { key: "CompassPoint", value: "NE" },
       ],
     });
     assert.deepEqual(mapped, {
@@ -92,6 +126,7 @@ describe("mapStopPoint", () => {
       lat: 51.508,
       lon: -0.128,
       smsCode: "53240",
+      bearingDegrees: 45,
     });
   });
 
@@ -102,6 +137,17 @@ describe("mapStopPoint", () => {
       towards: "Limehouse",
     });
     assert.equal(mapped?.towards, "Limehouse");
+  });
+
+  it("reads bearing from a compass indicator when there is no letter", () => {
+    const mapped = mapStopPoint({
+      id: "490012020A",
+      commonName: "The Highway",
+      stopLetter: "->W",
+      indicator: "->W",
+    });
+    assert.equal(mapped?.stopLetter, undefined);
+    assert.equal(mapped?.bearingDegrees, 270);
   });
 
   it("returns null without id", () => {

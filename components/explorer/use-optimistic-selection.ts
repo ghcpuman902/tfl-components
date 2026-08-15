@@ -9,7 +9,11 @@ import {
 } from "@/lib/tfl/explorer-url-state";
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise";
 import type { ExplorerLineSummary } from "@/lib/tfl/explorer/common";
-import { firstOrMatching, pointMatchesId } from "@/lib/tfl/explorer/selection";
+import {
+  explorerIdsEqual,
+  firstOrMatching,
+  pointMatchesId,
+} from "@/lib/tfl/explorer/selection";
 
 /**
  * Instant line identity from the cached directory; URL/RSC catch up behind.
@@ -26,7 +30,11 @@ export const useOptimisticLine = (
   );
 
   const urlId = state.id ?? lines[0]?.id;
-  if (optimisticId !== null && optimisticId === urlId) {
+  if (
+    optimisticId !== null &&
+    urlId != null &&
+    explorerIdsEqual(optimisticId, urlId)
+  ) {
     setOptimisticId(null);
   }
   if (optimisticDir !== null && optimisticDir === state.dir) {
@@ -38,7 +46,8 @@ export const useOptimisticLine = (
   const selectedLine = firstOrMatching(lines, selectedId) ?? null;
   const detailsPending =
     selectedLine != null &&
-    (selectedLine.id !== urlId || direction !== state.dir);
+    ((urlId != null && !explorerIdsEqual(selectedLine.id, urlId)) ||
+      direction !== state.dir);
 
   const handleSelectLine = (lineId: string) => {
     setOptimisticId(lineId);

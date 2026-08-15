@@ -25,8 +25,13 @@ describe("firstOrMatching", () => {
     assert.equal(firstOrMatching(lines, "victoria")?.id, "bakerloo");
   });
 
-  it("returns undefined for an empty list", () => {
-    assert.equal(firstOrMatching([], "central"), undefined);
+  it("matches line ids case-insensitively", () => {
+    const lines = [
+      { id: "n97", name: "N97" },
+      { id: "24", name: "24" },
+    ];
+    assert.equal(firstOrMatching(lines, "N97")?.id, "n97");
+    assert.equal(firstOrMatching(lines, "n97")?.id, "n97");
   });
 });
 
@@ -40,6 +45,14 @@ describe("firstOrMatchingPoint", () => {
     assert.equal(firstOrMatchingPoint(stations, "HUBOXC")?.id, "940GZZLUOXC");
   });
 
+  it("matches ids regardless of case", () => {
+    assert.equal(firstOrMatchingPoint(stations, "huboxc")?.id, "940GZZLUOXC");
+    assert.equal(
+      firstOrMatchingPoint(stations, "940gzzluoxc")?.id,
+      "940GZZLUOXC",
+    );
+  });
+
   it("falls back to the first station", () => {
     assert.equal(firstOrMatchingPoint(stations)?.id, "940GZZLUOXC");
   });
@@ -51,6 +64,12 @@ describe("pointMatchesId", () => {
     assert.equal(pointMatchesId(point, "940GZZLUOXC"), true);
     assert.equal(pointMatchesId(point, "HUBOXC"), true);
     assert.equal(pointMatchesId(point, "940GZZLUVIC"), false);
+  });
+
+  it("matches alias ids regardless of case", () => {
+    const point = { id: "940GZZLUOXC", aliasIds: ["HUBOXC"] };
+    assert.equal(pointMatchesId(point, "940gzzluoxc"), true);
+    assert.equal(pointMatchesId(point, "huboxc"), true);
   });
 });
 

@@ -1,6 +1,13 @@
 "use client";
 
-import { useId, useMemo, useState, type FormEvent } from "react";
+import {
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { Filter } from "lucide-react";
 import { LineInspector } from "@/components/explorer/entity-inspector/line-inspector";
 import {
@@ -29,6 +36,24 @@ type LinesBusPanelProps = {
   detailsPromise?: Promise<ExplorerLineDetailsPayload> | null;
 };
 
+/** Scroll only the results pane — never the page — when the selected chip is off-screen. */
+const scrollSelectedChipIntoPane = (
+  container: HTMLElement,
+  chip: HTMLElement,
+) => {
+  if (container.clientHeight === 0) return;
+
+  const chipRect = chip.getBoundingClientRect();
+  const paneRect = container.getBoundingClientRect();
+  const fullyVisible =
+    chipRect.top >= paneRect.top && chipRect.bottom <= paneRect.bottom;
+  if (fullyVisible) return;
+
+  const offset = chipRect.top - paneRect.top + container.scrollTop;
+  const top = offset - (container.clientHeight - chip.offsetHeight) / 2;
+  container.scrollTo({ top: Math.max(0, top) });
+};
+
 const filterBusLines = (
   lines: readonly ExplorerLineSummary[],
   query: string,
@@ -49,6 +74,8 @@ export const LinesBusPanel = ({
   detailsPromise,
 }: LinesBusPanelProps) => {
   const listId = useId();
+  const listPaneRef = useRef<HTMLDivElement>(null);
+  const selectedChipRef = useRef<HTMLButtonElement>(null);
   const [query, setQuery] = useState(state.q ?? "");
   const {
     selectedLine,
@@ -61,6 +88,20 @@ export const LinesBusPanel = ({
     () => filterBusLines(lines, query),
     [lines, query],
   );
+
+  useLayoutEffect(() => {
+    const pane = listPaneRef.current;
+    const chip = selectedChipRef.current;
+    if (!pane || !chip) return;
+
+    scrollSelectedChipIntoPane(pane, chip);
+    if (pane.clientHeight > 0) return;
+
+    const frame = requestAnimationFrame(() => {
+      scrollSelectedChipIntoPane(pane, chip);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selectedLine?.id]);
 
   const handleFilterSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -108,6 +149,7 @@ export const LinesBusPanel = ({
             </div>
           ) : (
             <div
+              ref={listPaneRef}
               className={cn(
                 explorerPaneClassName,
                 explorerResultsPaneClassName,
@@ -124,6 +166,7 @@ export const LinesBusPanel = ({
                   return (
                     <li key={line.id}>
                       <button
+                        ref={selected ? selectedChipRef : undefined}
                         type="button"
                         aria-pressed={selected}
                         aria-label={`Route ${line.name}`}

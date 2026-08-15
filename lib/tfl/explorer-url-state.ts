@@ -79,6 +79,18 @@ const parseOptionalString = (raw: string | undefined): string | undefined => {
   return trimmed ? trimmed : undefined;
 };
 
+/**
+ * Line ids are lowercase in the TfL directory (`n97`, not `N97`).
+ * Point ids (NaPTAN, BikePoint) keep their original case.
+ */
+const canonicalExplorerId = (
+  kind: ExplorerKind,
+  id: string | undefined,
+): string | undefined => {
+  if (!id) return undefined;
+  return kind === "lines" ? id.toLowerCase() : id;
+};
+
 export type ExplorerSearchParams = Record<
   string,
   string | string[] | undefined
@@ -99,7 +111,7 @@ export const parseExplorerState = (
   const domain = parseDomain(kind, get("domain"));
   const view = parseView(get("view"));
   const dir = parseDir(get("dir"));
-  const id = parseOptionalString(get("id"));
+  const id = canonicalExplorerId(kind, parseOptionalString(get("id")));
   const q = parseOptionalString(get("q"));
 
   return { kind, domain, view, dir, id, q };
@@ -137,8 +149,9 @@ export const buildExplorerHref = (
   if (merged.dir !== DEFAULT_EXPLORER_STATE.dir) {
     params.set("dir", merged.dir);
   }
-  if (merged.id) {
-    params.set("id", merged.id);
+  const id = canonicalExplorerId(merged.kind, merged.id);
+  if (id) {
+    params.set("id", id);
   }
   if (merged.q) {
     params.set("q", merged.q);

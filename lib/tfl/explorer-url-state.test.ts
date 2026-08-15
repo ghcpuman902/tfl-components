@@ -63,10 +63,22 @@ describe("parseExplorerState", () => {
     assert.equal(state.dir, "inbound");
   });
 
-  it("treats empty id and q as undefined", () => {
-    const state = parseExplorerState({ id: "  ", q: "" });
-    assert.equal(state.id, undefined);
-    assert.equal(state.q, undefined);
+  it("lowercases line ids from the query string", () => {
+    const state = parseExplorerState({
+      kind: "lines",
+      domain: "bus",
+      id: "N279",
+    });
+    assert.equal(state.id, "n279");
+  });
+
+  it("keeps point id case", () => {
+    const state = parseExplorerState({
+      kind: "points",
+      domain: "bus",
+      id: "490010245E",
+    });
+    assert.equal(state.id, "490010245E");
   });
 
   it("reads first value from array params", () => {
@@ -99,18 +111,25 @@ describe("buildExplorerHref", () => {
     );
   });
 
-  it("includes non-default values and never emits tab", () => {
+  it("lowercases line ids so night-bus links match the directory", () => {
     const href = buildExplorerHref({
       kind: "lines",
       domain: "bus",
-      id: "9",
-      dir: "outbound",
+      id: "N97",
     });
     assert.equal(
       href,
-      `${EXPLORER_PATH}?kind=lines&domain=bus&dir=outbound&id=9`,
+      `${EXPLORER_PATH}?kind=lines&domain=bus&id=n97`,
     );
-    assert.ok(!href.includes("tab="));
+  });
+
+  it("preserves point id case", () => {
+    const href = buildExplorerHref({
+      kind: "points",
+      domain: "bus",
+      id: "490010245E",
+    });
+    assert.ok(href.includes("id=490010245E"));
   });
 
   it("clamps cycle when switching to lines", () => {

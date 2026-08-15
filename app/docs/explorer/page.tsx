@@ -32,7 +32,7 @@ import {
 export const metadata: Metadata = {
   title: "Explorer",
   description:
-    "Explore how TfL stations, stops, docks, and lines relate.",
+    "Points are stations, stops, and docks; lines are the routes that serve them.",
 };
 
 type PageProps = {
@@ -159,13 +159,6 @@ export default function DocsExplorerPage({ searchParams }: PageProps) {
     <DocsReadableWidth>
       <article className="space-y-8">
         <DocsPageHeader entry={entry} />
-
-        <section className="space-y-2">
-          <p className="max-w-prose text-muted-foreground text-pretty">
-            Points are stations, stops, and docks. Lines are the routes that
-            serve them.
-          </p>
-        </section>
 
         <Suspense fallback={<ExploreBodySkeleton />}>
           <ExplorerFromParams searchParams={searchParams} />

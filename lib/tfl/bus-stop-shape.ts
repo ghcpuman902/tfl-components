@@ -19,6 +19,8 @@ export type NearbyBusStop = {
   lat?: number;
   lon?: number;
   smsCode?: string;
+  /** Degrees clockwise from north, when TfL exposes a compass / bearing. */
+  bearingDegrees?: number;
 };
 
 export const readTowards = (
@@ -39,6 +41,60 @@ export const readSmsCode = (
   const trimmed = value?.trim();
   return trimmed || undefined;
 };
+
+const COMPASS_DEGREES: Record<string, number> = {
+  N: 0,
+  NNE: 22.5,
+  NE: 45,
+  ENE: 67.5,
+  E: 90,
+  ESE: 112.5,
+  SE: 135,
+  SSE: 157.5,
+  S: 180,
+  SSW: 202.5,
+  SW: 225,
+  WSW: 247.5,
+  W: 270,
+  WNW: 292.5,
+  NW: 315,
+  NNW: 337.5,
+};
+
+const COMPASS_RE =
+  /^(?:->)?(N|NNE|NE|ENE|E|ESE|SE|SSE|S|SSW|SW|WSW|W|WNW|NW|NNW)$/i;
+
+/** `W`, `->NE`, or a 0–359 bearing string → degrees clockwise from north. */
+export const compassPointToDegrees = (
+  raw?: string | null,
+): number | undefined => {
+  const trimmed = usableTflText(raw);
+  if (!trimmed) return undefined;
+  if (/^\d+(\.\d+)?$/.test(trimmed)) {
+    const numeric = Number(trimmed);
+    if (numeric >= 0 && numeric < 360) return numeric;
+    return undefined;
+  }
+  const match = trimmed.replace(/\s+/g, "").match(COMPASS_RE);
+  if (!match?.[1]) return undefined;
+  return COMPASS_DEGREES[match[1].toUpperCase()];
+};
+
+const readPropValue = (
+  properties: AdditionalProperty[] | undefined,
+  key: string,
+): string | undefined =>
+  properties?.find((prop) => prop.key?.toLowerCase() === key)?.value;
+
+export const readBearingDegrees = (
+  properties?: AdditionalProperty[],
+  indicator?: string | null,
+  stopLetter?: string | null,
+): number | undefined =>
+  compassPointToDegrees(readPropValue(properties, "compasspoint")) ??
+  compassPointToDegrees(readPropValue(properties, "bearing")) ??
+  compassPointToDegrees(indicator) ??
+  compassPointToDegrees(stopLetter);
 
 /** London bus stop points that support live arrivals (not hubs / station parents). */
 export const isBoardableBusStopId = (id: string): boolean =>
@@ -75,6 +131,11 @@ export const mapStopPoint = (stop: {
     lat: typeof stop.lat === "number" ? stop.lat : undefined,
     lon: typeof stop.lon === "number" ? stop.lon : undefined,
     smsCode: readSmsCode(stop.additionalProperties),
+    bearingDegrees: readBearingDegrees(
+      stop.additionalProperties,
+      stop.indicator,
+      stop.stopLetter,
+    ),
   };
 };
 

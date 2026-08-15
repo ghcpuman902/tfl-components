@@ -221,7 +221,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "explore-index",
     title: "Explorer",
     description:
-      "Explore how TfL stations, stops, docks, and lines relate.",
+      "Points are stations, stops, and docks; lines are the routes that serve them.",
     group: "explore",
     kind: "page",
     href: "/docs/explorer",

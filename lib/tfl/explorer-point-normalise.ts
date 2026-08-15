@@ -3,8 +3,11 @@
  * Domain-specific optional fields are explicit — no `any`.
  */
 
-import { readStopLetter as readPaintedStopLetter } from "@/lib/tfl/bus-stop-letter";
-import { usableTflText } from "@/lib/tfl/bus-stop-letter";
+import {
+  readStopLetter as readPaintedStopLetter,
+  usableTflText,
+} from "@/lib/tfl/bus-stop-letter";
+import { readBearingDegrees } from "@/lib/tfl/bus-stop-shape";
 
 export type ExplorerPointKind = "stopPoint" | "bikePoint";
 
@@ -27,6 +30,8 @@ export type ExplorerPoint = {
   smsCode?: string;
   towards?: string;
   distanceMeters?: number;
+  /** Degrees clockwise from north — bus stop compass / `->W` indicator. */
+  bearingDegrees?: number;
   bikes?: number;
   eBikes?: number;
   spaces?: number;
@@ -99,6 +104,11 @@ export const normaliseStopPoint = (stop: StopLike): ExplorerPoint | null => {
       usableTflText(stop.towards) ||
       usableTflText(readProp(stop.additionalProperties, "Towards")),
     distanceMeters: typeof stop.distance === "number" ? stop.distance : undefined,
+    bearingDegrees: readBearingDegrees(
+      stop.additionalProperties,
+      stop.indicator,
+      stop.stopLetter,
+    ),
   };
 };
 

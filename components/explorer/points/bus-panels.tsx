@@ -26,6 +26,7 @@ const toPoint = (stop: ExplorerBusPoint): ExplorerPoint => ({
   smsCode: stop.smsCode,
   towards: stop.towards,
   distanceMeters: stop.distance,
+  bearingDegrees: stop.bearingDegrees,
 });
 
 type PointsBusFindProps = {

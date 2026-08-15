@@ -34,6 +34,7 @@ describe("normaliseStopPoint", () => {
       additionalProperties: [
         { key: "Towards", value: "Marble Arch" },
         { key: "SmsCode", value: "53240" },
+        { key: "CompassPoint", value: "W" },
       ],
     });
     assert.deepEqual(point, {
@@ -48,6 +49,7 @@ describe("normaliseStopPoint", () => {
       smsCode: "53240",
       towards: "Marble Arch",
       distanceMeters: 40,
+      bearingDegrees: 270,
     });
   });
 
@@ -61,6 +63,7 @@ describe("normaliseStopPoint", () => {
     });
     assert.equal(point?.towards, "Wapping");
     assert.equal(point?.stopLetter, undefined);
+    assert.equal(point?.bearingDegrees, 270);
   });
 
   it("returns null without id", () => {

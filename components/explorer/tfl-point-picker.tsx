@@ -248,7 +248,22 @@ export const TfLPointPicker = ({
       >
         <InputGroup className="h-9 min-w-0 flex-1">
           <InputGroupAddon align="inline-start">
-            <Search className="size-4" aria-hidden />
+            <span className="relative inline-flex size-4 shrink-0" aria-hidden>
+              <Search
+                className={cn(
+                  "size-4 transition-opacity duration-200",
+                  loading ? "opacity-0" : "opacity-100",
+                )}
+              />
+              <Loader2
+                className={cn(
+                  "absolute inset-0 size-4 transition-opacity duration-200",
+                  loading
+                    ? "opacity-100 motion-safe:animate-spin"
+                    : "opacity-0",
+                )}
+              />
+            </span>
           </InputGroupAddon>
           <InputGroupInput
             ref={inputRef}
@@ -285,14 +300,7 @@ export const TfLPointPicker = ({
             disabled={!canSearch}
             aria-busy={loading}
           >
-            {loading ? (
-              <>
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-                Searching…
-              </>
-            ) : (
-              "Search"
-            )}
+            Search
           </Button>
 
           {renderMap ? (

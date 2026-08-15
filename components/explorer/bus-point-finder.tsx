@@ -19,7 +19,7 @@ import {
   mapStopsFromGeoResponse,
 } from "@/lib/tfl/bus-stop-shape";
 import type { ExplorerView } from "@/lib/tfl/explorer-url-state";
-import { truncateLatLon } from "@/lib/tfl/geo";
+import { MAP_SEARCH_RADIUS_METERS, truncateLatLon } from "@/lib/tfl/geo";
 import type TflClient from "tfl-ts";
 
 type BusPointFinderProps = {
@@ -49,6 +49,7 @@ const toExplorerPoint = (
     smsCode: stop.smsCode,
     towards: stop.towards,
     distanceMeters: stop.distance,
+    bearingDegrees: stop.bearingDegrees,
   };
 };
 
@@ -77,6 +78,7 @@ const enrichBoardableStops = async (
         smsCode: stop.smsCode ?? detail.smsCode,
         lat: stop.lat ?? detail.lat,
         lon: stop.lon ?? detail.lon,
+        bearingDegrees: stop.bearingDegrees ?? detail.bearingDegrees,
       };
     });
   } catch {
@@ -96,6 +98,11 @@ export const BusPointFinder = ({
   const { loading, error, setError, runKeyed } = useExplorerKeyedQuery();
   const [livePoints, setLivePoints] = useState<ExplorerPoint[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
+  const [fitSearchKey, setFitSearchKey] = useState(0);
+  const [searchOrigin, setSearchOrigin] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
 
   const points = livePoints ?? initialPoints;
 
@@ -164,7 +171,7 @@ export const BusPointFinder = ({
         const nearby = await client.stopPoint.getByGeoPoint({
           lat: expandable.lat,
           lon: expandable.lon,
-          radius: 400,
+          radius: MAP_SEARCH_RADIUS_METERS,
           modes: ["bus"],
           returnLines: true,
         });
@@ -193,7 +200,7 @@ export const BusPointFinder = ({
         const response = await client.stopPoint.getByGeoPoint({
           lat,
           lon,
-          radius: 400,
+          radius: MAP_SEARCH_RADIUS_METERS,
           modes: ["bus"],
           returnLines: true,
         });
@@ -209,6 +216,29 @@ export const BusPointFinder = ({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not read location.");
     }
+  };
+
+  const handleSearchHere = async (center: { lat: number; lon: number }) => {
+    const { lat, lon } = truncateLatLon(center.lat, center.lon);
+    const result = await runKeyed(async (client) => {
+      const response = await client.stopPoint.getByGeoPoint({
+        lat,
+        lon,
+        radius: MAP_SEARCH_RADIUS_METERS,
+        modes: ["bus"],
+        returnLines: true,
+      });
+      return mapStopsFromGeoResponse(response.stopPoints ?? [], 12)
+        .map(toExplorerPoint)
+        .filter((point): point is ExplorerPoint => point !== null);
+    });
+
+    if (!result.ok) return;
+    setLivePoints(result.data);
+    setSearchOrigin({ lat, lon });
+    setFitSearchKey((key) => key + 1);
+    if (result.data[0]) onSelect(result.data[0]);
+    else setError("No bus stops in this area.");
   };
 
   return (
@@ -227,7 +257,16 @@ export const BusPointFinder = ({
       searchValue={query}
       onSearchValueChange={handleSearchValueChange}
       showDistance={false}
-      renderMap={(props) => <ExplorerPointMapLazy {...props} />}
+      renderMap={(props) => (
+        <ExplorerPointMapLazy
+          {...props}
+          onSearchHere={handleSearchHere}
+          searchRadiusMeters={MAP_SEARCH_RADIUS_METERS}
+          searchHereLoading={loading}
+          fitSearchKey={fitSearchKey}
+          searchOrigin={searchOrigin}
+        />
+      )}
     />
   );
 };

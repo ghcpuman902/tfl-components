@@ -246,10 +246,9 @@ const PointInspectorLive = ({
   const relationships = lineIds.length ? (
     <ul className="space-y-1" role="list">
       {lineIds.map((lineId) => {
-        const isBusLine = /^\d/.test(lineId) || lineId.length <= 3;
         const href = buildExplorerHref({
           kind: "lines",
-          domain: isBusLine ? "bus" : "tube-rail",
+          domain: isBus ? "bus" : "tube-rail",
           id: lineId,
         });
         const memberId = stopIdForLine(lineId);

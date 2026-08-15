@@ -13,8 +13,13 @@ export type ExplorerCachedArrivals = {
   error?: string;
 };
 
+/** TfL line ids are case-insensitive (`N97` ≡ `n97`). Point ids usually match exactly. */
+export const explorerIdsEqual = (a: string, b: string): boolean =>
+  a === b || a.toLowerCase() === b.toLowerCase();
+
 export const pointMatchesId = (point: Identified, id: string): boolean =>
-  point.id === id || point.aliasIds?.includes(id) === true;
+  explorerIdsEqual(point.id, id) ||
+  point.aliasIds?.some((alias) => explorerIdsEqual(alias, id)) === true;
 
 export const cachedArrivalsForPoint = (
   cached: ExplorerCachedArrivals | null | undefined,
@@ -30,7 +35,7 @@ export const firstOrMatching = <T extends { id: string }>(
   requested?: string,
 ): T | undefined => {
   if (requested) {
-    const match = items.find((item) => item.id === requested);
+    const match = items.find((item) => explorerIdsEqual(item.id, requested));
     if (match) return match;
   }
   return items[0];
@@ -42,10 +47,7 @@ export const firstOrMatchingPoint = <T extends Identified>(
   requested?: string,
 ): T | undefined => {
   if (requested) {
-    const match = items.find(
-      (item) =>
-        item.id === requested || item.aliasIds?.includes(requested) === true,
-    );
+    const match = items.find((item) => pointMatchesId(item, requested));
     if (match) return match;
   }
   return items[0];

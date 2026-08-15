@@ -22,11 +22,11 @@ export const explorerSplitHeightClassName =
   "@min-[48rem]/explorer:h-[min(40rem,70svh)]";
 
 /**
- * Results list / map: capped when the inspector wraps under, fills the split
- * column when two panes fit. `h-0` + `flex-1` drops the stacked used height.
+ * Results list / map: one-third of the viewport (capped at 28rem) as soon as
+ * the inspector wraps under. Side by side, fill the split column instead.
  */
 export const explorerResultsPaneClassName =
-  "h-112 min-h-0 min-w-0 max-sm:h-[calc(100svh/3)] @min-[48rem]/explorer:h-0 @min-[48rem]/explorer:flex-1 @min-[48rem]/explorer:overscroll-contain";
+  "h-[min(28rem,calc(100svh/3))] min-h-0 min-w-0 @min-[48rem]/explorer:h-0 @min-[48rem]/explorer:flex-1 @min-[48rem]/explorer:overscroll-contain";
 
 type ExplorerSplitProps = {
   lead: ReactNode;
