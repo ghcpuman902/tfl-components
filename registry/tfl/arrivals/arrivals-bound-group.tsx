@@ -271,20 +271,18 @@ const useArrivalsPageTrack = (pageCount: number) => {
   }, [pageCount])
 
   useEffect(() => {
-    setActivePage((current) => {
-      const safe = Math.min(current, Math.max(0, pageCount - 1))
-      if (safe !== current) {
-        requestAnimationFrame(() => {
-          slideRefs.current[safe]?.scrollIntoView({
-            inline: "start",
-            block: "nearest",
-            behavior: "auto",
-          })
-        })
-      }
-      return safe
+    if (activePage <= pageCount - 1) return
+    const safe = Math.max(0, pageCount - 1)
+    setActivePage(safe)
+    const frame = requestAnimationFrame(() => {
+      slideRefs.current[safe]?.scrollIntoView({
+        inline: "start",
+        block: "nearest",
+        behavior: "auto",
+      })
     })
-  }, [pageCount])
+    return () => cancelAnimationFrame(frame)
+  }, [activePage, pageCount])
 
   useEffect(() => {
     const container = containerRef.current

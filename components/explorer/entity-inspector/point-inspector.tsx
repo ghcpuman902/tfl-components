@@ -19,7 +19,7 @@ import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort";
 import {
   prepareBusStopDisruptions,
   type RawBusStopDisruption,
-} from "@/lib/tfl/bus-stop-disruptions";
+} from "@/lib/tfl/prepare-bus-stop-disruptions";
 import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types";
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise";
 import {

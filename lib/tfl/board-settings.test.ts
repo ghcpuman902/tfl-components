@@ -22,10 +22,9 @@ describe("board-settings allowlist", () => {
     }
   });
 
-  it("exposes a.lines without a dedicated form control", () => {
+  it("exposes a.lines as a URL setting with a line-order form control", () => {
     assert.equal(BOARD_SETTINGS.arrivalsLines.url, true);
-    assert.equal(BOARD_SETTINGS.arrivalsLines.form, false);
-    // Per-line rows UI writes a.lines; arrivalsRows is the form surface.
+    assert.equal(BOARD_SETTINGS.arrivalsLines.form, true);
     assert.equal(BOARD_SETTINGS.arrivalsRows.form, true);
   });
 

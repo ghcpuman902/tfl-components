@@ -1,6 +1,6 @@
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { DataSourceLabel } from "@/components/docs/data-source-label"
-import { prepareBusStopDisruptions } from "@/lib/tfl/bus-stop-disruptions"
+import { prepareBusStopDisruptions } from "@/lib/tfl/prepare-bus-stop-disruptions"
 import {
   CAPWORTH_STREET_ARRIVALS,
   CAPWORTH_STREET_DISRUPTION,

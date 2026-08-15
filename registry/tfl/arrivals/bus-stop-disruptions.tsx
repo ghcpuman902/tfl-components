@@ -12,10 +12,8 @@ import {
   type SetStateAction,
 } from "react"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
-import type { BusStopDisruption } from "@/lib/tfl/bus-stop-disruptions"
+import type { BusStopDisruption } from "@/lib/tfl/prepare-bus-stop-disruptions"
 import { cn } from "@/lib/utils"
-
-export type { BusStopDisruption }
 
 /**
  * Warning-badge colour for disrupted routes. Not a published TfL Colour

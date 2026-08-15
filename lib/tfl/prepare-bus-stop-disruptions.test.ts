@@ -3,7 +3,7 @@ import { describe, it } from "node:test"
 import {
   prepareBusStopDisruptions,
   type RawBusStopDisruption,
-} from "@/lib/tfl/bus-stop-disruptions"
+} from "@/lib/tfl/prepare-bus-stop-disruptions"
 
 describe("prepareBusStopDisruptions", () => {
   it("attaches a route-specific diversion to that route, even with zero live rows", () => {

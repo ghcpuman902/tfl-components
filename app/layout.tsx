@@ -54,7 +54,11 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? SITE_URL),
+  metadataBase: new URL(
+    URL.canParse(process.env.NEXT_PUBLIC_APP_URL ?? "")
+      ? process.env.NEXT_PUBLIC_APP_URL!
+      : SITE_URL,
+  ),
   title: {
     default: "tfl-components",
     template: "%s · tfl-components",

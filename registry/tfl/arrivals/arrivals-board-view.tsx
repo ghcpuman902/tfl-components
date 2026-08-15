@@ -6,8 +6,8 @@ import {
   BusStopDisruptionBoundary,
   BusStopDisruptionChips,
   BusStopDisruptionCover,
-  type BusStopDisruption,
 } from "@/components/tfl/arrivals/bus-stop-disruptions"
+import type { BusStopDisruption } from "@/lib/tfl/prepare-bus-stop-disruptions"
 import {
   ARRIVALS_EMPTY_COPY,
   ARRIVALS_LINE_EMPTY_COPY,

@@ -130,15 +130,15 @@ export const HomeHeroPhotos = () => {
     if (!hydrated || reduceMotion) return;
 
     const id = window.setInterval(() => {
-      setIndex((current) => {
-        const next = (current + 1) % SLIDES.length;
-        setLoadedThrough((through) => Math.max(through, next));
-        return next;
-      });
+      setIndex((current) => (current + 1) % SLIDES.length);
     }, INTERVAL_MS);
 
     return () => window.clearInterval(id);
   }, [hydrated, reduceMotion]);
+
+  useEffect(() => {
+    setLoadedThrough((through) => Math.max(through, index));
+  }, [index]);
 
   const active = SLIDES[index] ?? SLIDES[0];
   const visibleThrough = Math.max(loadedThrough, index);

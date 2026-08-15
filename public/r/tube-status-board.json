@@ -4,7 +4,7 @@
   "title": "Tube Status Board",
   "description": "Tube/rail status board — pass normalised tfl-ts line status rows as data.",
   "dependencies": [
-    "tfl-ts",
+    "tfl-ts@^2.9.0",
     "lucide-react"
   ],
   "registryDependencies": [

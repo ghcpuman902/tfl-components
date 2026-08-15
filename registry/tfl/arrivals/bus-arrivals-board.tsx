@@ -7,7 +7,7 @@ import {
   type ArrivalsBoardChromeProps,
   type ArrivalsBoardClassNames,
 } from "@/components/tfl/arrivals/arrivals-board-view"
-import type { BusStopDisruption } from "@/components/tfl/arrivals/bus-stop-disruptions"
+import type { BusStopDisruption } from "@/lib/tfl/prepare-bus-stop-disruptions"
 import {
   prepareBusArrivals,
   type BusArrivalsGroupBy,
@@ -138,8 +138,8 @@ export const BusArrivalsBoard = ({
 }
 
 export type { ArrivalsBoardClassNames }
-export type { BusStopDisruption }
-export { prepareBusStopDisruptions } from "@/lib/tfl/bus-stop-disruptions"
+export type { BusStopDisruption } from "@/lib/tfl/prepare-bus-stop-disruptions"
+export { prepareBusStopDisruptions } from "@/lib/tfl/prepare-bus-stop-disruptions"
 export type {
   BusArrivalsGroupBy,
   BusArrivalsGroupSortBy,

@@ -411,7 +411,7 @@
       "title": "Line Badge",
       "description": "Official TfL line colour badge via data-line tokens (OKLCH, adaptive a11y).",
       "dependencies": [
-        "tfl-ts"
+        "tfl-ts@^2.9.0"
       ],
       "registryDependencies": [
         "https://tfl.manglekuo.com/r/tfl-colours.json",
@@ -451,7 +451,7 @@
       "title": "Tube Status Board",
       "description": "Tube/rail status board — pass normalised tfl-ts line status rows as data.",
       "dependencies": [
-        "tfl-ts",
+        "tfl-ts@^2.9.0",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -493,7 +493,7 @@
       "title": "Cycle Hire Docks",
       "description": "Santander Cycles Map + Detail surfaces — pass normalised tfl-ts bike points as data.",
       "dependencies": [
-        "tfl-ts",
+        "tfl-ts@^2.9.0",
         "lucide-react",
         "maplibre-gl@5.24.0"
       ],
@@ -631,7 +631,7 @@
       "title": "Rail Arrivals Board",
       "description": "Per-station Tube and rail departures grouped by line and compass bound — pass RealtimePrediction[] as data.",
       "dependencies": [
-        "tfl-ts",
+        "tfl-ts@^2.9.0",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -684,6 +684,11 @@
           "target": "lib/tfl/arrivals-bound-sort.ts"
         },
         {
+          "path": "lib/tfl/arrivals-destination-text.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-destination-text.ts"
+        },
+        {
           "path": "lib/tfl/arrivals-route-sort.ts",
           "type": "registry:lib",
           "target": "lib/tfl/arrivals-route-sort.ts"
@@ -709,9 +714,9 @@
           "target": "components/tfl/arrivals/bus-stop-disruptions.tsx"
         },
         {
-          "path": "lib/tfl/bus-stop-disruptions.ts",
+          "path": "lib/tfl/prepare-bus-stop-disruptions.ts",
           "type": "registry:lib",
-          "target": "lib/tfl/bus-stop-disruptions.ts"
+          "target": "lib/tfl/prepare-bus-stop-disruptions.ts"
         },
         {
           "path": "components/tfl/station-name.tsx",
@@ -751,7 +756,7 @@
       "title": "Bus Arrivals Board",
       "description": "Bus stop departures as a flat time-ordered list, with optional route grouping — pass RealtimePrediction[] as data.",
       "dependencies": [
-        "tfl-ts",
+        "tfl-ts@^2.9.0",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -799,6 +804,11 @@
           "target": "lib/tfl/arrivals-bound-sort.ts"
         },
         {
+          "path": "lib/tfl/arrivals-destination-text.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-destination-text.ts"
+        },
+        {
           "path": "lib/tfl/arrivals-route-sort.ts",
           "type": "registry:lib",
           "target": "lib/tfl/arrivals-route-sort.ts"
@@ -829,9 +839,9 @@
           "target": "components/tfl/arrivals/bus-stop-disruptions.tsx"
         },
         {
-          "path": "lib/tfl/bus-stop-disruptions.ts",
+          "path": "lib/tfl/prepare-bus-stop-disruptions.ts",
           "type": "registry:lib",
-          "target": "lib/tfl/bus-stop-disruptions.ts"
+          "target": "lib/tfl/prepare-bus-stop-disruptions.ts"
         },
         {
           "path": "components/tfl/station-name.tsx",
@@ -871,7 +881,7 @@
       "title": "Arrivals Board",
       "description": "Deprecated adapter. Install rail-arrivals-board or bus-arrivals-board instead.",
       "dependencies": [
-        "tfl-ts",
+        "tfl-ts@^2.9.0",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -893,7 +903,7 @@
       "title": "Live Arrivals Board",
       "description": "Polling helper that feeds RailArrivalsBoard with stop arrivals data.",
       "dependencies": [
-        "tfl-ts",
+        "tfl-ts@^2.9.0",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -950,7 +960,8 @@
       "title": "Geographic Map",
       "description": "Free MapLibre geographic map — OSM transit line and station geometry, no API key required.",
       "dependencies": [
-        "maplibre-gl@5.24.0"
+        "maplibre-gl@5.24.0",
+        "@types/geojson"
       ],
       "registryDependencies": [
         "https://tfl.manglekuo.com/r/tfl-colours.json"
@@ -979,7 +990,7 @@
       "title": "Line Strip",
       "description": "TfL strip components — StraightStrip, BranchStrip, LineStrip molecule, full route, and journey A→B.",
       "dependencies": [
-        "tfl-ts"
+        "tfl-ts@^2.9.0"
       ],
       "registryDependencies": [
         "https://tfl.manglekuo.com/r/tfl-colours.json",

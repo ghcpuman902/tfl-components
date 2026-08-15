@@ -39,7 +39,8 @@ const LINE_DISAMBIGUATION_PARENS =
 
 /** Short display name for diagrams (drop common TfL suffixes + line brackets). */
 export const formatStationName = (name: string): string => {
-  let next = name
+  const raw = typeof name === "string" ? name : name == null ? "" : String(name)
+  let next = raw
     .replace(/\s+Underground Station$/i, "")
     .replace(/-Underground(?:\s+Station)?$/i, "")
     .replace(/\s+DLR Station$/i, "")

@@ -11,6 +11,31 @@ Tags `v0.1.0`–`v0.4.0` predate the split and mixed both tracks. From `web-v0.5
 
 ## Web app
 
+### [web-v0.6.0] - 2026-08-15
+
+Board builder, Explorer credentials, and Cache Components polish on the docs site. Installable registry work from this range ships as **[0.5.0](#050---2026-08-15)** on the components track.
+
+#### Added
+
+- Board builder (`/board`) with URL-backed config, live preview, and chromeless `/board/view`
+- Explorer Browse/Find with user-supplied TfL credentials instead of a shared server key
+- Geographic map docs (MapLibre default; Google/Mapbox remain vendor examples)
+
+#### Changed
+
+- Homepage hero sits in the PPR static shell so first paint is not blocked by live TfL fetches
+- Site favicon is the grey placeholder roundel (not line-colour bars or the trademarked mark)
+- Line Badge docs renamed to Line Chip; Colours treated as a tokens foundation
+- Next.js 16.3.0 → 16.3.1
+
+#### Fixed
+
+- Metadata base URL construction no longer throws when `NEXT_PUBLIC_APP_URL` is not a valid URL
+- Homepage photo rotator no longer nests `setState` inside another updater
+- Station-name formatter no longer crashes when TfL supplies a non-string label
+
+---
+
 ### [web-v0.5.0] - 2026-08-11
 
 Docs site polish: in-page feedback, typography preference, and cleaner MDX chrome. No separate component tag in this release; registry work that landed on `main` since `v0.4.0` waits for the next `v*` components release.
@@ -38,6 +63,36 @@ These registry items already exist on `main` but are **not** part of `web-v0.5.0
 ---
 
 ## Components
+
+### [0.5.0] - 2026-08-15
+
+Cycle Hire, geographic MapLibre map, colour tokens, and arrivals that match how TfL actually shares platforms and track. Registry installs now pin `tfl-ts@^2.9.0` and ship every helper the boards import.
+
+#### Added
+
+- Cycle Hire Docks: map + detail surfaces over normalised dock data
+- `tfl-geographic-map` with MapLibre as the default renderer (pass `data`, or serve unique-track GeoJSON at `/data/geography/{mode}-geometry.json`)
+- Generated `tfl-colours` tokens
+- `platform-chip` and `bus-number-chip`
+- Bus stop disruption rows on the bus arrivals board
+- Shared-platform grouping, Circle / H&C / Metropolitan shared-track identity, destination text that keeps `currentLocation` when TfL sends a placeholder, bound-group compass order, and pagination so every serving line stays on the board
+
+#### Changed
+
+- Registry `tfl-ts` dependency is `tfl-ts@^2.9.0` (shared-track prediction types and status helpers). Bare `tfl-ts` resolved 2.6.2 and failed typecheck
+- Bus disruption prep lives in `lib/tfl/prepare-bus-stop-disruptions.ts` so the shadcn CLI does not collide it with `bus-stop-disruptions.tsx`
+- Arrivals pager clamps the page index in an effect instead of an impure `setState` updater
+
+#### Fixed
+
+- `rail-arrivals-board` / `bus-arrivals-board` now include `lib/tfl/arrivals-destination-text.ts` in the registry payload
+- `tfl-geographic-map` declares `@types/geojson` so consumer typecheck passes
+
+#### Note for install consumers
+
+The geographic map’s default fetch is **not** inlined in the registry JSON (the GeoJSON is large). Copy `public/data/geography/*.json` from this repo, or pass geometry as `data`. Google Maps and Mapbox adapters are optional and not part of the default install.
+
+---
 
 ### [0.4.0] - 2026-08-10
 

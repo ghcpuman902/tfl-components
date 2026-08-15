@@ -30,6 +30,14 @@ Station hubs / arrivals StopPoints (poll the sibling that carries the line, neve
 
 See [docs/coding-style.md](./docs/coding-style.md) for TypeScript and React patterns.
 
+# Documentation copy
+
+Write user-facing documentation about the component or TfL concept, not the machinery this site uses to demonstrate it. Prefer title, one-sentence description, at most one short introduction, then the primary demo or action. Omit copy that the demo already communicates.
+
+Keep a sentence only when it helps the reader understand the subject, make a decision, or use it correctly. Do not expose caches, fixtures, seeds, quota strategy, search radius, browser storage, inspector mechanics, polling, streaming, or internal fetching in opening copy unless they change the reader's immediate action. Put necessary API-key, installation, security, troubleshooting, licensing, accessibility, and TfL data guidance where the relevant choice or risk occurs. Metadata descriptions follow the same rules.
+
+For copy reviews and rewrites, use [`.agents/skills/tfl-copy-audit/SKILL.md`](./.agents/skills/tfl-copy-audit/SKILL.md). Cursor uses the matching [`.cursor/rules/tfl-copy.mdc`](./.cursor/rules/tfl-copy.mdc).
+
 # Product principles
 
 See [docs/product-principles.md](./docs/product-principles.md) for how to scope work and ship incrementally.
