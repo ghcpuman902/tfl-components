@@ -10,15 +10,15 @@ export type CameraState = {
 export const CAMERA_STATES = {
   portrait: {
     width: 390,
-    position: [-0.18, 1.58, 1.68],
-    target: [-0.28, 1.5, 0],
-    fov: 40,
+    position: [-0.2, 1.55, 1.58],
+    target: [-0.26, 1.46, 0],
+    fov: 36,
   },
   medium: {
     width: 768,
-    position: [0.06, 1.4, 2.52],
-    target: [-0.04, 1.3, 0],
-    fov: 36,
+    position: [0.04, 1.42, 2.28],
+    target: [-0.08, 1.34, 0],
+    fov: 35,
   },
   wide: {
     width: 1440,

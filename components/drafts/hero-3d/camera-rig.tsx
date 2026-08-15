@@ -2,7 +2,7 @@
 
 import { useRef } from "react"
 import { PerspectiveCamera } from "@react-three/drei"
-import { useFrame, useThree } from "@react-three/fiber"
+import { useFrame } from "@react-three/fiber"
 import {
   MathUtils,
   Vector3,
@@ -15,17 +15,17 @@ import {
 import { useHeroTune } from "@/components/drafts/hero-3d/hero-tune-context"
 
 export const CameraRig = () => {
-  const size = useThree((state) => state.size)
   const { tune } = useHeroTune()
   const cameraRef = useRef<ThreePerspectiveCamera>(null)
   const lookAt = useRef(new Vector3(...tune.cameraTarget))
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const camera = cameraRef.current
     if (!camera) return
 
-    const aspect = size.width / Math.max(size.height, 1)
-    const framed = lerpCamera(size.width, aspect)
+    const { width, height } = state.size
+    const aspect = width / Math.max(height, 1)
+    const framed = lerpCamera(width, aspect)
     const goal = tune.followViewport
       ? framed
       : {
