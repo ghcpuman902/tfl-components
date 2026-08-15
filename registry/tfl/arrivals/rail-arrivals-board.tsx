@@ -3,6 +3,7 @@ import { RAIL_ARRIVALS_DEFAULT_PAGE_SIZE } from "@/lib/tfl/arrivals-defaults"
 import {
   ArrivalsBoardSkeleton,
   ArrivalsBoardView,
+  resolveArrivalsHeading,
   type ArrivalsBoardChromeProps,
   type ArrivalsBoardClassNames,
 } from "@/components/tfl/arrivals/arrivals-board-view"
@@ -117,11 +118,12 @@ export const RailArrivalsBoard = ({
   ...chrome
 }: RailArrivalsBoardProps) => {
   const rows = data ?? []
+  const heading = resolveArrivalsHeading(chrome.stopName, rows)
   if (loading && rows.length === 0 && !error) {
     return (
       <RailArrivalsBoardSkeleton
         className={className}
-        stopName={chrome.stopName}
+        stopName={heading}
       />
     )
   }
@@ -148,6 +150,7 @@ export const RailArrivalsBoard = ({
       className={className}
       classNames={classNames}
       {...chrome}
+      stopName={heading}
     />
   )
 }

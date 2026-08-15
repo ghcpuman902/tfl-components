@@ -124,7 +124,7 @@ Keep polling outside the board, then update `data`. Optional `statusLabel` shows
 | `groupBy` | `"none" \| "route"` | Flat list, default, or route sections. |
 | `sortBy` | `"timeToStation" \| "source"` | Arrival order. |
 | `groupSortBy` | `"route" \| "source"` | Route-group order when grouped. |
-| `stopName` | `string` | Board heading. Fits via abbr/scale. |
+| `stopName` | `string` | Optional heading override. Omit to use `data[].stationName`. Fits via abbr/scale. |
 | `stopLetter` | `string` | Stop letter, red circle next to the stop name. |
 | `loading` / `error` | … | Loading and error presentation. Prefer a short human `error` string. |
 | `emptyKind` | `"empty" \| "ended" \| "offline"` | Why the board has no rows when `error` is unset. Resolve in the app (`resolveArrivalsEmptyKind`). Night buses still run, so prefer `empty` over `ended`. |

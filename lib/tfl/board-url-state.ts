@@ -108,6 +108,29 @@ export const parseBoardConfig = (
 const encodeSegment = (param: string, value: string): string =>
   new URLSearchParams({ [param]: value }).toString().replace(/%2C/gi, ",");
 
+const KNOWN_HASH_PARAMS = new Set<string>([
+  BOARD_SETTINGS.stop.param,
+  BOARD_SETTINGS.stopName.param,
+  BOARD_SETTINGS.mode.param,
+  BOARD_SETTINGS.fit.param,
+  BOARD_SETTINGS.arrivalsRows.param,
+  BOARD_SETTINGS.arrivalsLines.param,
+  "key",
+]);
+
+/** Unknown fragment params, encoded the same way as known segments. */
+export const collectUnknownBoardParams = (
+  input: string | URLSearchParams,
+): string[] => {
+  const params = paramsFromInput(input);
+  const extras: string[] = [];
+  for (const [key, value] of params) {
+    if (KNOWN_HASH_PARAMS.has(key)) continue;
+    extras.push(encodeSegment(key, value));
+  }
+  return extras;
+};
+
 const mergeBoardConfig = (
   next: Partial<BoardConfig>,
   base: BoardConfig,
@@ -157,7 +180,7 @@ export const describeBoardHrefSegments = (
     });
   }
 
-  // Scalar default (number 3) is omitted; list form serializes when present.
+  // Any explicit a.rows (scalar broadcast or list) serializes; empty omits.
   if (merged.arrivals.rows !== undefined) {
     if (typeof merged.arrivals.rows === "number") {
       const rowsSerialized = serializeArrivalsRows(merged.arrivals.rows);
@@ -214,4 +237,40 @@ export const buildBoardHref = (
   const segments = describeBoardHrefSegments(next, base);
   if (segments.length === 0) return BOARD_VIEW_PATH;
   return `${BOARD_VIEW_PATH}#${segments.map((segment) => segment.text).join("&")}`;
+};
+
+/** Hash fragment for a config (`#stop=…`), or `""` when the path is bare. */
+export const boardHashFromConfig = (
+  next: Partial<BoardConfig> = {},
+  base: BoardConfig = DEFAULT_BOARD_CONFIG,
+): string => {
+  const href = buildBoardHref(next, base);
+  const index = href.indexOf("#");
+  return index === -1 ? "" : href.slice(index);
+};
+
+/**
+ * Parse then re-serialize a hash so common mistakes become the canonical
+ * fragment: trim, clamp, drop invalid slots / unknown line ids, omit
+ * default mode/fit, strip empty values. Unknown params are kept (J10
+ * forward-compat) and sit just before `key`.
+ */
+export const normalizeBoardHash = (
+  input: string | URLSearchParams = "",
+  override: Partial<BoardConfig> = {},
+): string => {
+  const parsed = parseBoardConfig(input);
+  const config = mergeBoardConfig(override, parsed);
+  const segments = describeBoardHrefSegments(config);
+  const extras = collectUnknownBoardParams(input);
+  const texts = segments.map((segment) => segment.text);
+  if (extras.length > 0) {
+    const keyIndex = segments.findIndex((segment) => segment.setting === "key");
+    if (keyIndex === -1) {
+      texts.push(...extras);
+    } else {
+      texts.splice(keyIndex, 0, ...extras);
+    }
+  }
+  return texts.length === 0 ? "" : `#${texts.join("&")}`;
 };

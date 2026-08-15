@@ -42,3 +42,17 @@ export const lookupBoardStationName = (
   if (!id) return undefined;
   return index[id];
 };
+
+/**
+ * URL / config override only. Empty, or a value that matches the catalog
+ * name for this stop, is not an override — the board resolves the heading.
+ */
+export const resolveBoardStopNameOverride = (
+  typed: string | undefined,
+  autoName: string | undefined,
+): string | undefined => {
+  const name = typed?.trim();
+  if (!name) return undefined;
+  if (autoName && name === autoName) return undefined;
+  return name;
+};

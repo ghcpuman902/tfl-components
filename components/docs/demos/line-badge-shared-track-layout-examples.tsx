@@ -22,12 +22,7 @@ const FixedChipFrame = ({
 }) => (
   <div className="space-y-1.5">
     <p className="text-xs text-muted-foreground">{label}</p>
-    <div
-      className={cn(
-        "max-w-full rounded-md border border-border bg-background p-2",
-        widthClass ?? "w-full",
-      )}
-    >
+    <div className={cn("max-w-full", widthClass ?? "w-full")}>
       {children}
     </div>
   </div>

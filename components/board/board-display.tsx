@@ -22,10 +22,12 @@ import {
 } from "@/lib/tfl/board-station-lines"
 import {
   lookupBoardStationName,
+  resolveBoardStopNameOverride,
   type BoardStationNamesIndex,
 } from "@/lib/tfl/board-station-names"
 import {
   DEFAULT_BOARD_CONFIG,
+  normalizeBoardHash,
   parseBoardConfig,
   type BoardConfig,
 } from "@/lib/tfl/board-url-state"
@@ -36,19 +38,34 @@ const BOUND_COLUMNS_CLASS_NAMES = {
     "@min-[30rem]/arrivals-group:grid-cols-2 @min-[30rem]/arrivals-group:gap-x-6",
 } as const
 
-const useBoardConfigFromHash = (): { config: BoardConfig; ready: boolean } => {
+const replaceHashIfNeeded = (nextHash: string) => {
+  if (window.location.hash === nextHash) return
+  const url = `${window.location.pathname}${window.location.search}${nextHash}`
+  window.history.replaceState(window.history.state, "", url)
+}
+
+const useBoardConfigFromHash = (
+  stationNames: BoardStationNamesIndex,
+): { config: BoardConfig; ready: boolean } => {
   const [config, setConfig] = useState<BoardConfig>(DEFAULT_BOARD_CONFIG)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const read = () => {
-      setConfig(parseBoardConfig(window.location.hash))
+      const parsed = parseBoardConfig(window.location.hash)
+      const autoName = lookupBoardStationName(stationNames, parsed.stop)
+      const stopName = resolveBoardStopNameOverride(parsed.stopName, autoName)
+      const next: BoardConfig = { ...parsed, stopName }
+      setConfig(next)
       setReady(true)
+      replaceHashIfNeeded(
+        normalizeBoardHash(window.location.hash, { stopName }),
+      )
     }
     read()
     window.addEventListener("hashchange", read)
     return () => window.removeEventListener("hashchange", read)
-  }, [])
+  }, [stationNames])
 
   return { config, ready }
 }
@@ -73,16 +90,15 @@ export const BoardDisplay = ({
   stationNames,
   arrivalsStopIds,
 }: BoardDisplayProps) => {
-  const { config, ready } = useBoardConfigFromHash()
+  const { config, ready } = useBoardConfigFromHash(stationNames)
   const appKey = config.key ?? null
   const stopId = config.stop ?? ""
-  // `stopName` in the URL wins; otherwise resolve the real name from the
-  // offline catalog so a bare `#stop=…` link never shows a raw NaPTAN id.
+  // URL `stopName` is an override only. Otherwise the catalog paints the
+  // heading immediately; the board infers from arrivals when that misses.
   const stopName =
     config.stopName?.trim() ||
     lookupBoardStationName(stationNames, stopId) ||
-    stopId ||
-    "Arrivals"
+    undefined
 
   const status = useBoardStatus({
     appKey,
@@ -137,10 +153,15 @@ export const BoardDisplay = ({
   }, [arrivals.data])
 
   const arrivalsProps = useMemo(
-    () => resolveArrivalsProps(config, servingLines, dataLineIds),
-    [config, servingLines, dataLineIds]
+    () => resolveArrivalsProps(config, servingLines, dataLineIds, lineGroups),
+    [config, servingLines, dataLineIds, lineGroups]
   )
   const pageSizeByLine = useMemo(() => {
+    // A scalar `a.rows` broadcasts to every section — do not keep the
+    // curated merge default (6) on top of that.
+    if (arrivalsProps.pageSize !== undefined) {
+      return arrivalsProps.pageSizeByLine
+    }
     if (!curatedPageSizeByLine && !arrivalsProps.pageSizeByLine) {
       return undefined
     }
@@ -148,7 +169,11 @@ export const BoardDisplay = ({
       ...curatedPageSizeByLine,
       ...arrivalsProps.pageSizeByLine,
     }
-  }, [curatedPageSizeByLine, arrivalsProps.pageSizeByLine])
+  }, [
+    curatedPageSizeByLine,
+    arrivalsProps.pageSize,
+    arrivalsProps.pageSizeByLine,
+  ])
 
   const statusHint =
     ready && !appKey && status.source === "site" ? DEGRADED_HINT : null

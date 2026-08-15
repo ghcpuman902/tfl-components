@@ -17,7 +17,7 @@ const POLL_MS = 20_000
  */
 export const LiveArrivalsBoard = ({
   stopPointId = DEFAULT_STOP_ID,
-  stopName = "Oxford Circus",
+  stopName,
 }: {
   stopPointId?: string
   stopName?: string

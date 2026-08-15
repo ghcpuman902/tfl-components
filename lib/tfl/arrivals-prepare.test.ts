@@ -564,6 +564,78 @@ describe("prepareRailArrivals", () => {
     assert.equal(merged.bounds[0]?.rows[0]?.arrival.vehicleId, "406")
   })
 
+  it("does not collapse distinct arrivals that share placeholder vehicleId 000", () => {
+    const westA = prediction({
+      id: "met-wb-a",
+      lineId: "metropolitan",
+      lineName: "Metropolitan",
+      modeName: "tube",
+      platformName: "Westbound - Platform 1",
+      towards: "Uxbridge",
+      timeToStation: 180,
+      vehicleId: "000",
+    })
+    const westB = prediction({
+      id: "met-wb-b",
+      lineId: "metropolitan",
+      lineName: "Metropolitan",
+      modeName: "tube",
+      platformName: "Westbound - Platform 1",
+      towards: "Uxbridge",
+      timeToStation: 360,
+      vehicleId: "000",
+    })
+    const eastA = prediction({
+      id: "met-eb-a",
+      lineId: "metropolitan",
+      lineName: "Metropolitan",
+      modeName: "tube",
+      platformName: "Eastbound - Platform 2",
+      towards: "Check Front of Train",
+      timeToStation: 240,
+      vehicleId: "000",
+    })
+    const eastB = prediction({
+      id: "met-eb-b",
+      lineId: "metropolitan",
+      lineName: "Metropolitan",
+      modeName: "tube",
+      platformName: "Eastbound - Platform 2",
+      towards: "Check Front of Train",
+      timeToStation: 420,
+      vehicleId: "0",
+    })
+    const known = prediction({
+      id: "met-wb-known",
+      lineId: "metropolitan",
+      lineName: "Metropolitan",
+      modeName: "tube",
+      platformName: "Westbound - Platform 1",
+      towards: "Uxbridge",
+      timeToStation: 900,
+      vehicleId: "436",
+    })
+    const board = prepareRailArrivals({
+      data: [westA, westB, eastA, eastB, known],
+    })
+    const metropolitan = board.groups.find(
+      (group) => group.lineId === "metropolitan",
+    )
+    assert.ok(metropolitan)
+    const west = metropolitan.bounds.find((bound) =>
+      bound.label?.startsWith("Westbound"),
+    )
+    const east = metropolitan.bounds.find((bound) =>
+      bound.label?.startsWith("Eastbound"),
+    )
+    assert.deepEqual(idsOf(west?.rows ?? []), [
+      "met-wb-a",
+      "met-wb-b",
+      "met-wb-known",
+    ])
+    assert.deepEqual(idsOf(east?.rows ?? []), ["met-eb-a", "met-eb-b"])
+  })
+
   it("buckets an ambiguous tagged arrival by raw lineId", () => {
     const ambiguous = {
       ...prediction({

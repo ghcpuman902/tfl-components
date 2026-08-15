@@ -5,6 +5,7 @@ import {
   buildBoardStationNamesIndex,
   getBoardStationNamesIndex,
   lookupBoardStationName,
+  resolveBoardStopNameOverride,
 } from "./board-station-names";
 
 describe("buildBoardStationNamesIndex", () => {
@@ -25,5 +26,23 @@ describe("buildBoardStationNamesIndex", () => {
 
   it("memoises getBoardStationNamesIndex", () => {
     assert.equal(getBoardStationNamesIndex(), getBoardStationNamesIndex());
+  });
+});
+
+describe("resolveBoardStopNameOverride", () => {
+  it("treats empty and catalog-matching names as no override", () => {
+    assert.equal(resolveBoardStopNameOverride(undefined, "Oxford Circus"), undefined);
+    assert.equal(resolveBoardStopNameOverride("  ", "Oxford Circus"), undefined);
+    assert.equal(
+      resolveBoardStopNameOverride("Oxford Circus", "Oxford Circus"),
+      undefined,
+    );
+  });
+
+  it("keeps a custom label", () => {
+    assert.equal(
+      resolveBoardStopNameOverride("Home", "Oxford Circus"),
+      "Home",
+    );
   });
 });

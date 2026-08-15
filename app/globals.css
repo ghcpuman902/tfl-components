@@ -232,14 +232,15 @@ html[data-tfl-type-profile="johnston-compatible"] {
 /*
  * LineBadgeGroup variant="codes": one 3-letter abbr at a time on the stripe
  * stack. Duration is N × --codes-hold; each item is delayed by its index.
- * Visible window must stay ≤ 1/N so two codes never overlap.
+ * Instant swap (no fade). Codes start hidden so delayed items do not stack
+ * on first paint — only :first-child is visible before its animation starts.
  */
 @keyframes tfl-line-code-cycle-2 {
   0%,
-  42% {
+  50% {
     opacity: 1;
   }
-  50%,
+  50.01%,
   100% {
     opacity: 0;
   }
@@ -247,10 +248,10 @@ html[data-tfl-type-profile="johnston-compatible"] {
 
 @keyframes tfl-line-code-cycle-3 {
   0%,
-  26% {
+  33.33% {
     opacity: 1;
   }
-  33%,
+  33.34%,
   100% {
     opacity: 0;
   }
@@ -261,10 +262,15 @@ html[data-tfl-type-profile="johnston-compatible"] {
 }
 
 .tfl-line-codes [data-code] {
+  opacity: 0;
   animation-duration: calc(var(--codes-count) * var(--codes-hold));
   animation-iteration-count: infinite;
-  animation-timing-function: ease;
+  animation-timing-function: linear;
   animation-delay: calc(var(--code-index) * var(--codes-hold));
+}
+
+.tfl-line-codes [data-code]:first-child {
+  opacity: 1;
 }
 
 .tfl-line-codes[data-codes="2"] [data-code] {

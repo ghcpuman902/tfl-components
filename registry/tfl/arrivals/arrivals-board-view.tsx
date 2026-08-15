@@ -31,7 +31,11 @@ export {
 } from "@/components/tfl/arrivals/arrivals-bound-group"
 
 export type ArrivalsBoardChromeProps = {
-  stopName: string
+  /**
+   * Board heading. Omit to use `data[].stationName` from the predictions.
+   * Fits via abbr/scale, same policy as destinations.
+   */
+  stopName?: string
   /**
    * @deprecated Dev/meta NaPTAN id — not shown in the board UI. Kept for call-site compat.
    */
@@ -95,6 +99,20 @@ export const getBusStopLetterFromPlatform = (
   const letter = platformName.trim()
   if (/^[A-Za-z]$/.test(letter)) return letter.toUpperCase()
   return null
+}
+
+/** Explicit `stopName` wins; otherwise the first non-empty `stationName` on `data`. */
+export const resolveArrivalsHeading = (
+  stopName: string | undefined,
+  data?: readonly Pick<RealtimePrediction, "stationName">[],
+): string | undefined => {
+  const override = stopName?.trim()
+  if (override) return override
+  for (const row of data ?? []) {
+    const name = row.stationName?.trim()
+    if (name) return name
+  }
+  return undefined
 }
 
 export const resolveBusStopLetter = (
@@ -351,21 +369,29 @@ export const ArrivalsBoardView = ({
           className="size-[var(--arrivals-row)] shrink-0"
           aria-hidden
         />
-        <TitleTag
-          className={cn("min-w-0 flex-1 text-3xl", TITLE_CLASS)}
-          aria-label={stopName}
-        >
-          <span className="block min-w-0" aria-hidden="true">
-            <StationName
-              name={stopName}
-              layout="auto"
-              maxLines={1}
-              allowAbbreviation
-              allowScaleDown
-              className="justify-center leading-8"
-            />
-          </span>
-        </TitleTag>
+        {stopName ? (
+          <TitleTag
+            className={cn("min-w-0 flex-1 text-3xl", TITLE_CLASS)}
+            aria-label={stopName}
+          >
+            <span className="block min-w-0" aria-hidden="true">
+              <StationName
+                name={stopName}
+                layout="auto"
+                maxLines={1}
+                allowAbbreviation
+                allowScaleDown
+                className="justify-center leading-8"
+              />
+            </span>
+          </TitleTag>
+        ) : loading ? (
+          <Skeleton className="h-8 w-56 max-w-full" />
+        ) : (
+          <TitleTag className={cn("min-w-0 flex-1 text-3xl", TITLE_CLASS)}>
+            <span className="sr-only">Arrivals</span>
+          </TitleTag>
+        )}
         {resolvedStopLetter || statusLabel || loading ? (
           <div className="flex shrink-0 items-center gap-x-2">
             {resolvedStopLetter ? (

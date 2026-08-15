@@ -316,8 +316,21 @@ const sharedTrackIdentityRank = (arrival: RealtimePrediction): number => {
 }
 
 /**
+ * TfL omits a real train id as blank or all zeros (`"000"`). Those are not
+ * one vehicle — collapsing them deletes distinct arrivals.
+ */
+const isUsableVehicleId = (
+  vehicleId: string | undefined,
+): vehicleId is string => {
+  const trimmed = vehicleId?.trim()
+  if (!trimmed) return false
+  return !/^0+$/.test(trimmed)
+}
+
+/**
  * TfL dual-lists the same vehicle on two lineIds at one shared-track stop.
- * Keep one row per `vehicleId` so the board does not paint the same train twice.
+ * Keep one row per usable `vehicleId` so the board does not paint the same
+ * train twice. Placeholder ids stay as separate rows.
  */
 const dedupeSharedTrackVehicles = (
   items: readonly IndexedArrival[],
@@ -326,7 +339,7 @@ const dedupeSharedTrackVehicles = (
   const passthrough: IndexedArrival[] = []
   for (const item of items) {
     const vehicleId = item.arrival.vehicleId?.trim()
-    if (!vehicleId) {
+    if (!isUsableVehicleId(vehicleId)) {
       passthrough.push(item)
       continue
     }

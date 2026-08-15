@@ -5,6 +5,7 @@ import {
   DEFAULT_BOARD_CONFIG,
   buildBoardHref,
   describeBoardHrefSegments,
+  normalizeBoardHash,
   parseBoardConfig,
 } from "./board-url-state";
 
@@ -118,6 +119,13 @@ describe("buildBoardHref", () => {
     );
   });
 
+  it("omits stopName when unset — the board resolves the heading", () => {
+    assert.equal(
+      buildBoardHref({ stop: "940GZZLUOXC" }),
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`,
+    );
+  });
+
   it("includes non-default values and the key", () => {
     const href = buildBoardHref({
       stop: "940GZZLUOXC",
@@ -132,12 +140,20 @@ describe("buildBoardHref", () => {
     );
   });
 
-  it("omits default scalar a.rows", () => {
+  it("serializes scalar a.rows=3 as a broadcast, not as omitted", () => {
     const href = buildBoardHref({
       stop: "940GZZLUOXC",
       arrivals: { rows: 3 },
     });
-    assert.equal(href, `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`);
+    assert.equal(href, `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&a.rows=3`);
+  });
+
+  it("keeps a trailing comma so a.rows=3, is first-slot only", () => {
+    const href = buildBoardHref({
+      stop: "940GZZLUOXC",
+      arrivals: { rows: [3, undefined] },
+    });
+    assert.equal(href, `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&a.rows=3,`);
   });
 
   it("serializes non-default scalar a.rows", () => {
@@ -212,7 +228,7 @@ describe("describeBoardHrefSegments", () => {
     assert.deepEqual(describeBoardHrefSegments({}), []);
   });
 
-  it("omits default mode, fit, and scalar a.rows", () => {
+  it("omits default mode and fit; scalar a.rows=3 is a real segment", () => {
     assert.deepEqual(
       describeBoardHrefSegments({
         stop: "940GZZLUOXC",
@@ -220,7 +236,10 @@ describe("describeBoardHrefSegments", () => {
         fit: "static",
         arrivals: { rows: 3 },
       }),
-      [{ setting: "stop", text: "stop=940GZZLUOXC" }],
+      [
+        { setting: "stop", text: "stop=940GZZLUOXC" },
+        { setting: "arrivalsRows", text: "a.rows=3" },
+      ],
     );
   });
 
@@ -265,5 +284,62 @@ describe("describeBoardHrefSegments", () => {
       .map((segment) => segment.text)
       .join("&")}`;
     assert.equal(fromSegments, buildBoardHref(next));
+  });
+});
+
+describe("normalizeBoardHash", () => {
+  it("is a no-op for an already-canonical hash", () => {
+    assert.equal(
+      normalizeBoardHash("#stop=940GZZLUOXC&a.rows=6"),
+      "#stop=940GZZLUOXC&a.rows=6",
+    );
+  });
+
+  it("trims, drops invalid slots, and clamps a.rows", () => {
+    assert.equal(
+      normalizeBoardHash("#stop=940GZZLUOXC&a.rows= 6 , abc ,2"),
+      "#stop=940GZZLUOXC&a.rows=6,,2",
+    );
+    assert.equal(
+      normalizeBoardHash("#stop=940GZZLUOXC&a.rows=99"),
+      "#stop=940GZZLUOXC&a.rows=16",
+    );
+  });
+
+  it("normalizes a.lines and omits default mode", () => {
+    assert.equal(
+      normalizeBoardHash(
+        "#stop=940GZZLUOXC&mode=static&a.lines=Victoria,central,victoria,not-a-line",
+      ),
+      "#stop=940GZZLUOXC&a.lines=victoria,central",
+    );
+  });
+
+  it("drops empty values and invalid mode/fit", () => {
+    assert.equal(
+      normalizeBoardHash("#stop=940GZZLUOXC&stopName=&mode=voice&fit=stretch"),
+      "#stop=940GZZLUOXC",
+    );
+  });
+
+  it("keeps unknown params before the key", () => {
+    assert.equal(
+      normalizeBoardHash("#stop=940GZZLUOXC&future=yes&s.filter=tube&key=abc"),
+      "#stop=940GZZLUOXC&future=yes&s.filter=tube&key=abc",
+    );
+  });
+
+  it("applies a stopName override so a catalog name can be stripped", () => {
+    assert.equal(
+      normalizeBoardHash("#stop=940GZZLUOXC&stopName=Oxford+Circus", {
+        stopName: undefined,
+      }),
+      "#stop=940GZZLUOXC",
+    );
+  });
+
+  it("returns an empty fragment for a bare or empty hash", () => {
+    assert.equal(normalizeBoardHash(""), "");
+    assert.equal(normalizeBoardHash("#"), "");
   });
 });

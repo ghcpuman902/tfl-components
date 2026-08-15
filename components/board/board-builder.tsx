@@ -26,11 +26,13 @@ import {
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
 import { useHorizontalScrollEnd } from "@/hooks/use-horizontal-scroll-end"
 import {
+  lookupBoardStationLineGroups,
   lookupBoardStationLines,
   type BoardStationLinesIndex,
 } from "@/lib/tfl/board-station-lines"
 import {
   lookupBoardStationName,
+  resolveBoardStopNameOverride,
   type BoardStationNamesIndex,
 } from "@/lib/tfl/board-station-names"
 import {
@@ -213,7 +215,6 @@ const PresetCard = ({
 const initialBoardConfig = (): BoardConfig => ({
   ...DEFAULT_BOARD_CONFIG,
   stop: HOME_RAIL_STOP.id,
-  stopName: HOME_RAIL_STOP.name,
   arrivals: {},
 })
 
@@ -250,14 +251,16 @@ export const BoardBuilder = ({
   const appKey = hydrated ? (getAppKey() ?? "") : ""
   const hasKey = Boolean(appKey)
 
+  const autoStopName = lookupBoardStationName(stationNames, config.stop)
+
   const forUrl = useMemo(
     () => ({
       ...config,
       stop: config.stop?.trim() || undefined,
-      stopName: config.stopName?.trim() || undefined,
+      stopName: resolveBoardStopNameOverride(config.stopName, autoStopName),
       key: appKey.trim() || undefined,
     }),
-    [config, appKey],
+    [config, appKey, autoStopName],
   )
 
   const href = useMemo(() => buildBoardHref(forUrl), [forUrl])
@@ -287,7 +290,8 @@ export const BoardBuilder = ({
       }
 
       // Positional overrides are stop-relative — drop them on stop change.
-      // A scalar `a.rows` survives.
+      // A scalar `a.rows` survives. Stop name is an override only — leave
+      // it empty so the board resolves the heading from the Stop ID.
       if (stopChanged) {
         const rows = merged.arrivals.rows
         merged.arrivals = {
@@ -295,14 +299,12 @@ export const BoardBuilder = ({
           lineOrder: undefined,
         }
 
-        // Auto-fill the station name from the Stop ID, same as rows/lines
-        // already derive from it — but only while the field still holds the
-        // *previous* auto-filled name. A custom name the user typed in
-        // survives the stop change; clearing the field re-arms auto-fill.
         const prevAutoName = lookupBoardStationName(stationNames, current.stop)
-        const wasAuto = !current.stopName || current.stopName === prevAutoName
-        if (wasAuto && next.stopName === undefined) {
-          merged.stopName = lookupBoardStationName(stationNames, next.stop)
+        const wasOverride =
+          Boolean(current.stopName?.trim()) &&
+          current.stopName?.trim() !== prevAutoName
+        if (!wasOverride && next.stopName === undefined) {
+          merged.stopName = undefined
         }
       }
 
@@ -372,6 +374,8 @@ export const BoardBuilder = ({
             config={config}
             formSettings={preset.formSettings}
             servingLines={lookupBoardStationLines(stationLines, config.stop)}
+            lineGroups={lookupBoardStationLineGroups(config.stop)}
+            autoStopName={autoStopName}
             segments={segments}
             onChange={handleConfigChange}
           />

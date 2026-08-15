@@ -13,6 +13,7 @@
  */
 
 import { getSharedTrackSegments } from "tfl-ts";
+import { RAIL_ARRIVALS_MERGED_PAGE_SIZE } from "@/lib/tfl/arrivals-defaults";
 import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort";
 import type { ArrivalsBoundId } from "@/lib/tfl/arrivals-bound-sort";
 import type {
@@ -66,7 +67,7 @@ const SHARED_TRACK_MERGE_EXCLUDE: Readonly<
   "940GZZLUBST": ["metropolitan"],
 };
 
-const SHARED_TRACK_MERGE_PAGE_SIZE = 6;
+const SHARED_TRACK_MERGE_PAGE_SIZE = RAIL_ARRIVALS_MERGED_PAGE_SIZE;
 
 const sortLineIds = (ids: readonly string[]): string[] =>
   [...ids].sort((a, b) =>

@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import type { RealtimePrediction } from "tfl-ts"
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
+import { resolveArrivalsHeading } from "@/components/tfl/arrivals/arrivals-board-view"
 
 /**
  * Structural tests for the arrivals layout API: stable `data-slot` hooks,
@@ -208,5 +209,43 @@ describe("arrivals board layout API", () => {
       html.match(/<ul[^>]*data-slot="arrivals-rows"[^>]*>/g) ?? []
     assert.equal(rowsTags.length, 2)
     assert.ok(rowsTags.every((tag) => tag.includes("rows-custom")))
+  })
+
+  it("uses data.stationName when stopName is omitted", () => {
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: railData.map((row) => ({
+          ...row,
+          stationName: "Oxford Circus",
+        })),
+      }),
+    )
+    assert.ok(html.includes("Oxford Circus"))
+  })
+
+  it("prefers an explicit stopName over data.stationName", () => {
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: railData.map((row) => ({
+          ...row,
+          stationName: "Oxford Circus",
+        })),
+        stopName: "Custom heading",
+      }),
+    )
+    assert.ok(html.includes("Custom heading"))
+    assert.equal(html.includes("Oxford Circus"), false)
+  })
+})
+
+describe("resolveArrivalsHeading", () => {
+  it("prefers the override, then the first stationName on data", () => {
+    assert.equal(resolveArrivalsHeading("Home", []), "Home")
+    assert.equal(
+      resolveArrivalsHeading(undefined, [{ stationName: "Oxford Circus" }]),
+      "Oxford Circus",
+    )
+    assert.equal(resolveArrivalsHeading("  ", []), undefined)
+    assert.equal(resolveArrivalsHeading(undefined, []), undefined)
   })
 })

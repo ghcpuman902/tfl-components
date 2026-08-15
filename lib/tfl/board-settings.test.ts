@@ -60,6 +60,9 @@ describe("parseRowsItem", () => {
 describe("parseArrivalsRows", () => {
   it("parses scalar and list forms", () => {
     assert.equal(parseArrivalsRows("6"), 6);
+    assert.equal(parseArrivalsRows("3"), 3);
+    assert.deepEqual(parseArrivalsRows("3,"), [3, undefined]);
+    assert.deepEqual(parseArrivalsRows("3,6,"), [3, 6, undefined]);
     assert.deepEqual(parseArrivalsRows("6,2,2"), [6, 2, 2]);
     assert.deepEqual(parseArrivalsRows("6,,2"), [6, undefined, 2]);
   });
@@ -71,18 +74,22 @@ describe("parseArrivalsRows", () => {
 });
 
 describe("serializeArrivalsRows", () => {
-  it("omits the component default scalar", () => {
-    assert.equal(
-      serializeArrivalsRows(RAIL_ARRIVALS_DEFAULT_PAGE_SIZE),
-      undefined,
-    );
+  it("keeps a scalar 3 — broadcast, not the empty default", () => {
+    assert.equal(serializeArrivalsRows(RAIL_ARRIVALS_DEFAULT_PAGE_SIZE), "3");
   });
 
-  it("serializes non-default scalar and lists", () => {
+  it("serializes scalars and lists, keeping empty slots", () => {
     assert.equal(serializeArrivalsRows(6), "6");
     assert.equal(serializeArrivalsRows(0), "0");
+    assert.equal(serializeArrivalsRows([3, undefined]), "3,");
+    assert.equal(serializeArrivalsRows([3, 6, undefined]), "3,6,");
     assert.equal(serializeArrivalsRows([6, 2, 2]), "6,2,2");
     assert.equal(serializeArrivalsRows([6, undefined, 2]), "6,,2");
+  });
+
+  it("omits an empty or all-blank list", () => {
+    assert.equal(serializeArrivalsRows([]), undefined);
+    assert.equal(serializeArrivalsRows([undefined, undefined]), undefined);
   });
 });
 

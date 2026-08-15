@@ -2,9 +2,17 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { HOME_RAIL_LINES } from "./home-arrivals-stops";
 import {
+  formatArrivalsRowsPlaceholder,
+  formatArrivalsRowsPreview,
   resolveArrivalsProps,
   resolveEffectiveLineOrder,
+  resolveEffectiveSections,
 } from "./board-config-resolve";
+import {
+  getBoardStationLinesIndex,
+  lookupBoardStationLineGroups,
+  lookupBoardStationLines,
+} from "./board-station-lines";
 import { DEFAULT_BOARD_CONFIG, type BoardConfig } from "./board-url-state";
 
 const base = (arrivals: BoardConfig["arrivals"]): BoardConfig => ({
@@ -61,9 +69,10 @@ describe("resolveArrivalsProps", () => {
     assert.equal(props.lines, HOME_RAIL_LINES);
   });
 
-  it("omits scalar default pageSize", () => {
+  it("broadcasts scalar 3 to every section", () => {
     const props = resolveArrivalsProps(base({ rows: 3 }), HOME_RAIL_LINES);
-    assert.equal(props.pageSize, undefined);
+    assert.equal(props.pageSize, 3);
+    assert.equal(props.pageSizeByLine, undefined);
   });
 
   it("zips positional rows by canonical serving order", () => {
@@ -139,5 +148,129 @@ describe("resolveArrivalsProps", () => {
     });
     // bakerloo present in lines seed, not in pageSizeByLine → component default
     assert.ok(props.lines?.some((l) => l.lineId === "bakerloo"));
+  });
+});
+
+const livst = (arrivals: BoardConfig["arrivals"] = {}): BoardConfig => ({
+  ...DEFAULT_BOARD_CONFIG,
+  stop: "940GZZLULVT",
+  arrivals,
+});
+
+describe("shared-platform sections", () => {
+  const serving = lookupBoardStationLines(
+    getBoardStationLinesIndex(),
+    "940GZZLULVT",
+  );
+  const groups = lookupBoardStationLineGroups("940GZZLULVT");
+
+  it("collapses Circle / H&C / Metropolitan into one Liverpool Street section", () => {
+    const sections = resolveEffectiveSections(livst(), serving, [], groups);
+    assert.deepEqual(
+      sections.map((section) => section.lineId),
+      ["central", "circle", "elizabeth", "weaver"],
+    );
+    const merged = sections.find((section) => section.lineId === "circle");
+    assert.deepEqual(merged?.lineIds, [
+      "circle",
+      "hammersmith-city",
+      "metropolitan",
+    ]);
+    assert.equal(merged?.defaultPageSize, 6);
+    assert.equal(
+      merged?.lineName,
+      "Circle, Hammersmith & City and Metropolitan",
+    );
+  });
+
+  it("previews curated defaults, not a flat max 3 per line", () => {
+    assert.equal(
+      formatArrivalsRowsPreview(livst(), serving, groups),
+      "Central: max 3, Circle, Hammersmith & City and Metropolitan: max 6, Elizabeth line: max 3, Weaver: max 3",
+    );
+    assert.equal(
+      formatArrivalsRowsPlaceholder(
+        resolveEffectiveSections(livst(), serving, [], groups),
+      ),
+      "3,6,3,3",
+    );
+  });
+
+  it("broadcasts a lone 3 to every Liverpool Street section, including the merge", () => {
+    assert.equal(
+      formatArrivalsRowsPreview(livst({ rows: 3 }), serving, groups),
+      "Central: max 3, Circle, Hammersmith & City and Metropolitan: max 3, Elizabeth line: max 3, Weaver: max 3",
+    );
+    const props = resolveArrivalsProps(livst({ rows: 3 }), serving, [], groups);
+    assert.equal(props.pageSize, 3);
+    assert.equal(props.pageSizeByLine, undefined);
+  });
+
+  it("treats 3, as first-slot only; empty slots keep section defaults", () => {
+    assert.equal(
+      formatArrivalsRowsPreview(livst({ rows: [3, undefined] }), serving, groups),
+      "Central: max 3, Circle, Hammersmith & City and Metropolitan: max 6, Elizabeth line: max 3, Weaver: max 3",
+    );
+    const props = resolveArrivalsProps(
+      livst({ rows: [3, 6, undefined] }),
+      serving,
+      [],
+      groups,
+    );
+    assert.deepEqual(props.pageSizeByLine, {
+      central: 3,
+      circle: 6,
+      "hammersmith-city": 6,
+      metropolitan: 6,
+    });
+  });
+
+  it("zips positional a.rows onto every member of a merged section", () => {
+    const props = resolveArrivalsProps(
+      livst({ rows: [4, 8, 2, 2] }),
+      serving,
+      [],
+      groups,
+    );
+    assert.deepEqual(props.pageSizeByLine, {
+      central: 4,
+      circle: 8,
+      "hammersmith-city": 8,
+      metropolitan: 8,
+      elizabeth: 2,
+      weaver: 2,
+    });
+  });
+
+  it("keeps Oxford Circus ungrouped", () => {
+    assert.deepEqual(
+      resolveEffectiveLineOrder(base({}), HOME_RAIL_LINES, [], undefined),
+      ["central", "victoria", "bakerloo"],
+    );
+    assert.equal(
+      formatArrivalsRowsPreview(base({}), HOME_RAIL_LINES),
+      "Central: max 3, Victoria: max 3, Bakerloo: max 3",
+    );
+  });
+
+  it("merges Circle and H&C at Baker Street; Metropolitan stays its own section", () => {
+    const bakerServing = lookupBoardStationLines(
+      getBoardStationLinesIndex(),
+      "940GZZLUBST",
+    );
+    const bakerGroups = lookupBoardStationLineGroups("940GZZLUBST");
+    const sections = resolveEffectiveSections(
+      { ...DEFAULT_BOARD_CONFIG, stop: "940GZZLUBST", arrivals: {} },
+      bakerServing,
+      [],
+      bakerGroups,
+    );
+    const merged = sections.find((section) => section.lineId === "circle");
+    assert.deepEqual(merged?.lineIds, ["circle", "hammersmith-city"]);
+    assert.ok(sections.some((section) => section.lineId === "metropolitan"));
+    assert.equal(
+      sections.some((section) => section.lineIds.includes("metropolitan") && section.lineIds.length > 1),
+      false,
+    );
   });
 });

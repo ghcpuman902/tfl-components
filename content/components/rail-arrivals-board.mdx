@@ -202,7 +202,7 @@ Keep polling outside the board, then update `data`. Optional `statusLabel` shows
 | `lineSortBy` | `"canonical" \| "source"` | Line section order. |
 | `lineOrder` | `readonly string[]` | Explicit line section order by id. Listed lines first; unlisted follow canonically. Ordering only — does not hide or seed lines. Overrides `lineSortBy`. |
 | `boundSortBy` | `"compass" \| "source"` | Bound order within a line. |
-| `stopName` | `string` | Board heading. Fits via abbr/scale, same policy as destinations. |
+| `stopName` | `string` | Optional heading override. Omit to use `data[].stationName`. Fits via abbr/scale, same policy as destinations. |
 | `loading` / `error` | … | Loading and error presentation. Prefer a short human `error` string. |
 | `emptyKind` | `"empty" \| "ended" \| "offline"` | Why the board has no sections when `error` is unset and `lines` is empty. Resolve in the app (`resolveArrivalsEmptyKind`). |
 | `emptyMessage` | `string` | Optional copy override for `emptyKind`. |

@@ -14,9 +14,13 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RAIL_ARRIVALS_DEFAULT_PAGE_SIZE } from "@/lib/tfl/arrivals-defaults"
 import type { RailArrivalsLine } from "@/lib/tfl/arrivals-prepare"
-import { resolveEffectiveLineOrder } from "@/lib/tfl/board-config-resolve"
+import {
+  formatArrivalsRowsPlaceholder,
+  formatArrivalsRowsPreview,
+  resolveEffectiveSections,
+} from "@/lib/tfl/board-config-resolve"
+import type { BoardStationLineGroup } from "@/lib/tfl/board-station-lines"
 import {
   BOARD_SETTINGS,
   parseArrivalsLines,
@@ -28,13 +32,16 @@ import {
   type BoardConfig,
   type BoardHrefSegment,
 } from "@/lib/tfl/board-url-state"
-import { getLineNameTiers } from "@/lib/tfl/line-names"
 
 type BoardConfigFormProps = {
   config: BoardConfig
   formSettings: readonly BoardSettingId[]
   /** Offline serving lines for the current stop — drives rows preview. */
   servingLines?: readonly RailArrivalsLine[]
+  /** Shared-platform merges for the current stop — same table as the board. */
+  lineGroups?: readonly BoardStationLineGroup[]
+  /** Catalog name for the current Stop ID — placeholder, not a URL value. */
+  autoStopName?: string
   /** Live URL segments for circled field badges (same list as Launch legend). */
   segments?: readonly BoardHrefSegment[]
   onChange: (next: Partial<BoardConfig>) => void
@@ -62,43 +69,6 @@ const linesDraftFromConfig = (
   lineOrder: BoardConfig["arrivals"]["lineOrder"],
 ): string => serializeArrivalsLines(lineOrder) ?? ""
 
-const lineDisplayName = (
-  lineId: string,
-  servingLines: readonly RailArrivalsLine[] | undefined,
-): string => {
-  const fromServing = servingLines?.find((line) => line.lineId === lineId)
-  if (fromServing?.lineName) return fromServing.lineName
-  return getLineNameTiers(lineId).full
-}
-
-/**
- * Live zip of effective line order × rows values, e.g.
- * `central: max 2, victoria: max 3, bakerloo: max 2`.
- */
-const buildRowsPreview = (
-  config: BoardConfig,
-  servingLines: readonly RailArrivalsLine[] | undefined,
-): string | null => {
-  if (!servingLines?.length) return null
-
-  const order = resolveEffectiveLineOrder(config, servingLines)
-  if (order.length === 0) return null
-
-  const rows = config.arrivals.rows
-  return order
-    .map((lineId, index) => {
-      const name = lineDisplayName(lineId, servingLines)
-      let max = RAIL_ARRIVALS_DEFAULT_PAGE_SIZE
-      if (typeof rows === "number") {
-        max = rows
-      } else if (Array.isArray(rows) && rows[index] !== undefined) {
-        max = rows[index] as number
-      }
-      return `${name}: max ${max}`
-    })
-    .join(", ")
-}
-
 const FieldLabel = ({
   htmlFor,
   setting,
@@ -125,6 +95,8 @@ export const BoardConfigForm = ({
   config,
   formSettings,
   servingLines,
+  lineGroups,
+  autoStopName,
   segments = [],
   onChange,
 }: BoardConfigFormProps) => {
@@ -142,10 +114,18 @@ export const BoardConfigForm = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only reset on stop change
   }, [config.stop])
 
-  const rowsPreview = useMemo(
-    () => buildRowsPreview(config, servingLines),
-    [config, servingLines],
+  const sections = useMemo(
+    () => resolveEffectiveSections(config, servingLines, [], lineGroups),
+    [config, servingLines, lineGroups],
   )
+  const rowsPreview = useMemo(
+    () => formatArrivalsRowsPreview(config, servingLines, lineGroups),
+    [config, servingLines, lineGroups],
+  )
+  const rowsPlaceholder = formatArrivalsRowsPlaceholder(sections)
+  const linesPlaceholder = sections.length
+    ? sections.map((section) => section.lineId).join(",")
+    : "central,victoria,bakerloo"
 
   const handleStopChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange({ stop: event.target.value })
@@ -233,14 +213,15 @@ export const BoardConfigForm = ({
             value={config.stopName ?? ""}
             onChange={handleStopNameChange}
             autoComplete="off"
+            placeholder={autoStopName}
             aria-describedby="board-stop-name-hint"
           />
           <p
             id="board-stop-name-hint"
             className="text-sm text-muted-foreground"
           >
-            Auto-fills from the Stop ID. Edit to show a custom label; clear
-            to go back to auto.
+            {BOARD_SETTINGS.stopName.ui?.help ??
+              "Override the heading. Leave blank to use the station name from the Stop ID."}
           </p>
         </div>
       ) : null}
@@ -261,11 +242,7 @@ export const BoardConfigForm = ({
             onChange={handleLinesChange}
             autoComplete="off"
             spellCheck={false}
-            placeholder={
-              servingLines?.length
-                ? servingLines.map((line) => line.lineId).join(",")
-                : "central,victoria,bakerloo"
-            }
+            placeholder={linesPlaceholder}
             aria-describedby="board-lines-hint"
           />
           <p id="board-lines-hint" className="text-sm text-muted-foreground">
@@ -291,7 +268,7 @@ export const BoardConfigForm = ({
             autoComplete="off"
             spellCheck={false}
             inputMode="numeric"
-            placeholder={String(RAIL_ARRIVALS_DEFAULT_PAGE_SIZE)}
+            placeholder={rowsPlaceholder}
             aria-describedby={
               rowsPreview
                 ? "board-rows-preview board-rows-hint"

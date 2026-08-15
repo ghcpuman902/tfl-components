@@ -2,6 +2,7 @@ import type { RealtimePrediction } from "tfl-ts"
 import {
   ArrivalsBoardSkeleton,
   ArrivalsBoardView,
+  resolveArrivalsHeading,
   resolveBusStopLetter,
   type ArrivalsBoardChromeProps,
   type ArrivalsBoardClassNames,
@@ -90,11 +91,12 @@ export const BusArrivalsBoard = ({
   ...chrome
 }: BusArrivalsBoardProps) => {
   const rows = data ?? []
+  const heading = resolveArrivalsHeading(chrome.stopName, rows)
   if (loading && rows.length === 0 && !error) {
     return (
       <BusArrivalsBoardSkeleton
         className={className}
-        stopName={chrome.stopName}
+        stopName={heading}
         stopLetter={stopLetter}
       />
     )
@@ -121,6 +123,7 @@ export const BusArrivalsBoard = ({
       className={className}
       classNames={classNames}
       {...chrome}
+      stopName={heading}
     />
   )
 }

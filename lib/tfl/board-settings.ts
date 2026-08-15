@@ -140,6 +140,7 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Stop name (optional)",
+      help: "Override the heading. Leave blank to use the station name from the Stop ID.",
       control: "text",
     },
   } satisfies ScalarSetting<string | undefined>,
@@ -201,12 +202,12 @@ export const BOARD_SETTINGS = {
       return undefined;
     },
     serialize: (value: number) => serializeRowsItem(value),
-    isDefault: (value: number) => value === RAIL_ARRIVALS_DEFAULT_PAGE_SIZE,
+    isDefault: (value: number) => false,
     url: true,
     form: true,
     ui: {
       label: "Rows per line",
-      help: "One number for every line, or a comma list matched to line order. 0 shows every row.",
+      help: "One number applies to every section. A comma list matches line order; empty slots use the section default (3, or 6 when lines share platforms). 0 shows every row.",
       control: "text",
     },
   } satisfies ScalarSetting<number>,
@@ -227,7 +228,7 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Line order (optional)",
-      help: "Comma-separated line ids. Blank uses the station’s default order.",
+      help: "Comma-separated line ids. Shared-platform lines are one section. Blank uses the station’s default order.",
       control: "text",
     },
   } satisfies ListSetting<readonly string[]>,
@@ -267,15 +268,10 @@ export const serializeArrivalsRows = (
   value: number | readonly (number | undefined)[],
 ): string | undefined => {
   if (typeof value === "number") {
-    if (value === RAIL_ARRIVALS_DEFAULT_PAGE_SIZE) return undefined;
     return serializeRowsItem(value);
   }
   if (value.length === 0) return undefined;
-  const allDefault = value.every(
-    (item) =>
-      item === undefined || item === RAIL_ARRIVALS_DEFAULT_PAGE_SIZE,
-  );
-  if (allDefault) return undefined;
+  if (value.every((item) => item === undefined)) return undefined;
   return value
     .map((item) =>
       item === undefined ? "" : serializeRowsItem(item),
