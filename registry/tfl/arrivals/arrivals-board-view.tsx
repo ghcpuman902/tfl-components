@@ -82,8 +82,6 @@ export const ARRIVALS_RHYTHM_VARS = {
 export const ARRIVALS_TILE_CLASS =
   "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden [content-visibility:auto] [contain-intrinsic-size:auto_3rem]"
 
-/** Half of `text-base` Johnston-like x-height (~4px). */
-const LINE_BAR_BORDER_CLASS = "border-b-4"
 const TITLE_CLASS =
   "[font-synthesis:none] [font-weight:var(--tfl-title-weight,400)] [letter-spacing:var(--tfl-title-tracking,0)]"
 
@@ -183,15 +181,10 @@ export const ArrivalsBoardSkeleton = ({
     ) : (
       Array.from({ length: 2 }).map((_, sectionIndex) => (
         <div key={sectionIndex}>
-          <div
-            className={cn(
-              "flex items-end",
-              ARRIVALS_TILE_CLASS,
-              LINE_BAR_BORDER_CLASS
-            )}
-          >
-            <Skeleton className="mb-2 h-6 w-28" />
+          <div className={cn("flex items-center", ARRIVALS_TILE_CLASS)}>
+            <Skeleton className="h-6 w-28" />
           </div>
+          <div className="h-1 -mt-1 bg-border" aria-hidden />
           {Array.from({ length: 4 }).map((_, rowIndex) => (
             <div
               key={rowIndex}
@@ -260,6 +253,7 @@ const GroupBody = ({
           lineName={group.lineName}
           isLastBound={index === group.bounds.length - 1}
           pageSize={pageSize}
+          showLineChip={group.lineIds.length > 1}
           classNames={classNames}
         />
       ))}
@@ -272,13 +266,16 @@ export const resolveGroupPageSize = (
   lineId: string,
   pageSize: number | undefined,
   pageSizeByLine: Readonly<Record<string, number>> | undefined,
+  lineIds?: readonly string[],
 ): number | undefined => {
   if (!pageSizeByLine) return pageSize
-  const keyed = pageSizeByLine[normalizeLineId(lineId)]
-  if (typeof keyed === "number") return keyed
-  // Also allow the raw id key for callers that already normalized.
-  const raw = pageSizeByLine[lineId]
-  if (typeof raw === "number") return raw
+  const ids = lineIds?.length ? lineIds : [lineId]
+  for (const id of ids) {
+    const keyed = pageSizeByLine[normalizeLineId(id)]
+    if (typeof keyed === "number") return keyed
+    const raw = pageSizeByLine[id]
+    if (typeof raw === "number") return raw
+  }
   return pageSize
 }
 
@@ -447,7 +444,11 @@ export const ArrivalsBoardView = ({
             <section
               key={group.key}
               data-slot="arrivals-group"
-              data-line={group.lineId || undefined}
+              data-line={
+                group.lineIds.length > 1
+                  ? undefined
+                  : group.lineId || undefined
+              }
               className={cn(
                 "@container/arrivals-group min-w-0",
                 classNames?.group
@@ -460,7 +461,8 @@ export const ArrivalsBoardView = ({
                 pageSize={resolveGroupPageSize(
                   group.lineId,
                   pageSize,
-                  pageSizeByLine
+                  pageSizeByLine,
+                  group.lineIds
                 )}
                 classNames={classNames}
               />

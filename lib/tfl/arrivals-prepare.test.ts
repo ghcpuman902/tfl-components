@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import type { RealtimePrediction } from "tfl-ts"
+import { ARRIVALS_PLATFORM_UNKNOWN_HEADING } from "@/lib/tfl/arrivals-empty"
 import {
   chunkBoundPages,
   prepareBusArrivals,
@@ -120,12 +121,12 @@ describe("prepareRailArrivals", () => {
       lines: oxfordLines,
     })
     assert.deepEqual(boundLabels(board.groups), [
-      "Central:Westbound",
+      "Central:Westbound · Platform 1",
       "Central:Eastbound",
       "Victoria:Northbound",
       "Victoria:Southbound",
-      "Bakerloo:Northbound",
-      "Bakerloo:Southbound",
+      "Bakerloo:Northbound · Platform 3",
+      "Bakerloo:Southbound · Platform 4",
     ])
   })
 
@@ -164,7 +165,7 @@ describe("prepareRailArrivals", () => {
       data: [laterNorth, bakerlooNorth],
     })
     const north = board.groups[0]?.bounds.find(
-      (bound) => bound.label === "Northbound"
+      (bound) => bound.boundId === "northbound"
     )
     assert.deepEqual(idsOf(north?.rows ?? []), ["b-n", "b-n-late"])
   })
@@ -184,8 +185,8 @@ describe("prepareRailArrivals", () => {
     ])
     const bakerloo = board.groups.find((group) => group.lineId === "bakerloo")
     assert.deepEqual(
-      bakerloo?.bounds.map((bound) => bound.label),
-      ["Northbound", "Southbound"]
+      bakerloo?.bounds.map((bound) => bound.boundId),
+      ["northbound", "southbound"]
     )
     assert.deepEqual(idsOf(bakerloo?.bounds[0]?.rows ?? []), ["b-n"])
     assert.deepEqual(idsOf(bakerloo?.bounds[1]?.rows ?? []), ["b-s"])
@@ -245,14 +246,14 @@ describe("prepareRailArrivals", () => {
       "Bakerloo",
     ])
     const centralWestBound = board.groups[0]?.bounds.find(
-      (bound) => bound.label === "Westbound"
+      (bound) => bound.boundId === "westbound"
     )
     assert.equal(centralWestBound?.rows.length, 3)
     const bakerloo = board.groups.find((group) => group.lineId === "bakerloo")
     assert.equal(bakerloo?.hasInformation, true)
     assert.deepEqual(
       idsOf(
-        bakerloo?.bounds.find((bound) => bound.label === "Northbound")?.rows ??
+        bakerloo?.bounds.find((bound) => bound.boundId === "northbound")?.rows ??
           []
       ),
       ["b-n"]
@@ -305,8 +306,8 @@ describe("prepareRailArrivals", () => {
     })
     const board = prepareRailArrivals({ data: [platformA, platformB] })
     assert.deepEqual(boundLabels(board.groups), [
-      "Elizabeth line:A",
-      "Elizabeth line:B",
+      "Elizabeth line:Platform A",
+      "Elizabeth line:Platform B",
     ])
     assert.deepEqual(idsOf(board.groups[0]?.bounds[0]?.rows ?? []), ["elz-a"])
     assert.deepEqual(idsOf(board.groups[0]?.bounds[1]?.rows ?? []), ["elz-b"])
@@ -333,8 +334,8 @@ describe("prepareRailArrivals", () => {
     })
     const board = prepareRailArrivals({ data: [platform1, platform2] })
     assert.deepEqual(boundLabels(board.groups), [
-      "Windrush:1",
-      "Windrush:2",
+      "Windrush:Platform 1",
+      "Windrush:Platform 2",
     ])
   })
 
@@ -343,12 +344,12 @@ describe("prepareRailArrivals", () => {
       data: [bakerlooNorth, bakerlooSouth],
     })
     assert.deepEqual(boundLabels(board.groups), [
-      "Bakerloo:Northbound",
-      "Bakerloo:Southbound",
+      "Bakerloo:Northbound · Platform 3",
+      "Bakerloo:Southbound · Platform 4",
     ])
   })
 
-  it("does not group literal Platform Unknown", () => {
+  it("groups literal Platform Unknown under a stable fallback heading", () => {
     const unknown = prediction({
       id: "unk",
       lineId: "central",
@@ -357,7 +358,133 @@ describe("prepareRailArrivals", () => {
       timeToStation: 20,
     })
     const board = prepareRailArrivals({ data: [unknown] })
-    assert.deepEqual(boundLabels(board.groups), ["Central:none"])
+    assert.deepEqual(boundLabels(board.groups), [
+      `Central:${ARRIVALS_PLATFORM_UNKNOWN_HEADING}`,
+    ])
+    const bound = board.groups[0]?.bounds[0]
+    assert.equal(bound?.kind, "unknown")
+    assert.equal(bound?.platformUniform, false)
+  })
+
+  it("treats a missing platformName as the unknown-platform bucket", () => {
+    const missing = prediction({
+      id: "miss",
+      lineId: "weaver",
+      lineName: "Weaver",
+      timeToStation: 70,
+    })
+    const board = prepareRailArrivals({ data: [missing] })
+    assert.equal(board.groups[0]?.bounds[0]?.kind, "unknown")
+    assert.equal(
+      board.groups[0]?.bounds[0]?.label,
+      ARRIVALS_PLATFORM_UNKNOWN_HEADING,
+    )
+  })
+
+  it("hoists a uniform platform into a compass heading", () => {
+    const board = prepareRailArrivals({ data: [bakerlooNorth] })
+    const north = board.groups[0]?.bounds[0]
+    assert.equal(north?.label, "Northbound · Platform 3")
+    assert.equal(north?.platformUniform, true)
+    assert.equal(north?.platformLabel, "3")
+    assert.equal(north?.kind, "compass")
+  })
+
+  it("keeps the compass heading and does not hoist when platforms vary", () => {
+    const platform1 = prediction({
+      id: "c-p1",
+      lineId: "central",
+      lineName: "Central",
+      platformName: "Westbound - Platform 1",
+      timeToStation: 20,
+    })
+    const platform2 = prediction({
+      id: "c-p2",
+      lineId: "central",
+      lineName: "Central",
+      platformName: "Westbound - Platform 2",
+      timeToStation: 40,
+    })
+    const board = prepareRailArrivals({ data: [platform1, platform2] })
+    const west = board.groups[0]?.bounds[0]
+    assert.equal(west?.label, "Westbound")
+    assert.equal(west?.platformUniform, false)
+    assert.equal(west?.platformLabel, null)
+    assert.equal(west?.rows.length, 2)
+  })
+
+  it("merges lineGroups into one section and keeps per-row line identity", () => {
+    const circleEast = prediction({
+      id: "cir-e",
+      lineId: "circle",
+      lineName: "Circle",
+      modeName: "tube",
+      platformName: "Eastbound - Platform 1",
+      towards: "Edgware Road (Circle)",
+      timeToStation: 120,
+    })
+    const hcWest = prediction({
+      id: "hc-w",
+      lineId: "hammersmith-city",
+      lineName: "Hammersmith & City",
+      modeName: "tube",
+      platformName: "Westbound - Platform 2",
+      towards: "Hammersmith",
+      timeToStation: 60,
+    })
+    const metEast = prediction({
+      id: "met-e",
+      lineId: "metropolitan",
+      lineName: "Metropolitan",
+      modeName: "tube",
+      platformName: "Eastbound - Platform 1",
+      towards: "Aldgate",
+      timeToStation: 90,
+    })
+    const centralWestOnly = prediction({
+      id: "cen-w",
+      lineId: "central",
+      lineName: "Central",
+      modeName: "tube",
+      platformName: "Westbound - Platform 5",
+      timeToStation: 30,
+    })
+    const board = prepareRailArrivals({
+      data: [circleEast, hcWest, metEast, centralWestOnly],
+      lineGroups: [
+        { lines: ["circle", "hammersmith-city", "metropolitan"] },
+      ],
+    })
+    assert.deepEqual(groupNames(board.groups), [
+      "Central",
+      "Circle, Hammersmith & City and Metropolitan",
+    ])
+    const merged = board.groups.find((group) => group.lineIds.length > 1)
+    assert.ok(merged)
+    assert.deepEqual(merged.lineIds, [
+      "circle",
+      "hammersmith-city",
+      "metropolitan",
+    ])
+    assert.equal(merged.lineId, "circle")
+    const west = merged.bounds.find((bound) => bound.boundId === "westbound")
+    const east = merged.bounds.find((bound) => bound.boundId === "eastbound")
+    assert.equal(west?.label, "Westbound · Platform 2")
+    assert.equal(east?.label, "Eastbound · Platform 1")
+    assert.deepEqual(idsOf(west?.rows ?? []), ["hc-w"])
+    assert.deepEqual(idsOf(east?.rows ?? []), ["met-e", "cir-e"])
+    assert.equal(east?.rows[0]?.arrival.lineId, "metropolitan")
+    assert.equal(east?.rows[1]?.arrival.lineId, "circle")
+    const central = board.groups.find((group) => group.lineId === "central")
+    assert.equal(central?.lineIds.length, 1)
+  })
+
+  it("ignores lineGroups with a single id", () => {
+    const board = prepareRailArrivals({
+      data: [bakerlooNorth, centralWest],
+      lineGroups: [{ lines: ["bakerloo"] }],
+    })
+    assert.deepEqual(groupNames(board.groups), ["Central", "Bakerloo"])
   })
 
   it("lineOrder does not hide or seed lines", () => {

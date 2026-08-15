@@ -10,6 +10,7 @@ import {
   prepareRailArrivals,
   type RailArrivalsBoundSortBy,
   type RailArrivalsLine,
+  type RailArrivalsLineGroup,
   type RailArrivalsLineSortBy,
   type RailArrivalsSortBy,
 } from "@/lib/tfl/arrivals-prepare"
@@ -29,6 +30,12 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
    * `lineOrder` for an explicit section order.
    */
   lines?: readonly RailArrivalsLine[]
+  /**
+   * Merge listed line ids into one section (shared platforms). Off by default.
+   * Each row keeps its originating `lineId` so mixed-line groups can show a
+   * line chip. Groups with fewer than two ids are ignored.
+   */
+  lineGroups?: readonly RailArrivalsLineGroup[]
   /** Arrival order within each bound. Default `timeToStation`. */
   sortBy?: RailArrivalsSortBy
   /** Line section order. Default `canonical` (`LINE_ORDER`). */
@@ -83,17 +90,19 @@ export const RailArrivalsBoardSkeleton = ({
 )
 
 /**
- * Rail arrivals board. Groups by line, then compass bound. Fetching, caching,
- * and polling stay in the app.
+ * Rail arrivals board. Groups by line (or `lineGroups` merge), then compass
+ * bound or platform. Fetching, caching, and polling stay in the app.
  *
  * Defaults: canonical `LINE_ORDER` (empty lines keep their slot), compass
  * bound order, `timeToStation` within each bound. Optional `lines[].bounds`
  * seeds empty bound groups from station metadata. Each bound shows `pageSize`
  * trains (or `pageSizeByLine[lineId]`); hover the bound group to page the rest.
+ * Uniform platforms hoist into the bound heading.
  */
 export const RailArrivalsBoard = ({
   data,
   lines,
+  lineGroups,
   sortBy = "timeToStation",
   lineSortBy = "canonical",
   lineOrder,
@@ -120,6 +129,7 @@ export const RailArrivalsBoard = ({
   const prepared = prepareRailArrivals({
     data: rows,
     lines,
+    lineGroups,
     sortBy,
     lineSortBy,
     lineOrder,
@@ -142,7 +152,7 @@ export const RailArrivalsBoard = ({
   )
 }
 
-export type { ArrivalsBoardClassNames, RailArrivalsLine }
+export type { ArrivalsBoardClassNames, RailArrivalsLine, RailArrivalsLineGroup }
 export type {
   RailArrivalsBoundSortBy,
   RailArrivalsLineSortBy,

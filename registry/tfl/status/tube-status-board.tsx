@@ -121,20 +121,17 @@ const BOARD_RHYTHM_VARS = {
 const TILE_CLASS =
   "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden";
 
-/** Half of `text-base` Johnston-like x-height (~4px). */
-const LINE_BAR_BORDER_CLASS = "border-b-4";
+/** Pull the brand bar into the tile without shrinking the title box. */
+const LINE_BAR_PULL_CLASS = "pointer-events-none -mt-1";
 
 /** Resolves via `data-line` → `--line-color` from tfl-colours tokens. */
 const lineTitleClass = "tfl-dark-line-text text-[var(--line-color)]";
-
-const isStripedBar = (modeName?: string) =>
-  modeName === "overground" || modeName === "elizabeth-line";
 
 /** Platform-chip geometry; neutral fill so severity is read as text, not colour. */
 const SeverityChip = ({ label }: { label: string }) => (
   <span
     className={cn(
-      "mr-[0.35em] inline-flex h-5 max-h-lh max-w-full shrink-0 items-center justify-center bg-foreground/5 px-1.5 align-text-bottom text-xs font-semibold text-foreground/60",
+      "mr-[0.35em] inline-flex h-5 max-w-full shrink-0 items-center justify-center bg-foreground/5 px-1.5 align-middle text-xs font-semibold text-foreground/60",
       CHIP_CAP_TEXT_BOX_CLASS,
     )}
   >
@@ -142,7 +139,7 @@ const SeverityChip = ({ label }: { label: string }) => (
   </span>
 );
 
-/** Half a tile — N lines + 1lh gap can land on the arrivals baseline. */
+/** Half a tile so wrapping copy lands on the arrivals baseline. */
 const DISRUPTION_LEADING_CLASS =
   "leading-[calc(var(--arrivals-row)/2)]";
 
@@ -152,8 +149,9 @@ const DISRUPTION_COPY_CLASS = cn(
 );
 
 /**
- * Min 1lh after copy, then ceil the block to a whole `--arrivals-row`
- * so the next line header stays on the same tile grid as arrivals.
+ * Ceil copy to a whole `--arrivals-row` so the next line header stays on
+ * the arrivals tile grid. Leading is half a tile, so leftover is 0–2lh —
+ * enough gap without a separate min padding.
  */
 const DISRUPTION_SNAP_STYLE = {
   height: "calc-size(auto, round(up, size, var(--arrivals-row)))",
@@ -168,11 +166,9 @@ const StatusDisruptionBlock = ({
     className={cn("box-border", DISRUPTION_LEADING_CLASS)}
     style={DISRUPTION_SNAP_STYLE}
   >
-    <div className="pb-[1lh]">
-      {announcements.map((announcement, index) => (
-        <StatusDisruptionCopy key={index} announcement={announcement} />
-      ))}
-    </div>
+    {announcements.map((announcement, index) => (
+      <StatusDisruptionCopy key={index} announcement={announcement} />
+    ))}
   </div>
 );
 
@@ -205,24 +201,11 @@ const StatusLineHeader = ({
   modeName?: string;
   name: string;
   trailing?: ReactNode;
-}) => {
-  const stripedBar = isStripedBar(modeName);
-
-  return (
+}) => (
+  <>
     <header
       data-line={lineId}
-      className={cn(
-        "relative flex items-end pb-2",
-        TILE_CLASS,
-        !stripedBar && LINE_BAR_BORDER_CLASS,
-      )}
-      style={
-        stripedBar
-          ? undefined
-          : ({
-              borderBottomColor: "var(--line-color)",
-            } as CSSProperties)
-      }
+      className={cn("relative flex items-center", TILE_CLASS)}
     >
       <h3
         className={cn(
@@ -233,26 +216,17 @@ const StatusLineHeader = ({
         <LineName lineId={lineId} name={name} />
       </h3>
       {trailing}
-      {stripedBar ? (
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0"
-          aria-hidden
-        >
-          <LineColorBar
-            lineId={lineId}
-            modeName={modeName}
-            heightClass="h-1"
-          />
-        </div>
-      ) : null}
     </header>
-  );
-};
+    <div className={LINE_BAR_PULL_CLASS} aria-hidden>
+      <LineColorBar lineId={lineId} modeName={modeName} heightClass="h-1" />
+    </div>
+  </>
+);
 
 const StatusSectionTitle = ({ children }: { children: ReactNode }) => (
   <h2
     className={cn(
-      "m-0 flex items-end text-xl leading-7 font-semibold",
+      "m-0 flex items-center text-xl leading-7 font-semibold",
       TILE_CLASS,
     )}
   >
@@ -318,7 +292,7 @@ const disruptionGridClass = (compact: boolean) =>
     : "mt-2 grid grid-cols-1 gap-x-4 md:grid-cols-2 lg:grid-cols-3";
 
 /**
- * Calm Good Service placeholder — every line in default `LINE_ORDER`,
+ * Calm loading placeholder — every line in default `LINE_ORDER`,
  * brand bars/titles present but fully desaturated until live data arrives.
  */
 export const TubeStatusBoardSkeleton = ({
@@ -326,13 +300,13 @@ export const TubeStatusBoardSkeleton = ({
   compact = false,
 }: SkeletonProps) => (
   <div
-    className="flex w-full flex-col gap-(--arrivals-row) text-base"
+    className="flex w-full flex-col text-base"
     style={BOARD_RHYTHM_VARS}
     aria-busy
     aria-label="Loading line status"
   >
     <div>
-      <StatusSectionTitle>Good Service</StatusSectionTitle>
+      <StatusSectionTitle>Checking the lines...</StatusSectionTitle>
       <div className={goodServiceGridClass(compact)}>
         {lineIds.map((lineId) => {
           const label = getLineNameTiers(lineId).full;
@@ -403,11 +377,12 @@ export const TubeStatusBoard = ({
   }
 
   return (
-    <div
-      className="flex w-full flex-col gap-(--arrivals-row) text-base"
-      style={BOARD_RHYTHM_VARS}
-    >
-      {!hideHeader && <TubeStatusBoardHeader />}
+    <div className="flex w-full flex-col text-base" style={BOARD_RHYTHM_VARS}>
+      {!hideHeader && (
+        <div className="mb-[var(--arrivals-row)]">
+          <TubeStatusBoardHeader />
+        </div>
+      )}
 
       {disruptedLines.length > 0 && (
         <div>

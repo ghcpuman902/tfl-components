@@ -21,6 +21,7 @@ Domain boards under `registry/tfl/arrivals/rail-arrivals-board.tsx` and `bus-arr
 - **Row separators** — absolute pseudo-elements (`after:` at the bottom). Never `border-b` on arrival/bound rows if that would stack outside the box without `box-border` discipline; prefer absolute hairlines.
 - **Line / route brand bar** — solid colours: `border-b-4` + `box-border` so the bar is **inside** the tile height. Do **not** put an in-flow `h-1` div + `mt-*` under the name (that shifts baselines between rail and bus).
 - **Striped** Overground / Elizabeth bars — absolute `LineColorBar` pinned to the tile bottom (border cannot paint dual rails).
+- **Shared-track merged headers** (`lineGroups`) — `LineName` in `text-foreground` (not a single line colour) plus an absolute segmented bar (one flex stripe per member), matching the Line title “Shared-track group” demo. Not `LineBadgeGroup` (that is the chip).
 - Content that does not fit clips; it must not expand the tile (`min/max-height` locked to `--arrivals-row`).
 
 ## Side-by-side alignment
@@ -52,7 +53,7 @@ Boards are single-column by default; consumers arrange groups/bounds via `classN
 
 ## Rail vs bus rows
 
-- Rail: `PlatformChip` before destination (`Platform N` → `Plat N` → `PN` → `N` via container query). Solid muted fill, no border. Aria always “Platform N”.
+- Rail: platform chip only when platforms **vary** inside the bound (compact `P{n}`). When every row shares one platform, hoist it into the bound heading (`Eastbound · Platform 1` or `Platform A`) and omit the row chip. Mixed-line (`lineGroups`) sections add a line chip before the destination.
 - Bus: `BusNumberChip` per row (bus red); stop letter on the header only.
 - Both chips: keep normal casing (`Platform 4`, route codes as given). Center with `[text-box:trim-both_cap_alphabetic]` (`CHIP_CAP_TEXT_BOX_CLASS`) — uppercase/cap metrics for the box, not `ex` trim. Do not force `uppercase` paint.
 - Bound labels (Northbound…) match line-name size; same hairline weight as arrival rows inside a line group.

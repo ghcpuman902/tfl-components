@@ -3,6 +3,7 @@ import { DEFAULT_MAX_ROWS } from "@/lib/tfl/arrivals-defaults"
 import {
   compareArrivalsBounds,
   formatArrivalsBoundLabel,
+  formatBoundHeading,
   normalizeArrivalsBoundId,
   parseArrivalsPlatformLabel,
   parseCompassBoundId,
@@ -10,6 +11,7 @@ import {
 } from "@/lib/tfl/arrivals-bound-sort"
 import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort"
 import { compareBusRouteNames } from "@/lib/tfl/arrivals-route-sort"
+import { getLineNameTiers, joinLineNames } from "@/lib/tfl/line-names"
 
 export { DEFAULT_MAX_ROWS } from "@/lib/tfl/arrivals-defaults"
 
@@ -45,9 +47,21 @@ export type ArrivalsPreparedRow = {
   sourceIndex: number
 }
 
+export type ArrivalsBoundKind = "compass" | "platform" | "unknown" | "none"
+
 export type ArrivalsPreparedBound = {
   key: string
+  /** Display heading from `formatBoundHeading`. Null only when kind is `none`. */
   label: string | null
+  kind: ArrivalsBoundKind
+  boundId: ArrivalsBoundId | null
+  /** Cleaned platform letter/number hoisted into the heading, when uniform. */
+  platformLabel: string | null
+  /**
+   * True when every row in this bound shares one known platform — hoist it
+   * into the heading and omit the per-row chip.
+   */
+  platformUniform: boolean
   /** True when this bound was empty before maxRows (metadata seed). */
   seededEmpty: boolean
   rows: ArrivalsPreparedRow[]
@@ -55,7 +69,10 @@ export type ArrivalsPreparedBound = {
 
 export type ArrivalsPreparedGroup = {
   key: string
+  /** Primary line id (canonical-first member when merged). */
   lineId: string
+  /** One id, or every member of a `lineGroups` merge. */
+  lineIds: readonly string[]
   lineName: string
   modeName?: string
   kind: "rail-line" | "bus-route"
@@ -63,6 +80,16 @@ export type ArrivalsPreparedGroup = {
   /** True when the group had no predictions before maxRows. */
   seededEmpty: boolean
   bounds: ArrivalsPreparedBound[]
+}
+
+/**
+ * Merge several line ids into one board section (shared platforms).
+ * Off by default — the caller opts in. Groups with fewer than two ids are ignored.
+ */
+export type RailArrivalsLineGroup = {
+  lines: readonly string[]
+  /** Override the joined header. Default: TfL list grammar via `joinLineNames`. */
+  label?: string
 }
 
 export type ArrivalsPreparedBoard = {
@@ -205,6 +232,7 @@ export const chunkBoundPages = (
 
 type LineBucket = {
   lineId: string
+  lineIds: string[]
   lineName: string
   modeName?: string
   expectedBounds: ArrivalsBoundId[]
@@ -213,42 +241,144 @@ type LineBucket = {
   firstSourceIndex: number
 }
 
+const EMPTY_BOUND = (): ArrivalsPreparedBound => ({
+  key: "bound-none",
+  label: null,
+  kind: "none",
+  boundId: null,
+  platformLabel: null,
+  platformUniform: false,
+  seededEmpty: true,
+  rows: [],
+})
+
+const orderLineIds = (ids: readonly string[]): string[] =>
+  [...ids].sort((a, b) =>
+    compareArrivalsLines(
+      { lineId: a, lineName: a },
+      { lineId: b, lineName: b },
+    ),
+  )
+
+type ResolvedLineGroup = {
+  lines: string[]
+  label?: string
+}
+
+const resolveLineGroups = (
+  lineGroups: readonly RailArrivalsLineGroup[] | undefined,
+): Map<string, ResolvedLineGroup> => {
+  const membership = new Map<string, ResolvedLineGroup>()
+  for (const raw of lineGroups ?? []) {
+    const lines = orderLineIds([
+      ...new Set(
+        raw.lines.map((id) => normalizeLineId(id)).filter(Boolean),
+      ),
+    ])
+    if (lines.length < 2) continue
+    if (lines.some((id) => membership.has(id))) continue
+    const entry: ResolvedLineGroup = { lines, label: raw.label }
+    for (const id of lines) membership.set(id, entry)
+  }
+  return membership
+}
+
+const groupBucketKey = (lineId: string, membership: Map<string, ResolvedLineGroup>) => {
+  const group = membership.get(normalizeLineId(lineId))
+  if (!group) return lineId
+  return `group:${group.lines.join("+")}`
+}
+
 const collectRailLines = (
   indexed: readonly IndexedArrival[],
-  expectedLines: readonly RailArrivalsLine[]
+  expectedLines: readonly RailArrivalsLine[],
+  lineGroups?: readonly RailArrivalsLineGroup[],
 ): LineBucket[] => {
+  const membership = resolveLineGroups(lineGroups)
   const byLine = new Map<string, LineBucket>()
 
+  const ensureBucket = (
+    key: string,
+    init: Omit<LineBucket, "items" | "seededEmpty"> & {
+      items?: IndexedArrival[]
+      seededEmpty?: boolean
+    },
+  ): LineBucket => {
+    const existing = byLine.get(key)
+    if (existing) return existing
+    const bucket: LineBucket = {
+      lineId: init.lineId,
+      lineIds: init.lineIds,
+      lineName: init.lineName,
+      modeName: init.modeName,
+      expectedBounds: init.expectedBounds,
+      seededEmpty: init.seededEmpty ?? false,
+      items: init.items ?? [],
+      firstSourceIndex: init.firstSourceIndex,
+    }
+    byLine.set(key, bucket)
+    return bucket
+  }
+
   for (const item of indexed) {
-    const key = lineKeyOf(item.arrival)
+    const rawId = lineKeyOf(item.arrival)
+    const lineId = normalizeLineId(item.arrival.lineId || rawId) || rawId
+    const key = groupBucketKey(lineId, membership)
+    const group = membership.get(normalizeLineId(lineId))
     const existing = byLine.get(key)
     if (existing) {
       existing.items.push(item)
+      existing.seededEmpty = false
+      existing.firstSourceIndex = Math.min(
+        existing.firstSourceIndex,
+        item.sourceIndex,
+      )
       continue
     }
-    byLine.set(key, {
-      lineId: item.arrival.lineId ?? "",
-      lineName: (item.arrival.lineName ?? item.arrival.lineId) || "Unknown",
+    const lineIds = group?.lines ?? [lineId]
+    const names = lineIds.map((id) => getLineNameTiers(id).full)
+    ensureBucket(key, {
+      lineId: lineIds[0] ?? lineId,
+      lineIds,
+      lineName:
+        group?.label?.trim() ||
+        (lineIds.length > 1
+          ? joinLineNames(names)
+          : (item.arrival.lineName ?? item.arrival.lineId) || "Unknown"),
       modeName: item.arrival.modeName,
       expectedBounds: [],
-      seededEmpty: false,
-      items: [item],
       firstSourceIndex: item.sourceIndex,
+      items: [item],
     })
   }
 
   for (const [expectedIndex, expected] of expectedLines.entries()) {
-    const key = expected.lineId || expected.lineName
-    if (!key) continue
+    const expectedId = expected.lineId || expected.lineName
+    if (!expectedId) continue
+    const lineId = normalizeLineId(expected.lineId) || expectedId
+    const key = groupBucketKey(lineId, membership)
+    const group = membership.get(normalizeLineId(lineId))
     const bounds = resolveExpectedBounds(expected.bounds)
     const existing = byLine.get(key)
     if (existing) {
-      if (bounds.length > 0) existing.expectedBounds = bounds
+      if (bounds.length > 0) {
+        const seen = new Set(existing.expectedBounds)
+        for (const bound of bounds) {
+          if (seen.has(bound)) continue
+          seen.add(bound)
+          existing.expectedBounds.push(bound)
+        }
+      }
       continue
     }
-    byLine.set(key, {
-      lineId: expected.lineId,
-      lineName: expected.lineName,
+    const lineIds = group?.lines ?? [lineId]
+    const names = lineIds.map((id) => getLineNameTiers(id, expected.lineName).full)
+    ensureBucket(key, {
+      lineId: lineIds[0] ?? lineId,
+      lineIds,
+      lineName:
+        group?.label?.trim() ||
+        (lineIds.length > 1 ? joinLineNames(names) : expected.lineName),
       modeName: expected.modeName,
       expectedBounds: bounds,
       seededEmpty: true,
@@ -260,10 +390,39 @@ const collectRailLines = (
   return [...byLine.values()]
 }
 
-const boundLabelOf = (platformName?: string): string | null => {
+type BoundKind = ArrivalsBoundKind
+
+type BoundBucket = {
+  kind: BoundKind
+  boundId: ArrivalsBoundId | null
+  platformLabels: Set<string>
+  items: IndexedArrival[]
+  firstSourceIndex: number
+}
+
+const classifyArrivalBound = (
+  platformName?: string,
+): {
+  kind: Exclude<BoundKind, "none">
+  boundId: ArrivalsBoundId | null
+  platformLabel: string | null
+} => {
   const boundId = parseCompassBoundId(platformName)
-  if (boundId) return formatArrivalsBoundLabel(boundId)
-  return parseArrivalsPlatformLabel(platformName)
+  const platformLabel = parseArrivalsPlatformLabel(platformName)
+  if (boundId) return { kind: "compass", boundId, platformLabel }
+  if (platformLabel) return { kind: "platform", boundId: null, platformLabel }
+  return { kind: "unknown", boundId: null, platformLabel: null }
+}
+
+const boundBucketKey = (
+  kind: BoundKind,
+  boundId: ArrivalsBoundId | null,
+  platformLabel: string | null,
+): string => {
+  if (kind === "compass" && boundId) return `compass:${boundId}`
+  if (kind === "platform" && platformLabel) return `platform:${platformLabel}`
+  if (kind === "unknown") return "unknown"
+  return "none"
 }
 
 const collectRailBounds = (
@@ -272,69 +431,105 @@ const collectRailBounds = (
   sortBy: RailArrivalsSortBy,
   boundSortBy: RailArrivalsBoundSortBy
 ): ArrivalsPreparedBound[] => {
-  const byBound = new Map<
-    string | null,
-    {
-      boundId: ArrivalsBoundId | null
-      items: IndexedArrival[]
-      firstSourceIndex: number
+  const byBound = new Map<string, BoundBucket>()
+
+  const ensure = (
+    key: string,
+    kind: BoundKind,
+    boundId: ArrivalsBoundId | null,
+    sourceIndex: number,
+  ): BoundBucket => {
+    const existing = byBound.get(key)
+    if (existing) return existing
+    const bucket: BoundBucket = {
+      kind,
+      boundId,
+      platformLabels: new Set(),
+      items: [],
+      firstSourceIndex: sourceIndex,
     }
-  >()
+    byBound.set(key, bucket)
+    return bucket
+  }
 
   for (const item of items) {
-    const boundId = parseCompassBoundId(item.arrival.platformName)
-    const label = boundLabelOf(item.arrival.platformName)
-    const existing = byBound.get(label)
-    if (existing) {
-      existing.items.push(item)
-      continue
+    const classified = classifyArrivalBound(item.arrival.platformName)
+    const key = boundBucketKey(
+      classified.kind,
+      classified.boundId,
+      classified.platformLabel,
+    )
+    const bucket = ensure(
+      key,
+      classified.kind,
+      classified.boundId,
+      item.sourceIndex,
+    )
+    bucket.items.push(item)
+    if (classified.platformLabel) {
+      bucket.platformLabels.add(classified.platformLabel)
     }
-    byBound.set(label, {
-      boundId,
-      items: [item],
-      firstSourceIndex: item.sourceIndex,
-    })
   }
 
   for (const [boundIndex, boundId] of expectedBounds.entries()) {
-    const label = formatArrivalsBoundLabel(boundId)
-    if (byBound.has(label)) continue
-    byBound.set(label, {
-      boundId,
-      items: [],
-      firstSourceIndex: items.length + boundIndex,
-    })
+    const key = boundBucketKey("compass", boundId, null)
+    if (byBound.has(key)) continue
+    ensure(key, "compass", boundId, items.length + boundIndex)
   }
 
   if (byBound.size === 0) {
-    return [
-      {
-        key: "bound-none",
-        label: null,
-        seededEmpty: true,
-        rows: [],
-      },
-    ]
+    return [EMPTY_BOUND()]
   }
 
   const sorted = [...byBound.entries()].sort((a, b) => {
     if (boundSortBy === "source") {
       return a[1].firstSourceIndex - b[1].firstSourceIndex
     }
-    return compareArrivalsBounds(a[0], b[0])
+    const aUnknown = a[1].kind === "unknown"
+    const bUnknown = b[1].kind === "unknown"
+    if (aUnknown !== bUnknown) return aUnknown ? 1 : -1
+    const aSort =
+      a[1].boundId ? formatArrivalsBoundLabel(a[1].boundId) : a[0]
+    const bSort =
+      b[1].boundId ? formatArrivalsBoundLabel(b[1].boundId) : b[0]
+    return compareArrivalsBounds(
+      a[1].kind === "compass" ? aSort : a[1].kind === "unknown" ? null : aSort,
+      b[1].kind === "compass" ? bSort : b[1].kind === "unknown" ? null : bSort,
+    )
   })
 
-  return sorted.map(([label, bucket]) => ({
-    key: label ? `bound-${label}` : "bound-none",
-    label,
-    seededEmpty: bucket.items.length === 0,
-    rows: sortIndexed(bucket.items, sortBy).map(toRow),
-  }))
+  return sorted.map(([key, bucket]) => {
+    const uniquePlatforms = [...bucket.platformLabels]
+    const platformUniform = uniquePlatforms.length === 1
+    const platformLabel = platformUniform ? uniquePlatforms[0]! : null
+    const hoistPlatform =
+      bucket.kind === "platform" || (bucket.kind === "compass" && platformUniform)
+    const label = formatBoundHeading({
+      boundId: bucket.boundId,
+      platformLabel: hoistPlatform ? platformLabel : null,
+      unknown: bucket.kind === "unknown",
+    })
+    return {
+      key: `bound-${key}`,
+      label,
+      kind: bucket.kind,
+      boundId: bucket.boundId,
+      platformLabel: hoistPlatform ? platformLabel : null,
+      platformUniform: hoistPlatform && platformLabel !== null,
+      seededEmpty: bucket.items.length === 0,
+      rows: sortIndexed(bucket.items, sortBy).map(toRow),
+    }
+  })
 }
 
 export type PrepareRailArrivalsOptions = {
   data?: readonly RealtimePrediction[]
   lines?: readonly RailArrivalsLine[]
+  /**
+   * Merge listed line ids into one section. Off by default. Groups with
+   * fewer than two ids, or that collide with an earlier group, are ignored.
+   */
+  lineGroups?: readonly RailArrivalsLineGroup[]
   sortBy?: RailArrivalsSortBy
   lineSortBy?: RailArrivalsLineSortBy
   boundSortBy?: RailArrivalsBoundSortBy
@@ -349,13 +544,22 @@ export type PrepareRailArrivalsOptions = {
 }
 
 const lineOrderRank = (
-  lineId: string,
+  lineIds: readonly string[],
   order: ReadonlyMap<string, number>,
-): number | undefined => order.get(normalizeLineId(lineId))
+): number | undefined => {
+  let best: number | undefined
+  for (const lineId of lineIds) {
+    const rank = order.get(normalizeLineId(lineId))
+    if (rank === undefined) continue
+    if (best === undefined || rank < best) best = rank
+  }
+  return best
+}
 
 export const prepareRailArrivals = ({
   data,
   lines = [],
+  lineGroups,
   sortBy = "timeToStation",
   lineSortBy = "canonical",
   boundSortBy = "compass",
@@ -363,7 +567,7 @@ export const prepareRailArrivals = ({
   maxRows = DEFAULT_MAX_ROWS,
 }: PrepareRailArrivalsOptions): ArrivalsPreparedBoard => {
   const indexed = indexArrivals(data)
-  const buckets = collectRailLines(indexed, lines)
+  const buckets = collectRailLines(indexed, lines, lineGroups)
 
   const explicitOrder =
     lineOrder && lineOrder.length > 0
@@ -374,8 +578,8 @@ export const prepareRailArrivals = ({
 
   buckets.sort((a, b) => {
     if (explicitOrder) {
-      const aRank = lineOrderRank(a.lineId, explicitOrder)
-      const bRank = lineOrderRank(b.lineId, explicitOrder)
+      const aRank = lineOrderRank(a.lineIds, explicitOrder)
+      const bRank = lineOrderRank(b.lineIds, explicitOrder)
       if (aRank !== undefined && bRank !== undefined) return aRank - bRank
       if (aRank !== undefined) return -1
       if (bRank !== undefined) return 1
@@ -402,8 +606,11 @@ export const prepareRailArrivals = ({
     )
     const hasInformation = bounds.some((bound) => bound.rows.length > 0)
     return {
-      key: bucket.lineId || bucket.lineName,
+      key: bucket.lineIds.length > 1
+        ? `group:${bucket.lineIds.join("+")}`
+        : bucket.lineId || bucket.lineName,
       lineId: bucket.lineId,
+      lineIds: bucket.lineIds,
       lineName: bucket.lineName,
       modeName: bucket.modeName,
       kind: "rail-line",
@@ -433,6 +640,7 @@ const collectBusRoutes = (indexed: readonly IndexedArrival[]): LineBucket[] => {
     }
     byRoute.set(key, {
       lineId: item.arrival.lineId ?? "",
+      lineIds: [item.arrival.lineId ?? key],
       lineName: (item.arrival.lineName ?? item.arrival.lineId) || "Unknown",
       modeName: item.arrival.modeName,
       expectedBounds: [],
@@ -480,6 +688,7 @@ export const prepareBusArrivals = ({
     return {
       key: bucket.lineId || bucket.lineName,
       lineId: bucket.lineId,
+      lineIds: bucket.lineIds,
       lineName: bucket.lineName,
       modeName: bucket.modeName,
       kind: "bus-route",
@@ -489,6 +698,10 @@ export const prepareBusArrivals = ({
         {
           key: "bound-none",
           label: null,
+          kind: "none",
+          boundId: null,
+          platformLabel: null,
+          platformUniform: false,
           seededEmpty: rows.length === 0,
           rows,
         },

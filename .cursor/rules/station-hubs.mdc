@@ -25,3 +25,5 @@ Canonical traps: tfl-ts skill (`.claude/skills/tfl-ts/SKILL.md` in the tfl-ts pa
 - Assume the Underground id at an interchange also carries Elizabeth line / Overground.
 
 Liverpool Street: `940GZZLULVT` (tube) and `910GLIVST` (Elizabeth + Weaver). Waterloo: do not poll `910GWATRLMN` for Bakerloo.
+
+Shared-platform board grouping (merge Circle / H&C / Met at Liverpool Street, not Baker Street): [docs/arrivals-shared-platforms.md](../../docs/arrivals-shared-platforms.md).

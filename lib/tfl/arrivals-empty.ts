@@ -13,6 +13,13 @@ export const ARRIVALS_EMPTY_COPY: Record<ArrivalsEmptyKind, string> = {
 /** Per-line / per-route when predictions are missing but the line is still shown. */
 export const ARRIVALS_LINE_EMPTY_COPY = "No information";
 
+/**
+ * Subgroup heading when TfL sends `Platform Unknown` (or no platform at all)
+ * on a live prediction. Distinct from a bound with no heading — that is
+ * reserved for true “no bound metadata” (bus lists, empty unseeded lines).
+ */
+export const ARRIVALS_PLATFORM_UNKNOWN_HEADING = "Platform to be confirmed";
+
 const LONDON_TIME_ZONE = "Europe/London";
 
 const londonHourFormatter = new Intl.DateTimeFormat("en-GB", {

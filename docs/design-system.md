@@ -80,6 +80,7 @@ Every tile uses a locked box (`box-border`, fixed `min`/`max`/`height` = `--arri
 | Row / bound hairlines | Absolute `after:` at the bottom of the tile | Separators stay out of flow |
 | Solid line/route brand bar | `border-b-4` + `box-border` on the line-header tile | Bar is painted **inside** the 48px box |
 | Striped Overground / Elizabeth | Absolute `LineColorBar` pinned to the tile bottom | Dual rails cannot be a single border |
+| Shared-track merged header | Foreground `LineName` + absolute equal-width stripes (one per line) | Not a single `--line-color` title; bar must not grow the tile |
 
 ```tsx
 // ✅ Solid brand bar inside the tile

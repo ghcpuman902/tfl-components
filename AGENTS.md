@@ -22,7 +22,7 @@ Domain board skeletons (static identity vs live severity, Suspense fallbacks): [
 
 Explorer inspector streaming (optimistic identity, `use(promise)` for route/arrivals/status): [docs/explorer-inspector-streaming.md](./docs/explorer-inspector-streaming.md) and [`.cursor/rules/explorer-inspector-streaming.mdc`](./.cursor/rules/explorer-inspector-streaming.mdc).
 
-Station hubs / arrivals StopPoints (poll the sibling that carries the line, never merge by display name): [`.cursor/rules/station-hubs.mdc`](./.cursor/rules/station-hubs.mdc). TfL API gotchas that change fetch or render belong in Interface MDX; the rest stays in the tfl-ts skill.
+Station hubs / arrivals StopPoints (poll the sibling that carries the line, never merge by display name): [`.cursor/rules/station-hubs.mdc`](./.cursor/rules/station-hubs.mdc). Shared-platform arrival grouping: [docs/arrivals-shared-platforms.md](./docs/arrivals-shared-platforms.md). TfL API gotchas that change fetch or render belong in Interface MDX; the rest stays in the tfl-ts skill.
 
 # Coding style
 

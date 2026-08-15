@@ -9,7 +9,10 @@
 
 import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort";
 import type { ArrivalsBoundId } from "@/lib/tfl/arrivals-bound-sort";
-import type { RailArrivalsLine } from "@/lib/tfl/arrivals-prepare";
+import type {
+  RailArrivalsLine,
+  RailArrivalsLineGroup,
+} from "@/lib/tfl/arrivals-prepare";
 import { HOME_RAIL_LINES, HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops";
 import { getLineNameTiers, railLineModeName } from "@/lib/tfl/line-names";
 import { getStationCatalog } from "@/lib/tfl/station-catalog";
@@ -22,6 +25,29 @@ export const BOARD_STATION_BOUNDS: Readonly<
   Record<string, readonly RailArrivalsLine[]>
 > = {
   [HOME_RAIL_STOP.id]: HOME_RAIL_LINES,
+};
+
+/**
+ * Curated shared-platform merges. Not derived from line-id overlap —
+ * Baker Street also carries Circle / H&C / Metropolitan but on different
+ * platforms, so it is absent here on purpose.
+ */
+export type BoardStationLineGroup = RailArrivalsLineGroup & {
+  /** Rows per bound for this merged section. Applied via `pageSizeByLine`. */
+  pageSize?: number;
+};
+
+const LIVERPOOL_STREET_SUBSURFACE: readonly BoardStationLineGroup[] = [
+  {
+    lines: ["circle", "hammersmith-city", "metropolitan"],
+    pageSize: 6,
+  },
+];
+
+export const BOARD_STATION_LINE_GROUPS: Readonly<
+  Record<string, readonly BoardStationLineGroup[]>
+> = {
+  "940GZZLULVT": LIVERPOOL_STREET_SUBSURFACE,
 };
 
 export type BoardStationLinesIndex = Readonly<
@@ -105,4 +131,27 @@ export const lookupBoardStationLines = (
   const id = stopId?.trim();
   if (!id) return undefined;
   return index[id];
+};
+
+/**
+ * Shared-platform line groups for a stop. Resolves catalog aliases so the
+ * rail sibling (`910GLIVST`) and hub id (`HUBLST`) share the tube-id table.
+ */
+export const lookupBoardStationLineGroups = (
+  stopId: string | undefined,
+): readonly BoardStationLineGroup[] | undefined => {
+  const id = stopId?.trim();
+  if (!id) return undefined;
+  const direct = BOARD_STATION_LINE_GROUPS[id];
+  if (direct) return direct;
+
+  const station = getStationCatalog().find(
+    (row) => row.id === id || row.aliasIds.includes(id),
+  );
+  if (!station) return undefined;
+  for (const candidate of [station.id, ...station.aliasIds]) {
+    const groups = BOARD_STATION_LINE_GROUPS[candidate];
+    if (groups) return groups;
+  }
+  return undefined;
 };

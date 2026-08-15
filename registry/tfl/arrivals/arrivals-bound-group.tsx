@@ -5,17 +5,18 @@ import {
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
   type ReactNode,
   type RefObject,
 } from "react"
 import { Play } from "lucide-react"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
 import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
-import { LineColorBar } from "@/components/tfl/brand/line-badge"
+import { LineBadge, LineColorBar } from "@/components/tfl/brand/line-badge"
+import { LineName } from "@/components/tfl/brand/line-name"
 import { StationName } from "@/components/tfl/station-name"
 import { ARRIVALS_LINE_EMPTY_COPY } from "@/lib/tfl/arrivals-empty"
 import { parseArrivalsPlatformLabel } from "@/lib/tfl/arrivals-bound-sort"
+import { getLineNameTiers } from "@/lib/tfl/line-names"
 import {
   chunkBoundPages,
   type ArrivalsPreparedBound,
@@ -60,8 +61,8 @@ const ROW_RULE_CLASS =
   "relative after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60"
 
 const LIST_RESET_CLASS = "m-0 ml-0 list-none space-y-0 p-0 [&>li]:mt-0"
-/** Half of `text-base` Johnston-like x-height (~4px). */
-const LINE_BAR_BORDER_CLASS = "border-b-4"
+/** Pull the brand bar into the tile without shrinking the title box. */
+const LINE_BAR_PULL_CLASS = "pointer-events-none -mt-1"
 
 export const formatArrivalsCountdown = (seconds?: number): string => {
   if (seconds === undefined || seconds < 0) return "-"
@@ -77,25 +78,38 @@ export const ArrivalRowItem = ({
   row,
   mode,
   showRule,
+  showLineChip = false,
+  hoistPlatform = false,
 }: {
   row: ArrivalsPreparedRow
   mode: ArrivalsBoardMode
   showRule: boolean
+  /** Mixed-line section: line identity before the destination. */
+  showLineChip?: boolean
+  /** Platform already lives in the subgroup heading — omit the row chip. */
+  hoistPlatform?: boolean
 }) => {
   const destination =
     row.arrival.towards?.trim() ||
     row.arrival.destinationName?.trim() ||
     "Unknown"
   const platformNumber =
-    mode === "rail" ? getArrivalsPlatformNumber(row.arrival.platformName) : null
+    mode === "rail" && !hoistPlatform
+      ? getArrivalsPlatformNumber(row.arrival.platformName)
+      : null
+  const lineId = row.arrival.lineId?.trim() || ""
+  const lineChipLabel = showLineChip && lineId
+    ? getLineNameTiers(lineId, row.arrival.lineName).short
+    : null
   const routeLabel =
     mode === "bus"
       ? (row.arrival.lineName ?? row.arrival.lineId ?? "").trim() || null
       : null
   const countdown = formatArrivalsCountdown(row.arrival.timeToStation)
   const rowLabel = [
-    platformNumber
-      ? `Platform ${platformNumber}`
+    platformNumber ? `Platform ${platformNumber}` : null,
+    lineChipLabel
+      ? (getLineNameTiers(lineId, row.arrival.lineName).full)
       : routeLabel
         ? `Route ${routeLabel}`
         : null,
@@ -105,27 +119,42 @@ export const ArrivalRowItem = ({
     .filter(Boolean)
     .join(", ")
 
+  const leading =
+    mode === "bus"
+      ? routeLabel
+        ? <BusNumberChip label={routeLabel} />
+        : null
+      : platformNumber || lineChipLabel
+        ? (
+          <div className="flex min-w-0 items-center gap-x-2">
+            {platformNumber ? (
+              <PlatformChip number={platformNumber} compact />
+            ) : null}
+            {lineChipLabel ? (
+              <LineBadge
+                lineId={lineId}
+                name={lineChipLabel}
+                className="max-w-18 truncate"
+              />
+            ) : null}
+          </div>
+        )
+        : null
+
   return (
     <li
       data-slot="arrivals-row"
       aria-label={rowLabel}
       className={cn(
-        "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 text-base",
+        "grid items-center gap-x-3 text-base",
+        leading
+          ? "grid-cols-[auto_minmax(0,1fr)_auto]"
+          : "grid-cols-[minmax(0,1fr)_auto]",
         TILE_CLASS,
         showRule && ROW_RULE_CLASS
       )}
     >
-      {mode === "bus" ? (
-        routeLabel ? (
-          <BusNumberChip label={routeLabel} />
-        ) : (
-          <span />
-        )
-      ) : platformNumber ? (
-        <PlatformChip number={platformNumber} />
-      ) : (
-        <span />
-      )}
+      {leading}
       <div className="min-w-0 overflow-hidden" aria-hidden="true">
         <StationName
           name={destination}
@@ -331,12 +360,16 @@ const PagedArrivalRows = ({
   mode,
   isLast,
   emptyLabel,
+  showLineChip = false,
+  hoistPlatform = false,
 }: {
   rows: readonly ArrivalsPreparedRow[]
   padCount: number
   mode: ArrivalsBoardMode
   isLast: boolean
   emptyLabel: string
+  showLineChip?: boolean
+  hoistPlatform?: boolean
 }) => {
   if (rows.length === 0) {
     return (
@@ -362,6 +395,8 @@ const PagedArrivalRows = ({
           row={row}
           mode={mode}
           showRule={!(isLast && index === rows.length - 1 && padCount === 0)}
+          showLineChip={showLineChip}
+          hoistPlatform={hoistPlatform}
         />
       ))}
       {Array.from({ length: padCount }, (_, index) => {
@@ -394,6 +429,8 @@ const ArrivalsPageTrack = ({
   containerRef,
   setSlideRef,
   className,
+  showLineChip = false,
+  hoistPlatform = false,
 }: {
   pages: readonly ArrivalsPage[]
   mode: ArrivalsBoardMode
@@ -402,6 +439,8 @@ const ArrivalsPageTrack = ({
   containerRef: RefObject<HTMLDivElement | null>
   setSlideRef: (index: number) => (element: HTMLElement | null) => void
   className?: string
+  showLineChip?: boolean
+  hoistPlatform?: boolean
 }) => {
   if (pages.length <= 1) {
     const only = pages[0]
@@ -417,6 +456,8 @@ const ArrivalsPageTrack = ({
           mode={mode}
           isLast={isLast}
           emptyLabel={emptyLabel}
+          showLineChip={showLineChip}
+          hoistPlatform={hoistPlatform}
         />
       </ul>
     )
@@ -445,11 +486,20 @@ const ArrivalsPageTrack = ({
             mode={mode}
             isLast={isLast}
             emptyLabel={emptyLabel}
+            showLineChip={showLineChip}
+            hoistPlatform={hoistPlatform}
           />
         </ul>
       ))}
     </div>
   )
+}
+
+const boundDataAttr = (bound: ArrivalsPreparedBound): string | undefined => {
+  if (bound.boundId) return bound.boundId
+  if (bound.platformLabel) return bound.platformLabel.toLowerCase()
+  if (bound.kind === "unknown") return "unknown"
+  return undefined
 }
 
 export const ArrivalsBoundGroup = ({
@@ -458,6 +508,7 @@ export const ArrivalsBoundGroup = ({
   lineName,
   isLastBound,
   pageSize = 0,
+  showLineChip = false,
   classNames,
 }: {
   bound: ArrivalsPreparedBound
@@ -465,6 +516,7 @@ export const ArrivalsBoundGroup = ({
   lineName: string
   isLastBound: boolean
   pageSize?: number
+  showLineChip?: boolean
   classNames?: ArrivalsBoardClassNames
 }) => {
   const canPage = Boolean(bound.label) && pageSize > 0
@@ -477,7 +529,7 @@ export const ArrivalsBoundGroup = ({
   return (
     <li
       data-slot="arrivals-subgroup"
-      data-bound={bound.label?.toLowerCase()}
+      data-bound={boundDataAttr(bound)}
       className={cn("group/bound min-w-0", classNames?.subgroup)}
     >
       {bound.label ? (
@@ -508,6 +560,8 @@ export const ArrivalsBoundGroup = ({
         containerRef={containerRef}
         setSlideRef={setSlideRef}
         className={classNames?.rows}
+        showLineChip={showLineChip}
+        hoistPlatform={bound.platformUniform}
       />
     </li>
   )
@@ -523,50 +577,58 @@ export const ArrivalsGroupHeader = ({
   pager?: ReactNode
 }) => {
   const LineHeadingTag = headingLevel === 2 ? "h3" : "h2"
+  const lineIds = group.lineIds.length > 0 ? group.lineIds : [group.lineId]
+  const isMerged = lineIds.length > 1
   const lineKey = group.kind === "bus-route" ? "buses" : group.lineId
-  const stripedBar =
-    group.kind === "rail-line" &&
-    (group.modeName === "overground" || group.modeName === "elizabeth-line")
 
   return (
-    <header
-      data-line={lineKey || undefined}
-      className={cn(
-        "relative flex items-end pb-2",
-        TILE_CLASS,
-        !stripedBar && LINE_BAR_BORDER_CLASS
-      )}
-      style={
-        stripedBar
-          ? undefined
-          : ({
-              borderBottomColor: "var(--line-color)",
-            } as CSSProperties)
-      }
-    >
-      <LineHeadingTag
-        className={cn(
-          "m-0 min-w-0 flex-1 truncate pr-2 text-xl leading-7 font-semibold text-[var(--line-color)]",
-          group.kind === "rail-line" && "tfl-dark-line-text",
-          !group.hasInformation && "opacity-70"
-        )}
+    <>
+      <header
+        data-line={isMerged ? undefined : lineKey || undefined}
+        className={cn("relative flex items-center", TILE_CLASS)}
       >
-        {group.lineName}
-      </LineHeadingTag>
-      {pager}
-      {stripedBar ? (
+        <LineHeadingTag
+          className={cn(
+            "m-0 min-w-0 flex-1 pr-2 text-xl leading-7 font-semibold",
+            isMerged
+              ? "text-foreground"
+              : "text-[var(--line-color)]",
+            !isMerged && group.kind === "rail-line" && "tfl-dark-line-text",
+            !group.hasInformation && "opacity-70",
+            !isMerged && "truncate"
+          )}
+        >
+          {isMerged ? (
+            <LineName lineIds={lineIds} group />
+          ) : (
+            group.lineName
+          )}
+        </LineHeadingTag>
+        {pager}
+      </header>
+      {isMerged ? (
         <div
-          className="pointer-events-none absolute inset-x-0 bottom-0"
+          className={cn(LINE_BAR_PULL_CLASS, "flex h-1 overflow-hidden")}
           aria-hidden
         >
+          {lineIds.map((id) => (
+            <div
+              key={id}
+              data-line={id}
+              className="min-w-0 flex-1 bg-[var(--line-color)]"
+            />
+          ))}
+        </div>
+      ) : (
+        <div className={LINE_BAR_PULL_CLASS} aria-hidden>
           <LineColorBar
-            lineId={group.lineId}
-            modeName={group.modeName}
+            lineId={lineKey}
+            modeName={group.kind === "rail-line" ? group.modeName : undefined}
             heightClass="h-1"
           />
         </div>
-      ) : null}
-    </header>
+      )}
+    </>
   )
 }
 

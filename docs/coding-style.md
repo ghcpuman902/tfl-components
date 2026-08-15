@@ -86,6 +86,8 @@ A physical interchange is often several StopPoint ids. Catalogue membership and 
 
 Agent rule: [`.cursor/rules/station-hubs.mdc`](../.cursor/rules/station-hubs.mdc). User-facing gotcha: [Tube & Rail Arrivals](/docs/tube-rail-arrivals#one-station-several-stoppoint-ids). Full traps table: tfl-ts skill.
 
+Shared-platform arrival grouping (hoist uniform platforms, unknown-platform fallback, optional `lineGroups` merge): [arrivals-shared-platforms.md](./arrivals-shared-platforms.md).
+
 ### Domain board skeletons
 
 Suspense fallbacks for data-aware boards should look like the **product at rest**:

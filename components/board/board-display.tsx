@@ -14,6 +14,7 @@ import {
   type BoardArrivalsStopIdsIndex,
 } from "@/lib/tfl/board-arrivals-stop-ids";
 import {
+  lookupBoardStationLineGroups,
   lookupBoardStationLines,
   type BoardStationLinesIndex,
 } from "@/lib/tfl/board-station-lines";
@@ -99,6 +100,21 @@ export const BoardDisplay = ({
     () => lookupBoardStationLines(stationLines, stopId),
     [stationLines, stopId],
   );
+  const lineGroups = useMemo(
+    () => lookupBoardStationLineGroups(stopId),
+    [stopId],
+  );
+  const curatedPageSizeByLine = useMemo(() => {
+    if (!lineGroups?.length) return undefined;
+    const map: Record<string, number> = {};
+    for (const group of lineGroups) {
+      if (typeof group.pageSize !== "number") continue;
+      for (const lineId of group.lines) {
+        map[lineId] = group.pageSize;
+      }
+    }
+    return Object.keys(map).length > 0 ? map : undefined;
+  }, [lineGroups]);
 
   const dataLineIds = useMemo(() => {
     const ids = new Set<string>();
@@ -112,6 +128,15 @@ export const BoardDisplay = ({
     () => resolveArrivalsProps(config, servingLines, dataLineIds),
     [config, servingLines, dataLineIds],
   );
+  const pageSizeByLine = useMemo(() => {
+    if (!curatedPageSizeByLine && !arrivalsProps.pageSizeByLine) {
+      return undefined;
+    }
+    return {
+      ...curatedPageSizeByLine,
+      ...arrivalsProps.pageSizeByLine,
+    };
+  }, [curatedPageSizeByLine, arrivalsProps.pageSizeByLine]);
 
   const statusHint =
     ready && !appKey && status.source === "site" ? DEGRADED_HINT : null;
@@ -132,9 +157,10 @@ export const BoardDisplay = ({
             headingLevel={2}
             data={arrivals.data}
             lines={arrivalsProps.lines}
+            lineGroups={lineGroups}
             lineOrder={arrivalsProps.lineOrder}
             pageSize={arrivalsProps.pageSize}
-            pageSizeByLine={arrivalsProps.pageSizeByLine}
+            pageSizeByLine={pageSizeByLine}
             loading={arrivals.loading}
             error={arrivalsError}
             classNames={BOUND_COLUMNS_CLASS_NAMES}

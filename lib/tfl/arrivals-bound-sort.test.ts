@@ -1,9 +1,13 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { ARRIVALS_PLATFORM_UNKNOWN_HEADING } from "@/lib/tfl/arrivals-empty";
 import {
   arrivalsBoundOrderKey,
   compareArrivalsBounds,
   formatArrivalsBoundLabel,
+  formatBoundHeading,
+  formatPlatformHeading,
+  isUnknownArrivalsPlatform,
   normalizeArrivalsBoundId,
   parseArrivalsPlatformLabel,
   parseCompassBoundId,
@@ -50,6 +54,46 @@ describe("parseArrivalsPlatformLabel", () => {
 describe("formatArrivalsBoundLabel", () => {
   it("title-cases the id", () => {
     assert.equal(formatArrivalsBoundLabel("westbound"), "Westbound");
+  });
+});
+
+describe("isUnknownArrivalsPlatform", () => {
+  it("detects TfL's literal Unknown", () => {
+    assert.equal(isUnknownArrivalsPlatform("Platform Unknown"), true);
+    assert.equal(isUnknownArrivalsPlatform("Unknown"), true);
+    assert.equal(isUnknownArrivalsPlatform("Westbound - Platform 1"), false);
+    assert.equal(isUnknownArrivalsPlatform(undefined), false);
+  });
+});
+
+describe("formatBoundHeading", () => {
+  it("joins direction and platform when both exist", () => {
+    assert.equal(
+      formatBoundHeading({ boundId: "eastbound", platformLabel: "1" }),
+      "Eastbound · Platform 1",
+    );
+  });
+
+  it("spells out a platform-only heading", () => {
+    assert.equal(formatPlatformHeading("A"), "Platform A");
+    assert.equal(
+      formatBoundHeading({ platformLabel: "A" }),
+      "Platform A",
+    );
+  });
+
+  it("keeps a direction-only heading when the platform is not hoisted", () => {
+    assert.equal(
+      formatBoundHeading({ boundId: "westbound" }),
+      "Westbound",
+    );
+  });
+
+  it("uses the unknown-platform fallback", () => {
+    assert.equal(
+      formatBoundHeading({ unknown: true }),
+      ARRIVALS_PLATFORM_UNKNOWN_HEADING,
+    );
   });
 });
 

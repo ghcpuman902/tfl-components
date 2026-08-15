@@ -4,6 +4,7 @@ import { HOME_RAIL_STOP } from "./home-arrivals-stops";
 import {
   buildBoardStationLinesIndex,
   getBoardStationLinesIndex,
+  lookupBoardStationLineGroups,
   lookupBoardStationLines,
 } from "./board-station-lines";
 
@@ -55,3 +56,26 @@ describe("buildBoardStationLinesIndex", () => {
     )
   })
 })
+
+describe("lookupBoardStationLineGroups", () => {
+  it("merges Circle / H&C / Metropolitan at Liverpool Street", () => {
+    const groups = lookupBoardStationLineGroups("940GZZLULVT");
+    assert.ok(groups);
+    assert.deepEqual(groups[0]?.lines, [
+      "circle",
+      "hammersmith-city",
+      "metropolitan",
+    ]);
+    assert.equal(groups[0]?.pageSize, 6);
+  });
+
+  it("resolves Liverpool Street aliases to the same merge", () => {
+    const tube = lookupBoardStationLineGroups("940GZZLULVT");
+    const rail = lookupBoardStationLineGroups("910GLIVST");
+    assert.equal(rail, tube);
+  });
+
+  it("does not merge Baker Street", () => {
+    assert.equal(lookupBoardStationLineGroups("940GZZLUBST"), undefined);
+  });
+});
