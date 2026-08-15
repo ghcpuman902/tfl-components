@@ -3,7 +3,7 @@ import { ImageResponse } from "next/og";
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
-/** Apple touch icon — line-colour bars, no trademarked roundel. */
+/** Apple touch icon — grey filled placeholder roundel, not the trademarked mark. */
 export default function AppleIcon() {
   return new ImageResponse(
     (
@@ -12,17 +12,32 @@ export default function AppleIcon() {
           width: "100%",
           height: "100%",
           display: "flex",
-          flexDirection: "column",
+          alignItems: "center",
           justifyContent: "center",
-          gap: 12,
-          padding: 24,
-          background: "#0a0a0a",
+          position: "relative",
+          background: "#ffffff",
         }}
       >
-        <div style={{ height: 18, width: "100%", background: "#E32017" }} />
-        <div style={{ height: 18, width: "100%", background: "#0098D4" }} />
-        <div style={{ height: 18, width: "100%", background: "#00782A" }} />
-        <div style={{ height: 18, width: "100%", background: "#F3A9BB" }} />
+        <div
+          style={{
+            position: "absolute",
+            display: "flex",
+            width: 146,
+            height: 146,
+            borderRadius: 73,
+            background: "rgba(115, 115, 115, 0.35)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            display: "flex",
+            width: 180,
+            height: 30,
+            borderRadius: 15,
+            background: "rgba(115, 115, 115, 0.85)",
+          }}
+        />
       </div>
     ),
     { ...size },

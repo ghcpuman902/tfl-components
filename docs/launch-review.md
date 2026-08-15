@@ -24,7 +24,7 @@ Date: 2026-08-13. Reviewed against production build on `localhost:3999`.
 | SEV-2 | Doubled homepage title | `title: { absolute: "tfl-components" }` |
 | SEV-2 | MapLibre scroll trap on home / docs | `cooperativeGestures: true` on MapLibre surfaces |
 | SEV-3 | Tiny pager / header taps | Invisible hit padding on pagers; nav `px-1.5 py-2` |
-| SEV-3 | Grey placeholder favicon | Line-colour `icon.svg` + generated `apple-icon` |
+| SEV-3 | Grey placeholder favicon | **Reverted** — the grey filled placeholder *is* the site mark. Do not replace with line-colour bars. See `.cursor/rules/site-favicon.mdc`. |
 
 ## Hostile interaction evidence
 

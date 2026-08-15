@@ -1,6 +1,6 @@
 ---
 description: Chrome uses shadcn tokens; domain UI uses TfL brand — reject SaaS clone aesthetics
-globs: app/**/*.{tsx,css},components/**/*.{tsx,css},content/**/*.mdx,lib/tfl/**/*.ts
+globs: app/**/*.{tsx,css},app/icon.svg,app/apple-icon.tsx,components/**/*.{tsx,css},content/**/*.mdx,lib/tfl/**/*.ts
 alwaysApply: false
 ---
 
@@ -72,6 +72,7 @@ Do **not** default the product to dark mode + Geist because the shadcn/Vercel sk
 - **Do not** download or redistribute Johnston. Hammersmith One is a Johnston-*like* demo stand-in only.  
 - Line / mode colours come from `@/lib/tfl/brand` (Issue 4 tokens), not ad-hoc hex in JSX unless matching a documented token.  
 - Roundel and trademark behaviour: follow Foundations constants (`ROUNDEL_*`, licensing copy on Foundations pages).  
+- Site favicon / apple-icon: grey filled placeholder roundel — not line-colour bars, not the trademarked mark. See [site-favicon.mdc](site-favicon.mdc).
 - Diagram geometry ratios live in `LINE_DIAGRAM` / strip components — not in theme `--radius` tokens.  
 - Station labels: use `StationName` / `formatStationLabel`; never ad-hoc `<br>` hacks for diagram names.
 - Arrivals board tiles: fixed rhythm + absolute hairlines / box-border brand bars — see [docs/design-system.md](docs/design-system.md) (“Arrivals board rhythm”) and [`.cursor/rules/arrivals-board-layout.mdc`](arrivals-board-layout.mdc).

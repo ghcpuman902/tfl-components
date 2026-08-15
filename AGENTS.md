@@ -16,6 +16,8 @@ See [docs/agent-workflow.md](./docs/agent-workflow.md) for collaboration pattern
 
 See [docs/design-system.md](./docs/design-system.md) for Tailwind and shadcn/ui conventions.
 
+Site favicon is the grey filled placeholder roundel (`app/icon.svg`), not line-colour bars and not the trademarked TfL mark. See [`.cursor/rules/site-favicon.mdc`](./.cursor/rules/site-favicon.mdc).
+
 Arrivals board vertical rhythm (fixed tiles, absolute hairlines, box-border brand bars): [docs/design-system.md](./docs/design-system.md#arrivals-board-rhythm) and [`.cursor/rules/arrivals-board-layout.mdc`](./.cursor/rules/arrivals-board-layout.mdc).
 
 Domain board skeletons (static identity vs live severity, Suspense fallbacks): [docs/coding-style.md](./docs/coding-style.md) (“Domain board skeletons”) and [`.cursor/rules/domain-skeletons.mdc`](./.cursor/rules/domain-skeletons.mdc).

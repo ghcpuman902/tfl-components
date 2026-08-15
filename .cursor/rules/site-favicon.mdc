@@ -1,0 +1,25 @@
+---
+description: Site favicon is the grey filled placeholder roundel — never replace it
+globs: app/icon.*,app/apple-icon.*,app/favicon.*,app/**/icon.*,app/**/apple-icon.*
+alwaysApply: false
+---
+
+# Site favicon
+
+The site mark is the **grey filled placeholder roundel** in `app/icon.svg` (disc + rounded bar, `#737373`). It is not a leftover, not unfinished, and not a SEV to close.
+
+`8ac06f3` replaced it with line-colour bars during a launch-review pass. That was wrong. Do not do it again.
+
+## Do
+
+- Keep `app/icon.svg` as the grey placeholder (same Wikimedia footprint as the `TfLRoundel` filled stand-in).
+- Keep `app/apple-icon` as the same mark (PNG is fine; geometry must stay a rounded disc + bar).
+- Leave `icon.svg` on a transparent background.
+
+## Do not
+
+- Replace it with rectangles, line-colour bars, a generic app-icon grid, or Lucide.
+- Use the trademarked hollow TfL roundel (official red/blue mark) as the favicon.
+- “Improve” a grey icon because a review called it a placeholder.
+
+The grey *is* the product identity we can ship: we do not have rights to the TfL roundel as a site mark.
