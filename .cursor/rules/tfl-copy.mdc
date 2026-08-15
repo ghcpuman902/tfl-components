@@ -1,0 +1,35 @@
+---
+description: Concept-first, demo-first copy for TfL documentation and public examples
+globs: app/docs/**/*.tsx, app/tools/**/*.tsx, content/**/*.mdx, components/docs/**/*.tsx, components/explorer/**/*.tsx, lib/docs-catalog.ts
+alwaysApply: false
+---
+
+# TfL documentation copy
+
+Write about the documented thing, not the machinery this site uses to demonstrate it.
+
+## Opening rhythm
+
+Prefer title, one-sentence description, at most one short introduction, then the primary demo or action. Omit the introduction when the description and demo are enough. Do not add captions or subtitles to a self-explanatory demo.
+
+## Sentence test
+
+Keep a sentence only when it helps the reader:
+
+1. understand the component or TfL concept,
+2. make a decision, or
+3. use it correctly.
+
+Cut technical facts that do none of these.
+
+## Do not leak site machinery
+
+Do not put caches, fixtures, seeds, fallback data, quota strategy, search radius, browser storage, inspector mechanics, polling, streaming, or internal fetching into titles, descriptions, introductions, or demo captions unless they change the reader's immediate action.
+
+Do not narrate obvious controls or outcomes. Do not repeat text, states, or example values the interface already shows.
+
+Put API-key instructions, installation details, security guidance, and troubleshooting at the point where the reader needs them. Preserve TfL API gotchas, licensing limits, and accessibility guidance when they prevent a realistic mistake.
+
+Catalogue and page metadata are public copy and follow the same rules.
+
+For a full review or rewrite, follow [`.agents/skills/tfl-copy-audit/SKILL.md`](../../.agents/skills/tfl-copy-audit/SKILL.md).

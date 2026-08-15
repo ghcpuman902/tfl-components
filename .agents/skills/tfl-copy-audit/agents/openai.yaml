@@ -1,0 +1,4 @@
+interface:
+  display_name: "TfL copy audit"
+  short_description: "Audit TfL docs copy for concept-first clarity"
+  default_prompt: "Use $tfl-copy-audit to review this documentation copy and propose concise replacements."
