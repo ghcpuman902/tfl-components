@@ -5,8 +5,14 @@
  * `LINE_STATION_SEQUENCES`. Curated bounds (Oxford Circus today) overlay the
  * membership list. Line IDs are sorted canonically — the catalog sorts
  * alphabetically and must not leak into positional URL mapping.
+ *
+ * Shared-track merge + identity come from tfl-ts `getSharedTrackSegments`
+ * (Circle / H&C / Metropolitan). Baker Street excludes Metropolitan from the
+ * merge — those platforms are separate — but still reconciles the three-line
+ * identity set.
  */
 
+import { getSharedTrackSegments } from "tfl-ts";
 import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort";
 import type { ArrivalsBoundId } from "@/lib/tfl/arrivals-bound-sort";
 import type {
@@ -28,27 +34,103 @@ export const BOARD_STATION_BOUNDS: Readonly<
 };
 
 /**
- * Curated shared-platform merges. Not derived from line-id overlap —
- * Baker Street also carries Circle / H&C / Metropolitan but on different
- * platforms, so it is absent here on purpose.
+ * Shared-platform merges. Derived from Circle / H&C / Met topology, with a
+ * Baker Street Metropolitan exclusion (different platforms).
  */
 export type BoardStationLineGroup = RailArrivalsLineGroup & {
   /** Rows per bound for this merged section. Applied via `pageSizeByLine`. */
   pageSize?: number;
 };
 
-const LIVERPOOL_STREET_SUBSURFACE: readonly BoardStationLineGroup[] = [
-  {
-    lines: ["circle", "hammersmith-city", "metropolitan"],
-    pageSize: 6,
-  },
-];
+export const SUBSURFACE_SHARED_TRACK_LINES = [
+  "circle",
+  "hammersmith-city",
+  "metropolitan",
+] as const;
+
+/** Metropolitan uses different platforms here — merge Circle + H&C only. */
+const SHARED_TRACK_MERGE_EXCLUDE: Readonly<
+  Record<string, readonly string[]>
+> = {
+  "940GZZLUBST": ["metropolitan"],
+};
+
+const SHARED_TRACK_MERGE_PAGE_SIZE = 6;
+
+const sortLineIds = (ids: readonly string[]): string[] =>
+  [...ids].sort((a, b) =>
+    compareArrivalsLines(
+      { lineId: a, lineName: getLineNameTiers(a).full },
+      { lineId: b, lineName: getLineNameTiers(b).full },
+    ),
+  );
+
+const SHARED_TRACK_SEGMENTS = getSharedTrackSegments(
+  SUBSURFACE_SHARED_TRACK_LINES,
+);
+
+/** Every naptan on Circle, H&C, or Metropolitan — used to block hub-alias leaks. */
+const SUBSURFACE_NAPTAN_IDS = new Set(
+  SHARED_TRACK_SEGMENTS.linesByStation.keys(),
+);
+
+const attachSafeAliases = <T,>(table: Record<string, T>): void => {
+  const catalog = getStationCatalog();
+  for (const key of Object.keys(table)) {
+    const station = catalog.find(
+      (row) => row.id === key || row.aliasIds.includes(key),
+    );
+    if (!station) continue;
+    for (const alias of [station.id, ...station.aliasIds]) {
+      if (alias in table) continue;
+      if (SUBSURFACE_NAPTAN_IDS.has(alias)) continue;
+      table[alias] = table[key];
+    }
+  }
+};
+
+const buildSharedTrackLineGroups = (): Record<
+  string,
+  readonly BoardStationLineGroup[]
+> => {
+  const table: Record<string, readonly BoardStationLineGroup[]> = {};
+  for (const stationId of SHARED_TRACK_SEGMENTS.shared) {
+    const serving = SHARED_TRACK_SEGMENTS.linesByStation.get(stationId) ?? [];
+    const exclude = new Set(SHARED_TRACK_MERGE_EXCLUDE[stationId] ?? []);
+    const lines = sortLineIds(serving.filter((id) => !exclude.has(id)));
+    if (lines.length < 2) continue;
+    table[stationId] = [
+      {
+        lines,
+        pageSize: SHARED_TRACK_MERGE_PAGE_SIZE,
+      },
+    ];
+  }
+  attachSafeAliases(table);
+  return table;
+};
+
+const buildSharedTrackLineSets = (): Record<string, readonly string[]> => {
+  const table: Record<string, readonly string[]> = {};
+  const identity = sortLineIds(SUBSURFACE_SHARED_TRACK_LINES);
+  for (const stationId of SHARED_TRACK_SEGMENTS.shared) {
+    table[stationId] = identity;
+  }
+  attachSafeAliases(table);
+  return table;
+};
 
 export const BOARD_STATION_LINE_GROUPS: Readonly<
   Record<string, readonly BoardStationLineGroup[]>
-> = {
-  "940GZZLULVT": LIVERPOOL_STREET_SUBSURFACE,
-};
+> = buildSharedTrackLineGroups();
+
+/**
+ * Line sets for exclusive-segment identity reconciliation at every shared
+ * Circle / H&C / Met station (same three-line network poll).
+ */
+export const SHARED_TRACK_LINE_SETS: Readonly<
+  Record<string, readonly string[]>
+> = buildSharedTrackLineSets();
 
 export type BoardStationLinesIndex = Readonly<
   Record<string, readonly RailArrivalsLine[]>
@@ -133,25 +215,41 @@ export const lookupBoardStationLines = (
   return index[id];
 };
 
-/**
- * Shared-platform line groups for a stop. Resolves catalog aliases so the
- * rail sibling (`910GLIVST`) and hub id (`HUBLST`) share the tube-id table.
- */
-export const lookupBoardStationLineGroups = (
+const lookupCuratedStopTable = <T>(
+  table: Readonly<Record<string, T>>,
   stopId: string | undefined,
-): readonly BoardStationLineGroup[] | undefined => {
+): T | undefined => {
   const id = stopId?.trim();
   if (!id) return undefined;
-  const direct = BOARD_STATION_LINE_GROUPS[id];
+  const direct = table[id];
   if (direct) return direct;
+  // A subsurface naptan missing from the table is a deliberate miss
+  // (Paddington Circle/District must not inherit the H&C-branch merge).
+  if (SUBSURFACE_NAPTAN_IDS.has(id)) return undefined;
 
   const station = getStationCatalog().find(
     (row) => row.id === id || row.aliasIds.includes(id),
   );
   if (!station) return undefined;
   for (const candidate of [station.id, ...station.aliasIds]) {
-    const groups = BOARD_STATION_LINE_GROUPS[candidate];
-    if (groups) return groups;
+    const value = table[candidate];
+    if (value) return value;
   }
   return undefined;
 };
+
+/**
+ * Shared-platform line groups for a stop. Resolves rail/hub aliases so the
+ * rail sibling (`910GLIVST`) and hub id (`HUBLST`) share the tube-id table.
+ * Does not copy a merge onto a different subsurface naptan.
+ */
+export const lookupBoardStationLineGroups = (
+  stopId: string | undefined,
+): readonly BoardStationLineGroup[] | undefined =>
+  lookupCuratedStopTable(BOARD_STATION_LINE_GROUPS, stopId);
+
+/** Line ids to reconcile on shared subsurface track at this stop. */
+export const lookupSharedTrackLineIds = (
+  stopId: string | undefined,
+): readonly string[] | undefined =>
+  lookupCuratedStopTable(SHARED_TRACK_LINE_SETS, stopId);

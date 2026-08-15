@@ -17,6 +17,7 @@ const prediction = (fields: {
   platformName?: string
   towards?: string
   timeToStation: number
+  vehicleId?: string
 }): RealtimePrediction =>
   ({
     lineName: fields.lineName ?? fields.lineId,
@@ -477,6 +478,115 @@ describe("prepareRailArrivals", () => {
     assert.equal(east?.rows[1]?.arrival.lineId, "circle")
     const central = board.groups.find((group) => group.lineId === "central")
     assert.equal(central?.lineIds.length, 1)
+  })
+
+  it("buckets a remapped shared-track arrival by canonicalLineId", () => {
+    const hcPaintedAsCircle = {
+      ...prediction({
+        id: "hc-as-cir",
+        lineId: "hammersmith-city",
+        lineName: "Hammersmith & City",
+        modeName: "tube",
+        platformName: "Westbound - Platform 2",
+        towards: "Hammersmith",
+        timeToStation: 80,
+      }),
+      sharedTrackIdentity: {
+        canonicalLineId: "circle",
+        confidence: "exclusive-segment" as const,
+        rawLineId: "hammersmith-city",
+      },
+    }
+    const board = prepareRailArrivals({
+      data: [hcPaintedAsCircle],
+    })
+    assert.deepEqual(groupNames(board.groups), ["Circle"])
+    assert.equal(board.groups[0]?.lineId, "circle")
+    assert.equal(board.groups[0]?.bounds[0]?.rows[0]?.arrival.lineId, "hammersmith-city")
+  })
+
+  it("leaves an untagged shared-track arrival on its raw line", () => {
+    const ambiguous = prediction({
+      id: "hc-amb",
+      lineId: "hammersmith-city",
+      lineName: "Hammersmith & City",
+      modeName: "tube",
+      platformName: "Westbound - Platform 2",
+      towards: "Check Front of Train",
+      timeToStation: 80,
+    })
+    const board = prepareRailArrivals({ data: [ambiguous] })
+    assert.deepEqual(groupNames(board.groups), ["Hammersmith & City"])
+  })
+
+  it("dedupes the same vehicle listed on two lines in a merged section", () => {
+    const hc = {
+      ...prediction({
+        id: "hc-406",
+        lineId: "hammersmith-city",
+        lineName: "Hammersmith & City",
+        modeName: "tube",
+        platformName: "Westbound - Platform 2",
+        towards: "Check Front of Train",
+        timeToStation: 80,
+        vehicleId: "406",
+      }),
+      sharedTrackIdentity: {
+        confidence: "ambiguous" as const,
+        rawLineId: "hammersmith-city",
+        rawLineIds: ["hammersmith-city", "metropolitan"],
+      },
+    }
+    const met = {
+      ...prediction({
+        id: "met-406",
+        lineId: "metropolitan",
+        lineName: "Metropolitan",
+        modeName: "tube",
+        platformName: "Westbound - Platform 2",
+        towards: "Check Front of Train",
+        timeToStation: 80,
+        vehicleId: "406",
+      }),
+      sharedTrackIdentity: {
+        confidence: "ambiguous" as const,
+        rawLineId: "metropolitan",
+        rawLineIds: ["hammersmith-city", "metropolitan"],
+      },
+    }
+    const board = prepareRailArrivals({
+      data: [hc, met],
+      lineGroups: [{ lines: ["circle", "hammersmith-city", "metropolitan"] }],
+    })
+    const merged = board.groups.find((group) => group.lineIds.length > 1)
+    assert.ok(merged)
+    assert.equal(merged.bounds[0]?.rows.length, 1)
+    assert.equal(merged.bounds[0]?.rows[0]?.arrival.vehicleId, "406")
+  })
+
+  it("buckets an ambiguous tagged arrival by raw lineId", () => {
+    const ambiguous = {
+      ...prediction({
+        id: "hc-amb-tag",
+        lineId: "hammersmith-city",
+        lineName: "Hammersmith & City",
+        modeName: "tube",
+        platformName: "Westbound - Platform 2",
+        towards: "Check Front of Train",
+        timeToStation: 80,
+      }),
+      sharedTrackIdentity: {
+        confidence: "ambiguous" as const,
+        rawLineId: "hammersmith-city",
+        rawLineIds: ["hammersmith-city", "metropolitan"],
+      },
+    }
+    const board = prepareRailArrivals({ data: [ambiguous] })
+    assert.deepEqual(groupNames(board.groups), ["Hammersmith & City"])
+    assert.equal(
+      board.groups[0]?.bounds[0]?.rows[0]?.arrival.lineId,
+      "hammersmith-city",
+    )
   })
 
   it("ignores lineGroups with a single id", () => {

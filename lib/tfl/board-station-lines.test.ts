@@ -6,6 +6,7 @@ import {
   getBoardStationLinesIndex,
   lookupBoardStationLineGroups,
   lookupBoardStationLines,
+  lookupSharedTrackLineIds,
 } from "./board-station-lines";
 
 describe("buildBoardStationLinesIndex", () => {
@@ -75,7 +76,72 @@ describe("lookupBoardStationLineGroups", () => {
     assert.equal(rail, tube);
   });
 
-  it("does not merge Baker Street", () => {
-    assert.equal(lookupBoardStationLineGroups("940GZZLUBST"), undefined);
+  it("merges Circle / H&C only at Baker Street (Metropolitan stays separate)", () => {
+    const groups = lookupBoardStationLineGroups("940GZZLUBST");
+    assert.ok(groups);
+    assert.deepEqual(groups[0]?.lines, ["circle", "hammersmith-city"]);
+  });
+
+  it("merges all three subsurface lines at King's Cross and Farringdon", () => {
+    for (const stopId of ["940GZZLUKSX", "940GZZLUFCN", "940GZZLUGPS"]) {
+      const groups = lookupBoardStationLineGroups(stopId);
+      assert.ok(groups, stopId);
+      assert.deepEqual(groups[0]?.lines, [
+        "circle",
+        "hammersmith-city",
+        "metropolitan",
+      ]);
+    }
+  });
+
+  it("merges Circle and Metropolitan at Aldgate", () => {
+    assert.deepEqual(lookupBoardStationLineGroups("940GZZLUALD")?.[0]?.lines, [
+      "circle",
+      "metropolitan",
+    ]);
+  });
+
+  it("merges Circle and H&C on the Hammersmith branch, not Paddington Circle/District", () => {
+    assert.deepEqual(lookupBoardStationLineGroups("940GZZLUPAH")?.[0]?.lines, [
+      "circle",
+      "hammersmith-city",
+    ]);
+    assert.equal(lookupBoardStationLineGroups("940GZZLUPAC"), undefined);
+  });
+
+  it("does not merge exclusive Circle stations", () => {
+    assert.equal(lookupBoardStationLineGroups("940GZZLUVIC"), undefined);
+  });
+});
+
+describe("lookupSharedTrackLineIds", () => {
+  it("lists Circle / H&C / Metropolitan at Liverpool Street", () => {
+    assert.deepEqual(lookupSharedTrackLineIds("940GZZLULVT"), [
+      "circle",
+      "hammersmith-city",
+      "metropolitan",
+    ]);
+  });
+
+  it("resolves Liverpool Street aliases", () => {
+    assert.equal(
+      lookupSharedTrackLineIds("910GLIVST"),
+      lookupSharedTrackLineIds("940GZZLULVT"),
+    );
+  });
+
+  it("reconciles the three-line set at Baker Street and King's Cross", () => {
+    const identity = [
+      "circle",
+      "hammersmith-city",
+      "metropolitan",
+    ];
+    assert.deepEqual(lookupSharedTrackLineIds("940GZZLUBST"), identity);
+    assert.deepEqual(lookupSharedTrackLineIds("940GZZLUKSX"), identity);
+  });
+
+  it("does not reconcile Paddington Circle/District or exclusive Circle", () => {
+    assert.equal(lookupSharedTrackLineIds("940GZZLUPAC"), undefined);
+    assert.equal(lookupSharedTrackLineIds("940GZZLUVIC"), undefined);
   });
 });

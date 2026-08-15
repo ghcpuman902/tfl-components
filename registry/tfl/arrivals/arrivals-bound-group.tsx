@@ -9,14 +9,20 @@ import {
   type RefObject,
 } from "react"
 import { Play } from "lucide-react"
+import type { PredictionWithSharedTrackIdentity } from "tfl-ts"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
 import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
-import { LineBadge, LineColorBar } from "@/components/tfl/brand/line-badge"
+import {
+  LineBadge,
+  LineBadgeGroup,
+  LineColorBar,
+} from "@/components/tfl/brand/line-badge"
 import { LineName } from "@/components/tfl/brand/line-name"
 import { StationName } from "@/components/tfl/station-name"
 import { ARRIVALS_LINE_EMPTY_COPY } from "@/lib/tfl/arrivals-empty"
 import { parseArrivalsPlatformLabel } from "@/lib/tfl/arrivals-bound-sort"
-import { getLineNameTiers } from "@/lib/tfl/line-names"
+import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort"
+import { getLineNameTiers, joinLineNames } from "@/lib/tfl/line-names"
 import {
   chunkBoundPages,
   type ArrivalsPreparedBound,
@@ -97,10 +103,44 @@ export const ArrivalRowItem = ({
     mode === "rail" && !hoistPlatform
       ? getArrivalsPlatformNumber(row.arrival.platformName)
       : null
-  const lineId = row.arrival.lineId?.trim() || ""
-  const lineChipLabel = showLineChip && lineId
-    ? getLineNameTiers(lineId, row.arrival.lineName).short
+  const tagged = row.arrival as PredictionWithSharedTrackIdentity
+  const rawLineId = row.arrival.lineId?.trim() || ""
+  const identity = tagged.sharedTrackIdentity
+  const canonicalLineId = identity?.canonicalLineId?.trim()
+  const lineId = canonicalLineId || rawLineId
+  const remapped = Boolean(canonicalLineId) && canonicalLineId !== rawLineId
+  const sharedChipIds =
+    showLineChip &&
+    identity?.confidence === "ambiguous" &&
+    identity.rawLineIds.length >= 2
+      ? [...identity.rawLineIds]
+          .map((id) => id.trim())
+          .filter(Boolean)
+          .sort((a, b) =>
+            compareArrivalsLines(
+              { lineId: a, lineName: getLineNameTiers(a).full },
+              { lineId: b, lineName: getLineNameTiers(b).full },
+            ),
+          )
+      : []
+  const lineTiers = lineId
+    ? getLineNameTiers(lineId, remapped ? undefined : row.arrival.lineName)
     : null
+  const lineChipLabel =
+    showLineChip && sharedChipIds.length < 2 && lineTiers
+      ? lineTiers.short
+      : null
+  const sharedChipLabel =
+    sharedChipIds.length >= 2
+      ? joinLineNames(sharedChipIds.map((id) => getLineNameTiers(id).full))
+      : null
+  const remapNote = remapped && lineTiers
+    ? `TfL currently labels this arrival ${getLineNameTiers(rawLineId, row.arrival.lineName).full} on this platform; it's running the ${lineTiers.full} line loop`
+    : null
+  const sharedNote =
+    !remapNote && sharedChipLabel
+      ? `TfL currently lists this arrival on ${sharedChipLabel}`
+      : null
   const routeLabel =
     mode === "bus"
       ? (row.arrival.lineName ?? row.arrival.lineId ?? "").trim() || null
@@ -108,35 +148,41 @@ export const ArrivalRowItem = ({
   const countdown = formatArrivalsCountdown(row.arrival.timeToStation)
   const rowLabel = [
     platformNumber ? `Platform ${platformNumber}` : null,
-    lineChipLabel
-      ? (getLineNameTiers(lineId, row.arrival.lineName).full)
-      : routeLabel
-        ? `Route ${routeLabel}`
-        : null,
+    sharedChipLabel ??
+      (lineChipLabel
+        ? lineTiers?.full
+        : routeLabel
+          ? `Route ${routeLabel}`
+          : null),
     destination,
     countdown,
+    remapNote ?? sharedNote,
   ]
     .filter(Boolean)
     .join(", ")
+
+  const lineChip = sharedChipLabel ? (
+    <LineBadgeGroup variant="codes" lineIds={sharedChipIds} />
+  ) : lineChipLabel ? (
+    <LineBadge
+      lineId={lineId}
+      name={lineChipLabel}
+      className="max-w-18 truncate"
+    />
+  ) : null
 
   const leading =
     mode === "bus"
       ? routeLabel
         ? <BusNumberChip label={routeLabel} />
         : null
-      : platformNumber || lineChipLabel
+      : platformNumber || lineChip
         ? (
           <div className="flex min-w-0 items-center gap-x-2">
             {platformNumber ? (
               <PlatformChip number={platformNumber} compact />
             ) : null}
-            {lineChipLabel ? (
-              <LineBadge
-                lineId={lineId}
-                name={lineChipLabel}
-                className="max-w-18 truncate"
-              />
-            ) : null}
+            {lineChip}
           </div>
         )
         : null
@@ -145,6 +191,7 @@ export const ArrivalRowItem = ({
     <li
       data-slot="arrivals-row"
       aria-label={rowLabel}
+      title={remapNote ?? sharedNote ?? undefined}
       className={cn(
         "grid items-center gap-x-3 text-base",
         leading

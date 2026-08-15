@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { RealtimePrediction } from "tfl-ts";
+import {
+  withSharedTrackIdentity,
+  type RealtimePrediction,
+} from "tfl-ts";
 import {
   selectArrivalsDataPath,
   shouldPausePollingForVisibility,
@@ -9,7 +12,10 @@ import {
 } from "@/lib/tfl/dual-path-arrivals";
 import { createBrowserTflClient } from "@/lib/tfl/browser-tfl-client";
 import { translateTflClientError } from "@/lib/tfl/tfl-error-translation";
-import { getStopArrivalsAction } from "@/lib/tfl/live-arrivals-action";
+import {
+  getLineArrivalsAction,
+  getStopArrivalsAction,
+} from "@/lib/tfl/live-arrivals-action";
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider";
 
 const DEFAULT_POLL_MS = 20_000;
@@ -30,6 +36,11 @@ type UseDualPathArrivalsOptions = {
    * Empty/null stays on the site path. Omit to use the credentials provider.
    */
   appKeyOverride?: string | null;
+  /**
+   * Curated shared-track line ids. When set, poll network-wide arrivals for
+   * those lines and tag stop rows with `sharedTrackIdentity`.
+   */
+  sharedTrackLineIds?: readonly string[];
 };
 
 type UseDualPathArrivalsResult = {
@@ -51,6 +62,7 @@ export const useDualPathArrivals = ({
   stopPointIds,
   pollMs = DEFAULT_POLL_MS,
   appKeyOverride,
+  sharedTrackLineIds,
 }: UseDualPathArrivalsOptions): UseDualPathArrivalsResult => {
   const { status, getAppKey, markInvalid, error: credentialError } =
     useUserTflCredentials();
@@ -71,6 +83,14 @@ export const useDualPathArrivals = ({
     ),
   ];
   const pollStopKey = pollStopIds.join(",");
+  const sharedTrackKey = [
+    ...new Set(
+      (sharedTrackLineIds ?? []).map((id) => id.trim()).filter(Boolean),
+    ),
+  ]
+    .sort()
+    .join(",");
+  const sharedTrackIds = sharedTrackKey ? sharedTrackKey.split(",") : [];
 
   const [data, setData] = useState<RealtimePrediction[]>([]);
   const [pollError, setPollError] = useState<string | null>(null);
@@ -78,8 +98,8 @@ export const useDualPathArrivals = ({
   const [tick, setTick] = useState(0);
 
   const pathKey = usingOverride
-    ? `${source}:override:${pollStopKey}`
-    : `${source}:${status}:${pollStopKey}`;
+    ? `${source}:override:${pollStopKey}:${sharedTrackKey}`
+    : `${source}:${status}:${pollStopKey}:${sharedTrackKey}`;
 
   useEffect(() => {
     if (isInvalid) return;
@@ -110,6 +130,20 @@ export const useDualPathArrivals = ({
       setLoading(false);
     };
 
+    const tagStopArrivals = async (
+      stopArrivals: RealtimePrediction[],
+      fetchNetwork: () => Promise<RealtimePrediction[] | null>,
+    ): Promise<RealtimePrediction[]> => {
+      if (sharedTrackIds.length < 2) return stopArrivals;
+      try {
+        const network = await fetchNetwork();
+        if (!network) return stopArrivals;
+        return withSharedTrackIdentity(stopArrivals, sharedTrackIds, network);
+      } catch {
+        return stopArrivals;
+      }
+    };
+
     const applyFailure = (message: string) => {
       if (cancelled) return;
       setPollError(message);
@@ -133,7 +167,12 @@ export const useDualPathArrivals = ({
         if (!result.ok) {
           applyFailure(result.error);
         } else {
-          applySuccess(result.arrivals);
+          const tagged = await tagStopArrivals(result.arrivals, async () => {
+            const lineResult = await getLineArrivalsAction(sharedTrackIds);
+            return lineResult.ok ? lineResult.arrivals : null;
+          });
+          if (cancelled || paused) return;
+          applySuccess(tagged);
         }
       } catch {
         applyFailure("Failed to load arrivals.");
@@ -167,7 +206,12 @@ export const useDualPathArrivals = ({
           },
           (arrivals) => {
             if (cancelled || paused) return;
-            applySuccess(arrivals);
+            void tagStopArrivals(arrivals, async () =>
+              client.line.getArrivals({ lineIds: sharedTrackIds }),
+            ).then((tagged) => {
+              if (cancelled || paused) return;
+              applySuccess(tagged);
+            });
           },
           (caught) => {
             if (cancelled) return;
@@ -237,6 +281,7 @@ export const useDualPathArrivals = ({
     source,
     trimmedStop,
     pollStopKey,
+    sharedTrackKey,
     isInvalid,
     usingOverride,
     overrideKey,

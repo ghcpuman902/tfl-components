@@ -1,4 +1,8 @@
-import { normalizeLineId, type RealtimePrediction } from "tfl-ts"
+import {
+  normalizeLineId,
+  type PredictionWithSharedTrackIdentity,
+  type RealtimePrediction,
+} from "tfl-ts"
 import { DEFAULT_MAX_ROWS } from "@/lib/tfl/arrivals-defaults"
 import {
   compareArrivalsBounds,
@@ -142,8 +146,20 @@ const toRow = (item: IndexedArrival): ArrivalsPreparedRow => ({
   sourceIndex: item.sourceIndex,
 })
 
+export const arrivalCanonicalLineId = (
+  arrival: RealtimePrediction,
+): string => {
+  const tagged = arrival as PredictionWithSharedTrackIdentity
+  return (
+    tagged.sharedTrackIdentity?.canonicalLineId ||
+    arrival.lineId ||
+    arrival.lineName ||
+    "unknown"
+  )
+}
+
 const lineKeyOf = (arrival: RealtimePrediction): string =>
-  arrival.lineId || arrival.lineName || "unknown"
+  arrivalCanonicalLineId(arrival)
 
 const resolveExpectedBounds = (
   bounds: readonly ArrivalsBoundId[] | undefined
@@ -289,6 +305,61 @@ const groupBucketKey = (lineId: string, membership: Map<string, ResolvedLineGrou
   return `group:${group.lines.join("+")}`
 }
 
+const sharedTrackIdentityRank = (arrival: RealtimePrediction): number => {
+  const tagged = arrival as PredictionWithSharedTrackIdentity
+  const identity = tagged.sharedTrackIdentity
+  if (identity?.confidence === "exclusive-segment") return 0
+  if (identity?.confidence === "ambiguous" && identity.rawLineIds.length >= 2) {
+    return 1
+  }
+  return 2
+}
+
+/**
+ * TfL dual-lists the same vehicle on two lineIds at one shared-track stop.
+ * Keep one row per `vehicleId` so the board does not paint the same train twice.
+ */
+const dedupeSharedTrackVehicles = (
+  items: readonly IndexedArrival[],
+): IndexedArrival[] => {
+  const byVehicle = new Map<string, IndexedArrival[]>()
+  const passthrough: IndexedArrival[] = []
+  for (const item of items) {
+    const vehicleId = item.arrival.vehicleId?.trim()
+    if (!vehicleId) {
+      passthrough.push(item)
+      continue
+    }
+    const rows = byVehicle.get(vehicleId)
+    if (rows) rows.push(item)
+    else byVehicle.set(vehicleId, [item])
+  }
+
+  const picked: IndexedArrival[] = []
+  for (const rows of byVehicle.values()) {
+    if (rows.length === 1) {
+      picked.push(rows[0]!)
+      continue
+    }
+    picked.push(
+      [...rows].sort((a, b) => {
+        const rankDiff =
+          sharedTrackIdentityRank(a.arrival) -
+          sharedTrackIdentityRank(b.arrival)
+        if (rankDiff !== 0) return rankDiff
+        const timeDiff =
+          (a.arrival.timeToStation ?? 0) - (b.arrival.timeToStation ?? 0)
+        if (timeDiff !== 0) return timeDiff
+        return a.sourceIndex - b.sourceIndex
+      })[0]!,
+    )
+  }
+
+  return [...passthrough, ...picked].sort(
+    (a, b) => a.sourceIndex - b.sourceIndex,
+  )
+}
+
 const collectRailLines = (
   indexed: readonly IndexedArrival[],
   expectedLines: readonly RailArrivalsLine[],
@@ -322,7 +393,7 @@ const collectRailLines = (
 
   for (const item of indexed) {
     const rawId = lineKeyOf(item.arrival)
-    const lineId = normalizeLineId(item.arrival.lineId || rawId) || rawId
+    const lineId = normalizeLineId(rawId) || rawId
     const key = groupBucketKey(lineId, membership)
     const group = membership.get(normalizeLineId(lineId))
     const existing = byLine.get(key)
@@ -344,7 +415,7 @@ const collectRailLines = (
         group?.label?.trim() ||
         (lineIds.length > 1
           ? joinLineNames(names)
-          : (item.arrival.lineName ?? item.arrival.lineId) || "Unknown"),
+          : getLineNameTiers(lineId, item.arrival.lineName).full || "Unknown"),
       modeName: item.arrival.modeName,
       expectedBounds: [],
       firstSourceIndex: item.sourceIndex,
@@ -385,6 +456,12 @@ const collectRailLines = (
       items: [],
       firstSourceIndex: indexed.length + expectedIndex,
     })
+  }
+
+  for (const bucket of byLine.values()) {
+    if (bucket.items.length > 1) {
+      bucket.items = dedupeSharedTrackVehicles(bucket.items)
+    }
   }
 
   return [...byLine.values()]

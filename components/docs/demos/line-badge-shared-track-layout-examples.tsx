@@ -74,5 +74,26 @@ export const LineBadgeSharedTrackLayoutExamples = () => (
         <LineBadgeGroup lineIds={EXAMPLES.towerHill} align="center" />
       </FixedChipFrame>
     </div>
+
+    <div className="grid gap-3 sm:grid-cols-2">
+      <FixedChipFrame label="Row codes · two lines">
+        <div className="flex h-12 items-center gap-3">
+          <LineBadgeGroup variant="codes" lineIds={EXAMPLES.goldhawk} />
+          <span className="text-sm font-medium">Hammersmith</span>
+          <span className="ml-auto text-sm font-semibold tabular-nums">
+            3 min
+          </span>
+        </div>
+      </FixedChipFrame>
+      <FixedChipFrame label="Row codes · three lines">
+        <div className="flex h-12 items-center gap-3">
+          <LineBadgeGroup variant="codes" lineIds={EXAMPLES.farringdon} />
+          <span className="text-sm font-medium">Check Front of Train</span>
+          <span className="ml-auto text-sm font-semibold tabular-nums">
+            Due
+          </span>
+        </div>
+      </FixedChipFrame>
+    </div>
   </div>
 );

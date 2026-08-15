@@ -16,6 +16,7 @@ import {
 import {
   lookupBoardStationLineGroups,
   lookupBoardStationLines,
+  lookupSharedTrackLineIds,
   type BoardStationLinesIndex,
 } from "@/lib/tfl/board-station-lines";
 import {
@@ -90,10 +91,15 @@ export const BoardDisplay = ({
     () => lookupBoardArrivalsStopIds(arrivalsStopIds, stopId),
     [arrivalsStopIds, stopId],
   );
+  const sharedTrackLineIds = useMemo(
+    () => lookupSharedTrackLineIds(stopId),
+    [stopId],
+  );
   const arrivals = useDualPathArrivals({
     stopPointId: ready ? stopId : "",
     stopPointIds: ready ? pollStopIds : [],
     appKeyOverride: ready ? appKey : null,
+    sharedTrackLineIds: ready ? sharedTrackLineIds : undefined,
   });
 
   const servingLines = useMemo(

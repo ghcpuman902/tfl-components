@@ -46,6 +46,8 @@ const data = await tfl.stopPoint.getArrivals({
 
 `resolveArrivalsStopId(hub, lineId)` is the per-line form. It returns `undefined` when that hub does not carry the line. Do not poll National Rail operator ids (c2c, South Western Railway). TfL's Arrivals API has no live predictions for them.
 
+On Circle / Hammersmith & City / Metropolitan shared track, TfL assigns `lineId` per station. The same train can be Circle at Victoria and H&C at Liverpool Street. tfl-ts `withSharedTrackIdentity` tags a stable `canonicalLineId` from exclusive-segment topology when the evidence is there. Vehicles TfL lists on two or more of those lines with no exclusive hit stay uncanonical and carry `rawLineIds` for a stacked codes chip. This site's Board opts in at every shared-track station; a library install calls the helper in the app.
+
 This site's Board builder expands siblings for you. A library install still has to do it in the app, because the board only renders the rows you pass in.
 
 Bus has its own board, [`BusArrivalsBoard`](/docs/bus-arrivals). The two share row chrome, chips, and the tile rhythm, not the high-level API. Fetching, caching, and polling stay in the app.
@@ -76,7 +78,7 @@ export default function Page({ data }) {
 
 Groups by line, then by compass bound from `platformName`. On a vertical board, West sits above East and North above South. Bound labels match the line-name size. When direction and platform are 1:1, the heading is `Eastbound · Platform 1` and the row does not repeat a platform chip. When a line has no compass prefix, as on Elizabeth line and Overground, the board groups by platform and spells the heading out (`Platform A`). Destinations use [`StationName`](/docs/station-name-labels). Hairlines inside a line group share one weight, including under bound titles. Literal `Platform Unknown` becomes a **Platform to be confirmed** subgroup — it is not a blank heading and not a chip.
 
-Pass `lineGroups` to merge lines that share platforms (for example Circle, Hammersmith & City, and Metropolitan at Liverpool Street). The section header uses the Line title **Shared-track group** treatment: foreground `LineName` plus a segmented brand bar, not a single line colour. Mixed-line rows lead with a line chip. The component does not infer merges from co-occurring line ids — Baker Street is the counterexample. This site’s Board opts in via a curated table; a library install passes `lineGroups` from the app.
+Pass `lineGroups` to merge lines that share platforms (for example Circle, Hammersmith & City, and Metropolitan at Liverpool Street). The section header uses the Line title **Shared-track group** treatment: foreground `LineName` plus a segmented brand bar, not a single line colour. Mixed-line rows lead with a line chip — a single `LineBadge` when the train has one identity, or `LineBadgeGroup variant="codes"` when TfL lists it on two or three lines. The component does not infer merges from co-occurring line ids. This site’s Board derives the table from shared-track topology (Baker Street excludes Metropolitan); a library install passes `lineGroups` from the app.
 
 Line sections stay in canonical `LINE_ORDER`. Empty expected lines keep that slot. Pass optional `lines` for the stop's serving set so a line with no predictions still renders a muted **No information** row. When `lines[].bounds` lists the compass sides that station actually serves, those bound groups still render even if the current poll has no trains that way. Otherwise a missing side is omitted.
 

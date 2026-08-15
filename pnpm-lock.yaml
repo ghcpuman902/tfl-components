@@ -99,8 +99,8 @@ importers:
         specifier: ^3.6.0
         version: 3.6.0
       tfl-ts:
-        specifier: ^2.7.0
-        version: 2.7.0(typescript@5.9.3)
+        specifier: file:../tfl-ts
+        version: file:../tfl-ts(typescript@5.9.3)
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
@@ -4059,8 +4059,8 @@ packages:
     resolution: {integrity: sha512-uxc/zpqFg6x7C8vOE7lh6Lbda8eEL9zmVm/PLeTPBRhh1xCgdWaQ+J1CUieGpIfm2HdtsUpRv+HshiasBMcc6A==}
     engines: {node: '>=6'}
 
-  tfl-ts@2.7.0:
-    resolution: {integrity: sha512-IeXLGHvYUc0qsgwwMISrT94Jv+XNNc5+dpkos6bOql2wCMmpGGWt/nvksc6EqmpLy7I7aDsSnuBNADNejBQauA==}
+  tfl-ts@file:../tfl-ts:
+    resolution: {directory: ../tfl-ts, type: directory}
     engines: {node: '>=18.0.0'}
     hasBin: true
     peerDependencies:
@@ -8618,7 +8618,7 @@ snapshots:
 
   tapable@2.3.3: {}
 
-  tfl-ts@2.7.0(typescript@5.9.3):
+  tfl-ts@file:../tfl-ts(typescript@5.9.3):
     dependencies:
       typescript: 5.9.3
 

@@ -109,6 +109,15 @@ export default function LineBadgeDemo() {
               <LineBadgeGroup lineIds={example.lineIds} />
             </div>
           ))}
+          <div className="flex items-center gap-3">
+            <LineBadgeGroup
+              variant="codes"
+              lineIds={["circle", "hammersmith-city", "metropolitan"]}
+            />
+            <p className="text-xs text-muted-foreground">
+              Row codes — one 3-letter abbr per stripe
+            </p>
+          </div>
         </DocsResizeFrame>
       </section>
 

@@ -17,9 +17,9 @@ These are wrong regardless of grouping preference.
 These are judgment calls. Change the formatter or the curated table — not the grouping engine.
 
 4. **Heading when direction and platform are 1:1.** Default is `"Eastbound · Platform 1"` via `formatBoundHeading`. Not a prop yet; a future `boundHeadingFormat` should wrap this helper.
-5. **Shared-platform line merge.** `RailArrivalsBoard` accepts optional `lineGroups: { lines, label? }[]`. Off by default on the installable component. This site’s `/board` opts in through `BOARD_STATION_LINE_GROUPS` in [`lib/tfl/board-station-lines.ts`](../lib/tfl/board-station-lines.ts) (Liverpool Street Circle + Hammersmith & City + Metropolitan, six rows per bound). The merged header matches Line title’s Shared-track group: `text-foreground` plus equal-width colour stripes. Mixed-line sections show a line chip **before** the destination. When the platform chip is hoisted, the row grid drops the empty leading column so destinations sit flush with the bound heading.
+5. **Shared-platform line merge.** `RailArrivalsBoard` accepts optional `lineGroups: { lines, label? }[]`. Off by default on the installable component. This site’s `/board` opts in through `BOARD_STATION_LINE_GROUPS` in [`lib/tfl/board-station-lines.ts`](../lib/tfl/board-station-lines.ts), derived from Circle / H&C / Met shared-track topology (six rows per bound). Baker Street merges Circle + H&C only — Metropolitan uses different platforms. Paddington Circle/District does not inherit the H&C-branch merge. The merged header matches Line title’s Shared-track group: `text-foreground` plus equal-width colour stripes. Mixed-line sections show a line chip **before** the destination. A train TfL lists on two or three of those lines uses `LineBadgeGroup variant="codes"` (stacked 3-letter abbrs). When the platform chip is hoisted, the row grid drops the empty leading column so destinations sit flush with the bound heading.
 
-Do **not** infer merges from “these line ids co-occur on the map”. Baker Street also carries Circle / H&C / Metropolitan, but Metropolitan uses different platforms — it is absent from the table on purpose.
+Do **not** infer merges from “these line ids co-occur on the map”. Topology says which naptans share track; Baker Street’s Metropolitan platforms are the counterexample that still needs an exclusion.
 
 ## Grouping rule
 
@@ -27,7 +27,7 @@ Do **not** infer merges from “these line ids co-occur on the map”. Baker Str
 2. If platform maps cleanly to direction, subgroup = direction + hoisted platform.
 3. If there is no compass prefix, subgroup = platform, heading spelled out.
 4. If direction is useful but platform varies, group by direction and show compact `P{n}` on the row.
-5. If several lines sit in one group, show a line chip on each prediction.
+5. If several lines sit in one group, show a line chip on each prediction. A train TfL lists on two member lines at this stop is one row (`vehicleId` dedupe) with a stacked codes chip.
 6. If only one line exists, do not repeat a line chip.
 7. If every row shares the same platform, hoist it into the heading.
 8. If platform is unknown, one stable fallback group — never a blank heading.
@@ -37,9 +37,11 @@ Do **not** infer merges from “these line ids co-occur on the map”. Baker Str
 | Station | Role |
 |---|---|
 | Liverpool Street | Shared Circle / H&C / Met platforms; Elizabeth lettered platforms; Weaver numbered + unknown outbound |
-| Baker Street | Counterexample — do not merge Circle / H&C / Met |
+| Baker Street | Merge Circle + H&C only — Metropolitan stays its own section |
 | *(open)* | Direction useful, platform varies inside the bound |
 | *(open)* | Platform useful, eastbound/westbound is not |
 | *(open)* | Lettered-platform Overground besides Elizabeth |
 
 No Board-URL param for `lineGroups` in this pass. Callers pass the prop; the hosted board uses the curated table.
+
+Circle / H&C / Met `lineId` flips on shared track (same train, different colour at Liverpool Street vs Victoria): [circle-hc-metropolitan-shared-track.md](./circle-hc-metropolitan-shared-track.md).
