@@ -69,7 +69,7 @@ Every tile uses a locked box (`box-border`, fixed `min`/`max`/`height` = `--arri
 
 **Gaps**
 
-- Title → first line group: tight (`space-y-2` = one unit).
+- Title → first line group: **none** — same continuous tile stack as line sections (no `space-y-2` / `mt-2` on the board root).
 - Between line sections: **none** — arrival rows and the next line header form one continuous tile stack (no `gap-y` / `space-y` between `<section>`s).
 - Do not reserve a double-height title band “in case the name wraps”.
 
@@ -107,7 +107,7 @@ Every tile uses a locked box (`box-border`, fixed `min`/`max`/`height` = `--arri
 
 **Side-by-side boards**
 
-Share the same title height, title→body gap, and row unit so the first line headers align. Mid-board drift from extra rail bound rows (Northbound / Southbound) is **content structure**, not a chrome-height bug.
+Share the same title height and row unit so the first line headers align. There is no title→body gap. Mid-board drift from extra rail bound rows (Northbound / Southbound) is **content structure**, not a chrome-height bug.
 
 **Responsive arrangements (CSS-first)**
 

@@ -43,28 +43,31 @@ export const RoundelTrademarkModal = ({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger
+            asChild
             className={cn(ROUNDEL_FRAME_CLASS, "cursor-help", className)}
-            // span (not button) so this stays valid inside links / other controls
-            render={
-              <span
-                role="button"
-                tabIndex={0}
-                aria-label="TfL roundel placeholder — trademark notice"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setOpen(true);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") return;
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setOpen(true);
-                }}
-              />
-            }
           >
-            {children}
+            {/* span (not button) so this stays valid inside links / other controls.
+                `asChild` works against either a Radix-shaped `asChild` primitive
+                (most shadcn consumers) or this project's Base UI `render` shim
+                — see components/ui/tooltip.tsx. */}
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label="TfL roundel placeholder — trademark notice"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setOpen(true);
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" && event.key !== " ") return;
+                event.preventDefault();
+                event.stopPropagation();
+                setOpen(true);
+              }}
+            >
+              {children}
+            </span>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-[14rem]">
             Trademark placeholder. Click for details.
@@ -98,8 +101,8 @@ export const RoundelTrademarkModal = ({
           </div>
 
           <DialogFooter className="gap-2 sm:justify-between">
-            <DialogClose render={<Button variant="outline" />}>
-              Close
+            <DialogClose asChild>
+              <Button variant="outline">Close</Button>
             </DialogClose>
             <a
               href={TFL_BRAND_LINKS.usingBrandIp}

@@ -179,6 +179,11 @@ const DisruptedBusNumberChip = ({
  *
  * Painted chip stays at arrival-row size (`h-5` / `text-xs` / `5ch`).
  * Title-relative `ex` on the same node as height collapses the padding.
+ *
+ * `translate-y-[0.35em]` nudges the chips to track the stop title's
+ * cap-height baseline (`STATION_NAME_TITLE_CLASS` trims to
+ * cap-alphabetic, which sits lower than dead-centre) rather than the
+ * tile's geometric middle. `em` scales with the row's `text-3xl` context.
  */
 export const BusStopDisruptionChips = ({
   className,
@@ -190,7 +195,8 @@ export const BusStopDisruptionChips = ({
   const { disruptions, activeLineId, setActiveLineId } = ctx
 
   return (
-    <div className={cn("flex h-full items-stretch", className)}>
+    <div className={cn("flex h-full translate-y-[0.35em] items-stretch", className)}>
+
       {disruptions.map((disruption) => {
         const isActive = activeLineId === disruption.lineId
         const isDimmed = activeLineId !== null && !isActive

@@ -25,7 +25,8 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       // —— J6 docs chrome ——
-      { source: "/installation", destination: "/docs/installation", permanent: true },
+      { source: "/installation", destination: "/docs/troubleshoot", permanent: true },
+      { source: "/docs/installation", destination: "/docs/troubleshoot", permanent: true },
       { source: "/interfaces", destination: "/docs/components", permanent: true },
       { source: "/interfaces/arrivals-board", destination: "/docs/tube-rail-arrivals", permanent: true },
       { source: "/interfaces/rail-arrivals-board", destination: "/docs/tube-rail-arrivals", permanent: true },
@@ -74,6 +75,20 @@ const nextConfig: NextConfig = {
       { source: "/components/line-badge", destination: "/docs/line-chip", permanent: true },
       { source: "/docs/line-badge", destination: "/docs/line-chip", permanent: true },
       { source: "/docs/line-name-labels", destination: "/docs/line-title", permanent: true },
+
+      // Guessable nested/short docs slugs — mirrors lib/docs-catalog.ts SLUG_ALIASES
+      // so a URL a reader would reasonably type also resolves over HTTP.
+      { source: "/docs/rail-arrivals", destination: "/docs/tube-rail-arrivals", permanent: true },
+      { source: "/docs/arrivals-board", destination: "/docs/tube-rail-arrivals", permanent: true },
+      { source: "/docs/rail-arrivals-board", destination: "/docs/tube-rail-arrivals", permanent: true },
+      { source: "/docs/bus-arrivals-board", destination: "/docs/bus-arrivals", permanent: true },
+      { source: "/docs/tube-status-board", destination: "/docs/tube-rail-status", permanent: true },
+      { source: "/docs/station-name", destination: "/docs/station-name-labels", permanent: true },
+      { source: "/docs/station-labels", destination: "/docs/station-name-labels", permanent: true },
+      { source: "/docs/line-name", destination: "/docs/line-title", permanent: true },
+      // `/docs/components/<slug>` guesses — every component page actually lives
+      // one level up, at `/docs/<slug>`.
+      { source: "/docs/components/:slug", destination: "/docs/:slug", permanent: true },
     ];
   },
 };

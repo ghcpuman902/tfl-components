@@ -43,6 +43,7 @@ const BusArrivalsLiveBoard = ({
       ) : null}
       <BusArrivalsBoard
         data={data}
+        now={fetchedAt ?? undefined}
         stopName={HOME_BUS_STOP.name}
         stopLetter={HOME_BUS_STOP.stopLetter}
         groupBy={groupBy}

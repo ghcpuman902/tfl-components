@@ -171,3 +171,8 @@ export type {
   RailArrivalsLineSortBy,
   RailArrivalsSortBy,
 } from "@/lib/tfl/arrivals-prepare"
+/**
+ * Re-exported so `data` and `tfl.stopPoint.getArrivals()` can be typed from
+ * this one module — no separate `tfl-ts` import to keep in sync, no cast.
+ */
+export type { RealtimePrediction } from "tfl-ts"

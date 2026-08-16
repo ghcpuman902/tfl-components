@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { ArrowRightIcon, RocketIcon } from "lucide-react";
+import { ArrowRightIcon, LayoutDashboard } from "lucide-react";
 import { BrowserWindow } from "@/components/docs/browser-window";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
+import { InstallCommand } from "@/components/docs/install-command";
 import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   RailArrivalsBoard,
   RailArrivalsBoardSkeleton,
@@ -20,24 +22,127 @@ import {
 } from "@/lib/tfl/home-arrivals-data";
 
 const TFL_KEY_SNIPPET = `TFL_APP_KEY=your-primary-or-secondary-key`;
-const ARRIVALS_INSTALL_SNIPPET =
-  "pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/rail-arrivals-board.json";
-const ARRIVALS_PAGE_SNIPPET = `import TflClient from "tfl-ts"
+
+const ARRIVALS_REACT_SNIPPET = `import { useEffect, useState } from "react"
+import TflClient, { type RealtimePrediction } from "tfl-ts"
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
 
-const tfl = new TflClient({
-  appKey: process.env.TFL_APP_KEY!,
-})
+const tfl = new TflClient({ appKey: import.meta.env.VITE_TFL_APP_KEY })
 
-export default async function Page() {
+export default function Page() {
+  const [data, setData] = useState<RealtimePrediction[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      const arrivals = await tfl.stopPoint.getArrivals({
+        stopPointIds: ["940GZZLUOXC"],
+        sortBy: "timeToStation",
+      })
+      if (!cancelled) setData(arrivals)
+    }
+
+    void load()
+    const id = setInterval(load, 20_000)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [])
+
+  return <RailArrivalsBoard data={data} stopName="Oxford Circus" />
+}`;
+
+const ARRIVALS_ACTION_SNIPPET = `"use server"
+
+import TflClient from "tfl-ts"
+
+const tfl = new TflClient({ appKey: process.env.TFL_APP_KEY! })
+
+export async function getArrivals() {
+  return tfl.stopPoint.getArrivals({
+    stopPointIds: ["940GZZLUOXC"],
+    sortBy: "timeToStation",
+  })
+}`;
+
+const ARRIVALS_ACTION_PAGE_SNIPPET = `"use client"
+
+import { useEffect, useState } from "react"
+import type { RealtimePrediction } from "tfl-ts"
+import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
+import { getArrivals } from "./actions"
+
+export default function Page() {
+  const [data, setData] = useState<RealtimePrediction[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      const arrivals = await getArrivals()
+      if (!cancelled) setData(arrivals)
+    }
+
+    void load()
+    const id = setInterval(load, 20_000)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [])
+
+  return <RailArrivalsBoard data={data} stopName="Oxford Circus" />
+}`;
+
+const ARRIVALS_ROUTE_SNIPPET = `import TflClient from "tfl-ts"
+
+const tfl = new TflClient({ appKey: process.env.TFL_APP_KEY! })
+const ALLOWED_ORIGIN = "https://your-app.example.com"
+
+export async function GET(request: Request) {
+  const origin = request.headers.get("origin")
   const data = await tfl.stopPoint.getArrivals({
     stopPointIds: ["940GZZLUOXC"],
     sortBy: "timeToStation",
   })
+  return Response.json(data, {
+    headers:
+      origin === ALLOWED_ORIGIN
+        ? { "Access-Control-Allow-Origin": ALLOWED_ORIGIN, Vary: "Origin" }
+        : { Vary: "Origin" },
+  })
+}`;
 
-  return (
-    <RailArrivalsBoard data={data} stopName="Oxford Circus" />
-  )
+const ARRIVALS_ROUTE_PAGE_SNIPPET = `"use client"
+
+import { useEffect, useState } from "react"
+import type { RealtimePrediction } from "tfl-ts"
+import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
+
+export default function Page() {
+  const [data, setData] = useState<RealtimePrediction[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      const arrivals = (await fetch("/api/arrivals").then((response) =>
+        response.json(),
+      )) as RealtimePrediction[]
+      if (!cancelled) setData(arrivals)
+    }
+
+    void load()
+    const id = setInterval(load, 20_000)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [])
+
+  return <RailArrivalsBoard data={data} stopName="Oxford Circus" />
 }`;
 
 export const metadata: Metadata = {
@@ -91,6 +196,7 @@ const IntroArrivalsPreview = async () => {
 
 export default function DocsIntroductionPage() {
   const entry = getDocsEntry("introduction")!;
+  const arrivalsEntry = getDocsEntry("tube-rail-arrivals")!;
 
   return (
     <DocsReadableWidth>
@@ -105,54 +211,47 @@ export default function DocsIntroductionPage() {
             </ExternalTextLink>
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Add to your <code className="text-xs">.env</code> /{" "}
-            <code className="text-xs">.env.local</code> /{" "}
-            <code className="text-xs">.env.development</code>.
+            Subscribe to 500 Requests per min, then copy Primary or Secondary
+            from Profile into <code className="text-xs">.env.local</code>.{" "}
+            <code className="text-xs">app_id</code> has been unused since Jan
+            2021.
           </p>
           <SyntaxHighlightedCode
             code={TFL_KEY_SNIPPET}
             language="bash"
             wrapperClassName="mt-0 mb-0"
           />
-          <p className="max-w-prose text-xs text-muted-foreground">
-            You only need one of the two keys (Primary or Secondary).{" "}
-            <code className="text-[0.7rem]">app_id</code> has been unused since
-            Jan 2021.
-          </p>
         </section>
 
-        <aside className="grid grid-cols-[auto_minmax(0,1fr)] items-stretch gap-4">
-          <div className="relative aspect-square h-full overflow-hidden rounded-xl bg-muted">
-            <RocketIcon
-              className="pointer-events-none absolute top-1/2 left-1/2 size-[140%] -translate-x-1/2 -translate-y-1/2 text-background"
-              strokeWidth={2.75}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            />
-          </div>
-          <div className="min-w-0 space-y-2">
-            <h2
-              id="hosted-url"
-              className={newMarkerParentClassName(
-                "inline-block pr-8 text-lg font-semibold after:-top-1 after:text-sm"
-              )}
-            >
-              Board
-            </h2>
-            <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
-              Wait, do you really need a server? Board is the quickest way to
-              turn an old iPad or tablet into a TfL dashboard. Once you have a
-              key, configure a single URL that opens a full-screen page for a
-              common use case.
-            </p>
-            <Link
-              href="/board"
-              className="inline-flex w-fit items-center gap-1.5 text-sm text-primary underline underline-offset-4"
-            >
-              Config your own board
-              <ArrowRightIcon className="size-3.5 shrink-0" aria-hidden />
-            </Link>
+        <aside className="@container">
+          <div className="grid grid-cols-1 items-start gap-4 @[24rem]:grid-cols-[5rem_minmax(0,1fr)]">
+            <div className="flex aspect-square w-16 items-center justify-center rounded-xl bg-foreground/10 @[24rem]:w-full">
+              <LayoutDashboard
+                className="size-18 text-foreground/30 stroke-1"
+                aria-hidden
+              />
+            </div>
+            <div className="min-w-0 space-y-2">
+              <h2
+                id="hosted-url"
+                className={newMarkerParentClassName(
+                  "inline-block pr-8 text-lg font-semibold after:-top-3 after:text-sm"
+                )}
+              >
+                Board
+              </h2>
+              <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+               You don&apos;t need to self host these components! Get a live arrival board running on your old iPad in less than 2 mins! 
+                Full screen, auto refresh, no installation, works on any device with a browser!
+              </p>
+              <Link
+                href="/board"
+                className="inline-flex w-fit items-center gap-1.5 text-sm text-primary underline underline-offset-4"
+              >
+                Try it
+                <ArrowRightIcon className="size-3.5 shrink-0" aria-hidden />
+              </Link>
+            </div>
           </div>
         </aside>
 
@@ -161,68 +260,134 @@ export default function DocsIntroductionPage() {
             2. Set up a typeface (optional)
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Skip this and components use your app’s font. For the TfL-inspired
-            look, start with{" "}
-            <Link
-              href="/docs/typography"
-              className="text-foreground underline underline-offset-4"
-            >
-              Hammersmith One
-            </Link>
-            . Official Johnston requires a licence from{" "}
+            Components use your app&apos;s font by default. 
+            The official Johnston font requires a licence from{" "}
             <ExternalTextLink href={TFL_BRAND_LINKS.fontRequests}>
               TfL
             </ExternalTextLink>
-            ; see{" "}
+            {" "}(see{" "}
             <Link
               href="/docs/tfl-licensing"
               className="text-foreground underline underline-offset-4"
             >
               Licensing and brand use
             </Link>
-            .
+            ).
+            
+            This site uses the free TfL-inspired{" "}
+            <Link
+              href="/docs/typography"
+              className="text-foreground underline underline-offset-4"
+            >
+              Hammersmith One
+            </Link>
+            . Or if you have Adobe subscription, a closer match is P22 Underground,
+            see <Link href="/docs/typography" className="text-foreground underline underline-offset-4">Typography</Link> for more details.
           </p>
         </section>
 
         <section className="space-y-3">
           <h2 id="install-and-import" className="text-lg font-semibold">
-            3. Install and import
+            3. Install and render
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Start with the Tube and rail arrivals board. The command copies its
-            source and dependencies into your app:
-          </p>
-          <SyntaxHighlightedCode
-            code={ARRIVALS_INSTALL_SNIPPET}
-            language="bash"
-            wrapperClassName="mt-0 mb-0"
-          />
-          <p className="max-w-prose text-muted-foreground">
-            Fetch predictions with{" "}
+            Start from a Next.js app with{" "}
+            <ExternalTextLink href="https://ui.shadcn.com/docs/installation/next">
+              shadcn already initialised
+            </ExternalTextLink>
+            . The command copies the board source into your repo and installs{" "}
             <ExternalTextLink href="https://www.npmjs.com/package/tfl-ts">
               tfl-ts
-            </ExternalTextLink>{" "}
-            and render them from a page:
+            </ExternalTextLink>
+            .
           </p>
-          <SyntaxHighlightedCode
-            code={ARRIVALS_PAGE_SNIPPET}
-            language="tsx"
-            wrapperClassName="mt-0 mb-0"
-          />
+          <InstallCommand registryUrl={arrivalsEntry.registryUrl!} />
+          <Tabs defaultValue="react" className="gap-2">
+            <TabsList variant="line" className="h-8">
+              <TabsTrigger value="react">React</TabsTrigger>
+              <TabsTrigger value="action">Next.js (Server Action)</TabsTrigger>
+              <TabsTrigger value="route">Next.js (Route Handler)</TabsTrigger>
+            </TabsList>
+            <TabsContent value="react" className="space-y-3">
+              <p className="max-w-prose text-sm text-muted-foreground">
+                (Quick and easy) Calls TfL from the browser, AKA client side. Anyone can right click dev tools and see your TfL key.
+              </p>
+              <SyntaxHighlightedCode
+                code={ARRIVALS_REACT_SNIPPET}
+                language="tsx"
+                wrapperClassName="mt-0 mb-0"
+              />
+            </TabsContent>
+            <TabsContent value="action" className="space-y-3">
+              <p className="max-w-prose text-sm text-muted-foreground">
+                (Recommended) Use Next.js&apos;s{" "}
+                <Link 
+                  href="https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions" 
+                  className="text-foreground underline underline-offset-4"
+                >
+                  Server Actions
+                </Link>{" "}
+                to call TfL from the server. This is more secure as the key stays on the server. To fully prevent abuse, consider implementing IP whitelisting or API key authentication.
+              </p>
+              <div className="space-y-1.5">
+                <p className="text-xs text-muted-foreground">app/actions.ts</p>
+                <SyntaxHighlightedCode
+                  code={ARRIVALS_ACTION_SNIPPET}
+                  language="ts"
+                  wrapperClassName="mt-0 mb-0"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-xs text-muted-foreground">app/page.tsx</p>
+                <SyntaxHighlightedCode
+                  code={ARRIVALS_ACTION_PAGE_SNIPPET}
+                  language="tsx"
+                  wrapperClassName="mt-0 mb-0"
+                />
+              </div>
+            </TabsContent>
+            <TabsContent value="route" className="space-y-3">
+              <p className="max-w-prose text-sm text-muted-foreground">
+                This method expose an API endpoint (<code className="text-xs">/api/arrivals</code>) anyone can call, here we demostrated how to add security with CORS,
+                to fully prevent abuse, consider implementing IP whitelisting or API key authentication.
+              </p>
+              <div className="space-y-1.5">
+                <p className="text-xs text-muted-foreground">
+                  app/api/arrivals/route.ts
+                </p>
+                <SyntaxHighlightedCode
+                  code={ARRIVALS_ROUTE_SNIPPET}
+                  language="ts"
+                  wrapperClassName="mt-0 mb-0"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-xs text-muted-foreground">app/page.tsx</p>
+                <SyntaxHighlightedCode
+                  code={ARRIVALS_ROUTE_PAGE_SNIPPET}
+                  language="tsx"
+                  wrapperClassName="mt-0 mb-0"
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
           <figure className="space-y-3 pt-3">
+            <p className="text-sm text-muted-foreground">
+              You should see something like this:
+            </p>
             <Suspense fallback={<IntroArrivalsFallback />}>
               <IntroArrivalsPreview />
             </Suspense>
-            <figcaption className="text-sm text-muted-foreground">
-              Oxford Circus, live.{" "}
+            <p className="text-sm text-muted-foreground">
+              Still having trouble? See{" "}
               <Link
-                href="/docs/tube-rail-arrivals"
+                href="/docs/troubleshoot"
                 className="text-foreground underline underline-offset-4"
               >
-                Tube and rail arrivals guide
-              </Link>{" "}
-              covers grouping, paging, and layouts.
-            </figcaption>
+                Troubleshoot
+              </Link>
+              .
+            </p>
           </figure>
         </section>
       </article>

@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import Link, { useLinkStatus } from "next/link"
 import { DocsSearch } from "@/components/docs/docs-search"
 import { newMarkerParentClassName } from "@/components/new-marker"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -9,6 +9,20 @@ import { useHorizontalScrollEnd } from "@/hooks/use-horizontal-scroll-end"
 import { cn } from "@/lib/utils"
 
 const GITHUB = "https://github.com/ghcpuman902/tfl-components"
+
+/**
+ * Child of a `<Link>` — `useLinkStatus` only reports its own link's pending
+ * transition. Dims the label so a click reads as "in progress" instead of
+ * looking like nothing happened while the RSC payload streams in.
+ */
+const NavLinkLabel = ({ children }: { children: React.ReactNode }) => {
+  const { pending } = useLinkStatus()
+  return (
+    <span className={cn("transition-opacity", pending && "opacity-50")}>
+      {children}
+    </span>
+  )
+}
 
 const GitHubLink = ({ className }: { className?: string }) => (
   <a
@@ -110,13 +124,13 @@ export const SiteHeader = ({
                   href={link.href}
                   className={cn(
                     "shrink-0 px-1.5 py-2",
-                    isNew && newMarkerParentClassName("pr-6 after:-top-1"),
+                    isNew && newMarkerParentClassName("pr-6 after:top-0.5"),
                     active
                       ? "font-medium text-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {link.label}
+                  <NavLinkLabel>{link.label}</NavLinkLabel>
                 </Link>
               )
             })}

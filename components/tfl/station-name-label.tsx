@@ -5,6 +5,8 @@
 export {
   StationName,
   StationNameLabel,
+  StationNameTitle,
+  STATION_NAME_TITLE_SLOT_CLASS,
   type StationNameLabelProps,
   type StationNameLayout,
   type StationNameProps,

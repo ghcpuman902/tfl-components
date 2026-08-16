@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react"
 import { normalizeLineId, type RealtimePrediction } from "tfl-ts"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
-import { StationName } from "@/components/tfl/station-name"
+import { StationNameTitle } from "@/components/tfl/station-name"
 import {
   BusStopDisruptionBoundary,
   BusStopDisruptionChips,
@@ -93,7 +93,7 @@ export const ARRIVALS_TILE_CLASS =
   "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden [content-visibility:auto] [contain-intrinsic-size:auto_3rem]"
 
 const TITLE_CLASS =
-  "[font-synthesis:none] [font-weight:var(--tfl-title-weight,400)] [letter-spacing:var(--tfl-title-tracking,0)]"
+  "tfl-title [font-synthesis:none] [font-weight:var(--tfl-title-weight,400)] [letter-spacing:var(--tfl-title-tracking,0)]"
 
 const LIST_RESET_CLASS = "m-0 ml-0 list-none space-y-0 p-0 [&>li]:mt-0"
 
@@ -129,7 +129,7 @@ export const ArrivalsBoardSkeleton = ({
 }) => (
   <div
     data-slot="arrivals-board"
-    className={cn("@container/arrivals w-full space-y-2", className)}
+    className={cn("@container/arrivals w-full", className)}
     style={ARRIVALS_RHYTHM_VARS}
     aria-busy
     aria-label="Loading arrivals"
@@ -146,20 +146,11 @@ export const ArrivalsBoardSkeleton = ({
           />
           <p
             className={cn(
-              "min-w-0 flex-1 text-3xl",
+              "flex h-full min-w-0 flex-1 items-center text-3xl",
               TITLE_CLASS
             )}
           >
-            <span className="block min-w-0">
-              <StationName
-                name={stopName}
-                layout="auto"
-                maxLines={1}
-                allowAbbreviation
-                allowScaleDown
-                className="justify-center leading-8"
-              />
-            </span>
+            <StationNameTitle name={stopName} />
           </p>
           {stopLetter ? <StopLetterBadge letter={stopLetter} /> : null}
         </>
@@ -348,7 +339,7 @@ export const ArrivalsBoardView = ({
   return (
     <div
       data-slot="arrivals-board"
-      className={cn("@container/arrivals w-full space-y-2", className)}
+      className={cn("@container/arrivals w-full", className)}
       style={ARRIVALS_RHYTHM_VARS}
     >
       <BusStopDisruptionBoundary disruptions={mode === "bus" ? disruptions : []}>
@@ -371,16 +362,7 @@ export const ArrivalsBoardView = ({
             )}
             aria-label={stopName}
           >
-            <span className="block min-w-0" aria-hidden="true">
-              <StationName
-                name={stopName}
-                layout="auto"
-                maxLines={1}
-                allowAbbreviation
-                allowScaleDown
-                className="justify-center leading-8"
-              />
-            </span>
+            <StationNameTitle name={stopName} />
             {mode === "bus" ? <BusStopDisruptionChips /> : null}
           </TitleTag>
         ) : loading ? (

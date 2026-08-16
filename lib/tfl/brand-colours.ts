@@ -30,9 +30,9 @@ export type BrandColourSpec = {
 };
 
 const rgbToHex = (rgb: string): string => {
-  const [r, g, b] = rgb.split(/\s+/).map(Number);
-  const h = (n: number) => n.toString(16).padStart(2, "0");
-  return `#${h(r)}${h(g)}${h(b)}`.toUpperCase();
+  const channels = rgb.split(/\s+/).map(Number);
+  const h = (n: number | undefined) => (n ?? 0).toString(16).padStart(2, "0");
+  return `#${h(channels[0])}${h(channels[1])}${h(channels[2])}`.toUpperCase();
 };
 
 const colour = (

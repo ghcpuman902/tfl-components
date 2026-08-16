@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { domToMarkdown } from "@/lib/docs/dom-to-markdown";
+import { openFeedbackDialog } from "@/lib/feedback/open";
 
 const COPIED_MS = 2000;
 
@@ -27,6 +28,7 @@ const setCopiedState = (
  * - `[data-mdx-copy]` — copy a code fence
  * - `[data-copy-page]` — serialize nearest `<article>` to Markdown
  * - `[data-code-peek-toggle]` — expand/collapse a peek code panel
+ * - `[data-open-feedback]` — open the site feedback dialog
  *
  * Keeps MDX / peek blocks free of client component boundaries (Cache Components).
  */
@@ -35,6 +37,15 @@ export const CodeCopyDelegator = () => {
     const handleClick = (event: MouseEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
+
+      const openFeedback = target.closest<HTMLButtonElement>(
+        "[data-open-feedback]",
+      );
+      if (openFeedback) {
+        event.preventDefault();
+        openFeedbackDialog();
+        return;
+      }
 
       const peekToggle = target.closest<HTMLButtonElement>(
         "[data-code-peek-toggle]",

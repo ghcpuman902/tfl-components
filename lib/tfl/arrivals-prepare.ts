@@ -806,6 +806,13 @@ export type PrepareBusArrivalsOptions = {
   groupBy?: BusArrivalsGroupBy
   sortBy?: BusArrivalsSortBy
   groupSortBy?: BusArrivalsGroupSortBy
+  /**
+   * Current time (ms) — drops predictions whose `timeToLive` has already
+   * expired. Same rail "self-destination" trap in principle (see
+   * `isExpiredArrivalPrediction`); pass `Date.now()` captured alongside
+   * `data` at fetch time. Omit to skip this filter.
+   */
+  now?: number
   maxRows?: number
 }
 
@@ -814,9 +821,12 @@ export const prepareBusArrivals = ({
   groupBy = "none",
   sortBy = "timeToStation",
   groupSortBy = "route",
+  now,
   maxRows = DEFAULT_MAX_ROWS,
 }: PrepareBusArrivalsOptions): ArrivalsPreparedBoard => {
-  const indexed = indexArrivals(data)
+  const indexed = indexArrivals(data).filter(
+    (item) => now === undefined || !isExpiredArrivalPrediction(item.arrival, now)
+  )
 
   if (groupBy !== "route") {
     const rows = sortIndexed(indexed, sortBy).slice(0, maxRows).map(toRow)

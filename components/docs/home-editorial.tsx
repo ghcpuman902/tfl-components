@@ -2,6 +2,7 @@ import { Suspense, type CSSProperties } from "react";
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board";
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board";
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
+import { StationNameTitle } from "@/components/tfl/station-name";
 import { LineStrip } from "@/components/tfl/diagram/line-strip";
 import { WeekAheadLineSkeleton } from "@/components/tfl/week-ahead/week-ahead-skeleton";
 import { HomeCycleHireMap } from "@/components/docs/home-cycle-hire-map";
@@ -40,10 +41,10 @@ type DemoFrameProps = {
 const DemoFrame = ({ caption, className, style, children }: DemoFrameProps) => (
   <article className={cn("min-w-0", className)} style={style}>
     {children}
-    {/* Caption = one arrivals tile; unit gap matches board title→body. */}
+    {/* Caption = one arrivals tile, flush with the board stack. */}
     <footer
       className={cn(
-        "mt-2 flex items-center text-xs leading-none text-muted-foreground",
+        "flex items-center text-xs leading-none text-muted-foreground",
         ARRIVALS_TILE_CLASS,
       )}
     >
@@ -83,12 +84,24 @@ async function HomeDeparturesPanel() {
     readHomeArrivalsBoardState(payload, "rail"),
   ]);
 
+  // Marketing dashboard, not the docs demo: quietly drop a line's stable
+  // "No information" placeholder here rather than showing it as a first
+  // impression. `RailArrivalsBoard`'s default (seed every declared line/
+  // bound so it never disappears) stays the library behaviour — see
+  // `RailArrivalsLine.bounds` in lib/tfl/arrivals-prepare.ts.
+  const activeLineIds = new Set(
+    payload.arrivals.map((arrival) => arrival.lineId).filter(Boolean),
+  );
+  const homeRailLines = HOME_RAIL_LINES.filter((line) =>
+    activeLineIds.has(line.lineId),
+  );
+
   return (
     <DemoFrame caption={["Cached TfL data", ageLabel]} style={ARRIVALS_RHYTHM}>
       <RailArrivalsBoard
         data={payload.arrivals}
         now={payload.fetchedAt}
-        lines={HOME_RAIL_LINES}
+        lines={homeRailLines}
         stopName={payload.stopName}
         headingLevel={2}
         error={boardState.error}
@@ -120,6 +133,7 @@ async function HomeBusAndCycleHirePanel() {
     <DemoFrame caption={cycleCaption} style={ARRIVALS_RHYTHM}>
       <BusArrivalsBoard
         data={bus.arrivals}
+        now={bus.fetchedAt}
         stopName={bus.stopName}
         stopLetter={HOME_BUS_STOP.stopLetter}
         headingLevel={2}
@@ -132,16 +146,17 @@ async function HomeBusAndCycleHirePanel() {
 
       <h2
         className={cn(
-          "tfl-title mt-[var(--arrivals-row)] flex min-w-0 items-center gap-x-2 text-3xl leading-none text-foreground",
+          "tfl-title mt-[var(--arrivals-row)] flex h-full min-w-0 items-center gap-x-2 text-3xl leading-none text-foreground",
           ARRIVALS_TILE_CLASS,
         )}
+        aria-label={HOME_CYCLE_HIRE.label}
       >
         <TfLRoundel
           variant="cycles"
           className="size-[var(--arrivals-row)] shrink-0"
           aria-hidden
         />
-        {HOME_CYCLE_HIRE.label}
+        <StationNameTitle name={HOME_CYCLE_HIRE.label} />
       </h2>
       {cycle.error ? (
         <p

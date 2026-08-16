@@ -247,6 +247,9 @@ export const BoardBuilder = ({
     getServerOrigin
   )
 
+  const availablePresets = BOARD_PRESETS.filter((item) => item.available)
+  const comingSoonPresets = BOARD_PRESETS.filter((item) => !item.available)
+
   const preset = getBoardPreset(presetId)
   const appKey = hydrated ? (getAppKey() ?? "") : ""
   const hasKey = Boolean(appKey)
@@ -320,7 +323,7 @@ export const BoardBuilder = ({
     <div className="space-y-8">
       <section className="space-y-3" aria-labelledby="board-layouts-heading">
         <h2 id="board-layouts-heading" className="text-lg font-semibold">
-          Layouts
+          Layout
         </h2>
         <div className="relative">
           <ul
@@ -329,11 +332,11 @@ export const BoardBuilder = ({
             aria-label="Board layouts"
             tabIndex={0}
           >
-            {BOARD_PRESETS.map((item) => (
+            {availablePresets.map((item) => (
               <PresetCard
                 key={item.id}
                 preset={item}
-                active={item.id === presetId && item.available}
+                active={item.id === presetId}
               />
             ))}
           </ul>
@@ -345,6 +348,12 @@ export const BoardBuilder = ({
             )}
           />
         </div>
+        {comingSoonPresets.length > 0 ? (
+          <p className="px-3 text-sm text-muted-foreground">
+            More layouts coming:{" "}
+            {comingSoonPresets.map((item) => item.title).join(" · ")}.
+          </p>
+        ) : null}
       </section>
 
       <Collapsible

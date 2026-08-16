@@ -1,0 +1,116 @@
+import { FeedbackTextLink } from "@/components/docs/feedback-text-link"
+
+## Set up a project
+
+You need a React app with [shadcn](https://ui.shadcn.com/docs) already initialised. Then go back to [Introduction](/docs) for the TfL key and the board install.
+
+### Next.js
+
+1. [Create a Next.js app](https://nextjs.org/docs/app/getting-started/installation).
+2. [Add shadcn](https://ui.shadcn.com/docs/installation/next).
+3. Put `TFL_APP_KEY` in `.env.local` and restart the dev server.
+4. Follow [Introduction](/docs). Use the Server Action tab if you want the key to stay on the server.
+
+### Vite and React
+
+1. [Scaffold Vite](https://vite.dev/guide/#scaffolding-your-first-vite-project) (`pnpm create vite`).
+2. [Add shadcn](https://ui.shadcn.com/docs/installation/vite).
+3. Put the key in `.env` as `VITE_TFL_APP_KEY`. Vite only exposes names that start with `VITE_`.
+4. Follow the React tab on [Introduction](/docs). That calls TfL from the browser. Do not publish the site with the key in the client.
+
+## Common problems
+
+### The board is empty
+
+On the [TfL API portal](https://api-portal.tfl.gov.uk/), subscribe to **500 Requests per min**, then copy Primary or Secondary from Profile. `app_id` has been unused since Jan 2021.
+
+Restart the dev server after editing `.env.local` or `.env`. Next.js and Vite read those files at startup.
+
+If you still get `[]`, `console.log` the `tfl-ts` result before you pass it to the board. A non-empty array means the key works.
+
+To check TfL itself, run the [tfl-ts CLI](https://github.com/ghcpuman902/tfl-ts#install-and-first-call) with your key:
+
+```bash
+export TFL_APP_KEY=your-key
+pnpm exec tfl raw stopPoint.arrivals --id 940GZZLUOXC
+```
+
+`npx tfl-ts` and `bunx tfl-ts` work the same way. If the CLI returns rows and the board does not, or you think `tfl-ts` is wrong, <FeedbackTextLink>send feedback</FeedbackTextLink>.
+
+Look up the station in [Explorer](/docs/explorer) and use the hub. `tfl-ts` (`STATION_HUBS`, `resolveArrivalsStopIds`) maps that hub to the StopPoints that actually carry each line. A single Underground or rail id often misses Elizabeth line, Overground, or the other half of an interchange.
+
+### The CLI skipped files or did not add `tfl-ts`
+
+`shadcn add` copies source into your repo and installs npm dependencies, including `tfl-ts`. If `button` or `skeleton` already exist, the CLI skips them and says so. That is normal.
+
+Use `--overwrite` only when you mean to replace local copies.
+
+If `tfl-ts` is missing, run the install command again, or add it with your package manager: `pnpm add tfl-ts`, `npm install tfl-ts`, `yarn add tfl-ts`, or `bun add tfl-ts`.
+
+### Colours look wrong
+
+The board install updates `globals.css` with TfL colour tokens. If line bars are grey or missing, check that file for the new tokens and that your app still imports it.
+
+### Installing several boards
+
+Register the URL once in `components.json`:
+
+```json
+{
+  "registries": {
+    "@tfl": "https://tfl.manglekuo.com/r/{name}.json"
+  }
+}
+```
+
+Then `pnpm dlx shadcn@latest add @tfl/rail-arrivals-board`. The full URL on Introduction still works.
+
+## FAQ
+
+### Why doesn't this match TfL Go or the TfL website?
+
+Official apps use TfL's internal APIs. Those can disagree with the Unified API, especially on subsurface lines (Circle, Hammersmith & City, Metropolitan, District). That is a known gap.
+
+The Unified API also repeats status rows and keeps scheduled trains that are already dead. We collapse and drop those so the board matches what people expect, not every raw row.
+
+### Why is status in a different order?
+
+TfL's severity numbers treat "Closed" as worse than a part closure. That includes a line that is only shut for the night or the weekend.
+
+`tfl-ts` does not follow that ranking. Real disruptions come first. Timetable closures (Waterloo & City on Saturday, end of traffic) sit at the bottom of Disruptions.
+
+TfL can send several status rows on one line. We use the worst one that is valid now, not whichever row is first.
+
+See [Tube and rail status](/docs/tube-rail-status).
+
+### Why are Circle and Hammersmith & City in one list?
+
+At some stations those lines (and sometimes Metropolitan or District) share the same platforms. The hosted [Board](/board) merges those into one section so you do not get three headings for one platform. A library install does not merge unless you pass `lineGroups`.
+
+Baker Street: Circle and H&C share platforms, Metropolitan does not, so Metropolitan stays its own section.
+
+### Why is the same train listed once here, or a different colour at the next station?
+
+TfL often lists one `vehicleId` on two lines at a shared-track stop, and it assigns `lineId` per station, not per train. The same vehicle can be Circle at Victoria and Hammersmith & City at Liverpool Street.
+
+The board keeps one row per real `vehicleId` (blank or `000` ids stay separate, because those are not one train). When we can prove the train from an exclusive segment, we paint one line. When we cannot, we stack the codes TfL sent.
+
+The hosted Board always does this. A library install dedupes in a merged section; stable colour needs `withSharedTrackIdentity` in the app. We never rewrite TfL's raw `lineId`.
+
+### Why is there no National Rail?
+
+TfL's Arrivals API has no live predictions for National Rail operators. Polling those ids returns `[]`. Elizabeth line and Overground are TfL modes and do return rows.
+
+### Why is Elizabeth or Overground missing a "towards"?
+
+Those modes often send `towards` as an empty string. `tfl-ts` `getNormalizedArrivals` and this board both use the destination station as the label. You should see a station name, not a blank. Raw `getArrivals` still has the empty field.
+
+### Why does a row say Scheduled instead of Due?
+
+On some Overground (Weaver) rows TfL has not assigned a platform yet. The countdown they send is not a real wait, so the board prints **Scheduled**. Underground rows are not affected.
+
+Elizabeth and Weaver also send leftover "already here" rows whose `timeToLive` has expired. The board drops those when you pass `now` with the fetch.
+
+### Does the install command add `tfl-ts`?
+
+Yes. It is a normal npm dependency. The board source is copied into your repo so you can edit it.

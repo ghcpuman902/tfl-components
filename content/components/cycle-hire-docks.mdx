@@ -31,12 +31,43 @@ Neither surface fetches. Layout chrome, full-screen map, Sheet, floating card, s
 
 ## Render
 
-### Shared `data`
+### App Router pages (explicit `data` on each surface)
+
+`CycleHireDocksMap` and `CycleHireDocksDetail` are plain named exports —
+render them straight from a Server Component page:
 
 ```tsx
+import {
+  CycleHireDocksMap,
+  CycleHireDocksDetail,
+} from "@/components/tfl/cycle-hire/cycle-hire-docks"
+
+export default async function Page() {
+  const data = await getBikePoints()
+  return (
+    <>
+      <CycleHireDocksMap data={data} className="h-dvh" />
+      <CycleHireDocksDetail data={data} hideHeader />
+    </>
+  )
+}
+```
+
+### Client-only pages (shared `data` via the compound)
+
+`CycleHireDocks.Map` / `CycleHireDocks.Detail` read `data` from a Provider
+instead of a prop, so you don't have to pass it twice. The compound is a
+static property on a Client Component (`"use client"`) — resolve `data` in a
+Server Component first, then hand it to a Client Component that renders the
+compound. Reaching `CycleHireDocks.Map` from a Server Component module
+throws (RSC client references don't keep static properties); use the named
+exports above there instead.
+
+```tsx
+"use client"
 import { CycleHireDocks } from "@/components/tfl/cycle-hire/cycle-hire-docks"
 
-export default function Page({ data }) {
+export function DocksView({ data }) {
   return (
     <CycleHireDocks data={data}>
       <CycleHireDocks.Map className="h-dvh" />
@@ -46,21 +77,7 @@ export default function Page({ data }) {
 }
 ```
 
-Mount one child or both.
-
-### Explicit `data` on each surface
-
-```tsx
-import {
-  CycleHireDocksMap,
-  CycleHireDocksDetail,
-} from "@/components/tfl/cycle-hire/cycle-hire-docks"
-
-<>
-  <CycleHireDocksMap data={data} className="h-dvh" />
-  <CycleHireDocksDetail data={data} hideHeader />
-</>
-```
+Mount one surface or both.
 
 ## Variations
 

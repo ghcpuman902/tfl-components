@@ -43,7 +43,7 @@ Orient before picking a surface:
 - Typography
 - Colours
 - Roundel
-- Troubleshoot (`/docs/installation`) — below the Components list; CLI detail, not a global install
+- Troubleshoot (`/docs/troubleshoot`) — below the Components list; setup, common problems, and FAQ. Install lives on Introduction. Old `/docs/installation` redirects here.
 - TfL brand licensing (and Skills for AI when present)
 
 ### Components (flat list)

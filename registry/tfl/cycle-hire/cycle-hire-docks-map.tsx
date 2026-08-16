@@ -169,7 +169,8 @@ const fitDocksCamera = (
   if (located.length === 0) return;
 
   if (located.length === 1) {
-    const dock = located[0];
+    const [dock] = located;
+    if (!dock) return;
     map.easeTo({
       center: [dock.lon, dock.lat],
       zoom: SINGLE_DOCK_ZOOM,

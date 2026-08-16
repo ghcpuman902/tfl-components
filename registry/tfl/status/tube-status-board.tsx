@@ -7,6 +7,7 @@ import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text"
 import { LineColorBar } from "@/components/tfl/brand/line-badge"
 import { LineName } from "@/components/tfl/brand/line-name"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
+import { StationNameTitle } from "@/components/tfl/station-name"
 import { getLineNameTiers } from "@/lib/tfl/line-names"
 import { partitionStatusBoardLines } from "@/lib/tfl/status-board"
 import type { StatusLine } from "@/lib/tfl/status-types"
@@ -224,28 +225,46 @@ const StatusLineHeader = ({
   </div>
 )
 
-const StatusSectionTitle = ({ children }: { children: ReactNode }) => (
+const StatusSectionTitle = ({
+  title,
+  trailing,
+  accessibleName,
+}: {
+  title: string
+  trailing?: ReactNode
+  accessibleName?: string
+}) => (
   <h2
     className={cn(
-      "m-0 flex items-center text-xl leading-7 font-semibold",
+      "tfl-title m-0 flex h-full min-w-0 items-center text-3xl",
       TILE_CLASS
     )}
+    aria-label={accessibleName ?? title}
   >
-    {children}
+    <StationNameTitle name={title} />
+    {trailing}
   </h2>
 )
 
 const StatusSectionHeading = ({
   compact,
-  children,
+  title,
+  trailing,
+  accessibleName,
 }: {
   compact: boolean
-  children: ReactNode
+  title: string
+  trailing?: ReactNode
+  accessibleName?: string
 }) =>
   compact ? (
-    <h2 className="sr-only">{children}</h2>
+    <h2 className="sr-only">{accessibleName ?? title}</h2>
   ) : (
-    <StatusSectionTitle>{children}</StatusSectionTitle>
+    <StatusSectionTitle
+      title={title}
+      trailing={trailing}
+      accessibleName={accessibleName}
+    />
   )
 
 /** Static board chrome — no status data required. */
@@ -301,14 +320,14 @@ type SkeletonProps = {
 /** Titles-only — denser than disruptions. Queries `@container/status`, not the viewport. */
 const goodServiceGridClass = (compact: boolean) =>
   compact
-    ? "mt-2 grid grid-cols-1 justify-items-stretch gap-x-4 gap-y-0"
-    : "mt-2 grid grid-cols-2 justify-items-stretch gap-x-4 gap-y-0 @min-[30rem]/status:grid-cols-3 @min-[45rem]/status:grid-cols-5"
+    ? "grid grid-cols-1 justify-items-stretch gap-x-4 gap-y-0"
+    : "grid grid-cols-2 justify-items-stretch gap-x-4 gap-y-0 @min-[30rem]/status:grid-cols-3 @min-[45rem]/status:grid-cols-5"
 
 /** Prose needs width — fewer columns than Good Service at the same board width. */
 const disruptionGridClass = (compact: boolean) =>
   compact
-    ? "mt-2 grid grid-cols-1 gap-x-4"
-    : "mt-2 grid grid-cols-1 gap-x-4 @min-[30rem]/status:grid-cols-2 @min-[45rem]/status:grid-cols-3"
+    ? "grid grid-cols-1 gap-x-4"
+    : "grid grid-cols-1 gap-x-4 @min-[30rem]/status:grid-cols-2 @min-[45rem]/status:grid-cols-3"
 
 /**
  * Calm loading placeholder — every line in default `LINE_ORDER`,
@@ -325,9 +344,10 @@ export const TubeStatusBoardSkeleton = ({
     aria-label="Loading line status"
   >
     <div>
-      <StatusSectionHeading compact={compact}>
-        Checking the lines...
-      </StatusSectionHeading>
+      <StatusSectionHeading
+        compact={compact}
+        title="Checking the lines..."
+      />
       <div className={goodServiceGridClass(compact)}>
         {lineIds.map((lineId) => {
           const label = getLineNameTiers(lineId).full
@@ -393,10 +413,17 @@ export const TubeStatusBoard = ({
       )}
 
       {disruptions.length > 0 && (
-        <div>
-          <StatusSectionHeading compact={compact}>
-            Service Disruptions
-          </StatusSectionHeading>
+        <div
+          className={
+            goodService.length > 0
+              ? "mb-[calc(var(--arrivals-row)/2)]"
+              : undefined
+          }
+        >
+          <StatusSectionHeading
+            compact={compact}
+            title="Service Disruptions"
+          />
           <div className={disruptionGridClass(compact)}>
             {disruptions.map(({ line, announcements, kind }) => {
               return (
@@ -420,14 +447,27 @@ export const TubeStatusBoard = ({
 
       {goodService.length > 0 && (
         <div>
-          <StatusSectionHeading compact={compact}>
-            Good Service
-            {!compact && disruptions.length > 0 ? (
-              <span className="ml-2 text-base font-normal text-muted-foreground">
-                ({goodService.length} lines)
-              </span>
-            ) : null}
-          </StatusSectionHeading>
+          <StatusSectionHeading
+            compact={compact}
+            title="Good Service"
+            accessibleName={
+              !compact && disruptions.length > 0
+                ? `Good Service (${goodService.length} lines)`
+                : undefined
+            }
+            trailing={
+              !compact && disruptions.length > 0 ? (
+                <span
+                  className={cn(
+                    "ml-2 shrink-0 text-base font-normal text-muted-foreground",
+                    CHIP_CAP_TEXT_BOX_CLASS
+                  )}
+                >
+                  ({goodService.length} lines)
+                </span>
+              ) : null
+            }
+          />
           <div className={goodServiceGridClass(compact)}>
             {goodService.map(({ line, announcements }) => {
               const infoLabel =

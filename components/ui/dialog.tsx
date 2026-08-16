@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import type { ReactElement } from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 
 import { cn } from "@/lib/utils"
@@ -19,8 +20,28 @@ function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
 
-function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
-  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
+/**
+ * `asChild` is a Radix-shaped compatibility shim: pass a single child element
+ * instead of Base UI's `render` (a bare element that receives `children`
+ * separately). Lets shared source (e.g. registry components) target either
+ * primitive flavour with one prop instead of assuming this project's Base UI
+ * choice — see `.cursor/rules/open-code-and-composition.mdc`.
+ */
+function DialogClose({
+  asChild,
+  render,
+  children,
+  ...props
+}: DialogPrimitive.Close.Props & { asChild?: boolean }) {
+  return (
+    <DialogPrimitive.Close
+      data-slot="dialog-close"
+      render={asChild ? (children as ReactElement) : render}
+      {...props}
+    >
+      {asChild ? undefined : children}
+    </DialogPrimitive.Close>
+  )
 }
 
 function DialogOverlay({

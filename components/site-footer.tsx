@@ -15,25 +15,28 @@ const StatsFallback = () => (
 
 const SiteFooterStats = async () => {
   const { visitors, installs, stars } = await getSiteStats();
+  // A real zero reads as an unearned metric, not proof — show it only once
+  // there's something to point at.
+  const showStars = stars !== null && stars > 0;
 
   return (
     <p className="text-xs text-muted-foreground">
       <span>{formatCount(visitors)} visitors</span>
       <span aria-hidden> · </span>
       <span>{formatCount(installs)} installs</span>
-      <span aria-hidden> · </span>
-      {stars === null ? (
-        <span>— stars</span>
-      ) : (
-        <a
-          href={GITHUB_REPO}
-          className="underline-offset-4 hover:text-foreground hover:underline"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {formatCount(stars)} stars
-        </a>
-      )}
+      {showStars ? (
+        <>
+          <span aria-hidden> · </span>
+          <a
+            href={GITHUB_REPO}
+            className="underline-offset-4 hover:text-foreground hover:underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {formatCount(stars)} stars
+          </a>
+        </>
+      ) : null}
     </p>
   );
 };

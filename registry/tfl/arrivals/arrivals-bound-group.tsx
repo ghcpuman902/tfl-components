@@ -553,7 +553,7 @@ const ArrivalsPageTrack = ({
   return (
     <div
       ref={containerRef}
-      className="flex touch-pan-x snap-x snap-mandatory gap-x-6 overflow-x-auto overscroll-x-contain scrollbar-none"
+      className="flex [touch-action:pan-x_pan-y] snap-x snap-mandatory gap-x-6 overflow-x-auto overscroll-x-contain scrollbar-none"
     >
       {pages.map((page, index) => (
         <ul

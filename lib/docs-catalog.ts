@@ -178,6 +178,7 @@ const SLUG_ALIASES: Record<string, string> = {
   "line-name-labels": "line-title",
   "line-badge": "line-chip",
   colors: "colours",
+  installation: "troubleshoot",
 };
 
 /**
@@ -267,13 +268,13 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     layer: "primitive",
   },
   {
-    slug: "installation",
+    slug: "troubleshoot",
     title: "Troubleshoot",
     description:
-      "CLI details, files on disk, and what to check when a component install does not look right.",
+      "Set up Next.js or Vite, fix an empty board, and why this can differ from TfL Go.",
     group: "start",
     kind: "page",
-    href: "/docs/installation",
+    href: "/docs/troubleshoot",
     sidebarSection: "get-started",
     sidebarOrder: 190,
   },

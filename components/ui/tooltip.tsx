@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactElement } from "react"
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 
 import { cn } from "@/lib/utils"
@@ -21,8 +22,28 @@ function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
   return <TooltipPrimitive.Root data-slot="tooltip" {...props} />
 }
 
-function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
+/**
+ * `asChild` is a Radix-shaped compatibility shim: pass a single child element
+ * instead of Base UI's `render` (a bare element that receives `children`
+ * separately). Lets shared source (e.g. registry components) target either
+ * primitive flavour with one prop instead of assuming this project's Base UI
+ * choice — see `.cursor/rules/open-code-and-composition.mdc`.
+ */
+function TooltipTrigger({
+  asChild,
+  render,
+  children,
+  ...props
+}: TooltipPrimitive.Trigger.Props & { asChild?: boolean }) {
+  return (
+    <TooltipPrimitive.Trigger
+      data-slot="tooltip-trigger"
+      render={asChild ? (children as ReactElement) : render}
+      {...props}
+    >
+      {asChild ? undefined : children}
+    </TooltipPrimitive.Trigger>
+  )
 }
 
 function TooltipContent({

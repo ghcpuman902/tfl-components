@@ -13,8 +13,7 @@ Domain boards under `registry/tfl/arrivals/rail-arrivals-board.tsx` and `bus-arr
 - One unit: `--arrivals-unit` (`0.5rem`). One row: `--arrivals-row` = 6 units (`3rem` / 48px).
 - Stop title, line headers, bound labels, and arrival rows are each **exactly one tile** (`TILE_CLASS`: fixed height + `box-border` + `overflow-hidden`).
 - Do **not** reserve a double-height title band “in case it wraps”. That leaves a dead gap under short names and desyncs rail vs bus.
-- Title → first line group gap stays tight (`space-y-2` / one unit).
-- **No gap between line sections** — last arrival row of one group sits flush against the next line header (continuous tile stack).
+- **No gap** between the stop title and the first line group, or between line sections — last arrival row of one group sits flush against the next line header (continuous tile stack). Do not use `space-y-2` / `mt-2` on the board root.
 
 ## Borders and bars (never grow a tile)
 
@@ -26,7 +25,7 @@ Domain boards under `registry/tfl/arrivals/rail-arrivals-board.tsx` and `bus-arr
 
 ## Side-by-side alignment
 
-When two boards share a homepage/grid row, their stop titles and first content rows must land on the same horizontal lines. Same title height, same title→body gap, same row unit.
+When two boards share a homepage/grid row, their stop titles and first content rows must land on the same horizontal lines. Same title height, no title→body gap, same row unit.
 
 ## Responsive layout API
 
@@ -73,7 +72,7 @@ Shared in `arrivals-bound-group.tsx` (`BoundPager` + `ArrivalsPageTrack`) for ra
 
 - Double-height title reservation that sits empty when the name is one line
 - Showing stop-point ids next to the title
-- `space-y-8` (or similar) between title and first line group
+- `space-y-2` / `mt-2` / `space-y-8` between title and first line group
 - Truncating stop names with ellipsis instead of abbr/scale
 - In-flow brand bar (`h-1` / `mt-*` under the line name) that shifts the painted baseline
 - Flow `border-b` on arrival rows **without** keeping the bar inside a `box-border` fixed tile (prefer absolute hairlines)

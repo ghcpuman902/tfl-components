@@ -39,6 +39,13 @@ export type BusArrivalsBoardProps = ArrivalsBoardChromeProps & {
   /** Cap on prediction rows after ordering. Headers do not count. */
   maxRows?: number
   /**
+   * Current time (ms) — drops predictions whose `timeToLive` has already
+   * expired (see `RailArrivalsBoard`'s `now`; the same trap can apply to bus
+   * predictions). Pass `Date.now()` captured alongside `data` at fetch time.
+   * Omit to skip this filter.
+   */
+  now?: number
+  /**
    * Visible arrivals per page. Grouped: per route, arrows on the route header.
    * Flat: the whole list, arrows in a trailing tile. Default 3.
    */
@@ -90,6 +97,7 @@ export const BusArrivalsBoard = ({
   sortBy = "timeToStation",
   groupSortBy = "route",
   maxRows = 16,
+  now,
   pageSize = 3,
   stopLetter,
   loading = false,
@@ -115,6 +123,7 @@ export const BusArrivalsBoard = ({
     groupBy,
     sortBy,
     groupSortBy,
+    now,
     maxRows,
   })
   const resolvedStopLetter = resolveBusStopLetter(stopLetter, rows)
@@ -145,3 +154,8 @@ export type {
   BusArrivalsGroupSortBy,
   BusArrivalsSortBy,
 } from "@/lib/tfl/arrivals-prepare"
+/**
+ * Re-exported so `data` and `tfl.stopPoint.getArrivals()` can be typed from
+ * this one module — no separate `tfl-ts` import to keep in sync, no cast.
+ */
+export type { RealtimePrediction } from "tfl-ts"

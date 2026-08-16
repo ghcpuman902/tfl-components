@@ -262,13 +262,12 @@ export const StationName = ({
   const result = useMemo(() => {
     if (!useAuto) return fixedResult(name, visualLines);
 
-    // Until the box is measured, run the fit policy at a 1px width so we
-    // land on the smallest form — never flash the full-size overflow default.
-    if (!hasFixedMetrics && (!size.measured || size.width <= 0)) {
-      return formatStationLabel(name, approximateStationMeasure, {
-        ...formatOptions,
-        maxWidth: 1,
-      });
+    // Unmeasured (or a ~0px slot) stays at full size. Pretending the box is
+    // 1px wide forced minScale on every first paint, then a shrink-wrapped
+    // parent ratcheted that small size even when the heading had room.
+    // Tiles clip overflow; scale down only after a real slot width exists.
+    if (!hasFixedMetrics && (!size.measured || size.width <= 4)) {
+      return fixedResult(name, visualLines);
     }
     return formatStationLabel(name, measure, formatOptions);
   }, [
@@ -316,6 +315,7 @@ export const StationName = ({
       paintMatchesText={!paintDiffersFromCopy}
       className={cn(
         "relative inline-flex h-full min-h-0 w-full min-w-0 flex-col justify-center",
+        useAuto && maxWidthProp == null && "flex-1",
         !multiline && "leading-none",
         align === "center" && "items-center",
         align === "right" && "items-end",
@@ -336,6 +336,13 @@ export const StationName = ({
           lineHeight: multiline ? MULTILINE_LINE_HEIGHT : undefined,
         }}
         aria-hidden="true"
+        // `layout="auto"` intentionally repaints once the box is measured
+        // (approximate → canvas fit can pick a different line break/scale
+        // than the pre-measure guess). That's a post-hydration update, not a
+        // markup mismatch, but suppress the warning on this node only —
+        // never on the whole component — since the two passes can render
+        // different characters/line breaks for the same props.
+        suppressHydrationWarning={useAuto}
       >
         {result.lines.map((line, index) => (
           <Fragment key={`${line}-${index}`}>
@@ -354,6 +361,48 @@ export const StationName = ({
     </FindableText>
   );
 };
+
+/**
+ * Flex slot for board identity titles (stop name, cycle area, status group).
+ * `layout="auto"` measures this box — it must be a flex item with a definite
+ * width (`flex-1 min-w-0`), not shrink-wrapped to the glyphs.
+ */
+export const STATION_NAME_TITLE_SLOT_CLASS =
+  "flex h-full min-w-0 flex-1 items-center";
+
+/**
+ * Trim the line box to cap-height → alphabetic baseline (not full
+ * ascent/descent) before centering. A title is a label for what sits below
+ * it, not what's above — centering on cap-height (rather than including
+ * descender space) reads as anchored to its content and nudges the glyphs
+ * down a touch versus dead-center. Same technique as chip labels
+ * (`CHIP_CAP_TEXT_BOX_CLASS`), applied here at title scale.
+ */
+const STATION_NAME_TITLE_CLASS =
+  "justify-center leading-none [text-box:trim-both_cap_alphabetic]";
+
+/** One-line auto-fit name for board identity rows. Visual only — set `aria-label` on the heading. */
+export const StationNameTitle = ({
+  name,
+  className,
+}: {
+  name: string;
+  className?: string;
+}) => (
+  <span
+    className={cn(STATION_NAME_TITLE_SLOT_CLASS, className)}
+    aria-hidden="true"
+  >
+    <StationName
+      name={name}
+      layout="auto"
+      maxLines={1}
+      allowAbbreviation
+      allowScaleDown
+      className={STATION_NAME_TITLE_CLASS}
+    />
+  </span>
+);
 
 /** @deprecated Prefer `StationName`. */
 export const StationNameLabel = StationName;
