@@ -1,7 +1,17 @@
 import { formatStationName } from "@/lib/tfl/diagram-station";
+import {
+  neededFindPhrases,
+  normalizeFindPhrase,
+} from "@/lib/tfl/find-coverage";
 import { STATION_ABBR_FIND_COMPLETIONS } from "@/lib/tfl/station-abbreviations";
 
 export { STATION_ABBR_FIND_COMPLETIONS } from "@/lib/tfl/station-abbreviations";
+export {
+  isFindCovered,
+  neededFindPhrases,
+  normalizeFindPhrase,
+  shouldExposeFindPhrase,
+} from "@/lib/tfl/find-coverage";
 
 const APOSTROPHE_RE = /[\u2018\u2019\u02BC']/g;
 
@@ -56,9 +66,6 @@ export const expandStationLineForFind = (line: string): string =>
     })
     .join("");
 
-const normalizeFindPhrase = (value: string): string =>
-  value.replace(/\s+/g, " ").trim();
-
 /**
  * Phrases already contiguous in the DOM for Cmd/Ctrl+F.
  * Multi-line paint inserts `<br>`, which breaks matching across lines — so a
@@ -94,39 +101,21 @@ export const stationFindAliases = (
   copyName: string,
   visualLines: readonly string[],
 ): string[] => {
-  const covered = new Set(
-    stationFindCoveredPhrases(visualLines).map((value) => value.toLowerCase()),
-  );
-
-  const candidates = new Set<string>();
-  const add = (value: string) => {
-    const trimmed = normalizeFindPhrase(value);
-    if (!trimmed) return;
-    if (covered.has(trimmed.toLowerCase())) return;
-    candidates.add(trimmed);
-  };
-  /** Drop phrases contained in a longer one so match counts stay honest. */
-  const withoutSubstrings = (values: string[]): string[] =>
-    values.filter(
-      (value) =>
-        !values.some(
-          (other) =>
-            other.length > value.length &&
-            other.toLowerCase().includes(value.toLowerCase()),
-        ),
-    );
-
-  add(copyName);
-  add(stationAndForm(copyName));
-  add(normalizeStationApostrophes(copyName));
-  add(stripStationApostrophes(copyName));
-  add(stationAndForm(stripStationApostrophes(copyName)));
-  add(normalizeStationApostrophes(stationAndForm(copyName)));
-
+  const covered = stationFindCoveredPhrases(visualLines);
   const visualJoined = normalizeFindPhrase(visualLines.join(" "));
-  add(stationAndForm(visualJoined));
-  add(stripStationApostrophes(visualJoined));
-  add(normalizeStationApostrophes(visualJoined));
 
-  return withoutSubstrings([...candidates]);
+  return neededFindPhrases(
+    [
+      copyName,
+      stationAndForm(copyName),
+      normalizeStationApostrophes(copyName),
+      stripStationApostrophes(copyName),
+      stationAndForm(stripStationApostrophes(copyName)),
+      normalizeStationApostrophes(stationAndForm(copyName)),
+      stationAndForm(visualJoined),
+      stripStationApostrophes(visualJoined),
+      normalizeStationApostrophes(visualJoined),
+    ],
+    covered,
+  );
 };

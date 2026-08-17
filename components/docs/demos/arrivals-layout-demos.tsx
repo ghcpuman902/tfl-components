@@ -124,3 +124,33 @@ export const BusFlatDemo = () => (
     />
   </DemoFigure>
 )
+
+const eppingTerminus = OXFORD_CIRCUS_ARRIVALS.filter((row) =>
+  (row.destinationName ?? "").includes("Epping")
+)
+
+const cockfostersTerminus = OXFORD_CIRCUS_ARRIVALS.filter((row) =>
+  (row.destinationName ?? "").includes("Cockfosters")
+)
+
+/** Consumer-side terminus filter — do not pass `lines`, or empty groups hide `emptyMessage`. */
+export const RailDestinationFilterDemo = () => (
+  <DemoFigure>
+    <RailArrivalsBoard
+      data={eppingTerminus}
+      stopName="Oxford Circus"
+      headingLevel={2}
+    />
+  </DemoFigure>
+)
+
+export const RailDestinationFilterEmptyDemo = () => (
+  <DemoFigure>
+    <RailArrivalsBoard
+      data={cockfostersTerminus}
+      stopName="Oxford Circus"
+      headingLevel={2}
+      emptyMessage="No trains to Cockfosters in this set."
+    />
+  </DemoFigure>
+)

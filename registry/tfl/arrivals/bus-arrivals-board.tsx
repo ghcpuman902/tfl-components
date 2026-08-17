@@ -47,7 +47,9 @@ export type BusArrivalsBoardProps = ArrivalsBoardChromeProps & {
   now?: number
   /**
    * Visible arrivals per page. Grouped: per route, arrows on the route header.
-   * Flat: the whole list, arrows in a trailing tile. Default 3.
+   * Flat: the whole list, arrows always visible in a trailing tile. Once
+   * there is more than one page, the list locks to this height (dashes +
+   * end-of-list message on a short last page). Default 3.
    */
   pageSize?: number
   /**

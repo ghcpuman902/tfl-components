@@ -65,27 +65,6 @@ export const StationWidthDemo = () => (
   </ul>
 );
 
-/** Board widths that unlock Platform 4 / Plat 4 / P4 / 4. */
-const PLATFORM_FORM_WIDTHS = [560, 448, 320, 240] as const;
-
-export const PlatformWidthDemo = () => (
-  <ul className="flex flex-col gap-3">
-    {PLATFORM_FORM_WIDTHS.map((width) => (
-      <li key={width} className="flex items-center gap-3">
-        <span className="w-12 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-          {width}px
-        </span>
-        <div
-          className="@container/arrivals flex h-8 shrink-0 items-center overflow-x-auto"
-          style={{ width }}
-        >
-          <PlatformChip number="4" />
-        </div>
-      </li>
-    ))}
-  </ul>
-);
-
 export const AbbreviationDemo = () => (
   <div className="space-y-5">
     <table className="w-auto text-left text-sm">
@@ -115,42 +94,46 @@ export const AbbreviationDemo = () => (
       </tbody>
     </table>
 
-    <DocsResizeFrame
-      defaultWidth={288}
-      minWidth={120}
-      className="@container/arrivals min-w-30"
-      style={ARRIVALS_RHYTHM}
-      captionSuffix=" · resize to see it in action"
-    >
-      <ul>
-        {ABBREVIATION_SAMPLES.map((row, index) => (
-          <li
-            key={row.name}
-            className={cn(
-              "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 px-2 text-sm",
-              ARRIVALS_TILE,
-              index < ABBREVIATION_SAMPLES.length - 1 && ARRIVALS_ROW_RULE,
-            )}
-          >
-            <PlatformChip number="4" />
-            <div className="min-w-0 overflow-hidden">
-              <StationName
-                name={row.name}
-                layout="auto"
-                maxLines={2}
-                allowAbbreviation
-                allowScaleDown
-                className="font-medium text-foreground"
-              />
-            </div>
-            <span className="shrink-0 font-semibold tabular-nums text-foreground">
-              {row.due}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </DocsResizeFrame>
+    <ArrivalsResizeDemo />
   </div>
+);
+
+export const ArrivalsResizeDemo = () => (
+  <DocsResizeFrame
+    defaultWidth={288}
+    minWidth={120}
+    className="@container/arrivals min-w-30"
+    style={ARRIVALS_RHYTHM}
+    captionSuffix=" · resize to see it in action"
+  >
+    <ul>
+      {ABBREVIATION_SAMPLES.map((row, index) => (
+        <li
+          key={row.name}
+          className={cn(
+            "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 px-2 text-sm",
+            ARRIVALS_TILE,
+            index < ABBREVIATION_SAMPLES.length - 1 && ARRIVALS_ROW_RULE,
+          )}
+        >
+          <PlatformChip number="4" />
+          <div className="min-w-0 overflow-hidden">
+            <StationName
+              name={row.name}
+              layout="auto"
+              maxLines={2}
+              allowAbbreviation
+              allowScaleDown
+              className="font-medium text-foreground"
+            />
+          </div>
+          <span className="shrink-0 font-semibold tabular-nums text-foreground">
+            {row.due}
+          </span>
+        </li>
+      ))}
+    </ul>
+  </DocsResizeFrame>
 );
 
 const COPY_FIND_WIDTH = 88;

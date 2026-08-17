@@ -172,10 +172,14 @@ export const ArrivalsBoardSkeleton = ({
     ) : (
       Array.from({ length: 2 }).map((_, sectionIndex) => (
         <div key={sectionIndex}>
-          <div className={cn("flex items-center", ARRIVALS_TILE_CLASS)}>
+          <div
+            className={cn(
+              "flex items-center border-b-4 border-border",
+              ARRIVALS_TILE_CLASS
+            )}
+          >
             <Skeleton className="h-6 w-28" />
           </div>
-          <div className="h-1 -mt-1 bg-border" aria-hidden />
           {Array.from({ length: 4 }).map((_, rowIndex) => (
             <div
               key={rowIndex}
@@ -210,6 +214,8 @@ const GroupBody = ({
   )
 
   if (!group.hasInformation && labeledBounds.length === 0) {
+    const lockHeight = (pageSize ?? 0) > 0
+    const dashCount = lockHeight ? Math.max(0, (pageSize ?? 1) - 1) : 0
     return (
       <ul
         data-slot="arrivals-subgroups"
@@ -226,6 +232,19 @@ const GroupBody = ({
         >
           {ARRIVALS_LINE_EMPTY_COPY}
         </li>
+        {Array.from({ length: dashCount }, (_, index) => (
+          <li
+            key={`dash-${index}`}
+            data-slot="arrivals-row"
+            aria-hidden
+            className={cn(
+              "flex items-center text-base text-muted-foreground/50",
+              ARRIVALS_TILE_CLASS
+            )}
+          >
+            —
+          </li>
+        ))}
       </ul>
     )
   }
@@ -282,9 +301,11 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
    */
   disruptions?: readonly BusStopDisruption[]
   /**
-   * Visible arrivals per page. Rail: per compass bound. Bus grouped: per
-   * route. Bus flat: the whole list, with a trailing pager tile. Omit or `0`
-   * to show the prepared rows.
+   * Visible arrivals per page. Rail: fixed subgroup height — every bound
+   * occupies exactly this many arrival tiles (short pages fill with dashes
+   * and an end-of-list message). Bus grouped / flat: same lock once there
+   * is more than one page; a short unpaged list keeps its natural height.
+   * Omit or `0` to show the prepared rows at natural height.
    */
   pageSize?: number
   /**

@@ -468,7 +468,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "station-name-labels",
     title: "Station name labels",
     description:
-      "How station names and platform chips shrink with width while copy, find, and screen readers keep the full name.",
+      "How station names shrink with width while copy, find, and screen readers keep the full name.",
     group: "primitives",
     kind: "component",
     href: "/docs/station-name-labels",

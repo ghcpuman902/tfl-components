@@ -1,6 +1,6 @@
 ## Width steps
 
-Width steps need an `@container/arrivals` ancestor, as on [`RailArrivalsBoard`](/docs/tube-rail-arrivals). Label casing stays title-style (`Platform 4`, `Plat 4`). Vertical centering trims the text box to cap-alphabetic metrics.
+Width steps need an `@container/arrivals` ancestor, as on [`RailArrivalsBoard`](/docs/tube-rail-arrivals). Visible form: `Platform N` → `Plat N` → `PN` → `N`. Casing stays title-style. `aria-label` stays `Platform N`.
 
 ```tsx
 import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
@@ -14,11 +14,12 @@ export default function Row() {
 }
 ```
 
+## Props
+
 | Prop | Type | Description |
 |------|------|-------------|
 | `number` | `string` | Platform number or letter after “Platform”. |
+| `compact` | `boolean` | Always paint `P{n}`. Use on a row when the subgroup heading is not the platform. |
 | `className` | `string` | Optional class merge. |
-
-Visible form steps with board width: `Platform N` → `Plat N` → `PN` → `N`. `aria-label` stays `Platform N`.
 
 Solid `bg-muted-foreground` fill, square corners, no border. Optical centre via `[text-box:trim-both_cap_alphabetic]`.

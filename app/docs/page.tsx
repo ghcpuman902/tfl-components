@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { ArrowRightIcon, LayoutDashboard } from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 import { BrowserWindow } from "@/components/docs/browser-window";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
@@ -153,6 +153,29 @@ export const metadata: Metadata = {
 
 const TFL_API_PORTAL = "https://api-portal.tfl.gov.uk/";
 
+const BoardIpadMark = () => (
+  <div
+    className="@container flex h-full flex-col w-full"
+    aria-hidden
+  >
+    <div className="flex aspect-square w-full shrink-0 items-end justify-center">
+      <div className="flex aspect-[134.7/200] h-full flex-col items-center rounded-[8cqw] bg-neutral-800 px-[5cqw]">
+        <div className="flex h-[10cqw] w-full items-center justify-center">
+          <div className="w-[1.6cqw] h-[1.6cqw] rounded-full bg-white" />
+        </div>
+        <div className="w-full flex-1 bg-white" />
+        <div className="flex h-[10cqw] w-full items-center justify-center">
+          <div className="w-[5.4cqw] h-[5.4cqw] rounded-full border-[0.5cqw] border-white" />
+        </div>
+      </div>
+    </div>
+    <div className="flex min-h-0 flex-1 flex-col items-center">
+      <div className="h-[6cqw] w-[3.2cqw] rounded-[0.6cqw] bg-neutral-300" />
+      <div className="min-h-0 w-[0.9cqw] flex-1 bg-neutral-300 shadow-[0_10cqw_0_0_var(--color-neutral-300),0_50cqw_0_0_var(--color-neutral-300)]" />
+    </div>
+  </div>
+);
+
 const ExternalTextLink = ({
   href,
   children,
@@ -213,6 +236,7 @@ export default function DocsIntroductionPage() {
           <p className="max-w-prose text-muted-foreground">
             Subscribe to 500 Requests per min, then copy Primary or Secondary
             from Profile into <code className="text-xs">.env.local</code>.{" "}
+            NOTE:{" "} 
             <code className="text-xs">app_id</code> has been unused since Jan
             2021.
           </p>
@@ -223,14 +247,9 @@ export default function DocsIntroductionPage() {
           />
         </section>
 
-        <aside className="@container">
-          <div className="grid grid-cols-1 items-start gap-4 @[24rem]:grid-cols-[5rem_minmax(0,1fr)]">
-            <div className="flex aspect-square w-16 items-center justify-center rounded-xl bg-foreground/10 @[24rem]:w-full">
-              <LayoutDashboard
-                className="size-18 text-foreground/30 stroke-1"
-                aria-hidden
-              />
-            </div>
+        <aside className="@container max-w-2xl overflow-hidden ring-1 ring-neutral-200 rounded-3xl p-4">
+          <div className="grid gap-4 grid-cols-[5rem_minmax(0,1fr)]">
+            <BoardIpadMark />
             <div className="min-w-0 space-y-2">
               <h2
                 id="hosted-url"

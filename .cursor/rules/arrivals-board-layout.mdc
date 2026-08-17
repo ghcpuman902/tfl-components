@@ -1,6 +1,6 @@
 ---
-description: Arrivals board vertical rhythm, title fit, and side-by-side alignment
-globs: registry/tfl/arrivals/**/*.{tsx,ts},components/tfl/arrivals/**/*.{tsx,ts},components/docs/**/*arrivals*,content/components/arrivals*.mdx,lib/tfl/station-*.ts
+description: Arrivals board vertical rhythm, title fit, pagination, and side-by-side alignment
+globs: registry/tfl/arrivals/**/*.{tsx,ts},components/tfl/arrivals/**/*.{tsx,ts},components/docs/**/*arrivals*.{tsx,ts},content/components/*arrivals*.mdx,lib/tfl/arrivals-*.ts,lib/tfl/station-*.ts
 alwaysApply: false
 ---
 
@@ -63,10 +63,32 @@ Shared in `arrivals-bound-group.tsx` (`BoundPager` + `ArrivalsPageTrack`) for ra
 
 - Pages are real horizontal slides (`overflow-x-auto` + `snap-x snap-mandatory` + `snap-always`). Swipe is native OS scrolling — not a JS gesture library.
 - Mid-swipe: `gap-x-6` between slides (same as bound-column arrangements) so countdown never touches the next page’s chips; when snapped, each slide is full-width so the gap sits off-screen.
-- Hover-capable pointers (`@media (hover: hover)`): arrows + `n/m` chip, revealed on `group-hover/bound` / focus-within. Arrow clicks jump instantly (`scrollIntoView` with `behavior: "auto"`).
-- Touch / no-hover: half-opacity iOS-style dots in the same slot, always visible; swipe the rows track to change page.
+- For rail, a configured positive `pageSize` is a fixed subgroup height, not only a chunk size. Every bound occupies exactly `pageSize` arrival-row tiles, including a short single page and an empty seeded group. For grouped and flat bus boards, apply the same fixed height once `pageCount > 1`; an unpaginated short bus list keeps its natural height. `pageSize <= 0` always keeps the natural unpaged height.
+- On a short final page with at least one arrival, use the final spare tile for **No more arrivals**. Any spare tiles between the last arrival and that message show a quiet dash. Do not add a page only to show the message, and do not displace an arrival when `pageSize` leaves no spare tile.
+- The end message has a CSS-first width ladder: **No more arrivals** → **No more**. Keep the full phrase as its accessible name. Do not wrap, clip, ellipsise, or reduce the tile height to make it fit.
+- Zero arrivals are not an end-of-list state. Keep **No information** in the first tile and use quiet dashes in the remaining tiles. Keep decorative dash tiles out of the accessibility tree.
+- Pagination controls follow their tile ownership. When arrows and the `n/m` count share a marked tile with other useful content, such as a rail bound label or grouped bus route header, hide them on hover-capable pointers until group hover or focus-within. When the controls own a dedicated otherwise-empty tile, as on the flat bus list, they are the tile marker and remain visible on hover-capable pointers. Never leave a blank control tile waiting for hover.
+- Touch / no-hover controls are always visible because there is no hover affordance. Keep the half-opacity iOS-style dots in the corresponding control position and swipe the rows track to change page.
+- Arrow clicks jump instantly (`scrollIntoView` with `behavior: "auto"`). Keyboard focus must reveal any hover-hidden controls.
 - Hide the entire pager when `pageCount <= 1` (no lone `1/1` or single dot).
-- Last page pads to `pageSize` height so snap height stays stable; a single short page stays short (no pad).
+
+For the default `pageSize={3}`, the final page resolves as follows:
+
+| Arrivals on final page | Tile 1 | Tile 2 | Tile 3 |
+|---|---|---|---|
+| 0 | No information | dash | dash |
+| 1 | arrival | dash | No more arrivals |
+| 2 | arrival | arrival | No more arrivals |
+| 3 | arrival | arrival | arrival |
+
+For rail, the same rule applies when the final page is the only page. For bus, it applies only when pagination is active. Exact multiples of `pageSize` stay full and do not gain a terminal page. With `pageSize={1}`, show the arrival or empty state; there is no spare tile for an end message.
+
+## Destination filtering
+
+- Do not add a destination-filter prop. Filtering belongs in the consumer before it passes `data` to the board.
+- Add a rail documentation example that filters `RealtimePrediction[]` to a named terminus, then renders the filtered array. Prefer the canonical destination field over `towards`, which may be blank or generic.
+- Be precise about what the example proves: a train's destination identifies its terminus. It does not prove that the train calls at an arbitrary intermediate station; that requires route or calling-pattern data.
+- Give a zero-match filter an accurate, destination-specific empty message. Do not let a consumer-created empty result read as an API failure. Watch line seeding: passing `lines` can create per-line empty groups and bypass the board-level `emptyMessage`.
 
 ## Anti-patterns
 
@@ -77,4 +99,8 @@ Shared in `arrivals-bound-group.tsx` (`BoundPager` + `ArrivalsPageTrack`) for ra
 - In-flow brand bar (`h-1` / `mt-*` under the line name) that shifts the painted baseline
 - Flow `border-b` on arrival rows **without** keeping the bar inside a `box-border` fixed tile (prefer absolute hairlines)
 - Letting wrap, padding, or borders increase row height and break the baseline grid
+- Blank padding tiles on a paged board; use decorative dashes and the final end-of-list message above
+- A dedicated pagination tile whose controls remain invisible until hover
+- Claiming **No more trains**, **No trains available**, or **End of schedule** when the board only knows the predictions it was given
+- Adding a destination-filter prop to the board
 - Wrapping homepage proof boards in overlay links to docs — use a hero CTA (e.g. Browse components) instead

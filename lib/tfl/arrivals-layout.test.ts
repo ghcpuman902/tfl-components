@@ -116,9 +116,12 @@ describe("arrivals board layout API", () => {
     assert.ok(html.includes('data-bound="eastbound"'))
     // One rows list per labeled bound; the empty line renders its row directly.
     assert.equal(slotCount(html, "arrivals-rows"), 2)
-    // Two predictions + one empty-line row tile.
-    assert.equal(slotCount(html, "arrivals-row"), 3)
+    // Default pageSize 3: two 1-train bounds fill to 3 tiles each
+    // (arrival + dash + end message); Bakerloo empty fills to 3
+    // (No information + two dashes).
+    assert.equal(slotCount(html, "arrivals-row"), 9)
     assert.ok(html.includes("No information"))
+    assert.ok(html.includes("No more arrivals"))
   })
 
   it("uses a fixed 5ch box for mixed-line identity chips", () => {
@@ -221,11 +224,30 @@ describe("arrivals board layout API", () => {
     assert.equal(slotCount(html, "arrivals-subgroups"), 0)
     assert.equal(slotCount(html, "arrivals-rows"), 1)
     assert.equal(slotCount(html, "arrivals-row"), 3)
+    assert.equal(html.includes("No more arrivals"), false)
     // Flat order is global time order, routes interleaved.
     const order = [...html.matchAll(/aria-label="Route (\d+),/g)].map(
       (match) => match[1]
     )
     assert.deepEqual(order, ["9", "18", "9"])
+  })
+
+  it("keeps the flat bus pager visible on a dedicated tile", () => {
+    const html = renderToStaticMarkup(
+      createElement(BusArrivalsBoard, {
+        data: busData,
+        stopName: "Trafalgar Square",
+        stopLetter: "G",
+        pageSize: 2,
+      })
+    )
+
+    assert.ok(html.includes("1/2") || html.includes("Page 1 of 2"), html)
+    const pager = html.match(
+      /<div class="hidden items-center p-0 transition-opacity[^"]*"/
+    )?.[0] ?? ""
+    assert.ok(pager.includes("[@media(hover:hover)]:flex"), pager)
+    assert.equal(pager.includes("opacity-0"), false, pager)
   })
 
   it("groups bus by route with group slots and no subgroups", () => {

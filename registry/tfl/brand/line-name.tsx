@@ -243,15 +243,9 @@ export const LineName = ({
     lineCount,
   });
 
-  const paintDiffers =
-    paint.hasMiddle ||
-    paint.short !== paint.full ||
-    Boolean(classes.fullTwoLine);
-
   return (
     <FindableText
       text={paint.full}
-      paintMatchesText={!paintDiffers}
       className={cn(
         establishContainer
           ? "@container/line-name block w-full min-w-0 max-w-full"

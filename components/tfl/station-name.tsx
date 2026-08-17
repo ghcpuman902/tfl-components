@@ -23,6 +23,7 @@ import {
   findCompletionForToken,
   stationCopyName,
   stationFindAliases,
+  stationFindCoveredPhrases,
 } from "@/lib/tfl/station-label-find";
 
 export type StationNameLayout = "fixed" | "auto";
@@ -290,6 +291,10 @@ export const StationName = ({
     onFormat?.(result);
   }, [onFormat, result, size.measured, size.width, useAuto]);
 
+  const coveredPhrases = useMemo(
+    () => stationFindCoveredPhrases(result.lines),
+    [result.lines],
+  );
   const findAliases = useMemo(
     () => stationFindAliases(copyName, result.lines),
     [copyName, result.lines],
@@ -312,6 +317,7 @@ export const StationName = ({
       ref={ref}
       text={copyName}
       aliases={extraFindAliases}
+      coveredPhrases={coveredPhrases}
       paintMatchesText={!paintDiffersFromCopy}
       className={cn(
         "relative inline-flex h-full min-h-0 w-full min-w-0 flex-col justify-center",

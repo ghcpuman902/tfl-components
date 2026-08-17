@@ -971,7 +971,8 @@ describe("sliceBoundPage", () => {
     const sliced = sliceBoundPage(rows, 0, 8)
     assert.equal(sliced.pageCount, 1)
     assert.equal(sliced.page, 0)
-    assert.equal(sliced.padCount, 0)
+    assert.equal(sliced.dashCount, 0)
+    assert.equal(sliced.showEndMessage, false)
     assert.deepEqual(
       sliced.rows.map((row) => row.key),
       ["r-0", "r-1", "r-2", "r-3", "r-4"]
@@ -982,28 +983,54 @@ describe("sliceBoundPage", () => {
     const sliced = sliceBoundPage(rows, 9, 2)
     assert.equal(sliced.pageCount, 3)
     assert.equal(sliced.page, 2)
-    assert.equal(sliced.padCount, 1)
+    assert.equal(sliced.dashCount, 0)
+    assert.equal(sliced.showEndMessage, false)
     assert.deepEqual(
       sliced.rows.map((row) => row.key),
       ["r-4"]
     )
   })
 
-  it("does not pad a short single page", () => {
+  it("fills a locked short single page with a dash and the end message", () => {
+    const sliced = sliceBoundPage(rows.slice(0, 1), 0, 3, true)
+    assert.equal(sliced.pageCount, 1)
+    assert.equal(sliced.rows.length, 1)
+    assert.equal(sliced.dashCount, 1)
+    assert.equal(sliced.showEndMessage, true)
+  })
+
+  it("leaves a short single page natural when height is not locked", () => {
     const sliced = sliceBoundPage(rows.slice(0, 1), 0, 3)
     assert.equal(sliced.pageCount, 1)
-    assert.equal(sliced.padCount, 0)
+    assert.equal(sliced.dashCount, 0)
+    assert.equal(sliced.showEndMessage, false)
     assert.equal(sliced.rows.length, 1)
   })
 
-  it("pads a short last page to pageSize when paging", () => {
-    const sliced = sliceBoundPage(rows, 1, 3)
+  it("fills a locked short last page with the end message", () => {
+    const sliced = sliceBoundPage(rows, 1, 3, true)
     assert.equal(sliced.pageCount, 2)
-    assert.equal(sliced.padCount, 1)
+    assert.equal(sliced.dashCount, 0)
+    assert.equal(sliced.showEndMessage, true)
     assert.deepEqual(
       sliced.rows.map((row) => row.key),
       ["r-3", "r-4"]
     )
+  })
+
+  it("fills an empty locked page with dashes and no end message", () => {
+    const sliced = sliceBoundPage([], 0, 3, true)
+    assert.equal(sliced.pageCount, 1)
+    assert.equal(sliced.rows.length, 0)
+    assert.equal(sliced.dashCount, 2)
+    assert.equal(sliced.showEndMessage, false)
+  })
+
+  it("does not spare a tile for the end message when pageSize is 1", () => {
+    const sliced = sliceBoundPage(rows.slice(0, 1), 0, 1, true)
+    assert.equal(sliced.dashCount, 0)
+    assert.equal(sliced.showEndMessage, false)
+    assert.equal(sliced.rows.length, 1)
   })
 })
 
@@ -1014,19 +1041,20 @@ describe("chunkBoundPages", () => {
     sourceIndex: index,
   }))
 
-  it("returns a single unpadded page when everything fits", () => {
+  it("returns a single unpadded page when everything fits and height is unlocked", () => {
     const chunked = chunkBoundPages(rows, 8)
     assert.equal(chunked.pageCount, 1)
     assert.equal(chunked.pages.length, 1)
-    assert.equal(chunked.pages[0]?.padCount, 0)
+    assert.equal(chunked.pages[0]?.dashCount, 0)
+    assert.equal(chunked.pages[0]?.showEndMessage, false)
     assert.deepEqual(
       chunked.pages[0]?.rows.map((row) => row.key),
       ["r-0", "r-1", "r-2", "r-3", "r-4"]
     )
   })
 
-  it("chunks every page and pads the short last page", () => {
-    const chunked = chunkBoundPages(rows, 2)
+  it("chunks every page and fills the short last page when locked", () => {
+    const chunked = chunkBoundPages(rows, 2, { lockHeight: true })
     assert.equal(chunked.pageCount, 3)
     assert.equal(chunked.pages.length, 3)
     assert.deepEqual(
@@ -1034,15 +1062,45 @@ describe("chunkBoundPages", () => {
       [["r-0", "r-1"], ["r-2", "r-3"], ["r-4"]]
     )
     assert.deepEqual(
-      chunked.pages.map((page) => page.padCount),
-      [0, 0, 1]
+      chunked.pages.map((page) => page.dashCount),
+      [0, 0, 0]
+    )
+    assert.deepEqual(
+      chunked.pages.map((page) => page.showEndMessage),
+      [false, false, true]
     )
   })
 
-  it("does not pad a short single page", () => {
-    const chunked = chunkBoundPages(rows.slice(0, 1), 3)
+  it("locks a short single page when lockHeight is true", () => {
+    const chunked = chunkBoundPages(rows.slice(0, 1), 3, { lockHeight: true })
     assert.equal(chunked.pageCount, 1)
-    assert.equal(chunked.pages[0]?.padCount, 0)
     assert.equal(chunked.pages[0]?.rows.length, 1)
+    assert.equal(chunked.pages[0]?.dashCount, 1)
+    assert.equal(chunked.pages[0]?.showEndMessage, true)
+  })
+
+  it("keeps a short single page natural when lockHeight is when-paged", () => {
+    const chunked = chunkBoundPages(rows.slice(0, 1), 3, {
+      lockHeight: "when-paged",
+    })
+    assert.equal(chunked.pageCount, 1)
+    assert.equal(chunked.pages[0]?.dashCount, 0)
+    assert.equal(chunked.pages[0]?.showEndMessage, false)
+  })
+
+  it("locks the last page when when-paged and pageCount is greater than 1", () => {
+    const chunked = chunkBoundPages(rows, 3, { lockHeight: "when-paged" })
+    assert.equal(chunked.pageCount, 2)
+    assert.equal(chunked.pages[0]?.showEndMessage, false)
+    assert.equal(chunked.pages[1]?.rows.length, 2)
+    assert.equal(chunked.pages[1]?.dashCount, 0)
+    assert.equal(chunked.pages[1]?.showEndMessage, true)
+  })
+
+  it("does not add a terminal page for an exact multiple", () => {
+    const chunked = chunkBoundPages(rows.slice(0, 4), 2, { lockHeight: true })
+    assert.equal(chunked.pageCount, 2)
+    assert.ok(chunked.pages.every((page) => page.showEndMessage === false))
+    assert.ok(chunked.pages.every((page) => page.dashCount === 0))
   })
 })

@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Geist_Mono, Hammersmith_One } from "next/font/google";
+import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 import { SITE_DESCRIPTION, SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -98,7 +99,9 @@ export default function RootLayout({
     >
       <head>
         {fontPreferenceScript ? (
-          <script
+          <Script
+            id="tfl-font-preference"
+            strategy="beforeInteractive"
             dangerouslySetInnerHTML={{ __html: fontPreferenceScript }}
           />
         ) : null}

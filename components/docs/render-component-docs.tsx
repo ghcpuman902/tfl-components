@@ -76,6 +76,11 @@ const data = sortLinesBySeverityAndOrder(
 
 <LineName lineId="hammersmith-city" />
 <LineName lineIds={["circle", "hammersmith-city", "metropolitan"]} group />`,
+  "platform-chip": `import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
+
+<div className="@container/arrivals">
+  <PlatformChip number="4" />
+</div>`,
 }
 
 const RailDocsPreviewFallback = () => (

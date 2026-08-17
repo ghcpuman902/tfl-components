@@ -17,6 +17,16 @@ export type PlatformChipProps = {
  * aria always “Platform N”. Casing stays title-style; centering uses cap text-box trim.
  *
  * Platform 1 → Plat 1 → P1 → 1
+ *
+ * `@container/arrivals` reads the whole board, not this chip's own column —
+ * CSS can't see how much space a sibling (the destination name) actually
+ * needs. Each breakpoint is that tier's own rendered width (measured) plus
+ * the row's other fixed content (due-time column, two `gap-x-3` gaps, `px-2`
+ * row padding ≈ 84px) plus one more `gap-x-3` (12px) as buffer — reusing the
+ * row's own spacing token rather than a round-number guess. That keeps the
+ * wider label alive as long as the row can actually fit it, instead of
+ * dropping to a shorter form while there's still visible slack next to a
+ * short destination name.
  */
 export const PlatformChip = ({
   number,
@@ -35,22 +45,22 @@ export const PlatformChip = ({
       <span aria-hidden>P{number}</span>
     ) : (
       <>
-        <span className="@min-[18rem]/arrivals:hidden" aria-hidden>
+        <span className="@min-[11rem]/arrivals:hidden" aria-hidden>
           {number}
         </span>
         <span
-          className="hidden @min-[18rem]/arrivals:inline @min-[26rem]/arrivals:hidden"
+          className="hidden @min-[11rem]/arrivals:inline @min-[12.5rem]/arrivals:hidden"
           aria-hidden
         >
           P{number}
         </span>
         <span
-          className="hidden @min-[26rem]/arrivals:inline @min-[34rem]/arrivals:hidden"
+          className="hidden @min-[12.5rem]/arrivals:inline @min-[14rem]/arrivals:hidden"
           aria-hidden
         >
           Plat {number}
         </span>
-        <span className="hidden @min-[34rem]/arrivals:inline" aria-hidden>
+        <span className="hidden @min-[14rem]/arrivals:inline" aria-hidden>
           Platform {number}
         </span>
       </>

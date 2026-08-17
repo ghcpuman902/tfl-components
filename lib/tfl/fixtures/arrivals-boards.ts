@@ -15,10 +15,12 @@ const prediction = (fields: {
   modeName?: string
   platformName?: string
   towards?: string
+  destinationName?: string
   timeToStation: number
 }): RealtimePrediction =>
   ({
     lineName: fields.lineName ?? fields.lineId,
+    destinationName: fields.destinationName ?? fields.towards,
     ...fields,
   }) as RealtimePrediction
 

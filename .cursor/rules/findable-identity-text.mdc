@@ -39,7 +39,7 @@ Do not retrofit `FindableText` onto surfaces using only CSS clipping — it's de
 
 ## Why this exists
 
-Chrome's find-in-page cannot match a phrase across a `<br>`, and abbreviated characters are gone from the DOM outright — no CSS trick fixes either. `FindableText` exposes the canonical string via `hidden="until-found"`, re-hiding it a beat after a match (there's no native "find closed" event, so it restarts the countdown if the browser matches it again). See the component's own comments for the underlying constraints (React's boolean `hidden` typing, `until-found` requiring non-inline `display`, Firefox/Safari fallback).
+Chrome's find-in-page cannot match a phrase across a `<br>`, and abbreviated characters are gone from the DOM outright — no CSS trick fixes either. `FindableText` exposes the canonical string via `hidden="until-found"` only when the current find query would not already highlight the painted copy (searching `Liverpool St` on a wrapped `Liverpool Street` must not also reveal the chip). It re-hides a beat after a match (there's no native "find closed" event, so it restarts the countdown if the browser matches it again). See the component's own comments for the underlying constraints (React's boolean `hidden` typing, `until-found` requiring non-inline `display`, Firefox/Safari fallback).
 
 ## Anti-patterns
 

@@ -23,7 +23,11 @@ import {
 } from "@/components/tfl/brand/line-badge"
 import { LineName } from "@/components/tfl/brand/line-name"
 import { StationName } from "@/components/tfl/station-name"
-import { ARRIVALS_LINE_EMPTY_COPY } from "@/lib/tfl/arrivals-empty"
+import {
+  ARRIVALS_END_COPY,
+  ARRIVALS_END_COPY_SHORT,
+  ARRIVALS_LINE_EMPTY_COPY,
+} from "@/lib/tfl/arrivals-empty"
 import {
   formatArrivalsRailDesignationLabel,
   isUnknownArrivalsPlatform,
@@ -35,6 +39,7 @@ import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort"
 import { getLineNameTiers, joinLineNames } from "@/lib/tfl/line-names"
 import {
   chunkBoundPages,
+  type ArrivalsPageFill,
   type ArrivalsPreparedBound,
   type ArrivalsPreparedGroup,
   type ArrivalsPreparedRow,
@@ -78,8 +83,12 @@ const ROW_RULE_CLASS =
   "relative after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60"
 
 const LIST_RESET_CLASS = "m-0 ml-0 list-none space-y-0 p-0 [&>li]:mt-0"
-/** Pull the brand bar into the tile without shrinking the title box. */
-const LINE_BAR_PULL_CLASS = "pointer-events-none -mt-1"
+
+const STRIPED_MODE_NAMES = new Set([
+  "overground",
+  "elizabeth-line",
+  "cable-car",
+])
 
 /**
  * A `Platform Unknown` mainline row (Weaver not yet platformed) reports a
@@ -368,12 +377,15 @@ const BoundPager = ({
   pageCount,
   onPrev,
   onNext,
+  ownsTile = false,
 }: {
   label: string
   page: number
   pageCount: number
   onPrev: () => void
   onNext: () => void
+  /** Dedicated control tile (flat bus) — stay visible on hover-capable pointers. */
+  ownsTile?: boolean
 }) => {
   if (pageCount <= 1) return null
 
@@ -385,9 +397,9 @@ const BoundPager = ({
       <div
         className={cn(
           "hidden items-center p-0 transition-opacity duration-150 [@media(hover:hover)]:flex",
-          "[@media(hover:hover)]:opacity-0",
-          "[@media(hover:hover)]:group-hover/bound:opacity-100",
-          "[@media(hover:hover)]:group-focus-within/bound:opacity-100"
+          !ownsTile && "[@media(hover:hover)]:opacity-0",
+          !ownsTile && "[@media(hover:hover)]:group-hover/bound:opacity-100",
+          !ownsTile && "[@media(hover:hover)]:group-focus-within/bound:opacity-100"
         )}
       >
         <button
@@ -441,9 +453,49 @@ const BoundPager = ({
   )
 }
 
+const QuietDashTile = ({ showRule }: { showRule: boolean }) => (
+  <li
+    data-slot="arrivals-row"
+    aria-hidden
+    className={cn(
+      "flex items-center text-base text-muted-foreground/50",
+      TILE_CLASS,
+      showRule && ROW_RULE_CLASS
+    )}
+  >
+    —
+  </li>
+)
+
+const ArrivalsEndMessageTile = ({ showRule }: { showRule: boolean }) => (
+  <li
+    data-slot="arrivals-row"
+    className={cn(
+      "@container/arrivals-end flex items-center text-base text-muted-foreground",
+      TILE_CLASS,
+      showRule && ROW_RULE_CLASS
+    )}
+    aria-label={ARRIVALS_END_COPY}
+  >
+    <span
+      className="whitespace-nowrap @min-[16rem]/arrivals-end:hidden"
+      aria-hidden
+    >
+      {ARRIVALS_END_COPY_SHORT}
+    </span>
+    <span
+      className="hidden whitespace-nowrap @min-[16rem]/arrivals-end:inline"
+      aria-hidden
+    >
+      {ARRIVALS_END_COPY}
+    </span>
+  </li>
+)
+
 const PagedArrivalRows = ({
   rows,
-  padCount,
+  dashCount,
+  showEndMessage,
   mode,
   isLast,
   emptyLabel,
@@ -451,61 +503,57 @@ const PagedArrivalRows = ({
   hoistPlatform = false,
 }: {
   rows: readonly ArrivalsPreparedRow[]
-  padCount: number
+  dashCount: number
+  showEndMessage: boolean
   mode: ArrivalsBoardMode
   isLast: boolean
   emptyLabel: string
   showLineChip?: boolean
   hoistPlatform?: boolean
 }) => {
-  if (rows.length === 0) {
-    return (
-      <li
-        data-slot="arrivals-row"
-        className={cn(
-          "flex items-center text-base text-muted-foreground",
-          TILE_CLASS,
-          !isLast && ROW_RULE_CLASS
-        )}
-        aria-label={emptyLabel}
-      >
-        {ARRIVALS_LINE_EMPTY_COPY}
-      </li>
-    )
-  }
+  const trailingCount = dashCount + (showEndMessage ? 1 : 0)
 
   return (
     <>
-      {rows.map((row, index) => (
-        <ArrivalRowItem
-          key={row.key}
-          row={row}
-          mode={mode}
-          showRule={!(isLast && index === rows.length - 1 && padCount === 0)}
-          showLineChip={showLineChip}
-          hoistPlatform={hoistPlatform}
+      {rows.length === 0 ? (
+        <li
+          data-slot="arrivals-row"
+          className={cn(
+            "flex items-center text-base text-muted-foreground",
+            TILE_CLASS,
+            !(isLast && trailingCount === 0) && ROW_RULE_CLASS
+          )}
+          aria-label={emptyLabel}
+        >
+          {ARRIVALS_LINE_EMPTY_COPY}
+        </li>
+      ) : (
+        rows.map((row, index) => (
+          <ArrivalRowItem
+            key={row.key}
+            row={row}
+            mode={mode}
+            showRule={
+              !(isLast && index === rows.length - 1 && trailingCount === 0)
+            }
+            showLineChip={showLineChip}
+            hoistPlatform={hoistPlatform}
+          />
+        ))
+      )}
+      {Array.from({ length: dashCount }, (_, index) => (
+        <QuietDashTile
+          key={`dash-${index}`}
+          showRule={
+            !(isLast && index === dashCount - 1 && !showEndMessage)
+          }
         />
       ))}
-      {Array.from({ length: padCount }, (_, index) => {
-        const isLastSlot = index === padCount - 1
-        return (
-          <li
-            key={`pad-${index}`}
-            aria-hidden
-            className={cn(
-              TILE_CLASS,
-              !(isLast && isLastSlot) && ROW_RULE_CLASS
-            )}
-          />
-        )
-      })}
+      {showEndMessage ? (
+        <ArrivalsEndMessageTile showRule={!isLast} />
+      ) : null}
     </>
   )
-}
-
-type ArrivalsPage = {
-  rows: ArrivalsPreparedRow[]
-  padCount: number
 }
 
 const ArrivalsPageTrack = ({
@@ -519,7 +567,7 @@ const ArrivalsPageTrack = ({
   showLineChip = false,
   hoistPlatform = false,
 }: {
-  pages: readonly ArrivalsPage[]
+  pages: readonly ArrivalsPageFill[]
   mode: ArrivalsBoardMode
   isLast: boolean
   emptyLabel: string
@@ -539,7 +587,8 @@ const ArrivalsPageTrack = ({
       >
         <PagedArrivalRows
           rows={only?.rows ?? []}
-          padCount={only?.padCount ?? 0}
+          dashCount={only?.dashCount ?? 0}
+          showEndMessage={only?.showEndMessage ?? false}
           mode={mode}
           isLast={isLast}
           emptyLabel={emptyLabel}
@@ -569,7 +618,8 @@ const ArrivalsPageTrack = ({
         >
           <PagedArrivalRows
             rows={page.rows}
-            padCount={page.padCount}
+            dashCount={page.dashCount}
+            showEndMessage={page.showEndMessage}
             mode={mode}
             isLast={isLast}
             emptyLabel={emptyLabel}
@@ -606,6 +656,13 @@ const RAIL_DESIGNATION_ICON: Record<
  * "Inner Rail · Platform 1" → "Inner Rail · P1" → (icon) "P1".
  * Same CSS-only, `@container/arrivals-group`-driven pattern as PlatformChip —
  * aria-label carries the full text; each visual tier is `aria-hidden`.
+ *
+ * Thresholds are each tier's own rendered width (measured, worst case
+ * "Outer Rail · Platform 2") plus this row's own `pr-2` (8px) as buffer —
+ * see PlatformChip for the same rule of thumb. This also keeps the ladder
+ * safe once `subgroups: "@min-[30rem]/arrivals-group:grid-cols-2"` halves
+ * the per-bound width: at that breakpoint each column still clears the
+ * full-tier threshold, so it never truncates a form it just picked.
  */
 const BoundHeadingLabel = ({ bound }: { bound: ArrivalsPreparedBound }) => {
   if (!bound.railDesignation || !bound.platformLabel || !bound.label) {
@@ -622,20 +679,20 @@ const BoundHeadingLabel = ({ bound }: { bound: ArrivalsPreparedBound }) => {
       aria-label={bound.label}
     >
       <span
-        className="flex items-center gap-1 @min-[10rem]/arrivals-group:hidden"
+        className="flex items-center gap-1 @min-[7.5rem]/arrivals-group:hidden"
         aria-hidden
       >
         <Icon className="size-3.5 shrink-0" />
         <span className="tabular-nums">{compactPlatform}</span>
       </span>
       <span
-        className="hidden truncate whitespace-nowrap @min-[10rem]/arrivals-group:inline @min-[16rem]/arrivals-group:hidden"
+        className="hidden truncate whitespace-nowrap @min-[7.5rem]/arrivals-group:inline @min-[11rem]/arrivals-group:hidden"
         aria-hidden
       >
         {designationLabel} · {compactPlatform}
       </span>
       <span
-        className="hidden truncate whitespace-nowrap @min-[16rem]/arrivals-group:inline"
+        className="hidden truncate whitespace-nowrap @min-[11rem]/arrivals-group:inline"
         aria-hidden
       >
         {bound.label}
@@ -662,7 +719,9 @@ export const ArrivalsBoundGroup = ({
   classNames?: ArrivalsBoardClassNames
 }) => {
   const canPage = Boolean(bound.label) && pageSize > 0
-  const chunked = chunkBoundPages(bound.rows, canPage ? pageSize : 0)
+  const chunked = chunkBoundPages(bound.rows, canPage ? pageSize : 0, {
+    lockHeight: canPage,
+  })
   const { containerRef, setSlideRef, activePage, handlePrev, handleNext } =
     useArrivalsPageTrack(chunked.pageCount)
   const showPager = canPage && chunked.pageCount > 1
@@ -677,7 +736,7 @@ export const ArrivalsBoundGroup = ({
       {bound.label ? (
         <div
           className={cn(
-            "flex items-center text-base font-semibold text-muted-foreground",
+            "flex items-center text-xl leading-7 font-semibold text-muted-foreground",
             TILE_CLASS,
             ROW_RULE_CLASS
           )}
@@ -722,35 +781,42 @@ export const ArrivalsGroupHeader = ({
   const lineIds = group.lineIds.length > 0 ? group.lineIds : [group.lineId]
   const isMerged = lineIds.length > 1
   const lineKey = group.kind === "bus-route" ? "buses" : group.lineId
+  const isStriped = Boolean(
+    group.kind === "rail-line" &&
+      group.modeName &&
+      STRIPED_MODE_NAMES.has(group.modeName)
+  )
+  const overlayBar = isMerged || isStriped
 
   return (
-    <>
-      <header
-        data-line={isMerged ? undefined : lineKey || undefined}
-        className={cn("relative flex items-center", TILE_CLASS)}
+    <header
+      data-line={isMerged ? undefined : lineKey || undefined}
+      className={cn("relative flex items-center border-b-4", TILE_CLASS)}
+      style={{
+        borderBottomColor: overlayBar ? "transparent" : "var(--line-color)",
+      }}
+    >
+      <LineHeadingTag
+        className={cn(
+          "m-0 min-w-0 flex-1 pr-2 text-xl leading-7 font-semibold",
+          isMerged
+            ? "text-foreground"
+            : "text-[var(--line-color)]",
+          !isMerged && group.kind === "rail-line" && "tfl-dark-line-text",
+          !group.hasInformation && "opacity-70",
+          !isMerged && "truncate"
+        )}
       >
-        <LineHeadingTag
-          className={cn(
-            "m-0 min-w-0 flex-1 pr-2 text-xl leading-7 font-semibold",
-            isMerged
-              ? "text-foreground"
-              : "text-[var(--line-color)]",
-            !isMerged && group.kind === "rail-line" && "tfl-dark-line-text",
-            !group.hasInformation && "opacity-70",
-            !isMerged && "truncate"
-          )}
-        >
-          {isMerged ? (
-            <LineName lineIds={lineIds} group />
-          ) : (
-            group.lineName
-          )}
-        </LineHeadingTag>
-        {pager}
-      </header>
+        {isMerged ? (
+          <LineName lineIds={lineIds} group />
+        ) : (
+          group.lineName
+        )}
+      </LineHeadingTag>
+      {pager}
       {isMerged ? (
         <div
-          className={cn(LINE_BAR_PULL_CLASS, "flex h-1 overflow-hidden")}
+          className="pointer-events-none absolute inset-x-0 bottom-0 flex h-1 overflow-hidden"
           aria-hidden
         >
           {lineIds.map((id) => (
@@ -761,16 +827,19 @@ export const ArrivalsGroupHeader = ({
             />
           ))}
         </div>
-      ) : (
-        <div className={LINE_BAR_PULL_CLASS} aria-hidden>
+      ) : isStriped ? (
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0"
+          aria-hidden
+        >
           <LineColorBar
             lineId={lineKey}
-            modeName={group.kind === "rail-line" ? group.modeName : undefined}
+            modeName={group.modeName}
             heightClass="h-1"
           />
         </div>
-      )}
-    </>
+      ) : null}
+    </header>
   )
 }
 
@@ -792,7 +861,9 @@ export const ArrivalsPagedGroup = ({
 }) => {
   const rows = group.bounds.flatMap((bound) => bound.rows)
   const canPage = pageSize > 0
-  const chunked = chunkBoundPages(rows, canPage ? pageSize : 0)
+  const chunked = chunkBoundPages(rows, canPage ? pageSize : 0, {
+    lockHeight: canPage ? "when-paged" : false,
+  })
   const { containerRef, setSlideRef, activePage, handlePrev, handleNext } =
     useArrivalsPageTrack(chunked.pageCount)
   const showPager = canPage && chunked.pageCount > 1
@@ -847,7 +918,9 @@ export const ArrivalsPagedList = ({
   classNames?: ArrivalsBoardClassNames
 }) => {
   const canPage = pageSize > 0
-  const chunked = chunkBoundPages(rows, canPage ? pageSize : 0)
+  const chunked = chunkBoundPages(rows, canPage ? pageSize : 0, {
+    lockHeight: canPage ? "when-paged" : false,
+  })
   const { containerRef, setSlideRef, activePage, handlePrev, handleNext } =
     useArrivalsPageTrack(chunked.pageCount)
   const showPager = canPage && chunked.pageCount > 1
@@ -871,6 +944,7 @@ export const ArrivalsPagedList = ({
             pageCount={chunked.pageCount}
             onPrev={handlePrev}
             onNext={handleNext}
+            ownsTile
           />
         </div>
       ) : null}

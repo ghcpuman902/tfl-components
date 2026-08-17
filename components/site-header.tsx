@@ -88,7 +88,7 @@ export const SiteHeader = ({
   const { scrollRef, showEndFade } = useHorizontalScrollEnd<HTMLElement>()
 
   return (
-    <header className="sticky top-0 z-30 box-border h-(--site-header-height) w-full border-b border-border bg-background/80 backdrop-blur">
+    <header className="sticky top-0 z-30 box-border h-(--site-header-height) w-full border-b border-border bg-background/60 backdrop-blur backdrop-saturate-150 backdrop-brightness-110">
       {/* Match sidebar content inset: group p-2 + label/button px-2 → 16px. */}
       <div className="flex h-full items-center gap-2 px-4 md:gap-4">
         {showSidebarTrigger ? (

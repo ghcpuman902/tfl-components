@@ -105,6 +105,14 @@ Every tile uses a locked box (`box-border`, fixed `min`/`max`/`height` = `--arri
 - Both chips keep normal casing. Center with uppercase/cap text-box trim: `text-box: trim-both cap alphabetic` (`CHIP_CAP_TEXT_BOX_CLASS`) — not x-height (`ex`) trim. Do not force `uppercase` paint.
 - Line titles / chips: [`LineName`](/docs/line-title) steps **full → middle (H&C / W&C) → 3-letter code** via `@container/line-name` queries for board headers. Prefer abbreviation before a 2-line wrap; short codes are last resort. Curated tiers live in `lib/tfl/line-names.ts`. Filled chips are [`Line chip`](/docs/line-chip) (`LineBadge` / `LineBadgeGroup` with a vertical colour rail for shared-track groups).
 
+**Pagination**
+
+Rail: a positive `pageSize` is a fixed subgroup height. Every bound occupies that many arrival tiles, including a short only page and an empty seeded group. Bus: the same lock applies once `pageCount > 1`; an unpaged short list keeps its natural height. `pageSize <= 0` is always natural height.
+
+A short page with arrivals uses the last spare tile for **No more arrivals** (narrow step: **No more**) and quiet dashes in tiles between. Zero arrivals are **No information** plus dashes — not an end-of-list state. Exact multiples stay full. Do not add a page only for the message.
+
+Pager on a shared tile (rail bound label, grouped bus route header) hides until hover or focus-within. A dedicated flat-bus control tile stays visible. Hide the pager when `pageCount <= 1`.
+
 **Side-by-side boards**
 
 Share the same title height and row unit so the first line headers align. There is no title→body gap. Mid-board drift from extra rail bound rows (Northbound / Southbound) is **content structure**, not a chrome-height bug.

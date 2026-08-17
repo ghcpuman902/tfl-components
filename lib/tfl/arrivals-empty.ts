@@ -13,6 +13,12 @@ export const ARRIVALS_EMPTY_COPY: Record<ArrivalsEmptyKind, string> = {
 /** Per-line / per-route when predictions are missing but the line is still shown. */
 export const ARRIVALS_LINE_EMPTY_COPY = "No information";
 
+/** Last spare tile on a short page that still has arrivals. */
+export const ARRIVALS_END_COPY = "No more arrivals";
+
+/** Narrow-width step of `ARRIVALS_END_COPY`. Accessible name stays the full phrase. */
+export const ARRIVALS_END_COPY_SHORT = "No more";
+
 /**
  * Subgroup heading when TfL sends `Platform Unknown` (or no platform at all)
  * on a live prediction. Distinct from a bound with no heading — that is

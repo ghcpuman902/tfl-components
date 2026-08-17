@@ -142,7 +142,7 @@ Named policies, not comparator callbacks:
 | `sortBy` | `timeToStation` | Input order, global when flat, per route when grouped |
 | `groupSortBy` | `route` (natural numeric) | First appearance in `data` |
 
-`groupSortBy` only applies when `groupBy="route"`. `maxRows` is a per-route cap when grouped, and a list cap when flat. `pageSize` pages extra arrivals via scroll-snap: hover arrows (with count) on the route header when grouped, or in a trailing tile when flat; touch uses swipe plus half-opacity dots. The pager hides when there is only one page. Equal `timeToStation` keeps input order. The board does not mutate `data`.
+`groupSortBy` only applies when `groupBy="route"`. `maxRows` is a per-route cap when grouped, and a list cap when flat. `pageSize` pages extra arrivals via scroll-snap. A short list with one page keeps its natural height. Once there is more than one page, the last page locks to `pageSize` tiles — dashes, then **No more arrivals**. Grouped: hover arrows on the route header. Flat: arrows stay visible in a trailing tile. Touch uses swipe plus half-opacity dots. The pager hides when there is only one page. Equal `timeToStation` keeps input order. The board does not mutate `data`.
 
 Same `--arrivals-unit` / `--arrivals-row` tiles as rail, so a bus board beside a rail board lines up. The stop letter is a red circle next to the stop name, not a per-row field.
 
@@ -164,6 +164,6 @@ Keep polling outside the board, then update `data`. Freshness and refresh belong
 | `emptyMessage` | `string` | Optional copy override for `emptyKind`. |
 | `statusLabel` | `string` | Optional short caption in the title row. |
 | `maxRows` | `number` | Prediction cap after ordering. Per route when grouped, whole list when flat. Headers do not count. |
-| `pageSize` | `number` | Visible arrivals per page, default 3. Grouped: pager on the route header. Flat: trailing tile, right-aligned. Hover arrows / touch dots; hidden when only one page. |
+| `pageSize` | `number` | Visible arrivals per page, default 3. One page stays short. Multiple pages lock height; a short last page fills with dashes and **No more arrivals**. Grouped: pager on the route header. Flat: trailing tile, always visible on hover pointers. Hidden when only one page. |
 | `className` | `string` | Root classes, merged over the board container. |
 | `classNames` | `{ groups?, group?, rows? }` | Layout-level class overrides for generated `data-slot` levels. `subgroups` / `subgroup` are rail-only. |

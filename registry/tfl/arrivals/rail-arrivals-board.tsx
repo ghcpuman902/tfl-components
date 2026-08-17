@@ -63,8 +63,10 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
    */
   maxRows?: number
   /**
-   * Visible arrivals per bound. Further trains page behind hover arrows on the
-   * bound label. Default 3. Overridden per line by `pageSizeByLine`.
+   * Visible arrivals per bound — also the fixed subgroup height. Short pages
+   * fill with dashes and “No more arrivals”. Empty seeded groups do
+   * the same with “No information”. Default 3. Overridden per line by
+   * `pageSizeByLine`.
    */
   pageSize?: number
   /**
@@ -104,9 +106,9 @@ export const RailArrivalsBoardSkeleton = ({
  *
  * Defaults: canonical `LINE_ORDER` (empty lines keep their slot), compass
  * bound order, `timeToStation` within each bound. Optional `lines[].bounds`
- * seeds empty bound groups from station metadata. Each bound shows `pageSize`
- * trains (or `pageSizeByLine[lineId]`); hover the bound group to page the rest.
- * Uniform platforms hoist into the bound heading.
+ * seeds empty bound groups from station metadata. Each bound occupies
+ * `pageSize` arrival tiles (or `pageSizeByLine[lineId]`); hover the bound
+ * group to page the rest. Uniform platforms hoist into the bound heading.
  */
 export const RailArrivalsBoard = ({
   data,

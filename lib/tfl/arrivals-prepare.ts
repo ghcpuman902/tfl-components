@@ -226,22 +226,74 @@ const limitRowsPerBound = (
     }
   })
 
+export type ArrivalsPageFill = {
+  rows: ArrivalsPreparedRow[]
+  /** Quiet dash tiles between the last arrival (or empty row) and the end message. */
+  dashCount: number
+  /** Final spare tile on a short page that still has arrivals. */
+  showEndMessage: boolean
+}
+
+export type ArrivalsLockHeight = boolean | "when-paged"
+
+const resolvePageFill = (
+  visibleCount: number,
+  pageSize: number,
+  lockHeight: boolean
+): Pick<ArrivalsPageFill, "dashCount" | "showEndMessage"> => {
+  if (!lockHeight || pageSize <= 0) {
+    return { dashCount: 0, showEndMessage: false }
+  }
+  if (visibleCount === 0) {
+    return { dashCount: Math.max(0, pageSize - 1), showEndMessage: false }
+  }
+  const spare = pageSize - visibleCount
+  if (spare <= 0) {
+    return { dashCount: 0, showEndMessage: false }
+  }
+  return { dashCount: spare - 1, showEndMessage: true }
+}
+
+const resolvePageCount = (
+  rowCount: number,
+  pageSize: number
+): number => {
+  if (pageSize <= 0) return 1
+  return Math.max(1, Math.ceil(rowCount / pageSize))
+}
+
+const shouldLockHeight = (
+  lockHeight: ArrivalsLockHeight | undefined,
+  pageCount: number
+): boolean => {
+  if (lockHeight === "when-paged") return pageCount > 1
+  return Boolean(lockHeight)
+}
+
 /** Visible slice for bound-group pagination. `pageSize <= 0` shows every row. */
 export const sliceBoundPage = (
   rows: readonly ArrivalsPreparedRow[],
   page: number,
-  pageSize: number
+  pageSize: number,
+  lockHeight: ArrivalsLockHeight = false
 ): {
   rows: ArrivalsPreparedRow[]
   page: number
   pageCount: number
-  /** Empty tiles to keep a multi-page bound at `pageSize` height. */
-  padCount: number
+  dashCount: number
+  showEndMessage: boolean
 } => {
-  if (pageSize <= 0 || rows.length <= pageSize) {
-    return { rows: [...rows], page: 0, pageCount: 1, padCount: 0 }
+  const pageCount = resolvePageCount(rows.length, pageSize)
+  const locked = shouldLockHeight(lockHeight, pageCount) && pageSize > 0
+  if (pageSize <= 0) {
+    return {
+      rows: [...rows],
+      page: 0,
+      pageCount: 1,
+      dashCount: 0,
+      showEndMessage: false,
+    }
   }
-  const pageCount = Math.ceil(rows.length / pageSize)
   const safePage = Math.min(Math.max(0, page), pageCount - 1)
   const start = safePage * pageSize
   const visible = rows.slice(start, start + pageSize)
@@ -249,24 +301,30 @@ export const sliceBoundPage = (
     rows: visible,
     page: safePage,
     pageCount,
-    padCount: pageSize - visible.length,
+    ...resolvePageFill(visible.length, pageSize, locked),
   }
 }
 
 /** Every page for a scroll-snap track. Reuses `sliceBoundPage` per index. */
 export const chunkBoundPages = (
   rows: readonly ArrivalsPreparedRow[],
-  pageSize: number
+  pageSize: number,
+  options?: { lockHeight?: ArrivalsLockHeight }
 ): {
-  pages: { rows: ArrivalsPreparedRow[]; padCount: number }[]
+  pages: ArrivalsPageFill[]
   pageCount: number
 } => {
-  const { pageCount } = sliceBoundPage(rows, 0, pageSize)
+  const { pageCount } = sliceBoundPage(rows, 0, pageSize, options?.lockHeight)
   return {
     pageCount,
     pages: Array.from({ length: pageCount }, (_, index) => {
-      const { rows: pageRows, padCount } = sliceBoundPage(rows, index, pageSize)
-      return { rows: pageRows, padCount }
+      const { rows: pageRows, dashCount, showEndMessage } = sliceBoundPage(
+        rows,
+        index,
+        pageSize,
+        options?.lockHeight
+      )
+      return { rows: pageRows, dashCount, showEndMessage }
     }),
   }
 }

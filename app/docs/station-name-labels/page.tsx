@@ -2,15 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  AccessibilityIcon,
-  ClipboardCopyIcon,
-  SearchIcon,
-  type LucideIcon,
-} from "lucide-react";
-import {
   AbbreviationDemo,
   CopyFindDemo,
-  PlatformWidthDemo,
   StationWidthDemo,
 } from "@/components/docs/demos/station-labels-explainer";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
@@ -21,30 +14,8 @@ import { getDocsEntry, getUsedBySlugs } from "@/lib/docs-catalog";
 export const metadata: Metadata = {
   title: "Station name labels",
   description:
-    "How station names and platform chips shrink with width while copy, find, and screen readers keep the full name.",
+    "How station names shrink with width while copy, find, and screen readers keep the full name.",
 };
-
-const IDENTITY_CARDS: readonly {
-  icon: LucideIcon;
-  title: string;
-  body: string;
-}[] = [
-  {
-    icon: SearchIcon,
-    title: "Find",
-    body: "Browser find still matches the full station name when the on-screen label is abbreviated or wrapped.",
-  },
-  {
-    icon: ClipboardCopyIcon,
-    title: "Copy",
-    body: "Paste gets the complete name. No abbreviations, soft breaks, or leftover line splits.",
-  },
-  {
-    icon: AccessibilityIcon,
-    title: "Screen readers",
-    body: "Assistive tech always hears the full name in context, never a shortened or cryptic version.",
-  },
-];
 
 export default function StationLabelsFoundationPage() {
   const entry = getDocsEntry("station-labels");
@@ -59,48 +30,11 @@ export default function StationLabelsFoundationPage() {
           usedBy={getUsedBySlugs(entry.slug)}
         />
 
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            No-compromise station name display
-          </h2>
-          <p className="max-w-prose text-muted-foreground">
-            Labels can abbreviate or break across two lines when width is tight.
-            Find, copy, and screen readers still get the real name.
-          </p>
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {IDENTITY_CARDS.map(({ icon: Icon, title, body }) => (
-              <li
-                key={title}
-                className="relative overflow-hidden rounded-xl border border-border bg-card p-4"
-              >
-                <Icon
-                  className="pointer-events-none absolute -right-4 top-1/2 size-36 -translate-y-1/2 text-foreground opacity-[0.1]"
-                  strokeWidth={2.75}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                />
-                <div className="relative space-y-1 pr-10">
-                  <h3 className="font-medium text-foreground">{title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {body}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-
         <section id="width" className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
             Every screen size
           </h2>
           <StationWidthDemo />
-        </section>
-
-        <section id="platforms" className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Platforms</h2>
-          <PlatformWidthDemo />
         </section>
 
         <section id="abbreviations" className="space-y-4">
@@ -119,7 +53,7 @@ export default function StationLabelsFoundationPage() {
           </h2>
           <p className="max-w-prose text-muted-foreground">
             The painted label can wrap or abbreviate. Find, copy, and screen
-            readers still get the full station name.
+            readers still get the full name, with no leftover line split.
           </p>
           <CopyFindDemo />
         </section>
