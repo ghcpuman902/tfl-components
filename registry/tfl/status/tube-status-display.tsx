@@ -93,7 +93,7 @@ const HeadingChips = ({
       {visible.map((id) => {
         const isActive = id === activeLineId
         return (
-          <div key={id} className="flex min-w-0 flex-col gap-0.5">
+          <div key={id} className="flex min-w-0 flex-col leading-none">
             <LineBadge
               lineId={id}
               className={cn(
@@ -189,10 +189,12 @@ const StatusDisplayFrameView = ({
           }}
         >
           {announcementTile && announcementTile.kind === "announcements" ? (
-            <StatusDisruptionBlock
-              announcements={announcementTile.items}
-              quiet={announcementTile.quiet}
-            />
+            <div className="py-[calc(var(--arrivals-row)/4)]">
+              <StatusDisruptionBlock
+                announcements={announcementTile.items}
+                quiet={announcementTile.quiet}
+              />
+            </div>
           ) : null}
           {chipsTile && chipsTile.kind === "chips" ? (
             <div className="flex min-h-0 flex-col">
@@ -206,7 +208,7 @@ const StatusDisplayFrameView = ({
                   {frame.bodyHeading}
                 </p>
               ) : null}
-              <div className="flex flex-wrap content-start gap-1">
+              <div className="ml-auto flex w-full max-w-lg flex-wrap justify-end gap-1">
                 {chipsTile.lineIds.map((id) => (
                   <LineBadge
                     key={id}

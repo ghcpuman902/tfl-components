@@ -52,7 +52,9 @@ export const DataSourceLabel = ({
       ? formatFetchedAgo(fetchedAt, now)
       : isLive
         ? "Live data"
-        : "Stale data";
+        : source === "fixture"
+          ? "Example data"
+          : "Shared demo data";
 
   const handleClick = () => {
     if (!canRefresh || loading) return;

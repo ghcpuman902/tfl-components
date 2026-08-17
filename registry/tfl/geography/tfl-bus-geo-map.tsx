@@ -21,6 +21,7 @@ import {
   openFreeMapStyleUrl,
 } from "@/lib/tfl/geography-credits";
 import { useVehicleSegmentSource } from "@/components/tfl/geography/sync-vehicle-source";
+import { provideMissingStyleImages } from "@/components/tfl/maps/provide-missing-style-images";
 import {
   vehiclesToSegmentGeoJSON,
   type VehiclePosition,
@@ -340,6 +341,7 @@ export const TflBusGeoMap = ({
       attributionControl: { compact: true },
       cooperativeGestures: true,
     });
+    provideMissingStyleImages(map);
 
     if (showNavigation) {
       map.addControl(

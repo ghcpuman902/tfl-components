@@ -7,6 +7,42 @@ import { TRANSIT_GEOMETRY_PUBLIC_ASSETS } from "@/lib/tfl/geography-credits";
 const googleMapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
 const apiKey = googleMapsKey ? googleMapsKey.trim() : undefined;
 
+type GoogleMapsLibraries = {
+  Map: google.maps.MapsLibrary["Map"];
+  SymbolPath: google.maps.CoreLibrary["SymbolPath"];
+};
+
+let googleMapsOptionsSet = false;
+let googleMapsLibrariesPromise: Promise<GoogleMapsLibraries> | null = null;
+
+/** `setOptions` may run once per page load; Strict Mode remounts would warn. */
+const loadGoogleMapsLibraries = (key: string) => {
+  if (googleMapsLibrariesPromise) return googleMapsLibrariesPromise;
+
+  const promise = (async () => {
+    const { setOptions, importLibrary } = await import(
+      "@googlemaps/js-api-loader"
+    );
+    if (!googleMapsOptionsSet) {
+      setOptions({ key, v: "weekly" });
+      googleMapsOptionsSet = true;
+    }
+    const [{ Map }, { SymbolPath }] = await Promise.all([
+      importLibrary("maps"),
+      importLibrary("core"),
+    ]);
+    return { Map, SymbolPath };
+  })();
+
+  googleMapsLibrariesPromise = promise;
+  void promise.catch(() => {
+    if (googleMapsLibrariesPromise === promise) {
+      googleMapsLibrariesPromise = null;
+    }
+  });
+  return promise;
+};
+
 const GoogleMapsPlaceholder = () => (
   <div
     className="flex h-40 items-center justify-center rounded-lg border border-dashed border-border bg-muted"
@@ -54,14 +90,7 @@ const GoogleMapsLiveMap = ({ apiKey }: { apiKey: string }) => {
 
     const handleInit = async () => {
       try {
-        const { setOptions, importLibrary } = await import(
-          "@googlemaps/js-api-loader"
-        );
-        setOptions({ key: apiKey, v: "weekly" });
-        const [{ Map }, { SymbolPath }] = await Promise.all([
-          importLibrary("maps"),
-          importLibrary("core"),
-        ]);
+        const { Map, SymbolPath } = await loadGoogleMapsLibraries(apiKey);
         if (cancelled || !containerRef.current) return;
 
         const map = new Map(containerRef.current, {

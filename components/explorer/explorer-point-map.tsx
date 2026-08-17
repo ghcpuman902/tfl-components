@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useDocumentDark } from "@/hooks/use-document-dark";
 import { openFreeMapStyleUrl } from "@/lib/tfl/geography-credits";
+import { provideMissingStyleImages } from "@/components/tfl/maps/provide-missing-style-images";
 import { TFL_MODAL_COLOURS } from "@/lib/tfl/brand-colours";
 import {
   MAP_SEARCH_RADIUS_METERS,
@@ -695,6 +696,7 @@ export const ExplorerPointMap = ({
       attributionControl: { compact: true },
       cooperativeGestures: true,
     });
+    provideMissingStyleImages(map);
 
     map.addControl(
       new maplibregl.NavigationControl({ showCompass: false }),

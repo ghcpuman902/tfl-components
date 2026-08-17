@@ -68,10 +68,14 @@ function ExplorerTubeRailPointsPanel({ state }: { state: ExplorerState }) {
 
 function ExplorerTubeRailLinesPanel({ state }: { state: ExplorerState }) {
   const lines = getExplorerTubeRailLines();
+  const seed = lines[0];
   const selected = firstOrMatching(lines, state.id);
-  const detailsPromise = selected
-    ? getExplorerLineDetails(selected.id, state.dir)
-    : null;
+  // Only the seed line gets a free site-key preview; other lines need the
+  // visitor's own key (see docs/tfl-user-credentials-design.md §4/§7).
+  const detailsPromise =
+    seed && selected?.id === seed.id
+      ? getExplorerLineDetails(selected.id, state.dir)
+      : null;
   return (
     <LinesTubeRailPanel
       state={state}
@@ -138,10 +142,15 @@ async function ExplorerActivePanelAsync({ state }: { state: ExplorerState }) {
 
   if (state.kind === "lines" && state.domain === "bus") {
     const lines = await getExplorerBusLines();
+    const seed = lines[0];
     const selected = firstOrMatching(lines, state.id);
-    const detailsPromise = selected
-      ? getExplorerLineDetails(selected.id, state.dir)
-      : null;
+    // Seed-only free preview — bus has hundreds of routes, so gating every
+    // other selection behind the visitor's key keeps the shared key's
+    // 500 req/min ceiling from fanning out across the whole directory.
+    const detailsPromise =
+      seed && selected?.id === seed.id
+        ? getExplorerLineDetails(selected.id, state.dir)
+        : null;
     return (
       <LinesBusPanel
         state={state}
@@ -153,10 +162,12 @@ async function ExplorerActivePanelAsync({ state }: { state: ExplorerState }) {
 
   if (state.kind === "lines" && state.domain === "river") {
     const lines = getExplorerRiverLines();
+    const seed = lines[0];
     const selected = firstOrMatching(lines, state.id);
-    const detailsPromise = selected
-      ? getExplorerLineDetails(selected.id, state.dir)
-      : null;
+    const detailsPromise =
+      seed && selected?.id === seed.id
+        ? getExplorerLineDetails(selected.id, state.dir)
+        : null;
     return (
       <LinesRiverPanel
         state={state}

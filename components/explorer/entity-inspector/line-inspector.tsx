@@ -11,6 +11,7 @@ import {
   InspectorJson,
   InspectorSection,
 } from "@/components/explorer/entity-inspector/entity-inspector"
+import { KeyPrompt } from "@/components/explorer/entity-inspector/point-inspector"
 import { DataSourceLabel } from "@/components/docs/data-source-label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useExplorerKeyedQuery } from "@/hooks/use-explorer-keyed-query"
@@ -21,8 +22,10 @@ import {
 } from "@/lib/tfl/explorer-url-state"
 import type {
   ExplorerLineDetailsPayload,
+  ExplorerLineRoute,
   ExplorerLineSummary,
 } from "@/lib/tfl/explorer/common"
+import { shapeExplorerLineRoute } from "@/lib/tfl/explorer/line-route-shape"
 import type { StatusLine } from "@/lib/tfl/status-types"
 import { cn } from "@/lib/utils"
 
@@ -114,6 +117,65 @@ const LineInspectorDetailsFallback = ({
         ))}
       </div>
     </InspectorSection>
+  </>
+)
+
+/** Ordered stop list — shared by the cached seed path and the keyed live path. */
+const OrderedStopsList = ({
+  stops,
+  direction,
+  domain,
+}: {
+  stops: ExplorerLineRoute["stops"]
+  direction: ExplorerDirection
+  domain: LineInspectorDomain
+}) => (
+  <>
+    <p className="text-xs text-muted-foreground">Ordered stops ({direction})</p>
+    {stops.length === 0 ? (
+      <p className="text-sm text-muted-foreground">
+        No stop sequence returned for this line.
+      </p>
+    ) : (
+      <ol className="space-y-1" role="list">
+        {stops.map((stop, index) => {
+          const stopHref = stop.id
+            ? buildExplorerHref({
+                kind: "points",
+                domain,
+                id: stop.id,
+              })
+            : undefined
+          return (
+            <li
+              key={`${stop.id ?? stop.name}-${index}`}
+              className="flex items-baseline gap-3 border-b border-border py-1.5 text-sm last:border-0"
+            >
+              <span className="w-7 text-muted-foreground tabular-nums">
+                {index + 1}
+              </span>
+              {stopHref ? (
+                <Link
+                  href={stopHref}
+                  className="min-w-0 truncate font-medium underline-offset-4 hover:underline"
+                >
+                  {stop.name ?? "Unknown"}
+                </Link>
+              ) : (
+                <span className="min-w-0 truncate font-medium">
+                  {stop.name ?? "Unknown"}
+                </span>
+              )}
+              {stop.id ? (
+                <code className="ml-auto shrink-0 text-xs text-muted-foreground">
+                  {stop.id}
+                </code>
+              ) : null}
+            </li>
+          )
+        })}
+      </ol>
+    )}
   </>
 )
 
@@ -220,53 +282,11 @@ const LineInspectorDetails = ({
       <InspectorSection title="Relationships">
         <div className="space-y-2">
           {directionToggle}
-          <p className="text-xs text-muted-foreground">
-            Ordered stops ({direction})
-          </p>
-          {route.stops.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No stop sequence returned for this line.
-            </p>
-          ) : (
-            <ol className="space-y-1" role="list">
-              {route.stops.map((stop, index) => {
-                const stopHref = stop.id
-                  ? buildExplorerHref({
-                      kind: "points",
-                      domain,
-                      id: stop.id,
-                    })
-                  : undefined
-                return (
-                  <li
-                    key={`${stop.id ?? stop.name}-${index}`}
-                    className="flex items-baseline gap-3 border-b border-border py-1.5 text-sm last:border-0"
-                  >
-                    <span className="w-7 text-muted-foreground tabular-nums">
-                      {index + 1}
-                    </span>
-                    {stopHref ? (
-                      <Link
-                        href={stopHref}
-                        className="min-w-0 truncate font-medium underline-offset-4 hover:underline"
-                      >
-                        {stop.name ?? "Unknown"}
-                      </Link>
-                    ) : (
-                      <span className="min-w-0 truncate font-medium">
-                        {stop.name ?? "Unknown"}
-                      </span>
-                    )}
-                    {stop.id ? (
-                      <code className="ml-auto shrink-0 text-xs text-muted-foreground">
-                        {stop.id}
-                      </code>
-                    ) : null}
-                  </li>
-                )
-              })}
-            </ol>
-          )}
+          <OrderedStopsList
+            stops={route.stops}
+            direction={direction}
+            domain={domain}
+          />
         </div>
       </InspectorSection>
 
@@ -280,6 +300,162 @@ const LineInspectorDetails = ({
                   id: displayStatus.id,
                   name: displayStatus.name,
                   lineStatuses: displayStatus.lineStatuses,
+                }
+              : null,
+            stopCount: route.stops.length,
+          }}
+        />
+      </InspectorSection>
+    </>
+  )
+}
+
+type LineInspectorLiveDetailsProps = {
+  lineId: string
+  direction: ExplorerDirection
+  domain: LineInspectorDomain
+  directionToggle: ReactNode
+}
+
+/**
+ * Live route + status for any line **other than the seed** — requires the
+ * visitor's own TfL API key (see docs/tfl-user-credentials-design.md §4/§7).
+ * Mirrors `PointInspectorLive`'s key-gated preview pattern.
+ */
+const LineInspectorLiveDetails = ({
+  lineId,
+  direction,
+  domain,
+  directionToggle,
+}: LineInspectorLiveDetailsProps) => {
+  const { ready, hydrated, loading, error, runKeyed, openDialog } =
+    useExplorerKeyedQuery()
+  const [route, setRoute] = useState<ExplorerLineRoute | null>(null)
+  const [status, setStatus] = useState<StatusLine | null>(null)
+  const [fetchedAt, setFetchedAt] = useState<number | null>(null)
+
+  const loadRouteAndStatus = async () =>
+    runKeyed(async (client) => {
+      const [lines, sequence, statuses] = await Promise.all([
+        client.line.get({ lineIds: [lineId] }),
+        client.line.getRouteSequence({ id: lineId, direction }),
+        client.line.getStatus({ lineIds: [lineId] }),
+      ])
+      return {
+        route: shapeExplorerLineRoute(lineId, lines, sequence),
+        status: statuses[0] ?? null,
+      }
+    })
+
+  useEffect(() => {
+    if (!hydrated || !ready) return
+
+    let cancelled = false
+
+    const load = async () => {
+      const result = await loadRouteAndStatus()
+      if (cancelled || !result.ok) return
+      setRoute(result.data.route)
+      setStatus(result.data.status)
+      setFetchedAt(Date.now())
+    }
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, ready, lineId, direction])
+
+  const handleRefresh = async () => {
+    const result = await loadRouteAndStatus()
+    if (result.ok) {
+      setRoute(result.data.route)
+      setStatus(result.data.status)
+      setFetchedAt(Date.now())
+    }
+  }
+
+  if (!hydrated) {
+    return <LineInspectorDetailsFallback directionToggle={directionToggle} />
+  }
+
+  if (!ready) {
+    return (
+      <>
+        <InspectorSection title="Preview">
+          <KeyPrompt
+            purpose="Live status for this line uses your TfL API key."
+            onAddKey={openDialog}
+          />
+        </InspectorSection>
+        <InspectorSection title="Relationships">
+          <div className="space-y-2">
+            {directionToggle}
+            <p className="text-sm text-muted-foreground">
+              Add a TfL API key to load the stop sequence for this line.
+            </p>
+          </div>
+        </InspectorSection>
+      </>
+    )
+  }
+
+  if (!route) {
+    return <LineInspectorDetailsFallback directionToggle={directionToggle} />
+  }
+
+  return (
+    <>
+      <InspectorSection title="Preview">
+        <div className="space-y-2">
+          {error ? (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {status ? (
+            <TubeStatusBoard
+              data={[status]}
+              now={fetchedAt ?? undefined}
+              compact
+              hideHeader
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Live status has not loaded yet.
+            </p>
+          )}
+          <DataSourceLabel
+            source="live"
+            fetchedAt={fetchedAt ?? undefined}
+            loading={loading}
+            onRefresh={handleRefresh}
+          />
+        </div>
+      </InspectorSection>
+
+      <InspectorSection title="Relationships">
+        <div className="space-y-2">
+          {directionToggle}
+          <OrderedStopsList
+            stops={route.stops}
+            direction={direction}
+            domain={domain}
+          />
+        </div>
+      </InspectorSection>
+
+      <InspectorSection title="Normalised data">
+        <InspectorJson
+          value={{
+            id: lineId,
+            direction,
+            status: status
+              ? {
+                  id: status.id,
+                  name: status.name,
+                  lineStatuses: status.lineStatuses,
                 }
               : null,
             stopCount: route.stops.length,
@@ -347,9 +523,9 @@ export const LineInspector = ({
       subtitle={`Line · ${line.modeName ?? domain}`}
       identity={identity}
       details={
-        detailsPending || !detailsPromise ? (
+        detailsPending ? (
           detailsFallback
-        ) : (
+        ) : detailsPromise ? (
           <Suspense fallback={detailsFallback}>
             <LineInspectorDetails
               key={line.id}
@@ -360,6 +536,15 @@ export const LineInspector = ({
               directionToggle={directionToggle}
             />
           </Suspense>
+        ) : (
+          // Not the cached seed — live route + status need the visitor's key.
+          <LineInspectorLiveDetails
+            key={line.id}
+            lineId={line.id}
+            direction={direction}
+            domain={domain}
+            directionToggle={directionToggle}
+          />
         )
       }
       code={code}

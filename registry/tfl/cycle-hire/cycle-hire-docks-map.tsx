@@ -20,6 +20,7 @@ import {
   type CycleHireLabelSide,
   type CycleHireMapEdgePadding,
 } from "@/components/tfl/cycle-hire/cycle-hire-map-camera";
+import { provideMissingStyleImages } from "@/components/tfl/maps/provide-missing-style-images";
 import { StationName } from "@/components/tfl/station-name";
 
 /** OpenFreeMap vector styles — inlined so the registry stays self-contained. */
@@ -227,6 +228,7 @@ export const CycleHireDocksMap = ({
       attributionControl: { compact: true },
       cooperativeGestures: true,
     });
+    provideMissingStyleImages(map);
 
     if (showNavigation) {
       map.addControl(

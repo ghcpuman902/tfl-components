@@ -15,7 +15,9 @@ const DISRUPTION_COPY_CLASS = cn(
 )
 
 const SeverityChip = ({ label }: { label: string }) => (
-  <QuietChip className="mr-[0.35em]">{label}</QuietChip>
+  <QuietChip className="mr-[0.35em] align-[length:calc((1lh-1.25rem)/2)]">
+    {label}
+  </QuietChip>
 )
 
 export const StatusDisruptionCopy = ({
@@ -32,7 +34,13 @@ export const StatusDisruptionCopy = ({
     : false
 
   return (
-    <p className={cn(DISRUPTION_COPY_CLASS, quiet && "text-muted-foreground")}>
+    <p
+      className={cn(
+        "m-0",
+        DISRUPTION_COPY_CLASS,
+        quiet && "text-muted-foreground"
+      )}
+    >
       {severityLabel ? <SeverityChip label={severityLabel} /> : null}
       {bodyIsOnlyLabel ? null : body}
     </p>

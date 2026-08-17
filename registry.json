@@ -654,6 +654,11 @@
           "target": "components/tfl/cycle-hire/cycle-hire-docks-map.tsx"
         },
         {
+          "path": "components/tfl/maps/provide-missing-style-images.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/maps/provide-missing-style-images.ts"
+        },
+        {
           "path": "registry/tfl/cycle-hire/cycle-hire-map-camera.ts",
           "type": "registry:lib",
           "target": "components/tfl/cycle-hire/cycle-hire-map-camera.ts"
@@ -1349,6 +1354,11 @@
           "target": "components/tfl/geography/tfl-geographic-map.tsx"
         },
         {
+          "path": "components/tfl/maps/provide-missing-style-images.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/maps/provide-missing-style-images.ts"
+        },
+        {
           "path": "lib/tfl/geography-types.ts",
           "type": "registry:lib",
           "target": "lib/tfl/geography-types.ts"
@@ -1382,6 +1392,11 @@
           "path": "registry/tfl/geography/tfl-bus-geo-map.tsx",
           "type": "registry:component",
           "target": "components/tfl/geography/tfl-bus-geo-map.tsx"
+        },
+        {
+          "path": "components/tfl/maps/provide-missing-style-images.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/maps/provide-missing-style-images.ts"
         },
         {
           "path": "lib/tfl/bus-geography-types.ts",

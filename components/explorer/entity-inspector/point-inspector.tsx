@@ -90,7 +90,8 @@ export const PointInspectorDeferred = ({
   )
 }
 
-const KeyPrompt = ({
+/** Shared "needs a personal key" prompt — reused by point and line inspectors. */
+export const KeyPrompt = ({
   purpose,
   onAddKey,
 }: {
