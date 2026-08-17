@@ -6,7 +6,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ColoursInstallTabs } from "@/components/docs/colours-install-tabs";
 import ColoursDemo from "@/components/docs/demos/colours-demo";
-import ColoursPreviewDemo from "@/components/docs/demos/colours-preview-demo";
 import { BwLineStylesCompare } from "@/components/docs/demos/bw-line-styles-compare";
 import { DocsPageHeader } from "@/components/docs/docs-page-header";
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
@@ -18,7 +17,7 @@ import { REGISTRY_BASE } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Colours",
   description:
-    "Official TfL line and mode colours — install tokens, map line ids, copy HEX or OKLCH.",
+    "Official TfL line and mode colours. Arrivals boards and status already apply them.",
 };
 
 const DATA_LINE_SNIPPET = `// data-line resolves --line-color / --line-ink for you
@@ -60,6 +59,12 @@ const bg = getLineColourBgClass(line.id) // "bg-tfl-line-northern"
 // ✅ Or bind dynamically without a utility class
 <span data-line={line.id} className="bg-[var(--line-color)]" />`;
 
+const LINE_PRIMITIVE_SNIPPET = `import { LineName } from "@/components/tfl/brand/line-name"
+import { LineBadge } from "@/components/tfl/brand/line-badge"
+
+<LineName lineId="victoria" />
+<LineBadge lineId="central" />`;
+
 const CHIP_CLASS =
   "inline-flex items-center bg-[var(--line-color)] px-2 py-0.5 text-xs font-bold text-[var(--line-ink)] tabular-nums";
 
@@ -67,6 +72,14 @@ const TFL_COLOURS_CSS = readFileSync(
   join(process.cwd(), "app/tfl-colours.css"),
   "utf8",
 );
+
+/** `:root` + `.dark` + `@theme` — the layers install adds to globals. */
+const TFL_COLOUR_TOKEN_LAYERS = (() => {
+  const start = TFL_COLOURS_CSS.indexOf(":root");
+  const pin = TFL_COLOURS_CSS.indexOf("/* Pin utilities");
+  if (start < 0) return TFL_COLOURS_CSS;
+  return TFL_COLOURS_CSS.slice(start, pin < 0 ? undefined : pin).trim();
+})();
 
 export default function FoundationsColoursPage() {
   const entry = getDocsEntry("colours");
@@ -105,14 +118,81 @@ export default function FoundationsColoursPage() {
           .
         </p>
 
-        <section id="preview" className="space-y-4">
-          <h2 className="text-lg font-semibold">Preview</h2>
-          <ColoursPreviewDemo />
+        <section className="space-y-4">
+          <ColoursDemo title="All colours — click to copy" titleId="colours" />
+          <h3 id="css" className="text-base font-medium">
+            CSS variables
+          </h3>
+          <p className="max-w-prose text-sm text-muted-foreground">
+            One name per colour. Light lives in{" "}
+            <code className="text-xs">:root</code>, dark in{" "}
+            <code className="text-xs">.dark</code>.{" "}
+            <code className="text-xs">@theme</code> exposes{" "}
+            <code className="text-xs">--color-tfl-*</code> for Tailwind
+            utilities.
+          </p>
+          <SyntaxHighlightedCode
+            code={TFL_COLOUR_TOKEN_LAYERS}
+            language="css"
+            peekLines={10}
+            wrapperClassName="mt-0 mb-0"
+          />
         </section>
 
-        <section id="installation" className="space-y-4">
+        <section className="space-y-4">
+          <h2 id="when" className="text-lg font-semibold">
+            When to use these tokens
+          </h2>
+          <p className="max-w-prose text-muted-foreground">
+            <Link
+              href="/docs/tube-rail-arrivals"
+              className="text-foreground underline underline-offset-4"
+            >
+              Arrivals boards
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="/docs/tube-rail-status"
+              className="text-foreground underline underline-offset-4"
+            >
+              status
+            </Link>{" "}
+            already paint line colour. For a label or chip, use{" "}
+            <Link
+              href="/docs/line-title"
+              className="text-foreground underline underline-offset-4"
+            >
+              Line title
+            </Link>{" "}
+            or{" "}
+            <Link
+              href="/docs/line-chip"
+              className="text-foreground underline underline-offset-4"
+            >
+              Line chip
+            </Link>
+            .
+          </p>
+          <SyntaxHighlightedCode
+            code={LINE_PRIMITIVE_SNIPPET}
+            language="tsx"
+            wrapperClassName="mt-0 mb-0"
+          />
+          <p className="max-w-prose text-sm text-muted-foreground">
+            Copy from this page when:
+          </p>
+          <ul className="max-w-prose list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
+            <li>The colour is not a line — TfL blue, coaches</li>
+            <li>Values for Figma</li>
+            <li>A custom component</li>
+          </ul>
+        </section>
+
+        <section className="space-y-4">
           <div className="space-y-2">
-            <h2 className="text-lg font-semibold">Installation</h2>
+            <h2 id="installation" className="text-lg font-semibold">
+              Installation
+            </h2>
             <p className="max-w-prose text-muted-foreground">
               Install via the shadcn registry, or copy the CSS variable layers
               into <code className="text-xs">globals.css</code>. Boards and{" "}
@@ -132,9 +212,11 @@ export default function FoundationsColoursPage() {
           />
         </section>
 
-        <section id="mapping" className="space-y-4">
+        <section className="space-y-4">
           <div className="space-y-2">
-            <h2 className="text-lg font-semibold">Line → colour mapping</h2>
+            <h2 id="mapping" className="text-lg font-semibold">
+              Line → colour mapping
+            </h2>
             <p className="max-w-prose text-muted-foreground">
               Three tiers: palette vars (
               <code className="text-xs">--tfl-line-central</code>),{" "}
@@ -169,14 +251,9 @@ export default function FoundationsColoursPage() {
             wrapperClassName="mt-0 mb-0"
           />
 
-          <div className="space-y-2">
-            <h3 id="tailwind" className="text-base font-medium">
-              Tailwind cannot build class names dynamically
-            </h3>
-            <p className="max-w-prose text-sm text-muted-foreground">
-              Predefined class strings only:
-            </p>
-          </div>
+          <h3 id="tailwind" className="text-base font-medium">
+            Tailwind cannot build class names dynamically
+          </h3>
           <SyntaxHighlightedCode
             code={MAP_LOOKUP_SNIPPET}
             language="tsx"
@@ -184,18 +261,14 @@ export default function FoundationsColoursPage() {
           />
         </section>
 
-        <section className="space-y-4">
-          <ColoursDemo title="All formats" titleId="formats" />
-        </section>
-
-        <section id="adaptive" className="space-y-3">
-          <h2 className="text-lg font-semibold">Adaptive modes</h2>
+        <section className="space-y-3">
+          <h2 id="adaptive" className="text-lg font-semibold">
+            Adaptive modes
+          </h2>
           <p className="max-w-prose text-sm text-muted-foreground">
-            TfL has not published dark-mode line colours. We took screenshots of
-            the TfL Go app in light and dark appearance and measured the OKLCH
-            shift between matching line paints. Dark tokens apply that median
-            shift to the published Colour standard values: about +3.3%
-            lightness, a little more chroma, hue held.
+            TfL has not published dark-mode line colours. Dark tokens shift the
+            Colour standard values slightly lighter and a little more chromatic,
+            hue held.
           </p>
           <ul className="max-w-prose list-disc space-y-2 pl-5 text-sm text-muted-foreground">
             <li>
@@ -225,8 +298,10 @@ export default function FoundationsColoursPage() {
           </ul>
         </section>
 
-        <section id="mono" className="space-y-3">
-          <h2 className="text-lg font-semibold">Mono line styles</h2>
+        <section className="space-y-3">
+          <h2 id="mono" className="text-lg font-semibold">
+            Mono line styles
+          </h2>
           <p className="max-w-prose text-sm text-muted-foreground">
             Colour route paint vs black-and-white Tube map stroke patterns
             (provisional reconstruction of the{" "}
@@ -238,9 +313,9 @@ export default function FoundationsColoursPage() {
             >
               large-print B&amp;W map
             </a>{" "}
-            key). These are the motifs{" "}
-            <code className="text-xs">data-tfl-colour=&quot;mono&quot;</code> will
-            carry once wired into strips — not yet the live CSS role tokens.
+            key). These motifs are what{" "}
+            <code className="text-xs">data-tfl-colour=&quot;mono&quot;</code>{" "}
+            will paint on strips. They are not live CSS role tokens yet.
           </p>
           <BwLineStylesCompare />
         </section>

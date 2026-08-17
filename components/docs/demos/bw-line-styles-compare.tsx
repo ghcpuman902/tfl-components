@@ -70,9 +70,8 @@ const colourLayers = (
   if (trackStyle === "cable-car") {
     return [
       { width: 8, stroke: color },
-      { width: 5.2, stroke: "#fff" },
-      { width: 2.4, stroke: color },
-      { width: 0.8, stroke: "#fff" },
+      { width: 4.8, stroke: "#fff" },
+      { width: 1.6, stroke: color },
     ];
   }
   if (trackStyle === "parallel") {

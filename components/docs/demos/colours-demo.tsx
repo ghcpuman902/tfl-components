@@ -1,4 +1,5 @@
 import { ColourFormatsGrid } from "@/components/docs/colour-formats-grid";
+import { ColourTokenPins } from "@/components/docs/demos/colour-token-pins";
 import {
   getLineColourBarMode,
   LINE_COLOUR_TOKENS,
@@ -21,10 +22,13 @@ export default function ColoursDemo({
   titleId?: string;
 }) {
   return (
-    <ColourFormatsGrid
-      lines={FORMAT_LINES}
-      title={title}
-      titleId={titleId}
-    />
+    <>
+      <ColourTokenPins />
+      <ColourFormatsGrid
+        lines={FORMAT_LINES}
+        title={title}
+        titleId={titleId}
+      />
+    </>
   );
 }

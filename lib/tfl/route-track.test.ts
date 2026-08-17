@@ -14,6 +14,7 @@ import { UNDERGROUND_LINE_COLOURS } from "@/lib/tfl/brand-colours";
 describe("route-track", () => {
   it("maps cable car to triple rails and map red", () => {
     assert.equal(resolveRouteTrackStyle("london-cable-car"), "cable-car");
+    assert.equal(resolveRouteTrackStyle("cable-car"), "cable-car");
     assert.equal(routeTrackRailCount("cable-car"), 3);
     assert.equal(routeTrackHeightUnits("cable-car"), 1.65);
     assert.equal(
@@ -42,7 +43,14 @@ describe("route-track", () => {
     assert.equal(resolveDiagramLineCssColor("victoria"), "var(--tfl-line-victoria)");
     assert.equal(resolveDiagramLineCssColor("northern"), "var(--tfl-line-northern)");
     assert.equal(resolveDiagramLineCssColor("elizabeth"), "var(--tfl-mode-elizabeth)");
-    assert.equal(resolveDiagramLineCssColor("london-cable-car"), null);
+    assert.equal(
+      resolveDiagramLineCssColor("london-cable-car"),
+      "var(--tfl-diagram-cable-car)",
+    );
+    assert.equal(
+      resolveDiagramLineCssColor("cable-car"),
+      "var(--tfl-diagram-cable-car)",
+    );
   });
 
   it("lists simple non-branch demo lines", () => {

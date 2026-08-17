@@ -20,6 +20,7 @@ import {
   UNDERGROUND_LINE_COLOURS,
   type BrandColourSpec,
 } from "@/lib/tfl/brand-colours";
+import { resolveRouteTrackStyle } from "@/lib/tfl/route-track";
 
 export type LineColourKind = "line" | "mode";
 
@@ -32,7 +33,6 @@ export type LineColourToken = {
   kind: LineColourKind;
   /** CSS custom property without `--` (e.g. `tfl-line-northern`). */
   cssVar: string;
-  inkCssVar: string;
   /** Complete Tailwind class strings — use as-is, never build with template literals. */
   bgClass: string;
   textClass: string;
@@ -66,7 +66,6 @@ const buildToken = (
     name: spec.label,
     kind,
     cssVar,
-    inkCssVar: `tfl-ink-${kind}-${id}`,
     bgClass: `bg-tfl-${kind}-${id}`,
     textClass: `text-tfl-${kind}-${id}`,
     hex: spec.hex,
@@ -119,31 +118,18 @@ export const getLineColourTextClass = (lineId: string): string | undefined =>
 /**
  * Mode name for `LineColorBar` rail stacks (Overground / Elizabeth / Cable Car).
  * Not every token needs a special mode — plain tube lines omit this.
+ *
+ * @deprecated Prefer `resolveRouteTrackStyle` from `@/lib/tfl/route-track`.
  */
 export const getLineColourBarMode = (
   lineId: string,
 ): string | undefined => {
+  const style = resolveRouteTrackStyle(lineId);
+  if (style === "solid") return undefined;
+  if (style === "cable-car") return "cable-car";
   const token = getLineColourToken(lineId);
-  if (!token) return undefined;
-  if (token.id === "elizabeth" || token.aliases.includes("elizabeth-line")) {
+  if (token?.id === "elizabeth" || token?.aliases.includes("elizabeth-line")) {
     return "elizabeth-line";
   }
-  if (token.id === "cable-car" || token.aliases.includes("london-cable-car")) {
-    return "cable-car";
-  }
-  if (
-    token.kind === "line" &&
-    [
-      "liberty",
-      "lioness",
-      "mildmay",
-      "suffragette",
-      "weaver",
-      "windrush",
-    ].includes(token.id)
-  ) {
-    return "overground";
-  }
-  if (token.id === "overground") return "overground";
-  return undefined;
+  return "overground";
 };

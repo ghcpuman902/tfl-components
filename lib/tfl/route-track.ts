@@ -19,6 +19,9 @@ export type RouteTrackStyle = "solid" | "parallel" | "cable-car";
 /** Tube-map cable-car red (triple rails); mode roundel stays purple. */
 export const CABLE_CAR_DIAGRAM_COLOR = CABLE_CAR_MAP_COLOUR.hex;
 
+/** Theme-aware diagram red — follows `--tfl-line-central` in light / dark. */
+export const CABLE_CAR_DIAGRAM_CSS_COLOR = "var(--tfl-diagram-cable-car)";
+
 const OVERGROUND_LINE_IDS = new Set([
   "liberty",
   "lioness",
@@ -30,6 +33,7 @@ const OVERGROUND_LINE_IDS = new Set([
 ]);
 
 const CABLE_CAR_LINE_IDS = new Set([
+  "cable-car",
   "london-cable-car",
   "emirates-airline",
 ]);
@@ -103,11 +107,11 @@ export const routeTrackHeightUnits = (style: RouteTrackStyle): number => {
 
 /**
  * Theme-aware CSS variable for a line id (picks up `.dark` tokens).
- * Cable car stays hex — diagram red is not the mode token.
+ * Cable car uses diagram red, not the purple mode token.
  */
 export const resolveDiagramLineCssColor = (lineId: string): string | null => {
   const id = lineId.toLowerCase();
-  if (CABLE_CAR_LINE_IDS.has(id)) return null;
+  if (CABLE_CAR_LINE_IDS.has(id)) return CABLE_CAR_DIAGRAM_CSS_COLOR;
   if (UNDERGROUND_COLOR_BY_ID[id]) return `var(--tfl-line-${id})`;
   if (id === "overground") return "var(--tfl-mode-overground)";
   if (OVERGROUND_COLOR_BY_ID[id]) return `var(--tfl-line-${id})`;

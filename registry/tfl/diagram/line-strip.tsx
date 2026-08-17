@@ -27,6 +27,7 @@ export type LineStripProps = {
   /** Preloaded stations (week-ahead / demos). When omitted, pass via `spine`. */
   stations?: readonly DiagramStation[];
   lineName?: string;
+  /** Hex fallback when `lineId` has no theme token (e.g. cable-car map red). */
   lineColor?: string;
   /** Full spine payload — alternative to stations + meta. */
   spine?: Pick<LineSpine, "stations" | "lineName" | "lineColor" | "routeError">;
@@ -95,8 +96,8 @@ export const LineStrip = ({
   trackStyle: trackStyleProp,
 }: LineStripProps) => {
   const color =
-    lineColorProp ??
     resolveDiagramLineCssColor(lineId) ??
+    lineColorProp ??
     spine?.lineColor ??
     resolveDiagramLineColor(lineId);
   const name = lineNameProp ?? spine?.lineName ?? lineId;

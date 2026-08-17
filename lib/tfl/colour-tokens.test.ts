@@ -39,17 +39,44 @@ describe("colour tokens generator", () => {
   });
 
   it("applies Go night OKLCH method in dark; Northern uses #FCFCFC", () => {
-    const { cssVars } = buildColourTokensArtefacts();
+    const { cssVars, cssText } = buildColourTokensArtefacts();
     assert.equal(
       cssVars.dark["tfl-line-northern"],
       northernDarkOklch(),
     );
-    assert.equal(cssVars.dark["tfl-ink-line-northern"], "oklch(0% 0 0)");
+    assert.equal(
+      Object.keys(cssVars.light).some((key) => key.startsWith("tfl-ink-")),
+      false,
+    );
+    assert.match(
+      cssText,
+      /\.dark \[data-line='northern'\] \{\n  --line-ink: oklch\(0% 0 0\);/,
+    );
     assert.notEqual(
       cssVars.dark["tfl-line-central"],
       cssVars.light["tfl-line-central"],
     );
     assert.ok(cssVars.dark["tfl-line-central"].startsWith("oklch("));
+    assert.equal(
+      cssVars.light["tfl-diagram-cable-car"],
+      cssVars.light["tfl-line-central"],
+    );
+    assert.equal(
+      cssVars.dark["tfl-diagram-cable-car"],
+      cssVars.dark["tfl-line-central"],
+    );
+    assert.match(
+      cssText,
+      /\[data-line='liberty'\] \{\n    --line-raw: var\(--tfl-line-liberty\);\n    --line-stroke-style: parallel;/,
+    );
+    assert.match(
+      cssText,
+      /\[data-line='cable-car'\] \{\n    --line-raw: var\(--tfl-mode-cable-car\);\n    --line-stroke-style: cable-car;/,
+    );
+    assert.match(
+      cssText,
+      /\[data-line='cable-car'\]\[data-tfl-diagram\],\n\[data-line='london-cable-car'\]\[data-tfl-diagram\] \{\n  --line-raw: var\(--tfl-diagram-cable-car\);/,
+    );
   });
 
   it("keeps committed app/tfl-colours.css in sync (run pnpm registry:build)", () => {
@@ -81,9 +108,19 @@ describe("colour tokens generator", () => {
       files?.some((file) => file.target === "lib/tfl/line-colour-map.ts"),
       "tfl-colours should ship line-colour-map.ts",
     );
+    assert.ok(
+      files?.some((file) => file.target === "lib/tfl/route-track.ts"),
+      "tfl-colours should ship route-track.ts",
+    );
 
     const lineBadge = registry.items.find((entry) => entry.name === "line-badge");
     assert.ok(lineBadge?.registryDependencies?.includes(COLOURS_REGISTRY_URL));
+    const lineBadgeFiles = (lineBadge as { files?: Array<{ target?: string }> })
+      .files;
+    assert.ok(
+      lineBadgeFiles?.some((file) => file.target === "lib/tfl/route-track.ts"),
+      "line-badge should ship route-track.ts",
+    );
 
     const ownNames = new Set(registry.items.map((entry) => entry.name));
     for (const entry of registry.items) {

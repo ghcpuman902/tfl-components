@@ -6,6 +6,11 @@ import {
   getLineNameTiers,
   joinLineNames,
 } from "@/lib/tfl/line-names";
+import {
+  resolveRouteTrackStyle,
+  routeTrackRailCount,
+  type RouteTrackStyle,
+} from "@/lib/tfl/route-track";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -22,10 +27,15 @@ type LineBadgeProps = {
   /** Show a filled colour chip (default) or text-only with brand colour. */
   variant?: "chip" | "text";
   /**
-   * Explicit brand colour when `lineId` is not in the token set
-   * (e.g. Cable Car map red). Sets `--line-raw` inline.
+   * Explicit brand colour when `lineId` is not in the token set.
+   * Sets `--line-raw` inline.
    */
   color?: string;
+  /**
+   * Use diagram paint when it differs from mode identity
+   * (Cable Car map red instead of purple).
+   */
+  diagram?: boolean;
   /**
    * `clip` (default) — paint the full name, let the parent clip.
    * `shrink` — step full → middle → short via `LineName` (chips may wrap).
@@ -77,6 +87,7 @@ export const LineBadge = ({
   className,
   variant = "chip",
   color,
+  diagram,
   fit = "clip",
 }: LineBadgeProps) => {
   const label = name ?? getLineNameTiers(lineId).full;
@@ -96,6 +107,7 @@ export const LineBadge = ({
     return (
       <span
         data-line={lineId}
+        data-tfl-diagram={diagram ? "" : undefined}
         className={cn(
           "font-semibold text-[var(--line-color)]",
           fit === "shrink" && "inline-block w-full min-w-0",
@@ -112,6 +124,7 @@ export const LineBadge = ({
   return (
     <span
       data-line={lineId}
+      data-tfl-diagram={diagram ? "" : undefined}
       className={cn(
         "inline-flex items-center bg-[var(--line-color)] px-2 py-0.5 text-xs font-bold text-[var(--line-ink)] tabular-nums",
         fit === "shrink" && "w-full min-w-0 max-w-full",
@@ -310,68 +323,74 @@ export const LineBadgeGroup = ({
   );
 };
 
+const resolveColorBarTrackStyle = (
+  lineId?: string,
+  modeName?: string,
+): RouteTrackStyle => {
+  if (modeName === "cable-car") return "cable-car";
+  if (modeName === "overground" || modeName === "elizabeth-line") {
+    return "parallel";
+  }
+  if (lineId) return resolveRouteTrackStyle(lineId);
+  return "solid";
+};
+
 /** Horizontal brand colour bar; Overground / Elizabeth / Cable Car get rail stacks. */
 export const LineColorBar = ({
   lineId,
   modeName,
   heightClass = "h-[4px]",
   color,
+  diagram,
 }: {
   lineId?: string;
   modeName?: string;
   heightClass?: string;
   /** Explicit brand colour when `lineId` is not in the token set. */
   color?: string;
+  /**
+   * Use diagram paint when it differs from mode identity
+   * (Cable Car map red instead of purple).
+   */
+  diagram?: boolean;
 }) => {
-  const isParallel =
-    modeName === "overground" || modeName === "elizabeth-line";
-  /** Map diagram: three red rails + two white gaps (not mode purple). */
-  const isCableCar = modeName === "cable-car";
-  const railClass = "w-full bg-[var(--line-color)]";
+  const rails = routeTrackRailCount(
+    resolveColorBarTrackStyle(lineId, modeName),
+  );
   const style = lineRawStyle(color);
   const dataLine = lineId || undefined;
-
-  if (isCableCar) {
-    return (
-      <div
-        data-line={dataLine}
-        className={cn("grid w-full grid-rows-5", heightClass)}
-        style={style}
-        aria-hidden
-      >
-        <div className={railClass} />
-        <div />
-        <div className={railClass} />
-        <div />
-        <div className={railClass} />
-      </div>
-    );
-  }
-
-  // Parallel mark: equal stroke / gap / stroke (brand §5), gap shows parent surface.
-  if (isParallel) {
-    return (
-      <div
-        data-line={dataLine}
-        className={cn("grid w-full grid-rows-3", heightClass)}
-        style={style}
-        aria-hidden
-      >
-        <div className={railClass} />
-        <div />
-        <div className={railClass} />
-      </div>
-    );
+  const bands: { key: string; fill: boolean }[] = [];
+  for (let i = 0; i < rails; i += 1) {
+    bands.push({ key: `rail-${i}`, fill: true });
+    if (i < rails - 1) {
+      bands.push({ key: `gap-${i}`, fill: false });
+    }
   }
 
   return (
     <div
       data-line={dataLine}
-      className={cn("relative w-full", heightClass)}
+      data-tfl-diagram={diagram ? "" : undefined}
+      className={cn(
+        rails === 1 ? "relative w-full" : "flex w-full flex-col",
+        heightClass,
+      )}
       style={style}
       aria-hidden
     >
-      <div className={cn("h-full", railClass)} />
+      {rails === 1 ? (
+        <div className="h-full w-full bg-[var(--line-color)]" />
+      ) : (
+        bands.map((band) => (
+          <div
+            key={band.key}
+            className={cn(
+              "min-h-0 w-full flex-1",
+              band.fill && "bg-[var(--line-color)]",
+            )}
+          />
+        ))
+      )}
     </div>
   );
 };

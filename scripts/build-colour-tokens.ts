@@ -28,6 +28,7 @@ import {
   northernDarkOklch,
   NORTHERN_DARK_HEX,
 } from "../lib/tfl/dark-line-colours";
+import { resolveRouteTrackStyle } from "../lib/tfl/route-track";
 import { REGISTRY_BASE } from "../lib/site";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -54,14 +55,13 @@ type TokenKind = "line" | "mode";
 export type ColourToken = {
   /** CSS custom property name without `--` (e.g. `tfl-line-central`). */
   varName: string;
-  /** Matching ink token without `--` (e.g. `tfl-ink-line-central`). */
-  inkVarName: string;
   kind: TokenKind;
   /** Primary data-line id (first binding). */
   primaryId: string;
   /** `data-line` attribute values that bind to this token. */
   dataLineIds: string[];
   oklch: string;
+  /** Chip text on this fill. White unless `stripText` is TfL blue. */
   inkOklch: string;
   /** Dark-map OKLCH (brand + Go night method, or Northern light fill). */
   darkOklch: string;
@@ -106,7 +106,6 @@ export const buildColourTokens = (): ColourToken[] => {
     const exception = DARK_EXCEPTIONS[id];
     tokens.push({
       varName,
-      inkVarName: `tfl-ink-${kind}-${id}`,
       kind,
       primaryId: id,
       dataLineIds: [id, ...(DATA_LINE_ALIASES[id] ?? [])],
@@ -153,32 +152,53 @@ export const buildColourTokensArtefacts = (
 
   for (const token of tokens) {
     light[token.varName] = token.oklch;
-    light[token.inkVarName] = token.inkOklch;
-
     dark[token.varName] = token.darkOklch;
-    dark[token.inkVarName] = token.darkInkOklch;
-
     theme[`color-${token.varName}`] = `var(--${token.varName})`;
   }
 
+  const central = tokens.find((token) => token.varName === "tfl-line-central");
+  if (central) {
+    light["tfl-diagram-cable-car"] = central.oklch;
+    dark["tfl-diagram-cable-car"] = central.darkOklch;
+    theme["color-tfl-diagram-cable-car"] = "var(--tfl-diagram-cable-car)";
+  }
+
   const bindingRules: Record<string, Record<string, string>> = {};
+  const diagramCableCarIds: string[] = [];
   for (const token of tokens) {
     for (const id of token.dataLineIds) {
-      bindingRules[`[data-line='${id}']`] = {
+      const rule: Record<string, string> = {
         "--line-raw": `var(--${token.varName})`,
-        "--line-ink-raw": `var(--${token.inkVarName})`,
       };
+      if (token.inkOklch !== WHITE_OKLCH) {
+        rule["--line-ink"] = token.inkOklch;
+      }
+      const strokeStyle = resolveRouteTrackStyle(id);
+      if (strokeStyle !== "solid") {
+        rule["--line-stroke-style"] = strokeStyle;
+      }
+      if (strokeStyle === "cable-car") {
+        diagramCableCarIds.push(id);
+      }
+      bindingRules[`[data-line='${id}']`] = rule;
     }
   }
 
+  const diagramBindingSelector = diagramCableCarIds
+    .map((id) => `[data-line='${id}'][data-tfl-diagram]`)
+    .join(", ");
+
   const css: CssPayload = {
     "@layer base": {
-      ...bindingRules,
       "[data-line]": {
         "--line-color": "var(--line-raw)",
-        "--line-ink": "var(--line-ink-raw, oklch(100% 0 0))",
+        "--line-ink": WHITE_OKLCH,
         "--line-stroke-style": "solid",
       },
+      ...bindingRules,
+    },
+    ".dark [data-line='northern']": {
+      "--line-ink": BLACK_OKLCH,
     },
     "@media (prefers-contrast: more) and (not (forced-colors: active))": {
       "[data-line]": {
@@ -201,10 +221,17 @@ export const buildColourTokensArtefacts = (
       "--line-color": "var(--foreground)",
       "--line-ink": "var(--background)",
     },
+    ...(diagramBindingSelector
+      ? {
+          [diagramBindingSelector]: {
+            "--line-raw": "var(--tfl-diagram-cable-car)",
+          },
+        }
+      : {}),
     '[data-tfl-northern="halo"] [data-line="northern"], [data-line="northern"][data-tfl-northern="halo"]':
       {
         "--line-raw": BLACK_OKLCH,
-        "--line-ink-raw": WHITE_OKLCH,
+        "--line-ink": WHITE_OKLCH,
       },
   };
 
@@ -262,19 +289,45 @@ const renderCssFile = (
   lines.push("");
 
   lines.push("@layer base {");
+  lines.push("  [data-line] {");
+  lines.push("    --line-color: var(--line-raw);");
+  lines.push(`    --line-ink: ${WHITE_OKLCH};`);
+  lines.push("    --line-stroke-style: solid;");
+  lines.push("  }");
   for (const token of tokens) {
     for (const id of token.dataLineIds) {
+      const strokeStyle = resolveRouteTrackStyle(id);
       lines.push(`  [data-line='${id}'] {`);
       lines.push(`    --line-raw: var(--${token.varName});`);
-      lines.push(`    --line-ink-raw: var(--${token.inkVarName});`);
+      if (token.inkOklch !== WHITE_OKLCH) {
+        lines.push(`    --line-ink: ${token.inkOklch};`);
+      }
+      if (strokeStyle !== "solid") {
+        lines.push(`    --line-stroke-style: ${strokeStyle};`);
+      }
       lines.push("  }");
     }
   }
-  lines.push("  [data-line] {");
-  lines.push("    --line-color: var(--line-raw);");
-  lines.push("    --line-ink: var(--line-ink-raw, oklch(100% 0 0));");
-  lines.push("    --line-stroke-style: solid;");
-  lines.push("  }");
+  lines.push("}", "");
+
+  const diagramIds = tokens.flatMap((token) =>
+    token.dataLineIds.filter((id) => resolveRouteTrackStyle(id) === "cable-car"),
+  );
+  if (diagramIds.length > 0) {
+    lines.push(
+      "/* Cable Car diagram paint: map red, not mode purple. */",
+    );
+    lines.push(
+      `${diagramIds
+        .map((id) => `[data-line='${id}'][data-tfl-diagram]`)
+        .join(",\n")} {`,
+    );
+    lines.push("  --line-raw: var(--tfl-diagram-cable-car);");
+    lines.push("}", "");
+  }
+
+  lines.push(".dark [data-line='northern'] {");
+  lines.push(`  --line-ink: ${BLACK_OKLCH};`);
   lines.push("}", "");
 
   lines.push(
@@ -314,7 +367,7 @@ const renderCssFile = (
   );
   lines.push('[data-line="northern"][data-tfl-northern="halo"] {');
   lines.push("  --line-raw: oklch(0% 0 0);");
-  lines.push("  --line-ink-raw: oklch(100% 0 0);");
+  lines.push(`  --line-ink: ${WHITE_OKLCH};`);
   lines.push("}", "");
   lines.push(".tfl-northern-halo-stroke {");
   lines.push(
@@ -391,6 +444,7 @@ const upsertRegistryItem = (artefacts: ColourTokensArtefacts): void => {
     title: "TfL colours",
     description:
       "Installable TfL line/mode OKLCH colour tokens with data-line role bindings, a11y adaptations, and an importable line→colour map for static Tailwind classes.",
+    dependencies: ["tfl-ts@^2.9.0"],
     cssVars: artefacts.cssVars,
     css: artefacts.css,
     files: [
@@ -403,6 +457,16 @@ const upsertRegistryItem = (artefacts: ColourTokensArtefacts): void => {
         path: "lib/tfl/line-colour-map.ts",
         type: "registry:lib",
         target: "lib/tfl/line-colour-map.ts",
+      },
+      {
+        path: "lib/tfl/route-track.ts",
+        type: "registry:lib",
+        target: "lib/tfl/route-track.ts",
+      },
+      {
+        path: "lib/tfl/line-diagram.ts",
+        type: "registry:lib",
+        target: "lib/tfl/line-diagram.ts",
       },
     ],
   };

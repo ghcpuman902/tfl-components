@@ -1,11 +1,10 @@
 import { LineBadge } from "@/components/tfl/brand/line-badge";
-import { CABLE_CAR_MAP_COLOUR } from "@/lib/tfl/brand-colours";
 import { LINE_COLOUR_TOKENS } from "@/lib/tfl/line-colour-map";
 
 const CHIP_LINES = LINE_COLOUR_TOKENS.map((token) => ({
   id: token.id,
   name: token.name,
-  mapColor: token.id === "cable-car" ? CABLE_CAR_MAP_COLOUR.hex : undefined,
+  diagram: token.id === "cable-car",
 }));
 
 /** Flex-wrap wall of every published line / mode colour as a LineBadge chip. */
@@ -16,7 +15,7 @@ export const LineChipWall = () => (
         key={line.id}
         lineId={line.id}
         name={line.name}
-        color={line.mapColor}
+        diagram={line.diagram}
       />
     ))}
   </div>

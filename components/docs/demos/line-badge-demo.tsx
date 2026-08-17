@@ -6,7 +6,6 @@ import {
   LineBadgeGroup,
   LineColorBar,
 } from "@/components/tfl/brand/line-badge";
-import { CABLE_CAR_MAP_COLOUR } from "@/lib/tfl/brand-colours";
 import {
   getLineColourBarMode,
   LINE_COLOUR_TOKENS,
@@ -16,7 +15,7 @@ const DEMO_LINES = LINE_COLOUR_TOKENS.map((token) => ({
   id: token.id,
   name: token.name,
   modeName: getLineColourBarMode(token.id),
-  mapColor: token.id === "cable-car" ? CABLE_CAR_MAP_COLOUR.hex : undefined,
+  diagram: token.id === "cable-car",
 }));
 
 /** Real stations where distinct brand colours share platforms / track. */
@@ -54,8 +53,8 @@ export default function LineBadgeDemo() {
           >
             Colours
           </a>
-          . Cable Car chips use map red via an explicit{" "}
-          <code className="text-xs">color</code> override.
+          . Cable Car chips use map red via{" "}
+          <code className="text-xs">diagram</code>.
         </p>
         <LineChipWall />
       </section>
@@ -133,7 +132,7 @@ export default function LineBadgeDemo() {
               <LineColorBar
                 lineId={line.id}
                 modeName={line.modeName}
-                color={line.mapColor}
+                diagram={line.diagram}
                 heightClass="h-[6px]"
               />
             </div>

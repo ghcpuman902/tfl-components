@@ -244,7 +244,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "colours",
     title: "Colours",
     description:
-      "Official TfL line and mode colours — install tokens, map line ids, copy HEX or OKLCH.",
+      "Official TfL line and mode colours. Arrivals boards and status already apply them.",
     group: "foundations",
     kind: "page",
     href: "/docs/colors",

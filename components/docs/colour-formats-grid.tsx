@@ -130,12 +130,12 @@ const ColourCard = ({
   return (
     <article className="flex min-w-0 flex-col gap-2 border-b border-border pb-3">
       <div className="space-y-1.5">
-        <h3
+        <p
           data-line={line.id}
           className="tfl-dark-line-text text-xl leading-7 font-semibold text-[var(--line-color)]"
         >
           {line.name}
-        </h3>
+        </p>
         <LineColorBar
           lineId={line.id}
           modeName={line.modeName}
@@ -147,7 +147,7 @@ const ColourCard = ({
         label={`${line.name} print`}
         value={row.print.value}
         tone="print"
-        className="px-2 py-2"
+        className="px-2 py-1.5"
       >
         <span className="flex flex-col gap-0.5">
           <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -186,7 +186,7 @@ const ColourCard = ({
               style={{ backgroundColor: light.cssColor }}
             />
           </span>
-          <span className="font-mono text-[10px] leading-snug break-all text-black/80">
+          <span className="font-mono text-[8px] leading-tight whitespace-nowrap text-black/80">
             {light.value}
           </span>
         </CopyButton>
@@ -213,7 +213,7 @@ const ColourCard = ({
               style={{ backgroundColor: dark.cssColor }}
             />
           </span>
-          <span className="font-mono text-[10px] leading-snug break-all text-white/90">
+          <span className="font-mono text-[8px] leading-tight whitespace-nowrap text-white/90">
             {dark.value}
           </span>
         </CopyButton>
@@ -244,33 +244,24 @@ export const ColourFormatsGrid = ({
         ) : (
           <span />
         )}
-        <div className="flex items-center gap-2">
-          <label
-            htmlFor="colour-format-select"
-            className="text-sm text-muted-foreground"
+        <Select
+          value={format}
+          onValueChange={(value) => {
+            if (value === "hex" || value === "oklch") setFormat(value);
+          }}
+        >
+          <SelectTrigger
+            id="colour-format-select"
+            size="sm"
+            aria-label="Screen colour format"
           >
-            Screen format
-          </label>
-          <Select
-            value={format}
-            onValueChange={(value) => {
-              if (value === "hex" || value === "oklch") setFormat(value);
-            }}
-          >
-            <SelectTrigger
-              id="colour-format-select"
-              size="sm"
-              className="min-w-28"
-              aria-label="Screen colour format"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="hex">HEX</SelectItem>
-              <SelectItem value="oklch">OKLCH</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent alignItemWithTrigger={false} align="end">
+            <SelectItem value="hex">HEX</SelectItem>
+            <SelectItem value="oklch">OKLCH</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
