@@ -1,5 +1,7 @@
 ## Get bike points
 
+Use `getById` when the interface follows one known dock:
+
 ```ts
 import TflClient from "tfl-ts"
 
@@ -7,14 +9,10 @@ const tfl = new TflClient({
   appKey: process.env.TFL_APP_KEY!,
 })
 
-const data = await Promise.all([
-  tfl.bikePoint.getById("BikePoints_237"),
-  tfl.bikePoint.getById("BikePoints_490"),
-  tfl.bikePoint.getById("BikePoints_46"),
-])
+const dock = await tfl.bikePoint.getById("BikePoints_237")
 ```
 
-`data` is the public `tfl.bikePoint.getById()` row type, aliased here as `CycleHireDock`. Nearby search:
+Search by radius when location helps someone compare nearby docks:
 
 ```ts
 const nearby = await tfl.bikePoint.getByRadius({
@@ -22,19 +20,34 @@ const nearby = await tfl.bikePoint.getByRadius({
   lon: -0.067048,
   radius: 500,
 })
-// nearby.places, same shape
+
+const data = nearby.places
 ```
 
-On this docs site, `getCachedBikePoints` in `@/lib/tfl/cycle-hire-data` wraps the curated IDs with Cache Components.
+Both methods return the public bike-point row shape, aliased here as
+`CycleHireDock`.
 
-Neither surface fetches. Layout chrome, full-screen map, Sheet, floating card, stays in the app.
+The components do not fetch. Pass one or more bike-point rows as `data`. Add
+full-screen layout, sheets, and floating cards in the app.
 
-## Render
+## Render one dock
 
-### App Router pages (explicit `data` on each surface)
+Most placements only need one dock. The detail view shows exact standard-bike,
+e-bike, and empty-space counts with an occupancy bar.
 
-`CycleHireDocksMap` and `CycleHireDocksDetail` are plain named exports —
-render them straight from a Server Component page:
+```tsx
+import { CycleHireDocksDetail } from "@/components/tfl/cycle-hire/cycle-hire-docks"
+
+export function DockAvailability({ dock }) {
+  return <CycleHireDocksDetail data={[dock]} hideHeader />
+}
+```
+
+## Compare nearby docks
+
+Use the map when position helps distinguish two or more docks. Pair it with
+Detail when exact counts matter. In a Server Component, pass the same rows to
+the named exports:
 
 ```tsx
 import {
@@ -43,25 +56,21 @@ import {
 } from "@/components/tfl/cycle-hire/cycle-hire-docks"
 
 export default async function Page() {
-  const data = await getBikePoints()
+  const data = await getNearbyBikePoints()
   return (
     <>
-      <CycleHireDocksMap data={data} className="h-dvh" />
+      <CycleHireDocksMap data={data} />
       <CycleHireDocksDetail data={data} hideHeader />
     </>
   )
 }
 ```
 
-### Client-only pages (shared `data` via the compound)
+### Share data in a Client Component
 
 `CycleHireDocks.Map` / `CycleHireDocks.Detail` read `data` from a Provider
-instead of a prop, so you don't have to pass it twice. The compound is a
-static property on a Client Component (`"use client"`) — resolve `data` in a
-Server Component first, then hand it to a Client Component that renders the
-compound. Reaching `CycleHireDocks.Map` from a Server Component module
-throws (RSC client references don't keep static properties); use the named
-exports above there instead.
+instead of a prop. Resolve `data` in a Server Component, then pass it to a
+Client Component that renders the compound:
 
 ```tsx
 "use client"
@@ -79,34 +88,24 @@ export function DocksView({ data }) {
 
 Mount one surface or both.
 
+The compound is a static property on a Client Component. Do not access
+`CycleHireDocks.Map` from a Server Component module because React Server
+Component references do not preserve static properties. Use the named exports
+there instead.
+
 ## Variations
 
-### Curated demo docks
-
-```tsx
-import {
-  CycleHireDocks,
-  DEFAULT_CYCLE_HIRE_DOCK_IDS,
-} from "@/components/tfl/cycle-hire/cycle-hire-docks"
-import { getCachedBikePoints } from "@/lib/tfl/cycle-hire-data"
-
-export default async function Page() {
-  const data = await getCachedBikePoints(DEFAULT_CYCLE_HIRE_DOCK_IDS)
-  return (
-    <CycleHireDocks data={data}>
-      <CycleHireDocks.Map />
-      <CycleHireDocks.Detail hideHeader />
-    </CycleHireDocks>
-  )
-}
-```
-
 ### Single dock row
+
+Use the row alone when the surrounding interface already provides the heading
+and layout:
 
 ```tsx
 import { CycleHireDockRow } from "@/components/tfl/cycle-hire/cycle-hire-docks"
 
-<CycleHireDockRow dock={data[0]} />
+export function DockAvailabilityRow({ dock }) {
+  return <CycleHireDockRow dock={dock} />
+}
 ```
 
 ### Show broken docks
@@ -119,14 +118,17 @@ Broken slots are hidden by default. Pass `showBroken` on Detail or a row:
 
 ## Props
 
-| Prop / API | Type | Description |
-|------------|------|-------------|
-| `CycleHireDocks` | `{ data, children }` | Optional Provider root. Inject `data` once for Map / Detail children. |
-| `CycleHireDocks.Map` / `CycleHireDocksMap` | `data?`, `className?` | OSM MapLibre surface. Markers need `lat` / `lon` on each row. |
-| `CycleHireDocks.Detail` / `CycleHireDocksDetail` | `data?`, `showBroken?`, `hideHeader?` | Occupancy bars and counts. |
-| `showBroken` | `boolean` | Include broken docks in the detail bar. Default `false`. |
+| Prop / API                                       | Type                                  | Description                                                           |
+| ------------------------------------------------ | ------------------------------------- | --------------------------------------------------------------------- |
+| `CycleHireDocks`                                 | `{ data, children }`                  | Optional Provider root. Inject `data` once for Map / Detail children. |
+| `CycleHireDocks.Map` / `CycleHireDocksMap`       | `data?`, `className?`                 | OSM MapLibre surface. Markers need `lat` / `lon` on each row.         |
+| `CycleHireDocks.Detail` / `CycleHireDocksDetail` | `data?`, `showBroken?`, `hideHeader?` | Occupancy bars and counts.                                            |
+| `showBroken`                                     | `boolean`                             | Include broken docks in the detail bar. Default `false`.              |
 
-Map markers: bike, then e-bike, then empty ring. Broken omitted. Lucide `Bike` in the centre. Map labels use `StationName`. They hang below the pin, then flip above when they would cover another pin or leave the map.
+Map markers show the proportion of standard bikes, e-bikes, and empty spaces.
+They do not show exact counts. Each marker's accessible name contains the dock
+name and counts. Labels move above the pin when the usual position would cover
+another pin or leave the map.
 
 Detail segment order: bike, e-bike, empty, then broken when `showBroken`. Accents on light UI: classic bikes `red-500`, e-bikes `cyan-400`, broken `amber-300`.
 

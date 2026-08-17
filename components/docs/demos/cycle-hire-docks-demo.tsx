@@ -1,37 +1,33 @@
-import { Suspense } from "react";
+import { Suspense } from "react"
 import {
   DEFAULT_CYCLE_HIRE_DOCK_IDS,
   CycleHireDocksBoardSkeleton,
-} from "@/components/tfl/cycle-hire/cycle-hire-docks";
-import { CycleHireDocksDemoClient } from "@/components/docs/demos/cycle-hire-docks-demo-client";
-import { DataSourceLabel } from "@/components/docs/data-source-label";
-import { getCachedBikePoints } from "@/lib/tfl/cycle-hire-data";
+} from "@/components/tfl/cycle-hire/cycle-hire-docks"
+import { CycleHireDocksDemoClient } from "@/components/docs/demos/cycle-hire-docks-demo-client"
+import { getCachedBikePoints } from "@/lib/tfl/cycle-hire-data"
 
 const CycleHirePreviewFallback = () => (
   <div className="flex flex-col gap-8">
     <div className="space-y-3">
-      <p className="text-sm font-medium text-foreground">Map</p>
-      <div
-        className="h-64 animate-pulse rounded-lg bg-muted"
-        aria-hidden
-      />
+      <p className="text-sm font-medium text-foreground">Single dock</p>
+      <CycleHireDocksBoardSkeleton dockCount={1} />
     </div>
     <div className="space-y-3">
-      <p className="text-sm font-medium text-foreground">Detail</p>
-      <CycleHireDocksBoardSkeleton />
+      <p className="text-sm font-medium text-foreground">Nearby docks</p>
+      <div className="h-64 animate-pulse rounded-lg bg-muted" aria-hidden />
     </div>
   </div>
-);
+)
 
 async function CycleHireDocksLive() {
-  let data: Awaited<ReturnType<typeof getCachedBikePoints>> = [];
-  let error: string | null = null;
+  let data: Awaited<ReturnType<typeof getCachedBikePoints>> = []
+  let error: string | null = null
 
   try {
-    data = (await getCachedBikePoints(DEFAULT_CYCLE_HIRE_DOCK_IDS)) ?? [];
+    data = (await getCachedBikePoints(DEFAULT_CYCLE_HIRE_DOCK_IDS)) ?? []
   } catch {
     error =
-      "Could not load cycle hire docks. Check TfL credentials and try again.";
+      "Could not load cycle hire docks. Check TfL credentials and try again."
   }
 
   if (error) {
@@ -39,20 +35,16 @@ async function CycleHireDocksLive() {
       <p className="text-sm text-destructive" role="alert">
         {error}
       </p>
-    );
+    )
   }
 
-  return <CycleHireDocksDemoClient data={data} />;
+  return <CycleHireDocksDemoClient data={data} />
 }
 
-/** Fetch in the docs layer; board only receives `data`. */
 export default function CycleHireDocksDemo() {
   return (
-    <div className="space-y-4">
-      <Suspense fallback={<CycleHirePreviewFallback />}>
-        <CycleHireDocksLive />
-      </Suspense>
-      <DataSourceLabel source="cached" />
-    </div>
-  );
+    <Suspense fallback={<CycleHirePreviewFallback />}>
+      <CycleHireDocksLive />
+    </Suspense>
+  )
 }

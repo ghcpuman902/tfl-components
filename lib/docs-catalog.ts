@@ -395,7 +395,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "cycle-hire-docks",
     title: "Cycle hire docks",
     description:
-      "Santander Cycles docks as a map and a detail list, from the same bike-point rows.",
+      "Show exact Santander Cycles availability for one dock, or compare nearby docks on a map.",
     group: "interfaces",
     kind: "component",
     href: "/docs/cycle-hire-docks",

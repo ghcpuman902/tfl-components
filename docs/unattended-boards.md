@@ -1,8 +1,9 @@
 # Unattended boards
 
 **Status: arrivals, Tube/rail status, and hosted Board follow this contract.**
-Cycle hire is still a design spike (`docs/cycle-hire-unattended.md`). Do not
-present Board as a finished iPad or signage product until home-screen,
+The cycle hire design is decided but not implemented
+(`docs/cycle-hire-unattended.md`). Do not present Board as a finished iPad or
+signage product until home-screen,
 standalone, long-running, reconnect, and wake-from-sleep checks are done.
 
 ## Decision
@@ -107,6 +108,24 @@ Bus disruption information is unresolved. It may become:
 Do not make the arrivals rows variable-height to fit disruption prose. Prototype
 both compositions against the same prepared disruption model before deciding
 the public component boundary.
+
+## Cycle hire docks
+
+Keep the existing map and expanding detail list. A compact sibling display uses
+the same 48px tile as arrivals and status. One dock occupies one tile with its
+name, exact standard-bike, e-bike, and space counts, plus an occupancy bar
+painted inside the bottom edge.
+
+The author chooses the number of visible dock tiles. One dock stays still and
+refreshes in place. When the supplied list exceeds the allocation, interactive
+use pages the dock frames and unattended use advances them. Backfill only a
+short final frame. Do not pin the first dock.
+
+The map has no display behaviour prop. Give it a fixed height in whole Board
+tiles and refresh markers in place. Keep ratio markers free of exact counts.
+Compose the compact dock display with the map when exact counts matter. See
+[`cycle-hire-unattended.md`](./cycle-hire-unattended.md) for the full anatomy,
+refresh rules, and acceptance cases.
 
 ## Fixed-height status display
 
@@ -234,10 +253,9 @@ The installable components should use a hybrid API:
   branch in that component.
 - Keep both status surfaces on the existing Tube and rail status documentation
   page. Do not create Interactive and Unattended sidebar groups.
-- Leave the Cycle hire boundary open until its unattended anatomy is designed.
-  If it changes only which dock rows are visible, it can extend Detail. If it
-  introduces a fixed display sequence with different chrome, it should become
-  a sibling surface over the same dock data.
+- Keep the current Cycle hire Detail and Map components. Add the compact
+  fixed-height dock display as a sibling over the same dock data. Keep all three
+  forms on the existing Cycle hire docks documentation page.
 
 The hosted Board can expose one global toggle. Registry components should not
 read hidden Board context as their only API. A developer using one component
@@ -257,7 +275,7 @@ need deterministic coverage.
 | Arrivals pinned frames and rank chips | About 450 lines of current paging and page paint | 150 to 240 lines, plus the shared controller | Extending the existing arrivals components avoids duplicating row rendering. |
 | Fixed-height status display | 518-line expanding renderer and 110-line prepared model | 300 to 450 lines, plus the shared controller | A sibling keeps the existing renderer readable and shares the prepared model. |
 | Status as a branch inside `TubeStatusBoard` | Same 628-line base | Similar 280 to 420 lines | It saves a public export, not much logic. The main file would approach 800 to 950 lines with two incompatible anatomies. |
-| Cycle hire unattended display | 248-line Detail and 47-line compound root | 120 to 220 lines if row paint is reused | Estimate is provisional until the sequence and one-tile state are designed. |
+| Cycle hire compact display | 248-line Detail and 47-line compound root | 180 to 280 lines, plus the shared controller | A sibling preserves Detail's natural-height rows and owns tile paging. |
 | Hosted Board mode plumbing | About 1,170 lines across display, settings, resolver, and URL state | 80 to 140 lines | Keep it as orchestration that passes intent down, not a second rendering system. |
 
 The size estimate favours the hybrid. One prop everywhere would make the status
@@ -368,7 +386,16 @@ tracking semantics.
 - Test a single-route commute board and a multi-route stop.
 - Promote one or both only after the information hierarchy is clear.
 
-### 6. Return to hosted Board
+### 6. Build the cycle hire display
+
+- Add the one-tile dock row and fixed tile allocation.
+- Reuse the shared unattended controller for overflow frames.
+- Keep a single frame free of paging chrome and timers.
+- Verify count refresh, membership changes, final-frame backfill, and fixed
+  empty and error states.
+- Admit the existing map only with a height expressed in whole Board tiles.
+
+### 7. Return to hosted Board
 
 - Replace the reserved mouse/touch URL model with use intent.
 - Compose only panels that satisfy the unattended contract.
@@ -376,7 +403,7 @@ tracking semantics.
 - Complete home-screen, standalone, long-running, reconnect, and wake-from-sleep
   testing before making the "quickest way to set up an iPad" claim.
 
-### 7. Extend the geographic map
+### 8. Extend the geographic map
 
 - Add bus route geometry as a provider-independent layer.
 - Investigate live bus and train position sources.
