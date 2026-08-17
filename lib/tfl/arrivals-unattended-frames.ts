@@ -5,6 +5,8 @@ import type {
 } from "@/lib/tfl/arrivals-prepare"
 import { chunkBoundPages } from "@/lib/tfl/arrivals-prepare"
 
+export type ArrivalsPinAdvance = "slide" | "jump"
+
 export type ArrivalsUnattendedFrame = ArrivalsPageFill & {
   id: string
   /** 1-based ranks in the full ordered list, aligned with `rows`. */
@@ -44,18 +46,24 @@ const fillFrame = (
 }
 
 /**
- * Unattended arrival frames. Default pins the first arrival and rotates the
- * remaining slots: 1 2 3 4 → 1 5 6 7 → 1 8 9 10.
+ * Unattended arrival frames. Default pins the first arrival and slides the
+ * remaining slots by one: 1 2 3 → 1 3 4. `pinAdvance: "jump"` skips a full
+ * window: 1 2 3 4 → 1 5 6 7.
  */
 export const buildPinnedFrames = (
   rows: readonly ArrivalsPreparedRow[],
   pageSize: number,
-  options?: { pinFirst?: boolean; lockHeight?: ArrivalsLockHeight }
+  options?: {
+    pinFirst?: boolean
+    pinAdvance?: ArrivalsPinAdvance
+    lockHeight?: ArrivalsLockHeight
+  }
 ): {
   frames: ArrivalsUnattendedFrame[]
   pageCount: number
 } => {
   const pinFirst = options?.pinFirst ?? true
+  const pinAdvance = options?.pinAdvance ?? "slide"
   const lockHeight = options?.lockHeight ?? true
 
   if (pageSize <= 0) {
@@ -83,8 +91,13 @@ export const buildPinnedFrames = (
 
   const rotating = rows.slice(1)
   const windowSize = pageSize - 1
+  const lastStart =
+    pinAdvance === "jump"
+      ? Math.max(0, rotating.length - 1)
+      : Math.max(0, rotating.length - windowSize)
+  const step = pinAdvance === "jump" ? windowSize : 1
   const frames: ArrivalsUnattendedFrame[] = []
-  for (let start = 0; start < rotating.length; start += windowSize) {
+  for (let start = 0; start <= lastStart; start += step) {
     const rest = rotating.slice(start, start + windowSize)
     const visible = [pinned, ...rest]
     const chunked = chunkBoundPages(visible, pageSize, { lockHeight: true })

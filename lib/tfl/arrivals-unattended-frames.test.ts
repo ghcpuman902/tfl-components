@@ -14,27 +14,55 @@ const keys = (frames: ReturnType<typeof buildPinnedFrames>["frames"]) =>
   frames.map((frame) => frame.rows.map((item) => item.key))
 
 describe("buildPinnedFrames", () => {
-  it("pins the first arrival and rotates the remaining slots", () => {
+  it("pins the first arrival and slides later slots by one", () => {
+    const rows = Array.from({ length: 5 }, (_, index) =>
+      row(`r${index + 1}`, index)
+    )
+    const { frames, pageCount } = buildPinnedFrames(rows, 3)
+    assert.equal(pageCount, 3)
+    assert.deepEqual(keys(frames), [
+      ["r1", "r2", "r3"],
+      ["r1", "r3", "r4"],
+      ["r1", "r4", "r5"],
+    ])
+    assert.deepEqual(frames[0]?.ranks, [1, 2, 3])
+    assert.deepEqual(frames[1]?.ranks, [1, 3, 4])
+    assert.deepEqual(frames[2]?.ranks, [1, 4, 5])
+  })
+
+  it("keeps a short last window when jump cannot fill it", () => {
+    const rows = Array.from({ length: 8 }, (_, index) =>
+      row(`r${index + 1}`, index)
+    )
+    const { frames } = buildPinnedFrames(rows, 4, { pinAdvance: "jump" })
+    assert.deepEqual(keys(frames), [
+      ["r1", "r2", "r3", "r4"],
+      ["r1", "r5", "r6", "r7"],
+      ["r1", "r8"],
+    ])
+  })
+
+  it("jumps a full window when pinAdvance is jump", () => {
     const rows = Array.from({ length: 10 }, (_, index) =>
       row(`r${index + 1}`, index)
     )
-    const { frames, pageCount } = buildPinnedFrames(rows, 4)
+    const { frames, pageCount } = buildPinnedFrames(rows, 4, {
+      pinAdvance: "jump",
+    })
     assert.equal(pageCount, 3)
     assert.deepEqual(keys(frames), [
       ["r1", "r2", "r3", "r4"],
       ["r1", "r5", "r6", "r7"],
       ["r1", "r8", "r9", "r10"],
     ])
-    assert.deepEqual(frames[0]?.ranks, [1, 2, 3, 4])
     assert.deepEqual(frames[1]?.ranks, [1, 5, 6, 7])
-    assert.deepEqual(frames[2]?.ranks, [1, 8, 9, 10])
   })
 
   it("keeps ranks stable when the first arrival is pinned", () => {
     const rows = [row("a", 0), row("b", 1), row("c", 2), row("d", 3), row("e", 4)]
     const { frames } = buildPinnedFrames(rows, 3)
     assert.deepEqual(frames[0]?.ranks, [1, 2, 3])
-    assert.deepEqual(frames[1]?.ranks, [1, 4, 5])
+    assert.deepEqual(frames[1]?.ranks, [1, 3, 4])
   })
 
   it("rotates equally when pinFirst is off", () => {
@@ -78,6 +106,6 @@ describe("buildPinnedFrames", () => {
     const flat = buildPinnedFrames(rows, 3)
     const grouped = buildPinnedFrames(rows, 3)
     assert.deepEqual(keys(flat.frames), keys(grouped.frames))
-    assert.deepEqual(flat.frames[1]?.ranks, [1, 4, 5])
+    assert.deepEqual(flat.frames[1]?.ranks, [1, 3, 4])
   })
 })

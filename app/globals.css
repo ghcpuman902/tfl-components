@@ -235,6 +235,31 @@ html[data-tfl-type-profile="johnston-compatible"] {
  * Instant swap (no fade). Codes start hidden so delayed items do not stack
  * on first paint — only :first-child is visible before its animation starts.
  */
+@keyframes tfl-unattended-dwell {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.tfl-unattended-dwell {
+  transform-origin: left center;
+  animation: tfl-unattended-dwell var(--unattended-dwell, 10s) linear forwards;
+}
+
+.tfl-unattended-dwell[data-paused="true"] {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tfl-unattended-dwell {
+    animation: none;
+    transform: scaleX(0);
+  }
+}
+
 @keyframes tfl-line-code-cycle-2 {
   0%,
   50% {

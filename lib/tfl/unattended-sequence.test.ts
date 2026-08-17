@@ -7,6 +7,7 @@ import {
   resumeUnattendedSequence,
   splitTextFrames,
   tickUnattendedSequence,
+  unattendedDwellProgress,
 } from "@/lib/tfl/unattended-sequence"
 
 const IDS = ["a", "b", "c"] as const
@@ -128,6 +129,25 @@ describe("tickUnattendedSequence", () => {
       nowMs: UNATTENDED_DEFAULT_DWELL_MS * 3,
     })
     assert.equal(state.itemId, "a")
+  })
+})
+
+describe("unattendedDwellProgress", () => {
+  it("stays at 0 for a single frame", () => {
+    const state = createUnattendedSequence({ itemIds: ["only"], nowMs: 0 })
+    assert.equal(unattendedDwellProgress(state, { itemCount: 1 }), 0)
+  })
+
+  it("reports elapsed share of the dwell", () => {
+    let state = createUnattendedSequence({ itemIds: IDS, nowMs: 0 })
+    state = tickUnattendedSequence(state, {
+      itemIds: IDS,
+      nowMs: 2_500,
+    })
+    assert.equal(
+      unattendedDwellProgress(state, { itemCount: IDS.length }),
+      0.25
+    )
   })
 })
 

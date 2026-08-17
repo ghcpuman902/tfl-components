@@ -8,6 +8,7 @@ import {
   parseArrivalsRows,
   parseBehaviour,
   parseLineIdItem,
+  parsePinAdvance,
   parseRowsItem,
   serializeArrivalsLines,
   serializeArrivalsRows,
@@ -119,5 +120,13 @@ describe("behaviour parser", () => {
     assert.equal(parseBehaviour("unattended"), "unattended");
     assert.equal(parseBehaviour("static"), "interactive");
     assert.equal(parseBehaviour("voice"), undefined);
+  });
+});
+
+describe("pinAdvance parser", () => {
+  it("accepts slide and jump", () => {
+    assert.equal(parsePinAdvance("slide"), "slide");
+    assert.equal(parsePinAdvance("jump"), "jump");
+    assert.equal(parsePinAdvance("skip"), undefined);
   });
 });

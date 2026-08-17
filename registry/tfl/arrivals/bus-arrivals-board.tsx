@@ -14,6 +14,7 @@ import {
   type BusArrivalsGroupSortBy,
   type BusArrivalsSortBy,
 } from "@/lib/tfl/arrivals-prepare"
+import type { ArrivalsPinAdvance } from "@/lib/tfl/arrivals-unattended-frames"
 import type { DisplayBehaviour } from "@/lib/tfl/unattended-sequence"
 
 export type BusArrivalsBoardProps = ArrivalsBoardChromeProps & {
@@ -57,6 +58,8 @@ export type BusArrivalsBoardProps = ArrivalsBoardChromeProps & {
   behaviour?: DisplayBehaviour
   /** Unattended: keep the first arrival visible while later slots rotate. */
   pinFirst?: boolean
+  /** Unattended, when pinned: slide later slots by one, or jump a full window. */
+  pinAdvance?: ArrivalsPinAdvance
   dwellMs?: number
   startDelayMs?: number
   /**
@@ -110,6 +113,7 @@ export const BusArrivalsBoard = ({
   pageSize = 3,
   behaviour,
   pinFirst,
+  pinAdvance,
   dwellMs,
   startDelayMs,
   stopLetter,
@@ -153,6 +157,7 @@ export const BusArrivalsBoard = ({
       pageSize={pageSize}
       behaviour={behaviour}
       pinFirst={pinFirst}
+      pinAdvance={pinAdvance}
       dwellMs={dwellMs}
       startDelayMs={startDelayMs}
       className={className}

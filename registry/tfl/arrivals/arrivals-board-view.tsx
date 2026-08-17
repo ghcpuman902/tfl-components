@@ -27,6 +27,7 @@ import {
   ArrivalsPagedList,
   type ArrivalsBoardClassNames,
 } from "@/components/tfl/arrivals/arrivals-bound-group"
+import type { ArrivalsPinAdvance } from "@/lib/tfl/arrivals-unattended-frames"
 import type { DisplayBehaviour } from "@/lib/tfl/unattended-sequence"
 
 export type { DisplayBehaviour }
@@ -205,6 +206,7 @@ const GroupBody = ({
   classNames,
   behaviour,
   pinFirst,
+  pinAdvance,
   dwellMs,
   startDelayMs,
 }: {
@@ -214,6 +216,7 @@ const GroupBody = ({
   classNames?: ArrivalsBoardClassNames
   behaviour?: DisplayBehaviour
   pinFirst?: boolean
+  pinAdvance?: ArrivalsPinAdvance
   dwellMs?: number
   startDelayMs?: number
 }) => {
@@ -279,6 +282,7 @@ const GroupBody = ({
           classNames={classNames}
           behaviour={behaviour}
           pinFirst={pinFirst}
+          pinAdvance={pinAdvance}
           dwellMs={dwellMs}
           startDelayMs={startDelayMs}
         />
@@ -333,6 +337,8 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
   behaviour?: DisplayBehaviour
   /** Unattended: keep the first arrival visible while later slots rotate. */
   pinFirst?: boolean
+  /** Unattended, when pinned: slide later slots by one, or jump a full window. */
+  pinAdvance?: ArrivalsPinAdvance
   dwellMs?: number
   startDelayMs?: number
   /**
@@ -370,6 +376,7 @@ export const ArrivalsBoardView = ({
   pageSizeByLine,
   behaviour,
   pinFirst,
+  pinAdvance,
   dwellMs,
   startDelayMs,
   className,
@@ -462,6 +469,7 @@ export const ArrivalsBoardView = ({
           classNames={classNames}
           behaviour={behaviour}
           pinFirst={pinFirst}
+          pinAdvance={pinAdvance}
           dwellMs={dwellMs}
           startDelayMs={startDelayMs}
         />
@@ -481,6 +489,7 @@ export const ArrivalsBoardView = ({
               classNames={classNames}
               behaviour={behaviour}
               pinFirst={pinFirst}
+              pinAdvance={pinAdvance}
               dwellMs={dwellMs}
               startDelayMs={startDelayMs}
             />
@@ -518,6 +527,7 @@ export const ArrivalsBoardView = ({
                 classNames={classNames}
                 behaviour={behaviour}
                 pinFirst={pinFirst}
+                pinAdvance={pinAdvance}
                 dwellMs={dwellMs}
                 startDelayMs={startDelayMs}
               />

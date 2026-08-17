@@ -16,6 +16,7 @@ import {
   reconcileUnattendedSequence,
   resumeUnattendedSequence,
   tickUnattendedSequence,
+  unattendedDwellProgress,
   type UnattendedPauseReason,
 } from "@/lib/tfl/unattended-sequence"
 
@@ -30,6 +31,8 @@ export type UseUnattendedSequenceOptions = {
 export type UseUnattendedSequenceResult = {
   index: number
   itemId: string | null
+  progress: number
+  started: boolean
   pauseReasons: readonly UnattendedPauseReason[]
   handlePointerEnter: PointerEventHandler<HTMLElement>
   handlePointerLeave: PointerEventHandler<HTMLElement>
@@ -50,6 +53,8 @@ export const useUnattendedSequence = ({
 
   const [index, setIndex] = useState(0)
   const [itemId, setItemId] = useState<string | null>(itemIds[0] ?? null)
+  const [progress, setProgress] = useState(0)
+  const [started, setStarted] = useState(startDelayMs <= 0)
   const [hovering, setHovering] = useState(false)
   const [focused, setFocused] = useState(false)
   const [hidden, setHidden] = useState(false)
@@ -74,9 +79,17 @@ export const useUnattendedSequence = ({
       nowMs: Date.now(),
       startDelayMs,
     })
-    setIndex(stateRef.current.index)
-    setItemId(stateRef.current.itemId)
-  }, [enabled, startDelayMs])
+    const next = stateRef.current
+    setIndex(next.index)
+    setItemId(next.itemId)
+    setStarted(next.remainingStartDelayMs <= 0)
+    setProgress(
+      unattendedDwellProgress(next, {
+        dwellMs,
+        itemCount: itemIdsRef.current.length,
+      })
+    )
+  }, [dwellMs, enabled, startDelayMs])
 
   useEffect(() => {
     if (!enabled) return
@@ -84,7 +97,11 @@ export const useUnattendedSequence = ({
     stateRef.current = next
     setIndex(next.index)
     setItemId(next.itemId)
-  }, [enabled, itemKey, itemIds])
+    setStarted(next.remainingStartDelayMs <= 0)
+    setProgress(
+      unattendedDwellProgress(next, { dwellMs, itemCount: itemIds.length })
+    )
+  }, [dwellMs, enabled, itemKey, itemIds])
 
   useEffect(() => {
     if (!enabled) return
@@ -97,6 +114,16 @@ export const useUnattendedSequence = ({
             stateRef.current,
             Date.now()
           )
+          const next = stateRef.current
+          setIndex(next.index)
+          setItemId(next.itemId)
+          setStarted(next.remainingStartDelayMs <= 0)
+          setProgress(
+            unattendedDwellProgress(next, {
+              dwellMs,
+              itemCount: itemIdsRef.current.length,
+            })
+          )
         }
         return nextHidden
       })
@@ -105,7 +132,7 @@ export const useUnattendedSequence = ({
     syncHidden()
     document.addEventListener("visibilitychange", syncHidden)
     return () => document.removeEventListener("visibilitychange", syncHidden)
-  }, [enabled])
+  }, [dwellMs, enabled])
 
   useEffect(() => {
     if (!enabled || itemIds.length <= 1) return
@@ -124,6 +151,13 @@ export const useUnattendedSequence = ({
       stateRef.current = next
       setIndex(next.index)
       setItemId(next.itemId)
+      setStarted(next.remainingStartDelayMs <= 0)
+      setProgress(
+        unattendedDwellProgress(next, {
+          dwellMs,
+          itemCount: itemIdsRef.current.length,
+        })
+      )
     }
 
     const interval = window.setInterval(tick, 250)
@@ -162,6 +196,8 @@ export const useUnattendedSequence = ({
   return {
     index,
     itemId,
+    progress,
+    started,
     pauseReasons,
     handlePointerEnter,
     handlePointerLeave,

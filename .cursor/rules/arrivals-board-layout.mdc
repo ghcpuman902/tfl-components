@@ -78,7 +78,10 @@ Shared in `arrivals-bound-group.tsx` (`BoundPager` + `ArrivalsPageTrack`) for ra
 `behaviour="unattended"` keeps the same row tiles and configured height.
 It advances without input. Rank chips show each row's place in the full
 ordered list and do not reset when the frame changes. There is no page
-count. The default pins the first arrival and rotates the remaining slots
+count. A dwell bar sits where the pager controls would be and fills
+through the reading interval. A single frame still shows the bar, empty.
+The default pins the first arrival and slides later slots by one
+(`1 2 3` → `1 3 4`). Set `pinAdvance="jump"` for a full-window skip
 (`1 2 3 4` → `1 5 6 7`). Set `pinFirst={false}` for equal rotation.
 Hover, focus, or a hidden document pauses the panel. Live refresh keeps
 the current arrivals where they still exist; a newly earliest arrival

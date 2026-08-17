@@ -82,6 +82,17 @@ const isPaused = (
   reasons: readonly UnattendedPauseReason[] | undefined
 ): boolean => Boolean(reasons && reasons.length > 0)
 
+/** 0–1 through the current dwell. Stays 0 for one frame or during start delay. */
+export const unattendedDwellProgress = (
+  state: UnattendedSequenceState,
+  options: { dwellMs?: number; itemCount: number }
+): number => {
+  if (options.itemCount <= 1) return 0
+  if (state.remainingStartDelayMs > 0) return 0
+  const dwellMs = Math.max(1, options.dwellMs ?? UNATTENDED_DEFAULT_DWELL_MS)
+  return Math.min(1, state.elapsedMs / dwellMs)
+}
+
 /** Advance elapsed time. Pause reasons freeze the current frame. */
 export const tickUnattendedSequence = (
   state: UnattendedSequenceState,

@@ -62,7 +62,7 @@ Pass `groupBy="route"` when you want route sections. The homepage proof board do
 
 ## Behaviour
 
-Unattended keeps the configured height and rotates later arrivals. Rank chips replace the page count, on both flat and route-grouped boards.
+Unattended keeps the configured height and rotates later arrivals. Rank chips replace the page count, on both flat and route-grouped boards. The first arrival stays pinned; later slots slide by one unless `pinAdvance` is `jump`.
 
 <BusUnattendedDemo />
 
@@ -183,5 +183,6 @@ Keep polling outside the board, then update `data`. Freshness and refresh belong
 | `pageSize` | `number` | Visible arrivals per page, default 3. One page stays short. Multiple pages lock height; a short last page fills with dashes and **No more arrivals**. Grouped: pager on the route header. Flat: trailing tile, always visible on hover pointers. Hidden when only one page. |
 | `behaviour` | `"interactive" \| "unattended"` | Interactive pager, or automatic frames with rank chips. |
 | `pinFirst` | `boolean` | Unattended: keep the next service visible while later slots rotate. Default `true`. |
+| `pinAdvance` | `"slide" \| "jump"` | Unattended, when pinned: slide later slots by one (`1 2 3` then `1 3 4`), or jump a full window. Default `slide`. |
 | `className` | `string` | Root classes, merged over the board container. |
 | `classNames` | `{ groups?, group?, rows? }` | Layout-level class overrides for generated `data-slot` levels. `subgroups` / `subgroup` are rail-only. |

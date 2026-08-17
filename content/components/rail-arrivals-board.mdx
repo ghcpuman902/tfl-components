@@ -91,7 +91,7 @@ A completely flat rail board is a different product. It would need a compressed 
 
 ## Behaviour
 
-Unattended keeps the bound height fixed and rotates later arrivals. Rank chips mark place in the full list. The first arrival stays pinned unless `pinFirst` is false.
+Unattended keeps the bound height fixed and rotates later arrivals. Rank chips mark place in the full list. The first arrival stays pinned; later slots slide by one unless `pinAdvance` is `jump`.
 
 <RailUnattendedDemo />
 
@@ -276,5 +276,6 @@ Keep polling outside the board, then update `data`. Freshness and refresh belong
 | `pageSizeByLine` | `Readonly<Record<string, number>>` | ID-keyed rows-per-bound override. Falls back to `pageSize`. Each value applies to every bound on that line. |
 | `behaviour` | `"interactive" \| "unattended"` | Interactive pager, or automatic frames with rank chips. |
 | `pinFirst` | `boolean` | Unattended: keep the next service visible while later slots rotate. Default `true`. |
+| `pinAdvance` | `"slide" \| "jump"` | Unattended, when pinned: slide later slots by one (`1 2 3` then `1 3 4`), or jump a full window. Default `slide`. |
 | `className` | `string` | Root classes, merged over the board container. |
 | `classNames` | `{ groups?, group?, subgroups?, subgroup?, rows? }` | Layout-level class overrides for generated `data-slot` levels. |

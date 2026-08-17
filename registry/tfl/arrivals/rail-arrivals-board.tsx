@@ -15,6 +15,7 @@ import {
   type RailArrivalsLineSortBy,
   type RailArrivalsSortBy,
 } from "@/lib/tfl/arrivals-prepare"
+import type { ArrivalsPinAdvance } from "@/lib/tfl/arrivals-unattended-frames"
 import type { DisplayBehaviour } from "@/lib/tfl/unattended-sequence"
 
 export { RAIL_ARRIVALS_DEFAULT_PAGE_SIZE } from "@/lib/tfl/arrivals-defaults"
@@ -80,6 +81,8 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
   behaviour?: DisplayBehaviour
   /** Unattended: keep the first arrival visible while later slots rotate. */
   pinFirst?: boolean
+  /** Unattended, when pinned: slide later slots by one, or jump a full window. */
+  pinAdvance?: ArrivalsPinAdvance
   dwellMs?: number
   startDelayMs?: number
   /**
@@ -131,6 +134,7 @@ export const RailArrivalsBoard = ({
   pageSizeByLine,
   behaviour,
   pinFirst,
+  pinAdvance,
   dwellMs,
   startDelayMs,
   loading = false,
@@ -172,6 +176,7 @@ export const RailArrivalsBoard = ({
       pageSizeByLine={pageSizeByLine}
       behaviour={behaviour}
       pinFirst={pinFirst}
+      pinAdvance={pinAdvance}
       dwellMs={dwellMs}
       startDelayMs={startDelayMs}
       className={className}
