@@ -26,7 +26,7 @@ export const explorerSplitHeightClassName =
  * the inspector wraps under. Side by side, fill the split column instead.
  */
 export const explorerResultsPaneClassName =
-  "h-[min(28rem,calc(100svh/3))] min-h-0 min-w-0 @min-[48rem]/explorer:h-0 @min-[48rem]/explorer:flex-1 @min-[48rem]/explorer:overscroll-contain";
+  "h-[min(28rem,calc(100svh/3))] min-h-0 min-w-0 overscroll-y-auto @min-[48rem]/explorer:h-0 @min-[48rem]/explorer:flex-1";
 
 type ExplorerSplitProps = {
   lead: ReactNode;

@@ -10,6 +10,9 @@ export type StationProperties = {
   zone?: string;
 };
 
+/** Which unique-track layer a map should paint. */
+export type TrackModel = "centreline" | "dual";
+
 export type LineSegmentProperties = {
   featureId: string;
   lineId: string;
@@ -17,9 +20,40 @@ export type LineSegmentProperties = {
   color: string;
   /**
    * Parallel-corridor paint offset on full OSM variant bundles.
-   * Omitted on unique-track map geometry (spine + leftover branches only).
+   * Omitted on unique-track map geometry.
    */
   lineOffset?: number;
+  /** Directional group on dual-track geometry (`0` / `1`). */
+  trackGroup?: 0 | 1;
+  /** Nearest station name at this directional group's far end. */
+  towards?: string;
+};
+
+export type TransitGraphNodeKind = "junction" | "terminus";
+
+export type TransitGraphNode = {
+  id: string;
+  kind: TransitGraphNodeKind;
+  coordinates: [number, number];
+  degree: number;
+  lineId: string;
+  stationId?: string;
+  stationName?: string;
+};
+
+export type TransitGraphEdge = {
+  id: string;
+  from: string;
+  to: string;
+  lineId: string;
+  featureId: string;
+  coordinates: [number, number][];
+  lengthMetres: number;
+};
+
+export type TransitGraph = {
+  nodes: TransitGraphNode[];
+  edges: TransitGraphEdge[];
 };
 
 export type StationFeatureCollection = FeatureCollection<

@@ -27,6 +27,7 @@ import {
   MapboxExample,
   GoogleMapsExample,
 } from "@/components/docs/map-geographic-lazy";
+import uniqueTrackManifest from "@/data/geography/unique-track/manifest.json";
 
 export const metadata: Metadata = {
   title: "Map – Tube & Rail (Geo)",
@@ -40,7 +41,8 @@ const USAGE_SNIPPET = `import { TflGeographicMap } from "@/components/tfl/geogra
   <TflGeographicMap />
 </div>
 
-<TflGeographicMap modes={["tube", "elizabeth"]} showStations={false} />`;
+<TflGeographicMap modes={["tube", "elizabeth"]} showStations={false} />
+<TflGeographicMap trackModel="dual" />`;
 
 const BUNDLE_SNIPPET = `type TransitGeometryBundle = {
   lines: FeatureCollection<LineString, {
@@ -48,6 +50,8 @@ const BUNDLE_SNIPPET = `type TransitGeometryBundle = {
     lineId: string      // "victoria"
     lineName: string    // "Victoria line"
     color: string       // "#0098D4"
+    trackGroup?: 0 | 1  // dual layer only
+    towards?: string    // dual layer only
   }>
   stations: FeatureCollection<Point, {
     featureId: string   // "940GZZLUBST"
@@ -143,13 +147,16 @@ export default function MapsGeographicPage() {
           <p className="max-w-prose text-muted-foreground">
             OpenStreetMap stores each timetable pattern as its own route. Paint
             all of them and the Elizabeth line stacks 24 times on the same
-            tracks. Tube would be 208 lines on 42 corridors.
+            tracks.
           </p>
           <p className="max-w-prose text-muted-foreground">
-            What the map draws is the unique track. Longest spine, leftover
-            branches, then simplified. Those files are served from{" "}
-            <code className="text-xs">/data/geography/</code>. Full OSM
-            variants stay in the repo for analysis. Do not put them on the map.
+            The map draws unique track: directional twins merged into one
+            centreline, real branches kept, junctions welded to a shared
+            vertex. Toggle Both tracks in the preview for each direction as
+            its own polyline.{" "}
+            <code className="text-xs">/data/geography/{"{mode}"}-graph.json</code>{" "}
+            is the same network as nodes and edges. Full OSM variants stay in
+            the repo for analysis — do not put them on the map.
           </p>
 
           <div className="overflow-x-auto">
@@ -157,52 +164,31 @@ export default function MapsGeographicPage() {
               <thead>
                 <tr className="border-b border-border text-left">
                   <th className="pb-2 pr-4 font-medium">File</th>
-                  <th className="pb-2 pr-4 font-medium">Unique tracks</th>
+                  <th className="pb-2 pr-4 font-medium">Centreline</th>
+                  <th className="pb-2 pr-4 font-medium">Both tracks</th>
                   <th className="pb-2 pr-4 font-medium">OSM variants</th>
                   <th className="pb-2 pr-4 font-medium">Stations</th>
                 </tr>
               </thead>
               <tbody className="text-muted-foreground">
-                <tr className="border-b border-border/50">
-                  <td className="py-2 pr-4">
-                    <code className="text-xs">tube-geometry.json</code>
-                  </td>
-                  <td className="py-2 pr-4">42</td>
-                  <td className="py-2 pr-4">208</td>
-                  <td className="py-2 pr-4">270</td>
-                </tr>
-                <tr className="border-b border-border/50">
-                  <td className="py-2 pr-4">
-                    <code className="text-xs">elizabeth-geometry.json</code>
-                  </td>
-                  <td className="py-2 pr-4">6</td>
-                  <td className="py-2 pr-4">24</td>
-                  <td className="py-2 pr-4">41</td>
-                </tr>
-                <tr className="border-b border-border/50">
-                  <td className="py-2 pr-4">
-                    <code className="text-xs">overground-geometry.json</code>
-                  </td>
-                  <td className="py-2 pr-4">12</td>
-                  <td className="py-2 pr-4">50</td>
-                  <td className="py-2 pr-4">112</td>
-                </tr>
-                <tr className="border-b border-border/50">
-                  <td className="py-2 pr-4">
-                    <code className="text-xs">dlr-geometry.json</code>
-                  </td>
-                  <td className="py-2 pr-4">6</td>
-                  <td className="py-2 pr-4">12</td>
-                  <td className="py-2 pr-4">45</td>
-                </tr>
-                <tr>
-                  <td className="py-2 pr-4">
-                    <code className="text-xs">tram-geometry.json</code>
-                  </td>
-                  <td className="py-2 pr-4">3</td>
-                  <td className="py-2 pr-4">10</td>
-                  <td className="py-2 pr-4">38</td>
-                </tr>
+                {uniqueTrackManifest.modes.map((row, index) => (
+                  <tr
+                    key={row.mode}
+                    className={
+                      index < uniqueTrackManifest.modes.length - 1
+                        ? "border-b border-border/50"
+                        : undefined
+                    }
+                  >
+                    <td className="py-2 pr-4">
+                      <code className="text-xs">{row.mode}-geometry.json</code>
+                    </td>
+                    <td className="py-2 pr-4">{row.fullLines}</td>
+                    <td className="py-2 pr-4">{row.dualFullLines}</td>
+                    <td className="py-2 pr-4">{row.variantLines}</td>
+                    <td className="py-2 pr-4">{row.stations}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -385,6 +371,13 @@ export default function MapsGeographicPage() {
                     <code>string[]</code>
                   </td>
                   <td className="py-2 pr-4 text-xs">all lines</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-2 pr-4 font-mono text-xs">trackModel</td>
+                  <td className="py-2 pr-4 text-xs">
+                    <code>&quot;centreline&quot; | &quot;dual&quot;</code>
+                  </td>
+                  <td className="py-2 pr-4 text-xs">centreline</td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="py-2 pr-4 font-mono text-xs">vehicles</td>

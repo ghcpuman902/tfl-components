@@ -8,11 +8,15 @@ import {
   useMemo,
   useSyncExternalStore,
 } from "react";
-import maplibregl, { type ExpressionSpecification } from "maplibre-gl";
+import maplibregl, {
+  type ExpressionSpecification,
+  type GeoJSONSource,
+} from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { cn } from "@/lib/utils";
 import { mapLineColorForBasemap } from "@/lib/tfl/dark-line-colours";
 import type {
+  TrackModel,
   TransitGeometryBundle,
   TransitMode,
 } from "@/lib/tfl/geography-types";
@@ -20,6 +24,7 @@ import {
   TRANSIT_GEOMETRY_PUBLIC_ASSETS,
   openFreeMapStyleUrl,
   OSM_TRANSIT_GEOMETRY_CREDIT,
+  transitGeometryAssetUrl,
   type TransitGeometryMode,
 } from "@/lib/tfl/geography-credits";
 import { useVehicleSegmentSource } from "@/components/tfl/geography/sync-vehicle-source";
@@ -52,6 +57,11 @@ type TflGeographicMapProps = {
   modes?: readonly TransitMode[];
   /** When set, only these line ids are painted. */
   lineIds?: readonly string[];
+  /**
+   * Unique-track layer to fetch when `data` is omitted.
+   * `"centreline"` merges directional twins; `"dual"` keeps both tracks.
+   */
+  trackModel?: TrackModel;
   /** Live vehicles. Positions are derived by the caller; this map paints track segments. */
   vehicles?: readonly VehiclePosition[];
   /** Keep vehicles walking along the track between arrival snapshots. */
@@ -397,9 +407,10 @@ const addTransitLayers = (
  * Free geographic map — MapLibre GL JS over OpenFreeMap Positron / Dark.
  * No API key. Station names render from the geometry `label` / `name` fields.
  *
- * Renders unique-track OSM transit geometry by default (spine + leftover
- * branches only — not every timetable variant). Fetches from
- * `/data/geography/`. Auto-fills parent via `h-full w-full`.
+ * Renders unique-track OSM transit geometry by default (merged centreline,
+ * not every timetable variant). Pass `trackModel="dual"` for both
+ * directional tracks. Fetches from `/data/geography/`. Auto-fills parent
+ * via `h-full w-full`.
  *
  * ```tsx
  * <div className="h-100">
@@ -411,6 +422,7 @@ export const TflGeographicMap = ({
   data,
   modes,
   lineIds,
+  trackModel = "centreline",
   vehicles,
   coast = false,
   showStations = true,
@@ -427,6 +439,7 @@ export const TflGeographicMap = ({
   >(null);
   const skipStyleSwapRef = useRef(true);
   const fittedRef = useRef(false);
+  const trackModelRef = useRef(trackModel);
   const lineIdsKey = lineIds?.join(",") ?? "";
   const modesKey = (modes ?? DEFAULT_MODES).join(",");
   const dark = useDocumentDark();
@@ -467,7 +480,8 @@ export const TflGeographicMap = ({
         if (!asset) {
           throw new Error(`No geography asset for mode ${mode}`);
         }
-        const res = await fetch(asset.url);
+        const url = transitGeometryAssetUrl(mode, trackModel);
+        const res = await fetch(url);
         if (!res.ok) {
           throw new Error(`Failed to load ${asset.label} (${res.status})`);
         }
@@ -478,7 +492,7 @@ export const TflGeographicMap = ({
       }),
     );
     return results;
-  }, [data, activeModes]);
+  }, [data, activeModes, trackModel]);
 
   const loadGeometryRef = useRef(loadGeometry);
   loadGeometryRef.current = loadGeometry;
@@ -573,6 +587,46 @@ export const TflGeographicMap = ({
       map.off("style.load", applyOverlays);
     };
   }, [dark, showLines, showStations, lineIdsKey, flushVehicles]);
+
+  useEffect(() => {
+    if (data) return;
+    const map = mapRef.current;
+    if (!map || status !== "ready") return;
+    if (trackModelRef.current === trackModel) return;
+    trackModelRef.current = trackModel;
+
+    let cancelled = false;
+    const applyTrackModel = async () => {
+      try {
+        const bundles = await loadGeometry();
+        if (cancelled || !mapRef.current) return;
+        bundlesRef.current = bundles;
+        for (const { mode, bundle } of bundles) {
+          const source = map.getSource(`${mode}-lines`) as
+            | GeoJSONSource
+            | undefined;
+          source?.setData(
+            remapLineCollection(filterBundleLines(bundle, lineIds), dark),
+          );
+        }
+        flushVehicles();
+      } catch {
+        if (!cancelled) setStatus("error");
+      }
+    };
+    void applyTrackModel();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    trackModel,
+    status,
+    data,
+    loadGeometry,
+    dark,
+    lineIds,
+    flushVehicles,
+  ]);
 
   return (
     <div
