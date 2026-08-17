@@ -36,31 +36,47 @@ export const PlatformChip = ({
   <span
     className={cn(
       "inline-flex h-5 shrink-0 items-center justify-center bg-muted-foreground px-1.5 text-xs font-semibold tabular-nums text-background",
-      CHIP_CAP_TEXT_BOX_CLASS,
       className,
     )}
     aria-label={`Platform ${number}`}
   >
     {compact ? (
-      <span aria-hidden>P{number}</span>
+      <span className={CHIP_CAP_TEXT_BOX_CLASS} aria-hidden>
+        P{number}
+      </span>
     ) : (
       <>
-        <span className="@min-[11rem]/arrivals:hidden" aria-hidden>
+        <span
+          className={cn("@min-[11rem]/arrivals:hidden", CHIP_CAP_TEXT_BOX_CLASS)}
+          aria-hidden
+        >
           {number}
         </span>
         <span
-          className="hidden @min-[11rem]/arrivals:inline @min-[12.5rem]/arrivals:hidden"
+          className={cn(
+            "hidden @min-[11rem]/arrivals:inline @min-[12.5rem]/arrivals:hidden",
+            CHIP_CAP_TEXT_BOX_CLASS,
+          )}
           aria-hidden
         >
           P{number}
         </span>
         <span
-          className="hidden @min-[12.5rem]/arrivals:inline @min-[14rem]/arrivals:hidden"
+          className={cn(
+            "hidden @min-[12.5rem]/arrivals:inline @min-[14rem]/arrivals:hidden",
+            CHIP_CAP_TEXT_BOX_CLASS,
+          )}
           aria-hidden
         >
           Plat {number}
         </span>
-        <span className="hidden @min-[14rem]/arrivals:inline" aria-hidden>
+        <span
+          className={cn(
+            "hidden @min-[14rem]/arrivals:inline",
+            CHIP_CAP_TEXT_BOX_CLASS,
+          )}
+          aria-hidden
+        >
           Platform {number}
         </span>
       </>

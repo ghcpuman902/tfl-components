@@ -13,10 +13,7 @@ import {
 import { Play, RotateCcw, RotateCw } from "lucide-react"
 import type { PredictionWithSharedTrackIdentity } from "tfl-ts"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
-import {
-  ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
-  CHIP_CAP_TEXT_BOX_CLASS,
-} from "@/components/tfl/arrivals/chip-text"
+import { ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS } from "@/components/tfl/arrivals/chip-text"
 import { QuietChip } from "@/components/tfl/arrivals/quiet-chip"
 import { useUnattendedSequence } from "@/hooks/use-unattended-sequence"
 import {
@@ -235,7 +232,6 @@ export const ArrivalRowItem = ({
       className={cn(
         "h-5 justify-center px-0",
         ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
-        CHIP_CAP_TEXT_BOX_CLASS,
       )}
     />
   ) : null

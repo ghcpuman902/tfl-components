@@ -26,12 +26,11 @@ export const BusNumberChip = ({ label, className, style }: BusNumberChipProps) =
     className={cn(
       "inline-flex h-5 shrink-0 items-center justify-center text-center text-xs font-bold tabular-nums text-white",
       ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
-      CHIP_CAP_TEXT_BOX_CLASS,
       className,
     )}
     style={{ backgroundColor: TFL_MODAL_COLOURS.buses.hex, ...style }}
     aria-label={`Route ${label}`}
   >
-    {label}
+    <span className={CHIP_CAP_TEXT_BOX_CLASS}>{label}</span>
   </span>
 );

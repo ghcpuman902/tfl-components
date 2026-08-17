@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { getLineAriaLabel } from "tfl-ts";
+import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text";
 import { LineName } from "@/components/tfl/brand/line-name";
 import { TFL_BLUE } from "@/lib/tfl/brand-colours";
 import {
@@ -96,7 +97,7 @@ export const LineBadge = ({
       ? getLineAriaLabel(label, lineStatuses)
       : `${label} line`;
   const style = lineRawStyle(color);
-  const paint =
+  const namePaint =
     fit === "shrink" ? (
       <LineName lineId={lineId} name={name ?? label} wrap />
     ) : (
@@ -116,7 +117,7 @@ export const LineBadge = ({
         style={style}
         aria-label={ariaLabel}
       >
-        {paint}
+        {namePaint}
       </span>
     );
   }
@@ -126,7 +127,7 @@ export const LineBadge = ({
       data-line={lineId}
       data-tfl-diagram={diagram ? "" : undefined}
       className={cn(
-        "inline-flex items-center bg-[var(--line-color)] px-2 py-0.5 text-xs font-bold text-[var(--line-ink)] tabular-nums",
+        "inline-flex h-5 items-center bg-[var(--line-color)] px-2 text-xs font-bold text-[var(--line-ink)] tabular-nums",
         fit === "shrink" && "w-full min-w-0 max-w-full",
         className,
       )}
@@ -134,7 +135,16 @@ export const LineBadge = ({
       aria-label={ariaLabel}
       role="img"
     >
-      {paint}
+      {fit === "shrink" ? (
+        <LineName
+          lineId={lineId}
+          name={name ?? label}
+          wrap
+          className={CHIP_CAP_TEXT_BOX_CLASS}
+        />
+      ) : (
+        <span className={CHIP_CAP_TEXT_BOX_CLASS}>{label}</span>
+      )}
     </span>
   );
 };
@@ -245,14 +255,17 @@ export const LineBadgeGroup = ({
           ))}
         </span>
         <span
-          className="relative z-10 grid w-full justify-items-center leading-5 text-white"
+          className="relative z-10 grid w-full place-items-center text-white"
           aria-hidden
         >
           {shorts.map((code, index) => (
             <span
               key={`${ids[index]}-${code}`}
               data-code={code}
-              className="col-start-1 row-start-1 text-center leading-none [text-box:trim-both_cap_alphabetic]"
+              className={cn(
+                "col-start-1 row-start-1 text-center",
+                CHIP_CAP_TEXT_BOX_CLASS,
+              )}
               style={{ "--code-index": index } as CSSProperties}
             >
               {code}

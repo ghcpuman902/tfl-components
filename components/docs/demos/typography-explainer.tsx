@@ -81,10 +81,8 @@ export const TrackingRuleDemo = () => (
   </div>
 );
 
-const platformChipClassName = cn(
-  "inline-flex h-6 shrink-0 items-center justify-center bg-muted-foreground px-2 text-xs font-semibold text-background",
-  CHIP_CAP_TEXT_BOX_CLASS,
-);
+const platformChipClassName =
+  "inline-flex h-6 shrink-0 items-center justify-center bg-muted-foreground px-2 text-xs font-semibold text-background";
 
 /**
  * Chips centre optically using a cap-height text-box trim, not x-height.
@@ -97,7 +95,9 @@ export const ChipTextDemo = () => (
     <Verdict good label="keep the label’s own casing">
       <div className="flex flex-wrap items-center gap-2">
         <span className={platformChipClassName} aria-label="Platform 4">
-          <span aria-hidden>Plat 4</span>
+          <span className={CHIP_CAP_TEXT_BOX_CLASS} aria-hidden>
+            Plat 4
+          </span>
         </span>
         <PlatformChip number="4" />
         <BusNumberChip label="N253" />
@@ -117,13 +117,17 @@ export const ChipTextDemo = () => (
           className={cn(platformChipClassName, "uppercase")}
           aria-label="Platform 4"
         >
-          <span aria-hidden>Plat 4</span>
+          <span className={CHIP_CAP_TEXT_BOX_CLASS} aria-hidden>
+            Plat 4
+          </span>
         </span>
         <span
           className={cn(platformChipClassName, "uppercase")}
           aria-label="Route N253"
         >
-          <span aria-hidden>n253</span>
+          <span className={CHIP_CAP_TEXT_BOX_CLASS} aria-hidden>
+            n253
+          </span>
         </span>
       </div>
       <p className="text-xs text-muted-foreground">
