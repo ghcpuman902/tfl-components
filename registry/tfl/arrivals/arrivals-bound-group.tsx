@@ -29,6 +29,7 @@ import {
   ARRIVALS_LINE_EMPTY_COPY,
 } from "@/lib/tfl/arrivals-empty"
 import {
+  formatArrivalsBoundLabel,
   formatArrivalsRailDesignationLabel,
   isUnknownArrivalsPlatform,
   parseArrivalsPlatformLabel,
@@ -77,7 +78,7 @@ export type ArrivalsBoardClassNames = {
  * This file cannot import those constants — the view imports this module.
  */
 const TILE_CLASS =
-  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden"
+  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip"
 
 const ROW_RULE_CLASS =
   "relative after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60"
@@ -253,7 +254,7 @@ export const ArrivalRowItem = ({
       )}
     >
       {leading}
-      <div className="min-w-0 overflow-hidden" aria-hidden="true">
+      <div className="min-w-0" aria-hidden="true">
         <StationName
           name={destination}
           layout="auto"
@@ -371,6 +372,15 @@ const useArrivalsPageTrack = (pageCount: number) => {
   }
 }
 
+/**
+ * On a shared tile (rail bound heading, bus route header) the controls must
+ * never reserve row width next to the label — a pager that "might appear"
+ * would otherwise force the label into a narrower tier for every row, paged
+ * or not. So outside `ownsTile`, both control shapes are `absolute` overlays
+ * on the row's own `relative` box (`ROW_RULE_CLASS` or the group header),
+ * not flex items. `ownsTile` (flat bus) keeps the original in-flow layout —
+ * nothing else lives in that tile, so reserving space there is free.
+ */
 const BoundPager = ({
   label,
   page,
@@ -392,64 +402,97 @@ const BoundPager = ({
   const atStart = page <= 0
   const atEnd = page >= pageCount - 1
 
+  const controls = (
+    <>
+      <button
+        type="button"
+        aria-label={`Previous ${label} arrivals`}
+        disabled={atStart}
+        onClick={onPrev}
+        className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-1.5 pl-0 text-muted-foreground before:absolute before:inset-y-[-0.5rem] before:inset-x-[-0.25rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
+      >
+        <Play
+          className="size-3 -scale-x-100 fill-current stroke-none"
+          aria-hidden
+        />
+      </button>
+      <span className="min-w-[2.75ch] text-center text-xs leading-none tabular-nums">
+        <span aria-hidden="true">
+          {page + 1}/{pageCount}
+        </span>
+        <span className="sr-only">
+          Page {page + 1} of {pageCount}
+        </span>
+      </span>
+      <button
+        type="button"
+        aria-label={`Next ${label} arrivals`}
+        disabled={atEnd}
+        onClick={onNext}
+        className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-0 pl-1.5 text-muted-foreground before:absolute before:inset-y-[-0.5rem] before:inset-x-[-0.25rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
+      >
+        <Play className="size-3 fill-current stroke-none" aria-hidden />
+      </button>
+    </>
+  )
+
+  const dots = Array.from({ length: pageCount }, (_, index) => (
+    <span
+      key={index}
+      className={cn(
+        "size-1.5 rounded-full bg-current",
+        index === page ? "opacity-100" : "opacity-40"
+      )}
+    />
+  ))
+
+  if (ownsTile) {
+    return (
+      <div className="ml-auto flex h-6 shrink-0 items-center text-muted-foreground">
+        <div className="hidden items-center p-0 [@media(hover:hover)]:flex">
+          {controls}
+        </div>
+        <div
+          className="flex items-center gap-1 opacity-50 [@media(hover:hover)]:hidden"
+          aria-hidden="true"
+        >
+          {dots}
+        </div>
+        <span className="sr-only [@media(hover:hover)]:hidden">
+          Page {page + 1} of {pageCount}
+        </span>
+      </div>
+    )
+  }
+
   return (
-    <div className="ml-auto flex h-6 shrink-0 items-center text-muted-foreground">
+    <>
+      {/* Hover-capable: revealed on group hover or keyboard focus-visible,
+          with a background — overlays the tail of the label. Mouse click
+          must not stick the overlay after unhover (`:focus-within` would). */}
       <div
         className={cn(
-          "hidden items-center p-0 transition-opacity duration-150 [@media(hover:hover)]:flex",
-          !ownsTile && "[@media(hover:hover)]:opacity-0",
-          !ownsTile && "[@media(hover:hover)]:group-hover/bound:opacity-100",
-          !ownsTile && "[@media(hover:hover)]:group-focus-within/bound:opacity-100"
+          "absolute inset-y-0 right-0 hidden items-center bg-linear-to-l from-background from-70% via-background to-transparent pl-6 text-muted-foreground opacity-0 transition-opacity duration-150 [@media(hover:hover)]:flex",
+          "pointer-events-none",
+          "[@media(hover:hover)]:group-hover/bound:opacity-100 [@media(hover:hover)]:group-hover/bound:pointer-events-auto",
+          "[@media(hover:hover)]:group-has-focus-visible/bound:opacity-100 [@media(hover:hover)]:group-has-focus-visible/bound:pointer-events-auto"
         )}
       >
-        <button
-          type="button"
-          aria-label={`Previous ${label} arrivals`}
-          disabled={atStart}
-          onClick={onPrev}
-          className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-1.5 pl-0 text-muted-foreground before:absolute before:inset-y-[-0.5rem] before:inset-x-[-0.25rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
-        >
-          <Play
-            className="size-3 -scale-x-100 fill-current stroke-none"
-            aria-hidden
-          />
-        </button>
-        <span className="min-w-[2.75ch] text-center text-xs leading-none tabular-nums">
-          <span aria-hidden="true">
-            {page + 1}/{pageCount}
-          </span>
-          <span className="sr-only">
-            Page {page + 1} of {pageCount}
-          </span>
-        </span>
-        <button
-          type="button"
-          aria-label={`Next ${label} arrivals`}
-          disabled={atEnd}
-          onClick={onNext}
-          className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-0 pl-1.5 text-muted-foreground before:absolute before:inset-y-[-0.5rem] before:inset-x-[-0.25rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
-        >
-          <Play className="size-3 fill-current stroke-none" aria-hidden />
-        </button>
+        {controls}
       </div>
+      {/* Touch / no-hover: indicators only (swipe the rows track). Wide
+          sections keep them vertically centred; below 18rem they sit just
+          above the hairline so they don't cover a long bound label. */}
       <div
-        className="flex items-center gap-1 opacity-50 [@media(hover:hover)]:hidden"
+        className="pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 text-muted-foreground opacity-50 [@media(hover:hover)]:hidden @max-[18rem]/arrivals-group:inset-y-auto @max-[18rem]/arrivals-group:bottom-1"
         aria-hidden="true"
       >
-        {Array.from({ length: pageCount }, (_, index) => (
-          <span
-            key={index}
-            className={cn(
-              "size-1.5 rounded-full bg-current",
-              index === page ? "opacity-100" : "opacity-40"
-            )}
-          />
-        ))}
+        {dots}
       </div>
       <span className="sr-only [@media(hover:hover)]:hidden">
         Page {page + 1} of {pageCount}
       </span>
-    </div>
+    </>
   )
 }
 
@@ -602,7 +645,7 @@ const ArrivalsPageTrack = ({
   return (
     <div
       ref={containerRef}
-      className="flex snap-x snap-mandatory gap-x-6 overflow-x-auto overscroll-x-contain scrollbar-none"
+      className="flex min-w-0 snap-x snap-mandatory gap-x-6 overflow-x-auto overscroll-x-contain scrollbar-none"
     >
       {pages.map((page, index) => (
         <ul
@@ -611,7 +654,7 @@ const ArrivalsPageTrack = ({
           data-slot="arrivals-rows"
           className={cn(
             LIST_RESET_CLASS,
-            "min-w-full shrink-0 snap-start snap-always",
+            "w-full min-w-full shrink-0 snap-start snap-always",
             className
           )}
           role="list"
@@ -649,50 +692,66 @@ const RAIL_DESIGNATION_ICON: Record<
 }
 
 /**
- * Bound heading label. Plain text normally; Inner/Outer Rail bounds
- * (Paddington / Bayswater / Notting Hill Gate's shared Circle/H&C stretch —
- * see docs/arrivals-shared-platforms.md) step through a width ladder so the
- * qualifier still fits when the line section is narrow:
- * "Inner Rail · Platform 1" → "Inner Rail · P1" → (icon) "P1".
- * Same CSS-only, `@container/arrivals-group`-driven pattern as PlatformChip —
- * aria-label carries the full text; each visual tier is `aria-hidden`.
- *
- * Thresholds are each tier's own rendered width (measured, worst case
- * "Outer Rail · Platform 2") plus this row's own `pr-2` (8px) as buffer —
- * see PlatformChip for the same rule of thumb. This also keeps the ladder
- * safe once `subgroups: "@min-[30rem]/arrivals-group:grid-cols-2"` halves
- * the per-bound width: at that breakpoint each column still clears the
- * full-tier threshold, so it never truncates a form it just picked.
+ * Bound heading label. When a platform is hoisted, the platform word uses
+ * the same CSS-only ladder as PlatformChip (Platform N → Plat N → PN).
+ * Inner/Outer Rail bounds add one tighter tier: (icon) "P1".
+ * The container is this label's own flex box (`@container/bound-heading`),
+ * so 2-up bound columns see their column width, not the line section.
+ * Thresholds are each tier's own rendered width at `text-xl leading-7
+ * font-semibold` (worst case "Southbound · Platform 12") plus this row's
+ * `pr-2` (8px) buffer. Aria keeps the full `bound.label`.
  */
 const BoundHeadingLabel = ({ bound }: { bound: ArrivalsPreparedBound }) => {
-  if (!bound.railDesignation || !bound.platformLabel || !bound.label) {
+  if (!bound.label) return null
+  if (!bound.platformLabel) {
     return <span className="min-w-0 flex-1 truncate pr-2">{bound.label}</span>
   }
-  const Icon = RAIL_DESIGNATION_ICON[bound.railDesignation]
-  const designationLabel = formatArrivalsRailDesignationLabel(
-    bound.railDesignation
-  )
-  const compactPlatform = `P${bound.platformLabel}`
+
+  const prefix = bound.boundId
+    ? formatArrivalsBoundLabel(bound.boundId)
+    : bound.railDesignation
+      ? formatArrivalsRailDesignationLabel(bound.railDesignation)
+      : null
+  const platform = bound.platformLabel
+  const Icon = bound.railDesignation
+    ? RAIL_DESIGNATION_ICON[bound.railDesignation]
+    : null
+  const join = (platformText: string) =>
+    prefix ? `${prefix} · ${platformText}` : platformText
+
   return (
     <span
-      className="flex min-w-0 flex-1 items-center gap-1 pr-2"
+      className="@container/bound-heading block min-w-0 flex-1 pr-2"
       aria-label={bound.label}
     >
+      {Icon ? (
+        <span
+          className="flex items-center gap-1 @min-[9rem]/bound-heading:hidden"
+          aria-hidden
+        >
+          <Icon className="size-3.5 shrink-0" />
+          <span className="tabular-nums">P{platform}</span>
+        </span>
+      ) : null}
       <span
-        className="flex items-center gap-1 @min-[7.5rem]/arrivals-group:hidden"
+        className={cn(
+          "truncate whitespace-nowrap",
+          Icon
+            ? "hidden @min-[9rem]/bound-heading:inline @min-[12.5rem]/bound-heading:hidden"
+            : "@min-[12.5rem]/bound-heading:hidden",
+        )}
         aria-hidden
       >
-        <Icon className="size-3.5 shrink-0" />
-        <span className="tabular-nums">{compactPlatform}</span>
+        {join(`P${platform}`)}
       </span>
       <span
-        className="hidden truncate whitespace-nowrap @min-[7.5rem]/arrivals-group:inline @min-[11rem]/arrivals-group:hidden"
+        className="hidden truncate whitespace-nowrap @min-[12.5rem]/bound-heading:inline @min-[15.5rem]/bound-heading:hidden"
         aria-hidden
       >
-        {designationLabel} · {compactPlatform}
+        {join(`Plat ${platform}`)}
       </span>
       <span
-        className="hidden truncate whitespace-nowrap @min-[11rem]/arrivals-group:inline"
+        className="hidden truncate whitespace-nowrap @min-[15.5rem]/bound-heading:inline"
         aria-hidden
       >
         {bound.label}
@@ -937,7 +996,7 @@ export const ArrivalsPagedList = ({
         className={classNames?.rows}
       />
       {showPager ? (
-        <div className={cn("flex items-center", TILE_CLASS)}>
+        <div className={cn("relative flex items-center", TILE_CLASS)}>
           <BoundPager
             label="arrivals"
             page={activePage}

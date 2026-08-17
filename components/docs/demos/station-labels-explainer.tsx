@@ -32,7 +32,7 @@ const ARRIVALS_RHYTHM = {
 } as CSSProperties;
 
 const ARRIVALS_TILE =
-  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden";
+  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip";
 
 const ARRIVALS_ROW_RULE =
   "relative after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60";
@@ -117,7 +117,7 @@ export const ArrivalsResizeDemo = () => (
           )}
         >
           <PlatformChip number="4" />
-          <div className="min-w-0 overflow-hidden">
+          <div className="min-w-0">
             <StationName
               name={row.name}
               layout="auto"

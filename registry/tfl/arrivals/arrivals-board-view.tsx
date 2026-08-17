@@ -87,10 +87,11 @@ export const ARRIVALS_RHYTHM_VARS = {
 
 /**
  * Fixed tile box. Height is always exactly one rhythm row — content may clip,
- * but borders/bars must never grow the tile (`box-border` + overflow lock).
+ * but borders/bars must never grow the tile (`box-border` + `overflow-clip`).
+ * Clip, not `hidden`: tiles must not become scroll containers above the page track.
  */
 export const ARRIVALS_TILE_CLASS =
-  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden [content-visibility:auto] [contain-intrinsic-size:auto_3rem]"
+  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip [content-visibility:auto] [contain-intrinsic-size:auto_3rem]"
 
 const TITLE_CLASS =
   "tfl-title [font-synthesis:none] [font-weight:var(--tfl-title-weight,400)] [letter-spacing:var(--tfl-title-tracking,0)]"

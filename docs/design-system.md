@@ -65,7 +65,7 @@ Agent rule (globs the board + demos): [`.cursor/rules/arrivals-board-layout.mdc`
 | `--arrivals-unit` | `0.5rem` | Smallest vertical step |
 | `--arrivals-row` | `6 × unit` (`3rem` / 48px) | One tile: stop title, line header, bound label, or arrival row |
 
-Every tile uses a locked box (`box-border`, fixed `min`/`max`/`height` = `--arrivals-row`, `overflow-hidden`, `shrink-0`). Content may clip; it must **never** grow the tile.
+Every tile uses a locked box (`box-border`, fixed `min`/`max`/`height` = `--arrivals-row`, `overflow-clip`, `shrink-0`). Content may clip; it must **never** grow the tile. Do not put `overflow-hidden` on destination cells or row tiles — that creates a scroll container and steals swipe from the page track.
 
 **Gaps**
 

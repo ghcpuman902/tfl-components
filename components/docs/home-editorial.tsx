@@ -29,7 +29,7 @@ const ARRIVALS_RHYTHM = {
 } as CSSProperties;
 
 const ARRIVALS_TILE_CLASS =
-  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden";
+  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip";
 
 type DemoFrameProps = {
   caption: readonly string[];

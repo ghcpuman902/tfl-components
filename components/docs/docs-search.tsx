@@ -156,7 +156,13 @@ export const DocsSearch = ({
   };
 
   return (
-    <div className={cn("relative w-full", className)}>
+    <div
+      className={cn(
+        "relative w-full",
+        variant === "header" && "@container min-w-0",
+        className,
+      )}
+    >
       <label htmlFor={`${listId}-input`} className="sr-only">
         Search documentation
       </label>
@@ -195,13 +201,21 @@ export const DocsSearch = ({
           onKeyDown={handleKeyDown}
           aria-keyshortcuts="Meta+K Control+K"
           className={cn(
-            "h-8 bg-background pl-8 text-sm",
-            showShortcutHint && "md:pr-16",
+            "h-8 min-w-0 bg-background pl-8 text-sm",
+            showShortcutHint &&
+              (variant === "header" ? "@min-[13.5rem]:pr-16" : "md:pr-16"),
           )}
           autoComplete="off"
         />
         {showShortcutHint && !query ? (
-          <KbdGroup className="pointer-events-none absolute top-1/2 right-1.5 hidden -translate-y-1/2 md:inline-flex">
+          <KbdGroup
+            className={cn(
+              "pointer-events-none absolute top-1/2 right-1.5 hidden -translate-y-1/2",
+              variant === "header"
+                ? "@min-[13.5rem]:inline-flex"
+                : "md:inline-flex",
+            )}
+          >
             <Kbd>{isMac ? "⌘" : "Ctrl"}</Kbd>
             <Kbd>K</Kbd>
           </KbdGroup>

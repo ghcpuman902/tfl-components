@@ -11,7 +11,7 @@ Domain boards under `registry/tfl/arrivals/rail-arrivals-board.tsx` and `bus-arr
 ## Rhythm
 
 - One unit: `--arrivals-unit` (`0.5rem`). One row: `--arrivals-row` = 6 units (`3rem` / 48px).
-- Stop title, line headers, bound labels, and arrival rows are each **exactly one tile** (`TILE_CLASS`: fixed height + `box-border` + `overflow-hidden`).
+- Stop title, line headers, bound labels, and arrival rows are each **exactly one tile** (`TILE_CLASS`: fixed height + `box-border` + `overflow-clip`). `overflow-clip` locks the box without creating a scroll container — do not put `overflow-hidden` on destination cells or row tiles; the page track (`overflow-x-auto`) is the only horizontal scroller.
 - Do **not** reserve a double-height title band “in case it wraps”. That leaves a dead gap under short names and desyncs rail vs bus.
 - **No gap** between the stop title and the first line group, or between line sections — last arrival row of one group sits flush against the next line header (continuous tile stack). Do not use `space-y-2` / `mt-2` on the board root.
 
@@ -67,7 +67,7 @@ Shared in `arrivals-bound-group.tsx` (`BoundPager` + `ArrivalsPageTrack`) for ra
 - On a short final page with at least one arrival, use the final spare tile for **No more arrivals**. Any spare tiles between the last arrival and that message show a quiet dash. Do not add a page only to show the message, and do not displace an arrival when `pageSize` leaves no spare tile.
 - The end message has a CSS-first width ladder: **No more arrivals** → **No more**. Keep the full phrase as its accessible name. Do not wrap, clip, ellipsise, or reduce the tile height to make it fit.
 - Zero arrivals are not an end-of-list state. Keep **No information** in the first tile and use quiet dashes in the remaining tiles. Keep decorative dash tiles out of the accessibility tree.
-- Pagination controls follow their tile ownership. When arrows and the `n/m` count share a marked tile with other useful content, such as a rail bound label or grouped bus route header, hide them on hover-capable pointers until group hover or focus-within. When the controls own a dedicated otherwise-empty tile, as on the flat bus list, they are the tile marker and remain visible on hover-capable pointers. Never leave a blank control tile waiting for hover.
+- Pagination controls follow their tile ownership. When arrows and the `n/m` count share a marked tile with other useful content, such as a rail bound label or grouped bus route header, hide them on hover-capable pointers until group hover or a `:focus-visible` descendant (keyboard). Do not use `:focus-within` — a mouse click would leave the overlay stuck after unhover. When the controls own a dedicated otherwise-empty tile, as on the flat bus list, they are the tile marker and remain visible on hover-capable pointers. Never leave a blank control tile waiting for hover.
 - Touch / no-hover controls are always visible because there is no hover affordance. Keep the half-opacity iOS-style dots in the corresponding control position and swipe the rows track to change page.
 - Arrow clicks jump instantly (`scrollIntoView` with `behavior: "auto"`). Keyboard focus must reveal any hover-hidden controls.
 - Hide the entire pager when `pageCount <= 1` (no lone `1/1` or single dot).
