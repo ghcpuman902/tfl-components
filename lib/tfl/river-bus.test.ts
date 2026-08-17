@@ -1,13 +1,28 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
+import { LINE_STATION_SEQUENCES } from "tfl-ts"
 import {
   filterRiverBusArrivals,
   filterRiverBusLineIds,
   isFerryPortId,
   isRiverBusLineId,
   pointHasRiverBusLine,
+  RIVER_BUS_LINE_IDS,
   riverRouteChipCopy,
 } from "./river-bus"
+
+describe("RIVER_BUS_LINE_IDS", () => {
+  it("reads live river-bus ids from tfl-ts LINE_STATION_SEQUENCES", () => {
+    const fromSnapshot = Object.values(LINE_STATION_SEQUENCES)
+      .filter((sequence) => sequence.modeName === "river-bus")
+      .map((sequence) => sequence.lineId)
+      .sort((a, b) => a.localeCompare(b, "en"))
+    assert.deepEqual(RIVER_BUS_LINE_IDS, fromSnapshot)
+    assert.ok(RIVER_BUS_LINE_IDS.includes("rb1"))
+    assert.ok(RIVER_BUS_LINE_IDS.includes("woolwich-ferry"))
+    assert.equal(RIVER_BUS_LINE_IDS.includes("rb2"), false)
+  })
+})
 
 describe("riverRouteChipCopy", () => {
   it("uppercases rb line ids", () => {

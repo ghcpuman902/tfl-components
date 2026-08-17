@@ -10,6 +10,7 @@ import {
   COLOURS_REGISTRY_URL,
 } from "../../scripts/build-colour-tokens";
 import { northernDarkOklch } from "./dark-line-colours";
+import { RIVER_BUS_LINE_IDS } from "./river-bus";
 
 describe("colour tokens generator", () => {
   it("emits line + mode tokens with kebab data-line ids", () => {
@@ -40,10 +41,7 @@ describe("colour tokens generator", () => {
     assert.ok(byVar["tfl-mode-river"]);
     assert.deepEqual(byVar["tfl-mode-river"].dataLineIds, [
       "river",
-      "rb1",
-      "rb4",
-      "rb6",
-      "woolwich-ferry",
+      ...RIVER_BUS_LINE_IDS,
       "river-bus",
     ]);
   });

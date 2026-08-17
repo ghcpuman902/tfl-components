@@ -28,6 +28,7 @@ import {
   northernDarkOklch,
   NORTHERN_DARK_HEX,
 } from "../lib/tfl/dark-line-colours";
+import { RIVER_BUS_LINE_IDS } from "../lib/tfl/river-bus";
 import { resolveRouteTrackStyle } from "../lib/tfl/route-track";
 import { REGISTRY_BASE } from "../lib/site";
 
@@ -97,7 +98,7 @@ const DATA_LINE_ALIASES: Record<string, string[]> = {
   elizabeth: ["elizabeth-line"],
   trams: ["tram"],
   "cable-car": ["london-cable-car"],
-  river: ["rb1", "rb4", "rb6", "woolwich-ferry", "river-bus"],
+  river: [...RIVER_BUS_LINE_IDS, "river-bus"],
 };
 
 export const buildColourTokens = (): ColourToken[] => {
@@ -465,7 +466,7 @@ const upsertRegistryItem = (artefacts: ColourTokensArtefacts): void => {
     title: "TfL colours",
     description:
       "Installable TfL line/mode OKLCH colour tokens with data-line role bindings, a11y adaptations, and an importable line→colour map for static Tailwind classes.",
-    dependencies: ["tfl-ts@^2.9.0"],
+    dependencies: ["tfl-ts@^2.10.0"],
     cssVars: artefacts.cssVars,
     css: artefacts.css,
     files: [

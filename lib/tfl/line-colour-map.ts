@@ -20,6 +20,7 @@ import {
   UNDERGROUND_LINE_COLOURS,
   type BrandColourSpec,
 } from "@/lib/tfl/brand-colours";
+import { RIVER_BUS_LINE_IDS } from "@/lib/tfl/river-bus";
 import { resolveRouteTrackStyle } from "@/lib/tfl/route-track";
 
 export type LineColourKind = "line" | "mode";
@@ -45,7 +46,7 @@ const DATA_LINE_ALIASES: Record<string, readonly string[]> = {
   elizabeth: ["elizabeth-line"],
   trams: ["tram"],
   "cable-car": ["london-cable-car"],
-  river: ["rb1", "rb4", "rb6", "woolwich-ferry", "river-bus"],
+  river: [...RIVER_BUS_LINE_IDS, "river-bus"],
 };
 
 const toDataLineId = (key: string): string =>

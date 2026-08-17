@@ -1,10 +1,10 @@
-/** Live river-bus line ids. Withdrawn `rb2` 404s and is not listed. */
-export const RIVER_BUS_LINE_IDS = [
-  "rb1",
-  "rb4",
-  "rb6",
-  "woolwich-ferry",
-] as const
+import { LINE_STATION_SEQUENCES } from "tfl-ts"
+
+/** Live river-bus line ids from tfl-ts `LINE_STATION_SEQUENCES`. */
+export const RIVER_BUS_LINE_IDS = Object.values(LINE_STATION_SEQUENCES)
+  .filter((sequence) => sequence.modeName === "river-bus")
+  .map((sequence) => sequence.lineId)
+  .sort((a, b) => a.localeCompare(b, "en"))
 
 export type RiverBusLineId = (typeof RIVER_BUS_LINE_IDS)[number]
 

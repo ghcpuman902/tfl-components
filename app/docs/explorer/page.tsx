@@ -152,7 +152,7 @@ async function ExplorerActivePanelAsync({ state }: { state: ExplorerState }) {
   }
 
   if (state.kind === "lines" && state.domain === "river") {
-    const lines = await getExplorerRiverLines();
+    const lines = getExplorerRiverLines();
     const selected = firstOrMatching(lines, state.id);
     const detailsPromise = selected
       ? getExplorerLineDetails(selected.id, state.dir)

@@ -4,7 +4,7 @@
   "title": "Cycle Hire Docks",
   "description": "Santander Cycles Map + Detail surfaces — pass normalised tfl-ts bike points as data.",
   "dependencies": [
-    "tfl-ts@^2.9.0",
+    "tfl-ts@^2.10.0",
     "lucide-react",
     "maplibre-gl@5.24.0"
   ],
