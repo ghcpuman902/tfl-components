@@ -72,7 +72,7 @@ export type ArrivalsBoardClassNames = {
  * This file cannot import those constants — the view imports this module.
  */
 const TILE_CLASS =
-  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden [content-visibility:auto] [contain-intrinsic-size:auto_3rem]"
+  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden"
 
 const ROW_RULE_CLASS =
   "relative after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60"
@@ -553,7 +553,7 @@ const ArrivalsPageTrack = ({
   return (
     <div
       ref={containerRef}
-      className="flex [touch-action:pan-x_pan-y] snap-x snap-mandatory gap-x-6 overflow-x-auto overscroll-x-contain scrollbar-none"
+      className="flex snap-x snap-mandatory gap-x-6 overflow-x-auto overscroll-x-contain scrollbar-none"
     >
       {pages.map((page, index) => (
         <ul
