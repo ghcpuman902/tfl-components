@@ -42,6 +42,23 @@ export default function BranchStripDemo() {
         />
       </section>
 
+      <section className="space-y-3" aria-labelledby="branch-mono">
+        <h2 id="branch-mono" className="text-lg font-semibold">
+          Mono
+        </h2>
+        <p className="max-w-prose text-sm text-muted-foreground">
+          Same horizontal schematic with B&amp;W stroke motifs. Pass{" "}
+          <code className="text-xs">mono</code> — only the graph paints this
+          way, not titles or chips.
+        </p>
+        <LineStrip
+          lineId="northern"
+          schematic={NORTHERN_LINE_SCHEMATIC_HORIZONTAL}
+          orientation="horizontal"
+          mono
+        />
+      </section>
+
       <section className="space-y-3" aria-labelledby="branch-vertical">
         <h2
           id="branch-vertical"

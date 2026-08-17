@@ -79,8 +79,8 @@ export const NORTHERN_LINE_SCHEMATIC_HORIZONTAL: LineSchematic = {
 
     // —— Mill Hill East spur (lane -1, into Finchley) ——
     // MUST stay off Finchley’s pos. Same pos → pure 90° stub (forbidden).
-    // Half-station before Finchley → room for a Line Diagram arc join.
-    n("mill-hill-east", "Mill Hill East", -1, 3.5, "terminus", [
+    // One full pitch before Finchley → room for a single-fillet 45° diagonal.
+    n("mill-hill-east", "Mill Hill East", -1, 3, "terminus", [
       "mill-hill-east",
     ]),
 

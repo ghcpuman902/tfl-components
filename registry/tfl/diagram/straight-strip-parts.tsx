@@ -4,6 +4,11 @@ import { formatStationName } from "@/lib/tfl/diagram-station";
 import { StationName } from "@/components/tfl/station-name";
 import { NationalRailPictogram } from "@/components/tfl/national-rail-pictogram";
 import {
+  monoLineHeightUnits,
+  resolveMonoLineStyle,
+  scaleMonoLayers,
+} from "@/lib/tfl/bw-line-styles";
+import {
   routeTrackHeightUnits,
   routeTrackRailCount,
   type RouteTrackStyle,
@@ -140,6 +145,109 @@ export const StraightRouteTrack = ({
           </div>
         );
       })}
+    </div>
+  );
+};
+
+type MonoRun = {
+  start: number;
+  end: number;
+  state: StripSegmentState;
+};
+
+const contiguousSegmentRuns = (
+  states: readonly StripSegmentState[],
+): MonoRun[] => {
+  if (states.length === 0) return [];
+  const runs: MonoRun[] = [];
+  let start = 0;
+  let state = states[0]!;
+  for (let i = 1; i <= states.length; i += 1) {
+    if (i === states.length || states[i] !== state) {
+      runs.push({ start, end: i, state });
+      start = i;
+      state = states[i] ?? state;
+    }
+  }
+  return runs;
+};
+
+type MonoRouteTrackProps = {
+  stationCount: number;
+  segmentStates: readonly StripSegmentState[];
+  lineId: string;
+  /** Absolute diagram unit — mono scales through `x`, not `--tfl-diagram-scale`. */
+  x: number;
+  lineTop: string;
+  colWidthUnits: number;
+};
+
+/**
+ * B&W Tube-map stroke motifs on a straight corridor.
+ * One SVG across the track; each same-state run is layered `<line>`s so
+ * dash phase stays continuous. Coordinates are percentages; strokes are px.
+ */
+export const MonoRouteTrack = ({
+  stationCount,
+  segmentStates,
+  lineId,
+  x,
+  lineTop,
+  colWidthUnits,
+}: MonoRouteTrackProps) => {
+  if (stationCount < 2) return null;
+
+  const layers = scaleMonoLayers(resolveMonoLineStyle(lineId), x);
+  const heightUnits = monoLineHeightUnits(layers);
+  const height = ux(heightUnits);
+  const nSeg = stationCount - 1;
+  const runs = contiguousSegmentRuns(segmentStates);
+
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute"
+      style={{
+        top: `calc(${lineTop} + ${ux(0.5)} - ${ux(heightUnits / 2)})`,
+        left: ux(colWidthUnits * 0.5),
+        width: `calc(${ux(colWidthUnits)} * ${nSeg})`,
+        height,
+      }}
+    >
+      <svg width="100%" height="100%" className="overflow-visible">
+        {runs.map((run) => {
+          const x1 = `${(run.start / nSeg) * 100}%`;
+          const x2 = `${(run.end / nSeg) * 100}%`;
+          if (run.state === "out-of-use") {
+            return (
+              <line
+                key={`${run.start}-${run.end}`}
+                x1={x1}
+                y1="50%"
+                x2={x2}
+                y2="50%"
+                stroke={OUT_OF_USE_LINE_COLOR}
+                strokeWidth={x}
+                strokeLinecap="butt"
+              />
+            );
+          }
+          return layers.map((layer, index) => (
+            <line
+              key={`${run.start}-${run.end}-${index}`}
+              x1={x1}
+              y1="50%"
+              x2={x2}
+              y2="50%"
+              stroke={layer.stroke}
+              strokeWidth={layer.width}
+              strokeDasharray={layer.dash}
+              strokeDashoffset={layer.dashoffset}
+              strokeLinecap={layer.linecap ?? "butt"}
+            />
+          ));
+        })}
+      </svg>
     </div>
   );
 };

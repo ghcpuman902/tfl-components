@@ -32,6 +32,11 @@ export type SchematicLayoutPoint = {
    * Line-diagram lane joins end tangent to the corridor main axis.
    */
   trackAxis: SchematicTrackAxis;
+  /**
+   * Local track heading in degrees from +x. Corridor nodes are 0 (horizontal)
+   * or 90 (vertical). A horizontal 45° spur tip reports ±45 / ±135.
+   */
+  trackAngle: number;
 };
 
 export type SchematicLayoutEdge = {
@@ -79,6 +84,8 @@ const SIN45 = SQRT2 / 2;
 const ONE_MINUS_COS45 = 1 - SIN45;
 /** Extra main-axis length a 45° S needs beyond |Δcross| when s0=s1=0. */
 const S45_MAIN_EXTRA = 2 * (SQRT2 - 1);
+/** Extra main-axis length a single 45° spur fillet needs beyond |Δcross|. */
+const SPUR_MAIN_EXTRA = SQRT2 - 1;
 /** Minimum |Δcross| for a 45° S of radius R: 2R(1 − cos45). */
 const S45_CROSS_MIN = 2 * ONE_MINUS_COS45;
 
@@ -275,6 +282,99 @@ export const octilinearLanePath = (
 };
 
 /**
+ * Largest centreline R that still fits a single-fillet 45° spur.
+ * Returns 0 when the diagonal cannot land (cross > main).
+ */
+export const maxSpurRadius = (
+  mainDelta: number,
+  crossDelta: number,
+): number => {
+  if (mainDelta < 0.5 || crossDelta < 0.5) return 0;
+  const extra = mainDelta - crossDelta;
+  if (extra < 0) return 0;
+  return extra / SPUR_MAIN_EXTRA;
+};
+
+/**
+ * Horizontal in-carriage spur: corridor run, one 45° circular fillet, then a
+ * straight 45° diagonal to the terminus. No second fillet.
+ *
+ * `fromIsJunction` is true when `x0,y0` is the corridor node.
+ */
+export const diagonalSpurPath = (
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  radius: number,
+  fromIsJunction: boolean,
+  mainAxis: "x" | "y" = "x",
+): string => {
+  const jx = fromIsJunction ? x0 : x1;
+  const jy = fromIsJunction ? y0 : y1;
+  const tx = fromIsJunction ? x1 : x0;
+  const ty = fromIsJunction ? y1 : y0;
+  const dx = tx - jx;
+  const dy = ty - jy;
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
+  if (absDx < 0.5 || absDy < 0.5) {
+    return `M ${x0} ${y0} L ${x1} ${y1}`;
+  }
+
+  const mainDelta = mainAxis === "x" ? absDx : absDy;
+  const crossDelta = mainAxis === "x" ? absDy : absDx;
+  const maxR = maxSpurRadius(mainDelta, crossDelta);
+  const r = Math.min(radius, maxR);
+  if (r < 0.5) {
+    return orthogonalRoundedPath(x0, y0, x1, y1, radius, mainAxis);
+  }
+
+  const sx = Math.sign(dx) || 1;
+  const sy = Math.sign(dy) || 1;
+  const leftover = mainDelta - crossDelta - r * SPUR_MAIN_EXTRA;
+  const arcMain = r * SIN45;
+  const arcCross = r * ONE_MINUS_COS45;
+
+  let asx: number;
+  let asy: number;
+  let aex: number;
+  let aey: number;
+  let sweep: 0 | 1;
+
+  if (mainAxis === "x") {
+    asx = jx + sx * leftover;
+    asy = jy;
+    aex = asx + sx * arcMain;
+    aey = asy + sy * arcCross;
+    sweep = sx * sy > 0 ? 1 : 0;
+  } else {
+    asx = jx;
+    asy = jy + sy * leftover;
+    aex = asx + sx * arcCross;
+    aey = asy + sy * arcMain;
+    sweep = sx * sy < 0 ? 1 : 0;
+  }
+
+  if (fromIsJunction) {
+    const parts = [`M ${jx} ${jy}`];
+    if (leftover > 0.5) parts.push(`L ${asx} ${asy}`);
+    parts.push(`A ${r} ${r} 0 0 ${sweep} ${aex} ${aey}`);
+    parts.push(`L ${tx} ${ty}`);
+    return parts.join(" ");
+  }
+
+  const revSweep = sweep === 1 ? 0 : 1;
+  const parts = [`M ${tx} ${ty}`, `L ${aex} ${aey}`];
+  parts.push(`A ${r} ${r} 0 0 ${revSweep} ${asx} ${asy}`);
+  if (leftover > 0.5) parts.push(`L ${jx} ${jy}`);
+  else if (Math.abs(asx - jx) > 0.5 || Math.abs(asy - jy) > 0.5) {
+    parts.push(`L ${jx} ${jy}`);
+  }
+  return parts.join(" ");
+};
+
+/**
  * Local track tangent at a node — used so ticks stay ⊥ to the line.
  *
  * Line-diagram lane joins (45° S / 90° R) end tangent to the corridor main
@@ -323,10 +423,42 @@ const localTrackTangent = (
   return mainAxis;
 };
 
-const isSpurJoin = (
+const nodeDegree = (
+  id: string,
+  edges: readonly SchematicEdge[],
+): number => {
+  let n = 0;
+  for (const edge of edges) {
+    if (edge.from === id || edge.to === id) n += 1;
+  }
+  return n;
+};
+
+const isDiagonalSpur = (
   from: SchematicNode,
   to: SchematicNode,
-): boolean => from.kind === "terminus" || to.kind === "terminus";
+  edges: readonly SchematicEdge[],
+): boolean => {
+  const fromDeg = nodeDegree(from.id, edges);
+  const toDeg = nodeDegree(to.id, edges);
+  const fromTip = from.kind === "terminus" && fromDeg === 1;
+  const toTip = to.kind === "terminus" && toDeg === 1;
+  return (fromTip && toDeg >= 2) || (toTip && fromDeg >= 2);
+};
+
+const spurTrackAngle = (
+  from: SchematicNode,
+  to: SchematicNode,
+  orientation: SchematicOrientation,
+): number => {
+  const tip = from.kind === "terminus" ? from : to;
+  const junction = tip === from ? to : from;
+  const dPos = tip.pos - junction.pos;
+  const dLane = tip.lane - junction.lane;
+  const sx = orientation === "horizontal" ? Math.sign(dPos) : Math.sign(dLane);
+  const sy = orientation === "horizontal" ? Math.sign(dLane) : Math.sign(dPos);
+  return (Math.atan2(sy, sx) * 180) / Math.PI;
+};
 
 const resolveCornerRadius = (
   options: SchematicLayoutOptions,
@@ -381,6 +513,37 @@ export const layoutLineSchematic = (
 
   const points: SchematicLayoutPoint[] = schematic.nodes.map((node) => {
     const { x, y } = xyById.get(node.id)!;
+    const trackAxis = localTrackTangent(
+      node.id,
+      xyById,
+      schematic.edges,
+      orientation,
+      laneById,
+    );
+    const spurEdge = schematic.edges.find(
+      (edge) =>
+        (edge.from === node.id || edge.to === node.id) &&
+        isDiagonalSpur(
+          byId.get(edge.from)!,
+          byId.get(edge.to)!,
+          schematic.edges,
+        ),
+    );
+    const isSpurTip =
+      orientation === "horizontal" &&
+      node.kind === "terminus" &&
+      nodeDegree(node.id, schematic.edges) === 1 &&
+      spurEdge != null;
+    const trackAngle =
+      isSpurTip && spurEdge
+        ? spurTrackAngle(
+            byId.get(spurEdge.from)!,
+            byId.get(spurEdge.to)!,
+            orientation,
+          )
+        : orientation === "horizontal"
+          ? 0
+          : 90;
     return {
       id: node.id,
       stationKey: schematicStationKey(node),
@@ -391,13 +554,8 @@ export const layoutLineSchematic = (
       pos: node.pos,
       kind: node.kind ?? "stop",
       branchIds: node.branchIds,
-      trackAxis: localTrackTangent(
-        node.id,
-        xyById,
-        schematic.edges,
-        orientation,
-        laneById,
-      ),
+      trackAxis,
+      trackAngle,
     };
   });
 
@@ -416,12 +574,24 @@ export const layoutLineSchematic = (
     if (sameLane) {
       path = `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
     } else {
-      const spur = isSpurJoin(from, to);
+      const spur = isDiagonalSpur(from, to, schematic.edges);
       const radius = resolveCornerRadius(options, orientation, spur);
-      path =
-        orientation === "horizontal"
-          ? octilinearLanePath(a.x, a.y, b.x, b.y, radius, mainAxis)
-          : orthogonalRoundedPath(a.x, a.y, b.x, b.y, radius, mainAxis);
+      if (orientation === "horizontal" && spur) {
+        const fromIsJunction = nodeDegree(from.id, schematic.edges) >= 2;
+        path = diagonalSpurPath(
+          a.x,
+          a.y,
+          b.x,
+          b.y,
+          radius,
+          fromIsJunction,
+          mainAxis,
+        );
+      } else if (orientation === "horizontal") {
+        path = octilinearLanePath(a.x, a.y, b.x, b.y, radius, mainAxis);
+      } else {
+        path = orthogonalRoundedPath(a.x, a.y, b.x, b.y, radius, mainAxis);
+      }
     }
 
     edges.push({

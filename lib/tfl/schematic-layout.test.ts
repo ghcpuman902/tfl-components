@@ -10,6 +10,7 @@ import { NORTHERN_LINE_SCHEMATIC_VERTICAL } from "./fixtures/northern-line-schem
 import {
   layoutLineSchematic,
   maxOctilinearRadius,
+  maxSpurRadius,
   octilinearLanePath,
   orthogonalRoundedPath,
   type SchematicLayout,
@@ -103,6 +104,43 @@ describe("orthogonalRoundedPath", () => {
   });
 });
 
+const pathHas45Run = (path: string): boolean => {
+  const tokens = path.split(/ +/);
+  let x = 0;
+  let y = 0;
+  for (let i = 0; i < tokens.length; ) {
+    const cmd = tokens[i];
+    if (cmd === "M" || cmd === "L") {
+      const nx = Number(tokens[i + 1]);
+      const ny = Number(tokens[i + 2]);
+      if (cmd === "L") {
+        const dx = nx - x;
+        const dy = ny - y;
+        if (Math.abs(dx) > 0.5 && Math.abs(Math.abs(dy / dx) - 1) < 0.05) {
+          return true;
+        }
+      }
+      x = nx;
+      y = ny;
+      i += 3;
+    } else if (cmd === "A") {
+      x = Number(tokens[i + 6]);
+      y = Number(tokens[i + 7]);
+      i += 8;
+    } else {
+      i += 1;
+    }
+  }
+  return false;
+};
+
+describe("maxSpurRadius", () => {
+  it("is positive when main span clears a 45° diagonal", () => {
+    assert.ok(maxSpurRadius(120, 100) > 30);
+    assert.equal(maxSpurRadius(60, 100), 0);
+  });
+});
+
 describe("Northern BranchStrip geometry", () => {
   for (const orientation of ["horizontal", "vertical"] as const) {
     describe(orientation, () => {
@@ -133,6 +171,55 @@ describe("Northern BranchStrip geometry", () => {
         assert.ok(m, `unparsed path: ${path}`);
         assert.notEqual(Number(m![1]), Number(m![3]), "x must change");
         assert.notEqual(Number(m![2]), Number(m![4]), "y must change");
+        if (orientation === "horizontal") {
+          assert.equal(
+            (path.match(/ A /g) ?? []).length,
+            1,
+            `horizontal spur must be a single fillet, got: ${path}`,
+          );
+          assert.equal(
+            pathHas45Run(path),
+            true,
+            `horizontal spur must include a 45° run, got: ${path}`,
+          );
+        } else {
+          assert.equal(
+            (path.match(/ A /g) ?? []).length,
+            1,
+            `vertical spur stays a quarter-circle, got: ${path}`,
+          );
+          assert.equal(
+            pathHas45Run(path),
+            false,
+            `vertical §11 must not grow a 45° run, got: ${path}`,
+          );
+        }
+      });
+
+      it("horizontal spurs keep a positive 45° radius", () => {
+        if (orientation !== "horizontal") return;
+        const byId = new Map(schematic.nodes.map((n) => [n.id, n]));
+        for (const edge of layout.edges) {
+          const from = byId.get(edge.from);
+          const to = byId.get(edge.to);
+          if (!from || !to || from.lane === to.lane) continue;
+          const fromDeg = schematic.edges.filter(
+            (e) => e.from === from.id || e.to === from.id,
+          ).length;
+          const toDeg = schematic.edges.filter(
+            (e) => e.from === to.id || e.to === to.id,
+          ).length;
+          const isSpur =
+            (from.kind === "terminus" && fromDeg === 1 && toDeg >= 2) ||
+            (to.kind === "terminus" && toDeg === 1 && fromDeg >= 2);
+          if (!isSpur) continue;
+          const mainDelta = Math.abs(from.pos - to.pos) * layout.mainPitch;
+          const crossDelta = Math.abs(from.lane - to.lane) * layout.lanePitch;
+          assert.ok(
+            maxSpurRadius(mainDelta, crossDelta) > 0.5,
+            `spur ${edge.from}→${edge.to} has no 45° room (Δmain=${mainDelta}, Δcross=${crossDelta})`,
+          );
+        }
       });
 
       it("Camden → Mornington: arc join when lanes differ (no Bezier)", () => {
@@ -184,6 +271,15 @@ describe("Northern BranchStrip geometry", () => {
           westFinchley.trackAxis,
           "Mill Hill dash orientation must match other stations on this diagram",
         );
+        if (orientation === "horizontal") {
+          const norm = ((mill.trackAngle % 180) + 180) % 180;
+          assert.ok(
+            Math.abs(norm - 45) < 1 || Math.abs(norm - 135) < 1,
+            `horizontal Mill Hill trackAngle should be 45-family, got ${mill.trackAngle}`,
+          );
+        } else {
+          assert.equal(mill.trackAngle, 90);
+        }
       });
     });
   }

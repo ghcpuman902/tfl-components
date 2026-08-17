@@ -105,6 +105,23 @@ export default function LineStripDemo() {
       </section>
 
       <section className="rounded-lg border border-border bg-card p-4 sm:p-6">
+        <h2 className="text-lg font-semibold">Mono</h2>
+        <p className="mt-1 mb-4 text-sm text-muted-foreground">
+          B&amp;W Tube-map stroke motifs on the graph. Pass{" "}
+          <code className="rounded bg-muted px-1 text-xs">mono</code>. Motifs
+          scale through{" "}
+          <code className="rounded bg-muted px-1 text-xs">x</code>, not the
+          inherited diagram scale.
+        </p>
+        <LineStrip
+          lineId="victoria"
+          stations={VICTORIA_STRIP}
+          lineName="Victoria line"
+          mono
+        />
+      </section>
+
+      <section className="rounded-lg border border-border bg-card p-4 sm:p-6">
         <h2 className="text-lg font-semibold">Part closure (sample)</h2>
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Victoria · no service between Seven Sisters and Green Park. The track

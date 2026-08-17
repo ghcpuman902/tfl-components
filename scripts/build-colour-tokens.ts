@@ -42,6 +42,12 @@ const BLACK_OKLCH = "oklch(0% 0 0)";
 const TFL_BLUE_OKLCH = srgbToOklchCss(parseHex(TFL_BLUE));
 const NORTHERN_DARK_OKLCH = northernDarkOklch();
 
+/** Large-print B&W map key greys — ink/paper swap in `.dark`. */
+const MONO_INK_OKLCH = srgbToOklchCss(parseHex("#202020"));
+const MONO_PAPER_OKLCH = WHITE_OKLCH;
+const MONO_GREY_OKLCH = srgbToOklchCss(parseHex("#96999b"));
+const MONO_LIGHT_OKLCH = srgbToOklchCss(parseHex("#b8babc"));
+
 /**
  * Northern dark default = Go light fill (`#FCFCFC`), not brand black.
  * Halo / stroke opt-in keeps brand black — see `data-tfl-northern="halo"`.
@@ -162,6 +168,19 @@ export const buildColourTokensArtefacts = (
     dark["tfl-diagram-cable-car"] = central.darkOklch;
     theme["color-tfl-diagram-cable-car"] = "var(--tfl-diagram-cable-car)";
   }
+
+  light["tfl-mono-ink"] = MONO_INK_OKLCH;
+  light["tfl-mono-paper"] = MONO_PAPER_OKLCH;
+  light["tfl-mono-grey"] = MONO_GREY_OKLCH;
+  light["tfl-mono-light"] = MONO_LIGHT_OKLCH;
+  dark["tfl-mono-ink"] = MONO_PAPER_OKLCH;
+  dark["tfl-mono-paper"] = MONO_INK_OKLCH;
+  dark["tfl-mono-grey"] = MONO_GREY_OKLCH;
+  dark["tfl-mono-light"] = MONO_LIGHT_OKLCH;
+  theme["color-tfl-mono-ink"] = "var(--tfl-mono-ink)";
+  theme["color-tfl-mono-paper"] = "var(--tfl-mono-paper)";
+  theme["color-tfl-mono-grey"] = "var(--tfl-mono-grey)";
+  theme["color-tfl-mono-light"] = "var(--tfl-mono-light)";
 
   const bindingRules: Record<string, Record<string, string>> = {};
   const diagramCableCarIds: string[] = [];
@@ -467,6 +486,11 @@ const upsertRegistryItem = (artefacts: ColourTokensArtefacts): void => {
         path: "lib/tfl/line-diagram.ts",
         type: "registry:lib",
         target: "lib/tfl/line-diagram.ts",
+      },
+      {
+        path: "lib/tfl/bw-line-styles.ts",
+        type: "registry:lib",
+        target: "lib/tfl/bw-line-styles.ts",
       },
     ],
   };

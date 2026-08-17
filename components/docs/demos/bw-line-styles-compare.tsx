@@ -150,7 +150,7 @@ export const BwLineStylesCompare = () => (
               <div className="bg-white px-1 dark:bg-neutral-100">
                 <Strip d={STRAIGHT} layers={colourLayers(color, trackStyle)} />
               </div>
-              <div className="bg-white px-1 dark:bg-neutral-100">
+              <div className="bg-background px-1">
                 <Strip d={STRAIGHT} layers={bwLineStyles[row.bw]} />
               </div>
             </div>

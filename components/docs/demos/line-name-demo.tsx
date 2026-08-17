@@ -1,4 +1,5 @@
 import { DocsResizeFrame } from "@/components/docs/docs-resize-frame";
+import { LineColorBar } from "@/components/tfl/brand/line-badge";
 import { LineName } from "@/components/tfl/brand/line-name";
 
 const SHARED_TRACK_IDS = [
@@ -37,10 +38,10 @@ const BoardLineHeader = ({
       </div>
       <div className="flex h-1 w-full overflow-hidden" aria-hidden>
         {ids.map((id) => (
-          <div
+          <LineColorBar
             key={id}
-            data-line={id}
-            className="min-w-0 flex-1 bg-[var(--line-color)]"
+            lineId={id}
+            heightClass="h-1 min-w-0 flex-1"
           />
         ))}
       </div>
@@ -83,6 +84,18 @@ export default function LineNameDemo() {
         <div className="space-y-1">
           <p className="text-xs text-muted-foreground">Short name</p>
           <BoardLineHeader lineId="central" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">
+            Double rail (Elizabeth)
+          </p>
+          <BoardLineHeader lineId="elizabeth" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">
+            Triple rail (Cable Car)
+          </p>
+          <BoardLineHeader lineId="cable-car" />
         </div>
       </DocsResizeFrame>
     </div>

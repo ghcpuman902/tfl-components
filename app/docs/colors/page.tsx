@@ -287,7 +287,9 @@ export default function FoundationsColoursPage() {
             </li>
             <li>
               <code className="text-xs">data-tfl-colour=&quot;mono&quot;</code> —
-              app opt-in colourless mode (greys today); see{" "}
+              greys <code className="text-xs">--line-color</code> /{" "}
+              <code className="text-xs">--line-ink</code> for chrome. Stroke
+              motifs live on strips — see{" "}
               <a
                 href="#mono"
                 className="text-foreground underline underline-offset-4"
@@ -313,9 +315,27 @@ export default function FoundationsColoursPage() {
             >
               large-print B&amp;W map
             </a>{" "}
-            key). These motifs are what{" "}
-            <code className="text-xs">data-tfl-colour=&quot;mono&quot;</code>{" "}
-            will paint on strips. They are not live CSS role tokens yet.
+            key). Palette tokens{" "}
+            <code className="text-xs">--tfl-mono-ink</code> /{" "}
+            <code className="text-xs">paper</code> /{" "}
+            <code className="text-xs">grey</code> /{" "}
+            <code className="text-xs">light</code> invert in{" "}
+            <code className="text-xs">.dark</code>. Only{" "}
+            <a
+              href="/docs/line-strip"
+              className="text-foreground underline underline-offset-4"
+            >
+              Simple line strip
+            </a>{" "}
+            and{" "}
+            <a
+              href="/docs/branch-strip"
+              className="text-foreground underline underline-offset-4"
+            >
+              Branch line strip
+            </a>{" "}
+            paint the motifs, via a{" "}
+            <code className="text-xs">mono</code> prop.
           </p>
           <BwLineStylesCompare />
         </section>

@@ -2,9 +2,11 @@
  * Tube-map black & white line patterns (large-print B&W map key).
  * Tuned against B&W key / Overground traces — provisional, not TfL measurements.
  *
- * Coordinate system: Underground outer stroke = 8.
+ * Coordinate system: Underground outer stroke = 8 (= 1× diagram unit).
  * Non-Underground / Overground borders are ⅓ of total height.
- * Used by the Colours docs mono compare; later for `data-tfl-colour="mono"`.
+ *
+ * Palette tokens (`--tfl-mono-ink` / paper / grey / light) invert in `.dark`.
+ * Only Simple line strip and Branch line strip paint these motifs.
  */
 
 export type StrokeLayer = {
@@ -16,10 +18,10 @@ export type StrokeLayer = {
   linecap?: "butt" | "round" | "square";
 };
 
-export const DARK = "#202020";
-export const GREY = "#96999b";
-export const LIGHT = "#b8babc";
-export const WHITE = "#fff";
+export const DARK = "var(--tfl-mono-ink)";
+export const GREY = "var(--tfl-mono-grey)";
+export const LIGHT = "var(--tfl-mono-light)";
+export const WHITE = "var(--tfl-mono-paper)";
 
 /** Underground solid-route thickness. */
 export const UG = 8;
@@ -260,3 +262,66 @@ export const bwLineStyles: Record<string, StrokeLayer[]> = {
 };
 
 export type BwLineStyleKey = keyof typeof bwLineStyles;
+
+const MONO_STYLE_BY_ID: Record<string, BwLineStyleKey> = {
+  bakerloo: "bakerloo",
+  central: "central",
+  circle: "circle",
+  district: "district",
+  "hammersmith-city": "hammersmithCity",
+  jubilee: "jubilee",
+  metropolitan: "metropolitan",
+  northern: "northern",
+  piccadilly: "piccadilly",
+  victoria: "victoria",
+  "waterloo-city": "waterlooCity",
+  dlr: "dlr",
+  elizabeth: "elizabeth",
+  "elizabeth-line": "elizabeth",
+  tram: "trams",
+  trams: "trams",
+  "cable-car": "cableCar",
+  "london-cable-car": "cableCar",
+  "emirates-airline": "cableCar",
+  thameslink: "thameslink",
+  "national-rail": "nationalRail",
+  liberty: "liberty",
+  lioness: "lioness",
+  mildmay: "mildmay",
+  suffragette: "suffragette",
+  weaver: "weaver",
+  windrush: "windrush",
+};
+
+/** B&W stroke layers for a TfL line / mode id. Unknown ids fall back to solid ink. */
+export const resolveMonoLineStyle = (lineId: string): StrokeLayer[] => {
+  const key = MONO_STYLE_BY_ID[lineId.toLowerCase()];
+  return key ? bwLineStyles[key] : bwLineStyles.northern;
+};
+
+/** Stack height in diagram `x` units (UG 8 = 1×). */
+export const monoLineHeightUnits = (layers: readonly StrokeLayer[]): number => {
+  const outer = layers.reduce((max, layer) => Math.max(max, layer.width), 0);
+  return outer / UG;
+};
+
+const scaleDash = (dash: string, factor: number): string =>
+  dash
+    .split(/\s+/)
+    .map((part) => String(Number(part) * factor))
+    .join(" ");
+
+/** Scale motif widths, dashes, and offsets so UG 8 maps to diagram unit `x`. */
+export const scaleMonoLayers = (
+  layers: readonly StrokeLayer[],
+  x: number,
+): StrokeLayer[] => {
+  const factor = x / UG;
+  return layers.map((layer) => ({
+    ...layer,
+    width: layer.width * factor,
+    dash: layer.dash ? scaleDash(layer.dash, factor) : undefined,
+    dashoffset:
+      layer.dashoffset != null ? layer.dashoffset * factor : undefined,
+  }));
+};

@@ -77,6 +77,14 @@ describe("colour tokens generator", () => {
       cssText,
       /\[data-line='cable-car'\]\[data-tfl-diagram\],\n\[data-line='london-cable-car'\]\[data-tfl-diagram\] \{\n  --line-raw: var\(--tfl-diagram-cable-car\);/,
     );
+    assert.ok(cssVars.light["tfl-mono-ink"]?.startsWith("oklch("));
+    assert.equal(cssVars.dark["tfl-mono-ink"], cssVars.light["tfl-mono-paper"]);
+    assert.equal(cssVars.dark["tfl-mono-paper"], cssVars.light["tfl-mono-ink"]);
+    assert.equal(cssVars.dark["tfl-mono-grey"], cssVars.light["tfl-mono-grey"]);
+    assert.equal(
+      cssVars.theme["color-tfl-mono-ink"],
+      "var(--tfl-mono-ink)",
+    );
   });
 
   it("keeps committed app/tfl-colours.css in sync (run pnpm registry:build)", () => {
@@ -111,6 +119,18 @@ describe("colour tokens generator", () => {
     assert.ok(
       files?.some((file) => file.target === "lib/tfl/route-track.ts"),
       "tfl-colours should ship route-track.ts",
+    );
+    assert.ok(
+      files?.some((file) => file.target === "lib/tfl/bw-line-styles.ts"),
+      "tfl-colours should ship bw-line-styles.ts",
+    );
+
+    const lineStrip = registry.items.find((entry) => entry.name === "line-strip");
+    const lineStripFiles = (lineStrip as { files?: Array<{ target?: string }> })
+      .files;
+    assert.ok(
+      lineStripFiles?.some((file) => file.target === "lib/tfl/bw-line-styles.ts"),
+      "line-strip should ship bw-line-styles.ts",
     );
 
     const lineBadge = registry.items.find((entry) => entry.name === "line-badge");

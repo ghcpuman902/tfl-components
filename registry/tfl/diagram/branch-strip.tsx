@@ -1,6 +1,10 @@
 import { StationName } from "@/components/tfl/station-name";
 import { OUT_OF_USE_LINE_COLOR } from "@/components/tfl/diagram/straight-strip-parts";
 import {
+  resolveMonoLineStyle,
+  scaleMonoLayers,
+} from "@/lib/tfl/bw-line-styles";
+import {
   branchStripMetrics,
   placeBranchStripLabels,
   verticalLabelOnLeft,
@@ -23,7 +27,7 @@ import { cn } from "@/lib/utils";
  *
  * ## Visual regression checklist (run after every edit)
  * Open http://localhost:3999/docs/branch-strip and confirm:
- * 1. **Mill Hill East** joins Finchley with a Line Diagram circular arc — never a flat 90° stub
+ * 1. **Mill Hill East** joins Finchley with a single 45° diagonal + one fillet — never a 90° stub
  *    (same `pos` as Finchley is forbidden; see `schematic-layout.test.ts`)
  * 2. **Camden → Mornington Crescent** is a §6 join (45° S or 90° R) — never a freeform Bezier
  * 3. **No station labels overlap** each other; prefer labels clear of the track
@@ -53,6 +57,11 @@ export type BranchStripProps = {
    * Lets closures paint without redesigning the schematic.
    */
   segmentStates?: Readonly<Record<string, StripSegmentState>>;
+  /**
+   * Paint B&W Tube-map stroke motifs instead of a single colour stroke.
+   * Scales through `x` (defaults to the orientation baseline).
+   */
+  mono?: boolean;
 };
 
 export const BranchStrip = ({
@@ -63,10 +72,15 @@ export const BranchStrip = ({
   className,
   nodeLabelLines,
   segmentStates,
+  mono = false,
 }: BranchStripProps) => {
   const orientation = orientationProp ?? schematic.orientation;
   const isHorizontal = orientation === "horizontal";
   const m = branchStripMetrics(orientation, xProp);
+  const monoLayers = mono
+    ? scaleMonoLayers(resolveMonoLineStyle(schematic.lineId), m.x)
+    : null;
+  const markerColor = mono ? "var(--tfl-mono-ink)" : lineColor;
   const {
     nameFont,
     labelLineHeight,
@@ -132,14 +146,41 @@ export const BranchStrip = ({
                 segmentStates?.[branchSegmentKey(edge.from, edge.to)] ??
                 segmentStates?.[branchSegmentKey(edge.to, edge.from)];
               const state = override ?? edge.state;
-              const stroke =
-                state === "out-of-use" ? OUT_OF_USE_LINE_COLOR : lineColor;
+              const edgeKey = `${edge.branchId ?? "edge"}:${edge.from}→${edge.to}`;
+              if (state === "out-of-use") {
+                return (
+                  <path
+                    key={edgeKey}
+                    d={edge.path}
+                    fill="none"
+                    stroke={OUT_OF_USE_LINE_COLOR}
+                    strokeWidth={strokeWidth}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                );
+              }
+              if (monoLayers) {
+                return monoLayers.map((layer, index) => (
+                  <path
+                    key={`${edgeKey}-${index}`}
+                    d={edge.path}
+                    fill="none"
+                    stroke={layer.stroke}
+                    strokeWidth={layer.width}
+                    strokeDasharray={layer.dash}
+                    strokeDashoffset={layer.dashoffset}
+                    strokeLinecap={layer.linecap ?? "round"}
+                    strokeLinejoin="round"
+                  />
+                ));
+              }
               return (
                 <path
-                  key={`${edge.branchId ?? "edge"}:${edge.from}→${edge.to}`}
+                  key={edgeKey}
                   d={edge.path}
                   fill="none"
-                  stroke={stroke}
+                  stroke={lineColor}
                   strokeWidth={strokeWidth}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -151,12 +192,14 @@ export const BranchStrip = ({
               <BranchStripMarker
                 key={`m-${point.id}`}
                 point={point}
-                lineColor={lineColor}
+                lineColor={markerColor}
                 strokeWidth={strokeWidth}
                 tickProtrude={tickProtrude}
                 ringOuter={ringOuter}
                 ringStroke={ringStroke}
                 routeAlongMain={point.trackAxis === "x"}
+                trackAngle={point.trackAngle}
+                mono={mono}
               />
             ))}
           </g>
@@ -282,6 +325,9 @@ type BranchStripMarkerProps = {
   ringStroke: number;
   /** True when local track runs along the main (horizontal) axis. */
   routeAlongMain: boolean;
+  /** Local track heading in degrees from +x. Tick/bar rotate to stay ⊥. */
+  trackAngle?: number;
+  mono?: boolean;
 };
 
 /**
@@ -298,6 +344,8 @@ const BranchStripMarker = ({
   ringOuter,
   ringStroke,
   routeAlongMain,
+  trackAngle = 0,
+  mono = false,
 }: BranchStripMarkerProps) => {
   if (point.kind === "interchange") {
     return (
@@ -305,17 +353,28 @@ const BranchStripMarker = ({
         cx={point.x}
         cy={point.y}
         r={ringOuter}
-        className="fill-white stroke-black dark:fill-black dark:stroke-white"
+        className={
+          mono
+            ? undefined
+            : "fill-white stroke-black dark:fill-black dark:stroke-white"
+        }
+        fill={mono ? "var(--tfl-mono-paper)" : undefined}
+        stroke={mono ? "var(--tfl-mono-ink)" : undefined}
         strokeWidth={ringStroke}
       />
     );
   }
 
+  const isDiagonal = Math.abs(Math.round(trackAngle) % 90) !== 0;
+  const rotate = isDiagonal
+    ? `rotate(${trackAngle} ${point.x} ${point.y})`
+    : undefined;
+
   const halfLen = strokeWidth / 2 + tickProtrude;
 
   if (point.kind === "terminus") {
     const half = strokeWidth / 2 + tickProtrude * 3.5;
-    if (routeAlongMain) {
+    if (routeAlongMain || isDiagonal) {
       return (
         <rect
           x={point.x - strokeWidth / 2}
@@ -323,6 +382,7 @@ const BranchStripMarker = ({
           width={strokeWidth}
           height={half * 2}
           fill={lineColor}
+          transform={rotate}
         />
       );
     }
@@ -337,7 +397,7 @@ const BranchStripMarker = ({
     );
   }
 
-  if (routeAlongMain) {
+  if (routeAlongMain || isDiagonal) {
     return (
       <rect
         x={point.x - strokeWidth / 2}
@@ -345,6 +405,7 @@ const BranchStripMarker = ({
         width={strokeWidth}
         height={strokeWidth + tickProtrude * 2}
         fill={lineColor}
+        transform={rotate}
       />
     );
   }

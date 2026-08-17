@@ -1,4 +1,5 @@
-import { BranchStrip } from "@/components/tfl/diagram/branch-strip";import { StraightStrip } from "@/components/tfl/diagram/straight-strip";
+import { BranchStrip } from "@/components/tfl/diagram/branch-strip";
+import { StraightStrip } from "@/components/tfl/diagram/straight-strip";
 import { LineRouteDiagram } from "@/components/tfl/diagram/line-route-diagram";
 import {
   sliceLineSpineStations,
@@ -64,6 +65,11 @@ export type LineStripProps = {
    * (solid / Overground·Elizabeth parallel / cable-car triple).
    */
   trackStyle?: RouteTrackStyle;
+  /**
+   * Paint B&W Tube-map stroke motifs on the strip graph.
+   * Scales through `x`, not `--tfl-diagram-scale`.
+   */
+  mono?: boolean;
 };
 
 /**
@@ -94,6 +100,7 @@ export const LineStrip = ({
   labelPlacement = "above",
   applyLabelRecipes = true,
   trackStyle: trackStyleProp,
+  mono = false,
 }: LineStripProps) => {
   const color =
     resolveDiagramLineCssColor(lineId) ??
@@ -119,6 +126,7 @@ export const LineStrip = ({
         className={className}
         nodeLabelLines={prepared.nodeLabelLines}
         segmentStates={prepared.segmentStates}
+        mono={mono}
       />
     );
   }
@@ -169,6 +177,8 @@ export const LineStrip = ({
       trackStyle={trackStyle}
       x={x}
       className={scroll ? undefined : className}
+      mono={mono}
+      lineId={lineId}
     />
   );
 

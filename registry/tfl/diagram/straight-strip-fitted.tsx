@@ -9,6 +9,7 @@ import {
   horizontalDiagramMetrics,
 } from "@/lib/tfl/line-diagram";
 import {
+  MonoRouteTrack,
   StraightRouteTrack,
   StraightStripStationColumn,
   selectFittedLabelIndexes,
@@ -37,6 +38,8 @@ type FittedProps = {
   sharedFitScale?: number;
   labelPlacement?: StripLabelPlacement;
   trackStyle?: RouteTrackStyle;
+  mono?: boolean;
+  lineId?: string;
 };
 
 /**
@@ -55,6 +58,8 @@ export const StraightStripFitted = ({
   sharedFitScale,
   labelPlacement = "above",
   trackStyle = "solid",
+  mono = false,
+  lineId,
 }: FittedProps) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -71,6 +76,7 @@ export const StraightStripFitted = ({
     return () => observer.disconnect();
   }, []);
 
+  const markerColor = mono ? "var(--tfl-mono-ink)" : lineColor;
   const m = horizontalDiagramMetrics(labelPlacement);
   const colWidthPxApprox =
     DIAGRAM_BASELINE.horizontal * 0.85 * m.colWidthUnits;
@@ -80,10 +86,11 @@ export const StraightStripFitted = ({
       ? Math.min(1, width / Math.max(colWidthPxApprox * stations.length, 1))
       : 1;
   const fitScale = sharedFitScale ?? selfScale;
+  const monoX = (x ?? DIAGRAM_BASELINE.horizontal) * fitScale;
 
   const unitStyle = (
-    x != null
-      ? { [DIAGRAM_X_VAR]: `${x * fitScale}px` }
+    mono || x != null
+      ? { [DIAGRAM_X_VAR]: `${(x ?? DIAGRAM_BASELINE.horizontal) * fitScale}px` }
       : {
           [DIAGRAM_X_VAR]: `calc(${DIAGRAM_BASELINE.horizontal}px * var(${DIAGRAM_SCALE_VAR}, 1) * ${fitScale})`,
         }
@@ -139,15 +146,26 @@ export const StraightStripFitted = ({
       ) : null}
 
       <div className="relative" style={{ width: totalWidth }}>
-        <StraightRouteTrack
-          stationCount={stations.length}
-          segmentStates={segmentStates}
-          lineColor={lineColor}
-          lineTop={m.lineTop}
-          lineWidth={m.lineWidth}
-          colWidthUnits={m.colWidthUnits}
-          trackStyle={trackStyle}
-        />
+        {mono && lineId ? (
+          <MonoRouteTrack
+            stationCount={stations.length}
+            segmentStates={segmentStates}
+            lineId={lineId}
+            x={monoX}
+            lineTop={m.lineTop}
+            colWidthUnits={m.colWidthUnits}
+          />
+        ) : (
+          <StraightRouteTrack
+            stationCount={stations.length}
+            segmentStates={segmentStates}
+            lineColor={lineColor}
+            lineTop={m.lineTop}
+            lineWidth={m.lineWidth}
+            colWidthUnits={m.colWidthUnits}
+            trackStyle={trackStyle}
+          />
+        )}
 
         <ol className="relative m-0 flex list-none items-start p-0">
           {stations.map((station, index) => (
@@ -155,7 +173,7 @@ export const StraightStripFitted = ({
               key={`${station.id}-${index}`}
               station={station}
               index={index}
-              lineColor={lineColor}
+              lineColor={markerColor}
               showLabel={labelIndexes.has(index)}
               connectionBand={connectionBand}
               colWidth={m.colWidth}
