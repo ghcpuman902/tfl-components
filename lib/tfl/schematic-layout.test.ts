@@ -20,7 +20,7 @@ import type { LineSchematic } from "./line-schematic.ts";
 /**
  * Geometry + label invariants for BranchStrip / Northern fixtures.
  *
- * Visual check after any edit: http://localhost:3999/docs/branch-strip
+ * Visual check after any edit: http://localhost:3999/docs/branch-strip-horizontal
  * 1. Mill Hill curves into Finchley with a circular arc — never a flat 90° stub
  * 2. Camden → Mornington is a Line Diagram join (45° S or 90° R) — never Bezier
  * 3. Station labels do not overlap each other

@@ -4,6 +4,7 @@ import { partitionStatusBoardLines } from "@/lib/tfl/status-board"
 import {
   allocateStatusStripRegions,
   buildStatusDisplayFrames,
+  packAnnouncementPages,
 } from "@/lib/tfl/status-display"
 import type { StatusLine } from "@/lib/tfl/status-types"
 
@@ -90,9 +91,13 @@ describe("buildStatusDisplayFrames", () => {
     assert.equal(frames[0]?.heading, "Service disruptions")
     assert.equal(frames[0]?.activeLineId, "central")
     assert.equal(frames[0]?.activeLineName, "Central")
-    assert.ok(frames[0]?.tiles.every((tile) => tile.kind === "text"))
+    assert.ok(frames[0]?.tiles.every((tile) => tile.kind === "announcements"))
+    assert.equal(frames[0]?.pageCount, 1)
     const good = frames.find((frame) => frame.phase === "good-service")
     assert.ok(good)
+    assert.equal(good?.heading, "Service disruptions")
+    assert.deepEqual(good?.headingLineIds, ["central"])
+    assert.equal(good?.bodyHeading, "Good service")
     const goodChips = good?.tiles[0]
     assert.equal(goodChips?.kind, "chips")
     if (goodChips?.kind === "chips") {
@@ -117,25 +122,37 @@ describe("buildStatusDisplayFrames", () => {
     const frames = buildStatusDisplayFrames(sections, { tiles: 1 })
     assert.equal(frames[0]?.tiles.length, 0)
     assert.equal(frames[0]?.heading, "Service disruptions")
-    assert.ok(!frames[0]?.tiles.some((tile) => tile.kind === "text"))
+    assert.ok(!frames[0]?.tiles.some((tile) => tile.kind === "announcements"))
   })
 
-  it("splits long reasons across further frames", () => {
+  it("keeps a typical disruption on one page", () => {
     const sections = partitionStatusBoardLines([central], { now: SATURDAY })
+    const frames = buildStatusDisplayFrames(sections, { tiles: 4 })
+    const disruption = frames.filter((frame) => frame.phase === "disruptions")
+    assert.equal(disruption.length, 1)
+    assert.equal(disruption[0]?.pageCount, 1)
+    assert.equal(disruption[0]?.tiles[0]?.kind, "announcements")
+  })
+
+  it("pages only when one announcement exceeds the body", () => {
+    const long = line(
+      "central",
+      "Central",
+      6,
+      "Severe Delays",
+      `Central Line: ${"Delayed at every station. ".repeat(20)}`
+    )
+    const sections = partitionStatusBoardLines([long], { now: SATURDAY })
     const frames = buildStatusDisplayFrames(sections, {
       tiles: 3,
       charsPerTile: 40,
     })
     const disruption = frames.filter((frame) => frame.phase === "disruptions")
-    const texts = disruption.flatMap((frame) =>
-      frame.tiles.filter((tile) => tile.kind === "text").map((tile) => tile.text)
-    )
-    assert.ok(texts.length >= 2)
+    assert.ok(disruption.length >= 2)
     assert.ok(
-      disruption.every((frame) => !frame.tiles.some((tile) => tile.kind === "chips"))
+      disruption.every((frame) => frame.tiles[0]?.kind === "announcements")
     )
     assert.equal(disruption[0]?.pageCount, disruption.length)
-    assert.equal(disruption[0]?.tiles.length, 1)
   })
 
   it("scopes network summary to every fetched line and detail to the filter", () => {
@@ -168,7 +185,13 @@ describe("buildStatusDisplayFrames", () => {
       detailLineIds: ["victoria"],
     })
     assert.ok(frames.every((frame) => frame.phase === "good-service"))
-    assert.deepEqual(frames[0]?.headingLineIds, ["victoria"])
+    assert.equal(frames[0]?.heading, "Good service")
+    assert.deepEqual(frames[0]?.headingLineIds, [])
+    const selectedChips = frames[0]?.tiles[0]
+    assert.equal(selectedChips?.kind, "chips")
+    if (selectedChips?.kind === "chips") {
+      assert.deepEqual([...selectedChips.lineIds], ["victoria"])
+    }
     assert.equal(frames[0]?.otherGoodServiceCopy, undefined)
   })
 
@@ -183,6 +206,34 @@ describe("buildStatusDisplayFrames", () => {
     })
     assert.equal(frames[0]?.heading, "Central")
     assert.deepEqual(frames[0]?.headingLineIds, [])
+  })
+})
+
+describe("packAnnouncementPages", () => {
+  it("keeps several chip-and-copy blocks on one page when they fit", () => {
+    const pages = packAnnouncementPages(
+      [
+        { text: "Minor delays through the core.", statusSeverityDescription: "Minor Delays" },
+        { text: "No service after 1930.", statusSeverityDescription: "Part Closure" },
+      ],
+      { linesPerPage: 6, charsPerLine: 60 }
+    )
+    assert.equal(pages.length, 1)
+    assert.equal(pages[0]?.length, 2)
+  })
+
+  it("stacks two paragraphs on one page even when the summed estimate is over", () => {
+    const paragraph =
+      "On Mondays to Fridays no service before 0700 and after 1930, and on Saturdays no service before 0800."
+    const pages = packAnnouncementPages(
+      [
+        { text: paragraph, statusSeverityDescription: "Part Closure" },
+        { text: paragraph, statusSeverityDescription: "No Service" },
+      ],
+      { linesPerPage: 6, charsPerLine: 20 }
+    )
+    assert.equal(pages.length, 1)
+    assert.equal(pages[0]?.length, 2)
   })
 })
 

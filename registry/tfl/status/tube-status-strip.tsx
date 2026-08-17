@@ -9,6 +9,7 @@ import { partitionStatusBoardLines } from "@/lib/tfl/status-board"
 import {
   allocateStatusStripRegions,
   buildStatusDisplayFrames,
+  statusDisplayReasonText,
   visibleHeadingChips,
   type StatusDetailScope,
 } from "@/lib/tfl/status-display"
@@ -106,18 +107,19 @@ export const TubeStatusStrip = ({
     .filter(Boolean)
     .join(" ")
 
-  const reasonText =
-    frame?.tiles
-      .filter((tile) => tile.kind === "text")
-      .map((tile) => tile.text)
-      .join(" ") ?? ""
+  const reasonText = frame ? statusDisplayReasonText(frame.tiles) : ""
   const hasLine = Boolean(frame?.activeLineId && frame.activeLineName)
+  const chipsTile = frame?.tiles.find((tile) => tile.kind === "chips")
   const disruptedIds = visibleHeadingChips(
-    frame?.phase === "disruptions" ? frame.headingLineIds : [],
+    frame?.heading === "Service disruptions" ? frame.headingLineIds : [],
     frame?.activeLineId
   )
   const otherIds = visibleHeadingChips(
-    frame?.phase === "good-service" ? frame.headingLineIds : [],
+    chipsTile?.kind === "chips"
+      ? chipsTile.lineIds
+      : frame?.phase === "good-service"
+        ? frame.headingLineIds
+        : [],
     frame?.activeLineId
   )
 

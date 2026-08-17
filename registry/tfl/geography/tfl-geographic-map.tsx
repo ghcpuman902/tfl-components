@@ -22,10 +22,12 @@ import {
   OSM_TRANSIT_GEOMETRY_CREDIT,
   type TransitGeometryMode,
 } from "@/lib/tfl/geography-credits";
+import { useVehicleSegmentSource } from "@/components/tfl/geography/sync-vehicle-source";
 import {
-  vehiclesToGeoJSON,
+  vehiclesToSegmentGeoJSON,
   type VehiclePosition,
 } from "@/lib/tfl/map-vehicles";
+import type { RoutePolyline } from "@/lib/tfl/vehicle-progress";
 
 const LONDON_CENTER: [number, number] = [-0.12, 51.51];
 const LONDON_ZOOM = 10.2;
@@ -49,8 +51,10 @@ type TflGeographicMapProps = {
   modes?: readonly TransitMode[];
   /** When set, only these line ids are painted. */
   lineIds?: readonly string[];
-  /** Live vehicle dots. Positions are derived by the caller. */
+  /** Live vehicles. Positions are derived by the caller; this map paints track segments. */
   vehicles?: readonly VehiclePosition[];
+  /** Keep vehicles walking along the track between arrival snapshots. */
+  coast?: boolean;
   /** Show station circles and names. Default true. */
   showStations?: boolean;
   /** Show line tracks. Default true. */
@@ -147,14 +151,16 @@ const STATION_RADIUS: ExpressionSpecification = [
   5,
 ];
 
-const VEHICLE_RADIUS: ExpressionSpecification = [
+const VEHICLE_LINE_WIDTH: ExpressionSpecification = [
   "interpolate",
   ["linear"],
   ["zoom"],
   10,
-  3.5,
-  14,
   5.5,
+  14,
+  10,
+  16,
+  14,
 ];
 
 const STATION_LABEL_SIZE: ExpressionSpecification = [
@@ -212,6 +218,61 @@ const filterBundleLines = (
   };
 };
 
+const filterBundleStations = (
+  bundle: TransitGeometryBundle,
+  lineIds: readonly string[] | undefined,
+): TransitGeometryBundle["stations"] => {
+  if (!lineIds?.length) return bundle.stations;
+  const allow = new Set(lineIds);
+  return {
+    type: "FeatureCollection",
+    features: (bundle.stations.features ?? []).filter((feature) =>
+      (feature.properties?.lineIds ?? []).some((id) => allow.has(id)),
+    ),
+  };
+};
+
+const polylinesFromBundles = (
+  bundles: { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[],
+  lineIds?: readonly string[],
+): RoutePolyline[] => {
+  const allow = lineIds?.length ? new Set(lineIds) : null;
+  const out: RoutePolyline[] = [];
+  for (const { bundle } of bundles) {
+    for (const feature of bundle.lines.features ?? []) {
+      const lineId = feature.properties?.lineId ?? "";
+      if (allow && !allow.has(lineId)) continue;
+      if (feature.geometry?.type === "LineString") {
+        out.push({ lineId, line: feature.geometry });
+      }
+    }
+  }
+  return out;
+};
+
+const fitLineBounds = (
+  map: maplibregl.Map,
+  bundles: { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[],
+  lineIds: readonly string[] | undefined,
+) => {
+  if (!lineIds?.length) return;
+  const bounds = new maplibregl.LngLatBounds();
+  let any = false;
+  for (const { bundle } of bundles) {
+    for (const feature of filterBundleLines(bundle, lineIds).features ?? []) {
+      if (feature.geometry?.type !== "LineString") continue;
+      for (const coord of feature.geometry.coordinates) {
+        const lon = coord[0];
+        const lat = coord[1];
+        if (lon == null || lat == null) continue;
+        bounds.extend([lon, lat]);
+        any = true;
+      }
+    }
+  }
+  if (any) map.fitBounds(bounds, { padding: 48, duration: 0 });
+};
+
 const addTransitLayers = (
   map: maplibregl.Map,
   bundles: { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[],
@@ -232,7 +293,7 @@ const addTransitLayers = (
     if (showStations) {
       map.addSource(`${mode}-stations`, {
         type: "geojson",
-        data: asFeatureCollection(bundle.stations),
+        data: asFeatureCollection(filterBundleStations(bundle, lineIds)),
       });
     }
   }
@@ -315,17 +376,17 @@ const addTransitLayers = (
   if (!map.getSource("rail-vehicles")) {
     map.addSource("rail-vehicles", {
       type: "geojson",
-      data: vehiclesToGeoJSON([]),
+      data: vehiclesToSegmentGeoJSON([], []),
     });
     map.addLayer({
       id: "rail-vehicles",
-      type: "circle",
+      type: "line",
       source: "rail-vehicles",
+      layout: LINE_LAYOUT,
       paint: {
-        "circle-radius": VEHICLE_RADIUS,
-        "circle-color": ["coalesce", ["get", "color"], "#0019A8"],
-        "circle-stroke-width": 1.5,
-        "circle-stroke-color": dark ? "#111827" : "#ffffff",
+        "line-color": dark ? "#9ca3af" : "#4b5563",
+        "line-width": VEHICLE_LINE_WIDTH,
+        "line-opacity": 0.96,
       },
     });
   }
@@ -350,6 +411,7 @@ export const TflGeographicMap = ({
   modes,
   lineIds,
   vehicles,
+  coast = false,
   showStations = true,
   showLines = true,
   showNavigation = true,
@@ -363,8 +425,7 @@ export const TflGeographicMap = ({
     { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[] | null
   >(null);
   const skipStyleSwapRef = useRef(true);
-  const vehiclesRef = useRef(vehicles);
-  vehiclesRef.current = vehicles;
+  const fittedRef = useRef(false);
   const lineIdsKey = lineIds?.join(",") ?? "";
   const modesKey = (modes ?? DEFAULT_MODES).join(",");
   const dark = useDocumentDark();
@@ -421,6 +482,23 @@ export const TflGeographicMap = ({
   const loadGeometryRef = useRef(loadGeometry);
   loadGeometryRef.current = loadGeometry;
 
+  const getPolylines = useCallback(
+    (): RoutePolyline[] =>
+      polylinesFromBundles(bundlesRef.current ?? [], lineIds),
+    // lineIds identity is represented by lineIdsKey.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lineIdsKey],
+  );
+
+  const { flush: flushVehicles } = useVehicleSegmentSource({
+    mapRef,
+    sourceId: "rail-vehicles",
+    vehicles,
+    getPolylines,
+    coast,
+    ready: status === "ready",
+  });
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container || mapRef.current) return;
@@ -452,11 +530,9 @@ export const TflGeographicMap = ({
         bundlesRef.current = bundles;
 
         addTransitLayers(map, bundles, showLines, showStations, dark, lineIds);
-        const vehicleSource = map.getSource("rail-vehicles");
-        if (vehicleSource?.type === "geojson") {
-          (vehicleSource as maplibregl.GeoJSONSource).setData(
-            vehiclesToGeoJSON(vehiclesRef.current ?? []),
-          );
+        if (!fittedRef.current) {
+          fitLineBounds(map, bundles, lineIds);
+          fittedRef.current = true;
         }
         setStatus("ready");
       } catch {
@@ -471,7 +547,7 @@ export const TflGeographicMap = ({
     };
     // Create once. Overlay and style swaps live in the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [center, zoom, showNavigation]);
+  }, [showNavigation]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -486,12 +562,7 @@ export const TflGeographicMap = ({
       if (!bundles) return;
       prepareBasemapForTransit(map);
       addTransitLayers(map, bundles, showLines, showStations, dark, lineIds);
-      const vehicleSource = map.getSource("rail-vehicles");
-      if (vehicleSource?.type === "geojson") {
-        (vehicleSource as maplibregl.GeoJSONSource).setData(
-          vehiclesToGeoJSON(vehiclesRef.current ?? []),
-        );
-      }
+      flushVehicles();
     };
 
     map.setStyle(openFreeMapStyleUrl(dark));
@@ -499,18 +570,7 @@ export const TflGeographicMap = ({
     return () => {
       map.off("style.load", applyOverlays);
     };
-  }, [dark, showLines, showStations, lineIdsKey]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    const source = map.getSource("rail-vehicles");
-    if (source?.type === "geojson") {
-      (source as maplibregl.GeoJSONSource).setData(
-        vehiclesToGeoJSON(vehicles ?? []),
-      );
-    }
-  }, [vehicles, status]);
+  }, [dark, showLines, showStations, lineIdsKey, flushVehicles]);
 
   return (
     <div

@@ -3,7 +3,7 @@ import type { LineString, Position } from "geojson";
 import { TFL_MODAL_COLOURS } from "@/lib/tfl/brand-colours";
 import type { BusRouteGeometry, BusRouteStop } from "@/lib/tfl/bus-geography-types";
 import { getTflClient } from "@/lib/tfl/client";
-import { selectLongestOrderedRoute } from "@/lib/tfl/week-ahead-status";
+import type { OrderedRouteLike } from "@/lib/tfl/week-ahead-status";
 
 export type BusRouteDirection = "inbound" | "outbound";
 
@@ -24,7 +24,10 @@ export const parseTflLineStrings = (
 ): LineString[] => {
   if (!lineStrings?.length) return [];
   const lines: LineString[] = [];
+  const seenRaw = new Set<string>();
   for (const raw of lineStrings) {
+    if (seenRaw.has(raw)) continue;
+    seenRaw.add(raw);
     try {
       const parsed: unknown = JSON.parse(raw);
       if (isCoordRing(parsed)) {
@@ -45,6 +48,37 @@ export const parseTflLineStrings = (
   return lines;
 };
 
+/**
+ * Superloop (and some express variants) list more than one orderedLineRoute
+ * that share a spine and differ only at a terminus. Walk longest-first and
+ * keep every unique naptan.
+ */
+export const collectOrderedStopIds = (
+  routes: readonly OrderedRouteLike[] | null | undefined,
+  fallbackIds: readonly string[] = [],
+): string[] => {
+  const sorted = [...(routes ?? [])].sort(
+    (left, right) =>
+      (right.naptanIds?.length ?? 0) - (left.naptanIds?.length ?? 0),
+  );
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const route of sorted) {
+    for (const id of route.naptanIds ?? []) {
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      ids.push(id);
+    }
+  }
+  if (ids.length > 0) return ids;
+  for (const id of fallbackIds) {
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+  }
+  return ids;
+};
+
 const buildBusRouteGeometry = async (
   routeId: string,
   direction: BusRouteDirection,
@@ -54,7 +88,6 @@ const buildBusRouteGeometry = async (
     id: routeId,
     direction,
   });
-  const spine = selectLongestOrderedRoute(sequence.orderedLineRoutes);
   const byId = new Map(
     (sequence.stations ?? [])
       .filter(
@@ -66,11 +99,12 @@ const buildBusRouteGeometry = async (
       .map((stop) => [stop.id!, stop] as const),
   );
 
-  const orderedIds = spine?.naptanIds ?? [];
   const stops: BusRouteStop[] = [];
   const seen = new Set<string>();
-  const sourceIds =
-    orderedIds.length > 0 ? orderedIds : [...byId.keys()];
+  const sourceIds = collectOrderedStopIds(
+    sequence.orderedLineRoutes,
+    [...byId.keys()],
+  );
 
   for (const id of sourceIds) {
     if (seen.has(id)) continue;
@@ -115,3 +149,13 @@ export async function getCachedBusRouteGeometry(
   cacheTag("tfl-bus-route-geometry", `tfl-bus-route-${routeId}-${direction}`);
   return buildBusRouteGeometry(routeId.trim(), direction);
 }
+
+export const getCachedBusRouteGeometries = (
+  routeIds: readonly string[],
+  direction: BusRouteDirection = "outbound",
+): Promise<BusRouteGeometry[]> =>
+  Promise.all(
+    [...new Set(routeIds.map((id) => id.trim()).filter(Boolean))].map((id) =>
+      getCachedBusRouteGeometry(id, direction),
+    ),
+  );

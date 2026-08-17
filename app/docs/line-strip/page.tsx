@@ -11,7 +11,8 @@ export default function LineStripDocsPage() {
   return renderComponentDocs({
     slug: "line-strip",
     relatedLinks: [
-      { href: "/docs/branch-strip", label: "Branch line strip" },
+      { href: "/docs/branch-strip-horizontal", label: "Branch strip — horizontal" },
+      { href: "/docs/branch-strip-vertical", label: "Branch strip — vertical" },
       { href: "/docs/station-name-labels", label: "Station name labels" },
       { href: "/docs/map-schematic", label: "Schematic & network" },
       { href: "/blocks/week-ahead", label: "Week ahead Block" },

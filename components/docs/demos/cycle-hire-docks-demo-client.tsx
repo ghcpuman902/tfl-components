@@ -22,6 +22,28 @@ export const CycleHireDocksDemoClient = ({ data }: Props) => {
     <CycleHireDocks data={data}>
       <div className="flex flex-col gap-8">
         <div className="space-y-3">
+          <p className="text-sm font-medium text-foreground">Compact display</p>
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Multiple docks</p>
+              <CycleHireDocks.Display
+                tiles={3}
+                behaviour="unattended"
+                showBroken={showBroken}
+              />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">One dock</p>
+              <CycleHireDocks.Display
+                data={primaryDock ? [primaryDock] : []}
+                tiles={2}
+                showBroken={showBroken}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-medium text-foreground">Single dock</p>
             <div className="flex items-center gap-2">
@@ -48,7 +70,7 @@ export const CycleHireDocksDemoClient = ({ data }: Props) => {
 
         <div className="space-y-3">
           <p className="text-sm font-medium text-foreground">Nearby docks</p>
-          <CycleHireDocks.Map className="border border-border" />
+          <CycleHireDocks.Map />
         </div>
       </div>
     </CycleHireDocks>

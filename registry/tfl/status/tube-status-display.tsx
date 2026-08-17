@@ -1,7 +1,11 @@
 "use client"
 
 import { type CSSProperties } from "react"
-import { LineBadge, LineColorBar } from "@/components/tfl/brand/line-badge"
+import { LineBadge } from "@/components/tfl/brand/line-badge"
+import {
+  DISRUPTION_LEADING_CLASS,
+  StatusDisruptionBlock,
+} from "@/components/tfl/status/status-disruption-copy"
 import { useUnattendedSequence } from "@/hooks/use-unattended-sequence"
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
 import { partitionStatusBoardLines } from "@/lib/tfl/status-board"
@@ -27,14 +31,6 @@ const BOARD_RHYTHM_VARS = {
 const TILE_CLASS =
   "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip"
 
-const DISRUPTION_LEADING_CLASS = "leading-[calc(var(--arrivals-row)/2)]"
-
-const STRIPED_MODE_NAMES = new Set([
-  "overground",
-  "elizabeth-line",
-  "cable-car",
-])
-
 export type TubeStatusDisplayProps = {
   data?: readonly StatusLine[]
   tiles?: number
@@ -50,119 +46,122 @@ export type TubeStatusDisplayProps = {
   error?: string | null
 }
 
+const ChipDwellBar = ({
+  filling,
+  paused,
+  frameKey,
+  dwellMs,
+}: {
+  filling: boolean
+  paused: boolean
+  frameKey: string
+  dwellMs: number
+}) => (
+  <div className="h-1 w-full overflow-hidden bg-foreground/15" aria-hidden>
+    {filling ? (
+      <div
+        key={`${frameKey}-go`}
+        className="tfl-unattended-dwell h-full w-full bg-foreground/50"
+        data-paused={paused ? "true" : undefined}
+        style={{ "--unattended-dwell": `${dwellMs}ms` } as CSSProperties}
+      />
+    ) : null}
+  </div>
+)
+
 const HeadingChips = ({
   lineIds,
   activeLineId,
+  dwellMs,
+  frameKey,
+  paused,
+  started,
+  canAdvance,
 }: {
   lineIds: readonly string[]
   activeLineId?: string
+  dwellMs: number
+  frameKey: string
+  paused: boolean
+  started: boolean
+  canAdvance: boolean
 }) => {
   const visible = visibleHeadingChips(lineIds, activeLineId)
   if (visible.length === 0) return null
   return (
-    <div className="flex min-w-0 shrink-0 items-center gap-1" aria-hidden>
-      {visible.map((id) => (
-        <LineBadge
-          key={id}
-          lineId={id}
-          className={cn(
-            "h-5 justify-center px-1.5",
-            activeLineId && id !== activeLineId && "opacity-40"
-          )}
-        />
-      ))}
+    <div className="flex min-w-0 shrink-0 items-end gap-1" aria-hidden>
+      {visible.map((id) => {
+        const isActive = id === activeLineId
+        return (
+          <div key={id} className="flex min-w-0 flex-col gap-0.5">
+            <LineBadge
+              lineId={id}
+              className={cn(
+                "h-5 justify-center px-1.5",
+                activeLineId && !isActive && "opacity-40"
+              )}
+            />
+            <ChipDwellBar
+              filling={isActive && canAdvance && started}
+              paused={paused}
+              frameKey={frameKey}
+              dwellMs={dwellMs}
+            />
+          </div>
+        )
+      })}
     </div>
-  )
-}
-
-const PageDots = ({
-  pageIndex,
-  pageCount,
-}: {
-  pageIndex: number
-  pageCount: number
-}) => {
-  if (pageCount <= 1) return null
-  const dots = Array.from({ length: pageCount }, (_, index) => (
-    <span
-      key={index}
-      className={cn(
-        "size-1.5 rounded-full bg-current",
-        index === pageIndex ? "opacity-100" : "opacity-40"
-      )}
-    />
-  ))
-  return (
-    <>
-      <div
-        className={cn(
-          "pointer-events-none absolute top-1 right-0 hidden items-center gap-1 bg-linear-to-l from-background from-70% via-background to-transparent pl-6 text-muted-foreground opacity-0 transition-opacity duration-150 [@media(hover:hover)]:flex",
-          "[@media(hover:hover)]:group-hover/status-display:opacity-50"
-        )}
-        aria-hidden
-      >
-        {dots}
-      </div>
-      <div
-        className="pointer-events-none absolute top-1 right-0 flex items-center gap-1 text-muted-foreground opacity-50 [@media(hover:hover)]:hidden"
-        aria-hidden
-      >
-        {dots}
-      </div>
-      <span className="sr-only">
-        Page {pageIndex + 1} of {pageCount}
-      </span>
-    </>
   )
 }
 
 const StatusDisplayFrameView = ({
   frame,
   tiles,
+  dwellMs,
+  started,
+  paused,
+  canAdvance,
+  frameKey,
 }: {
   frame: StatusDisplayFrame
   tiles: number
+  dwellMs: number
+  started: boolean
+  paused: boolean
+  canAdvance: boolean
+  frameKey: string
 }) => {
   const bodyTiles = Math.max(0, tiles - 1)
-  const textTile = frame.tiles.find((tile) => tile.kind === "text")
-  const chipsTile = frame.tiles.find((tile) => tile.kind === "chips")
-  const showHeadingChips =
-    frame.phase === "disruptions" || bodyTiles === 0
-  const activeLineId = frame.activeLineId
-  const isLineHeading = Boolean(activeLineId)
-  const isStriped = Boolean(
-    frame.activeModeName && STRIPED_MODE_NAMES.has(frame.activeModeName)
+  const announcementTile = frame.tiles.find(
+    (tile) => tile.kind === "announcements"
   )
+  const chipsTile = frame.tiles.find((tile) => tile.kind === "chips")
+  const showHeadingChips = frame.headingLineIds.length > 0
+  const activeLineId = frame.activeLineId
+  const namedHeading =
+    frame.headingLineIds.length === 0 && Boolean(activeLineId)
   const pageIndex = frame.pageIndex ?? 0
   const pageCount = frame.pageCount ?? 1
 
   return (
     <div
-      className="group/status-display flex w-full flex-col"
+      className="flex w-full flex-col"
       aria-label={`${frame.heading}${
         frame.activeLineName ? `, ${frame.activeLineName}` : ""
       }${pageCount > 1 ? `, page ${pageIndex + 1} of ${pageCount}` : ""}`}
     >
       <div
-        data-line={isLineHeading ? activeLineId : undefined}
+        data-line={namedHeading ? activeLineId : undefined}
         className={cn(
           "relative flex items-center text-xl leading-7 font-semibold",
-          TILE_CLASS,
-          isLineHeading && !isStriped && "border-b-4"
+          TILE_CLASS
         )}
-        style={
-          isLineHeading && !isStriped
-            ? { borderBottomColor: "var(--line-color)" }
-            : undefined
-        }
       >
         <p
           className={cn(
             "m-0 min-w-0 flex-1 truncate",
             showHeadingChips && "pr-2",
-            frame.headingLineIds.length === 0 &&
-              isLineHeading &&
-              "text-[var(--line-color)] tfl-dark-line-text"
+            namedHeading && "text-[var(--line-color)] tfl-dark-line-text"
           )}
         >
           {frame.heading}
@@ -171,48 +170,51 @@ const StatusDisplayFrameView = ({
           <HeadingChips
             lineIds={frame.headingLineIds}
             activeLineId={activeLineId}
+            dwellMs={dwellMs}
+            frameKey={frameKey}
+            paused={paused}
+            started={started}
+            canAdvance={canAdvance}
           />
-        ) : null}
-        <PageDots pageIndex={pageIndex} pageCount={pageCount} />
-        {isLineHeading && isStriped ? (
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0"
-            aria-hidden
-          >
-            <LineColorBar
-              lineId={activeLineId}
-              modeName={frame.activeModeName}
-              heightClass="h-1"
-            />
-          </div>
         ) : null}
       </div>
       {bodyTiles > 0 ? (
         <div
-          className="overflow-clip"
+          className={cn(
+            "relative overflow-clip",
+            announcementTile && "bg-muted"
+          )}
           style={{
             height: `calc(var(--arrivals-row) * ${bodyTiles})`,
           }}
         >
-          {textTile && textTile.kind === "text" ? (
-            <p
-              className={cn(
-                "m-0 text-base text-pretty text-foreground/80",
-                DISRUPTION_LEADING_CLASS
-              )}
-            >
-              {textTile.text}
-            </p>
+          {announcementTile && announcementTile.kind === "announcements" ? (
+            <StatusDisruptionBlock
+              announcements={announcementTile.items}
+              quiet={announcementTile.quiet}
+            />
           ) : null}
           {chipsTile && chipsTile.kind === "chips" ? (
-            <div className="flex flex-wrap content-start gap-1">
-              {chipsTile.lineIds.map((id) => (
-                <LineBadge
-                  key={id}
-                  lineId={id}
-                  className="h-5 justify-center px-1.5"
-                />
-              ))}
+            <div className="flex min-h-0 flex-col">
+              {frame.bodyHeading ? (
+                <p
+                  className={cn(
+                    "m-0 flex items-center text-xl leading-7 font-semibold",
+                    TILE_CLASS
+                  )}
+                >
+                  {frame.bodyHeading}
+                </p>
+              ) : null}
+              <div className="flex flex-wrap content-start gap-1">
+                {chipsTile.lineIds.map((id) => (
+                  <LineBadge
+                    key={id}
+                    lineId={id}
+                    className="h-5 justify-center px-1.5"
+                  />
+                ))}
+              </div>
             </div>
           ) : null}
           {frame.otherGoodServiceCopy ? (
@@ -347,7 +349,15 @@ export const TubeStatusDisplay = ({
         key={frame.id}
         className={cn(!reducedMotion && "transition-opacity duration-200")}
       >
-        <StatusDisplayFrameView frame={frame} tiles={tiles} />
+        <StatusDisplayFrameView
+          frame={frame}
+          tiles={tiles}
+          dwellMs={dwellMs}
+          started={sequence.started}
+          paused={sequence.pauseReasons.length > 0}
+          canAdvance={itemIds.length > 1}
+          frameKey={frame.id}
+        />
       </div>
     </div>
   )

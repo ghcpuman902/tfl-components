@@ -21,7 +21,13 @@ export default function MapsSchematicPage() {
       <article className="space-y-12">
         <DocsPageHeader entry={entry} />
         <RelationshipBadges
-          builtWith={["line-strip", "branch-strip", "station-name-labels", "line-chip"]}
+          builtWith={[
+            "line-strip",
+            "branch-strip-horizontal",
+            "branch-strip-vertical",
+            "station-name-labels",
+            "line-chip",
+          ]}
           usesFoundations={["colours"]}
         />
 
@@ -49,10 +55,17 @@ export default function MapsSchematicPage() {
               <dd className="text-muted-foreground">
                 Lanes and joins.{" "}
                 <Link
-                  href="/docs/branch-strip"
+                  href="/docs/branch-strip-horizontal"
                   className="text-foreground underline underline-offset-4"
                 >
-                  Branch strip
+                  Branch strip — horizontal
+                </Link>
+                {" · "}
+                <Link
+                  href="/docs/branch-strip-vertical"
+                  className="text-foreground underline underline-offset-4"
+                >
+                  vertical
                 </Link>
               </dd>
             </div>

@@ -236,19 +236,12 @@ export default function MapsGeographicPage() {
             . Pass derived dots as{" "}
             <code className="text-xs">vehicles</code> —{" "}
             <Link
-              href="/docs/vehicle-progress"
+              href="/docs/live-vehicle-tracking"
               className="text-foreground underline-offset-4 hover:underline"
             >
-              Vehicle progress
+              Live Tube &amp; Rail vehicles
             </Link>{" "}
-            places them.{" "}
-            <Link
-              href="/blocks/live-vehicles"
-              className="text-foreground underline-offset-4 hover:underline"
-            >
-              Live vehicles
-            </Link>{" "}
-            composes both maps.
+            places them.
           </p>
         </section>
 
@@ -471,10 +464,10 @@ export default function MapsGeographicPage() {
             </Link>
             {" · "}
             <Link
-              href="/docs/vehicle-progress"
+              href="/docs/live-vehicle-tracking"
               className="text-foreground underline-offset-4 hover:underline"
             >
-              Vehicle progress
+              Live Tube &amp; Rail vehicles
             </Link>
             {" · "}
             <Link

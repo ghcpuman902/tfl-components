@@ -2,12 +2,26 @@ import { Suspense } from "react"
 import {
   DEFAULT_CYCLE_HIRE_DOCK_IDS,
   CycleHireDocksBoardSkeleton,
+  CycleHireDocksDisplaySkeleton,
 } from "@/components/tfl/cycle-hire/cycle-hire-docks"
 import { CycleHireDocksDemoClient } from "@/components/docs/demos/cycle-hire-docks-demo-client"
 import { getCachedBikePoints } from "@/lib/tfl/cycle-hire-data"
 
 const CycleHirePreviewFallback = () => (
   <div className="flex flex-col gap-8">
+    <div className="space-y-3">
+      <p className="text-sm font-medium text-foreground">Compact display</p>
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Multiple docks</p>
+          <CycleHireDocksDisplaySkeleton tiles={3} />
+        </div>
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">One dock</p>
+          <CycleHireDocksDisplaySkeleton tiles={2} />
+        </div>
+      </div>
+    </div>
     <div className="space-y-3">
       <p className="text-sm font-medium text-foreground">Single dock</p>
       <CycleHireDocksBoardSkeleton dockCount={1} />

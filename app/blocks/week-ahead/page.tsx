@@ -64,10 +64,17 @@ export default function WeekAheadBlockPage() {
                 </Link>{" "}
                 and{" "}
                 <Link
-                  href="/docs/branch-strip"
+                  href="/docs/branch-strip-horizontal"
                   className="text-primary underline-offset-4 hover:underline"
                 >
-                  Branch strip
+                  Branch strip — horizontal
+                </Link>
+                {" / "}
+                <Link
+                  href="/docs/branch-strip-vertical"
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  vertical
                 </Link>{" "}
                 render schematic routes.
               </li>

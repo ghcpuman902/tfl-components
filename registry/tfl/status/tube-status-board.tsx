@@ -4,15 +4,14 @@ import { LINE_ORDER } from "tfl-ts"
 import { ExternalLink, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text"
-import { QuietChip } from "@/components/tfl/arrivals/quiet-chip"
 import { LineColorBar } from "@/components/tfl/brand/line-badge"
+import { StatusDisruptionBlock } from "@/components/tfl/status/status-disruption-copy"
 import { LineName } from "@/components/tfl/brand/line-name"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
 import { StationNameTitle } from "@/components/tfl/station-name"
 import { getLineNameTiers } from "@/lib/tfl/line-names"
 import { partitionStatusBoardLines } from "@/lib/tfl/status-board"
 import type { StatusLine } from "@/lib/tfl/status-types"
-import { type LineAnnouncement } from "@/lib/tfl/status-reason"
 
 export type { StatusLine } from "@/lib/tfl/status-types"
 export {
@@ -134,58 +133,6 @@ const LINE_BAR_PULL_CLASS = "pointer-events-none -mt-1"
 
 /** Resolves via `data-line` → `--line-color` from tfl-colours tokens. */
 const lineTitleClass = "tfl-dark-line-text text-[var(--line-color)]"
-
-/** Platform-chip geometry; neutral fill so severity is read as text, not colour. */
-const SeverityChip = ({ label }: { label: string }) => (
-  <QuietChip className="mr-[0.35em]">{label}</QuietChip>
-)
-
-/** Half-tile leading — wrapping copy stays on the arrivals baseline without snapping the block to a whole tile. */
-const DISRUPTION_LEADING_CLASS = "leading-[calc(var(--arrivals-row)/2)]"
-
-const DISRUPTION_COPY_CLASS = cn(
-  "text-base text-pretty text-foreground/80",
-  DISRUPTION_LEADING_CLASS
-)
-
-const StatusDisruptionBlock = ({
-  announcements,
-  quiet = false,
-}: {
-  announcements: readonly LineAnnouncement[]
-  quiet?: boolean
-}) => (
-  <div className={DISRUPTION_LEADING_CLASS}>
-    {announcements.map((announcement, index) => (
-      <StatusDisruptionCopy
-        key={index}
-        announcement={announcement}
-        quiet={quiet}
-      />
-    ))}
-  </div>
-)
-
-const StatusDisruptionCopy = ({
-  announcement,
-  quiet = false,
-}: {
-  announcement: LineAnnouncement
-  quiet?: boolean
-}) => {
-  const severityLabel = announcement.statusSeverityDescription?.trim()
-  const body = announcement.text
-  const bodyIsOnlyLabel = severityLabel
-    ? body.toLowerCase() === severityLabel.toLowerCase()
-    : false
-
-  return (
-    <p className={cn(DISRUPTION_COPY_CLASS, quiet && "text-muted-foreground")}>
-      {severityLabel ? <SeverityChip label={severityLabel} /> : null}
-      {bodyIsOnlyLabel ? null : body}
-    </p>
-  )
-}
 
 const StatusLineHeader = ({
   lineId,

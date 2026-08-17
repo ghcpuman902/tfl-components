@@ -326,13 +326,20 @@ export default function FoundationsColoursPage() {
               className="text-foreground underline underline-offset-4"
             >
               Simple line strip
-            </a>{" "}
-            and{" "}
+            </a>
+            ,{" "}
             <a
-              href="/docs/branch-strip"
+              href="/docs/branch-strip-horizontal"
               className="text-foreground underline underline-offset-4"
             >
-              Branch line strip
+              Branch strip — horizontal
+            </a>
+            , and{" "}
+            <a
+              href="/docs/branch-strip-vertical"
+              className="text-foreground underline underline-offset-4"
+            >
+              vertical
             </a>{" "}
             paint the motifs, via a{" "}
             <code className="text-xs">mono</code> prop.

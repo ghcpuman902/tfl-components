@@ -1,4 +1,5 @@
-import { BranchStrip } from "@/components/tfl/diagram/branch-strip";
+import { BranchStripHorizontal } from "@/components/tfl/diagram/branch-strip-horizontal";
+import { BranchStripVertical } from "@/components/tfl/diagram/branch-strip-vertical";
 import { StraightStrip } from "@/components/tfl/diagram/straight-strip";
 import { LineRouteDiagram } from "@/components/tfl/diagram/line-route-diagram";
 import {
@@ -33,7 +34,7 @@ export type LineStripProps = {
   /** Full spine payload — alternative to stations + meta. */
   spine?: Pick<LineSpine, "stations" | "lineName" | "lineColor" | "routeError">;
   /**
-   * When set, renders `BranchStrip` instead of a linear strip.
+   * When set, renders a branched strip instead of a linear strip.
    * Orientation defaults to the schematic’s authored hint.
    */
   schematic?: LineSchematic;
@@ -75,7 +76,7 @@ export type LineStripProps = {
 /**
  * Molecular strip: TfL-aware compose layer.
  * Resolves colour, spine slicing, adjacency/closure presentation, and
- * editorial label breaks, then renders `StraightStrip` or `BranchStrip`.
+ * editorial label breaks, then renders `StraightStrip` or a branched strip.
  * Fetching stays in Server Component / data-loader parents.
  */
 export const LineStrip = ({
@@ -117,18 +118,19 @@ export const LineStrip = ({
       segmentStates: branchSegmentStates,
       applyLabelRecipes,
     });
-    return (
-      <BranchStrip
-        schematic={prepared.schematic}
-        lineColor={color}
-        orientation={orientation}
-        x={x}
-        className={className}
-        nodeLabelLines={prepared.nodeLabelLines}
-        segmentStates={prepared.segmentStates}
-        mono={mono}
-      />
-    );
+    const branchProps = {
+      schematic: prepared.schematic,
+      lineColor: color,
+      x,
+      className,
+      nodeLabelLines: prepared.nodeLabelLines,
+      segmentStates: prepared.segmentStates,
+      mono,
+    };
+    if (schematic.orientation === "vertical") {
+      return <BranchStripVertical {...branchProps} />;
+    }
+    return <BranchStripHorizontal {...branchProps} />;
   }
 
   const rawStations = stationsProp ?? spine?.stations ?? [];

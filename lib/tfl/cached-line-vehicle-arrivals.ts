@@ -11,22 +11,36 @@ export type CachedVehicleArrivals = {
   fetchedAt: number;
 };
 
-async function getCachedLineVehicleArrivals(
-  lineId: string,
+const uniqueSortedIds = (lineIds: readonly string[]): string[] =>
+  [...new Set(lineIds.map((id) => id.trim()).filter(Boolean))].sort();
+
+/**
+ * Shared across every visitor without a personal TfL key via Next's Data
+ * Cache. One batched `getArrivals` covers every id in the set.
+ */
+async function getCachedLineVehicleArrivalsByKey(
+  lineIdsKey: string,
 ): Promise<CachedVehicleArrivals> {
   "use cache";
-  cacheLife({ stale: 15, revalidate: 20, expire: 60 });
-  cacheTag("tfl-line-vehicle-arrivals", `tfl-line-vehicle-arrivals-${lineId}`);
+  cacheLife({ stale: 5, revalidate: 10, expire: 30 });
+  cacheTag("tfl-line-vehicle-arrivals", `tfl-line-vehicle-arrivals-${lineIdsKey}`);
 
+  const lineIds = lineIdsKey.split(",").filter(Boolean);
+  if (lineIds.length === 0) {
+    return { arrivals: [], fetchedAt: Date.now() };
+  }
   const client = getTflClient();
-  const arrivals = await client.line.getArrivals({
-    lineIds: [lineId],
-  });
+  const arrivals = await client.line.getArrivals({ lineIds });
   return { arrivals, fetchedAt: Date.now() };
 }
 
+export const getCachedBatchedLineArrivals = (
+  lineIds: readonly string[],
+): Promise<CachedVehicleArrivals> =>
+  getCachedLineVehicleArrivalsByKey(uniqueSortedIds(lineIds).join(","));
+
 export const getCachedTrackedRailArrivals = (): Promise<CachedVehicleArrivals> =>
-  getCachedLineVehicleArrivals(TRACKED_RAIL_LINE_ID);
+  getCachedBatchedLineArrivals([TRACKED_RAIL_LINE_ID]);
 
 export const getCachedTrackedBusArrivals = (): Promise<CachedVehicleArrivals> =>
-  getCachedLineVehicleArrivals(TRACKED_BUS_ROUTE_ID);
+  getCachedBatchedLineArrivals([TRACKED_BUS_ROUTE_ID]);

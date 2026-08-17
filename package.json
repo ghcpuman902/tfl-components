@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test 'lib/tfl/**/*.test.ts' 'lib/feedback/**/*.test.ts' && tsx scripts/check-no-server-appkey.ts && tsx scripts/check-registry-urls.ts",
     "geography:unique-track": "node scripts/snapshot-unique-track-geometry.mjs",
+    "schematics:build": "tsx scripts/build-branch-schematics.ts",
     "registry:build": "tsx scripts/build-colour-tokens.ts && shadcn build"
   },
   "dependencies": {
@@ -32,6 +33,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.4.0",
     "embla-carousel-react": "^8.6.0",
+    "fast-xml-parser": "^5.11.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^1.31.0",
     "maplibre-gl": "^5.24.0",

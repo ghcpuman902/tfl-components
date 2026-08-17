@@ -2,7 +2,10 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import type { LineString } from "geojson"
 import type { RealtimePrediction } from "tfl-ts"
-import { locateVehicles } from "@/lib/tfl/vehicle-positions"
+import {
+  advanceVehiclePosition,
+  locateVehicles,
+} from "@/lib/tfl/vehicle-positions"
 
 const prediction = (fields: {
   vehicleId: string
@@ -17,10 +20,15 @@ const prediction = (fields: {
     ...fields,
   }) as RealtimePrediction
 
-/** Eastbound line along 51.5°N, 0.01° longitude (~0.7 km). */
+/**
+ * Eastbound line along 51.5°N with room behind station A so dead
+ * reckoning has track to walk backward onto (real lines extend past
+ * every station; this mirrors that).
+ */
 const EAST_LINE: LineString = {
   type: "LineString",
   coordinates: [
+    [-0.16, 51.5],
     [-0.14, 51.5],
     [-0.13, 51.5],
   ],
@@ -32,13 +40,13 @@ const STATIONS = new Map([
 ])
 
 describe("locateVehicles", () => {
-  it("places a single remaining prediction on that stop", () => {
+  it("places a vehicle exactly on the stop when it is arriving now", () => {
     const [position] = locateVehicles({
       predictions: [
         prediction({
           vehicleId: "241",
           naptanId: "A",
-          timeToStation: 40,
+          timeToStation: 0,
         }),
       ],
       stationsById: STATIONS,
@@ -48,10 +56,10 @@ describe("locateVehicles", () => {
     assert.equal(position.lat, 51.5)
     assert.equal(position.lon, -0.14)
     assert.equal(position.vehicleId, "241")
-    assert.equal(position.timeToNextStationSec, 40)
+    assert.equal(position.timeToNextStationSec, 0)
   })
 
-  it("interpolates along the polyline between the next two stops", () => {
+  it("walks backward from the next stop using the assumed line speed", () => {
     const [position] = locateVehicles({
       predictions: [
         prediction({
@@ -69,13 +77,13 @@ describe("locateVehicles", () => {
       polylines: [EAST_LINE],
     })
     assert.ok(position)
-    // segmentTotal = 60; fraction = (60 - 30) / 60 = 0.5
-    assert.ok(Math.abs(position.lon - -0.135) < 0.0008)
+    // Behind A (further from B), never past it.
+    assert.ok(position.lon < -0.14)
     assert.ok(Math.abs(position.lat - 51.5) < 0.0008)
     assert.ok(position.bearingDeg > 70 && position.bearingDeg < 110)
   })
 
-  it("clamps a late vehicle onto the next stop", () => {
+  it("keeps moving even when the ETA is far larger than the next hop's gap", () => {
     const [position] = locateVehicles({
       predictions: [
         prediction({
@@ -93,7 +101,9 @@ describe("locateVehicles", () => {
       polylines: [EAST_LINE],
     })
     assert.ok(position)
-    assert.ok(Math.abs(position.lon - -0.14) < 0.0008)
+    // A distant vehicle should not be frozen exactly on the next stop.
+    assert.notEqual(position.lon, -0.14)
+    assert.ok(position.lon < -0.14)
   })
 
   it("skips predictions without a known station", () => {
@@ -109,5 +119,31 @@ describe("locateVehicles", () => {
       polylines: [EAST_LINE],
     })
     assert.equal(positions.length, 0)
+  })
+})
+
+describe("advanceVehiclePosition", () => {
+  it("walks along the hop as time-to-station elapses", () => {
+    const [placed] = locateVehicles({
+      predictions: [
+        prediction({
+          vehicleId: "241",
+          naptanId: "A",
+          timeToStation: 30,
+        }),
+        prediction({
+          vehicleId: "241",
+          naptanId: "B",
+          timeToStation: 90,
+        }),
+      ],
+      stationsById: STATIONS,
+      polylines: [EAST_LINE],
+      asOf: 1_000,
+    })
+    assert.ok(placed)
+    const later = advanceVehiclePosition(placed, 1_000 + 15_000, [EAST_LINE])
+    assert.ok(later.lon > placed.lon)
+    assert.ok(later.lon < -0.13)
   })
 })

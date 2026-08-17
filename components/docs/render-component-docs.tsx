@@ -64,6 +64,18 @@ const data = sortLinesBySeverityAndOrder(
   "line-strip": `const spine = await getLineSpine("victoria")
 
 <LineStrip lineId="victoria" spine={spine} fit />`,
+  "branch-strip-horizontal": `import { BranchStripHorizontal } from "@/components/tfl/diagram/branch-strip-horizontal"
+
+<BranchStripHorizontal
+  schematic={schematic}
+  lineColor={lineColor}
+/>`,
+  "branch-strip-vertical": `import { BranchStripVertical } from "@/components/tfl/diagram/branch-strip-vertical"
+
+<BranchStripVertical
+  schematic={schematic}
+  lineColor={lineColor}
+/>`,
   "map-geographic": `import { TflGeographicMap } from "@/components/tfl/geography/tfl-geographic-map"
 
 <div className="h-100">

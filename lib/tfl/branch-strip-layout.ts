@@ -16,7 +16,7 @@ import type {
 /**
  * Pure label placement for BranchStrip — shared by the UI and regression tests.
  *
- * After edits, verify visually at http://localhost:3999/docs/branch-strip
+ * After edits, verify visually at http://localhost:3999/docs/branch-strip-horizontal
  * (see checklist on `BranchStrip`).
  */
 

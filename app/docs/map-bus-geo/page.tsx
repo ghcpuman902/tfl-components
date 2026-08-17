@@ -15,12 +15,15 @@ import {
   getUsedBySlugs,
   type DocsEntry,
 } from "@/lib/docs-catalog";
-import { getCachedBusRouteGeometry } from "@/lib/tfl/bus-route-geometry";
-import { BUS_ROUTE_DIVERSION_DEMO } from "@/lib/tfl/fixtures/bus-route-diversion-demo";
 import {
-  TRACKED_BUS_DIRECTION,
-  TRACKED_BUS_ROUTE_ID,
-} from "@/lib/tfl/live-vehicles-stops";
+  getCachedBusRouteGeometry,
+  type BusRouteDirection,
+} from "@/lib/tfl/bus-route-geometry";
+import { BUS_ROUTE_DIVERSION_DEMO } from "@/lib/tfl/fixtures/bus-route-diversion-demo";
+
+const PREVIEW_BUS_ROUTE_ID = "1";
+const SUPERLOOP_ROUTE_ID = "sl1";
+const PREVIEW_BUS_DIRECTION: BusRouteDirection = "outbound";
 
 export const metadata: Metadata = {
   title: "Map – Bus (Geo)",
@@ -41,13 +44,24 @@ const SHAPE_SNIPPET = `type BusRouteGeometry = {
   segments: { id: string; status: "current" | "diverted" | "disabled"; line: LineString }[]
 }`;
 
-const LiveBusRoutePreview = async () => {
+const LiveBusRoutePreview = async ({
+  routeId,
+}: {
+  routeId: string;
+}) => {
   const data = await getCachedBusRouteGeometry(
-    TRACKED_BUS_ROUTE_ID,
-    TRACKED_BUS_DIRECTION,
+    routeId,
+    PREVIEW_BUS_DIRECTION,
   );
   return <MapBusGeoDemo data={data} />;
 };
+
+const MapPreviewFallback = () => (
+  <div
+    className="h-[min(70vh,32rem)] animate-pulse rounded-lg bg-muted"
+    aria-hidden
+  />
+);
 
 export default function MapBusGeoPage() {
   const entry = getDocsEntry("maps-bus");
@@ -66,15 +80,8 @@ export default function MapBusGeoPage() {
           <h2 id="preview-heading" className="text-lg font-semibold">
             Preview
           </h2>
-          <Suspense
-            fallback={
-              <div
-                className="h-[min(70vh,32rem)] animate-pulse rounded-lg bg-muted"
-                aria-hidden
-              />
-            }
-          >
-            <LiveBusRoutePreview />
+          <Suspense fallback={<MapPreviewFallback />}>
+            <LiveBusRoutePreview routeId={PREVIEW_BUS_ROUTE_ID} />
           </Suspense>
           <DataSourceLabel source="cached" />
         </section>
@@ -118,6 +125,22 @@ export default function MapBusGeoPage() {
           />
         </section>
 
+        <section className="space-y-3" aria-labelledby="superloop-heading">
+          <h2 id="superloop-heading" className="text-lg font-semibold">
+            Superloop
+          </h2>
+          <p className="max-w-prose text-muted-foreground">
+            Superloop sequences can repeat the same polyline and list two
+            termini on one spine. Deduplicate{" "}
+            <code className="text-xs">lineStrings</code> and keep every unique
+            stop.
+          </p>
+          <Suspense fallback={<MapPreviewFallback />}>
+            <LiveBusRoutePreview routeId={SUPERLOOP_ROUTE_ID} />
+          </Suspense>
+          <DataSourceLabel source="cached" />
+        </section>
+
         <section className="space-y-3" aria-labelledby="render-heading">
           <h2 id="render-heading" className="text-lg font-semibold">
             Render
@@ -128,14 +151,7 @@ export default function MapBusGeoPage() {
             <code className="text-xs">disabled</code> is greyed. The caller
             decides which segment is which — this is not live disruption data.
           </p>
-          <Suspense
-            fallback={
-              <div
-                className="h-[min(70vh,32rem)] animate-pulse rounded-lg bg-muted"
-                aria-hidden
-              />
-            }
-          >
+          <Suspense fallback={<MapPreviewFallback />}>
             <MapBusGeoDemo data={BUS_ROUTE_DIVERSION_DEMO} />
           </Suspense>
           <DataSourceLabel source="fixture" />
@@ -154,17 +170,10 @@ export default function MapBusGeoPage() {
             </Link>
             {" · "}
             <Link
-              href="/docs/vehicle-progress"
+              href="/docs/live-bus-vehicles"
               className="text-foreground underline-offset-4 hover:underline"
             >
-              Vehicle progress
-            </Link>
-            {" · "}
-            <Link
-              href="/blocks/live-vehicles"
-              className="text-foreground underline-offset-4 hover:underline"
-            >
-              Live vehicles
+              Live buses
             </Link>
             {" · "}
             <Link

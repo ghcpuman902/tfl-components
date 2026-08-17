@@ -1,0 +1,21 @@
+## When to use this
+
+Use `BranchStripHorizontal` when the corridor reads left to right. Prefer [`LineStrip`](/docs/line-strip) when you still need TfL label recipes and colour resolution.
+
+```tsx
+import { BranchStripHorizontal } from "@/components/tfl/diagram/branch-strip-horizontal"
+import { LineStrip } from "@/components/tfl/diagram/line-strip"
+import { prepareBranchStrip } from "@/lib/tfl/strip-model"
+```
+
+It ships with the line-strip registry item. No `tfl-ts` fetch inside this atom.
+
+## Geometry
+
+Takes a horizontal `LineSchematic`: lane and position nodes authored for this orientation. Do not rotate a [vertical](/docs/branch-strip-vertical) graph. Branches sit by real station coordinates — north and west above the trunk, south and east below. The strip reads north-to-south or west-to-east.
+
+Corridor joins use a 45° S when space allows, otherwise 90° R. A true spur is a single 45° diagonal with one R3x fillet. The terminus bar sits perpendicular to that diagonal.
+
+Shared stations that diverge and converge stay one node. Parallel corridors that share a name, Euston, use duplicate nodes with a shared `stationKey`. A loop that is most of the line, Circle, is two parallel arcs plus the Hammersmith spur — not an unrolled sausage.
+
+Pass `mono` to paint B&W Tube-map stroke motifs. Mono scales through `x`, not `--tfl-diagram-scale`.

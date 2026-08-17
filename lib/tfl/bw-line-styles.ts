@@ -6,7 +6,7 @@
  * Non-Underground / Overground borders are ⅓ of total height.
  *
  * Palette tokens (`--tfl-mono-ink` / paper / grey / light) invert in `.dark`.
- * Only Simple line strip and Branch line strip paint these motifs.
+ * Only Simple line strip and the branch strips paint these motifs.
  */
 
 export type StrokeLayer = {

@@ -1,11 +1,21 @@
 import { splitTextFrames } from "@/lib/tfl/unattended-sequence"
 import type { StatusBoardLine, StatusBoardSections } from "@/lib/tfl/status-board"
+import type { LineAnnouncement } from "@/lib/tfl/status-reason"
 
 export type StatusDisplayPhase = "disruptions" | "good-service"
 export type StatusDetailScope = "network" | "selection" | "none"
 
+export type StatusDisplayAnnouncement = Pick<
+  LineAnnouncement,
+  "text" | "statusSeverityDescription"
+>
+
 export type StatusDisplayTile =
-  | { kind: "text"; text: string }
+  | {
+      kind: "announcements"
+      items: readonly StatusDisplayAnnouncement[]
+      quiet?: boolean
+    }
   | { kind: "chips"; lineIds: readonly string[] }
   | { kind: "empty" }
 
@@ -14,6 +24,7 @@ export type StatusDisplayFrame = {
   phase: StatusDisplayPhase
   heading: string
   headingLineIds: readonly string[]
+  bodyHeading?: string
   activeLineId?: string
   activeLineName?: string
   activeModeName?: string
@@ -36,8 +47,9 @@ export type StatusStripAllocation = {
   reasonUnits: number
 }
 
-const DEFAULT_CHARS_PER_TILE = 80
+const DEFAULT_CHARS_PER_TILE = 200
 const GOOD_SERVICE_OTHER = "Good service on all other lines"
+const LINES_PER_TILE = 2
 
 const lineId = (row: StatusBoardLine): string =>
   row.line.id?.trim() || row.line.name?.trim() || "unknown"
@@ -54,12 +66,6 @@ const filterBySelection = (
   return rows.filter((row) => wanted.has(lineId(row)))
 }
 
-const announcementText = (row: StatusBoardLine): string =>
-  row.announcements
-    .map((announcement) => announcement.text.trim())
-    .filter(Boolean)
-    .join(" ")
-
 const otherGoodServiceCopy = (
   scope: StatusDetailScope,
   goodService: readonly StatusBoardLine[],
@@ -70,6 +76,117 @@ const otherGoodServiceCopy = (
   const others = goodService.filter((row) => !selected.has(lineId(row)))
   return others.length > 0 ? GOOD_SERVICE_OTHER : undefined
 }
+
+const toDisplayAnnouncements = (
+  announcement: LineAnnouncement
+): StatusDisplayAnnouncement[] => {
+  const paragraphs = announcement.text
+    .split(/\n+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+  const source = paragraphs.length > 0 ? paragraphs : [announcement.text]
+  return source.map((text, index) => ({
+    text,
+    statusSeverityDescription:
+      index === 0 ? announcement.statusSeverityDescription : undefined,
+  }))
+}
+
+const announcementBody = (item: StatusDisplayAnnouncement): string => {
+  const label = item.statusSeverityDescription?.trim()
+  const body = item.text.trim()
+  if (label && body.toLowerCase() === label.toLowerCase()) return ""
+  return body
+}
+
+const estimateAnnouncementLines = (
+  item: StatusDisplayAnnouncement,
+  charsPerLine: number
+): number => {
+  const label = item.statusSeverityDescription?.trim()
+  const reserved = label ? label.length + 1 : 0
+  const chars = reserved + announcementBody(item).length
+  if (chars <= 0) return label ? 1 : 0
+  return Math.max(1, Math.ceil(chars / Math.max(1, charsPerLine)))
+}
+
+const splitAnnouncement = (
+  item: StatusDisplayAnnouncement,
+  pageChars: number
+): StatusDisplayAnnouncement[] => {
+  const body = announcementBody(item)
+  if (!body) return [item]
+  const chunks = splitTextFrames(body, pageChars)
+  if (chunks.length <= 1) return [item]
+  return chunks.map((chunk, index) => ({
+    text: chunk,
+    statusSeverityDescription:
+      index === 0 ? item.statusSeverityDescription : undefined,
+  }))
+}
+
+/**
+ * Stack every chip+copy block on one page when each block fits on its own.
+ * Only split a single block that is longer than the body by itself.
+ */
+export const packAnnouncementPages = (
+  items: readonly StatusDisplayAnnouncement[],
+  options: { linesPerPage: number; charsPerLine: number }
+): StatusDisplayAnnouncement[][] => {
+  if (items.length === 0) return []
+  const linesPerPage = Math.max(1, options.linesPerPage)
+  const charsPerLine = Math.max(1, options.charsPerLine)
+  const pageChars = linesPerPage * charsPerLine
+  const fitsAlone = (item: StatusDisplayAnnouncement) =>
+    estimateAnnouncementLines(item, charsPerLine) <= linesPerPage
+
+  if (items.every(fitsAlone)) return [[...items]]
+
+  const pages: StatusDisplayAnnouncement[][] = []
+  let current: StatusDisplayAnnouncement[] = []
+  let used = 0
+
+  const flush = () => {
+    if (current.length === 0) return
+    pages.push(current)
+    current = []
+    used = 0
+  }
+
+  for (const item of items) {
+    const lines = estimateAnnouncementLines(item, charsPerLine)
+    if (!fitsAlone(item)) {
+      flush()
+      for (const piece of splitAnnouncement(item, pageChars)) {
+        pages.push([piece])
+      }
+      continue
+    }
+    if (current.length > 0 && used + lines > linesPerPage) {
+      flush()
+    }
+    current.push(item)
+    used += lines
+  }
+  flush()
+  return pages.length > 0 ? pages : [[...items]]
+}
+
+export const statusDisplayReasonText = (
+  tiles: readonly StatusDisplayTile[]
+): string =>
+  tiles
+    .flatMap((tile) => {
+      if (tile.kind !== "announcements") return []
+      return tile.items.map(
+        (item) =>
+          announcementBody(item) ||
+          item.statusSeverityDescription?.trim() ||
+          item.text.trim()
+      )
+    })
+    .filter(Boolean)
+    .join(" ")
 
 const framesForLine = (
   row: StatusBoardLine,
@@ -83,13 +200,14 @@ const framesForLine = (
   }
 ): StatusDisplayFrame[] => {
   const id = lineId(row)
-  const text = announcementText(row)
+  const items = row.announcements.flatMap(toDisplayAnnouncements)
   const bodyTiles = options.bodyTiles
   const identity = {
     activeLineId: id,
     activeLineName: lineName(row),
     activeModeName: row.line.modeName,
   }
+  const quiet = row.kind === "closed"
 
   if (bodyTiles <= 0) {
     return [
@@ -107,53 +225,47 @@ const framesForLine = (
     ]
   }
 
-  if (!text) {
-    return [
-      {
-        id: `${options.phase}:${id}`,
-        phase: options.phase,
-        heading: options.heading,
-        headingLineIds: options.headingLineIds,
-        ...identity,
-        otherGoodServiceCopy: options.otherGoodServiceCopy,
-        pageIndex: 0,
-        pageCount: 1,
-        tiles: [],
-      },
-    ]
-  }
+  const pages = packAnnouncementPages(items, {
+    linesPerPage: bodyTiles * LINES_PER_TILE,
+    charsPerLine: Math.max(1, Math.round(options.charsPerTile / LINES_PER_TILE)),
+  })
+  const source = pages.length > 0 ? pages : [[]]
 
-  const chunks = splitTextFrames(text, options.charsPerTile * bodyTiles)
-  const source = chunks.length > 0 ? chunks : [text]
-  return source.map((chunk, index) => ({
+  return source.map((pageItems, index) => ({
     id: `${options.phase}:${id}:${index}`,
     phase: options.phase,
     heading: options.heading,
     headingLineIds: options.headingLineIds,
     ...identity,
-    otherGoodServiceCopy: options.otherGoodServiceCopy,
+    otherGoodServiceCopy:
+      index === source.length - 1 ? options.otherGoodServiceCopy : undefined,
     pageIndex: index,
     pageCount: source.length,
-    tiles: [{ kind: "text" as const, text: chunk }],
+    tiles:
+      pageItems.length > 0
+        ? [{ kind: "announcements" as const, items: pageItems, quiet }]
+        : [],
   }))
 }
 
 const goodServiceBodyFrames = (
   rows: readonly StatusBoardLine[],
   options: {
-    headingLineIds: readonly string[]
+    disruptionLineIds: readonly string[]
     bodyTiles: number
     otherGoodServiceCopy?: string
   }
 ): StatusDisplayFrame[] => {
   if (rows.length === 0) return []
   const lineIds = rows.map(lineId)
+  const keepDisruptions = options.disruptionLineIds.length > 0
   return [
     {
       id: `good-service:${lineIds.join(",")}`,
       phase: "good-service",
-      heading: "Good service",
-      headingLineIds: options.headingLineIds,
+      heading: keepDisruptions ? "Service disruptions" : "Good service",
+      headingLineIds: keepDisruptions ? options.disruptionLineIds : [],
+      bodyHeading: keepDisruptions ? "Good service" : undefined,
       otherGoodServiceCopy: options.otherGoodServiceCopy,
       pageIndex: 0,
       pageCount: 1,
@@ -183,11 +295,6 @@ export const buildStatusDisplayFrames = (
     scope === "selection"
       ? filterBySelection(sections.disruptions, detailIds)
       : sections.disruptions
-  const goodSummary =
-    scope === "selection"
-      ? filterBySelection(sections.goodService, detailIds)
-      : sections.goodService
-
   const disruptionDetail =
     scope === "network" || scope === "selection" || scope === "none"
       ? filterBySelection(sections.disruptions, detailIds)
@@ -196,7 +303,6 @@ export const buildStatusDisplayFrames = (
 
   const disruptionHeadingIds =
     scope === "none" ? [] : disruptionSummary.map(lineId)
-  const goodHeadingIds = scope === "none" ? [] : goodSummary.map(lineId)
   const otherCopy = otherGoodServiceCopy(scope, sections.goodService, detailIds)
 
   const disruptionFrames = disruptionDetail.flatMap((row) =>
@@ -211,7 +317,7 @@ export const buildStatusDisplayFrames = (
   )
 
   const goodFrames = goodServiceBodyFrames(goodDetail, {
-    headingLineIds: goodHeadingIds,
+    disruptionLineIds: disruptionHeadingIds,
     bodyTiles,
     otherGoodServiceCopy: otherCopy,
   })

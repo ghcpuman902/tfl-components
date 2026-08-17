@@ -452,6 +452,11 @@
           "target": "components/tfl/status/tube-status-board.tsx"
         },
         {
+          "path": "registry/tfl/status/status-disruption-copy.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/status/status-disruption-copy.tsx"
+        },
+        {
           "path": "lib/tfl/status-types.ts",
           "type": "registry:lib",
           "target": "lib/tfl/status-types.ts"
@@ -495,6 +500,21 @@
           "path": "registry/tfl/status/tube-status-display.tsx",
           "type": "registry:component",
           "target": "components/tfl/status/tube-status-display.tsx"
+        },
+        {
+          "path": "registry/tfl/status/status-disruption-copy.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/status/status-disruption-copy.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/quiet-chip.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/quiet-chip.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/chip-text.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/arrivals/chip-text.ts"
         },
         {
           "path": "lib/tfl/status-display.ts",
@@ -592,7 +612,7 @@
       "name": "cycle-hire-docks",
       "type": "registry:block",
       "title": "Cycle Hire Docks",
-      "description": "Santander Cycles Map + Detail surfaces — pass normalised tfl-ts bike points as data.",
+      "description": "Show Santander Cycles availability in a map, detail list, or fixed-height display.",
       "dependencies": [
         "tfl-ts@^2.10.0",
         "lucide-react",
@@ -624,6 +644,11 @@
           "target": "components/tfl/cycle-hire/cycle-hire-docks-detail.tsx"
         },
         {
+          "path": "registry/tfl/cycle-hire/cycle-hire-docks-display.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/cycle-hire/cycle-hire-docks-display.tsx"
+        },
+        {
           "path": "registry/tfl/cycle-hire/cycle-hire-docks-map.tsx",
           "type": "registry:component",
           "target": "components/tfl/cycle-hire/cycle-hire-docks-map.tsx"
@@ -647,6 +672,31 @@
           "path": "lib/tfl/cycle-hire-types.ts",
           "type": "registry:lib",
           "target": "lib/tfl/cycle-hire-types.ts"
+        },
+        {
+          "path": "lib/tfl/cycle-hire-display.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/cycle-hire-display.ts"
+        },
+        {
+          "path": "lib/tfl/unattended-sequence.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/unattended-sequence.ts"
+        },
+        {
+          "path": "lib/tfl/interactive-idle-return.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/interactive-idle-return.ts"
+        },
+        {
+          "path": "hooks/use-unattended-sequence.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-unattended-sequence.ts"
+        },
+        {
+          "path": "hooks/use-interactive-idle-return.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-interactive-idle-return.ts"
         },
         {
           "path": "lib/tfl/brand-colours.ts",
@@ -1354,7 +1404,7 @@
       "name": "line-strip",
       "type": "registry:block",
       "title": "Line Strip",
-      "description": "TfL strip components — StraightStrip, BranchStrip, LineStrip molecule, full route, and journey A→B.",
+      "description": "TfL strip components — StraightStrip, branched strips, LineStrip molecule, full route, and journey A→B.",
       "dependencies": [
         "tfl-ts@^2.10.0"
       ],
@@ -1379,9 +1429,19 @@
           "target": "components/tfl/diagram/straight-strip-fitted.tsx"
         },
         {
-          "path": "registry/tfl/diagram/branch-strip.tsx",
+          "path": "registry/tfl/diagram/branch-strip-parts.tsx",
           "type": "registry:component",
-          "target": "components/tfl/diagram/branch-strip.tsx"
+          "target": "components/tfl/diagram/branch-strip-parts.tsx"
+        },
+        {
+          "path": "registry/tfl/diagram/branch-strip-horizontal.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/diagram/branch-strip-horizontal.tsx"
+        },
+        {
+          "path": "registry/tfl/diagram/branch-strip-vertical.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/diagram/branch-strip-vertical.tsx"
         },
         {
           "path": "registry/tfl/diagram/line-strip.tsx",

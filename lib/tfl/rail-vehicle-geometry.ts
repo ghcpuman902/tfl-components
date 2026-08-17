@@ -2,8 +2,11 @@ import type { LineString } from "geojson";
 import { getLineColor, STATION_HUBS } from "tfl-ts";
 import allStations from "@/data/geography/all-stations.json";
 import tubeGeometry from "@/data/geography/tube-geometry.json";
-import type { TransitGeometryBundle } from "@/lib/tfl/geography-types";
-import type { StationCoord } from "@/lib/tfl/vehicle-progress";
+import type {
+  TransitGeometryBundle,
+  TransitMode,
+} from "@/lib/tfl/geography-types";
+import type { RoutePolyline, StationCoord } from "@/lib/tfl/vehicle-progress";
 
 type StationRow = {
   id?: string | number;
@@ -58,6 +61,35 @@ export const railPolylinesForLine = (lineId: string): LineString[] =>
     .filter((feature) => feature.properties?.lineId === lineId)
     .map((feature) => feature.geometry)
     .filter((geometry): geometry is LineString => geometry.type === "LineString");
+
+export const railPolylinesForLines = (
+  lineIds: readonly string[],
+): RoutePolyline[] =>
+  lineIds.flatMap((lineId) =>
+    railPolylinesForLine(lineId).map((line) => ({ lineId, line })),
+  );
+
+const OVERGROUND_LINE_IDS = new Set([
+  "london-overground",
+  "mildmay",
+  "windrush",
+  "liberty",
+  "lioness",
+  "suffragette",
+  "weaver",
+]);
+
+export const railModeForLineId = (lineId: string): TransitMode => {
+  if (lineId === "elizabeth") return "elizabeth";
+  if (lineId === "dlr") return "dlr";
+  if (lineId === "tram") return "tram";
+  if (OVERGROUND_LINE_IDS.has(lineId)) return "overground";
+  return "tube";
+};
+
+export const railModesForLineIds = (
+  lineIds: readonly string[],
+): TransitMode[] => [...new Set(lineIds.map(railModeForLineId))];
 
 export const railVehicleColor = (lineId: string): string =>
   getLineColor(lineId).hex;

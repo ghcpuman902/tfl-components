@@ -27,7 +27,8 @@ export default function BlocksIndexPage() {
         { href: "/docs/components", label: "Components catalogue" },
         { href: "/docs/map-schematic", label: "Schematic maps" },
         { href: "/blocks/week-ahead", label: "Week ahead" },
-        { href: "/blocks/live-vehicles", label: "Live vehicles" },
+        { href: "/docs/live-vehicle-tracking", label: "Live Tube & Rail vehicles" },
+        { href: "/docs/live-bus-vehicles", label: "Live buses" },
       ]}
     />
   );

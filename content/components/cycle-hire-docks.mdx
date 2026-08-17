@@ -93,6 +93,63 @@ The compound is a static property on a Client Component. Do not access
 Component references do not preserve static properties. Use the named exports
 there instead.
 
+## Compact display
+
+Use `CycleHireDocksDisplay` when the dock list must fit a fixed-height panel.
+Set `tiles` to the total number of 48px tiles:
+
+```tsx
+import { CycleHireDocksDisplay } from "@/components/tfl/cycle-hire/cycle-hire-docks"
+
+export function DocksDisplay({ data }) {
+  return <CycleHireDocksDisplay data={data} tiles={3} behaviour="unattended" />
+}
+```
+
+Each tile is 48px high, matching the arrivals and status displays. The first
+tile carries the cycle roundel. With several docks it says `Cycle hire docks`
+and holds the page indicator. `tiles={3}` makes the panel 144px high and leaves
+two tiles for dock rows. The default is two tiles. Empty and error states keep
+the same height.
+
+With one dock, the first tile uses the dock name as its heading and puts the
+exact counts on the right. The remaining space shows one block per physical
+slot, with a gap between blocks:
+
+```tsx
+<CycleHireDocksDisplay data={[dock]} tiles={2} />
+```
+
+With several docks, each dock row keeps its own counts and compact slot strip:
+
+```tsx
+<CycleHireDocksDisplay data={nearbyDocks} tiles={3} behaviour="unattended" />
+```
+
+Interactive is the default. Extra docks use manual pages: swipe the dock rows
+on touch, or hover over the display for controls in the heading. After
+inactivity on a later page, the display returns to the first page.
+
+Unattended advances the same pages automatically. Counts update in place;
+changed membership and order wait for the next page boundary. Pages do not
+overlap: three tiles with five docks show `1 2`, then `3 4`, then `5` with one
+empty row. One page stays still and has no paging indicator or timer.
+
+| Prop           | Type                            | Description                                              |
+| -------------- | ------------------------------- | -------------------------------------------------------- |
+| `data`         | `readonly CycleHireDock[]`      | Dock rows in display order.                              |
+| `tiles`        | `number`                        | Total 48px tiles, including the heading. Default `2`.    |
+| `behaviour`    | `"interactive" \| "unattended"` | Manual or automatic pages. Default `"interactive"`.      |
+| `dwellMs`      | `number`                        | Unattended page interval. Default 10 seconds.            |
+| `startDelayMs` | `number`                        | Delay before unattended paging starts. Default `0`.      |
+| `idleReturnMs` | `number`                        | Delay before an interactive display returns to page one. |
+| `showBroken`   | `boolean`                       | Include broken slots in the counts and slot blocks.      |
+| `error`        | `string \| null`                | Show an error without changing the configured height.    |
+| `className`    | `string`                        | Set width, border, and placement styles.                 |
+
+The map remains separate. Size it with `className`; it does not take
+`behaviour` or join the dock sequence.
+
 ## Variations
 
 ### Single dock row
@@ -118,12 +175,13 @@ Broken slots are hidden by default. Pass `showBroken` on Detail or a row:
 
 ## Props
 
-| Prop / API                                       | Type                                  | Description                                                           |
-| ------------------------------------------------ | ------------------------------------- | --------------------------------------------------------------------- |
-| `CycleHireDocks`                                 | `{ data, children }`                  | Optional Provider root. Inject `data` once for Map / Detail children. |
-| `CycleHireDocks.Map` / `CycleHireDocksMap`       | `data?`, `className?`                 | OSM MapLibre surface. Markers need `lat` / `lon` on each row.         |
-| `CycleHireDocks.Detail` / `CycleHireDocksDetail` | `data?`, `showBroken?`, `hideHeader?` | Occupancy bars and counts.                                            |
-| `showBroken`                                     | `boolean`                             | Include broken docks in the detail bar. Default `false`.              |
+| Prop / API                                         | Type                                           | Description                                                         |
+| -------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------- |
+| `CycleHireDocks`                                   | `{ data, children }`                           | Optional Provider root. Inject `data` once for child surfaces.      |
+| `CycleHireDocks.Map` / `CycleHireDocksMap`         | `data?`, `className?`                          | OSM MapLibre surface. Markers need `lat` / `lon` on each row.       |
+| `CycleHireDocks.Detail` / `CycleHireDocksDetail`   | `data?`, `showBroken?`, `hideHeader?`          | Expanding occupancy bars and counts.                                |
+| `CycleHireDocks.Display` / `CycleHireDocksDisplay` | `data?`, `tiles?`, `behaviour?`, `showBroken?` | Fixed-height dock tiles with manual or unattended paging.           |
+| `showBroken`                                       | `boolean`                                      | Include broken docks in counts and occupancy bars. Default `false`. |
 
 Map markers show the proportion of standard bikes, e-bikes, and empty spaces.
 They do not show exact counts. Each marker's accessible name contains the dock

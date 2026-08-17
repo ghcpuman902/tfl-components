@@ -35,7 +35,7 @@ const nextConfig: NextConfig = {
       { source: "/interfaces/tube-status-board", destination: "/docs/tube-rail-status", permanent: true },
       { source: "/interfaces/line-strip", destination: "/docs/line-strip", permanent: true },
       { source: "/primitives", destination: "/docs/components", permanent: true },
-      { source: "/primitives/branch-strip", destination: "/docs/branch-strip", permanent: true },
+      { source: "/primitives/branch-strip", destination: "/docs/branch-strip-horizontal", permanent: true },
       { source: "/primitives/station-name", destination: "/docs/station-name-labels", permanent: true },
       { source: "/foundations", destination: "/docs", permanent: true },
       { source: "/foundations/typography", destination: "/docs/typography", permanent: true },
@@ -60,8 +60,8 @@ const nextConfig: NextConfig = {
       { source: "/roundel", destination: "/docs/tfl-roundel", permanent: true },
       { source: "/line-diagram", destination: "/docs/line-strip", permanent: true },
       { source: "/components/line-diagram", destination: "/docs/line-strip", permanent: true },
-      { source: "/tools/branch-diagram", destination: "/docs/branch-strip", permanent: true },
-      { source: "/branch-diagram", destination: "/docs/branch-strip", permanent: true },
+      { source: "/tools/branch-diagram", destination: "/docs/branch-strip-horizontal", permanent: true },
+      { source: "/branch-diagram", destination: "/docs/branch-strip-horizontal", permanent: true },
       { source: "/route", destination: "/explore/routes", permanent: true },
       { source: "/typography", destination: "/tools/typography", permanent: true },
       { source: "/tools/browse-lines", destination: "/explore/lines", permanent: true },
@@ -72,7 +72,7 @@ const nextConfig: NextConfig = {
       { source: "/components/river-bus-arrivals-board", destination: "/docs/river-bus-arrivals", permanent: true },
       { source: "/components/line-strip", destination: "/docs/line-strip", permanent: true },
       { source: "/primitives/line-strip", destination: "/docs/line-strip", permanent: true },
-      { source: "/components/branch-strip", destination: "/docs/branch-strip", permanent: true },
+      { source: "/components/branch-strip", destination: "/docs/branch-strip-horizontal", permanent: true },
       { source: "/components/tfl-roundel", destination: "/docs/tfl-roundel", permanent: true },
       { source: "/components/line-badge", destination: "/docs/line-chip", permanent: true },
       { source: "/docs/line-badge", destination: "/docs/line-chip", permanent: true },
@@ -92,6 +92,7 @@ const nextConfig: NextConfig = {
       // `/docs/components/<slug>` guesses — every component page actually lives
       // one level up, at `/docs/<slug>`.
       { source: "/docs/components/:slug", destination: "/docs/:slug", permanent: true },
+      { source: "/blocks/live-vehicles", destination: "/docs/live-bus-vehicles", permanent: true },
     ];
   },
 };

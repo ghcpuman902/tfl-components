@@ -1,3 +1,5 @@
+import { LINE_STATION_SEQUENCES } from "tfl-ts";
+import { formatStationName } from "@/lib/tfl/diagram-station";
 import type { OrderedRouteLike } from "@/lib/tfl/week-ahead-status";
 import { selectLongestOrderedRoute } from "@/lib/tfl/week-ahead-status";
 
@@ -24,6 +26,133 @@ export type LineTopology = {
   /** Preferred spine for compact 1-row views (week-ahead). */
   primaryBranchId: string;
   branches: LineBranchMeta[];
+  /** Display names keyed by Naptan id (static builder fills this). */
+  stationNames?: Readonly<Record<string, string>>;
+  /** Segment ids that participate in a cycle via `nextBranchIds`. */
+  loopBranchIds?: readonly string[];
+  /**
+   * Longest inbound Regular ordered route (full end-to-end).
+   * Layout uses this as the trunk when present.
+   */
+  trunkStationIds?: readonly string[];
+};
+
+export type StaticBranchSegment = {
+  id: string;
+  numericId: number;
+  stationIds: readonly string[];
+  nextIds: readonly string[];
+  previousIds: readonly string[];
+};
+
+type StaticSequenceBranch = {
+  id: number;
+  direction: string;
+  serviceType: string;
+  nextBranchIds: readonly number[];
+  previousBranchIds: readonly number[];
+  stationIds: readonly string[];
+};
+
+type StaticSequenceRoute = {
+  name: string;
+  direction: string;
+  serviceType: string;
+  stationIds: readonly string[];
+};
+
+type StaticSequence = {
+  lineId: string;
+  lineName: string;
+  stations: readonly { id: string; name: string }[];
+  branches: readonly StaticSequenceBranch[];
+  orderedRoutes: readonly StaticSequenceRoute[];
+};
+
+export const staticSegmentId = (numericId: number): string =>
+  `segment-${numericId}`;
+
+export const getStaticLineSequence = (
+  lineId: string,
+): StaticSequence | null => {
+  const sequence = (
+    LINE_STATION_SEQUENCES as Record<string, StaticSequence | undefined>
+  )[lineId];
+  return sequence ?? null;
+};
+
+const inboundRegularBranches = (
+  sequence: StaticSequence,
+): StaticSequenceBranch[] =>
+  sequence.branches.filter(
+    (branch) =>
+      branch.direction === "inbound" &&
+      branch.serviceType === "Regular" &&
+      branch.stationIds.length >= 2,
+  );
+
+const inboundRegularRoutes = (
+  sequence: StaticSequence,
+): StaticSequenceRoute[] =>
+  sequence.orderedRoutes.filter(
+    (route) =>
+      route.direction === "inbound" &&
+      route.serviceType === "Regular" &&
+      route.stationIds.length >= 2,
+  );
+
+const detectLoopSegmentIds = (
+  segments: readonly StaticSequenceBranch[],
+): string[] => {
+  const byId = new Map(segments.map((segment) => [segment.id, segment]));
+  const loops = new Set<string>();
+
+  for (const start of segments) {
+    const seen = new Set<number>();
+    const stack = [...start.nextBranchIds];
+    while (stack.length > 0) {
+      const nextId = stack.pop()!;
+      if (nextId === start.id) {
+        loops.add(staticSegmentId(start.id));
+        break;
+      }
+      if (seen.has(nextId)) continue;
+      seen.add(nextId);
+      const next = byId.get(nextId);
+      if (!next) continue;
+      stack.push(...next.nextBranchIds);
+    }
+  }
+
+  return [...loops];
+};
+
+/**
+ * Lines whose inbound Regular sequence has more than one branch segment.
+ * Simple corridors (Victoria, Bakerloo, …) are excluded.
+ */
+export const listBranchedLineIds = (): string[] => {
+  const ids: string[] = [];
+  for (const sequence of Object.values(LINE_STATION_SEQUENCES) as StaticSequence[]) {
+    if (inboundRegularBranches(sequence).length > 1) {
+      ids.push(sequence.lineId);
+    }
+  }
+  return ids.sort((a, b) => a.localeCompare(b));
+};
+
+export const staticBranchSegments = (
+  lineId: string,
+): StaticBranchSegment[] => {
+  const sequence = getStaticLineSequence(lineId);
+  if (!sequence) return [];
+  return inboundRegularBranches(sequence).map((branch) => ({
+    id: staticSegmentId(branch.id),
+    numericId: branch.id,
+    stationIds: branch.stationIds,
+    nextIds: branch.nextBranchIds.map(staticSegmentId),
+    previousIds: branch.previousBranchIds.map(staticSegmentId),
+  }));
 };
 
 const slugifyBranch = (name: string, index: number): string => {
@@ -33,6 +162,82 @@ const slugifyBranch = (name: string, index: number): string => {
     .replace(/^-|-$/g, "")
     .slice(0, 48);
   return base || `branch-${index + 1}`;
+};
+
+const stationNameMap = (
+  sequence: StaticSequence,
+): Record<string, string> => {
+  const names: Record<string, string> = {};
+  for (const stop of sequence.stations) {
+    names[stop.id] = formatStationName(stop.name);
+  }
+  return names;
+};
+
+/**
+ * Build a branched topology from tfl-ts `LINE_STATION_SEQUENCES` branch
+ * segments (`nextBranchIds` / `previousBranchIds`). Inbound Regular only.
+ */
+export const buildLineTopologyFromStaticBranches = (
+  lineId: string,
+): LineTopology | null => {
+  const sequence = getStaticLineSequence(lineId);
+  if (!sequence) return null;
+
+  const segments = inboundRegularBranches(sequence);
+  if (segments.length === 0) return null;
+
+  const names = stationNameMap(sequence);
+  const nodeIds = new Set<string>();
+  const edgeKeys = new Set<string>();
+  const edges: LineEdge[] = [];
+  const branches: LineBranchMeta[] = [];
+
+  for (const segment of segments) {
+    const branchId = staticSegmentId(segment.id);
+    const first = names[segment.stationIds[0]!] ?? segment.stationIds[0]!;
+    const last =
+      names[segment.stationIds[segment.stationIds.length - 1]!] ??
+      segment.stationIds[segment.stationIds.length - 1]!;
+    branches.push({
+      id: branchId,
+      name: first === last ? first : `${first} → ${last}`,
+    });
+
+    for (const id of segment.stationIds) nodeIds.add(id);
+    for (let i = 0; i < segment.stationIds.length - 1; i += 1) {
+      const from = segment.stationIds[i]!;
+      const to = segment.stationIds[i + 1]!;
+      const key = `${branchId}:${from}→${to}`;
+      if (edgeKeys.has(key)) continue;
+      edgeKeys.add(key);
+      edges.push({ fromStationId: from, toStationId: to, branchId });
+    }
+  }
+
+  const routes = inboundRegularRoutes(sequence);
+  const longest = selectLongestOrderedRoute(
+    routes.map((route) => ({
+      name: route.name,
+      naptanIds: [...route.stationIds],
+      serviceType: route.serviceType,
+    })),
+  );
+  const trunkStationIds = longest?.naptanIds ?? segments[0]!.stationIds;
+  const primary = [...segments].sort(
+    (a, b) => b.stationIds.length - a.stationIds.length,
+  )[0]!;
+
+  return {
+    lineId: sequence.lineId,
+    nodes: [...nodeIds].map((stationId) => ({ stationId })),
+    edges,
+    primaryBranchId: staticSegmentId(primary.id),
+    branches,
+    stationNames: names,
+    loopBranchIds: detectLoopSegmentIds(segments),
+    trunkStationIds: [...trunkStationIds],
+  };
 };
 
 /**

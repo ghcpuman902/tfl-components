@@ -93,8 +93,12 @@ export default function LineStripDemo() {
           Piccadilly, Victoria, Liberty (Overground), and London Cable Car.
           Overground paints as parallel rails; cable car is three red rails with
           white gaps. Branched lines live under{" "}
-          <Link href="/docs/branch-strip" className="underline">
-            Branch strip
+          <Link href="/docs/branch-strip-horizontal" className="underline">
+            Branch strip — horizontal
+          </Link>
+          {" / "}
+          <Link href="/docs/branch-strip-vertical" className="underline">
+            vertical
           </Link>
           . Desktop scale matches the reference baseline (
           {DIAGRAM_BASELINE.horizontal}px line).
@@ -234,8 +238,12 @@ import { LineStrip } from "@/components/tfl/diagram/line-strip";
             Browse lines
           </Link>
           . Branched schematics live under{" "}
-          <Link href="/docs/branch-strip" className="underline">
-            Branch strip
+          <Link href="/docs/branch-strip-horizontal" className="underline">
+            Branch strip — horizontal
+          </Link>
+          {" / "}
+          <Link href="/docs/branch-strip-vertical" className="underline">
+            vertical
           </Link>
           .
         </p>

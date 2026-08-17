@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -19,10 +20,12 @@ import { mapLineColorForBasemap } from "@/lib/tfl/dark-line-colours";
 import {
   openFreeMapStyleUrl,
 } from "@/lib/tfl/geography-credits";
+import { useVehicleSegmentSource } from "@/components/tfl/geography/sync-vehicle-source";
 import {
-  vehiclesToGeoJSON,
+  vehiclesToSegmentGeoJSON,
   type VehiclePosition,
 } from "@/lib/tfl/map-vehicles";
+import type { RoutePolyline } from "@/lib/tfl/vehicle-progress";
 import { cn } from "@/lib/utils";
 
 const LONDON_CENTER: [number, number] = [-0.128, 51.507];
@@ -35,6 +38,8 @@ type TflBusGeoMapProps = {
   /** Optional extra geometry (e.g. a second direction). */
   alternate?: BusRouteGeometry;
   vehicles?: readonly VehiclePosition[];
+  /** Keep vehicles walking along the track between arrival snapshots. */
+  coast?: boolean;
   showStops?: boolean;
   showNavigation?: boolean;
   center?: [number, number];
@@ -113,14 +118,16 @@ const STOP_RADIUS: ExpressionSpecification = [
   5,
 ];
 
-const VEHICLE_RADIUS: ExpressionSpecification = [
+const VEHICLE_LINE_WIDTH: ExpressionSpecification = [
   "interpolate",
   ["linear"],
   ["zoom"],
   11,
-  4,
-  15,
   6,
+  15,
+  11,
+  17,
+  14,
 ];
 
 const boundsFromGeometry = (
@@ -232,19 +239,35 @@ const addRouteLayers = (
 
   map.addSource("bus-vehicles", {
     type: "geojson",
-    data: vehiclesToGeoJSON([]),
+    data: vehiclesToSegmentGeoJSON([], []),
   });
   map.addLayer({
     id: "bus-vehicles",
-    type: "circle",
+    type: "line",
     source: "bus-vehicles",
+    layout: {
+      "line-join": "round",
+      "line-cap": "round",
+    },
     paint: {
-      "circle-radius": VEHICLE_RADIUS,
-      "circle-color": ["coalesce", ["get", "color"], color],
-      "circle-stroke-width": 1.5,
-      "circle-stroke-color": dark ? "#111827" : "#ffffff",
+      "line-color": dark ? "#9ca3af" : "#4b5563",
+      "line-width": VEHICLE_LINE_WIDTH,
+      "line-opacity": 0.96,
     },
   });
+};
+
+const polylinesFromRoutes = (
+  routes: readonly (BusRouteGeometry | undefined)[],
+): RoutePolyline[] => {
+  const out: RoutePolyline[] = [];
+  for (const route of routes) {
+    if (!route) continue;
+    for (const segment of route.segments) {
+      out.push({ lineId: route.routeId, line: segment.line });
+    }
+  }
+  return out;
 };
 
 const asGeoJsonSource = (
@@ -274,6 +297,7 @@ export const TflBusGeoMap = ({
   data,
   alternate,
   vehicles,
+  coast = false,
   showStops = true,
   showNavigation = true,
   center = LONDON_CENTER,
@@ -283,8 +307,6 @@ export const TflBusGeoMap = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const skipStyleSwapRef = useRef(true);
-  const vehiclesRef = useRef(vehicles);
-  vehiclesRef.current = vehicles;
   const dark = useSyncExternalStore(
     subscribeDocumentDark,
     getDocumentDark,
@@ -293,6 +315,18 @@ export const TflBusGeoMap = ({
   const [status, setStatus] = useState<"loading" | "ready">("loading");
 
   const routes = useMemo(() => [data, alternate], [data, alternate]);
+  const getPolylines = useCallback(
+    (): RoutePolyline[] => polylinesFromRoutes(routes),
+    [routes],
+  );
+  const { flush: flushVehicles } = useVehicleSegmentSource({
+    mapRef,
+    sourceId: "bus-vehicles",
+    vehicles,
+    getPolylines,
+    coast,
+    ready: status === "ready",
+  });
 
   useEffect(() => {
     const container = containerRef.current;
@@ -317,9 +351,6 @@ export const TflBusGeoMap = ({
 
     map.on("load", () => {
       addRouteLayers(map, routes, showStops, dark);
-      asGeoJsonSource(map.getSource("bus-vehicles"))?.setData(
-        vehiclesToGeoJSON(vehiclesRef.current ?? []),
-      );
       const bounds = boundsFromGeometry(routes);
       if (bounds) {
         map.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: 0 });
@@ -331,9 +362,9 @@ export const TflBusGeoMap = ({
       map.remove();
       mapRef.current = null;
     };
-    // Initial style from first `dark` snapshot; swaps happen below.
+    // Create once. Overlay and style swaps live in the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [center, zoom, showNavigation, showStops]);
+  }, [showNavigation]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -350,24 +381,14 @@ export const TflBusGeoMap = ({
     }
     const apply = () => {
       addRouteLayers(map, routes, showStops, dark);
-      asGeoJsonSource(map.getSource("bus-vehicles"))?.setData(
-        vehiclesToGeoJSON(vehiclesRef.current ?? []),
-      );
+      flushVehicles();
     };
     map.setStyle(openFreeMapStyleUrl(dark));
     map.once("style.load", apply);
     return () => {
       map.off("style.load", apply);
     };
-  }, [dark, showStops]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    asGeoJsonSource(map.getSource("bus-vehicles"))?.setData(
-      vehiclesToGeoJSON(vehicles ?? []),
-    );
-  }, [vehicles, status]);
+  }, [dark, showStops, flushVehicles]);
 
   return (
     <div

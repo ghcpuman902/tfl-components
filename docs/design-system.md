@@ -45,7 +45,7 @@ Use `StationName` / `formatStationLabel` — never ad-hoc `<br>` or CSS wrapping
 | `formatStationLabel` | Pure scorer: prefer 1 line → balanced 2-line word split → optional abbr → scale ≥ 0.75 |
 | `STATION_ABBREVIATIONS` | Conservative map (`Street`→`St`, `Road`→`Rd`, …) from `station-abbreviations` — only when allowed |
 | `/tools/typography` | A–Z lab to inspect every Tube / Elizabeth / DLR / Overground / Tram name |
-| `/components/branch-strip` | Northern schematics — separate horizontal/vertical `lane × pos` layouts |
+| `/docs/branch-strip-horizontal` / `/docs/branch-strip-vertical` | Separate horizontal and vertical `lane × pos` layouts |
 
 Rules: break only between words; prefer the full name; never split a token; optional abbreviations only to fit; scale-down is last resort (`STATION_LABEL_MIN_SCALE = 0.75`).
 

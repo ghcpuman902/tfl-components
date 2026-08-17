@@ -2,81 +2,39 @@ import type { LineString } from "geojson";
 import type { RealtimePrediction } from "tfl-ts";
 import type { VehiclePosition } from "@/lib/tfl/map-vehicles";
 import {
-  pointBetweenStations,
-  progressBetweenStops,
-  type StationCoord,
-} from "@/lib/tfl/vehicle-progress";
+  advanceHopPosition,
+  ingestVehicleHops,
+} from "@/lib/tfl/vehicle-hop-engine";
+import type { StationCoord } from "@/lib/tfl/vehicle-progress";
 
 export type { VehiclePosition, StationCoord };
-export { pointBetweenStations, progressBetweenStops };
-
-const groupPredictions = (
-  predictions: readonly RealtimePrediction[],
-): Map<string, RealtimePrediction[]> => {
-  const groups = new Map<string, RealtimePrediction[]>();
-  for (const prediction of predictions) {
-    const vehicleId = prediction.vehicleId?.trim();
-    if (!vehicleId) continue;
-    const list = groups.get(vehicleId);
-    if (list) list.push(prediction);
-    else groups.set(vehicleId, [prediction]);
-  }
-  for (const list of groups.values()) {
-    list.sort(
-      (a, b) => (a.timeToStation ?? 9e9) - (b.timeToStation ?? 9e9),
-    );
-  }
-  return groups;
-};
 
 /**
- * Place each vehicle on route geometry from its next two predicted stops.
- * TfL never sends vehicle lat/lon — use {@link progressBetweenStops} then
- * {@link pointBetweenStations}.
+ * One-shot placement (no hop memory). Prefer {@link ingestVehicleHops}
+ * when polling so ETA regressions cannot walk a vehicle backward.
  */
 export const locateVehicles = ({
   predictions,
   stationsById,
   polylines,
+  asOf,
 }: {
   predictions: readonly RealtimePrediction[];
   stationsById: ReadonlyMap<string, StationCoord>;
   polylines: readonly LineString[];
-}): VehiclePosition[] => {
-  const out: VehiclePosition[] = [];
+  asOf?: number;
+}): VehiclePosition[] =>
+  ingestVehicleHops({
+    tracks: new Map(),
+    predictions,
+    stationsById,
+    polylines,
+    asOf: asOf ?? 0,
+  });
 
-  for (const [vehicleId, rows] of groupPredictions(predictions)) {
-    const next = rows[0];
-    if (!next?.naptanId) continue;
-    const nextStop = stationsById.get(next.naptanId);
-    if (!nextStop) continue;
-
-    const ttsNext = next.timeToStation ?? 0;
-    const after = rows[1];
-    const afterStop = after?.naptanId
-      ? stationsById.get(after.naptanId)
-      : undefined;
-    const progress = progressBetweenStops(ttsNext, after?.timeToStation);
-    const placed =
-      afterStop != null
-        ? pointBetweenStations({
-            from: nextStop,
-            to: afterStop,
-            progress,
-            polylines,
-          })
-        : { lat: nextStop.lat, lon: nextStop.lon, bearingDeg: 0 };
-
-    out.push({
-      vehicleId,
-      lineId: next.lineId ?? "",
-      lat: placed.lat,
-      lon: placed.lon,
-      bearingDeg: placed.bearingDeg,
-      destinationName: next.destinationName ?? next.towards ?? "",
-      timeToNextStationSec: ttsNext,
-    });
-  }
-
-  return out;
-};
+/** Re-place a vehicle using remaining km / countdown as it elapses since `asOf`. */
+export const advanceVehiclePosition = (
+  vehicle: VehiclePosition,
+  nowMs: number,
+  polylines: readonly LineString[],
+): VehiclePosition => advanceHopPosition(vehicle, nowMs, polylines);

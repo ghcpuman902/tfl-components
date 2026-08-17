@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 
 const SLUG_MAP: Record<string, string> = {
-  "branch-strip": "/docs/branch-strip",
+  "branch-strip": "/docs/branch-strip-horizontal",
+  "branch-strip-horizontal": "/docs/branch-strip-horizontal",
+  "branch-strip-vertical": "/docs/branch-strip-vertical",
   "station-name": "/docs/station-name-labels",
 };
 

@@ -1,4 +1,4 @@
-/** Demo rail line for the Live vehicles Block. */
+/** Default rail line for the live-vehicle docs demos. */
 export const TRACKED_RAIL_LINE_ID = "victoria";
 
 /** Demo bus route — serves Trafalgar Square. */
