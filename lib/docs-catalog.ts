@@ -410,7 +410,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   },
   {
     slug: "maps-geographic",
-    title: "Map (Geographic)",
+    title: "Map – Tube & Rail (Geo)",
     description:
       "Track geometry as GeoJSON for Tube, Elizabeth, Overground, DLR, and Tram. Use the packaged MapLibre map, or draw the same files in your own SDK.",
     group: "maps",
@@ -422,6 +422,23 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     modeMarker: "map",
     registryName: "tfl-geographic-map",
     registryUrl: `${REGISTRY_BASE}/tfl-geographic-map.json`,
+    layer: "map",
+    usesFoundations: ["colours"],
+  },
+  {
+    slug: "maps-bus",
+    title: "Map – Bus (Geo)",
+    description:
+      "One bus route on a geographic map, with optional diverted and disabled segments.",
+    group: "maps",
+    kind: "component",
+    href: "/docs/map-bus-geo",
+    sidebarSection: "components",
+    sidebarOrder: 75,
+    preferred: true,
+    modeMarker: "bus",
+    registryName: "tfl-bus-geo-map",
+    registryUrl: `${REGISTRY_BASE}/tfl-bus-geo-map.json`,
     layer: "map",
     usesFoundations: ["colours"],
   },
@@ -621,6 +638,19 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarSection: "hidden",
     sidebarOrder: 0,
     builtWith: ["line-strip", "branch-strip", "station-name-labels", "line-chip"],
+    usesFoundations: ["colours"],
+  },
+  {
+    slug: "live-vehicles",
+    title: "Live vehicles",
+    description:
+      "Block composing geographic maps with live vehicle positions derived from line-wide arrivals.",
+    group: "blocks",
+    kind: "block",
+    href: "/blocks/live-vehicles",
+    sidebarSection: "hidden",
+    sidebarOrder: 0,
+    builtWith: ["maps-geographic", "maps-bus"],
     usesFoundations: ["colours"],
   },
   {

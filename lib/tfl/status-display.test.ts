@@ -60,9 +60,15 @@ describe("buildStatusDisplayFrames", () => {
       now: SATURDAY,
     })
     const frames = buildStatusDisplayFrames(sections, { tiles: 4 })
-    assert.ok(frames.length >= 1)
-    assert.ok(frames.every((frame) => frame.phase === "good-service"))
+    assert.equal(frames.length, 1)
+    assert.equal(frames[0]?.phase, "good-service")
     assert.equal(frames[0]?.heading, "Good service")
+    const allGood = frames[0]?.tiles[0]
+    assert.equal(allGood?.kind, "chips")
+    if (allGood?.kind === "chips") {
+      assert.deepEqual([...allGood.lineIds].sort(), ["bakerloo", "victoria"])
+    }
+    assert.equal(frames[0]?.activeLineId, undefined)
   })
 
   it("loops disruptions without an empty Good service phase", () => {
@@ -83,7 +89,16 @@ describe("buildStatusDisplayFrames", () => {
     assert.equal(frames[0]?.phase, "disruptions")
     assert.equal(frames[0]?.heading, "Service disruptions")
     assert.equal(frames[0]?.activeLineId, "central")
-    assert.ok(frames.some((frame) => frame.phase === "good-service"))
+    assert.equal(frames[0]?.activeLineName, "Central")
+    assert.ok(frames[0]?.tiles.every((tile) => tile.kind === "text"))
+    const good = frames.find((frame) => frame.phase === "good-service")
+    assert.ok(good)
+    const goodChips = good?.tiles[0]
+    assert.equal(goodChips?.kind, "chips")
+    if (goodChips?.kind === "chips") {
+      assert.deepEqual([...goodChips.lineIds].sort(), ["bakerloo", "victoria"])
+    }
+    assert.equal(good?.activeLineId, undefined)
   })
 
   it("keeps timetable-closed lines in disruptions", () => {
@@ -111,13 +126,16 @@ describe("buildStatusDisplayFrames", () => {
       tiles: 3,
       charsPerTile: 40,
     })
-    const texts = frames
-      .filter((frame) => frame.phase === "disruptions")
-      .flatMap((frame) =>
-        frame.tiles.filter((tile) => tile.kind === "text").map((tile) => tile.text)
-      )
-    assert.ok(texts.length >= 1)
-    assert.ok(frames[0]?.tiles.some((tile) => tile.kind === "line"))
+    const disruption = frames.filter((frame) => frame.phase === "disruptions")
+    const texts = disruption.flatMap((frame) =>
+      frame.tiles.filter((tile) => tile.kind === "text").map((tile) => tile.text)
+    )
+    assert.ok(texts.length >= 2)
+    assert.ok(
+      disruption.every((frame) => !frame.tiles.some((tile) => tile.kind === "chips"))
+    )
+    assert.equal(disruption[0]?.pageCount, disruption.length)
+    assert.equal(disruption[0]?.tiles.length, 1)
   })
 
   it("scopes network summary to every fetched line and detail to the filter", () => {

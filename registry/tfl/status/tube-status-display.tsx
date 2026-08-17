@@ -1,9 +1,7 @@
 "use client"
 
 import { type CSSProperties } from "react"
-import { LINE_ORDER } from "tfl-ts"
 import { LineBadge, LineColorBar } from "@/components/tfl/brand/line-badge"
-import { LineName } from "@/components/tfl/brand/line-name"
 import { useUnattendedSequence } from "@/hooks/use-unattended-sequence"
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
 import { partitionStatusBoardLines } from "@/lib/tfl/status-board"
@@ -12,7 +10,6 @@ import {
   visibleHeadingChips,
   type StatusDetailScope,
   type StatusDisplayFrame,
-  type StatusDisplayTile,
 } from "@/lib/tfl/status-display"
 import type { StatusLine } from "@/lib/tfl/status-types"
 import type { PrepareLineAnnouncementsOptions } from "@/lib/tfl/status-reason"
@@ -30,8 +27,13 @@ const BOARD_RHYTHM_VARS = {
 const TILE_CLASS =
   "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip"
 
-const ROW_RULE_CLASS =
-  "relative after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60"
+const DISRUPTION_LEADING_CLASS = "leading-[calc(var(--arrivals-row)/2)]"
+
+const STRIPED_MODE_NAMES = new Set([
+  "overground",
+  "elizabeth-line",
+  "cable-car",
+])
 
 export type TubeStatusDisplayProps = {
   data?: readonly StatusLine[]
@@ -65,7 +67,7 @@ const HeadingChips = ({
           lineId={id}
           className={cn(
             "h-5 justify-center px-1.5",
-            id === activeLineId && "ring-1 ring-foreground/40"
+            activeLineId && id !== activeLineId && "opacity-40"
           )}
         />
       ))}
@@ -73,53 +75,44 @@ const HeadingChips = ({
   )
 }
 
-const DisplayTile = ({
-  tile,
-  showRule,
+const PageDots = ({
+  pageIndex,
+  pageCount,
 }: {
-  tile: StatusDisplayTile
-  showRule: boolean
+  pageIndex: number
+  pageCount: number
 }) => {
-  if (tile.kind === "empty") {
-    return (
-      <div
-        className={cn(TILE_CLASS, showRule && ROW_RULE_CLASS)}
-        aria-hidden
-      />
-    )
-  }
-  if (tile.kind === "line") {
-    return (
-      <div
-        data-line={tile.lineId}
-        className={cn("relative flex items-center", TILE_CLASS, showRule && ROW_RULE_CLASS)}
-      >
-        <p className="m-0 min-w-0 flex-1 truncate text-xl leading-7 font-semibold text-[var(--line-color)] tfl-dark-line-text">
-          <LineName lineId={tile.lineId} name={tile.name} />
-        </p>
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0"
-          aria-hidden
-        >
-          <LineColorBar
-            lineId={tile.lineId}
-            modeName={tile.modeName}
-            heightClass="h-1"
-          />
-        </div>
-      </div>
-    )
-  }
-  return (
-    <p
+  if (pageCount <= 1) return null
+  const dots = Array.from({ length: pageCount }, (_, index) => (
+    <span
+      key={index}
       className={cn(
-        "flex items-center text-base text-pretty text-foreground/80",
-        TILE_CLASS,
-        showRule && ROW_RULE_CLASS
+        "size-1.5 rounded-full bg-current",
+        index === pageIndex ? "opacity-100" : "opacity-40"
       )}
-    >
-      <span className="line-clamp-2">{tile.text}</span>
-    </p>
+    />
+  ))
+  return (
+    <>
+      <div
+        className={cn(
+          "pointer-events-none absolute top-1 right-0 hidden items-center gap-1 bg-linear-to-l from-background from-70% via-background to-transparent pl-6 text-muted-foreground opacity-0 transition-opacity duration-150 [@media(hover:hover)]:flex",
+          "[@media(hover:hover)]:group-hover/status-display:opacity-50"
+        )}
+        aria-hidden
+      >
+        {dots}
+      </div>
+      <div
+        className="pointer-events-none absolute top-1 right-0 flex items-center gap-1 text-muted-foreground opacity-50 [@media(hover:hover)]:hidden"
+        aria-hidden
+      >
+        {dots}
+      </div>
+      <span className="sr-only">
+        Page {pageIndex + 1} of {pageCount}
+      </span>
+    </>
   )
 }
 
@@ -130,44 +123,109 @@ const StatusDisplayFrameView = ({
   frame: StatusDisplayFrame
   tiles: number
 }) => {
-  const heading =
-    frame.headingLineIds.length === 0 && frame.activeLineId
-      ? frame.heading
-      : frame.heading
+  const bodyTiles = Math.max(0, tiles - 1)
+  const textTile = frame.tiles.find((tile) => tile.kind === "text")
+  const chipsTile = frame.tiles.find((tile) => tile.kind === "chips")
+  const showHeadingChips =
+    frame.phase === "disruptions" || bodyTiles === 0
+  const activeLineId = frame.activeLineId
+  const isLineHeading = Boolean(activeLineId)
+  const isStriped = Boolean(
+    frame.activeModeName && STRIPED_MODE_NAMES.has(frame.activeModeName)
+  )
+  const pageIndex = frame.pageIndex ?? 0
+  const pageCount = frame.pageCount ?? 1
+
   return (
     <div
-      className="flex w-full flex-col"
-      aria-label={`${heading}${frame.activeLineId ? `, ${frame.activeLineId}` : ""}`}
+      className="group/status-display flex w-full flex-col"
+      aria-label={`${frame.heading}${
+        frame.activeLineName ? `, ${frame.activeLineName}` : ""
+      }${pageCount > 1 ? `, page ${pageIndex + 1} of ${pageCount}` : ""}`}
     >
       <div
+        data-line={isLineHeading ? activeLineId : undefined}
         className={cn(
-          "flex items-center gap-2 text-xl leading-7 font-semibold",
+          "relative flex items-center text-xl leading-7 font-semibold",
           TILE_CLASS,
-          ROW_RULE_CLASS
+          isLineHeading && !isStriped && "border-b-4"
         )}
+        style={
+          isLineHeading && !isStriped
+            ? { borderBottomColor: "var(--line-color)" }
+            : undefined
+        }
       >
-        <p className="m-0 min-w-0 flex-1 truncate">{frame.heading}</p>
-        <HeadingChips
-          lineIds={frame.headingLineIds}
-          activeLineId={frame.activeLineId}
-        />
-      </div>
-      {frame.tiles.map((tile, index) => (
-        <DisplayTile
-          key={`${frame.id}-${index}`}
-          tile={tile}
-          showRule={index < frame.tiles.length - 1 || tiles > frame.tiles.length + 1}
-        />
-      ))}
-      {frame.otherGoodServiceCopy && tiles >= 4 ? (
         <p
           className={cn(
-            "flex items-center text-sm text-muted-foreground",
-            TILE_CLASS
+            "m-0 min-w-0 flex-1 truncate",
+            showHeadingChips && "pr-2",
+            frame.headingLineIds.length === 0 &&
+              isLineHeading &&
+              "text-[var(--line-color)] tfl-dark-line-text"
           )}
         >
-          {frame.otherGoodServiceCopy}
+          {frame.heading}
         </p>
+        {showHeadingChips ? (
+          <HeadingChips
+            lineIds={frame.headingLineIds}
+            activeLineId={activeLineId}
+          />
+        ) : null}
+        <PageDots pageIndex={pageIndex} pageCount={pageCount} />
+        {isLineHeading && isStriped ? (
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0"
+            aria-hidden
+          >
+            <LineColorBar
+              lineId={activeLineId}
+              modeName={frame.activeModeName}
+              heightClass="h-1"
+            />
+          </div>
+        ) : null}
+      </div>
+      {bodyTiles > 0 ? (
+        <div
+          className="overflow-clip"
+          style={{
+            height: `calc(var(--arrivals-row) * ${bodyTiles})`,
+          }}
+        >
+          {textTile && textTile.kind === "text" ? (
+            <p
+              className={cn(
+                "m-0 text-base text-pretty text-foreground/80",
+                DISRUPTION_LEADING_CLASS
+              )}
+            >
+              {textTile.text}
+            </p>
+          ) : null}
+          {chipsTile && chipsTile.kind === "chips" ? (
+            <div className="flex flex-wrap content-start gap-1">
+              {chipsTile.lineIds.map((id) => (
+                <LineBadge
+                  key={id}
+                  lineId={id}
+                  className="h-5 justify-center px-1.5"
+                />
+              ))}
+            </div>
+          ) : null}
+          {frame.otherGoodServiceCopy ? (
+            <p
+              className={cn(
+                "m-0 text-sm text-muted-foreground",
+                DISRUPTION_LEADING_CLASS
+              )}
+            >
+              {frame.otherGoodServiceCopy}
+            </p>
+          ) : null}
+        </div>
       ) : null}
     </div>
   )
@@ -175,10 +233,8 @@ const StatusDisplayFrameView = ({
 
 export const TubeStatusDisplaySkeleton = ({
   tiles = 4,
-  lineIds = LINE_ORDER.slice(0, 4),
 }: {
   tiles?: number
-  lineIds?: readonly string[]
 }) => (
   <div
     className="flex w-full flex-col saturate-0"
@@ -189,28 +245,14 @@ export const TubeStatusDisplaySkeleton = ({
     <div
       className={cn(
         "flex items-center text-xl leading-7 font-semibold text-muted-foreground",
-        TILE_CLASS,
-        ROW_RULE_CLASS
+        TILE_CLASS
       )}
     >
       Status
     </div>
-    {Array.from({ length: Math.max(0, tiles - 1) }, (_, index) => {
-      const lineId = lineIds[index]
-      return (
-        <div
-          key={lineId ?? index}
-          data-line={lineId}
-          className={cn("relative flex items-center", TILE_CLASS, ROW_RULE_CLASS)}
-        >
-          {lineId ? (
-            <p className="m-0 truncate text-xl leading-7 font-semibold text-[var(--line-color)] tfl-dark-line-text">
-              <LineName lineId={lineId} />
-            </p>
-          ) : null}
-        </div>
-      )
-    })}
+    {Array.from({ length: Math.max(0, tiles - 1) }, (_, index) => (
+      <div key={index} className={TILE_CLASS} />
+    ))}
   </div>
 )
 

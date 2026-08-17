@@ -1307,6 +1307,46 @@
           "path": "lib/tfl/geography-credits.ts",
           "type": "registry:lib",
           "target": "lib/tfl/geography-credits.ts"
+        },
+        {
+          "path": "lib/tfl/map-vehicles.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/map-vehicles.ts"
+        }
+      ]
+    },
+    {
+      "name": "tfl-bus-geo-map",
+      "type": "registry:block",
+      "title": "Bus Geographic Map",
+      "description": "One bus route on MapLibre — current, diverted, and disabled segments as props.",
+      "dependencies": [
+        "maplibre-gl@5.24.0",
+        "@types/geojson"
+      ],
+      "registryDependencies": [
+        "https://tfl.manglekuo.com/r/tfl-colours.json"
+      ],
+      "files": [
+        {
+          "path": "registry/tfl/geography/tfl-bus-geo-map.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/geography/tfl-bus-geo-map.tsx"
+        },
+        {
+          "path": "lib/tfl/bus-geography-types.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/bus-geography-types.ts"
+        },
+        {
+          "path": "lib/tfl/geography-credits.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/geography-credits.ts"
+        },
+        {
+          "path": "lib/tfl/map-vehicles.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/map-vehicles.ts"
         }
       ]
     },

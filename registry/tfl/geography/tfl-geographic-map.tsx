@@ -22,6 +22,10 @@ import {
   OSM_TRANSIT_GEOMETRY_CREDIT,
   type TransitGeometryMode,
 } from "@/lib/tfl/geography-credits";
+import {
+  vehiclesToGeoJSON,
+  type VehiclePosition,
+} from "@/lib/tfl/map-vehicles";
 
 const LONDON_CENTER: [number, number] = [-0.12, 51.51];
 const LONDON_ZOOM = 10.2;
@@ -43,6 +47,10 @@ type TflGeographicMapProps = {
   data?: Partial<Record<TransitMode, TransitGeometryBundle>>;
   /** Which transit modes to render. Defaults to all five. */
   modes?: readonly TransitMode[];
+  /** When set, only these line ids are painted. */
+  lineIds?: readonly string[];
+  /** Live vehicle dots. Positions are derived by the caller. */
+  vehicles?: readonly VehiclePosition[];
   /** Show station circles and names. Default true. */
   showStations?: boolean;
   /** Show line tracks. Default true. */
@@ -139,6 +147,16 @@ const STATION_RADIUS: ExpressionSpecification = [
   5,
 ];
 
+const VEHICLE_RADIUS: ExpressionSpecification = [
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  10,
+  3.5,
+  14,
+  5.5,
+];
+
 const STATION_LABEL_SIZE: ExpressionSpecification = [
   "interpolate",
   ["linear"],
@@ -180,12 +198,27 @@ const prepareBasemapForTransit = (map: maplibregl.Map) => {
  * Per-mode casing→core→stations stacks the next mode’s white casing over the
  * previous mode’s colour (Tube/Jubilee was hiding DLR teal in Docklands).
  */
+const filterBundleLines = (
+  bundle: TransitGeometryBundle,
+  lineIds: readonly string[] | undefined,
+): TransitGeometryBundle["lines"] => {
+  if (!lineIds?.length) return bundle.lines;
+  const allow = new Set(lineIds);
+  return {
+    type: "FeatureCollection",
+    features: (bundle.lines.features ?? []).filter((feature) =>
+      allow.has(feature.properties?.lineId ?? ""),
+    ),
+  };
+};
+
 const addTransitLayers = (
   map: maplibregl.Map,
   bundles: { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[],
   showLines: boolean,
   showStations: boolean,
   dark: boolean,
+  lineIds?: readonly string[],
 ) => {
   const tone = dark ? "dark" : "light";
 
@@ -193,7 +226,7 @@ const addTransitLayers = (
     if (showLines) {
       map.addSource(`${mode}-lines`, {
         type: "geojson",
-        data: remapLineCollection(bundle.lines, dark),
+        data: remapLineCollection(filterBundleLines(bundle, lineIds), dark),
       });
     }
     if (showStations) {
@@ -278,6 +311,24 @@ const addTransitLayers = (
       });
     }
   }
+
+  if (!map.getSource("rail-vehicles")) {
+    map.addSource("rail-vehicles", {
+      type: "geojson",
+      data: vehiclesToGeoJSON([]),
+    });
+    map.addLayer({
+      id: "rail-vehicles",
+      type: "circle",
+      source: "rail-vehicles",
+      paint: {
+        "circle-radius": VEHICLE_RADIUS,
+        "circle-color": ["coalesce", ["get", "color"], "#0019A8"],
+        "circle-stroke-width": 1.5,
+        "circle-stroke-color": dark ? "#111827" : "#ffffff",
+      },
+    });
+  }
 };
 
 /**
@@ -297,6 +348,8 @@ const addTransitLayers = (
 export const TflGeographicMap = ({
   data,
   modes,
+  lineIds,
+  vehicles,
   showStations = true,
   showLines = true,
   showNavigation = true,
@@ -310,6 +363,9 @@ export const TflGeographicMap = ({
     { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[] | null
   >(null);
   const skipStyleSwapRef = useRef(true);
+  const vehiclesRef = useRef(vehicles);
+  vehiclesRef.current = vehicles;
+  const lineIdsKey = lineIds?.join(",") ?? "";
   const dark = useDocumentDark();
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -386,7 +442,13 @@ export const TflGeographicMap = ({
         if (cancelled) return;
         bundlesRef.current = bundles;
 
-        addTransitLayers(map, bundles, showLines, showStations, dark);
+        addTransitLayers(map, bundles, showLines, showStations, dark, lineIds);
+        const vehicleSource = map.getSource("rail-vehicles");
+        if (vehicleSource?.type === "geojson") {
+          (vehicleSource as maplibregl.GeoJSONSource).setData(
+            vehiclesToGeoJSON(vehiclesRef.current ?? []),
+          );
+        }
         setStatus("ready");
       } catch {
         if (!cancelled) setStatus("error");
@@ -414,7 +476,13 @@ export const TflGeographicMap = ({
       const bundles = bundlesRef.current;
       if (!bundles) return;
       prepareBasemapForTransit(map);
-      addTransitLayers(map, bundles, showLines, showStations, dark);
+      addTransitLayers(map, bundles, showLines, showStations, dark, lineIds);
+      const vehicleSource = map.getSource("rail-vehicles");
+      if (vehicleSource?.type === "geojson") {
+        (vehicleSource as maplibregl.GeoJSONSource).setData(
+          vehiclesToGeoJSON(vehiclesRef.current ?? []),
+        );
+      }
     };
 
     map.setStyle(openFreeMapStyleUrl(dark));
@@ -422,7 +490,18 @@ export const TflGeographicMap = ({
     return () => {
       map.off("style.load", applyOverlays);
     };
-  }, [dark, showLines, showStations]);
+  }, [dark, showLines, showStations, lineIdsKey]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const source = map.getSource("rail-vehicles");
+    if (source?.type === "geojson") {
+      (source as maplibregl.GeoJSONSource).setData(
+        vehiclesToGeoJSON(vehicles ?? []),
+      );
+    }
+  }, [vehicles, status]);
 
   return (
     <div

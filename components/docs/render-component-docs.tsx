@@ -69,6 +69,11 @@ const data = sortLinesBySeverityAndOrder(
 <div className="h-100">
   <TflGeographicMap />
 </div>`,
+  "map-bus-geo": `import { TflBusGeoMap } from "@/components/tfl/geography/tfl-bus-geo-map"
+
+<div className="h-100">
+  <TflBusGeoMap data={route} />
+</div>`,
   "line-badge": `import { LineBadge, LineColorBar } from "@/components/tfl/brand/line-badge"
 
 <LineBadge lineId="victoria" name="Victoria" />

@@ -5,13 +5,8 @@ export type StatusDisplayPhase = "disruptions" | "good-service"
 export type StatusDetailScope = "network" | "selection" | "none"
 
 export type StatusDisplayTile =
-  | {
-      kind: "line"
-      lineId: string
-      name: string
-      modeName?: string
-    }
   | { kind: "text"; text: string }
+  | { kind: "chips"; lineIds: readonly string[] }
   | { kind: "empty" }
 
 export type StatusDisplayFrame = {
@@ -20,7 +15,11 @@ export type StatusDisplayFrame = {
   heading: string
   headingLineIds: readonly string[]
   activeLineId?: string
+  activeLineName?: string
+  activeModeName?: string
   otherGoodServiceCopy?: string
+  pageIndex?: number
+  pageCount?: number
   tiles: readonly StatusDisplayTile[]
 }
 
@@ -55,28 +54,11 @@ const filterBySelection = (
   return rows.filter((row) => wanted.has(lineId(row)))
 }
 
-const padTiles = (
-  tiles: StatusDisplayTile[],
-  count: number
-): StatusDisplayTile[] => {
-  if (count <= 0) return []
-  const next = tiles.slice(0, count)
-  while (next.length < count) next.push({ kind: "empty" })
-  return next
-}
-
 const announcementText = (row: StatusBoardLine): string =>
   row.announcements
     .map((announcement) => announcement.text.trim())
     .filter(Boolean)
     .join(" ")
-
-const lineTile = (row: StatusBoardLine): StatusDisplayTile => ({
-  kind: "line",
-  lineId: lineId(row),
-  name: lineName(row),
-  modeName: row.line.modeName,
-})
 
 const otherGoodServiceCopy = (
   scope: StatusDetailScope,
@@ -103,6 +85,11 @@ const framesForLine = (
   const id = lineId(row)
   const text = announcementText(row)
   const bodyTiles = options.bodyTiles
+  const identity = {
+    activeLineId: id,
+    activeLineName: lineName(row),
+    activeModeName: row.line.modeName,
+  }
 
   if (bodyTiles <= 0) {
     return [
@@ -111,46 +98,44 @@ const framesForLine = (
         phase: options.phase,
         heading: options.heading,
         headingLineIds: options.headingLineIds,
-        activeLineId: id,
+        ...identity,
         otherGoodServiceCopy: options.otherGoodServiceCopy,
+        pageIndex: 0,
+        pageCount: 1,
         tiles: [],
       },
     ]
   }
 
-  const identity = lineTile(row)
-  const textSlots = Math.max(0, bodyTiles - 1)
-  if (textSlots === 0 || !text) {
+  if (!text) {
     return [
       {
         id: `${options.phase}:${id}`,
         phase: options.phase,
         heading: options.heading,
         headingLineIds: options.headingLineIds,
-        activeLineId: id,
+        ...identity,
         otherGoodServiceCopy: options.otherGoodServiceCopy,
-        tiles: padTiles([identity], bodyTiles),
+        pageIndex: 0,
+        pageCount: 1,
+        tiles: [],
       },
     ]
   }
 
-  const chunks = splitTextFrames(text, options.charsPerTile * textSlots)
+  const chunks = splitTextFrames(text, options.charsPerTile * bodyTiles)
   const source = chunks.length > 0 ? chunks : [text]
-  return source.map((chunk, index) => {
-    const parts = splitTextFrames(chunk, options.charsPerTile)
-    const textTiles: StatusDisplayTile[] = parts
-      .slice(0, textSlots)
-      .map((part) => ({ kind: "text" as const, text: part }))
-    return {
-      id: `${options.phase}:${id}:${index}`,
-      phase: options.phase,
-      heading: options.heading,
-      headingLineIds: options.headingLineIds,
-      activeLineId: id,
-      otherGoodServiceCopy: options.otherGoodServiceCopy,
-      tiles: padTiles([identity, ...textTiles], bodyTiles),
-    }
-  })
+  return source.map((chunk, index) => ({
+    id: `${options.phase}:${id}:${index}`,
+    phase: options.phase,
+    heading: options.heading,
+    headingLineIds: options.headingLineIds,
+    ...identity,
+    otherGoodServiceCopy: options.otherGoodServiceCopy,
+    pageIndex: index,
+    pageCount: source.length,
+    tiles: [{ kind: "text" as const, text: chunk }],
+  }))
 }
 
 const goodServiceBodyFrames = (
@@ -161,33 +146,23 @@ const goodServiceBodyFrames = (
     otherGoodServiceCopy?: string
   }
 ): StatusDisplayFrame[] => {
-  if (options.bodyTiles <= 0) {
-    return [
-      {
-        id: "good-service:summary",
-        phase: "good-service",
-        heading: "Good service",
-        headingLineIds: options.headingLineIds,
-        otherGoodServiceCopy: options.otherGoodServiceCopy,
-        tiles: [],
-      },
-    ]
-  }
   if (rows.length === 0) return []
-  const frames: StatusDisplayFrame[] = []
-  for (let start = 0; start < rows.length; start += options.bodyTiles) {
-    const slice = rows.slice(start, start + options.bodyTiles)
-    frames.push({
-      id: `good-service:${slice.map(lineId).join(",")}`,
+  const lineIds = rows.map(lineId)
+  return [
+    {
+      id: `good-service:${lineIds.join(",")}`,
       phase: "good-service",
       heading: "Good service",
       headingLineIds: options.headingLineIds,
-      activeLineId: lineId(slice[0]!),
       otherGoodServiceCopy: options.otherGoodServiceCopy,
-      tiles: padTiles(slice.map(lineTile), options.bodyTiles),
-    })
-  }
-  return frames
+      pageIndex: 0,
+      pageCount: 1,
+      tiles:
+        options.bodyTiles > 0
+          ? [{ kind: "chips", lineIds }]
+          : [],
+    },
+  ]
 }
 
 /**

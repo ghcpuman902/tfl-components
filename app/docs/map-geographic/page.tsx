@@ -29,7 +29,7 @@ import {
 } from "@/components/docs/map-geographic-lazy";
 
 export const metadata: Metadata = {
-  title: "Map (Geographic)",
+  title: "Map – Tube & Rail (Geo)",
   description:
     "Track geometry as GeoJSON for Tube, Elizabeth, Overground, DLR, and Tram. Use the packaged MapLibre map, or draw the same files in your own SDK.",
 };
@@ -222,13 +222,25 @@ export default function MapsGeographicPage() {
 
         <section className="space-y-3" aria-labelledby="map-next-heading">
           <h2 id="map-next-heading" className="text-lg font-semibold">
-            Coming next
+            Related
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Bus route geometry and live bus or train positions belong here as
-            optional geographic layers, not as separate mode-specific map
-            products. Data coverage, freshness, vehicle identity, and stale
-            positions still need investigation before those layers can ship.
+            Bus routes are a separate map — they come from TfL route sequences,
+            not these vendored rail files. See{" "}
+            <Link
+              href="/docs/map-bus-geo"
+              className="text-foreground underline-offset-4 hover:underline"
+            >
+              Map – Bus (Geo)
+            </Link>
+            . Live dots on either map are a{" "}
+            <Link
+              href="/blocks/live-vehicles"
+              className="text-foreground underline-offset-4 hover:underline"
+            >
+              Live vehicles
+            </Link>{" "}
+            Block, not part of this component.
           </p>
         </section>
 
@@ -429,6 +441,13 @@ export default function MapsGeographicPage() {
             In code
           </h2>
           <p className="text-sm text-muted-foreground">
+            <Link
+              href="/docs/map-bus-geo"
+              className="text-foreground underline-offset-4 hover:underline"
+            >
+              Map – Bus (Geo)
+            </Link>
+            {" · "}
             <Link
               href="/docs/cycle-hire-docks"
               className="text-foreground underline-offset-4 hover:underline"

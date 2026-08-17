@@ -111,7 +111,7 @@ export const TubeStatusStrip = ({
       .filter((tile) => tile.kind === "text")
       .map((tile) => tile.text)
       .join(" ") ?? ""
-  const lineTile = frame?.tiles.find((tile) => tile.kind === "line")
+  const hasLine = Boolean(frame?.activeLineId && frame.activeLineName)
   const disruptedIds = visibleHeadingChips(
     frame?.phase === "disruptions" ? frame.headingLineIds : [],
     frame?.activeLineId
@@ -132,7 +132,7 @@ export const TubeStatusStrip = ({
         error
           ? error
           : frame
-            ? `${frame.heading}${lineTile && lineTile.kind === "line" ? `, ${lineTile.name}` : ""}`
+            ? `${frame.heading}${frame.activeLineName ? `, ${frame.activeLineName}` : ""}`
             : "No status"
       }
     >
@@ -144,7 +144,9 @@ export const TubeStatusStrip = ({
               lineId={id}
               className={cn(
                 "h-5 justify-center px-1.5",
-                id === frame?.activeLineId && "ring-1 ring-foreground/40"
+                frame?.activeLineId &&
+                  id !== frame.activeLineId &&
+                  "opacity-40"
               )}
             />
           ))}
@@ -160,15 +162,18 @@ export const TubeStatusStrip = ({
       >
         {error ? (
           <p className="truncate text-destructive">{error}</p>
-        ) : lineTile && lineTile.kind === "line" ? (
+        ) : hasLine ? (
           <>
-            <div data-line={lineTile.lineId} className="relative min-w-0 shrink-0">
+            <div data-line={frame?.activeLineId} className="relative min-w-0 shrink-0">
               <p className="m-0 truncate text-xl leading-7 font-semibold text-[var(--line-color)] tfl-dark-line-text">
-                <LineName lineId={lineTile.lineId} name={lineTile.name} />
+                <LineName
+                  lineId={frame?.activeLineId}
+                  name={frame?.activeLineName}
+                />
               </p>
               <LineColorBar
-                lineId={lineTile.lineId}
-                modeName={lineTile.modeName}
+                lineId={frame?.activeLineId}
+                modeName={frame?.activeModeName}
                 heightClass="h-1"
               />
             </div>
