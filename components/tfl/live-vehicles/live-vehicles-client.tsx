@@ -11,6 +11,7 @@ import type { VehiclePosition } from "@/lib/tfl/map-vehicles";
 
 const POLL_MS = 30_000;
 const TWEEN_MS = 2_000;
+const TUBE_MODES = ["tube"] as const;
 const VICTORIA_LINE_IDS = [TRACKED_RAIL_LINE_ID] as const;
 
 const easeInOut = (t: number) => t * t * (3 - 2 * t);
@@ -115,7 +116,7 @@ export const LiveVehiclesClient = ({
           </h2>
           <div className="h-[min(60vh,28rem)] overflow-hidden border border-border">
             <TflGeographicMap
-              modes={["tube"]}
+              modes={TUBE_MODES}
               lineIds={VICTORIA_LINE_IDS}
               vehicles={rail}
               showNavigation={false}

@@ -15,11 +15,16 @@ import {
   getUsedBySlugs,
   type DocsEntry,
 } from "@/lib/docs-catalog";
+import { getCachedBusRouteGeometry } from "@/lib/tfl/bus-route-geometry";
+import { BUS_ROUTE_DIVERSION_DEMO } from "@/lib/tfl/fixtures/bus-route-diversion-demo";
+import {
+  TRACKED_BUS_DIRECTION,
+  TRACKED_BUS_ROUTE_ID,
+} from "@/lib/tfl/live-vehicles-stops";
 
 export const metadata: Metadata = {
   title: "Map – Bus (Geo)",
-  description:
-    "One bus route on a geographic map, with optional diverted and disabled segments.",
+  description: "A geographic map of one bus route.",
 };
 
 const USAGE_SNIPPET = `import { TflBusGeoMap } from "@/components/tfl/geography/tfl-bus-geo-map"
@@ -35,6 +40,14 @@ const SHAPE_SNIPPET = `type BusRouteGeometry = {
   stops: { id: string; name: string; lat: number; lon: number; sequence: number }[]
   segments: { id: string; status: "current" | "diverted" | "disabled"; line: LineString }[]
 }`;
+
+const LiveBusRoutePreview = async () => {
+  const data = await getCachedBusRouteGeometry(
+    TRACKED_BUS_ROUTE_ID,
+    TRACKED_BUS_DIRECTION,
+  );
+  return <MapBusGeoDemo data={data} />;
+};
 
 export default function MapBusGeoPage() {
   const entry = getDocsEntry("maps-bus");
@@ -61,9 +74,9 @@ export default function MapBusGeoPage() {
               />
             }
           >
-            <MapBusGeoDemo />
+            <LiveBusRoutePreview />
           </Suspense>
-          <DataSourceLabel source="fixture" />
+          <DataSourceLabel source="cached" />
         </section>
 
         <section className="space-y-2" aria-labelledby="usage-heading">
@@ -95,8 +108,8 @@ export default function MapBusGeoPage() {
             Pass a normalised{" "}
             <code className="text-xs">BusRouteGeometry</code>. Live sequences
             come from{" "}
-            <code className="text-xs">tfl.line.getRouteSequence</code>
-            {" "}for one route id. This map does not fetch.
+            <code className="text-xs">tfl.line.getRouteSequence</code> for one
+            route id. This map does not fetch.
           </p>
           <SyntaxHighlightedCode
             code={SHAPE_SNIPPET}
@@ -115,6 +128,17 @@ export default function MapBusGeoPage() {
             <code className="text-xs">disabled</code> is greyed. The caller
             decides which segment is which — this is not live disruption data.
           </p>
+          <Suspense
+            fallback={
+              <div
+                className="h-[min(70vh,32rem)] animate-pulse rounded-lg bg-muted"
+                aria-hidden
+              />
+            }
+          >
+            <MapBusGeoDemo data={BUS_ROUTE_DIVERSION_DEMO} />
+          </Suspense>
+          <DataSourceLabel source="fixture" />
         </section>
 
         <section className="space-y-2 border-t border-border pt-8">
@@ -127,6 +151,13 @@ export default function MapBusGeoPage() {
               className="text-foreground underline-offset-4 hover:underline"
             >
               Map – Tube &amp; Rail (Geo)
+            </Link>
+            {" · "}
+            <Link
+              href="/docs/vehicle-progress"
+              className="text-foreground underline-offset-4 hover:underline"
+            >
+              Vehicle progress
             </Link>
             {" · "}
             <Link

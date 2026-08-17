@@ -2,8 +2,8 @@ import { TFL_MODAL_COLOURS } from "@/lib/tfl/brand-colours";
 import type { BusRouteGeometry } from "@/lib/tfl/bus-geography-types";
 
 /**
- * Hand-built Westminster loop for the Bus (Geo) Preview.
- * Exercises current / diverted / disabled paint — not live TfL disruption data.
+ * Hand-built Westminster loop for diverted / disabled paint.
+ * Not live TfL disruption data.
  */
 export const BUS_ROUTE_DIVERSION_DEMO: BusRouteGeometry = {
   routeId: "24",

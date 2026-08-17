@@ -366,12 +366,18 @@ export const TflGeographicMap = ({
   const vehiclesRef = useRef(vehicles);
   vehiclesRef.current = vehicles;
   const lineIdsKey = lineIds?.join(",") ?? "";
+  const modesKey = (modes ?? DEFAULT_MODES).join(",");
   const dark = useDocumentDark();
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
     "loading",
   );
 
-  const activeModes = useMemo(() => modes ?? DEFAULT_MODES, [modes]);
+  const activeModes = useMemo(
+    () => modes ?? DEFAULT_MODES,
+    // Parent arrays are often inline (`modes={["tube"]}`); compare by id list.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [modesKey],
+  );
 
   const loadGeometry = useCallback(async (): Promise<
     { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[]
@@ -412,6 +418,9 @@ export const TflGeographicMap = ({
     return results;
   }, [data, activeModes]);
 
+  const loadGeometryRef = useRef(loadGeometry);
+  loadGeometryRef.current = loadGeometry;
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container || mapRef.current) return;
@@ -438,7 +447,7 @@ export const TflGeographicMap = ({
     map.on("load", async () => {
       try {
         prepareBasemapForTransit(map);
-        const bundles = bundlesRef.current ?? (await loadGeometry());
+        const bundles = bundlesRef.current ?? (await loadGeometryRef.current());
         if (cancelled) return;
         bundlesRef.current = bundles;
 
@@ -460,9 +469,9 @@ export const TflGeographicMap = ({
       map.remove();
       mapRef.current = null;
     };
-    // Initial style comes from first `dark` snapshot; swaps happen below.
+    // Create once. Overlay and style swaps live in the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [center, zoom, showNavigation, showLines, showStations, loadGeometry]);
+  }, [center, zoom, showNavigation]);
 
   useEffect(() => {
     const map = mapRef.current;

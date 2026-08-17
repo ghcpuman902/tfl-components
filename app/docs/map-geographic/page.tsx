@@ -233,14 +233,22 @@ export default function MapsGeographicPage() {
             >
               Map – Bus (Geo)
             </Link>
-            . Live dots on either map are a{" "}
+            . Pass derived dots as{" "}
+            <code className="text-xs">vehicles</code> —{" "}
+            <Link
+              href="/docs/vehicle-progress"
+              className="text-foreground underline-offset-4 hover:underline"
+            >
+              Vehicle progress
+            </Link>{" "}
+            places them.{" "}
             <Link
               href="/blocks/live-vehicles"
               className="text-foreground underline-offset-4 hover:underline"
             >
               Live vehicles
             </Link>{" "}
-            Block, not part of this component.
+            composes both maps.
           </p>
         </section>
 
@@ -379,6 +387,20 @@ export default function MapsGeographicPage() {
                   <td className="py-2 pr-4 text-xs">all five</td>
                 </tr>
                 <tr className="border-b border-border/50">
+                  <td className="py-2 pr-4 font-mono text-xs">lineIds</td>
+                  <td className="py-2 pr-4 text-xs">
+                    <code>string[]</code>
+                  </td>
+                  <td className="py-2 pr-4 text-xs">all lines</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-2 pr-4 font-mono text-xs">vehicles</td>
+                  <td className="py-2 pr-4 text-xs">
+                    <code>VehiclePosition[]</code>
+                  </td>
+                  <td className="py-2 pr-4 text-xs">none</td>
+                </tr>
+                <tr className="border-b border-border/50">
                   <td className="py-2 pr-4 font-mono text-xs">showStations</td>
                   <td className="py-2 pr-4 text-xs">boolean</td>
                   <td className="py-2 pr-4 text-xs">true</td>
@@ -446,6 +468,13 @@ export default function MapsGeographicPage() {
               className="text-foreground underline-offset-4 hover:underline"
             >
               Map – Bus (Geo)
+            </Link>
+            {" · "}
+            <Link
+              href="/docs/vehicle-progress"
+              className="text-foreground underline-offset-4 hover:underline"
+            >
+              Vehicle progress
             </Link>
             {" · "}
             <Link

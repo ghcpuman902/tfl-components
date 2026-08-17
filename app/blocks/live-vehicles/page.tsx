@@ -13,7 +13,7 @@ import { getDocsEntry } from "@/lib/docs-catalog";
 export const metadata: Metadata = {
   title: "Live vehicles",
   description:
-    "Block composing geographic maps with live vehicle positions derived from line-wide arrivals.",
+    "Trains and buses on the geographic maps. Positions come from arrivals, not a GPS feed.",
 };
 
 export default function LiveVehiclesBlockPage() {
@@ -35,16 +35,13 @@ export default function LiveVehiclesBlockPage() {
             </p>
             <ul className="list-inside list-disc space-y-1">
               <li>
-                This Block owns polling and marker motion.
-              </li>
-              <li>
                 <Link
                   href="/docs/map-geographic"
                   className="text-primary underline-offset-4 hover:underline"
                 >
                   Map – Tube &amp; Rail (Geo)
                 </Link>{" "}
-                paints Victoria track geometry.
+                paints the Victoria line.
               </li>
               <li>
                 <Link
@@ -53,12 +50,17 @@ export default function LiveVehiclesBlockPage() {
                 >
                   Map – Bus (Geo)
                 </Link>{" "}
-                paints route 24 from a TfL route sequence.
+                paints route 24.
               </li>
               <li>
-                Positions are derived from{" "}
-                <code className="text-xs">line.getArrivals</code> — TfL does
-                not send vehicle coordinates.
+                <Link
+                  href="/docs/vehicle-progress"
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  Vehicle progress
+                </Link>{" "}
+                places each vehicle from two arrival times. TfL does not send
+                coordinates.
               </li>
             </ul>
           </div>

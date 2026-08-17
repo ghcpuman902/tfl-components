@@ -428,8 +428,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "maps-bus",
     title: "Map – Bus (Geo)",
-    description:
-      "One bus route on a geographic map, with optional diverted and disabled segments.",
+    description: "A geographic map of one bus route.",
     group: "maps",
     kind: "component",
     href: "/docs/map-bus-geo",
@@ -440,6 +439,20 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     registryName: "tfl-bus-geo-map",
     registryUrl: `${REGISTRY_BASE}/tfl-bus-geo-map.json`,
     layer: "map",
+    usesFoundations: ["colours"],
+  },
+  {
+    slug: "vehicle-progress",
+    title: "Vehicle progress",
+    description:
+      "Place a vehicle between two stops from a 0–1 progress value.",
+    group: "maps",
+    kind: "component",
+    href: "/docs/vehicle-progress",
+    sidebarSection: "components",
+    sidebarOrder: 76,
+    layer: "primitive",
+    builtWith: ["maps-geographic", "maps-bus"],
     usesFoundations: ["colours"],
   },
   {
@@ -644,13 +657,13 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "live-vehicles",
     title: "Live vehicles",
     description:
-      "Block composing geographic maps with live vehicle positions derived from line-wide arrivals.",
+      "Trains and buses on the geographic maps. Positions come from arrivals, not a GPS feed.",
     group: "blocks",
     kind: "block",
     href: "/blocks/live-vehicles",
     sidebarSection: "hidden",
     sidebarOrder: 0,
-    builtWith: ["maps-geographic", "maps-bus"],
+    builtWith: ["maps-geographic", "maps-bus", "vehicle-progress"],
     usesFoundations: ["colours"],
   },
   {

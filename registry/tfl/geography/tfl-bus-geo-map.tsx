@@ -283,6 +283,8 @@ export const TflBusGeoMap = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const skipStyleSwapRef = useRef(true);
+  const vehiclesRef = useRef(vehicles);
+  vehiclesRef.current = vehicles;
   const dark = useSyncExternalStore(
     subscribeDocumentDark,
     getDocumentDark,
@@ -315,6 +317,9 @@ export const TflBusGeoMap = ({
 
     map.on("load", () => {
       addRouteLayers(map, routes, showStops, dark);
+      asGeoJsonSource(map.getSource("bus-vehicles"))?.setData(
+        vehiclesToGeoJSON(vehiclesRef.current ?? []),
+      );
       const bounds = boundsFromGeometry(routes);
       if (bounds) {
         map.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: 0 });
@@ -345,6 +350,9 @@ export const TflBusGeoMap = ({
     }
     const apply = () => {
       addRouteLayers(map, routes, showStops, dark);
+      asGeoJsonSource(map.getSource("bus-vehicles"))?.setData(
+        vehiclesToGeoJSON(vehiclesRef.current ?? []),
+      );
     };
     map.setStyle(openFreeMapStyleUrl(dark));
     map.once("style.load", apply);
