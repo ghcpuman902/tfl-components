@@ -1,0 +1,116 @@
+import { RiverBusArrivalsBoardGroupedDemo } from "@/components/docs/demos/river-bus-arrivals-demo"
+import { RiverUnattendedDemo } from "@/components/docs/demos/arrivals-layout-demos"
+import { RiverBusArrivalsDisruptionDemo } from "@/components/docs/demos/river-bus-arrivals-disruption-demo"
+import { RiverLineStatusDemo } from "@/components/docs/demos/river-line-status-demo"
+
+## Get predictions
+
+```ts
+import TflClient from "tfl-ts"
+
+const tfl = new TflClient({
+  appKey: process.env.TFL_APP_KEY!,
+})
+
+const stopId = "930GCAW"
+const [stop, data] = await Promise.all([
+  tfl.stopPoint.get(stopId),
+  tfl.stopPoint.getArrivals({
+    stopPointIds: [stopId],
+    sortBy: "timeToStation",
+  }),
+])
+```
+
+Poll the pier (`NaptanFerryPort`, ids like `930G…`). A berth (`9300…`) returns no predictions. `towards` is blank — the board uses `destinationName`. The board keeps only `rb1`, `rb4`, `rb6`, and `woolwich-ferry`. If you pass `now`, use the timestamp captured with the response, not a live clock.
+
+Tube and rail use [`RailArrivalsBoard`](/docs/tube-rail-arrivals). Bus uses [`BusArrivalsBoard`](/docs/bus-arrivals). The three share row chrome and the tile rhythm, not the high-level API. Fetching stays in the app. Nearby search lives under [Explorer → River](/docs/explorer?domain=river).
+
+## Render
+
+```tsx
+import { RiverBusArrivalsBoard } from "@/components/tfl/arrivals/river-bus-arrivals-board"
+
+<RiverBusArrivalsBoard
+  data={data}
+  stopName={stop.commonName}
+/>
+```
+
+The default is flat: no route headers, interleaved RB1 / RB4 / RB6 chips in soonest-first order. Waits under 30 minutes stay as `Due` / `X min`. From 30 minutes, the board shows the London clock time from `expectedArrival`. An empty list reads “No live departure times available.” — RB4 and Woolwich Ferry can have Good Service with no countdown feed.
+
+## Group by route
+
+Pass `groupBy="route"` for one section per river-bus line. Each section uses a river-blue bar. The route chip stays on the header; rows are destination and time.
+
+<RiverBusArrivalsBoardGroupedDemo />
+
+```tsx
+<RiverBusArrivalsBoard
+  data={data}
+  stopName={stop.commonName}
+  groupBy="route"
+/>
+```
+
+## Behaviour
+
+Unattended keeps the configured height and rotates later arrivals. Rank chips replace the page count, on both flat and route-grouped boards. The first arrival stays pinned. Later slots chunk in windows of `pageSize - 1`; only a short final window overlaps. Frames are not swipeable. New ordering is adopted at a frame boundary; countdown updates in place.
+
+<RiverUnattendedDemo />
+
+```tsx
+<RiverBusArrivalsBoard
+  data={data}
+  stopName={stop.commonName}
+  behaviour="unattended"
+/>
+```
+
+## Disruptions
+
+`getArrivals` has no disruption field. A diverted or suspended route just disappears. Pier warnings live in `stopPoint.getDisruption` — the same `DisruptedPoint` payload as bus. Line-wide status is `line.getStatus`, not this board.
+
+```ts
+const disruptedPoints = await tfl.stopPoint.getDisruption({
+  stopPointIds: [stopId],
+})
+```
+
+Pass the result and your `data` through `prepareBusStopDisruptions`:
+
+```tsx
+import { prepareBusStopDisruptions } from "@/components/tfl/arrivals/river-bus-arrivals-board"
+
+<RiverBusArrivalsBoard
+  data={data}
+  disruptions={prepareBusStopDisruptions(disruptedPoints, data)}
+  stopName={stop.commonName}
+/>
+```
+
+A named route (`RB1`, `Woolwich Ferry`) attaches to that line. A pier-wide closure with no route named fans out to every river route currently in `data`. Warning chips sit after the pier name; hover or tap to read the text.
+
+<RiverBusArrivalsDisruptionDemo />
+
+## Line status
+
+Route-wide status is a different fetch: `line.getStatus`. Pass those rows into [`TubeStatusBoard`](/docs/tube-rail-status) — do not invent a river status component. Filter to the four river-bus ids, or only the lines that serve this pier.
+
+```ts
+import { sortLinesBySeverityAndOrder } from "tfl-ts"
+
+const fetchedAt = Date.now()
+const data = sortLinesBySeverityAndOrder(
+  await tfl.line.getStatus({
+    lineIds: ["rb1", "rb4", "rb6", "woolwich-ferry"],
+  }),
+  { now: fetchedAt },
+)
+```
+
+```tsx
+<TubeStatusBoard data={data} now={fetchedAt} compact hideHeader />
+```
+
+<RiverLineStatusDemo />

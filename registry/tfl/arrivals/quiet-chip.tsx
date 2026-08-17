@@ -1,5 +1,9 @@
 import type { HTMLAttributes, ReactNode } from "react"
-import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text"
+import {
+  ARRIVALS_RANK_CHIP_WIDTH_CLASS,
+  CHIP_CAP_TEXT_BOX_CLASS,
+  arrivalsOrdinalSuffix,
+} from "@/components/tfl/arrivals/chip-text"
 import { cn } from "@/lib/utils"
 
 export type QuietChipProps = HTMLAttributes<HTMLSpanElement> & {
@@ -17,4 +21,26 @@ export const QuietChip = ({ children, className, ...props }: QuietChipProps) => 
   >
     <span className={CHIP_CAP_TEXT_BOX_CLASS}>{children}</span>
   </span>
+)
+
+/**
+ * Unattended list position. Fixed `3ch`. Suffix uses OpenType `ordn` when
+ * the face has it, with a raised fallback so `st`/`nd`/`rd`/`th` still sit
+ * as superscripts.
+ */
+export const ArrivalRankChip = ({
+  rank,
+  className,
+  ...props
+}: { rank: number } & Omit<QuietChipProps, "children">) => (
+  <QuietChip
+    aria-hidden
+    className={cn(ARRIVALS_RANK_CHIP_WIDTH_CLASS, "px-0 tabular-nums", className)}
+    {...props}
+  >
+    {rank}
+    <sup className="ordinal top-0 text-[0.62em] leading-none font-features-['ordn']">
+      {arrivalsOrdinalSuffix(rank)}
+    </sup>
+  </QuietChip>
 )

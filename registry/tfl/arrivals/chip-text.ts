@@ -13,3 +13,27 @@ export const CHIP_CAP_TEXT_BOX_CLASS =
  * 3 letters. One extra `ch` keeps MET / H&C / N253 from clipping.
  */
 export const ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS = "w-[5ch]";
+
+/** Unattended rank chip — digit + ordinal suffix (`1st`). */
+export const ARRIVALS_RANK_CHIP_WIDTH_CLASS = "w-[3ch]";
+
+export const arrivalsOrdinalSuffix = (
+  rank: number,
+): "st" | "nd" | "rd" | "th" => {
+  const abs = Math.abs(Math.trunc(rank));
+  const mod100 = abs % 100;
+  if (mod100 >= 11 && mod100 <= 13) return "th";
+  switch (abs % 10) {
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
+  }
+};
+
+export const formatArrivalsRankLabel = (rank: number): string =>
+  `${rank}${arrivalsOrdinalSuffix(rank)}`;

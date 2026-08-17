@@ -49,6 +49,32 @@ describe("tickUnattendedSequence", () => {
     assert.equal(state.elapsedMs, 0)
   })
 
+  it("does not shorten dwell when the sequence has more frames", () => {
+    const many = ["a", "b", "c", "d", "e", "f"] as const
+    let short = createUnattendedSequence({ itemIds: IDS, nowMs: 0 })
+    let long = createUnattendedSequence({ itemIds: many, nowMs: 0 })
+    short = tickUnattendedSequence(short, {
+      itemIds: IDS,
+      nowMs: UNATTENDED_DEFAULT_DWELL_MS - 1,
+    })
+    long = tickUnattendedSequence(long, {
+      itemIds: many,
+      nowMs: UNATTENDED_DEFAULT_DWELL_MS - 1,
+    })
+    assert.equal(short.itemId, "a")
+    assert.equal(long.itemId, "a")
+    short = tickUnattendedSequence(short, {
+      itemIds: IDS,
+      nowMs: UNATTENDED_DEFAULT_DWELL_MS,
+    })
+    long = tickUnattendedSequence(long, {
+      itemIds: many,
+      nowMs: UNATTENDED_DEFAULT_DWELL_MS,
+    })
+    assert.equal(short.itemId, "b")
+    assert.equal(long.itemId, "b")
+  })
+
   it("honours a shorter dwell override", () => {
     let state = createUnattendedSequence({ itemIds: IDS, nowMs: 0 })
     state = tickUnattendedSequence(state, {
@@ -79,14 +105,8 @@ describe("tickUnattendedSequence", () => {
     assert.equal(state.itemId, "b")
   })
 
-  it("pauses on hover and focus", () => {
+  it("pauses on focus", () => {
     let state = createUnattendedSequence({ itemIds: IDS, nowMs: 0 })
-    state = tickUnattendedSequence(state, {
-      itemIds: IDS,
-      nowMs: 8_000,
-      pauseReasons: ["hover"],
-    })
-    assert.equal(state.itemId, "a")
     state = tickUnattendedSequence(state, {
       itemIds: IDS,
       nowMs: 16_000,

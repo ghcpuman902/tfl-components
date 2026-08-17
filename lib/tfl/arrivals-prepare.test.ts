@@ -3,6 +3,7 @@ import { describe, it } from "node:test"
 import type { RealtimePrediction } from "tfl-ts"
 import { ARRIVALS_PLATFORM_UNKNOWN_HEADING } from "@/lib/tfl/arrivals-empty"
 import {
+  arrivalIdentityKey,
   chunkBoundPages,
   isExpiredArrivalPrediction,
   prepareBusArrivals,
@@ -133,20 +134,26 @@ describe("prepareRailArrivals", () => {
   })
 
   it("keeps row keys unique when TfL repeats a prediction id", () => {
-    const first = prediction({
-      id: "322784161",
-      lineId: "dlr",
-      lineName: "DLR",
-      platformName: "Eastbound - Platform 1",
-      timeToStation: 120,
-    })
-    const second = prediction({
-      id: "322784161",
-      lineId: "dlr",
-      lineName: "DLR",
-      platformName: "Eastbound - Platform 1",
-      timeToStation: 240,
-    })
+    const first = {
+      ...prediction({
+        id: "322784161",
+        lineId: "dlr",
+        lineName: "DLR",
+        platformName: "Eastbound - Platform 1",
+        timeToStation: 120,
+      }),
+      expectedArrival: "2026-08-17T19:02:00Z",
+    }
+    const second = {
+      ...prediction({
+        id: "322784161",
+        lineId: "dlr",
+        lineName: "DLR",
+        platformName: "Eastbound - Platform 1",
+        timeToStation: 240,
+      }),
+      expectedArrival: "2026-08-17T19:04:00Z",
+    }
     const board = prepareRailArrivals({ data: [first, second] })
     const keys = board.groups.flatMap((group) =>
       group.bounds.flatMap((bound) => bound.rows.map((row) => row.key)),
@@ -694,6 +701,77 @@ describe("prepareRailArrivals", () => {
     )
   })
 
+  it("does not seed a permanently-empty Circle section at Hammersmith", () => {
+    // TfL tags every Circle-bound train through Hammersmith's H&C building
+    // as "hammersmith-city" — a real "circle" row never arrives there. Seed
+    // all four hub lines (as the Board/Explorer do) with the Circle+H&C
+    // merge applied; Circle must fold into the merged section instead of
+    // showing its own "No information" placeholder.
+    const hc1 = prediction({
+      id: "hsc-1",
+      lineId: "hammersmith-city",
+      lineName: "Hammersmith & City",
+      modeName: "tube",
+      platformName: "Eastbound - Platform 2",
+      towards: "Barking",
+      timeToStation: 90,
+    })
+    const hc2 = prediction({
+      id: "hsc-2",
+      lineId: "hammersmith-city",
+      lineName: "Hammersmith & City",
+      modeName: "tube",
+      platformName: "Eastbound - Platform 2",
+      towards: "Barking",
+      timeToStation: 300,
+    })
+    const district = prediction({
+      id: "hsd-district",
+      lineId: "district",
+      lineName: "District",
+      modeName: "tube",
+      platformName: "Eastbound - Platform 4",
+      towards: "Upminster",
+      timeToStation: 120,
+    })
+    const piccadilly = prediction({
+      id: "hsd-picc",
+      lineId: "piccadilly",
+      lineName: "Piccadilly",
+      modeName: "tube",
+      platformName: "Eastbound - Platform 3",
+      towards: "Cockfosters",
+      timeToStation: 150,
+    })
+    const hammersmithLines = [
+      { lineId: "circle", lineName: "Circle", modeName: "tube" },
+      { lineId: "district", lineName: "District", modeName: "tube" },
+      {
+        lineId: "hammersmith-city",
+        lineName: "Hammersmith & City",
+        modeName: "tube",
+      },
+      { lineId: "piccadilly", lineName: "Piccadilly", modeName: "tube" },
+    ]
+    const board = prepareRailArrivals({
+      data: [hc1, hc2, district, piccadilly],
+      lines: hammersmithLines,
+      lineGroups: [{ lines: ["circle", "hammersmith-city"] }],
+    })
+    assert.deepEqual(new Set(groupNames(board.groups)), new Set([
+      "Circle and Hammersmith & City",
+      "District",
+      "Piccadilly",
+    ]))
+    const merged = board.groups.find((group) => group.lineIds.length > 1)
+    assert.ok(merged)
+    assert.equal(merged.hasInformation, true)
+    assert.deepEqual(idsOf(merged.bounds.flatMap((b) => b.rows)).sort(), [
+      "hsc-1",
+      "hsc-2",
+    ])
+  })
+
   it("ignores lineGroups with a single id", () => {
     const board = prepareRailArrivals({
       data: [bakerlooNorth, centralWest],
@@ -957,6 +1035,169 @@ describe("prepareBusArrivals", () => {
       data.map((row) => row.id),
       ["205-late", "9-soon"]
     )
+  })
+})
+
+describe("arrivalIdentityKey", () => {
+  const base = prediction({
+    id: "pred-1",
+    lineId: "central",
+    lineName: "Central",
+    platformName: "Westbound - Platform 1",
+    timeToStation: 90,
+    vehicleId: "123",
+  })
+
+  it("is unchanged when countdown, timestamp, or location change", () => {
+    const first = {
+      ...base,
+      timeToStation: 90,
+      timestamp: "2026-08-17T19:00:00Z",
+      currentLocation: "At Oxford Circus",
+    }
+    const second = {
+      ...base,
+      timeToStation: 30,
+      timestamp: "2026-08-17T19:01:00Z",
+      currentLocation: "Between Bond Street and Oxford Circus",
+    }
+    assert.equal(arrivalIdentityKey(first), arrivalIdentityKey(second))
+  })
+
+  it("is a pure function of fields — reappearance matches the original key", () => {
+    const original = arrivalIdentityKey(base)
+    const clone = { ...base }
+    assert.equal(arrivalIdentityKey(clone), original)
+  })
+
+  it("ignores shared-track presentation tags", () => {
+    const ambiguous = {
+      ...base,
+      sharedTrackIdentity: {
+        confidence: "ambiguous" as const,
+        rawLineId: "central",
+        rawLineIds: ["central", "circle"],
+      },
+    }
+    const exclusive = {
+      ...base,
+      sharedTrackIdentity: {
+        confidence: "exclusive-segment" as const,
+        canonicalLineId: "circle",
+        rawLineId: "central",
+      },
+    }
+    assert.equal(arrivalIdentityKey(ambiguous), arrivalIdentityKey(base))
+    assert.equal(arrivalIdentityKey(exclusive), arrivalIdentityKey(base))
+  })
+
+  it("does not collide when platform, direction, or destination differ", () => {
+    const west = {
+      ...base,
+      direction: "outbound",
+      platformName: "Westbound - Platform 1",
+      destinationNaptanId: "940GZZLUEPG",
+    }
+    const east = {
+      ...base,
+      direction: "inbound",
+      platformName: "Eastbound - Platform 2",
+      destinationNaptanId: "940GZZLUEBY",
+    }
+    assert.notEqual(arrivalIdentityKey(west), arrivalIdentityKey(east))
+  })
+})
+
+describe("prepared row identity", () => {
+  it("keeps the same key when input order changes", () => {
+    const soon = prediction({
+      id: "soon",
+      lineId: "central",
+      platformName: "Westbound - Platform 1",
+      timeToStation: 20,
+      vehicleId: "101",
+    })
+    const later = prediction({
+      id: "later",
+      lineId: "central",
+      platformName: "Westbound - Platform 1",
+      timeToStation: 80,
+      vehicleId: "202",
+    })
+    const first = prepareRailArrivals({ data: [later, soon] })
+    const second = prepareRailArrivals({ data: [soon, later] })
+    const keyById = (board: ReturnType<typeof prepareRailArrivals>) =>
+      Object.fromEntries(
+        board.rows.map((row) => [row.arrival.id, row.key])
+      )
+    assert.deepEqual(keyById(first), keyById(second))
+    assert.notEqual(first.rows[0]?.key, first.rows[1]?.key)
+  })
+
+  it("gives distinct keys when TfL repeats id but trip or vehicle differs", () => {
+    const first = {
+      ...prediction({
+        id: "shared",
+        lineId: "central",
+        platformName: "Westbound - Platform 1",
+        timeToStation: 40,
+        vehicleId: "101",
+      }),
+      tripId: "trip-a",
+    }
+    const second = {
+      ...prediction({
+        id: "shared",
+        lineId: "central",
+        platformName: "Westbound - Platform 1",
+        timeToStation: 80,
+        vehicleId: "202",
+      }),
+      tripId: "trip-b",
+    }
+    const board = prepareRailArrivals({ data: [first, second] })
+    const keys = board.rows.map((row) => row.key)
+    assert.equal(keys.length, 2)
+    assert.equal(new Set(keys).size, 2)
+  })
+
+  it("keeps a shared-track row's key when the tag changes", () => {
+    const raw = prediction({
+      id: "hc-406",
+      lineId: "hammersmith-city",
+      lineName: "Hammersmith & City",
+      platformName: "Westbound - Platform 2",
+      timeToStation: 80,
+      vehicleId: "406",
+    })
+    const tagged = {
+      ...raw,
+      sharedTrackIdentity: {
+        confidence: "exclusive-segment" as const,
+        canonicalLineId: "circle",
+        rawLineId: "hammersmith-city",
+      },
+    }
+    const first = prepareRailArrivals({ data: [raw] })
+    const second = prepareRailArrivals({ data: [tagged] })
+    assert.equal(first.rows[0]?.key, second.rows[0]?.key)
+  })
+
+  it("keeps fully identical predictions as separate rows", () => {
+    const first = {
+      ...prediction({
+        id: "dup",
+        lineId: "dlr",
+        platformName: "Eastbound - Platform 1",
+        timeToStation: 120,
+      }),
+      expectedArrival: "2026-08-17T19:02:00Z",
+    }
+    const second = { ...first, timeToStation: 240 }
+    const board = prepareRailArrivals({ data: [first, second] })
+    const keys = board.rows.map((row) => row.key)
+    assert.equal(keys.length, 2)
+    assert.equal(new Set(keys).size, 2)
   })
 })
 

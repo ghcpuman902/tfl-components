@@ -7,7 +7,7 @@ export const UNATTENDED_DEFAULT_DWELL_MS = 10_000
 
 export type DisplayBehaviour = "interactive" | "unattended"
 
-export type UnattendedPauseReason = "hover" | "focus" | "hidden"
+export type UnattendedPauseReason = "focus" | "hidden"
 
 export const isDocumentHidden = (
   visibilityState: DocumentVisibilityState

@@ -293,6 +293,21 @@
           "[data-line='river']": {
             "--line-raw": "var(--tfl-mode-river)"
           },
+          "[data-line='rb1']": {
+            "--line-raw": "var(--tfl-mode-river)"
+          },
+          "[data-line='rb4']": {
+            "--line-raw": "var(--tfl-mode-river)"
+          },
+          "[data-line='rb6']": {
+            "--line-raw": "var(--tfl-mode-river)"
+          },
+          "[data-line='woolwich-ferry']": {
+            "--line-raw": "var(--tfl-mode-river)"
+          },
+          "[data-line='river-bus']": {
+            "--line-raw": "var(--tfl-mode-river)"
+          },
           "[data-line='trams']": {
             "--line-raw": "var(--tfl-mode-trams)"
           },
@@ -712,6 +727,34 @@
       ]
     },
     {
+      "name": "river-route-chip",
+      "type": "registry:component",
+      "title": "River Route Chip",
+      "description": "River-bus route chip — River Services blue, fixed width, Woolwich Ferry as WF.",
+      "files": [
+        {
+          "path": "registry/tfl/arrivals/river-route-chip.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/river-route-chip.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/chip-text.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/arrivals/chip-text.ts"
+        },
+        {
+          "path": "lib/tfl/river-bus.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/river-bus.ts"
+        },
+        {
+          "path": "lib/tfl/brand-colours.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/brand-colours.ts"
+        }
+      ]
+    },
+    {
       "name": "rail-arrivals-board",
       "type": "registry:component",
       "title": "Rail Arrivals Board",
@@ -870,6 +913,7 @@
         "https://tfl.manglekuo.com/r/line-badge.json",
         "https://tfl.manglekuo.com/r/platform-chip.json",
         "https://tfl.manglekuo.com/r/bus-number-chip.json",
+        "https://tfl.manglekuo.com/r/river-route-chip.json",
         "https://tfl.manglekuo.com/r/tfl-roundel.json",
         "skeleton"
       ],
@@ -878,6 +922,162 @@
           "path": "registry/tfl/arrivals/bus-arrivals-board.tsx",
           "type": "registry:component",
           "target": "components/tfl/arrivals/bus-arrivals-board.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/arrivals-board-view.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/arrivals-board-view.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/arrivals-bound-group.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/arrivals-bound-group.tsx"
+        },
+        {
+          "path": "lib/tfl/arrivals-prepare.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-prepare.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-defaults.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-defaults.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-line-sort.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-line-sort.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-bound-sort.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-bound-sort.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-destination-text.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-destination-text.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-route-sort.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-route-sort.ts"
+        },
+        {
+          "path": "lib/tfl/arrivals-empty.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-empty.ts"
+        },
+        {
+          "path": "lib/tfl/bus-stop-letter.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/bus-stop-letter.ts"
+        },
+        {
+          "path": "registry/tfl/arrivals/stop-letter-badge.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/stop-letter-badge.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/chip-text.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/arrivals/chip-text.ts"
+        },
+        {
+          "path": "registry/tfl/arrivals/bus-stop-disruptions.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/bus-stop-disruptions.tsx"
+        },
+        {
+          "path": "lib/tfl/prepare-bus-stop-disruptions.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/prepare-bus-stop-disruptions.ts"
+        },
+        {
+          "path": "components/tfl/station-name.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/station-name.tsx"
+        },
+        {
+          "path": "components/tfl/findable-text.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/findable-text.tsx"
+        },
+        {
+          "path": "lib/tfl/station-typography.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-typography.ts"
+        },
+        {
+          "path": "lib/tfl/diagram-station.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/diagram-station.ts"
+        },
+        {
+          "path": "lib/tfl/station-label-find.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-label-find.ts"
+        },
+        {
+          "path": "lib/tfl/station-abbreviations.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-abbreviations.ts"
+        },
+        {
+          "path": "registry/tfl/arrivals/quiet-chip.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/quiet-chip.tsx"
+        },
+        {
+          "path": "lib/tfl/arrivals-unattended-frames.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-unattended-frames.ts"
+        },
+        {
+          "path": "lib/tfl/unattended-sequence.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/unattended-sequence.ts"
+        },
+        {
+          "path": "hooks/use-unattended-sequence.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-unattended-sequence.ts"
+        }
+      ]
+    },
+    {
+      "name": "river-bus-arrivals-board",
+      "type": "registry:component",
+      "title": "River Bus Arrivals Board",
+      "description": "River bus pier departures as a flat time-ordered list, with optional route grouping — pass RealtimePrediction[] as data.",
+      "dependencies": [
+        "tfl-ts@^2.9.0",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "https://tfl.manglekuo.com/r/tfl-colours.json",
+        "https://tfl.manglekuo.com/r/line-badge.json",
+        "https://tfl.manglekuo.com/r/platform-chip.json",
+        "https://tfl.manglekuo.com/r/bus-number-chip.json",
+        "https://tfl.manglekuo.com/r/river-route-chip.json",
+        "https://tfl.manglekuo.com/r/tfl-roundel.json",
+        "skeleton"
+      ],
+      "files": [
+        {
+          "path": "registry/tfl/arrivals/river-bus-arrivals-board.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/river-bus-arrivals-board.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/river-route-chip.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/river-route-chip.tsx"
+        },
+        {
+          "path": "lib/tfl/river-bus.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/river-bus.ts"
         },
         {
           "path": "registry/tfl/arrivals/arrivals-board-view.tsx",

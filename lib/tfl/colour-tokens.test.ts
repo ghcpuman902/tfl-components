@@ -36,6 +36,16 @@ describe("colour tokens generator", () => {
       "cable-car",
       "london-cable-car",
     ]);
+
+    assert.ok(byVar["tfl-mode-river"]);
+    assert.deepEqual(byVar["tfl-mode-river"].dataLineIds, [
+      "river",
+      "rb1",
+      "rb4",
+      "rb6",
+      "woolwich-ferry",
+      "river-bus",
+    ]);
   });
 
   it("applies Go night OKLCH method in dark; Northern uses #FCFCFC", () => {

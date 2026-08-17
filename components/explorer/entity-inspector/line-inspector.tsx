@@ -2,12 +2,8 @@
 
 import { Suspense, use, useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
-import {
-  getWorstCurrentStatus,
-  getSeverityClasses,
-  isNormalService,
-} from "tfl-ts"
 import { LineColorBar } from "@/components/tfl/brand/line-badge"
+import { TubeStatusBoard } from "@/components/tfl/status/tube-status-board"
 import {
   CodeSnippet,
   CopyableField,
@@ -21,6 +17,7 @@ import { useExplorerKeyedQuery } from "@/hooks/use-explorer-keyed-query"
 import {
   buildExplorerHref,
   type ExplorerDirection,
+  type ExplorerDomain,
 } from "@/lib/tfl/explorer-url-state"
 import type {
   ExplorerLineDetailsPayload,
@@ -29,10 +26,12 @@ import type {
 import type { StatusLine } from "@/lib/tfl/status-types"
 import { cn } from "@/lib/utils"
 
+type LineInspectorDomain = Exclude<ExplorerDomain, "cycle">
+
 type LineInspectorProps = {
   line: ExplorerLineSummary
   direction: ExplorerDirection
-  domain: "tube-rail" | "bus"
+  domain: LineInspectorDomain
   detailsPromise?: Promise<ExplorerLineDetailsPayload> | null
   detailsPending?: boolean
   onDirectionChange?: (direction: ExplorerDirection) => void
@@ -46,7 +45,7 @@ const LineDirectionToggle = ({
 }: {
   lineId: string
   direction: ExplorerDirection
-  domain: "tube-rail" | "bus"
+  domain: LineInspectorDomain
   onDirectionChange?: (direction: ExplorerDirection) => void
 }) => {
   const inboundHref = buildExplorerHref({
@@ -122,7 +121,7 @@ type LineInspectorDetailsProps = {
   detailsPromise: Promise<ExplorerLineDetailsPayload>
   expectedLineId: string
   expectedDirection: ExplorerDirection
-  domain: "tube-rail" | "bus"
+  domain: LineInspectorDomain
   directionToggle: ReactNode
 }
 
@@ -170,17 +169,6 @@ const LineInspectorDetails = ({
   }
 
   const displayStatus = liveStatus ?? status ?? null
-  const primaryStatus = displayStatus
-    ? getWorstCurrentStatus(displayStatus.lineStatuses ?? [])
-    : undefined
-  const statusDescription =
-    primaryStatus?.statusSeverityDescription ?? "Unknown"
-  const severityClass = primaryStatus
-    ? getSeverityClasses(primaryStatus.statusSeverity ?? 10, true).text
-    : ""
-  const normal = displayStatus
-    ? isNormalService(displayStatus.lineStatuses ?? [])
-    : null
 
   const handleRefreshStatus = async () => {
     const result = await runKeyed(async (client) => {
@@ -203,10 +191,12 @@ const LineInspectorDetails = ({
             </p>
           ) : null}
           {displayStatus ? (
-            <p className={cn("text-sm font-medium", severityClass)}>
-              {statusDescription}
-              {normal === false ? " — disruption" : null}
-            </p>
+            <TubeStatusBoard
+              data={[displayStatus]}
+              now={statusFetchedAt ?? undefined}
+              compact
+              hideHeader
+            />
           ) : (
             <p className="text-sm text-muted-foreground">
               {ready
@@ -243,7 +233,7 @@ const LineInspectorDetails = ({
                 const stopHref = stop.id
                   ? buildExplorerHref({
                       kind: "points",
-                      domain: domain === "bus" ? "bus" : "tube-rail",
+                      domain,
                       id: stop.id,
                     })
                   : undefined

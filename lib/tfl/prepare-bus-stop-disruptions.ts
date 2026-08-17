@@ -16,6 +16,19 @@ export type BusStopDisruption = {
 }
 
 const ROUTE_MENTION = /route\s+([a-z0-9]{1,4})\b/i
+const RIVER_LINE_MENTION = /\b(rb[146]|woolwich[\s-]?ferry)\b/i
+
+/**
+ * Keep bus route codes as TfL painted them (`N22`). Canonicalise river ids
+ * so `RB1` / `Woolwich Ferry` match `isRiverBusLineId` and the river chip.
+ */
+const normaliseDisruptionLineId = (raw: string): string => {
+  const trimmed = raw.trim()
+  const id = trimmed.toLowerCase()
+  if (/^woolwich[\s-]?ferry$/.test(id) || id === "wf") return "woolwich-ferry"
+  if (/^rb[146]$/.test(id)) return id
+  return trimmed
+}
 
 /**
  * TfL's free-text disruption copy wraps lines with a literal `\n` — two
@@ -42,6 +55,10 @@ const cleanDescription = (raw: string | undefined): string =>
  * - Stop-wide ("Bus Stop Closed", no route named): the whole physical stop
  *   is affected, so the same text applies to every route currently in
  *   `rows` — no route there is more or less affected than another.
+ *
+ * River piers use the same `DisruptedPoint` payload. Mentions look like
+ * `RB1` or `Woolwich Ferry` rather than `Route 164`; a pier-wide closure
+ * still fans out to every river route in `rows`.
  */
 export const prepareBusStopDisruptions = (
   disruptions: readonly RawBusStopDisruption[],
@@ -65,14 +82,13 @@ export const prepareBusStopDisruptions = (
       .map((line) => line.id?.trim())
       .filter((id): id is string => Boolean(id))
 
-    const mentioned = description.match(ROUTE_MENTION)?.[1]
+    const mentioned =
+      description.match(ROUTE_MENTION)?.[1] ??
+      description.match(RIVER_LINE_MENTION)?.[1]
 
-    const lineIds =
-      concerned.length > 0
-        ? concerned
-        : mentioned
-          ? [mentioned]
-          : knownRoutes
+    const lineIds = (
+      concerned.length > 0 ? concerned : mentioned ? [mentioned] : knownRoutes
+    ).map(normaliseDisruptionLineId)
 
     for (const lineId of lineIds) {
       if (!byLineId.has(lineId)) byLineId.set(lineId, description)

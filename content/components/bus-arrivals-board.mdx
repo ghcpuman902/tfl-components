@@ -47,7 +47,7 @@ The default is flat: no route headers, no route colour bars, interleaved route n
 
 ## Group by route
 
-Pass `groupBy="route"` when you want route sections. The homepage proof board does this. Routes sort in stable natural numeric order (`9` before `18` before `205`). Arrivals inside each route sort by `timeToStation`. Each section uses a bus-red bar and repeats the route chip on every row. Extra pages sit in a native horizontal scroll-snap track: hover for arrows with a page count on the route header, or swipe the rows on touch with half-opacity dots.
+Pass `groupBy="route"` when you want route sections. The homepage proof board does this. Routes sort in stable natural numeric order (`9` before `18` before `205`). Arrivals inside each route sort by `timeToStation`. Each section uses a bus-red bar. The route number sits in the header; rows are destination and time. Extra pages sit in a native horizontal scroll-snap track: hover for arrows with a page count on the route header, or swipe the rows on touch with half-opacity dots.
 
 <BusArrivalsGroupedVariant />
 
@@ -62,7 +62,7 @@ Pass `groupBy="route"` when you want route sections. The homepage proof board do
 
 ## Behaviour
 
-Unattended keeps the configured height and rotates later arrivals. Rank chips replace the page count, on both flat and route-grouped boards. The first arrival stays pinned; later slots slide by one unless `pinAdvance` is `jump`.
+Unattended keeps the configured height and rotates later arrivals. Rank chips replace the page count, on both flat and route-grouped boards. The first arrival stays pinned. Later slots chunk in windows of `pageSize - 1`; only a short final window overlaps. Frames are not swipeable. New ordering is adopted at a frame boundary; countdown updates in place.
 
 <BusUnattendedDemo />
 
@@ -158,7 +158,7 @@ Named policies, not comparator callbacks:
 | `sortBy` | `timeToStation` | Input order, global when flat, per route when grouped |
 | `groupSortBy` | `route` (natural numeric) | First appearance in `data` |
 
-`groupSortBy` only applies when `groupBy="route"`. `maxRows` is a per-route cap when grouped, and a list cap when flat. `pageSize` pages extra arrivals via scroll-snap. Each slide is locked to the track width, so destination wrap / abbreviation via [`StationName`](/docs/station-name-labels) is the same on a paged route and a single-page route. A short list with one page keeps its natural height. Once there is more than one page, the last page locks to `pageSize` tiles — dashes, then **No more arrivals**. Grouped: hover arrows on the route header. Flat: arrows stay visible in a trailing tile. Touch uses swipe plus half-opacity dots. The pager hides when there is only one page. Equal `timeToStation` keeps input order. The board does not mutate `data`.
+`groupSortBy` only applies when `groupBy="route"`. `maxRows` is a per-route cap when grouped, and a list cap when flat. `pageSize` pages extra arrivals via scroll-snap. Each slide is locked to the track width, so destination wrap / abbreviation via [`StationName`](/docs/station-name-labels) is the same on a paged route and a single-page route. A short list with one page keeps its natural height. Once there is more than one page, the last page locks to `pageSize` tiles — dashes, then **No more arrivals**. New fetches update the current page in place. After inactivity on a later page, the list returns to the first page. Grouped: hover arrows on the route header. Flat: arrows stay visible in a trailing tile. Touch uses swipe plus half-opacity dots. The pager hides when there is only one page. Equal `timeToStation` keeps input order. The board does not mutate `data`.
 
 Same `--arrivals-unit` / `--arrivals-row` tiles as rail, so a bus board beside a rail board lines up. The stop letter is a red circle next to the stop name, not a per-row field.
 
@@ -183,6 +183,5 @@ Keep polling outside the board, then update `data`. Freshness and refresh belong
 | `pageSize` | `number` | Visible arrivals per page, default 3. One page stays short. Multiple pages lock height; a short last page fills with dashes and **No more arrivals**. Grouped: pager on the route header. Flat: trailing tile, always visible on hover pointers. Hidden when only one page. |
 | `behaviour` | `"interactive" \| "unattended"` | Interactive pager, or automatic frames with rank chips. |
 | `pinFirst` | `boolean` | Unattended: keep the next service visible while later slots rotate. Default `true`. |
-| `pinAdvance` | `"slide" \| "jump"` | Unattended, when pinned: slide later slots by one (`1 2 3` then `1 3 4`), or jump a full window. Default `slide`. |
 | `className` | `string` | Root classes, merged over the board container. |
 | `classNames` | `{ groups?, group?, rows? }` | Layout-level class overrides for generated `data-slot` levels. `subgroups` / `subgroup` are rail-only. |

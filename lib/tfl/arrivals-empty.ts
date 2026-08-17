@@ -10,6 +10,12 @@ export const ARRIVALS_EMPTY_COPY: Record<ArrivalsEmptyKind, string> = {
   offline: "You're offline. Arrivals will update when you're back.",
 };
 
+/**
+ * River predictions can be `[]` while line status is still Good Service
+ * (RB4 / Woolwich Ferry). Do not claim that no boats are due.
+ */
+export const RIVER_ARRIVALS_EMPTY_COPY = "No live departure times available.";
+
 /** Per-line / per-route when predictions are missing but the line is still shown. */
 export const ARRIVALS_LINE_EMPTY_COPY = "No information";
 
@@ -56,8 +62,8 @@ type ResolveArrivalsEmptyKindOptions = {
   /** Fetch/render failure — board uses `error` instead. */
   hasError?: boolean;
   offline?: boolean;
-  /** Rail uses the overnight `ended` heuristic; bus does not. */
-  domain?: "rail" | "bus";
+  /** Rail uses the overnight `ended` heuristic; bus and river do not. */
+  domain?: "rail" | "bus" | "river";
   nowMs: number;
 };
 
@@ -74,6 +80,6 @@ export const resolveArrivalsEmptyKind = ({
 }: ResolveArrivalsEmptyKindOptions): ArrivalsEmptyKind | null => {
   if (hasError || rowCount > 0) return null;
   if (offline) return "offline";
-  if (domain !== "bus" && isLikelyRailServiceEnded(nowMs)) return "ended";
+  if (domain === "rail" && isLikelyRailServiceEnded(nowMs)) return "ended";
   return "empty";
 };

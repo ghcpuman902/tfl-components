@@ -23,8 +23,19 @@ describe("parseExplorerState", () => {
   });
 
   it("falls back on invalid domain for points", () => {
-    const state = parseExplorerState({ kind: "points", domain: "river" });
+    const state = parseExplorerState({ kind: "points", domain: "boats" });
     assert.equal(state.domain, "tube-rail");
+  });
+
+  it("accepts river for points and lines", () => {
+    assert.equal(
+      parseExplorerState({ kind: "points", domain: "river" }).domain,
+      "river",
+    );
+    assert.equal(
+      parseExplorerState({ kind: "lines", domain: "river" }).domain,
+      "river",
+    );
   });
 
   it("rejects cycle under lines", () => {
@@ -162,8 +173,13 @@ describe("buildExplorerHref", () => {
 });
 
 describe("domainsForKind", () => {
-  it("excludes cycle from lines", () => {
-    assert.deepEqual(domainsForKind("lines"), ["tube-rail", "bus"]);
-    assert.deepEqual(domainsForKind("points"), ["tube-rail", "bus", "cycle"]);
+  it("excludes cycle from lines and includes river on both", () => {
+    assert.deepEqual(domainsForKind("lines"), ["tube-rail", "bus", "river"]);
+    assert.deepEqual(domainsForKind("points"), [
+      "tube-rail",
+      "bus",
+      "river",
+      "cycle",
+    ]);
   });
 });

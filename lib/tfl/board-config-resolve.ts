@@ -24,7 +24,6 @@ export type ResolvedArrivalsProps = {
   /** ID-keyed rows-per-bound override from positional `a.rows`. */
   pageSizeByLine?: Readonly<Record<string, number>>;
   pinFirst?: boolean;
-  pinAdvance?: "slide" | "jump";
 };
 
 export type ResolvedStatusProps = {
@@ -314,9 +313,6 @@ export const resolveArrivalsProps = (
   }
   if (config.arrivals.pinFirst === false) {
     result.pinFirst = false;
-  }
-  if (config.arrivals.pinAdvance === "jump") {
-    result.pinAdvance = "jump";
   }
 
   const rows = config.arrivals.rows;

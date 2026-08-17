@@ -134,6 +134,25 @@ describe("lookupBoardStationLineGroups", () => {
       "hammersmith-city",
     ]);
   });
+
+  it("auto-merges Circle and H&C at Hammersmith's H&C/Circle building, with no curated override needed", () => {
+    // Unlike Paddington Circle, tfl-ts's static topology already marks
+    // 940GZZLUHSC as shared for this pair — no SHARED_TRACK_MERGE_INCLUDE
+    // entry exists for it. TfL tags every Circle-bound train through here as
+    // "hammersmith-city", so without this merge the Circle section would
+    // read "No information" forever even though trains are running.
+    assert.deepEqual(lookupBoardStationLineGroups("940GZZLUHSC")?.[0]?.lines, [
+      "circle",
+      "hammersmith-city",
+    ]);
+  });
+
+  it("does not leak the Circle/H&C merge onto Hammersmith's separate District & Piccadilly building", () => {
+    // 940GZZLUHSD is a different physical station (different platforms, a
+    // few minutes' walk away) that only ever sees District and Piccadilly
+    // trains. It must not inherit 940GZZLUHSC's merge via hub-alias lookup.
+    assert.equal(lookupBoardStationLineGroups("940GZZLUHSD"), undefined);
+  });
 });
 
 describe("lookupSharedTrackLineIds", () => {

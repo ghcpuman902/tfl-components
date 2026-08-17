@@ -32,6 +32,15 @@ export type ExplorerTubeRailPoint = {
 
 export type ExplorerBusPoint = NearbyBusStop;
 
+/** River-bus pier (`NaptanFerryPort`). `lines` is river-bus ids only. */
+export type ExplorerRiverPoint = {
+  id: string;
+  name: string;
+  lat?: number;
+  lon?: number;
+  lines: string[];
+};
+
 export type ExplorerCyclePoint = CycleHireDock & {
   distance?: number;
 };

@@ -7,7 +7,6 @@ import {
   useRef,
   useState,
   type FocusEventHandler,
-  type PointerEventHandler,
 } from "react"
 import {
   UNATTENDED_DEFAULT_DWELL_MS,
@@ -34,8 +33,6 @@ export type UseUnattendedSequenceResult = {
   progress: number
   started: boolean
   pauseReasons: readonly UnattendedPauseReason[]
-  handlePointerEnter: PointerEventHandler<HTMLElement>
-  handlePointerLeave: PointerEventHandler<HTMLElement>
   handleFocus: FocusEventHandler<HTMLElement>
   handleBlur: FocusEventHandler<HTMLElement>
 }
@@ -55,7 +52,6 @@ export const useUnattendedSequence = ({
   const [itemId, setItemId] = useState<string | null>(itemIds[0] ?? null)
   const [progress, setProgress] = useState(0)
   const [started, setStarted] = useState(startDelayMs <= 0)
-  const [hovering, setHovering] = useState(false)
   const [focused, setFocused] = useState(false)
   const [hidden, setHidden] = useState(false)
 
@@ -139,7 +135,6 @@ export const useUnattendedSequence = ({
 
     const tick = () => {
       const pauseReasons: UnattendedPauseReason[] = []
-      if (hovering) pauseReasons.push("hover")
       if (focused) pauseReasons.push("focus")
       if (hidden) pauseReasons.push("hidden")
       const next = tickUnattendedSequence(stateRef.current, {
@@ -162,20 +157,8 @@ export const useUnattendedSequence = ({
 
     const interval = window.setInterval(tick, 250)
     return () => window.clearInterval(interval)
-  }, [dwellMs, enabled, focused, hidden, hovering, itemIds.length])
+  }, [dwellMs, enabled, focused, hidden, itemIds.length])
 
-  const handlePointerEnter = useCallback<PointerEventHandler<HTMLElement>>(
-    () => {
-      setHovering(true)
-    },
-    []
-  )
-  const handlePointerLeave = useCallback<PointerEventHandler<HTMLElement>>(
-    () => {
-      setHovering(false)
-    },
-    []
-  )
   const handleFocus = useCallback<FocusEventHandler<HTMLElement>>(() => {
     setFocused(true)
   }, [])
@@ -187,11 +170,10 @@ export const useUnattendedSequence = ({
 
   const pauseReasons = useMemo(() => {
     const reasons: UnattendedPauseReason[] = []
-    if (hovering) reasons.push("hover")
     if (focused) reasons.push("focus")
     if (hidden) reasons.push("hidden")
     return reasons
-  }, [focused, hidden, hovering])
+  }, [focused, hidden])
 
   return {
     index,
@@ -199,8 +181,6 @@ export const useUnattendedSequence = ({
     progress,
     started,
     pauseReasons,
-    handlePointerEnter,
-    handlePointerLeave,
     handleFocus,
     handleBlur,
   }

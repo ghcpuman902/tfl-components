@@ -5,12 +5,31 @@ import type {
 } from "@/lib/tfl/arrivals-prepare"
 import { chunkBoundPages } from "@/lib/tfl/arrivals-prepare"
 
-export type ArrivalsPinAdvance = "slide" | "jump"
-
 export type ArrivalsUnattendedFrame = ArrivalsPageFill & {
   id: string
   /** 1-based ranks in the full ordered list, aligned with `rows`. */
   ranks: readonly number[]
+}
+
+/**
+ * Chunk `items` into windows of `windowSize`. Only the final window shifts
+ * back to fill a short remainder — earlier windows never overlap.
+ */
+export const chunkWithFinalBackfill = <T,>(
+  items: readonly T[],
+  windowSize: number
+): T[][] => {
+  if (windowSize <= 0 || items.length === 0) {
+    return items.length ? [[...items]] : []
+  }
+  const windowCount = Math.ceil(items.length / windowSize)
+  return Array.from({ length: windowCount }, (_, index) => {
+    const start =
+      index === windowCount - 1
+        ? Math.max(0, items.length - windowSize)
+        : index * windowSize
+    return items.slice(start, start + windowSize)
+  })
 }
 
 const rankOf = (
@@ -46,16 +65,20 @@ const fillFrame = (
 }
 
 /**
- * Unattended arrival frames. Default pins the first arrival and slides the
- * remaining slots by one: 1 2 3 → 1 3 4. `pinAdvance: "jump"` skips a full
- * window: 1 2 3 4 → 1 5 6 7.
+ * Unattended arrival frames. Default pins the first arrival and chunks the
+ * remaining rows into windows of `pageSize - 1`. Only the final window
+ * overlaps when it would otherwise be short:
+ *
+ *   3 visible, 4 arrivals: 1 2 3 → 1 3 4
+ *   3 visible, 5 arrivals: 1 2 3 → 1 4 5
+ *   3 visible, 6 arrivals: 1 2 3 → 1 4 5 → 1 5 6
+ *   3 visible, 7 arrivals: 1 2 3 → 1 4 5 → 1 6 7
  */
 export const buildPinnedFrames = (
   rows: readonly ArrivalsPreparedRow[],
   pageSize: number,
   options?: {
     pinFirst?: boolean
-    pinAdvance?: ArrivalsPinAdvance
     lockHeight?: ArrivalsLockHeight
   }
 ): {
@@ -63,7 +86,6 @@ export const buildPinnedFrames = (
   pageCount: number
 } => {
   const pinFirst = options?.pinFirst ?? true
-  const pinAdvance = options?.pinAdvance ?? "slide"
   const lockHeight = options?.lockHeight ?? true
 
   if (pageSize <= 0) {
@@ -90,15 +112,8 @@ export const buildPinnedFrames = (
   }
 
   const rotating = rows.slice(1)
-  const windowSize = pageSize - 1
-  const lastStart =
-    pinAdvance === "jump"
-      ? Math.max(0, rotating.length - 1)
-      : Math.max(0, rotating.length - windowSize)
-  const step = pinAdvance === "jump" ? windowSize : 1
-  const frames: ArrivalsUnattendedFrame[] = []
-  for (let start = 0; start <= lastStart; start += step) {
-    const rest = rotating.slice(start, start + windowSize)
+  const windows = chunkWithFinalBackfill(rotating, pageSize - 1)
+  const frames: ArrivalsUnattendedFrame[] = windows.map((rest) => {
     const visible = [pinned, ...rest]
     const chunked = chunkBoundPages(visible, pageSize, { lockHeight: true })
     const page = chunked.pages[0] ?? {
@@ -106,17 +121,33 @@ export const buildPinnedFrames = (
       dashCount: 0,
       showEndMessage: false,
     }
-    frames.push({
+    return {
       id: `rest:${frameId(rest)}`,
       rows: page.rows,
       ranks: page.rows.map((row) => rankOf(rows, row)),
       dashCount: page.dashCount,
       showEndMessage: page.showEndMessage,
-    })
-  }
+    }
+  })
 
   return {
     frames: frames.length > 0 ? frames : [fillFrame([pinned], rows, pageSize, true)],
     pageCount: Math.max(1, frames.length),
+  }
+}
+
+/**
+ * Keep a frozen frame's order and ranks, but swap in live row values
+ * (countdown, location) for matching keys. Missing keys keep the frozen row.
+ */
+export const refreshFrameRows = (
+  frame: ArrivalsUnattendedFrame,
+  liveRows: readonly ArrivalsPreparedRow[]
+): ArrivalsUnattendedFrame => {
+  if (frame.rows.length === 0) return frame
+  const byKey = new Map(liveRows.map((row) => [row.key, row]))
+  return {
+    ...frame,
+    rows: frame.rows.map((row) => byKey.get(row.key) ?? row),
   }
 }

@@ -17,8 +17,9 @@ import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code
 import { TubeStatusBoardSkeleton } from "@/components/tfl/status/tube-status-board"
 import { RailArrivalsBoardSkeleton } from "@/components/tfl/arrivals/rail-arrivals-board"
 import { BusArrivalsBoardSkeleton } from "@/components/tfl/arrivals/bus-arrivals-board"
+import { RiverBusArrivalsBoardSkeleton } from "@/components/tfl/arrivals/river-bus-arrivals-board"
 import { CycleHireDocksBoardSkeleton } from "@/components/tfl/cycle-hire/cycle-hire-docks"
-import { HOME_BUS_STOP, HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
+import { HOME_BUS_STOP, HOME_RAIL_STOP, HOME_RIVER_STOP } from "@/lib/tfl/home-arrivals-stops"
 
 type RelatedLink = { href: string; label: string }
 
@@ -94,10 +95,15 @@ const BusDocsPreviewFallback = () => (
   />
 )
 
+const RiverDocsPreviewFallback = () => (
+  <RiverBusArrivalsBoardSkeleton stopName={HOME_RIVER_STOP.name} />
+)
+
 const PREVIEW_FALLBACKS: Record<string, ComponentType> = {
   "tube-status-board": TubeStatusBoardSkeleton,
   "rail-arrivals-board": RailDocsPreviewFallback,
   "bus-arrivals-board": BusDocsPreviewFallback,
+  "river-bus-arrivals": RiverDocsPreviewFallback,
   "cycle-hire-docks": CycleHireDocksBoardSkeleton,
 }
 

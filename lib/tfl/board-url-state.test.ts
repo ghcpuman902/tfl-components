@@ -42,6 +42,14 @@ describe("parseBoardConfig", () => {
     assert.equal(config.behaviour, "interactive");
   });
 
+  it("ignores retired a.pinAdvance", () => {
+    const config = parseBoardConfig(
+      "stop=940GZZLUOXC&a.pinAdvance=jump&a.pinFirst=false",
+    );
+    assert.equal(config.arrivals.pinFirst, false);
+    assert.equal("pinAdvance" in config.arrivals, false);
+  });
+
   it("maps legacy mode values to interactive", () => {
     const config = parseBoardConfig("mode=touch&fit=fill");
     assert.equal(config.behaviour, "interactive");

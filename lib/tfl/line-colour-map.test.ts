@@ -22,5 +22,7 @@ describe("line colour map", () => {
     assert.ok(a);
     assert.equal(a, b);
     assert.equal(a.cssVar, "tfl-mode-elizabeth");
+    assert.equal(getLineColourToken("rb1")?.id, "river");
+    assert.equal(getLineColourToken("woolwich-ferry")?.id, "river");
   });
 });

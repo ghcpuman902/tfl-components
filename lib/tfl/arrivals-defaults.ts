@@ -18,3 +18,6 @@ export const RAIL_ARRIVALS_MERGED_PAGE_SIZE =
 
 /** Per-bound prediction cap after ordering. Does not drop later lines. */
 export const DEFAULT_MAX_ROWS = 16;
+
+/** River waits at this length and above show London clock time, not minutes. */
+export const RIVER_COUNTDOWN_CLOCK_FROM_SECONDS = 30 * 60;

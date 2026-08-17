@@ -298,8 +298,6 @@ export const TubeStatusDisplay = ({
         ...BOARD_RHYTHM_VARS,
         minHeight: `calc(var(--arrivals-row) * ${tiles})`,
       }}
-      onPointerEnter={sequence.handlePointerEnter}
-      onPointerLeave={sequence.handlePointerLeave}
       onFocus={sequence.handleFocus}
       onBlur={sequence.handleBlur}
     >

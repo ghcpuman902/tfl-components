@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Arrivals board layout
 
-Domain boards under `registry/tfl/arrivals/rail-arrivals-board.tsx` and `bus-arrivals-board.tsx`. Shared presentation lives in `arrivals-board-view.tsx`. Rail and bus do **not** share a high-level `variant` API.
+Domain boards under `registry/tfl/arrivals/rail-arrivals-board.tsx`, `bus-arrivals-board.tsx`, and `river-bus-arrivals-board.tsx`. Shared presentation lives in `arrivals-board-view.tsx`. Rail, bus, and river do **not** share a high-level `variant` API.
 
 ## Rhythm
 
@@ -53,7 +53,8 @@ Boards are single-column by default; consumers arrange groups/bounds via `classN
 ## Rail vs bus rows
 
 - Rail: platform chip only when platforms **vary** inside the bound (compact `P{n}`). When every row shares one platform, hoist it into the bound heading (`Eastbound · Platform 1` or `Platform A`) and omit the row chip. Mixed-line (`lineGroups`) sections add a line chip before the destination. One identity → `LineBadge` (3-letter). A train listed on 2–3 lines → `LineBadgeGroup variant="codes"` (same-height stripe stack; CSS-cycles one 3-letter abbr). Both line chips use a fixed `w-[5ch]` box (`ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS`), same as `BusNumberChip`, so CIR / H&C / MET and the stacked codes chip align. The codes chip must fit inside `--arrivals-row` (48px) at normal chip height (`h-5`).
-- Bus: `BusNumberChip` per row (bus red); stop letter on the header only.
+- Bus: `BusNumberChip` per row on the **flat** list (bus red); stop letter on the header only. Grouped-by-route hoists the number into the section header and omits the row chip.
+- River: `RiverRouteChip` per row on the flat list. Grouped-by-route hoists the same way as bus. Stop-point disruptions use the same warning chips as bus, painted on the river chip. Warning chips sit immediately after the stop name, inside the title’s `flex-1` measure slot (name is `w-auto`; auto-fit still measures leftover width). Do not shrink-wrap the title or auto-fit will scale it down. The corner badge hangs outside the chip and must not be clipped. `RiverBusArrivalsBoard` keeps only `rb1` / `rb4` / `rb6` / `woolwich-ferry` before prepare. Empty copy is “No live departure times available.” Countdown is `Due` / minutes below 30 minutes; at 30+ show the Europe/London clock from `expectedArrival` (minutes if that field is missing). `now` is the fetch timestamp, never a ticking clock.
 - Both chips: keep normal casing (`Platform 4`, route codes as given). Center with `[text-box:trim-both_cap_alphabetic]` (`CHIP_CAP_TEXT_BOX_CLASS`) — uppercase/cap metrics for the box, not `ex` trim. Do not force `uppercase` paint.
 - Bound labels (Northbound…) match line-name size; same hairline weight as arrival rows inside a line group.
 
@@ -61,7 +62,7 @@ Boards are single-column by default; consumers arrange groups/bounds via `classN
 
 Shared in `arrivals-bound-group.tsx` (`BoundPager` + `ArrivalsPageTrack`) for rail bounds, bus route groups, and flat bus lists.
 
-- Pages are real horizontal slides (`overflow-x-auto` + `snap-x snap-mandatory` + `snap-always`). Swipe is native OS scrolling — not a JS gesture library.
+- Pages are real horizontal slides (`overflow-x-auto overflow-y-clip` + `snap-x snap-mandatory` + `snap-always`). `overflow-y-clip` stops `overflow-x: auto` from computing `overflow-y: auto`, which would make the track a vertical scrollport and let snap / live updates move the page. Swipe is native OS scrolling — not a JS gesture library.
 - Each slide is `w-full min-w-full shrink-0` (and the track is `min-w-0`). `min-w-full` alone with `width: auto` sizes the slide to the destination’s max-content; `StationName` then measures a box that already “fits” and never wraps or abbreviates. Destination fit is board-owned — paged and unpaged rows share one path. Demos pass `pageSize` / `groupBy` / `classNames`; they do not restyle the track.
 - Mid-swipe: `gap-x-6` between slides (same as bound-column arrangements) so countdown never touches the next page’s chips; when snapped, each slide is full-width so the gap sits off-screen.
 - For rail, a configured positive `pageSize` is a fixed subgroup height, not only a chunk size. Every bound occupies exactly `pageSize` arrival-row tiles, including a short single page and an empty seeded group. For grouped and flat bus boards, apply the same fixed height once `pageCount > 1`; an unpaginated short bus list keeps its natural height. `pageSize <= 0` always keeps the natural unpaged height.
@@ -70,22 +71,25 @@ Shared in `arrivals-bound-group.tsx` (`BoundPager` + `ArrivalsPageTrack`) for ra
 - Zero arrivals are not an end-of-list state. Keep **No information** in the first tile and use quiet dashes in the remaining tiles. Keep decorative dash tiles out of the accessibility tree.
 - Pagination controls follow their tile ownership. When arrows and the `n/m` count share a marked tile with other useful content, such as a rail bound label or grouped bus route header, hide them on hover-capable pointers until group hover or a `:focus-visible` descendant (keyboard). Do not use `:focus-within` — a mouse click would leave the overlay stuck after unhover. When the controls own a dedicated otherwise-empty tile, as on the flat bus list, they are the tile marker and remain visible on hover-capable pointers. Never leave a blank control tile waiting for hover.
 - Touch / no-hover controls are always visible because there is no hover affordance. Keep the half-opacity iOS-style dots in the corresponding control position and swipe the rows track to change page.
-- Arrow clicks jump instantly (`scrollIntoView` with `behavior: "auto"`). Keyboard focus must reveal any hover-hidden controls.
+- Arrow clicks jump instantly by setting the track’s `scrollLeft` (`behavior: "auto"`). Do not use `scrollIntoView` — it also scrolls the document (`html` has `scroll-padding-top` for the sticky header) and jumps the reading position when live data updates, idle-return fires, or page count clamps. Keyboard focus must reveal any hover-hidden controls.
 - Hide the entire pager when `pageCount <= 1` (no lone `1/1` or single dot).
+- Interactive pages stay live: new fetches update values and ordering on the current page. Do not freeze a snapshot while someone browses a later page. After inactivity on a non-first page, return to page 1. Mouse, touch, swipe, click, and keyboard reset the timer. Hover and focus suspend it.
 
 ### Unattended
 
 `behaviour="unattended"` keeps the same row tiles and configured height.
 It advances without input. Rank chips show each row's place in the full
-ordered list and do not reset when the frame changes. There is no page
+ordered list (`1st`, `2nd`, …) in a fixed `3ch` box and do not reset when
+the frame changes. The suffix uses OpenType `ordn` when the face has it. There is no page
 count. A dwell bar sits where the pager controls would be and fills
 through the reading interval. A single frame still shows the bar, empty.
-The default pins the first arrival and slides later slots by one
-(`1 2 3` → `1 3 4`). Set `pinAdvance="jump"` for a full-window skip
-(`1 2 3 4` → `1 5 6 7`). Set `pinFirst={false}` for equal rotation.
-Hover, focus, or a hidden document pauses the panel. Live refresh keeps
-the current arrivals where they still exist; a newly earliest arrival
-replaces the pinned row immediately.
+Unattended frames are not swipeable. The default pins the first arrival
+and chunks later slots into windows of `pageSize - 1`. Only the final
+window overlaps when it would otherwise be short (`1 2 3` → `1 4 5`, or
+`1 3 4` when four arrivals remain). Set `pinFirst={false}` for equal
+rotation. Focus or a hidden document pauses the panel. Hover does not. Adopt
+the latest ordering at a frame boundary; countdown fields may update in
+place. Dwell does not shorten with frame count.
 
 For the default `pageSize={3}`, the final page resolves as follows:
 
@@ -96,7 +100,7 @@ For the default `pageSize={3}`, the final page resolves as follows:
 | 2 | arrival | arrival | No more arrivals |
 | 3 | arrival | arrival | arrival |
 
-For rail, the same rule applies when the final page is the only page. For bus, it applies only when pagination is active. Exact multiples of `pageSize` stay full and do not gain a terminal page. With `pageSize={1}`, show the arrival or empty state; there is no spare tile for an end message.
+For rail, the same rule applies when the final page is the only page. For bus and river, it applies only when pagination is active. Exact multiples of `pageSize` stay full and do not gain a terminal page. With `pageSize={1}`, show the arrival or empty state; there is no spare tile for an end message.
 
 ## Destination filtering
 

@@ -13,7 +13,6 @@ import { RAIL_ARRIVALS_DEFAULT_PAGE_SIZE } from "@/lib/tfl/arrivals-defaults";
 export type BoardScope = "shell" | "arrivals" | "status";
 
 export type BoardBehaviour = "interactive" | "unattended";
-export type BoardPinAdvance = "slide" | "jump";
 export type BoardStatusSurface = "display" | "strip";
 export type BoardStatusOverview = "network" | "selection" | "none";
 
@@ -52,7 +51,6 @@ export type ListSetting<T> = SettingBase<T> & {
 export type BoardSetting<T = unknown> = ScalarSetting<T> | ListSetting<T>;
 
 const BEHAVIOURS = new Set<BoardBehaviour>(["interactive", "unattended"]);
-const PIN_ADVANCES = new Set<BoardPinAdvance>(["slide", "jump"]);
 const STATUS_SURFACES = new Set<BoardStatusSurface>(["display", "strip"]);
 const STATUS_OVERVIEWS = new Set<BoardStatusOverview>([
   "network",
@@ -72,13 +70,6 @@ export const BOARD_ROWS_MAX = 16;
 export const parseOptionalString = (raw: string): string | undefined => {
   const trimmed = raw.trim();
   return trimmed ? trimmed : undefined;
-};
-
-export const parsePinAdvance = (raw: string): BoardPinAdvance | undefined => {
-  const trimmed = raw.trim();
-  return PIN_ADVANCES.has(trimmed as BoardPinAdvance)
-    ? (trimmed as BoardPinAdvance)
-    : undefined;
 };
 
 export const parseBehaviour = (raw: string): BoardBehaviour | undefined => {
@@ -278,27 +269,6 @@ export const BOARD_SETTINGS = {
       ],
     },
   } satisfies ScalarSetting<boolean>,
-
-  arrivalsPinAdvance: {
-    kind: "scalar",
-    param: "a.pinAdvance",
-    scope: "arrivals",
-    defaultValue: "slide" as BoardPinAdvance,
-    parse: parsePinAdvance,
-    serialize: (value: BoardPinAdvance) => value,
-    isDefault: (value: BoardPinAdvance) => value === "slide",
-    url: true,
-    form: true,
-    ui: {
-      label: "Pinned rotation",
-      help: "Unattended only. Slide later slots by one, or jump a full window.",
-      control: "select",
-      options: [
-        { value: "slide", label: "Slide" },
-        { value: "jump", label: "Jump" },
-      ],
-    },
-  } satisfies ScalarSetting<BoardPinAdvance>,
 
   statusSurface: {
     kind: "scalar",

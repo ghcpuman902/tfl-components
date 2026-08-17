@@ -18,25 +18,22 @@ import type { RoundelPreset } from "@/lib/tfl/roundel-presets";
 import { cn } from "@/lib/utils";
 
 type DomainTile = {
-  value: ExplorerDomain | "river";
+  value: ExplorerDomain;
   label: string;
   roundel: RoundelPreset;
-  comingSoon?: boolean;
 };
 
-/** Sidebar order: Tube & rail, Bus, River · soon, Cycle hire. */
+/** Sidebar order: Tube & rail, Bus, River, Cycle hire. */
 const DOMAIN_TILES: readonly DomainTile[] = [
   { value: "tube-rail", label: domainLabel("tube-rail"), roundel: "underground" },
   { value: "bus", label: domainLabel("bus"), roundel: "buses" },
-  { value: "river", label: "River", roundel: "river", comingSoon: true },
+  { value: "river", label: domainLabel("river"), roundel: "river" },
   { value: "cycle", label: domainLabel("cycle"), roundel: "cycles" },
 ];
 
 const domainTilesForKind = (kind: ExplorerKind): readonly DomainTile[] => {
   const available = new Set<string>(domainsForKind(kind));
-  return DOMAIN_TILES.filter(
-    (tile) => tile.comingSoon || available.has(tile.value),
-  );
+  return DOMAIN_TILES.filter((tile) => available.has(tile.value));
 };
 
 const KIND_TRIGGER_CLASS =
@@ -48,11 +45,9 @@ const DOMAIN_TILE_TRIGGER_CLASS =
 const DomainTileLabel = ({
   roundel,
   label,
-  comingSoon,
 }: {
   roundel: RoundelPreset;
   label: string;
-  comingSoon?: boolean;
 }) => (
   <>
     <TfLRoundel
@@ -61,12 +56,7 @@ const DomainTileLabel = ({
       className="pointer-events-none size-7 shrink-0 sm:size-10"
       aria-hidden
     />
-    <span className="min-w-0 leading-tight">
-      {label}
-      {comingSoon ? (
-        <span className="font-normal text-muted-foreground"> · soon</span>
-      ) : null}
-    </span>
+    <span className="min-w-0 leading-tight">{label}</span>
   </>
 );
 
@@ -141,13 +131,10 @@ export const ExplorerShell = ({ state, children }: ExplorerShellProps) => {
         <Tabs
           value={state.domain}
           onValueChange={(value) => {
-            if (
-              value === "tube-rail" ||
-              value === "bus" ||
-              value === "cycle"
-            ) {
+            const domain = value as ExplorerDomain;
+            if (domainsForKind(state.kind).includes(domain)) {
               navigate({
-                domain: value,
+                domain,
                 id: undefined,
                 q: undefined,
                 view: "list",
@@ -166,14 +153,11 @@ export const ExplorerShell = ({ state, children }: ExplorerShellProps) => {
               <TabsTrigger
                 key={tile.value}
                 value={tile.value}
-                disabled={tile.comingSoon}
-                title={tile.comingSoon ? "Coming soon" : undefined}
                 className={DOMAIN_TILE_TRIGGER_CLASS}
               >
                 <DomainTileLabel
                   roundel={tile.roundel}
                   label={tile.label}
-                  comingSoon={tile.comingSoon}
                 />
               </TabsTrigger>
             ))}

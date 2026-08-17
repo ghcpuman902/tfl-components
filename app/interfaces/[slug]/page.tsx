@@ -4,6 +4,7 @@ const SLUG_MAP: Record<string, string> = {
   "arrivals-board": "/docs/tube-rail-arrivals",
   "rail-arrivals-board": "/docs/tube-rail-arrivals",
   "bus-arrivals-board": "/docs/bus-arrivals",
+  "river-bus-arrivals-board": "/docs/river-bus-arrivals",
   "tube-status-board": "/docs/tube-rail-status",
   "cycle-hire-docks": "/docs/cycle-hire-docks",
   "line-strip": "/docs/line-strip",

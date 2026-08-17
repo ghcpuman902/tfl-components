@@ -6,7 +6,7 @@ import {
 } from "@/lib/tfl/board-arrivals-stop-ids";
 import { SHARED_TRACK_LINE_SETS } from "@/lib/tfl/board-station-lines";
 import { getTflClient } from "@/lib/tfl/client";
-import { HOME_BUS_STOP, HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops";
+import { HOME_BUS_STOP, HOME_RAIL_STOP, HOME_RIVER_STOP } from "@/lib/tfl/home-arrivals-stops";
 
 /**
  * Stop IDs the site key is allowed to poll for docs demos.
@@ -16,6 +16,7 @@ import { HOME_BUS_STOP, HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops";
 export const DEMO_STOP_ARRIVALS_IDS = new Set<string>([
   HOME_RAIL_STOP.id,
   HOME_BUS_STOP.id,
+  HOME_RIVER_STOP.id,
   // Shared-track Circle / H&C / Met naptans — Board site-key path.
   ...Object.keys(SHARED_TRACK_LINE_SETS).filter((id) =>
     id.startsWith("940GZZ"),

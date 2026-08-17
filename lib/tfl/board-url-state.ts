@@ -15,14 +15,12 @@ import {
   parseBooleanFlag,
   parseDwellSeconds,
   parseOptionalString,
-  parsePinAdvance,
   parseRowsItem,
   parseStatusOverview,
   parseStatusSurface,
   serializeArrivalsLines,
   serializeArrivalsRows,
   type BoardBehaviour,
-  type BoardPinAdvance,
   type BoardSettingId,
   type BoardStatusOverview,
   type BoardStatusSurface,
@@ -31,7 +29,7 @@ import {
 export const BOARD_PATH = "/board";
 export const BOARD_VIEW_PATH = "/board/view";
 
-export type { BoardBehaviour, BoardPinAdvance, BoardStatusOverview, BoardStatusSurface };
+export type { BoardBehaviour, BoardStatusOverview, BoardStatusSurface };
 
 export type BoardArrivalsConfig = {
   /**
@@ -42,7 +40,6 @@ export type BoardArrivalsConfig = {
   /** Explicit line section order. Ordering only — does not filter. */
   lineOrder?: readonly string[];
   pinFirst?: boolean;
-  pinAdvance?: BoardPinAdvance;
 };
 
 export type BoardStatusConfig = {
@@ -108,8 +105,6 @@ export const parseBoardConfig = (
   if (lineOrder !== undefined) arrivals.lineOrder = lineOrder;
   const pinFirst = parseBooleanFlag(params.get("a.pinFirst") ?? "");
   if (pinFirst !== undefined) arrivals.pinFirst = pinFirst;
-  const pinAdvance = parsePinAdvance(params.get("a.pinAdvance") ?? "");
-  if (pinAdvance !== undefined) arrivals.pinAdvance = pinAdvance;
 
   const status: BoardStatusConfig = {};
   const surface = parseStatusSurface(params.get("s.surface") ?? "");
@@ -261,19 +256,6 @@ export const describeBoardHrefSegments = (
       text: encodeSegment(
         BOARD_SETTINGS.arrivalsPinFirst.param,
         BOARD_SETTINGS.arrivalsPinFirst.serialize(merged.arrivals.pinFirst),
-      ),
-    });
-  }
-
-  if (
-    merged.arrivals.pinAdvance !== undefined &&
-    !BOARD_SETTINGS.arrivalsPinAdvance.isDefault(merged.arrivals.pinAdvance)
-  ) {
-    segments.push({
-      setting: "arrivalsPinAdvance",
-      text: encodeSegment(
-        BOARD_SETTINGS.arrivalsPinAdvance.param,
-        BOARD_SETTINGS.arrivalsPinAdvance.serialize(merged.arrivals.pinAdvance),
       ),
     });
   }

@@ -222,6 +222,21 @@
   [data-line='river'] {
     --line-raw: var(--tfl-mode-river);
   }
+  [data-line='rb1'] {
+    --line-raw: var(--tfl-mode-river);
+  }
+  [data-line='rb4'] {
+    --line-raw: var(--tfl-mode-river);
+  }
+  [data-line='rb6'] {
+    --line-raw: var(--tfl-mode-river);
+  }
+  [data-line='woolwich-ferry'] {
+    --line-raw: var(--tfl-mode-river);
+  }
+  [data-line='river-bus'] {
+    --line-raw: var(--tfl-mode-river);
+  }
   [data-line='trams'] {
     --line-raw: var(--tfl-mode-trams);
   }

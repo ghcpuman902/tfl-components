@@ -7,6 +7,7 @@ import type {
   ExplorerLineSummary,
 } from "@/lib/tfl/explorer/common"
 import type { ExplorerDirection } from "@/lib/tfl/explorer-url-state"
+import { stopsFromRiverOrderedRoutes } from "@/lib/tfl/explorer/river-route"
 import { getCachedLineStatuses } from "@/lib/tfl/status-data"
 
 const TUBE_RAIL_MODE_IDS = [
@@ -54,6 +55,16 @@ export async function getExplorerLineRoute(
     client.line.getRouteSequence({ id: lineId, direction }),
   ])
 
+  const riverStops =
+    sequence.mode === "river-bus" || lines[0]?.modeName === "river-bus"
+      ? stopsFromRiverOrderedRoutes({
+          mode: "river-bus",
+          orderedLineRoutes: sequence.orderedLineRoutes,
+          stations: sequence.stations,
+          stopPointSequences: sequence.stopPointSequences,
+        })
+      : null
+
   return {
     line: lines[0]
       ? {
@@ -63,7 +74,9 @@ export async function getExplorerLineRoute(
         }
       : { id: lineId },
     stops:
-      sequence.stopPointSequences?.flatMap((seq) => seq.stopPoint ?? []) ?? [],
+      riverStops ??
+      sequence.stopPointSequences?.flatMap((seq) => seq.stopPoint ?? []) ??
+      [],
   }
 }
 

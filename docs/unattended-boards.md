@@ -33,14 +33,16 @@ Every component admitted to an unattended Board must meet these rules.
    but fast cycling is not a goal.
 4. **Live refresh does not gratuitously reset the sequence.** Keep the current
    item when it still exists. Move to the nearest valid item when it disappears.
+   A frame does not reorganise mid-interval. Adopt new ordering only at a frame
+   boundary. Countdown fields may still update in place.
 5. **Empty and error states occupy the same allocated height.** A failed fetch
    must not collapse a panel.
 6. **Only content changes.** Prefer an instant replacement or restrained
    crossfade. Do not slide the whole layout. Reduced-motion users get the same
    information changes without animated movement.
-7. **Interactive attention pauses automatic changes.** Focus, pointer hover, or
-   touch pauses the affected panel long enough to use it. An unattended display
-   with no input continues normally.
+7. **Interactive attention pauses automatic changes.** Focus pauses the
+   affected panel long enough to use it. Hover does not pause rotation. An
+   unattended display with no input continues normally.
 8. **Hidden documents do not race through frames.** Pause while the page is not
    visible. On return, show a complete frame for a full reading interval.
 9. **Readers can tell where they are in a sequence.** Use the position marker
@@ -57,30 +59,38 @@ its own sequence length and reading interval.
 The existing pager is already the interactive baseline: native swipe for touch,
 arrows for hover-capable pointers, and a fixed number of rows per page.
 
+Interactive boards stay live. New fetches update values and ordering on the
+page the reader is looking at. Do not freeze a snapshot while someone browses
+a later page. After inactivity on a non-first page, return to the first page.
+Mouse, touch, swipe, click, and keyboard activity reset that timer. Hover and
+focus suspend it so a reader mid-navigation is not yanked back.
+
 In unattended use it advances when a bound has more arrivals than its configured
-row count. The default keeps the first arrival visible and rotates the remaining
-slots:
+row count. The default pins the first arrival and chunks the remaining rows
+into windows of `pageSize - 1`. Only the final window overlaps when it would
+otherwise be short:
 
 ```text
-Four visible rows
-
-Frame 1  1  2  3  4
-Frame 2  1  5  6  7
-Frame 3  1  8  9  10
+3 visible, 4 arrivals: 1 2 3 → 1 3 4
+3 visible, 5 arrivals: 1 2 3 → 1 4 5
+3 visible, 6 arrivals: 1 2 3 → 1 4 5 → 1 5 6
+3 visible, 7 arrivals: 1 2 3 → 1 4 5 → 1 6 7
 ```
 
 Every row gets a stable rank chip in the full ordered list. The chips reuse the
 quiet neutral treatment used for status severity labels. They do not restart
 when the frame changes. There is no page number because a frame is only the set
 of rotating slots currently visible, not a page the reader navigates.
+Unattended frames are not swipeable.
 
 Pinning the first arrival is the unattended default. Authors can turn pinning
 off when equal rotation matters more than keeping the next service visible.
 This is an arrivals presentation choice, not a second meaning of unattended
 mode.
 
-When polling changes the order, keep the currently visible arrival where
-possible. The newly earliest arrival replaces the pinned row immediately.
+When polling changes the order, adopt the latest list at the next frame
+boundary. Countdown fields may update in place. The newly earliest arrival
+replaces the pinned row when the next frame starts.
 
 ## Bus arrivals
 
@@ -274,6 +284,9 @@ p2=arrivals
 p2.rows=3
 p2.pinFirst=true
 ```
+
+There is no `p2.pinAdvance` parameter. Pinned rotation is always chunking
+plus final-window backfill.
 
 `p1.dwell` is an override. With no override, unattended panels use the shared
 default. There is no `p1.page=rotate` parameter.

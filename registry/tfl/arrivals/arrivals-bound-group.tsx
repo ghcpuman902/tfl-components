@@ -9,17 +9,24 @@ import {
   type CSSProperties,
   type ReactNode,
   type RefObject,
+  type UIEventHandler,
 } from "react"
 import { Play, RotateCcw, RotateCw } from "lucide-react"
 import type { PredictionWithSharedTrackIdentity } from "tfl-ts"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
-import { ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS } from "@/components/tfl/arrivals/chip-text"
-import { QuietChip } from "@/components/tfl/arrivals/quiet-chip"
+import { RiverRouteChip } from "@/components/tfl/arrivals/river-route-chip"
+import {
+  ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
+  formatArrivalsRankLabel,
+} from "@/components/tfl/arrivals/chip-text"
+import { ArrivalRankChip } from "@/components/tfl/arrivals/quiet-chip"
+import { useInteractiveIdleReturn } from "@/hooks/use-interactive-idle-return"
 import { useUnattendedSequence } from "@/hooks/use-unattended-sequence"
 import {
   buildPinnedFrames,
-  type ArrivalsPinAdvance,
+  refreshFrameRows,
 } from "@/lib/tfl/arrivals-unattended-frames"
+import { INTERACTIVE_IDLE_RETURN_MS } from "@/lib/tfl/interactive-idle-return"
 import type { ArrivalsLockHeight } from "@/lib/tfl/arrivals-prepare"
 import {
   UNATTENDED_DEFAULT_DWELL_MS,
@@ -33,6 +40,7 @@ import {
 } from "@/components/tfl/brand/line-badge"
 import { LineName } from "@/components/tfl/brand/line-name"
 import { StationName } from "@/components/tfl/station-name"
+import { RIVER_COUNTDOWN_CLOCK_FROM_SECONDS } from "@/lib/tfl/arrivals-defaults"
 import {
   ARRIVALS_END_COPY,
   ARRIVALS_END_COPY_SHORT,
@@ -58,7 +66,10 @@ import {
 import { usableTflText } from "@/lib/tfl/bus-stop-letter"
 import { cn } from "@/lib/utils"
 
-type ArrivalsBoardMode = "rail" | "bus"
+type ArrivalsBoardMode = "rail" | "bus" | "river"
+
+const isRouteArrivalsMode = (mode: ArrivalsBoardMode): boolean =>
+  mode === "bus" || mode === "river"
 
 /**
  * Layout-level class overrides for generated board parts. Each key maps to a
@@ -95,6 +106,25 @@ const ROW_RULE_CLASS =
 
 const LIST_RESET_CLASS = "m-0 ml-0 list-none space-y-0 p-0 [&>li]:mt-0"
 
+/**
+ * Move the snap track to a slide without touching the document.
+ * `scrollIntoView` also scrolls ancestors — on a docs page that includes
+ * `html` (`scroll-padding-top` for the sticky header), so a live poll,
+ * idle return, or page-count clamp jumps the reading position even when
+ * the board height is unchanged.
+ */
+const scrollArrivalsTrackToSlide = (
+  container: HTMLElement | null,
+  slide: HTMLElement | null
+) => {
+  if (!container || !slide) return
+  const left =
+    slide.getBoundingClientRect().left -
+    container.getBoundingClientRect().left +
+    container.scrollLeft
+  container.scrollTo({ left, behavior: "auto" })
+}
+
 const STRIPED_MODE_NAMES = new Set([
   "overground",
   "elizabeth-line",
@@ -109,14 +139,35 @@ const STRIPED_MODE_NAMES = new Set([
  * hasn't allocated a platform yet, so there's no live position to count
  * down from. See docs/arrivals-shared-platforms.md.
  */
+const londonArrivalClockFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Europe/London",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+})
+
+export const formatLondonArrivalClock = (iso?: string): string | null => {
+  if (!iso?.trim()) return null
+  const ms = Date.parse(iso)
+  if (!Number.isFinite(ms)) return null
+  return londonArrivalClockFormatter.format(new Date(ms))
+}
+
 export const formatArrivalsCountdown = (
   seconds?: number,
-  options?: { platformName?: string }
+  options?: {
+    platformName?: string
+    expectedArrival?: string
+    clockFromSeconds?: number
+  },
 ): string => {
   if (isUnknownArrivalsPlatform(options?.platformName)) return "Scheduled"
   if (seconds === undefined || seconds < 0) return "-"
   if (seconds < 60) return "Due"
-  return `${Math.floor(seconds / 60)} min`
+  const minutes = `${Math.floor(seconds / 60)} min`
+  const clockFrom = options?.clockFromSeconds
+  if (clockFrom === undefined || seconds < clockFrom) return minutes
+  return formatLondonArrivalClock(options?.expectedArrival) ?? minutes
 }
 
 export const getArrivalsPlatformNumber = (
@@ -129,6 +180,7 @@ export const ArrivalRowItem = ({
   showRule,
   showLineChip = false,
   hoistPlatform = false,
+  hoistRouteChip = false,
   rank,
 }: {
   row: ArrivalsPreparedRow
@@ -138,6 +190,8 @@ export const ArrivalRowItem = ({
   showLineChip?: boolean
   /** Platform already lives in the subgroup heading — omit the row chip. */
   hoistPlatform?: boolean
+  /** Route already lives in the group header — omit the row chip. */
+  hoistRouteChip?: boolean
   /** 1-based rank in the full ordered list (unattended). */
   rank?: number
 }) => {
@@ -191,7 +245,7 @@ export const ArrivalRowItem = ({
       ? `TfL currently lists this arrival on ${sharedChipLabel}`
       : null
   const routeLabel =
-    mode === "bus"
+    isRouteArrivalsMode(mode)
       ? (row.arrival.lineName ?? row.arrival.lineId ?? "").trim() || null
       : null
   // TfL sometimes repeats the line name as the destination ("Circle Line" on
@@ -206,14 +260,20 @@ export const ArrivalRowItem = ({
   })
   const countdown = formatArrivalsCountdown(row.arrival.timeToStation, {
     platformName: row.arrival.platformName,
+    ...(mode === "river"
+      ? {
+          expectedArrival: row.arrival.expectedArrival,
+          clockFromSeconds: RIVER_COUNTDOWN_CLOCK_FROM_SECONDS,
+        }
+      : {}),
   })
   const rowLabel = [
-    rank ? `Arrival ${rank}` : null,
+    rank ? `${formatArrivalsRankLabel(rank)} arrival` : null,
     platformNumber ? `Platform ${platformNumber}` : null,
     sharedChipLabel ??
       (lineChipLabel
         ? lineTiers?.full
-        : routeLabel
+        : !hoistRouteChip && routeLabel
           ? `Route ${routeLabel}`
           : null),
     destination,
@@ -238,9 +298,18 @@ export const ArrivalRowItem = ({
 
   const identityLead =
     mode === "bus"
-      ? routeLabel
+      ? !hoistRouteChip && routeLabel
         ? <BusNumberChip label={routeLabel} />
         : null
+      : mode === "river"
+        ? !hoistRouteChip
+          ? (
+            <RiverRouteChip
+              lineId={row.arrival.lineId}
+              lineName={row.arrival.lineName}
+            />
+          )
+          : null
       : platformNumber || lineChip
         ? (
           <div className="flex min-w-0 items-center gap-x-2">
@@ -255,9 +324,7 @@ export const ArrivalRowItem = ({
   const leading =
     rank || identityLead ? (
       <div className="flex min-w-0 items-center gap-x-2">
-        {rank ? (
-          <QuietChip aria-hidden>{rank}</QuietChip>
-        ) : null}
+        {rank ? <ArrivalRankChip rank={rank} /> : null}
         {identityLead}
       </div>
     ) : null
@@ -308,11 +375,10 @@ const useArrivalsPageTrack = (pageCount: number) => {
     const safe = Math.max(0, pageCount - 1)
     setActivePage(safe)
     const frame = requestAnimationFrame(() => {
-      slideRefs.current[safe]?.scrollIntoView({
-        inline: "start",
-        block: "nearest",
-        behavior: "auto",
-      })
+      scrollArrivalsTrackToSlide(
+        containerRef.current,
+        slideRefs.current[safe]
+      )
     })
     return () => cancelAnimationFrame(frame)
   }, [activePage, pageCount])
@@ -361,11 +427,10 @@ const useArrivalsPageTrack = (pageCount: number) => {
   const goToPage = useCallback(
     (index: number) => {
       const safe = Math.min(Math.max(0, index), Math.max(0, pageCount - 1))
-      slideRefs.current[safe]?.scrollIntoView({
-        inline: "start",
-        block: "nearest",
-        behavior: "auto",
-      })
+      scrollArrivalsTrackToSlide(
+        containerRef.current,
+        slideRefs.current[safe]
+      )
       setActivePage(safe)
     },
     [pageCount]
@@ -390,6 +455,7 @@ const useArrivalsPageTrack = (pageCount: number) => {
     containerRef,
     setSlideRef,
     activePage: Math.min(activePage, Math.max(0, pageCount - 1)),
+    goToPage,
     handlePrev,
     handleNext,
   }
@@ -612,6 +678,7 @@ const PagedArrivalRows = ({
   emptyLabel,
   showLineChip = false,
   hoistPlatform = false,
+  hoistRouteChip = false,
   ranks,
 }: {
   rows: readonly ArrivalsPreparedRow[]
@@ -622,6 +689,7 @@ const PagedArrivalRows = ({
   emptyLabel: string
   showLineChip?: boolean
   hoistPlatform?: boolean
+  hoistRouteChip?: boolean
   ranks?: readonly number[]
 }) => {
   const trailingCount = dashCount + (showEndMessage ? 1 : 0)
@@ -651,6 +719,7 @@ const PagedArrivalRows = ({
             }
             showLineChip={showLineChip}
             hoistPlatform={hoistPlatform}
+            hoistRouteChip={hoistRouteChip}
             rank={ranks?.[index]}
           />
         ))
@@ -680,6 +749,8 @@ const ArrivalsPageTrack = ({
   className,
   showLineChip = false,
   hoistPlatform = false,
+  hoistRouteChip = false,
+  onScroll,
 }: {
   pages: readonly ArrivalsPageFill[]
   mode: ArrivalsBoardMode
@@ -690,6 +761,8 @@ const ArrivalsPageTrack = ({
   className?: string
   showLineChip?: boolean
   hoistPlatform?: boolean
+  hoistRouteChip?: boolean
+  onScroll?: UIEventHandler<HTMLDivElement>
 }) => {
   if (pages.length <= 1) {
     const only = pages[0]
@@ -708,6 +781,7 @@ const ArrivalsPageTrack = ({
           emptyLabel={emptyLabel}
           showLineChip={showLineChip}
           hoistPlatform={hoistPlatform}
+          hoistRouteChip={hoistRouteChip}
         />
       </ul>
     )
@@ -716,7 +790,8 @@ const ArrivalsPageTrack = ({
   return (
     <div
       ref={containerRef}
-      className="flex min-w-0 snap-x snap-mandatory gap-x-6 overflow-x-auto overscroll-x-contain scrollbar-none"
+      onScroll={onScroll}
+      className="flex min-w-0 snap-x snap-mandatory gap-x-6 overflow-x-auto overflow-y-clip overscroll-x-contain scrollbar-none"
     >
       {pages.map((page, index) => (
         <ul
@@ -739,6 +814,7 @@ const ArrivalsPageTrack = ({
             emptyLabel={emptyLabel}
             showLineChip={showLineChip}
             hoistPlatform={hoistPlatform}
+            hoistRouteChip={hoistRouteChip}
           />
         </ul>
       ))}
@@ -753,8 +829,6 @@ type UnattendedArrivalSession = {
   paused: boolean
   started: boolean
   dwellMs: number
-  handlePointerEnter: ReturnType<typeof useUnattendedSequence>["handlePointerEnter"]
-  handlePointerLeave: ReturnType<typeof useUnattendedSequence>["handlePointerLeave"]
   handleFocus: ReturnType<typeof useUnattendedSequence>["handleFocus"]
   handleBlur: ReturnType<typeof useUnattendedSequence>["handleBlur"]
 }
@@ -763,7 +837,6 @@ const useUnattendedArrivalSession = ({
   rows,
   pageSize,
   pinFirst = true,
-  pinAdvance,
   lockHeight = true,
   dwellMs = UNATTENDED_DEFAULT_DWELL_MS,
   startDelayMs = 0,
@@ -772,15 +845,48 @@ const useUnattendedArrivalSession = ({
   rows: readonly ArrivalsPreparedRow[]
   pageSize: number
   pinFirst?: boolean
-  pinAdvance?: ArrivalsPinAdvance
   lockHeight?: ArrivalsLockHeight
   dwellMs?: number
   startDelayMs?: number
   enabled: boolean
 }): UnattendedArrivalSession => {
+  const livePageCount = useMemo(
+    () => buildPinnedFrames(rows, pageSize, { pinFirst, lockHeight }).pageCount,
+    [lockHeight, pageSize, pinFirst, rows]
+  )
+  const shouldHold = enabled && livePageCount > 1
+  const configKey = `${pageSize}|${String(pinFirst)}|${String(lockHeight)}`
+
+  const [held, setHeld] = useState({
+    rows,
+    configKey,
+    generation: 0,
+  })
+  const [holding, setHolding] = useState(shouldHold)
+  const [seenIndex, setSeenIndex] = useState<number | null>(null)
+  const [generation, setGeneration] = useState(0)
+
+  const snapshotNow =
+    shouldHold &&
+    (!holding ||
+      held.configKey !== configKey ||
+      held.generation !== generation)
+
+  if (snapshotNow) {
+    setHolding(true)
+    setHeld({ rows, configKey, generation })
+  } else if (!shouldHold && holding) {
+    setHolding(false)
+  }
+
+  const committedRows = shouldHold
+    ? snapshotNow
+      ? rows
+      : held.rows
+    : rows
   const { frames } = useMemo(
-    () => buildPinnedFrames(rows, pageSize, { pinFirst, pinAdvance, lockHeight }),
-    [lockHeight, pageSize, pinAdvance, pinFirst, rows]
+    () => buildPinnedFrames(committedRows, pageSize, { pinFirst, lockHeight }),
+    [committedRows, lockHeight, pageSize, pinFirst]
   )
   const itemIds = useMemo(() => frames.map((frame) => frame.id), [frames])
   const sequence = useUnattendedSequence({
@@ -789,16 +895,25 @@ const useUnattendedArrivalSession = ({
     startDelayMs,
     enabled: enabled && itemIds.length > 1,
   })
+
+  if (!shouldHold) {
+    if (seenIndex !== null) setSeenIndex(null)
+  } else if (seenIndex === null) {
+    setSeenIndex(sequence.index)
+  } else if (seenIndex !== sequence.index) {
+    setSeenIndex(sequence.index)
+    setGeneration((value) => value + 1)
+  }
+
   const frame = frames[sequence.index] ?? frames[0]
+  const refreshed = frame ? refreshFrameRows(frame, rows) : frame
   return {
-    frame,
+    frame: refreshed,
     canAdvance: itemIds.length > 1,
-    frameKey: frame?.id ?? "empty",
+    frameKey: refreshed?.id ?? "empty",
     paused: sequence.pauseReasons.length > 0,
     started: sequence.started,
     dwellMs,
-    handlePointerEnter: sequence.handlePointerEnter,
-    handlePointerLeave: sequence.handlePointerLeave,
     handleFocus: sequence.handleFocus,
     handleBlur: sequence.handleBlur,
   }
@@ -812,6 +927,7 @@ const UnattendedArrivalFrames = ({
   className,
   showLineChip = false,
   hoistPlatform = false,
+  hoistRouteChip = false,
 }: {
   session: UnattendedArrivalSession
   mode: ArrivalsBoardMode
@@ -820,6 +936,7 @@ const UnattendedArrivalFrames = ({
   className?: string
   showLineChip?: boolean
   hoistPlatform?: boolean
+  hoistRouteChip?: boolean
 }) => {
   const frame = session.frame
   return (
@@ -837,6 +954,7 @@ const UnattendedArrivalFrames = ({
         emptyLabel={emptyLabel}
         showLineChip={showLineChip}
         hoistPlatform={hoistPlatform}
+        hoistRouteChip={hoistRouteChip}
         ranks={frame?.ranks}
       />
     </ul>
@@ -938,9 +1056,9 @@ export const ArrivalsBoundGroup = ({
   classNames,
   behaviour = "interactive",
   pinFirst = true,
-  pinAdvance,
   dwellMs,
   startDelayMs,
+  idleReturnMs = INTERACTIVE_IDLE_RETURN_MS,
 }: {
   bound: ArrivalsPreparedBound
   mode: ArrivalsBoardMode
@@ -951,16 +1069,18 @@ export const ArrivalsBoundGroup = ({
   classNames?: ArrivalsBoardClassNames
   behaviour?: DisplayBehaviour
   pinFirst?: boolean
-  pinAdvance?: ArrivalsPinAdvance
   dwellMs?: number
   startDelayMs?: number
+  idleReturnMs?: number
 }) => {
   const canPage = Boolean(bound.label) && pageSize > 0
   const unattended = behaviour === "unattended" && canPage
+  // Live interactive pages: always chunk the current rows. Do not freeze
+  // ordering while someone browses a later page.
   const chunked = chunkBoundPages(bound.rows, canPage ? pageSize : 0, {
     lockHeight: canPage,
   })
-  const { containerRef, setSlideRef, activePage, handlePrev, handleNext } =
+  const { containerRef, setSlideRef, activePage, goToPage, handlePrev, handleNext } =
     useArrivalsPageTrack(unattended ? 1 : chunked.pageCount)
   const showPager = canPage && !unattended && chunked.pageCount > 1
   const emptyScope = bound.label ? `${lineName} ${bound.label}` : lineName
@@ -969,11 +1089,15 @@ export const ArrivalsBoundGroup = ({
     rows: bound.rows,
     pageSize,
     pinFirst,
-    pinAdvance,
     lockHeight: true,
     dwellMs,
     startDelayMs,
     enabled: unattended,
+  })
+  const idle = useInteractiveIdleReturn({
+    enabled: showPager,
+    idleMs: idleReturnMs,
+    onReturnToFirst: () => goToPage(0),
   })
 
   return (
@@ -981,10 +1105,12 @@ export const ArrivalsBoundGroup = ({
       data-slot="arrivals-subgroup"
       data-bound={boundDataAttr(bound)}
       className={cn("group/bound min-w-0", classNames?.subgroup)}
-      onPointerEnter={unattended ? session.handlePointerEnter : undefined}
-      onPointerLeave={unattended ? session.handlePointerLeave : undefined}
-      onFocus={unattended ? session.handleFocus : undefined}
-      onBlur={unattended ? session.handleBlur : undefined}
+      onPointerEnter={unattended ? undefined : idle.handlePointerEnter}
+      onPointerLeave={unattended ? undefined : idle.handlePointerLeave}
+      onPointerDown={unattended ? undefined : idle.handlePointerDown}
+      onFocus={unattended ? session.handleFocus : idle.handleFocus}
+      onBlur={unattended ? session.handleBlur : idle.handleBlur}
+      onKeyDown={unattended ? undefined : idle.handleKeyDown}
     >
       {bound.label ? (
         <div
@@ -1035,6 +1161,7 @@ export const ArrivalsBoundGroup = ({
           className={classNames?.rows}
           showLineChip={showLineChip}
           hoistPlatform={bound.platformUniform}
+          onScroll={showPager ? idle.handleScroll : undefined}
         />
       )}
     </li>
@@ -1043,17 +1170,24 @@ export const ArrivalsBoundGroup = ({
 
 export const ArrivalsGroupHeader = ({
   group,
+  mode = "rail",
   headingLevel,
   pager,
 }: {
   group: ArrivalsPreparedGroup
+  mode?: ArrivalsBoardMode
   headingLevel: 1 | 2
   pager?: ReactNode
 }) => {
   const LineHeadingTag = headingLevel === 2 ? "h3" : "h2"
   const lineIds = group.lineIds.length > 0 ? group.lineIds : [group.lineId]
   const isMerged = lineIds.length > 1
-  const lineKey = group.kind === "bus-route" ? "buses" : group.lineId
+  const lineKey =
+    mode === "river"
+      ? "river"
+      : group.kind === "bus-route"
+        ? "buses"
+        : group.lineId
   const isStriped = Boolean(
     group.kind === "rail-line" &&
       group.modeName &&
@@ -1126,9 +1260,9 @@ export const ArrivalsPagedGroup = ({
   classNames,
   behaviour = "interactive",
   pinFirst = true,
-  pinAdvance,
   dwellMs,
   startDelayMs,
+  idleReturnMs = INTERACTIVE_IDLE_RETURN_MS,
 }: {
   group: ArrivalsPreparedGroup
   mode: ArrivalsBoardMode
@@ -1138,9 +1272,9 @@ export const ArrivalsPagedGroup = ({
   classNames?: ArrivalsBoardClassNames
   behaviour?: DisplayBehaviour
   pinFirst?: boolean
-  pinAdvance?: ArrivalsPinAdvance
   dwellMs?: number
   startDelayMs?: number
+  idleReturnMs?: number
 }) => {
   const rows = group.bounds.flatMap((bound) => bound.rows)
   const canPage = pageSize > 0
@@ -1148,7 +1282,7 @@ export const ArrivalsPagedGroup = ({
   const chunked = chunkBoundPages(rows, canPage ? pageSize : 0, {
     lockHeight: canPage ? "when-paged" : false,
   })
-  const { containerRef, setSlideRef, activePage, handlePrev, handleNext } =
+  const { containerRef, setSlideRef, activePage, goToPage, handlePrev, handleNext } =
     useArrivalsPageTrack(unattended ? 1 : chunked.pageCount)
   const showPager = canPage && !unattended && chunked.pageCount > 1
   const emptyLabel = `${group.lineName}: ${ARRIVALS_LINE_EMPTY_COPY}`
@@ -1156,11 +1290,15 @@ export const ArrivalsPagedGroup = ({
     rows,
     pageSize,
     pinFirst,
-    pinAdvance,
     lockHeight: "when-paged",
     dwellMs,
     startDelayMs,
     enabled: unattended,
+  })
+  const idle = useInteractiveIdleReturn({
+    enabled: showPager,
+    idleMs: idleReturnMs,
+    onReturnToFirst: () => goToPage(0),
   })
 
   return (
@@ -1171,13 +1309,16 @@ export const ArrivalsPagedGroup = ({
         "group/bound @container/arrivals-group min-w-0",
         classNames?.group
       )}
-      onPointerEnter={unattended ? session.handlePointerEnter : undefined}
-      onPointerLeave={unattended ? session.handlePointerLeave : undefined}
-      onFocus={unattended ? session.handleFocus : undefined}
-      onBlur={unattended ? session.handleBlur : undefined}
+      onPointerEnter={unattended ? undefined : idle.handlePointerEnter}
+      onPointerLeave={unattended ? undefined : idle.handlePointerLeave}
+      onPointerDown={unattended ? undefined : idle.handlePointerDown}
+      onFocus={unattended ? session.handleFocus : idle.handleFocus}
+      onBlur={unattended ? session.handleBlur : idle.handleBlur}
+      onKeyDown={unattended ? undefined : idle.handleKeyDown}
     >
       <ArrivalsGroupHeader
         group={group}
+        mode={mode}
         headingLevel={headingLevel}
         pager={
           unattended ? (
@@ -1206,6 +1347,7 @@ export const ArrivalsPagedGroup = ({
           isLast={isLastGroup}
           emptyLabel={emptyLabel}
           className={classNames?.rows}
+          hoistRouteChip
         />
       ) : (
         <ArrivalsPageTrack
@@ -1216,6 +1358,8 @@ export const ArrivalsPagedGroup = ({
           containerRef={containerRef}
           setSlideRef={setSlideRef}
           className={classNames?.rows}
+          hoistRouteChip
+          onScroll={showPager ? idle.handleScroll : undefined}
         />
       )}
     </section>
@@ -1230,9 +1374,9 @@ export const ArrivalsPagedList = ({
   classNames,
   behaviour = "interactive",
   pinFirst = true,
-  pinAdvance,
   dwellMs,
   startDelayMs,
+  idleReturnMs = INTERACTIVE_IDLE_RETURN_MS,
 }: {
   rows: readonly ArrivalsPreparedRow[]
   mode: ArrivalsBoardMode
@@ -1240,36 +1384,42 @@ export const ArrivalsPagedList = ({
   classNames?: ArrivalsBoardClassNames
   behaviour?: DisplayBehaviour
   pinFirst?: boolean
-  pinAdvance?: ArrivalsPinAdvance
   dwellMs?: number
   startDelayMs?: number
+  idleReturnMs?: number
 }) => {
   const canPage = pageSize > 0
   const unattended = behaviour === "unattended" && canPage
   const chunked = chunkBoundPages(rows, canPage ? pageSize : 0, {
     lockHeight: canPage ? "when-paged" : false,
   })
-  const { containerRef, setSlideRef, activePage, handlePrev, handleNext } =
+  const { containerRef, setSlideRef, activePage, goToPage, handlePrev, handleNext } =
     useArrivalsPageTrack(unattended ? 1 : chunked.pageCount)
   const showPager = canPage && !unattended && chunked.pageCount > 1
   const session = useUnattendedArrivalSession({
     rows,
     pageSize,
     pinFirst,
-    pinAdvance,
     lockHeight: "when-paged",
     dwellMs,
     startDelayMs,
     enabled: unattended,
   })
+  const idle = useInteractiveIdleReturn({
+    enabled: showPager,
+    idleMs: idleReturnMs,
+    onReturnToFirst: () => goToPage(0),
+  })
 
   return (
     <div
       className="group/bound min-w-0"
-      onPointerEnter={unattended ? session.handlePointerEnter : undefined}
-      onPointerLeave={unattended ? session.handlePointerLeave : undefined}
-      onFocus={unattended ? session.handleFocus : undefined}
-      onBlur={unattended ? session.handleBlur : undefined}
+      onPointerEnter={unattended ? undefined : idle.handlePointerEnter}
+      onPointerLeave={unattended ? undefined : idle.handlePointerLeave}
+      onPointerDown={unattended ? undefined : idle.handlePointerDown}
+      onFocus={unattended ? session.handleFocus : idle.handleFocus}
+      onBlur={unattended ? session.handleBlur : idle.handleBlur}
+      onKeyDown={unattended ? undefined : idle.handleKeyDown}
     >
       {unattended ? (
         <UnattendedArrivalFrames
@@ -1288,6 +1438,7 @@ export const ArrivalsPagedList = ({
           containerRef={containerRef}
           setSlideRef={setSlideRef}
           className={classNames?.rows}
+          onScroll={showPager ? idle.handleScroll : undefined}
         />
       )}
       {unattended ? (

@@ -171,6 +171,7 @@ const SLUG_ALIASES: Record<string, string> = {
   "arrivals-board": "tube-rail-arrivals",
   "rail-arrivals-board": "tube-rail-arrivals",
   "bus-arrivals-board": "bus-arrivals",
+  "river-bus-arrivals-board": "river-bus-arrivals",
   "tube-status-board": "tube-rail-status",
   "station-name": "station-name-labels",
   "station-labels": "station-name-labels",
@@ -340,7 +341,8 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     usesFoundations: ["colours", "tfl-roundel"],
   },
   {
-    slug: "bus-arrivals",    title: "Bus Arrivals",
+    slug: "bus-arrivals",
+    title: "Bus Arrivals",
     description:
       "Departures at a bus stop. Flat by default, or grouped by route.",
     group: "interfaces",
@@ -374,15 +376,20 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "river-bus-arrivals",
     title: "River bus arrivals",
-    description: "River bus pier departures. Coming soon.",
+    description:
+      "Departures at a river bus pier. Flat by default, or grouped by route.",
     group: "interfaces",
-    kind: "placeholder",
+    kind: "component",
     href: "/docs/river-bus-arrivals",
     sidebarSection: "components",
     sidebarOrder: 40,
     preferred: true,
     modeMarker: "river",
-    comingSoon: true,
+    registryName: "river-bus-arrivals-board",
+    registryUrl: `${REGISTRY_BASE}/river-bus-arrivals-board.json`,
+    layer: "data-aware",
+    builtWith: ["station-name-labels"],
+    usesFoundations: ["colours", "tfl-roundel"],
   },
   {
     slug: "cycle-hire-docks",

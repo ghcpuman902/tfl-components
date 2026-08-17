@@ -12,8 +12,12 @@ import {
   type SetStateAction,
 } from "react"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
+import { RiverRouteChip } from "@/components/tfl/arrivals/river-route-chip"
 import type { BusStopDisruption } from "@/lib/tfl/prepare-bus-stop-disruptions"
+import { riverRouteChipCopy } from "@/lib/tfl/river-bus"
 import { cn } from "@/lib/utils"
+
+export type StopDisruptionChipVariant = "bus" | "river"
 
 /**
  * Warning-badge colour for disrupted routes. Not a published TfL Colour
@@ -28,6 +32,7 @@ const TRIGGER_SLOT = "bus-stop-disruption-trigger"
 
 type DisruptionContextValue = {
   disruptions: readonly BusStopDisruption[]
+  variant: StopDisruptionChipVariant
   activeLineId: string | null
   setActiveLineId: Dispatch<SetStateAction<string | null>>
 }
@@ -45,9 +50,11 @@ const DisruptionContext = createContext<DisruptionContextValue | null>(null)
  */
 export const BusStopDisruptionBoundary = ({
   disruptions,
+  variant = "bus",
   children,
 }: {
   disruptions: readonly BusStopDisruption[]
+  variant?: StopDisruptionChipVariant
   children: ReactNode
 }) => {
   const [activeLineId, setActiveLineId] = useState<string | null>(null)
@@ -58,7 +65,7 @@ export const BusStopDisruptionBoundary = ({
 
   return (
     <DisruptionContext.Provider
-      value={{ disruptions, activeLineId, setActiveLineId }}
+      value={{ disruptions, variant, activeLineId, setActiveLineId }}
     >
       <div className="relative">{children}</div>
     </DisruptionContext.Provider>
@@ -73,7 +80,7 @@ export const BusStopDisruptionBoundary = ({
  */
 const BADGE_GEOMETRY = {
   sm: { badge: 14, cutout: 9, insetX: 0, insetY: 3, stroke: [2, 6] as const, dot: 2, gap: 1.5 },
-  lg: { badge: 20, cutout: 13, insetX: 4, insetY: 4, stroke: [2.5, 8] as const, dot: 2.5, gap: 2 },
+  lg: { badge: 20, cutout: 13, insetX: 0, insetY: 4, stroke: [2.5, 8] as const, dot: 2.5, gap: 2 },
 }
 
 /**
@@ -131,28 +138,39 @@ const WarningMark = ({
 )
 
 /** Route chip with a masked-through warning badge pinned to its top-right corner. */
-const DisruptedBusNumberChip = ({
-  label,
+const DisruptedRouteChip = ({
+  lineId,
+  variant,
   size = "sm",
   chipClassName,
 }: {
-  label: string
+  lineId: string
+  variant: StopDisruptionChipVariant
   size?: "sm" | "lg"
   chipClassName?: string
 }) => {
   const geometry = BADGE_GEOMETRY[size]
+  const mask = cutoutMaskStyle(geometry.cutout, geometry.insetX, geometry.insetY)
   return (
-    <span className="relative inline-flex shrink-0">
-      <BusNumberChip
-        label={label}
-        className={chipClassName}
-        style={cutoutMaskStyle(geometry.cutout, geometry.insetX, geometry.insetY)}
-      />
+    <span className="relative inline-flex shrink-0 overflow-visible">
+      {variant === "river" ? (
+        <RiverRouteChip
+          lineId={lineId}
+          className={chipClassName}
+          style={mask}
+        />
+      ) : (
+        <BusNumberChip
+          label={lineId}
+          className={chipClassName}
+          style={mask}
+        />
+      )}
       <span
-        className="absolute flex -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full"
+        className="absolute flex items-center justify-center rounded-full"
         style={{
-          top: geometry.insetY,
-          right: geometry.insetX,
+          top: geometry.insetY - geometry.badge / 2,
+          right: geometry.insetX - geometry.badge / 2,
           width: geometry.badge,
           height: geometry.badge,
           backgroundColor: BUS_DISRUPTION_WARNING_COLOR,
@@ -164,6 +182,18 @@ const DisruptedBusNumberChip = ({
   )
 }
 
+const disruptionTriggerLabel = (
+  variant: StopDisruptionChipVariant,
+  lineId: string,
+  description: string,
+): string => {
+  const identity =
+    variant === "river"
+      ? riverRouteChipCopy(lineId).ariaLabel
+      : `Route ${lineId}`
+  return `${identity} disruption: ${description}`
+}
+
 /**
  * Header trigger row — one warning chip per disrupted route, painted
  * inline after the stop name. Mouse hover opens; tap/`click` toggles.
@@ -172,18 +202,10 @@ const DisruptedBusNumberChip = ({
  * the cover straight back shut. Any other chip dims to `opacity-50`
  * while one is active so the open one reads as selected.
  *
- * Each trigger's hit area spans the title row height and butts up
- * against its neighbour with zero gap (visual spacing comes from
- * padding *inside* each button) — moving the pointer from one chip to
- * the next never crosses a dead zone that would blink the cover closed.
- *
- * Painted chip stays at arrival-row size (`h-5` / `text-xs` / `5ch`).
- * Title-relative `ex` on the same node as height collapses the padding.
- *
- * `translate-y-[0.35em]` nudges the chips to track the stop title's
- * cap-height baseline (`STATION_NAME_TITLE_CLASS` trims to
- * cap-alphabetic, which sits lower than dead-centre) rather than the
- * tile's geometric middle. `em` scales with the row's `text-3xl` context.
+ * Triggers sit on the title baseline, immediately after the name.
+ * Neighbours share a zero-gap hit strip (padding is inside each button)
+ * so the pointer never crosses a dead zone that would blink the cover
+ * closed. Painted chip stays `h-5` / `text-xs` / `5ch`.
  */
 export const BusStopDisruptionChips = ({
   className,
@@ -192,10 +214,15 @@ export const BusStopDisruptionChips = ({
 }) => {
   const ctx = useContext(DisruptionContext)
   if (!ctx || ctx.disruptions.length === 0) return null
-  const { disruptions, activeLineId, setActiveLineId } = ctx
+  const { disruptions, variant, activeLineId, setActiveLineId } = ctx
 
   return (
-    <div className={cn("flex h-full translate-y-[0.35em] items-stretch", className)}>
+    <div
+      className={cn(
+        "flex shrink-0 items-center pr-2",
+        className,
+      )}
+    >
 
       {disruptions.map((disruption) => {
         const isActive = activeLineId === disruption.lineId
@@ -210,7 +237,11 @@ export const BusStopDisruptionChips = ({
               isDimmed && "opacity-50"
             )}
             aria-expanded={isActive}
-            aria-label={`Route ${disruption.lineId} disruption: ${disruption.description}`}
+            aria-label={disruptionTriggerLabel(
+              variant,
+              disruption.lineId,
+              disruption.description,
+            )}
             onPointerEnter={(event) => {
               if (event.pointerType !== "mouse") return
               setActiveLineId(disruption.lineId)
@@ -227,8 +258,9 @@ export const BusStopDisruptionChips = ({
               )
             }
           >
-            <DisruptedBusNumberChip
-              label={disruption.lineId}
+            <DisruptedRouteChip
+              lineId={disruption.lineId}
+              variant={variant}
               size="sm"
             />
           </button>
@@ -272,8 +304,9 @@ export const BusStopDisruptionCover = () => {
       role="status"
     >
       <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-base text-pretty text-foreground">
-        <DisruptedBusNumberChip
-          label={active.lineId}
+        <DisruptedRouteChip
+          lineId={active.lineId}
+          variant={ctx.variant}
           size="lg"
           chipClassName="h-8 w-[6ch] text-base"
         />

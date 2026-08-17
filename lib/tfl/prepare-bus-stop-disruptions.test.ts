@@ -89,4 +89,50 @@ describe("prepareBusStopDisruptions", () => {
     )
     assert.deepEqual(result, [])
   })
+
+  it("attaches an RB1 mention to that river line", () => {
+    const result = prepareBusStopDisruptions(
+      [
+        {
+          description:
+            "RB1 is not calling at this pier until\\n21:00 on Friday 21 August. tfl.gov.uk.\\n",
+        },
+      ],
+      [],
+    )
+    assert.deepEqual(result, [
+      {
+        lineId: "rb1",
+        description:
+          "RB1 is not calling at this pier until 21:00 on Friday 21 August. tfl.gov.uk.",
+      },
+    ])
+  })
+
+  it("canonicalises Woolwich Ferry mentions", () => {
+    const result = prepareBusStopDisruptions(
+      [{ description: "Woolwich Ferry is not running this evening" }],
+      [],
+    )
+    assert.equal(result[0]?.lineId, "woolwich-ferry")
+  })
+
+  it("fans a pier-wide closure out to river routes in rows", () => {
+    const result = prepareBusStopDisruptions(
+      [{ description: "Pier Closed\\nuntil 17:00 Tuesday 18 August\\n\\n" }],
+      [{ lineName: "RB1" }, { lineName: "RB6" }, { lineName: "RB1" }],
+    )
+    assert.deepEqual(
+      result.map((d) => d.lineId).sort(),
+      ["rb1", "rb6"],
+    )
+  })
+
+  it("does not treat a bus route mention as a river line", () => {
+    const result = prepareBusStopDisruptions(
+      [{ description: "Route 164 is on diversion" }],
+      [],
+    )
+    assert.deepEqual(result.map((d) => d.lineId), ["164"])
+  })
 })

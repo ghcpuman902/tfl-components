@@ -185,6 +185,46 @@ export const CAPWORTH_STREET_DISRUPTION = {
   description: "Bus Stop Closed\\nuntil 17:00 Tuesday 18 August\\n\\n",
 }
 
+const river = (
+  id: string,
+  lineId: string,
+  lineName: string,
+  destinationName: string,
+  timeToStation: number,
+): RealtimePrediction =>
+  prediction({
+    id,
+    lineId,
+    lineName,
+    modeName: "river-bus",
+    platformName: "inbound",
+    towards: "",
+    destinationName,
+    timeToStation,
+  })
+
+/**
+ * Canary Wharf Pier — RB1 and RB6 interleaved, enough rows to page
+ * unattended at `pageSize` 3.
+ */
+export const CANARY_WHARF_ARRIVALS: readonly RealtimePrediction[] = [
+  river("rb1-1", "rb1", "RB1", "Westminster Pier", 80),
+  river("rb6-1", "rb6", "RB6", "Putney Pier", 140),
+  river("rb1-2", "rb1", "RB1", "Barking Riverside Pier", 260),
+  river("rb6-2", "rb6", "RB6", "North Greenwich Pier", 380),
+  river("rb1-3", "rb1", "RB1", "Westminster Pier", 500),
+  river("rb6-3", "rb6", "RB6", "Putney Pier", 620),
+]
+
+/**
+ * Same `DisruptedPoint` shape as bus `stopPoint.getDisruption`. Pier-wide
+ * (no route named), so `prepareBusStopDisruptions` fans it out to every
+ * river route in `CANARY_WHARF_ARRIVALS`.
+ */
+export const CANARY_WHARF_PIER_DISRUPTION = {
+  description: "Pier Closed\\nuntil 17:00 Tuesday 18 August\\n\\n",
+}
+
 /** Liverpool Street serving lines used to demo a shared-track merge. */
 export const LIVERPOOL_STREET_LINES: readonly RailArrivalsLine[] = [
   {

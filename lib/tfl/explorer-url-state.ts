@@ -7,7 +7,7 @@
 export const EXPLORER_PATH = "/docs/explorer";
 
 export type ExplorerKind = "points" | "lines";
-export type ExplorerDomain = "tube-rail" | "bus" | "cycle";
+export type ExplorerDomain = "tube-rail" | "bus" | "river" | "cycle";
 export type ExplorerView = "list" | "map";
 export type ExplorerDirection = "inbound" | "outbound";
 
@@ -31,8 +31,13 @@ const KINDS = new Set<ExplorerKind>(["points", "lines"]);
 const VIEWS = new Set<ExplorerView>(["list", "map"]);
 const DIRS = new Set<ExplorerDirection>(["inbound", "outbound"]);
 
-const POINTS_DOMAINS = new Set<ExplorerDomain>(["tube-rail", "bus", "cycle"]);
-const LINES_DOMAINS = new Set<ExplorerDomain>(["tube-rail", "bus"]);
+const POINTS_DOMAINS = new Set<ExplorerDomain>([
+  "tube-rail",
+  "bus",
+  "river",
+  "cycle",
+]);
+const LINES_DOMAINS = new Set<ExplorerDomain>(["tube-rail", "bus", "river"]);
 
 const firstParam = (
   value: string | string[] | undefined,
@@ -163,7 +168,9 @@ export const buildExplorerHref = (
 
 /** Domains available for a given kind. */
 export const domainsForKind = (kind: ExplorerKind): readonly ExplorerDomain[] =>
-  kind === "lines" ? (["tube-rail", "bus"] as const) : (["tube-rail", "bus", "cycle"] as const);
+  kind === "lines"
+    ? (["tube-rail", "bus", "river"] as const)
+    : (["tube-rail", "bus", "river", "cycle"] as const);
 
 export const domainLabel = (domain: ExplorerDomain): string => {
   switch (domain) {
@@ -171,6 +178,8 @@ export const domainLabel = (domain: ExplorerDomain): string => {
       return "Tube & rail";
     case "bus":
       return "Bus";
+    case "river":
+      return "River";
     case "cycle":
       return "Cycle hire";
   }

@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react"
 import { normalizeLineId, type RealtimePrediction } from "tfl-ts"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
+import type { RoundelPreset } from "@/lib/tfl/roundel-presets"
 import { StationNameTitle } from "@/components/tfl/station-name"
 import {
   BusStopDisruptionBoundary,
@@ -27,12 +28,20 @@ import {
   ArrivalsPagedList,
   type ArrivalsBoardClassNames,
 } from "@/components/tfl/arrivals/arrivals-bound-group"
-import type { ArrivalsPinAdvance } from "@/lib/tfl/arrivals-unattended-frames"
 import type { DisplayBehaviour } from "@/lib/tfl/unattended-sequence"
 
 export type { DisplayBehaviour }
 
-export type ArrivalsBoardMode = "rail" | "bus"
+export type ArrivalsBoardMode = "rail" | "bus" | "river"
+
+const arrivalsRoundelVariant = (mode: ArrivalsBoardMode): RoundelPreset => {
+  if (mode === "bus") return "buses"
+  if (mode === "river") return "river"
+  return "underground"
+}
+
+const isRouteArrivalsMode = (mode: ArrivalsBoardMode): boolean =>
+  mode === "bus" || mode === "river"
 
 export type { ArrivalsBoardClassNames }
 export {
@@ -95,7 +104,7 @@ export const ARRIVALS_RHYTHM_VARS = {
  * Clip, not `hidden`: tiles must not become scroll containers above the page track.
  */
 export const ARRIVALS_TILE_CLASS =
-  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip [content-visibility:auto] [contain-intrinsic-size:auto_3rem]"
+  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip"
 
 const TITLE_CLASS =
   "tfl-title [font-synthesis:none] [font-weight:var(--tfl-title-weight,400)] [letter-spacing:var(--tfl-title-tracking,0)]"
@@ -145,7 +154,7 @@ export const ArrivalsBoardSkeleton = ({
       {stopName ? (
         <>
           <TfLRoundel
-            variant={mode === "bus" ? "buses" : "underground"}
+            variant={arrivalsRoundelVariant(mode)}
             className="size-[var(--arrivals-row)] shrink-0"
             aria-hidden
           />
@@ -163,7 +172,7 @@ export const ArrivalsBoardSkeleton = ({
         <Skeleton className="h-8 w-56 max-w-full" />
       )}
     </div>
-    {mode === "bus" ? (
+    {isRouteArrivalsMode(mode) ? (
       <div>
         {Array.from({ length: 6 }).map((_, rowIndex) => (
           <div
@@ -206,9 +215,9 @@ const GroupBody = ({
   classNames,
   behaviour,
   pinFirst,
-  pinAdvance,
   dwellMs,
   startDelayMs,
+  idleReturnMs,
 }: {
   group: ArrivalsPreparedGroup
   mode: ArrivalsBoardMode
@@ -216,9 +225,9 @@ const GroupBody = ({
   classNames?: ArrivalsBoardClassNames
   behaviour?: DisplayBehaviour
   pinFirst?: boolean
-  pinAdvance?: ArrivalsPinAdvance
   dwellMs?: number
   startDelayMs?: number
+  idleReturnMs?: number
 }) => {
   const labeledBounds = group.bounds.filter((bound) => bound.label)
   // `grid-cols-1` (not block) so consumer `grid-cols-*` variants merge cleanly.
@@ -282,7 +291,7 @@ const GroupBody = ({
           classNames={classNames}
           behaviour={behaviour}
           pinFirst={pinFirst}
-          pinAdvance={pinAdvance}
+          idleReturnMs={idleReturnMs}
           dwellMs={dwellMs}
           startDelayMs={startDelayMs}
         />
@@ -314,7 +323,7 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
   prepared: ArrivalsPreparedBoard
   resolvedStopLetter?: string | null
   /**
-   * Bus only. Per-route disruption warnings — build with
+   * Bus and river. Per-route disruption warnings — build with
    * `prepareBusStopDisruptions` from `stopPoint.getDisruption` output.
    * Renders a warning chip per route in the header; hover/tap covers the
    * rows below with that route's description.
@@ -337,10 +346,10 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
   behaviour?: DisplayBehaviour
   /** Unattended: keep the first arrival visible while later slots rotate. */
   pinFirst?: boolean
-  /** Unattended, when pinned: slide later slots by one, or jump a full window. */
-  pinAdvance?: ArrivalsPinAdvance
   dwellMs?: number
   startDelayMs?: number
+  /** Interactive: return to page 1 after this many idle milliseconds. */
+  idleReturnMs?: number
   /**
    * Root classes, merged over the board container (`data-slot="arrivals-board"`).
    * The root *is* the `arrivals` container, so container-query variants here
@@ -376,9 +385,9 @@ export const ArrivalsBoardView = ({
   pageSizeByLine,
   behaviour,
   pinFirst,
-  pinAdvance,
   dwellMs,
   startDelayMs,
+  idleReturnMs,
   className,
   classNames,
 }: ArrivalsBoardViewProps) => {
@@ -389,6 +398,9 @@ export const ArrivalsBoardView = ({
     !loading &&
     prepared.rows.length === 0 &&
     prepared.groups.length === 0
+  const showStopDisruptions = mode === "bus" || mode === "river"
+  const hasStopDisruptionChips =
+    showStopDisruptions && disruptions.length > 0
 
   return (
     <div
@@ -396,28 +408,36 @@ export const ArrivalsBoardView = ({
       className={cn("@container/arrivals w-full", className)}
       style={ARRIVALS_RHYTHM_VARS}
     >
-      <BusStopDisruptionBoundary disruptions={mode === "bus" ? disruptions : []}>
+      <BusStopDisruptionBoundary
+        disruptions={showStopDisruptions ? disruptions : []}
+        variant={mode === "river" ? "river" : "bus"}
+      >
       <div
         className={cn(
           "flex min-w-0 items-center gap-x-3 text-3xl",
-          ARRIVALS_TILE_CLASS
+          ARRIVALS_TILE_CLASS,
+          hasStopDisruptionChips && "overflow-visible",
         )}
       >
         <TfLRoundel
-          variant={mode === "bus" ? "buses" : "underground"}
+          variant={arrivalsRoundelVariant(mode)}
           className="size-[var(--arrivals-row)] shrink-0"
           aria-hidden
         />
         {stopName ? (
           <TitleTag
             className={cn(
-              "flex h-full min-w-0 flex-1 items-center gap-x-1.5",
+              "flex h-full min-w-0 flex-1 items-center",
               TITLE_CLASS
             )}
             aria-label={stopName}
           >
-            <StationNameTitle name={stopName} />
-            {mode === "bus" ? <BusStopDisruptionChips /> : null}
+            <StationNameTitle
+              name={stopName}
+              end={
+                hasStopDisruptionChips ? <BusStopDisruptionChips /> : undefined
+              }
+            />
           </TitleTag>
         ) : loading ? (
           <Skeleton className="h-8 w-56 max-w-full" />
@@ -469,11 +489,11 @@ export const ArrivalsBoardView = ({
           classNames={classNames}
           behaviour={behaviour}
           pinFirst={pinFirst}
-          pinAdvance={pinAdvance}
+          idleReturnMs={idleReturnMs}
           dwellMs={dwellMs}
           startDelayMs={startDelayMs}
         />
-      ) : mode === "bus" ? (
+      ) : isRouteArrivalsMode(mode) ? (
         <div
           data-slot="arrivals-groups"
           className={cn("grid grid-cols-1", classNames?.groups)}
@@ -489,7 +509,7 @@ export const ArrivalsBoardView = ({
               classNames={classNames}
               behaviour={behaviour}
               pinFirst={pinFirst}
-              pinAdvance={pinAdvance}
+              idleReturnMs={idleReturnMs}
               dwellMs={dwellMs}
               startDelayMs={startDelayMs}
             />
@@ -514,7 +534,11 @@ export const ArrivalsBoardView = ({
                 classNames?.group
               )}
             >
-              <ArrivalsGroupHeader group={group} headingLevel={headingLevel} />
+              <ArrivalsGroupHeader
+                group={group}
+                mode={mode}
+                headingLevel={headingLevel}
+              />
               <GroupBody
                 group={group}
                 mode={mode}
@@ -527,7 +551,7 @@ export const ArrivalsBoardView = ({
                 classNames={classNames}
                 behaviour={behaviour}
                 pinFirst={pinFirst}
-                pinAdvance={pinAdvance}
+                idleReturnMs={idleReturnMs}
                 dwellMs={dwellMs}
                 startDelayMs={startDelayMs}
               />

@@ -83,7 +83,7 @@ Groups by line, then by compass bound from `platformName`. Default order is West
 
 Line sections stay in canonical `LINE_ORDER`. Empty expected lines keep that slot. Pass optional `lines` for the stop's serving set so a line with no predictions still renders a muted **No information** row. When `lines[].bounds` lists the compass sides that station actually serves, those bound groups still render even if the current poll has no trains that way. Otherwise a missing side is omitted.
 
-Each bound occupies `pageSize` arrival tiles, default 3 — including a short only page and a seeded empty group. Override per line with `pageSizeByLine` (ID-keyed map; falls back to `pageSize`). Extra pages sit in a native horizontal scroll-snap track. Each slide is locked to the track width, so destination wrap / abbreviation via [`StationName`](/docs/station-name-labels) is the same on page 1 and page 5 — a slide must not grow to the destination's max-content. On hover-capable pointers, hover the bound label and its rows for quiet arrows with a `1/5` count — clicks jump instantly. On touch screens, swipe the bound rows; half-opacity page dots stay visible in place of the arrows. A short page with arrivals uses the last spare tile for **No more arrivals** and quiet dashes in any tiles between. Zero arrivals stay **No information**, then dashes — not an end-of-list state. Exact multiples of `pageSize` stay full. The pager hides when there is only one page.
+Each bound occupies `pageSize` arrival tiles, default 3 — including a short only page and a seeded empty group. Override per line with `pageSizeByLine` (ID-keyed map; falls back to `pageSize`). Extra pages sit in a native horizontal scroll-snap track. Each slide is locked to the track width, so destination wrap / abbreviation via [`StationName`](/docs/station-name-labels) is the same on page 1 and page 5 — a slide must not grow to the destination's max-content. On hover-capable pointers, hover the bound label and its rows for quiet arrows with a `1/5` count — clicks jump instantly. On touch screens, swipe the bound rows; half-opacity page dots stay visible in place of the arrows. New fetches update the current page in place. After inactivity on a later page, the bound returns to the first page. A short page with arrivals uses the last spare tile for **No more arrivals** and quiet dashes in any tiles between. Zero arrivals stay **No information**, then dashes — not an end-of-list state. Exact multiples of `pageSize` stay full. The pager hides when there is only one page.
 
 Pass `lineOrder` to pin section order by line id. Listed lines rank by list position; unlisted serving lines follow, still in canonical order among themselves. Ordering only — it does not hide lines or seed phantom sections.
 
@@ -91,7 +91,7 @@ A completely flat rail board is a different product. It would need a compressed 
 
 ## Behaviour
 
-Unattended keeps the bound height fixed and rotates later arrivals. Rank chips mark place in the full list. The first arrival stays pinned; later slots slide by one unless `pinAdvance` is `jump`.
+Unattended keeps the bound height fixed and rotates later arrivals. Rank chips mark place in the full list. The first arrival stays pinned. Later slots chunk in windows of `pageSize - 1`; only a short final window overlaps (`1 2 3` then `1 4 5`, or `1 3 4` when four arrivals remain). Frames are not swipeable. New ordering is adopted at a frame boundary; countdown updates in place.
 
 <RailUnattendedDemo />
 
@@ -276,6 +276,5 @@ Keep polling outside the board, then update `data`. Freshness and refresh belong
 | `pageSizeByLine` | `Readonly<Record<string, number>>` | ID-keyed rows-per-bound override. Falls back to `pageSize`. Each value applies to every bound on that line. |
 | `behaviour` | `"interactive" \| "unattended"` | Interactive pager, or automatic frames with rank chips. |
 | `pinFirst` | `boolean` | Unattended: keep the next service visible while later slots rotate. Default `true`. |
-| `pinAdvance` | `"slide" \| "jump"` | Unattended, when pinned: slide later slots by one (`1 2 3` then `1 3 4`), or jump a full window. Default `slide`. |
 | `className` | `string` | Root classes, merged over the board container. |
 | `classNames` | `{ groups?, group?, subgroups?, subgroup?, rows? }` | Layout-level class overrides for generated `data-slot` levels. |

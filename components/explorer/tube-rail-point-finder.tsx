@@ -1,55 +1,26 @@
-"use client";
+"use client"
 
-import { useMemo, useState } from "react";
-import { TfLPointPicker } from "@/components/explorer/tfl-point-picker";
-import { ExplorerPointMapLazy } from "@/components/explorer/explorer-point-map-lazy";
+import { useMemo, useState } from "react"
+import { TfLPointPicker } from "@/components/explorer/tfl-point-picker"
+import { ExplorerPointMapLazy } from "@/components/explorer/explorer-point-map-lazy"
+import { getGeolocation } from "@/hooks/use-explorer-keyed-query"
+import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
+import type { ExplorerView } from "@/lib/tfl/explorer-url-state"
 import {
-  getGeolocation,
-  useExplorerKeyedQuery,
-} from "@/hooks/use-explorer-keyed-query";
-import {
-  collapseExplorerPointsToHubs,
-  normaliseStopPoint,
-  type ExplorerPoint,
-} from "@/lib/tfl/explorer-point-normalise";
-import type { ExplorerView } from "@/lib/tfl/explorer-url-state";
-import { truncateLatLon } from "@/lib/tfl/geo";
-
-const RAIL_MODES = [
-  "tube",
-  "elizabeth-line",
-  "dlr",
-  "overground",
-  "tram",
-] as const;
+  filterExplorerTubeRailPoints,
+  nearbyExplorerTubeRailPoints,
+} from "@/lib/tfl/explorer-tube-rail-search"
 
 type TubeRailPointFinderProps = {
-  selectedId?: string | null;
-  onSelect: (point: ExplorerPoint) => void;
-  view: ExplorerView;
-  onViewChange: (view: ExplorerView) => void;
-  initialQuery?: string;
-  /** Cached catalog — shown until Search / Locate replaces with live results. */
-  initialPoints?: readonly ExplorerPoint[];
-  emptyMessage?: string;
-};
-
-const filterCachedPoints = (
-  points: readonly ExplorerPoint[],
-  query: string,
-): ExplorerPoint[] => {
-  const q = query.trim().toLowerCase();
-  if (!q) return [...points];
-  return points.filter(
-    (point) =>
-      point.name.toLowerCase().includes(q) ||
-      point.id.toLowerCase().includes(q) ||
-      point.hubId?.toLowerCase().includes(q) ||
-      point.aliasIds?.some((alias) => alias.toLowerCase().includes(q)) ||
-      point.lineIds?.some((lineId) => lineId.toLowerCase().includes(q)) ||
-      point.modes?.some((mode) => mode.toLowerCase().includes(q)),
-  );
-};
+  selectedId?: string | null
+  onSelect: (point: ExplorerPoint) => void
+  view: ExplorerView
+  onViewChange: (view: ExplorerView) => void
+  initialQuery?: string
+  /** Full cached catalogue — filtered locally as you type. */
+  initialPoints?: readonly ExplorerPoint[]
+  emptyMessage?: string
+}
 
 export const TubeRailPointFinder = ({
   selectedId,
@@ -60,98 +31,51 @@ export const TubeRailPointFinder = ({
   initialPoints = [],
   emptyMessage = "No matching stations.",
 }: TubeRailPointFinderProps) => {
-  const { loading, error, setError, runKeyed } = useExplorerKeyedQuery();
-  const [livePoints, setLivePoints] = useState<ExplorerPoint[] | null>(null);
-  const [query, setQuery] = useState(initialQuery);
+  const [query, setQuery] = useState(initialQuery)
+  const [nearbyPoints, setNearbyPoints] = useState<ExplorerPoint[] | null>(null)
+  const [locating, setLocating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const points = useMemo(() => {
-    if (livePoints !== null) return livePoints;
-    return filterCachedPoints(initialPoints, query);
-  }, [livePoints, initialPoints, query]);
+    if (nearbyPoints !== null) return nearbyPoints
+    return filterExplorerTubeRailPoints(initialPoints, query)
+  }, [nearbyPoints, initialPoints, query])
 
   const handleSearchValueChange = (next: string) => {
-    setQuery(next);
-    // Typing filters the cached catalog; leave live results until Search/Locate.
-    if (livePoints !== null) {
-      setLivePoints(null);
-      setError(null);
+    setQuery(next)
+    if (nearbyPoints !== null) {
+      setNearbyPoints(null)
+      setError(null)
     }
-  };
-
-  const handleSearchSubmit = async (nextQuery: string) => {
-    const trimmed = nextQuery.trim();
-    if (trimmed.length < 2) {
-      setError("Enter at least 2 characters to search.");
-      return;
-    }
-
-    const result = await runKeyed(async (client) => {
-      const response = await client.stopPoint.search({
-        query: trimmed,
-        modes: [...RAIL_MODES],
-        maxResults: 25,
-      });
-      return (response.matches ?? [])
-        .map((match) =>
-          normaliseStopPoint({
-            id: match.id,
-            name: match.name ?? match.stationName,
-            lat: match.lat,
-            lon: match.lon,
-            modes: match.modes,
-            lines: match.lines,
-            platformName: match.platformName,
-          }),
-        )
-        .filter((point): point is ExplorerPoint => point !== null);
-    });
-
-    if (result.ok) {
-      const collapsed = collapseExplorerPointsToHubs(result.data, initialPoints);
-      setLivePoints(collapsed);
-      if (collapsed[0]) onSelect(collapsed[0]);
-    }
-  };
+  }
 
   const handleLocate = async () => {
+    setLocating(true)
+    setError(null)
     try {
-      const coords = await getGeolocation();
-      const { lat, lon } = truncateLatLon(coords.lat, coords.lon);
-      const result = await runKeyed(async (client) => {
-        const response = await client.stopPoint.getByGeoPoint({
-          lat,
-          lon,
-          radius: 800,
-          modes: [...RAIL_MODES],
-          returnLines: true,
-        });
-        return (response.stopPoints ?? [])
-          .map((stop) => normaliseStopPoint(stop))
-          .filter((point): point is ExplorerPoint => point !== null)
-          .slice(0, 25);
-      });
-
-      if (result.ok) {
-        const collapsed = collapseExplorerPointsToHubs(
-          result.data,
-          initialPoints,
-        );
-        setLivePoints(collapsed);
-        if (collapsed[0]) onSelect(collapsed[0]);
+      const origin = await getGeolocation()
+      const nearby = nearbyExplorerTubeRailPoints(initialPoints, origin)
+      if (nearby.length === 0) {
+        setNearbyPoints(null)
+        setError("No stations nearby.")
+        return
       }
+      setNearbyPoints(nearby)
+      onSelect(nearby[0]!)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not read location.");
+      setError(err instanceof Error ? err.message : "Could not read location.")
+    } finally {
+      setLocating(false)
     }
-  };
+  }
 
   return (
     <TfLPointPicker
       points={points}
       selectedId={selectedId}
       onSelect={onSelect}
-      onSearchSubmit={handleSearchSubmit}
       onLocate={handleLocate}
-      loading={loading}
+      loading={locating}
       error={error}
       emptyMessage={emptyMessage}
       view={view}
@@ -161,5 +85,5 @@ export const TubeRailPointFinder = ({
       onSearchValueChange={handleSearchValueChange}
       renderMap={(props) => <ExplorerPointMapLazy {...props} />}
     />
-  );
-};
+  )
+}

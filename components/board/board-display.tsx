@@ -239,7 +239,6 @@ export const BoardDisplay = ({
             pageSizeByLine={pageSizeByLine}
             behaviour={config.behaviour}
             pinFirst={arrivalsProps.pinFirst}
-            pinAdvance={arrivalsProps.pinAdvance}
             startDelayMs={unattended ? 0 : undefined}
             loading={arrivals.loading}
             error={arrivalsError}

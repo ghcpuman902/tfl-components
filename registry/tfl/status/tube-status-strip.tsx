@@ -125,8 +125,6 @@ export const TubeStatusStrip = ({
     <div
       className={cn("grid w-full items-stretch", className)}
       style={{ ...BOARD_RHYTHM_VARS, gridTemplateColumns: columns }}
-      onPointerEnter={sequence.handlePointerEnter}
-      onPointerLeave={sequence.handlePointerLeave}
       onFocus={sequence.handleFocus}
       onBlur={sequence.handleBlur}
       role={error ? "alert" : "status"}

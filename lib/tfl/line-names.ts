@@ -140,6 +140,30 @@ export const LINE_NAME_TIERS: Record<string, LineNameTiers> = {
     short: "WIN",
     bucket: "short",
   },
+  rb1: {
+    full: "RB1",
+    middle: "RB1",
+    short: "RB1",
+    bucket: "short",
+  },
+  rb4: {
+    full: "RB4",
+    middle: "RB4",
+    short: "RB4",
+    bucket: "short",
+  },
+  rb6: {
+    full: "RB6",
+    middle: "RB6",
+    short: "RB6",
+    bucket: "short",
+  },
+  "woolwich-ferry": {
+    full: "Woolwich Ferry",
+    middle: "Woolwich",
+    short: "WF",
+    bucket: "long",
+  },
 };
 
 const DATA_LINE_ALIASES: Record<string, string> = {

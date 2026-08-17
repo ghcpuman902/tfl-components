@@ -97,6 +97,7 @@ const DATA_LINE_ALIASES: Record<string, string[]> = {
   elizabeth: ["elizabeth-line"],
   trams: ["tram"],
   "cable-car": ["london-cable-car"],
+  river: ["rb1", "rb4", "rb6", "woolwich-ferry", "river-bus"],
 };
 
 export const buildColourTokens = (): ColourToken[] => {
@@ -406,6 +407,7 @@ const COLOUR_CONSUMERS = [
   "arrivals-board",
   "rail-arrivals-board",
   "bus-arrivals-board",
+  "river-bus-arrivals-board",
   "live-arrivals-board",
   "line-strip",
 ] as const;

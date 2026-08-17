@@ -45,6 +45,7 @@ const DATA_LINE_ALIASES: Record<string, readonly string[]> = {
   elizabeth: ["elizabeth-line"],
   trams: ["tram"],
   "cable-car": ["london-cable-car"],
+  river: ["rb1", "rb4", "rb6", "woolwich-ferry", "river-bus"],
 };
 
 const toDataLineId = (key: string): string =>

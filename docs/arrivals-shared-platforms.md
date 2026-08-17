@@ -43,6 +43,7 @@ Do **not** infer merges from “these line ids co-occur on the map”. Topology 
 | Liverpool Street | Shared Circle / H&C / Met platforms; Elizabeth lettered platforms; Weaver numbered + unknown outbound; Weaver self-destination rows dropped via expired `timeToLive`; Weaver `Platform Unknown` shows "Scheduled" |
 | Baker Street | Merge Circle + H&C only — Metropolitan stays its own section |
 | Paddington (Circle) `940GZZLUPAC` | Merge Circle + District + H&C; "Inner Rail" / "Outer Rail" platform qualifier. Westbound Platform 15 / Eastbound Platform 16 already fit the standard compass+platform heading (`formatBoundHeading`) — no special case needed there. |
+| Hammersmith (H&C/Circle) `940GZZLUHSC` | Auto-detected Circle + H&C merge, no curated override — every Circle-bound train is tagged `hammersmith-city` here, so the merge is what stops Circle showing "No information" forever. `940GZZLUHSD`, the separate District + Piccadilly building, correctly gets none of it (alias-leak guard) and is not merged into this station. |
 | *(open)* | Direction useful, platform varies inside the bound |
 | *(open)* | Platform useful, eastbound/westbound is not |
 | *(open)* | Lettered-platform Overground besides Elizabeth |

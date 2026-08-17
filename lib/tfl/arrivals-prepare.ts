@@ -155,21 +155,89 @@ const sortIndexed = (
     sortBy === "source" ? compareIndexedBySource : compareIndexedByTime
   )
 
-/** TfL sometimes repeats `id` in one bound; `sourceIndex` keeps React keys unique. */
-const rowKey = (item: IndexedArrival): string => {
-  const identity =
-    item.arrival.id ??
-    item.arrival.vehicleId ??
-    item.arrival.lineId ??
-    "row"
-  return `${identity}-${item.sourceIndex}`
+/**
+ * TfL omits a real train id as blank or all zeros (`"000"`). Those are not
+ * one vehicle — collapsing them deletes distinct arrivals.
+ */
+const isUsableVehicleId = (
+  vehicleId: string | undefined,
+): vehicleId is string => {
+  const trimmed = vehicleId?.trim()
+  if (!trimmed) return false
+  return !/^0+$/.test(trimmed)
 }
 
-const toRow = (item: IndexedArrival): ArrivalsPreparedRow => ({
-  key: rowKey(item),
-  arrival: item.arrival,
-  sourceIndex: item.sourceIndex,
-})
+const normalizeIdentityPart = (value?: string): string =>
+  value?.trim().toLowerCase() ?? ""
+
+/**
+ * Stable prediction identity. Independent of source-array position, rank,
+ * page, countdown, timestamp, current location, and shared-track presentation.
+ * Raw `lineId` is used on purpose — `sharedTrackIdentity` is a derived tag.
+ */
+export const arrivalIdentityKey = (arrival: RealtimePrediction): string =>
+  [
+    normalizeIdentityPart(arrival.naptanId),
+    normalizeIdentityPart(arrival.lineId),
+    normalizeIdentityPart(arrival.direction),
+    normalizeIdentityPart(arrival.platformName),
+    normalizeIdentityPart(arrival.tripId),
+    isUsableVehicleId(arrival.vehicleId)
+      ? normalizeIdentityPart(arrival.vehicleId)
+      : "",
+    normalizeIdentityPart(arrival.destinationNaptanId),
+    normalizeIdentityPart(arrival.id),
+  ].join("|")
+
+/**
+ * Assign React keys for a sibling list. Distinct predictions keep a field
+ * composite. When TfL repeats that composite, `expectedArrival` breaks the
+ * tie. Fully identical rows stay separate with a last-resort suffix so the
+ * board does not collapse two predictions into one tile.
+ */
+const assignPreparedRows = (
+  items: readonly IndexedArrival[]
+): ArrivalsPreparedRow[] => {
+  const bases = items.map((item) => arrivalIdentityKey(item.arrival))
+  const groups = new Map<string, number[]>()
+  for (const [index, base] of bases.entries()) {
+    const list = groups.get(base)
+    if (list) list.push(index)
+    else groups.set(base, [index])
+  }
+
+  const keys = new Array<string>(items.length)
+  for (const [base, indexes] of groups) {
+    if (indexes.length === 1) {
+      keys[indexes[0]!] = base
+      continue
+    }
+    const withExpected = indexes.map((index) => {
+      const expected = items[index]!.arrival.expectedArrival?.trim() ?? ""
+      return { index, key: expected ? `${base}|${expected}` : base }
+    })
+    const expectedCounts = new Map<string, number>()
+    for (const entry of withExpected) {
+      expectedCounts.set(entry.key, (expectedCounts.get(entry.key) ?? 0) + 1)
+    }
+    const stillColliding = new Map<string, number>()
+    for (const entry of withExpected) {
+      if ((expectedCounts.get(entry.key) ?? 0) <= 1) {
+        keys[entry.index] = entry.key
+        continue
+      }
+      const next = (stillColliding.get(entry.key) ?? 0) + 1
+      stillColliding.set(entry.key, next)
+      keys[entry.index] = `${entry.key}#${next}`
+    }
+  }
+
+  return items.map((item, index) => ({
+    key: keys[index]!,
+    arrival: item.arrival,
+    sourceIndex: item.sourceIndex,
+  }))
+}
 
 export const arrivalCanonicalLineId = (
   arrival: RealtimePrediction,
@@ -270,7 +338,11 @@ const shouldLockHeight = (
   return Boolean(lockHeight)
 }
 
-/** Visible slice for bound-group pagination. `pageSize <= 0` shows every row. */
+/**
+ * Visible slice for bound-group pagination. `pageSize <= 0` shows every row.
+ * Interactive boards must call this on the live ordered list — do not freeze
+ * a snapshot while someone is browsing a later page.
+ */
 export const sliceBoundPage = (
   rows: readonly ArrivalsPreparedRow[],
   page: number,
@@ -397,18 +469,6 @@ const sharedTrackIdentityRank = (arrival: RealtimePrediction): number => {
     return 1
   }
   return 2
-}
-
-/**
- * TfL omits a real train id as blank or all zeros (`"000"`). Those are not
- * one vehicle — collapsing them deletes distinct arrivals.
- */
-const isUsableVehicleId = (
-  vehicleId: string | undefined,
-): vehicleId is string => {
-  const trimmed = vehicleId?.trim()
-  if (!trimmed) return false
-  return !/^0+$/.test(trimmed)
 }
 
 /**
@@ -711,7 +771,7 @@ const collectRailBounds = (
       railDesignation: bucket.railDesignation,
       platformUniform: hoistPlatform && platformLabel !== null,
       seededEmpty: bucket.items.length === 0,
-      rows: sortIndexed(bucket.items, sortBy).map(toRow),
+          rows: assignPreparedRows(sortIndexed(bucket.items, sortBy)),
     }
   })
 }
@@ -887,7 +947,9 @@ export const prepareBusArrivals = ({
   )
 
   if (groupBy !== "route") {
-    const rows = sortIndexed(indexed, sortBy).slice(0, maxRows).map(toRow)
+    const rows = assignPreparedRows(
+      sortIndexed(indexed, sortBy).slice(0, maxRows)
+    )
     return { layout: "flat", groups: [], rows }
   }
 
@@ -900,7 +962,7 @@ export const prepareBusArrivals = ({
   })
 
   const groups: ArrivalsPreparedGroup[] = buckets.map((bucket) => {
-    const rows = sortIndexed(bucket.items, sortBy).map(toRow)
+    const rows = assignPreparedRows(sortIndexed(bucket.items, sortBy))
     return {
       key: bucket.lineId || bucket.lineName,
       lineId: bucket.lineId,

@@ -7,8 +7,10 @@ import { ExplorerShell } from "@/components/explorer/explorer-shell";
 import { PointsTubeRailFind } from "@/components/explorer/points/tube-rail-panels";
 import { PointsBusFind } from "@/components/explorer/points/bus-panels";
 import { PointsCycleFind } from "@/components/explorer/points/cycle-panels";
+import { PointsRiverFind } from "@/components/explorer/points/river-panels";
 import { LinesTubeRailPanel } from "@/components/explorer/lines/tube-rail-panels";
 import { LinesBusPanel } from "@/components/explorer/lines/bus-panels";
+import { LinesRiverPanel } from "@/components/explorer/lines/river-panels";
 import { ExploreBodySkeleton } from "@/components/tfl/page-skeletons";
 import { getDocsEntry } from "@/lib/docs-catalog";
 import {
@@ -19,11 +21,14 @@ import { getExplorerCachedArrivals } from "@/lib/tfl/explorer/cached-arrivals";
 import { getExplorerTubeRailPoints } from "@/lib/tfl/explorer/points-tube-rail";
 import { getExplorerFeaturedBusStops } from "@/lib/tfl/explorer/points-bus";
 import { getExplorerFeaturedCycleHireDocks } from "@/lib/tfl/explorer/points-cycle";
+import { getExplorerRiverPiers } from "@/lib/tfl/explorer/points-river";
 import {
   getExplorerLineDetails,
   getExplorerTubeRailLines,
 } from "@/lib/tfl/explorer/lines-tube-rail";
 import { getExplorerBusLines } from "@/lib/tfl/explorer/lines-bus";
+import { getExplorerRiverLines } from "@/lib/tfl/explorer/lines-river";
+import { HOME_RIVER_STOP } from "@/lib/tfl/home-arrivals-stops";
 import {
   firstOrMatching,
   firstOrMatchingPoint,
@@ -106,6 +111,24 @@ async function ExplorerActivePanelAsync({ state }: { state: ExplorerState }) {
     );
   }
 
+  if (state.kind === "points" && state.domain === "river") {
+    const piers = await getExplorerRiverPiers();
+    const seed =
+      piers.find((pier) => pier.id === HOME_RIVER_STOP.id) ?? piers[0];
+    const selected = firstOrMatching(piers, state.id);
+    const cachedArrivalsPromise =
+      seed && selected?.id === seed.id
+        ? getExplorerCachedArrivals(seed.id, seed.name)
+        : undefined;
+    return (
+      <PointsRiverFind
+        state={state}
+        piers={piers}
+        cachedArrivalsPromise={cachedArrivalsPromise}
+      />
+    );
+  }
+
   if (state.kind === "points" && state.domain === "cycle") {
     const featured = await getExplorerFeaturedCycleHireDocks();
     return (
@@ -128,11 +151,22 @@ async function ExplorerActivePanelAsync({ state }: { state: ExplorerState }) {
     );
   }
 
-  return (
-    <p className="text-sm text-muted-foreground">
-      River modes are on the roadmap.
-    </p>
-  );
+  if (state.kind === "lines" && state.domain === "river") {
+    const lines = await getExplorerRiverLines();
+    const selected = firstOrMatching(lines, state.id);
+    const detailsPromise = selected
+      ? getExplorerLineDetails(selected.id, state.dir)
+      : null;
+    return (
+      <LinesRiverPanel
+        state={state}
+        lines={lines}
+        detailsPromise={detailsPromise}
+      />
+    );
+  }
+
+  return null;
 }
 
 async function ExplorerFromParams({ searchParams }: PageProps) {

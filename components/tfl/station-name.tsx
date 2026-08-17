@@ -391,22 +391,34 @@ const STATION_NAME_TITLE_CLASS =
 export const StationNameTitle = ({
   name,
   className,
+  end,
 }: {
   name: string;
   className?: string;
+  /** Sits after the name (e.g. disruption chips). The slot stays `flex-1` so auto-fit still measures leftover width. */
+  end?: ReactNode;
 }) => (
   <span
-    className={cn(STATION_NAME_TITLE_SLOT_CLASS, className)}
-    aria-hidden="true"
+    className={cn(
+      STATION_NAME_TITLE_SLOT_CLASS,
+      end != null && "gap-x-1.5",
+      className,
+    )}
   >
-    <StationName
-      name={name}
-      layout="auto"
-      maxLines={1}
-      allowAbbreviation
-      allowScaleDown
-      className={STATION_NAME_TITLE_CLASS}
-    />
+    <span aria-hidden="true" className="contents">
+      <StationName
+        name={name}
+        layout="auto"
+        maxLines={1}
+        allowAbbreviation
+        allowScaleDown
+        className={cn(
+          STATION_NAME_TITLE_CLASS,
+          end != null && "w-auto flex-none",
+        )}
+      />
+    </span>
+    {end}
   </span>
 );
 

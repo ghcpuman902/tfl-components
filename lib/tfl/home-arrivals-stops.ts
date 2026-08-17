@@ -35,3 +35,9 @@ export const HOME_BUS_STOP = {
   name: "Trafalgar Square",
   stopLetter: "G",
 } as const
+
+/** Busy interchange pier served by RB1, RB4, and RB6. Poll this id, not a berth child. */
+export const HOME_RIVER_STOP = {
+  id: "930GCAW",
+  name: "Canary Wharf Pier",
+} as const

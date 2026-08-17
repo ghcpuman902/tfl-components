@@ -41,8 +41,10 @@ const offenders: { file: string; line: number; text: string }[] = [];
 for (const root of SCAN_ROOTS) {
   for (const file of walk(join(ROOT, root))) {
     const source = readFileSync(file, "utf8");
-    if (!USE_SERVER_RE.test(source)) continue;
-    const lines = source.split("\n");
+    // Docs snippets may contain `"use server"` inside template strings.
+    const withoutTemplates = source.replace(/`(?:\\.|[^`\\])*`/gs, "");
+    if (!USE_SERVER_RE.test(withoutTemplates)) continue;
+    const lines = withoutTemplates.split("\n");
     lines.forEach((text, index) => {
       // Allow comments that document the ban.
       const trimmed = text.trim();

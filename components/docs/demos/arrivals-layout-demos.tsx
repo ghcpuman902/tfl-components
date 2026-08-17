@@ -1,5 +1,6 @@
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
+import { RiverBusArrivalsBoard } from "@/components/tfl/arrivals/river-bus-arrivals-board"
 import { DataSourceLabel } from "@/components/docs/data-source-label"
 import {
   LIVERPOOL_STREET_ARRIVALS,
@@ -8,6 +9,7 @@ import {
   OXFORD_CIRCUS_ARRIVALS,
   OXFORD_CIRCUS_LINES,
   TRAFALGAR_SQUARE_ARRIVALS,
+  CANARY_WHARF_ARRIVALS,
 } from "@/lib/tfl/fixtures/arrivals-boards"
 
 /**
@@ -174,6 +176,18 @@ export const BusUnattendedDemo = () => (
       data={TRAFALGAR_SQUARE_ARRIVALS}
       stopName="Trafalgar Square"
       stopLetter="G"
+      headingLevel={2}
+      behaviour="unattended"
+      pageSize={3}
+    />
+  </DemoFigure>
+)
+
+export const RiverUnattendedDemo = () => (
+  <DemoFigure>
+    <RiverBusArrivalsBoard
+      data={CANARY_WHARF_ARRIVALS}
+      stopName="Canary Wharf Pier"
       headingLevel={2}
       behaviour="unattended"
       pageSize={3}

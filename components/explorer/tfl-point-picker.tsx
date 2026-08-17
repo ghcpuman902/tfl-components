@@ -1,10 +1,10 @@
-"use client";
+"use client"
 
 /**
  * TfLPointPicker — controlled, props-only point search / browse UI.
  *
  * Owns:
- * - search input UI (explicit Search / Enter submission)
+ * - search input UI (optional Search / Enter submission; omit for type-to-filter)
  * - locate action UI
  * - filters slot
  * - loading / empty / error states
@@ -30,74 +30,84 @@ import {
   useId,
   useRef,
   useState,
+  type FormEvent,
   type KeyboardEvent,
   type ReactNode,
-} from "react";
-import { List, Loader2, LocateFixed, Map as MapIcon, Search } from "lucide-react";
+} from "react"
+import {
+  List,
+  Loader2,
+  LocateFixed,
+  Map as MapIcon,
+  Search,
+} from "lucide-react"
 import {
   explorerPaneClassName,
   explorerPaneItemClassName,
   explorerResultsPaneClassName,
   explorerSplitFillClassName,
-} from "@/components/explorer/explorer-split";
-import { Button } from "@/components/ui/button";
+} from "@/components/explorer/explorer-split"
+import { Button } from "@/components/ui/button"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from "@/components/ui/input-group";
-import { cn } from "@/lib/utils";
-import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge";
-import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise";
-import type { ExplorerView } from "@/lib/tfl/explorer-url-state";
+} from "@/components/ui/input-group"
+import { cn } from "@/lib/utils"
+import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
+import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
+import type { ExplorerView } from "@/lib/tfl/explorer-url-state"
 
 export type TfLPointPickerMapRenderProps = {
-  points: readonly ExplorerPoint[];
-  selectedId?: string | null;
-  onSelect: (point: ExplorerPoint) => void;
-  className?: string;
-};
+  points: readonly ExplorerPoint[]
+  selectedId?: string | null
+  onSelect: (point: ExplorerPoint) => void
+  className?: string
+}
 
 export type TfLPointPickerProps = {
-  points: readonly ExplorerPoint[];
-  selectedId?: string | null;
-  onSelect: (point: ExplorerPoint) => void;
-  /** Fires only on Search click or Enter — typing never spends quota. */
-  onSearchSubmit: (query: string) => void;
+  points: readonly ExplorerPoint[]
+  selectedId?: string | null
+  onSelect: (point: ExplorerPoint) => void
+  /**
+   * Fires only on Search click or Enter. Omit when typing already filters
+   * a complete local catalogue — Enter then does nothing.
+   */
+  onSearchSubmit?: (query: string) => void
   /** Omit to hide the locate button entirely. */
-  onLocate?: () => void;
-  loading?: boolean;
-  error?: string | null;
-  emptyMessage?: string;
-  view: ExplorerView;
-  onViewChange: (view: ExplorerView) => void;
-  renderMap?: (props: TfLPointPickerMapRenderProps) => ReactNode;
-  filters?: ReactNode;
-  searchPlaceholder?: string;
-  searchValue?: string;
-  onSearchValueChange?: (value: string) => void;
+  onLocate?: () => void
+  loading?: boolean
+  error?: string | null
+  emptyMessage?: string
+  view: ExplorerView
+  onViewChange: (view: ExplorerView) => void
+  renderMap?: (props: TfLPointPickerMapRenderProps) => ReactNode
+  filters?: ReactNode
+  searchPlaceholder?: string
+  searchValue?: string
+  onSearchValueChange?: (value: string) => void
   /** Metres from a geo target. Bus name search leaves this off. */
-  showDistance?: boolean;
-  className?: string;
-};
+  showDistance?: boolean
+  className?: string
+}
 
 const formatDistance = (meters?: number): string => {
-  if (meters === undefined) return "";
-  if (meters < 1000) return `${Math.round(meters)}m`;
-  return `${(meters / 1000).toFixed(1)}km`;
-};
+  if (meters === undefined) return ""
+  if (meters < 1000) return `${Math.round(meters)}m`
+  return `${(meters / 1000).toFixed(1)}km`
+}
 
 const SEARCH_INPUT_CLASS =
-  "appearance-none [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden";
+  "appearance-none [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
 
 type PointResultOptionProps = {
-  point: ExplorerPoint;
-  selected: boolean;
-  active: boolean;
-  onSelect: (point: ExplorerPoint) => void;
-  showDistance: boolean;
-};
+  point: ExplorerPoint
+  selected: boolean
+  active: boolean
+  onSelect: (point: ExplorerPoint) => void
+  showDistance: boolean
+}
 
 const PointResultOption = ({
   point,
@@ -106,8 +116,8 @@ const PointResultOption = ({
   onSelect,
   showDistance,
 }: PointResultOptionProps) => {
-  const isBus = point.modes?.includes("bus") ?? false;
-  const stopLetter = isBus ? point.stopLetter : undefined;
+  const isBus = point.modes?.includes("bus") ?? false
+  const stopLetter = isBus ? point.stopLetter : undefined
   const meta = [
     point.hubMembers && point.hubMembers.length > 1
       ? `${point.hubMembers.length} StopPoints`
@@ -117,7 +127,7 @@ const PointResultOption = ({
       ? formatDistance(point.distanceMeters)
       : null,
     point.bikes !== undefined ? `${point.bikes} bikes` : null,
-  ].filter(Boolean);
+  ].filter(Boolean)
 
   return (
     <button
@@ -135,28 +145,32 @@ const PointResultOption = ({
         .join(", ")}
       className={cn(
         "flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors",
-        "[content-visibility:auto] [contain-intrinsic-size:auto_3.25rem]",
+        "[contain-intrinsic-size:auto_3.25rem] [content-visibility:auto]",
         explorerPaneItemClassName,
-        "hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-        selected && "bg-muted ring-1 ring-inset ring-primary",
-        active && !selected && "bg-muted/40",
+        "hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset",
+        selected && "bg-muted ring-1 ring-primary ring-inset",
+        active && !selected && "bg-muted/40"
       )}
     >
       <span className="flex min-w-0 items-center gap-2">
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="truncate font-medium">{point.name}</span>
-          {stopLetter ? <StopLetterBadge letter={stopLetter} size="sm" /> : null}
+          {stopLetter ? (
+            <StopLetterBadge letter={stopLetter} size="sm" />
+          ) : null}
         </span>
         <code className="ml-auto shrink-0 text-xs text-muted-foreground">
           {point.id}
         </code>
       </span>
       {meta.length > 0 ? (
-        <span className="text-xs text-muted-foreground">{meta.join(" · ")}</span>
+        <span className="text-xs text-muted-foreground">
+          {meta.join(" · ")}
+        </span>
       ) : null}
     </button>
-  );
-};
+  )
+}
 
 export const TfLPointPicker = ({
   points,
@@ -177,68 +191,74 @@ export const TfLPointPicker = ({
   showDistance = true,
   className,
 }: TfLPointPickerProps) => {
-  const listId = useId();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [internalQuery, setInternalQuery] = useState("");
+  const listId = useId()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [internalQuery, setInternalQuery] = useState("")
 
-  const query = searchValue ?? internalQuery;
-  const setQuery = onSearchValueChange ?? setInternalQuery;
-  const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
-  const trimmedQuery = query.trim();
-  const canSearch = trimmedQuery.length > 0 && trimmedQuery !== submittedQuery && !loading;
+  const query = searchValue ?? internalQuery
+  const setQuery = onSearchValueChange ?? setInternalQuery
+  const [submittedQuery, setSubmittedQuery] = useState<string | null>(null)
+  const trimmedQuery = query.trim()
+  const canSearch =
+    Boolean(onSearchSubmit) &&
+    trimmedQuery.length > 0 &&
+    trimmedQuery !== submittedQuery &&
+    !loading
+  const showSearchButton = Boolean(onSearchSubmit)
+  const showViewToggle = Boolean(renderMap)
 
-  const selectedIndex = points.findIndex((point) => point.id === selectedId);
+  const selectedIndex = points.findIndex((point) => point.id === selectedId)
   const [activeIndex, setActiveIndex] = useState(
-    selectedIndex >= 0 ? selectedIndex : 0,
-  );
+    selectedIndex >= 0 ? selectedIndex : 0
+  )
   const resolvedActiveIndex =
     selectedIndex >= 0
       ? selectedIndex
-      : Math.min(activeIndex, Math.max(points.length - 1, 0));
+      : Math.min(activeIndex, Math.max(points.length - 1, 0))
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!canSearch) return;
-    setSubmittedQuery(trimmedQuery);
-    onSearchSubmit(query);
-  };
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault()
+    if (!onSearchSubmit || !canSearch) return
+    setSubmittedQuery(trimmedQuery)
+    onSearchSubmit(query)
+  }
 
   const handleListKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
-    if (points.length === 0) return;
+    if (points.length === 0) return
 
     if (event.key === "ArrowDown") {
-      event.preventDefault();
+      event.preventDefault()
       setActiveIndex((current) => {
-        const base = selectedIndex >= 0 ? selectedIndex : current;
-        return (base + 1) % points.length;
-      });
-      return;
+        const base = selectedIndex >= 0 ? selectedIndex : current
+        return (base + 1) % points.length
+      })
+      return
     }
     if (event.key === "ArrowUp") {
-      event.preventDefault();
+      event.preventDefault()
       setActiveIndex((current) => {
-        const base = selectedIndex >= 0 ? selectedIndex : current;
-        return (base - 1 + points.length) % points.length;
-      });
-      return;
+        const base = selectedIndex >= 0 ? selectedIndex : current
+        return (base - 1 + points.length) % points.length
+      })
+      return
     }
     if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      const point = points[resolvedActiveIndex];
-      if (point) onSelect(point);
+      event.preventDefault()
+      const point = points[resolvedActiveIndex]
+      if (point) onSelect(point)
     }
-  };
+  }
 
-  const showMap = view === "map" && renderMap;
+  const showMap = view === "map" && renderMap
 
-  const paneClassName = cn(explorerPaneClassName, explorerResultsPaneClassName);
+  const paneClassName = cn(explorerPaneClassName, explorerResultsPaneClassName)
 
   return (
     <div
       className={cn(
         "flex min-h-0 min-w-0 flex-col gap-3",
         explorerSplitFillClassName,
-        className,
+        className
       )}
     >
       <form
@@ -252,15 +272,13 @@ export const TfLPointPicker = ({
               <Search
                 className={cn(
                   "size-4 transition-opacity duration-200",
-                  loading ? "opacity-0" : "opacity-100",
+                  loading ? "opacity-0" : "opacity-100"
                 )}
               />
               <Loader2
                 className={cn(
                   "absolute inset-0 size-4 transition-opacity duration-200",
-                  loading
-                    ? "opacity-100 motion-safe:animate-spin"
-                    : "opacity-0",
+                  loading ? "opacity-100 motion-safe:animate-spin" : "opacity-0"
                 )}
               />
             </span>
@@ -293,47 +311,51 @@ export const TfLPointPicker = ({
           ) : null}
         </InputGroup>
 
-        <div className="flex h-9 shrink-0 items-stretch gap-2">
-          <Button
-            type="submit"
-            size="lg"
-            disabled={!canSearch}
-            aria-busy={loading}
-          >
-            Search
-          </Button>
+        {showSearchButton || showViewToggle ? (
+          <div className="flex h-9 shrink-0 items-stretch gap-2">
+            {showSearchButton ? (
+              <Button
+                type="submit"
+                size="lg"
+                disabled={!canSearch}
+                aria-busy={loading}
+              >
+                Search
+              </Button>
+            ) : null}
 
-          {renderMap ? (
-            <div
-              className="inline-flex h-9 items-stretch rounded-lg border border-border p-0.5"
-              role="group"
-              aria-label="Results view"
-            >
-              <Button
-                type="button"
-                size="sm"
-                variant={view === "list" ? "secondary" : "ghost"}
-                aria-pressed={view === "list"}
-                className="h-full rounded-[calc(var(--radius-lg)-2px)]"
-                onClick={() => onViewChange("list")}
+            {showViewToggle ? (
+              <div
+                className="inline-flex h-9 items-stretch rounded-lg border border-border p-0.5"
+                role="group"
+                aria-label="Results view"
               >
-                <List className="size-4" aria-hidden />
-                <span className="sr-only sm:not-sr-only">List</span>
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={view === "map" ? "secondary" : "ghost"}
-                aria-pressed={view === "map"}
-                className="h-full rounded-[calc(var(--radius-lg)-2px)]"
-                onClick={() => onViewChange("map")}
-              >
-                <MapIcon className="size-4" aria-hidden />
-                <span className="sr-only sm:not-sr-only">Map</span>
-              </Button>
-            </div>
-          ) : null}
-        </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={view === "list" ? "secondary" : "ghost"}
+                  aria-pressed={view === "list"}
+                  className="h-full rounded-[calc(var(--radius-lg)-2px)]"
+                  onClick={() => onViewChange("list")}
+                >
+                  <List className="size-4" aria-hidden />
+                  <span className="sr-only sm:not-sr-only">List</span>
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={view === "map" ? "secondary" : "ghost"}
+                  aria-pressed={view === "map"}
+                  className="h-full rounded-[calc(var(--radius-lg)-2px)]"
+                  onClick={() => onViewChange("map")}
+                >
+                  <MapIcon className="size-4" aria-hidden />
+                  <span className="sr-only sm:not-sr-only">Map</span>
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </form>
 
       {filters ? <div className="space-y-2">{filters}</div> : null}
@@ -369,7 +391,7 @@ export const TfLPointPicker = ({
           onKeyDown={handleListKeyDown}
           className={cn(
             paneClassName,
-            "space-y-1 overflow-y-auto overscroll-y-auto p-1 scrollbar-thin",
+            "scrollbar-thin space-y-1 overflow-y-auto overscroll-y-auto p-1"
           )}
         >
           {points.map((point, index) => (
@@ -385,5 +407,5 @@ export const TfLPointPicker = ({
         </ul>
       )}
     </div>
-  );
-};
+  )
+}

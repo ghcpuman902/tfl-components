@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import type { RealtimePrediction } from "tfl-ts"
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
+import { RiverBusArrivalsBoard } from "@/components/tfl/arrivals/river-bus-arrivals-board"
 import { resolveArrivalsHeading } from "@/components/tfl/arrivals/arrivals-board-view"
 
 /**
@@ -21,6 +22,7 @@ const prediction = (fields: {
   platformName?: string
   towards?: string
   timeToStation: number
+  expectedArrival?: string
 }): RealtimePrediction =>
   ({
     lineName: fields.lineName ?? fields.lineId,
@@ -272,6 +274,44 @@ describe("arrivals board layout API", () => {
       html.match(/<ul[^>]*data-slot="arrivals-rows"[^>]*>/g) ?? []
     assert.equal(rowsTags.length, 2)
     assert.ok(rowsTags.every((tag) => tag.includes("rows-custom")))
+    // Route identity lives on the group header, not on each row.
+    assert.equal(html.includes("aria-label=\"Route 9,"), false)
+    assert.equal(html.includes("aria-label=\"Route 18,"), false)
+  })
+
+  it("groups river by route without repeating the route chip on rows", () => {
+    const html = renderToStaticMarkup(
+      createElement(RiverBusArrivalsBoard, {
+        data: [
+          prediction({
+            id: "rb1-1",
+            lineId: "rb1",
+            lineName: "RB1",
+            towards: "Barking Riverside Pier",
+            timeToStation: 1020,
+            modeName: "river-bus",
+          }),
+          prediction({
+            id: "rb4-1",
+            lineId: "rb4",
+            lineName: "RB4",
+            towards: "Rotherhithe Pier",
+            timeToStation: 180,
+            modeName: "river-bus",
+          }),
+        ],
+        stopName: "Canary Wharf Pier",
+        groupBy: "route",
+      }),
+    )
+
+    assert.equal(slotCount(html, "arrivals-group"), 2)
+    assert.ok(html.includes('data-route="rb1"'))
+    assert.ok(html.includes('data-route="rb4"'))
+    assert.ok(html.includes(">RB1<"))
+    assert.ok(html.includes(">RB4<"))
+    assert.equal(html.includes('aria-label="RB1"'), false)
+    assert.equal(html.includes('aria-label="RB4"'), false)
   })
 
   it("uses data.stationName when stopName is omitted", () => {
@@ -298,6 +338,169 @@ describe("arrivals board layout API", () => {
     )
     assert.ok(html.includes("Custom heading"))
     assert.equal(html.includes("Oxford Circus"), false)
+  })
+
+  it("paints river disruption chips from prepared stop-point warnings", () => {
+    const html = renderToStaticMarkup(
+      createElement(RiverBusArrivalsBoard, {
+        data: [
+          prediction({
+            id: "rb1-1",
+            lineId: "rb1",
+            lineName: "RB1",
+            towards: "Westminster Pier",
+            timeToStation: 80,
+            modeName: "river-bus",
+          }),
+          prediction({
+            id: "rb6-1",
+            lineId: "rb6",
+            lineName: "RB6",
+            towards: "Putney Pier",
+            timeToStation: 140,
+            modeName: "river-bus",
+          }),
+        ],
+        disruptions: [
+          { lineId: "rb1", description: "Pier Closed until 17:00" },
+        ],
+        stopName: "Canary Wharf Pier",
+      }),
+    )
+    assert.ok(html.includes("RB1 disruption: Pier Closed until 17:00"))
+    assert.equal(html.includes("Route rb1 disruption"), false)
+    assert.ok(html.includes("w-auto"))
+  })
+
+  it("marks unattended river rows with rank chips", () => {
+    const html = renderToStaticMarkup(
+      createElement(RiverBusArrivalsBoard, {
+        data: [
+          prediction({
+            id: "rb1-1",
+            lineId: "rb1",
+            lineName: "RB1",
+            towards: "Westminster Pier",
+            timeToStation: 80,
+            modeName: "river-bus",
+          }),
+          prediction({
+            id: "rb6-1",
+            lineId: "rb6",
+            lineName: "RB6",
+            towards: "Putney Pier",
+            timeToStation: 140,
+            modeName: "river-bus",
+          }),
+          prediction({
+            id: "rb1-2",
+            lineId: "rb1",
+            lineName: "RB1",
+            towards: "Barking Riverside Pier",
+            timeToStation: 260,
+            modeName: "river-bus",
+          }),
+          prediction({
+            id: "rb6-2",
+            lineId: "rb6",
+            lineName: "RB6",
+            towards: "North Greenwich Pier",
+            timeToStation: 380,
+            modeName: "river-bus",
+          }),
+        ],
+        stopName: "Canary Wharf Pier",
+        behaviour: "unattended",
+        pageSize: 3,
+      }),
+    )
+    assert.ok(html.includes("1st arrival"))
+    assert.ok(html.includes("2nd arrival"))
+    assert.ok(html.includes(">1<"))
+    assert.ok(html.includes(">st<"))
+    assert.ok(html.includes("w-[3ch]"))
+  })
+
+  it("keeps only river-bus line ids from a mixed payload", () => {
+    const html = renderToStaticMarkup(
+      createElement(RiverBusArrivalsBoard, {
+        data: [
+          prediction({
+            id: "22-1",
+            lineId: "22",
+            lineName: "22",
+            towards: "Putney Bridge",
+            timeToStation: 80,
+            modeName: "bus",
+          }),
+          prediction({
+            id: "rb6-1",
+            lineId: "rb6",
+            lineName: "RB6",
+            towards: "Putney Pier",
+            timeToStation: 140,
+            modeName: "river-bus",
+          }),
+        ],
+        stopName: "Putney Pier",
+      }),
+    )
+    assert.ok(html.includes("Putney Pier"))
+    assert.ok(html.includes(">RB6<"))
+    assert.equal(html.includes("Putney Bridge"), false)
+    assert.equal(html.includes(">22<"), false)
+  })
+
+  it("uses the river empty copy when predictions are missing", () => {
+    const html = renderToStaticMarkup(
+      createElement(RiverBusArrivalsBoard, {
+        data: [],
+        stopName: "Rotherhithe",
+      }),
+    )
+    assert.ok(html.includes("No live departure times available."))
+    assert.equal(html.includes("No river buses due"), false)
+  })
+
+  it("shows London clock time for river waits of 30 minutes or more", () => {
+    const html = renderToStaticMarkup(
+      createElement(RiverBusArrivalsBoard, {
+        data: [
+          prediction({
+            id: "rb1-soon",
+            lineId: "rb1",
+            lineName: "RB1",
+            towards: "Westminster Pier",
+            timeToStation: 29 * 60,
+            expectedArrival: "2026-08-17T18:29:00Z",
+            modeName: "river-bus",
+          }),
+          prediction({
+            id: "rb1-later",
+            lineId: "rb1",
+            lineName: "RB1",
+            towards: "Barking Riverside Pier",
+            timeToStation: 31 * 60,
+            expectedArrival: "2026-08-17T19:02:00Z",
+            modeName: "river-bus",
+          }),
+          prediction({
+            id: "rb6-no-clock",
+            lineId: "rb6",
+            lineName: "RB6",
+            towards: "Putney Pier",
+            timeToStation: 40 * 60,
+            modeName: "river-bus",
+          }),
+        ],
+        stopName: "Canary Wharf Pier",
+        pageSize: 3,
+      }),
+    )
+    assert.ok(html.includes("29 min"))
+    assert.ok(html.includes("20:02"))
+    assert.ok(html.includes("40 min"))
+    assert.equal(html.includes("31 min"), false)
   })
 })
 
