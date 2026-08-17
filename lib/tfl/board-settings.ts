@@ -12,8 +12,9 @@ import { RAIL_ARRIVALS_DEFAULT_PAGE_SIZE } from "@/lib/tfl/arrivals-defaults";
 
 export type BoardScope = "shell" | "arrivals" | "status";
 
-export type BoardInteractionMode = "static" | "mouse" | "touch";
-export type BoardFitMode = "static" | "fill";
+export type BoardBehaviour = "interactive" | "unattended";
+export type BoardStatusSurface = "display" | "strip";
+export type BoardStatusOverview = "network" | "selection" | "none";
 
 export type BoardSettingUi = {
   label: string;
@@ -49,9 +50,19 @@ export type ListSetting<T> = SettingBase<T> & {
 
 export type BoardSetting<T = unknown> = ScalarSetting<T> | ListSetting<T>;
 
-const MODES = new Set<BoardInteractionMode>(["static", "mouse", "touch"]);
-const FITS = new Set<BoardFitMode>(["static", "fill"]);
+const BEHAVIOURS = new Set<BoardBehaviour>(["interactive", "unattended"]);
+const STATUS_SURFACES = new Set<BoardStatusSurface>(["display", "strip"]);
+const STATUS_OVERVIEWS = new Set<BoardStatusOverview>([
+  "network",
+  "selection",
+  "none",
+]);
 const LINE_ORDER_SET = new Set<string>(LINE_ORDER);
+const LEGACY_MODE_TO_BEHAVIOUR: Record<string, BoardBehaviour> = {
+  static: "interactive",
+  mouse: "interactive",
+  touch: "interactive",
+};
 
 /** Max rows visible per bound (matches `maxRows` default on the arrivals board). */
 export const BOARD_ROWS_MAX = 16;
@@ -61,20 +72,45 @@ export const parseOptionalString = (raw: string): string | undefined => {
   return trimmed ? trimmed : undefined;
 };
 
-export const parseInteractionMode = (
-  raw: string,
-): BoardInteractionMode | undefined => {
+export const parseBehaviour = (raw: string): BoardBehaviour | undefined => {
   const trimmed = raw.trim();
-  return MODES.has(trimmed as BoardInteractionMode)
-    ? (trimmed as BoardInteractionMode)
+  if (BEHAVIOURS.has(trimmed as BoardBehaviour)) {
+    return trimmed as BoardBehaviour;
+  }
+  return LEGACY_MODE_TO_BEHAVIOUR[trimmed];
+};
+
+export const parseStatusSurface = (
+  raw: string,
+): BoardStatusSurface | undefined => {
+  const trimmed = raw.trim();
+  return STATUS_SURFACES.has(trimmed as BoardStatusSurface)
+    ? (trimmed as BoardStatusSurface)
     : undefined;
 };
 
-export const parseFitMode = (raw: string): BoardFitMode | undefined => {
+export const parseStatusOverview = (
+  raw: string,
+): BoardStatusOverview | undefined => {
   const trimmed = raw.trim();
-  return FITS.has(trimmed as BoardFitMode)
-    ? (trimmed as BoardFitMode)
+  return STATUS_OVERVIEWS.has(trimmed as BoardStatusOverview)
+    ? (trimmed as BoardStatusOverview)
     : undefined;
+};
+
+export const parseBooleanFlag = (raw: string): boolean | undefined => {
+  const trimmed = raw.trim().toLowerCase();
+  if (trimmed === "true" || trimmed === "1") return true;
+  if (trimmed === "false" || trimmed === "0") return false;
+  return undefined;
+};
+
+export const parseDwellSeconds = (raw: string): number | undefined => {
+  const trimmed = raw.trim();
+  if (!trimmed || !/^\d+$/.test(trimmed)) return undefined;
+  const n = Number(trimmed);
+  if (!Number.isInteger(n) || n < 1) return undefined;
+  return Math.min(n, 120);
 };
 
 /**
@@ -145,46 +181,26 @@ export const BOARD_SETTINGS = {
     },
   } satisfies ScalarSetting<string | undefined>,
 
-  mode: {
+  behaviour: {
     kind: "scalar",
-    param: "mode",
+    param: "behaviour",
     scope: "shell",
-    defaultValue: "static" as BoardInteractionMode,
-    parse: parseInteractionMode,
-    serialize: (value: BoardInteractionMode) => value,
-    isDefault: (value: BoardInteractionMode) => value === "static",
+    defaultValue: "interactive" as BoardBehaviour,
+    parse: parseBehaviour,
+    serialize: (value: BoardBehaviour) => value,
+    isDefault: (value: BoardBehaviour) => value === "interactive",
     url: true,
-    form: false,
+    form: true,
     ui: {
-      label: "Interactivity",
+      label: "Behaviour",
+      help: "Interactive waits for swipe, click, or keyboard. Unattended advances pageable panels on a timer.",
       control: "select",
       options: [
-        { value: "static", label: "Non-interactive" },
-        { value: "mouse", label: "Mouse" },
-        { value: "touch", label: "Touch" },
+        { value: "interactive", label: "Interactive" },
+        { value: "unattended", label: "Unattended" },
       ],
     },
-  } satisfies ScalarSetting<BoardInteractionMode>,
-
-  fit: {
-    kind: "scalar",
-    param: "fit",
-    scope: "shell",
-    defaultValue: "static" as BoardFitMode,
-    parse: parseFitMode,
-    serialize: (value: BoardFitMode) => value,
-    isDefault: (value: BoardFitMode) => value === "static",
-    url: true,
-    form: false,
-    ui: {
-      label: "Fit",
-      control: "select",
-      options: [
-        { value: "static", label: "Natural size" },
-        { value: "fill", label: "Fill the screen" },
-      ],
-    },
-  } satisfies ScalarSetting<BoardFitMode>,
+  } satisfies ScalarSetting<BoardBehaviour>,
 
   arrivalsRows: {
     kind: "scalar",
@@ -202,7 +218,7 @@ export const BOARD_SETTINGS = {
       return undefined;
     },
     serialize: (value: number) => serializeRowsItem(value),
-    isDefault: (value: number) => false,
+    isDefault: () => false,
     url: true,
     form: true,
     ui: {
@@ -232,6 +248,120 @@ export const BOARD_SETTINGS = {
       control: "text",
     },
   } satisfies ListSetting<readonly string[]>,
+
+  arrivalsPinFirst: {
+    kind: "scalar",
+    param: "a.pinFirst",
+    scope: "arrivals",
+    defaultValue: true,
+    parse: parseBooleanFlag,
+    serialize: (value: boolean) => (value ? "true" : "false"),
+    isDefault: (value: boolean) => value,
+    url: true,
+    form: true,
+    ui: {
+      label: "Pin first arrival",
+      help: "Unattended only. Keep the next service visible while later rows rotate.",
+      control: "select",
+      options: [
+        { value: "true", label: "Pin first" },
+        { value: "false", label: "Rotate equally" },
+      ],
+    },
+  } satisfies ScalarSetting<boolean>,
+
+  statusSurface: {
+    kind: "scalar",
+    param: "s.surface",
+    scope: "status",
+    defaultValue: "display" as BoardStatusSurface,
+    parse: parseStatusSurface,
+    serialize: (value: BoardStatusSurface) => value,
+    isDefault: (value: BoardStatusSurface) => value === "display",
+    url: true,
+    form: true,
+    ui: {
+      label: "Status surface",
+      control: "select",
+      options: [
+        { value: "display", label: "Vertical tiles" },
+        { value: "strip", label: "Horizontal strip" },
+      ],
+    },
+  } satisfies ScalarSetting<BoardStatusSurface>,
+
+  statusTiles: {
+    kind: "scalar",
+    param: "s.tiles",
+    scope: "status",
+    defaultValue: 4,
+    parse: parseRowsItem,
+    serialize: (value: number) => serializeRowsItem(value),
+    isDefault: (value: number) => value === 4,
+    url: true,
+    form: true,
+    ui: {
+      label: "Status tiles",
+      help: "Fixed height in arrivals-row tiles. 1 is summary only.",
+      control: "number",
+    },
+  } satisfies ScalarSetting<number>,
+
+  statusLines: {
+    kind: "list",
+    param: "s.lines",
+    scope: "status",
+    defaultValue: [] as readonly string[],
+    parseItem: parseLineIdItem,
+    serializeItem: serializeLineIdItem,
+    isDefault: (value: readonly string[]) => value.length === 0,
+    url: true,
+    form: true,
+    ui: {
+      label: "Status lines (optional)",
+      help: "Comma-separated line ids for detail. Blank uses every fetched line.",
+      control: "text",
+    },
+  } satisfies ListSetting<readonly string[]>,
+
+  statusOverview: {
+    kind: "scalar",
+    param: "s.overview",
+    scope: "status",
+    defaultValue: "network" as BoardStatusOverview,
+    parse: parseStatusOverview,
+    serialize: (value: BoardStatusOverview) => value,
+    isDefault: (value: BoardStatusOverview) => value === "network",
+    url: true,
+    form: true,
+    ui: {
+      label: "Status overview",
+      control: "select",
+      options: [
+        { value: "network", label: "Network" },
+        { value: "selection", label: "Selection" },
+        { value: "none", label: "None" },
+      ],
+    },
+  } satisfies ScalarSetting<BoardStatusOverview>,
+
+  statusDwell: {
+    kind: "scalar",
+    param: "s.dwell",
+    scope: "status",
+    defaultValue: undefined as number | undefined,
+    parse: parseDwellSeconds,
+    serialize: (value: number | undefined) =>
+      value === undefined ? "" : String(value),
+    isDefault: (value: number | undefined) => value === undefined,
+    url: true,
+    form: true,
+    ui: {
+      label: "Status dwell (seconds)",
+      help: "Override the shared 10-second reading interval.",
+      control: "number",
+    },
+  } satisfies ScalarSetting<number | undefined>,
 } as const;
 
 export type BoardSettingId = keyof typeof BOARD_SETTINGS;

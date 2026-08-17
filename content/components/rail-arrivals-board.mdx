@@ -5,6 +5,7 @@ import {
   RailLineAndBoundColumnsDemo,
   RailDestinationFilterDemo,
   RailDestinationFilterEmptyDemo,
+  RailUnattendedDemo,
 } from "@/components/docs/demos/arrivals-layout-demos"
 
 ## Get predictions
@@ -87,6 +88,21 @@ Each bound occupies `pageSize` arrival tiles, default 3 — including a short on
 Pass `lineOrder` to pin section order by line id. Listed lines rank by list position; unlisted serving lines follow, still in canonical order among themselves. Ordering only — it does not hide lines or seed phantom sections.
 
 A completely flat rail board is a different product. It would need a compressed row that still shows line, bound, platform, destination, and countdown, not a layout switch on this component.
+
+## Behaviour
+
+Unattended keeps the bound height fixed and rotates later arrivals. Rank chips mark place in the full list. The first arrival stays pinned unless `pinFirst` is false.
+
+<RailUnattendedDemo />
+
+```tsx
+<RailArrivalsBoard
+  data={data}
+  stopName="Oxford Circus"
+  behaviour="unattended"
+  pageSize={3}
+/>
+```
 
 ## Filter by destination
 
@@ -258,5 +274,7 @@ Keep polling outside the board, then update `data`. Freshness and refresh belong
 | `maxRows` | `number` | Per-bound prediction cap after ordering. Does not drop later lines. Headers and empty rows do not count. |
 | `pageSize` | `number` | Arrival tiles per bound, default 3. Short pages fill with dashes and **No more arrivals**. Hidden when only one page. |
 | `pageSizeByLine` | `Readonly<Record<string, number>>` | ID-keyed rows-per-bound override. Falls back to `pageSize`. Each value applies to every bound on that line. |
+| `behaviour` | `"interactive" \| "unattended"` | Interactive pager, or automatic frames with rank chips. |
+| `pinFirst` | `boolean` | Unattended: keep the next service visible while later slots rotate. Default `true`. |
 | `className` | `string` | Root classes, merged over the board container. |
 | `classNames` | `{ groups?, group?, subgroups?, subgroup?, rows? }` | Layout-level class overrides for generated `data-slot` levels. |

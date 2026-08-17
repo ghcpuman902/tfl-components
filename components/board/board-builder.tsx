@@ -290,6 +290,10 @@ export const BoardBuilder = ({
           ...current.arrivals,
           ...next.arrivals,
         },
+        status: {
+          ...current.status,
+          ...next.status,
+        },
       }
 
       // Positional overrides are stop-relative — drop them on stop change.

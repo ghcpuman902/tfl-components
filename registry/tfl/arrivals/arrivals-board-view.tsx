@@ -27,6 +27,9 @@ import {
   ArrivalsPagedList,
   type ArrivalsBoardClassNames,
 } from "@/components/tfl/arrivals/arrivals-bound-group"
+import type { DisplayBehaviour } from "@/lib/tfl/unattended-sequence"
+
+export type { DisplayBehaviour }
 
 export type ArrivalsBoardMode = "rail" | "bus"
 
@@ -200,11 +203,19 @@ const GroupBody = ({
   mode,
   pageSize,
   classNames,
+  behaviour,
+  pinFirst,
+  dwellMs,
+  startDelayMs,
 }: {
   group: ArrivalsPreparedGroup
   mode: ArrivalsBoardMode
   pageSize?: number
   classNames?: ArrivalsBoardClassNames
+  behaviour?: DisplayBehaviour
+  pinFirst?: boolean
+  dwellMs?: number
+  startDelayMs?: number
 }) => {
   const labeledBounds = group.bounds.filter((bound) => bound.label)
   // `grid-cols-1` (not block) so consumer `grid-cols-*` variants merge cleanly.
@@ -266,6 +277,10 @@ const GroupBody = ({
           pageSize={pageSize}
           showLineChip={group.lineIds.length > 1}
           classNames={classNames}
+          behaviour={behaviour}
+          pinFirst={pinFirst}
+          dwellMs={dwellMs}
+          startDelayMs={startDelayMs}
         />
       ))}
     </ul>
@@ -314,6 +329,12 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
    * for lines not listed. Each value applies to every bound on that line.
    */
   pageSizeByLine?: Readonly<Record<string, number>>
+  /** Interactive pager vs unattended auto-advance. Default interactive. */
+  behaviour?: DisplayBehaviour
+  /** Unattended: keep the first arrival visible while later slots rotate. */
+  pinFirst?: boolean
+  dwellMs?: number
+  startDelayMs?: number
   /**
    * Root classes, merged over the board container (`data-slot="arrivals-board"`).
    * The root *is* the `arrivals` container, so container-query variants here
@@ -347,6 +368,10 @@ export const ArrivalsBoardView = ({
   emptyMessage,
   pageSize,
   pageSizeByLine,
+  behaviour,
+  pinFirst,
+  dwellMs,
+  startDelayMs,
   className,
   classNames,
 }: ArrivalsBoardViewProps) => {
@@ -435,6 +460,10 @@ export const ArrivalsBoardView = ({
           mode={mode}
           pageSize={pageSize}
           classNames={classNames}
+          behaviour={behaviour}
+          pinFirst={pinFirst}
+          dwellMs={dwellMs}
+          startDelayMs={startDelayMs}
         />
       ) : mode === "bus" ? (
         <div
@@ -450,6 +479,10 @@ export const ArrivalsBoardView = ({
               pageSize={pageSize}
               isLastGroup={index === prepared.groups.length - 1}
               classNames={classNames}
+              behaviour={behaviour}
+              pinFirst={pinFirst}
+              dwellMs={dwellMs}
+              startDelayMs={startDelayMs}
             />
           ))}
         </div>
@@ -483,6 +516,10 @@ export const ArrivalsBoardView = ({
                   group.lineIds
                 )}
                 classNames={classNames}
+                behaviour={behaviour}
+                pinFirst={pinFirst}
+                dwellMs={dwellMs}
+                startDelayMs={startDelayMs}
               />
             </section>
           ))}

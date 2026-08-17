@@ -1,8 +1,9 @@
 # Unattended boards
 
-**Status: product design, not an implementation contract.** Board should not be
-presented as a finished iPad or signage product until the behaviours below work
-across the components it composes.
+**Status: arrivals, Tube/rail status, and hosted Board follow this contract.**
+Cycle hire is still a design spike (`docs/cycle-hire-unattended.md`). Do not
+present Board as a finished iPad or signage product until home-screen,
+standalone, long-running, reconnect, and wake-from-sleep checks are done.
 
 ## Decision
 

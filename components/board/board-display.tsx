@@ -6,9 +6,17 @@ import {
   TubeStatusBoard,
   TubeStatusBoardSkeleton,
 } from "@/components/tfl/status/tube-status-board"
+import {
+  TubeStatusDisplay,
+  TubeStatusDisplaySkeleton,
+} from "@/components/tfl/status/tube-status-display"
+import { TubeStatusStrip } from "@/components/tfl/status/tube-status-strip"
 import { useBoardStatus } from "@/hooks/use-board-status"
 import { useDualPathArrivals } from "@/hooks/use-dual-path-arrivals"
-import { resolveArrivalsProps } from "@/lib/tfl/board-config-resolve"
+import {
+  resolveArrivalsProps,
+  resolveStatusProps,
+} from "@/lib/tfl/board-config-resolve"
 import {
   lookupBoardArrivalsStopIds,
   type BoardArrivalsStopIdsIndex,
@@ -181,6 +189,8 @@ export const BoardDisplay = ({
     () => resolveArrivalsProps(config, servingLines, dataLineIds, lineGroups),
     [config, servingLines, dataLineIds, lineGroups]
   )
+  const statusProps = useMemo(() => resolveStatusProps(config), [config])
+  const unattended = config.behaviour === "unattended"
   const pageSizeByLine = useMemo(() => {
     // A scalar `a.rows` broadcasts to every section — do not keep the
     // curated merge default (6) on top of that.
@@ -227,6 +237,9 @@ export const BoardDisplay = ({
             lineOrder={arrivalsProps.lineOrder}
             pageSize={arrivalsProps.pageSize}
             pageSizeByLine={pageSizeByLine}
+            behaviour={config.behaviour}
+            pinFirst={arrivalsProps.pinFirst}
+            startDelayMs={unattended ? 0 : undefined}
             loading={arrivals.loading}
             error={arrivalsError}
             classNames={BOUND_COLUMNS_CLASS_NAMES}
@@ -235,7 +248,33 @@ export const BoardDisplay = ({
         <section className="min-w-0 md:col-span-1" aria-label="Line status">
           {!ready ||
           (status.loading && status.data.length === 0 && !status.error) ? (
-            <TubeStatusBoardSkeleton />
+            unattended ? (
+              <TubeStatusDisplaySkeleton tiles={statusProps.tiles} />
+            ) : (
+              <TubeStatusBoardSkeleton />
+            )
+          ) : unattended && statusProps.surface === "strip" ? (
+            <TubeStatusStrip
+              data={status.data}
+              now={status.fetchedAt ?? undefined}
+              units={statusProps.tiles}
+              detailScope={statusProps.detailScope}
+              detailLineIds={statusProps.detailLineIds}
+              dwellMs={statusProps.dwellMs}
+              startDelayMs={1500}
+              error={status.error}
+            />
+          ) : unattended ? (
+            <TubeStatusDisplay
+              data={status.data}
+              now={status.fetchedAt ?? undefined}
+              tiles={statusProps.tiles}
+              detailScope={statusProps.detailScope}
+              detailLineIds={statusProps.detailLineIds}
+              dwellMs={statusProps.dwellMs}
+              startDelayMs={1500}
+              error={status.error}
+            />
           ) : (
             <TubeStatusBoard
               data={status.data}

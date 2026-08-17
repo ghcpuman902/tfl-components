@@ -2,6 +2,7 @@ import { BusArrivalsGroupedVariant } from "@/components/docs/demos/bus-arrivals-
 import {
   BusRouteColumnsDemo,
   BusFlatDemo,
+  BusUnattendedDemo,
 } from "@/components/docs/demos/arrivals-layout-demos"
 import { BusArrivalsDisruptionDemo } from "@/components/docs/demos/bus-arrivals-disruption-demo"
 
@@ -56,6 +57,21 @@ Pass `groupBy="route"` when you want route sections. The homepage proof board do
   stopName={stop.commonName}
   stopLetter={stop.stopLetter}
   groupBy="route"
+/>
+```
+
+## Behaviour
+
+Unattended keeps the configured height and rotates later arrivals. Rank chips replace the page count, on both flat and route-grouped boards.
+
+<BusUnattendedDemo />
+
+```tsx
+<BusArrivalsBoard
+  data={data}
+  stopName={stop.commonName}
+  stopLetter={stop.stopLetter}
+  behaviour="unattended"
 />
 ```
 
@@ -165,5 +181,7 @@ Keep polling outside the board, then update `data`. Freshness and refresh belong
 | `statusLabel` | `string` | Optional short caption in the title row. |
 | `maxRows` | `number` | Prediction cap after ordering. Per route when grouped, whole list when flat. Headers do not count. |
 | `pageSize` | `number` | Visible arrivals per page, default 3. One page stays short. Multiple pages lock height; a short last page fills with dashes and **No more arrivals**. Grouped: pager on the route header. Flat: trailing tile, always visible on hover pointers. Hidden when only one page. |
+| `behaviour` | `"interactive" \| "unattended"` | Interactive pager, or automatic frames with rank chips. |
+| `pinFirst` | `boolean` | Unattended: keep the next service visible while later slots rotate. Default `true`. |
 | `className` | `string` | Root classes, merged over the board container. |
 | `classNames` | `{ groups?, group?, rows? }` | Layout-level class overrides for generated `data-slot` levels. `subgroups` / `subgroup` are rail-only. |

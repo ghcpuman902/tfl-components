@@ -11,7 +11,6 @@ import {
   BoardSegmentBadge,
   boardSegmentIndex,
 } from "@/components/board/board-url-legend"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { RailArrivalsLine } from "@/lib/tfl/arrivals-prepare"
@@ -286,48 +285,30 @@ export const BoardConfigForm = ({
         </div>
       ) : null}
 
-      <fieldset className="space-y-3" disabled>
-        <legend className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <span>Display options</span>
-          <Badge variant="secondary">Coming soon</Badge>
-        </legend>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="board-mode">
-              {BOARD_SETTINGS.mode.ui?.label}
-            </Label>
-            <select
-              id="board-mode"
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm opacity-60"
-              value={config.mode}
-              disabled
-              aria-disabled
-            >
-              {BOARD_SETTINGS.mode.ui?.options?.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="board-fit">{BOARD_SETTINGS.fit.ui?.label}</Label>
-            <select
-              id="board-fit"
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm opacity-60"
-              value={config.fit}
-              disabled
-              aria-disabled
-            >
-              {BOARD_SETTINGS.fit.ui?.options?.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </fieldset>
+      <div className="space-y-2">
+        <Label htmlFor="board-behaviour">
+          {BOARD_SETTINGS.behaviour.ui?.label}
+        </Label>
+        <select
+          id="board-behaviour"
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
+          value={config.behaviour}
+          onChange={(event) =>
+            onChange({
+              behaviour: event.target.value as BoardConfig["behaviour"],
+            })
+          }
+        >
+          {BOARD_SETTINGS.behaviour.ui?.options?.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <p className="text-sm text-muted-foreground">
+          {BOARD_SETTINGS.behaviour.ui?.help}
+        </p>
+      </div>
     </form>
   )
 }

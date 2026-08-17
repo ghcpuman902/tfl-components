@@ -22,6 +22,14 @@ export default function DraftsIndexPage() {
         "AI-generated explorations under review",
       ]}
       relatedHrefs={[
+        {
+          href: "/drafts/bus-disruption-band",
+          label: "Bus disruption band — in the arrivals header",
+        },
+        {
+          href: "/drafts/bus-disruption-surface",
+          label: "Bus disruption surface — its own list",
+        },
         { href: "/tools", label: "Tools — promoted playgrounds" },
         { href: "/docs/components", label: "Components — promoted boards" },
         { href: "/blocks", label: "Blocks — composed patterns" },

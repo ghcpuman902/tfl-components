@@ -9,8 +9,8 @@ export const BoardWipNotice = () => {
 
   return (
     <p className="mt-2 max-w-prose text-sm text-muted-foreground">
-      Experimental interactive preview. Unattended rotation and fixed-height
-      panels are not ready yet.{" "}
+      Unattended rotation is on. Home-screen and wake-from-sleep have not
+      been checked.{" "}
       <button
         type="button"
         onClick={handleOpenFeedback}

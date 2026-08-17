@@ -24,6 +24,19 @@ export default function BoardBuilderPage() {
             Configure an experimental full-screen TfL display through one URL.
           </p>
           <BoardWipNotice />
+          <div className="mt-6 max-w-prose space-y-3 text-sm text-muted-foreground">
+            <p>
+              Unattended example:{" "}
+              <code className="text-foreground">
+                /board/view#stop=940GZZLUOXC&behaviour=unattended&a.rows=3&s.tiles=4
+              </code>
+            </p>
+            <p>
+              A landscape iPad can take 3 arrival rows per bound and a 4-tile
+              status column. A portrait phone should keep one panel, usually
+              arrivals.
+            </p>
+          </div>
         </header>
 
         <BoardBuilder stationLines={stationLines} stationNames={stationNames} />

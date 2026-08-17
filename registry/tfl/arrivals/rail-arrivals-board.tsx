@@ -15,6 +15,7 @@ import {
   type RailArrivalsLineSortBy,
   type RailArrivalsSortBy,
 } from "@/lib/tfl/arrivals-prepare"
+import type { DisplayBehaviour } from "@/lib/tfl/unattended-sequence"
 
 export { RAIL_ARRIVALS_DEFAULT_PAGE_SIZE } from "@/lib/tfl/arrivals-defaults"
 
@@ -75,6 +76,12 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
    * line.
    */
   pageSizeByLine?: Readonly<Record<string, number>>
+  /** Interactive pager vs unattended auto-advance. Default interactive. */
+  behaviour?: DisplayBehaviour
+  /** Unattended: keep the first arrival visible while later slots rotate. */
+  pinFirst?: boolean
+  dwellMs?: number
+  startDelayMs?: number
   /**
    * Root classes, merged over the board container
    * (`data-slot="arrivals-board"`). Use `classNames` for board-width
@@ -122,6 +129,10 @@ export const RailArrivalsBoard = ({
   maxRows = 16,
   pageSize = RAIL_ARRIVALS_DEFAULT_PAGE_SIZE,
   pageSizeByLine,
+  behaviour,
+  pinFirst,
+  dwellMs,
+  startDelayMs,
   loading = false,
   error = null,
   className,
@@ -159,6 +170,10 @@ export const RailArrivalsBoard = ({
       error={error}
       pageSize={pageSize}
       pageSizeByLine={pageSizeByLine}
+      behaviour={behaviour}
+      pinFirst={pinFirst}
+      dwellMs={dwellMs}
+      startDelayMs={startDelayMs}
       className={className}
       classNames={classNames}
       {...chrome}

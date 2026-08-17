@@ -37,16 +37,14 @@ describe("parseBoardConfig", () => {
     assert.equal(config.stop, "940GZZLUOXC");
   });
 
-  it("falls back on invalid mode and fit", () => {
-    const config = parseBoardConfig("mode=voice&fit=stretch");
-    assert.equal(config.mode, "static");
-    assert.equal(config.fit, "static");
+  it("falls back on invalid behaviour", () => {
+    const config = parseBoardConfig("behaviour=voice");
+    assert.equal(config.behaviour, "interactive");
   });
 
-  it("accepts reserved coming-soon values", () => {
+  it("maps legacy mode values to interactive", () => {
     const config = parseBoardConfig("mode=touch&fit=fill");
-    assert.equal(config.mode, "touch");
-    assert.equal(config.fit, "fill");
+    assert.equal(config.behaviour, "interactive");
   });
 
   it("treats empty stop, stopName, and key as undefined", () => {
@@ -57,10 +55,10 @@ describe("parseBoardConfig", () => {
   });
 
   it("accepts URLSearchParams", () => {
-    const params = new URLSearchParams("stop=940GZZLUOXC&mode=mouse");
+    const params = new URLSearchParams("stop=940GZZLUOXC&behaviour=unattended");
     const config = parseBoardConfig(params);
     assert.equal(config.stop, "940GZZLUOXC");
-    assert.equal(config.mode, "mouse");
+    assert.equal(config.behaviour, "unattended");
   });
 
   it("ignores unknown params", () => {
@@ -112,9 +110,9 @@ describe("buildBoardHref", () => {
     assert.equal(buildBoardHref({}), BOARD_VIEW_PATH);
   });
 
-  it("omits default mode and fit", () => {
+  it("omits default behaviour", () => {
     assert.equal(
-      buildBoardHref({ mode: "static", fit: "static", stop: "940GZZLUOXC" }),
+      buildBoardHref({ behaviour: "interactive", stop: "940GZZLUOXC" }),
       `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`,
     );
   });
@@ -130,13 +128,12 @@ describe("buildBoardHref", () => {
     const href = buildBoardHref({
       stop: "940GZZLUOXC",
       stopName: "Oxford Circus",
-      mode: "mouse",
-      fit: "fill",
+      behaviour: "unattended",
       key: "abc123",
     });
     assert.equal(
       href,
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&stopName=Oxford+Circus&mode=mouse&fit=fill&key=abc123`,
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&stopName=Oxford+Circus&behaviour=unattended&key=abc123`,
     );
   });
 
@@ -180,12 +177,11 @@ describe("buildBoardHref", () => {
       stop: "940GZZLUOXC",
       arrivals: { rows: 0 },
       key: "abc123",
-      mode: "touch",
-      fit: "fill",
+      behaviour: "unattended",
     });
     assert.equal(
       href,
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&mode=touch&fit=fill&a.rows=0&key=abc123`,
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&behaviour=unattended&a.rows=0&key=abc123`,
     );
   });
 
@@ -193,10 +189,10 @@ describe("buildBoardHref", () => {
     const original = {
       stop: "940GZZLUOXC",
       stopName: "Oxford Circus",
-      mode: "touch" as const,
-      fit: "fill" as const,
+      behaviour: "unattended" as const,
       key: "secretkey",
       arrivals: {},
+      status: {},
     };
     const href = buildBoardHref(original);
     const hash = href.slice(BOARD_VIEW_PATH.length);
@@ -207,8 +203,7 @@ describe("buildBoardHref", () => {
   it("round-trips arrivals settings", () => {
     const original = {
       stop: "940GZZLUOXC",
-      mode: "static" as const,
-      fit: "static" as const,
+      behaviour: "interactive" as const,
       arrivals: {
         rows: [6, undefined, 2] as const,
         lineOrder: ["victoria", "central", "bakerloo"] as const,
@@ -228,12 +223,11 @@ describe("describeBoardHrefSegments", () => {
     assert.deepEqual(describeBoardHrefSegments({}), []);
   });
 
-  it("omits default mode and fit; scalar a.rows=3 is a real segment", () => {
+  it("omits default behaviour; scalar a.rows=3 is a real segment", () => {
     assert.deepEqual(
       describeBoardHrefSegments({
         stop: "940GZZLUOXC",
-        mode: "static",
-        fit: "static",
+        behaviour: "interactive",
         arrivals: { rows: 3 },
       }),
       [
@@ -247,8 +241,7 @@ describe("describeBoardHrefSegments", () => {
     const segments = describeBoardHrefSegments({
       stop: "940GZZLUOXC",
       stopName: "Oxford Circus",
-      mode: "mouse",
-      fit: "fill",
+      behaviour: "unattended",
       arrivals: {
         rows: [6, 2, 2],
         lineOrder: ["victoria", "central", "bakerloo"],
@@ -257,15 +250,14 @@ describe("describeBoardHrefSegments", () => {
     });
     assert.deepEqual(
       segments.map((segment) => segment.setting),
-      ["stop", "stopName", "mode", "fit", "arrivalsRows", "arrivalsLines", "key"],
+      ["stop", "stopName", "behaviour", "arrivalsRows", "arrivalsLines", "key"],
     );
     assert.deepEqual(
       segments.map((segment) => segment.text),
       [
         "stop=940GZZLUOXC",
         "stopName=Oxford+Circus",
-        "mode=mouse",
-        "fit=fill",
+        "behaviour=unattended",
         "a.rows=6,2,2",
         "a.lines=victoria,central,bakerloo",
         "key=abc123",
@@ -306,18 +298,18 @@ describe("normalizeBoardHash", () => {
     );
   });
 
-  it("normalizes a.lines and omits default mode", () => {
+  it("normalizes a.lines and omits default behaviour", () => {
     assert.equal(
       normalizeBoardHash(
-        "#stop=940GZZLUOXC&mode=static&a.lines=Victoria,central,victoria,not-a-line",
+        "#stop=940GZZLUOXC&behaviour=interactive&a.lines=Victoria,central,victoria,not-a-line",
       ),
       "#stop=940GZZLUOXC&a.lines=victoria,central",
     );
   });
 
-  it("drops empty values and invalid mode/fit", () => {
+  it("drops empty values and invalid behaviour", () => {
     assert.equal(
-      normalizeBoardHash("#stop=940GZZLUOXC&stopName=&mode=voice&fit=stretch"),
+      normalizeBoardHash("#stop=940GZZLUOXC&stopName=&behaviour=voice&fit=stretch"),
       "#stop=940GZZLUOXC",
     );
   });

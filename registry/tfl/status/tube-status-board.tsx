@@ -4,6 +4,7 @@ import { LINE_ORDER } from "tfl-ts"
 import { ExternalLink, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text"
+import { QuietChip } from "@/components/tfl/arrivals/quiet-chip"
 import { LineColorBar } from "@/components/tfl/brand/line-badge"
 import { LineName } from "@/components/tfl/brand/line-name"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
@@ -136,14 +137,7 @@ const lineTitleClass = "tfl-dark-line-text text-[var(--line-color)]"
 
 /** Platform-chip geometry; neutral fill so severity is read as text, not colour. */
 const SeverityChip = ({ label }: { label: string }) => (
-  <span
-    className={cn(
-      "mr-[0.35em] inline-flex h-5 max-w-full shrink-0 items-center justify-center bg-foreground/5 px-1.5 align-middle text-xs font-semibold text-foreground/60",
-      CHIP_CAP_TEXT_BOX_CLASS
-    )}
-  >
-    <span className="truncate">{label}</span>
-  </span>
+  <QuietChip className="mr-[0.35em]">{label}</QuietChip>
 )
 
 /** Half-tile leading — wrapping copy stays on the arrivals baseline without snapping the block to a whole tile. */

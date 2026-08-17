@@ -6,8 +6,7 @@ import {
   URL_BOARD_SETTING_IDS,
   parseArrivalsLines,
   parseArrivalsRows,
-  parseFitMode,
-  parseInteractionMode,
+  parseBehaviour,
   parseLineIdItem,
   parseRowsItem,
   serializeArrivalsLines,
@@ -115,11 +114,10 @@ describe("parseArrivalsLines / parseLineIdItem", () => {
   });
 });
 
-describe("mode and fit parsers", () => {
-  it("accepts known values and rejects others", () => {
-    assert.equal(parseInteractionMode("mouse"), "mouse");
-    assert.equal(parseInteractionMode("voice"), undefined);
-    assert.equal(parseFitMode("fill"), "fill");
-    assert.equal(parseFitMode("stretch"), undefined);
+describe("behaviour parser", () => {
+  it("accepts known values, maps legacy mode, and rejects others", () => {
+    assert.equal(parseBehaviour("unattended"), "unattended");
+    assert.equal(parseBehaviour("static"), "interactive");
+    assert.equal(parseBehaviour("voice"), undefined);
   });
 });

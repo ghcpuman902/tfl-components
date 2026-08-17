@@ -14,6 +14,7 @@ import {
   type BusArrivalsGroupSortBy,
   type BusArrivalsSortBy,
 } from "@/lib/tfl/arrivals-prepare"
+import type { DisplayBehaviour } from "@/lib/tfl/unattended-sequence"
 
 export type BusArrivalsBoardProps = ArrivalsBoardChromeProps & {
   /**
@@ -52,6 +53,12 @@ export type BusArrivalsBoardProps = ArrivalsBoardChromeProps & {
    * end-of-list message on a short last page). Default 3.
    */
   pageSize?: number
+  /** Interactive pager vs unattended auto-advance. Default interactive. */
+  behaviour?: DisplayBehaviour
+  /** Unattended: keep the first arrival visible while later slots rotate. */
+  pinFirst?: boolean
+  dwellMs?: number
+  startDelayMs?: number
   /**
    * Root classes, merged over the board container
    * (`data-slot="arrivals-board"`). Use `classNames` for board-width
@@ -101,6 +108,10 @@ export const BusArrivalsBoard = ({
   maxRows = 16,
   now,
   pageSize = 3,
+  behaviour,
+  pinFirst,
+  dwellMs,
+  startDelayMs,
   stopLetter,
   loading = false,
   error = null,
@@ -140,6 +151,10 @@ export const BusArrivalsBoard = ({
       loading={loading}
       error={error}
       pageSize={pageSize}
+      behaviour={behaviour}
+      pinFirst={pinFirst}
+      dwellMs={dwellMs}
+      startDelayMs={startDelayMs}
       className={className}
       classNames={classNames}
       {...chrome}

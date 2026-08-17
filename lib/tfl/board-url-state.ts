@@ -11,20 +11,25 @@ import {
   BOARD_SETTINGS,
   parseArrivalsLines,
   parseArrivalsRows,
-  parseFitMode,
-  parseInteractionMode,
+  parseBehaviour,
+  parseBooleanFlag,
+  parseDwellSeconds,
   parseOptionalString,
+  parseRowsItem,
+  parseStatusOverview,
+  parseStatusSurface,
   serializeArrivalsLines,
   serializeArrivalsRows,
-  type BoardFitMode,
-  type BoardInteractionMode,
+  type BoardBehaviour,
   type BoardSettingId,
+  type BoardStatusOverview,
+  type BoardStatusSurface,
 } from "@/lib/tfl/board-settings";
 
 export const BOARD_PATH = "/board";
 export const BOARD_VIEW_PATH = "/board/view";
 
-export type { BoardFitMode, BoardInteractionMode };
+export type { BoardBehaviour, BoardStatusOverview, BoardStatusSurface };
 
 export type BoardArrivalsConfig = {
   /**
@@ -34,21 +39,30 @@ export type BoardArrivalsConfig = {
   rows?: number | readonly (number | undefined)[];
   /** Explicit line section order. Ordering only — does not filter. */
   lineOrder?: readonly string[];
+  pinFirst?: boolean;
+};
+
+export type BoardStatusConfig = {
+  surface?: BoardStatusSurface;
+  tiles?: number;
+  lines?: readonly string[];
+  overview?: BoardStatusOverview;
+  dwell?: number;
 };
 
 export type BoardConfig = {
   key?: string;
   stop?: string;
   stopName?: string;
-  mode: BoardInteractionMode;
-  fit: BoardFitMode;
+  behaviour: BoardBehaviour;
   arrivals: BoardArrivalsConfig;
+  status: BoardStatusConfig;
 };
 
 export const DEFAULT_BOARD_CONFIG: BoardConfig = {
-  mode: BOARD_SETTINGS.mode.defaultValue,
-  fit: BOARD_SETTINGS.fit.defaultValue,
+  behaviour: BOARD_SETTINGS.behaviour.defaultValue,
   arrivals: {},
+  status: {},
 };
 
 /**
@@ -79,25 +93,38 @@ export const parseBoardConfig = (
   const stopName =
     parseOptionalString(params.get("stopName") ?? "") ?? undefined;
   const key = parseOptionalString(params.get("key") ?? "") ?? undefined;
-  const mode =
-    parseInteractionMode(params.get("mode") ?? "") ??
-    DEFAULT_BOARD_CONFIG.mode;
-  const fit =
-    parseFitMode(params.get("fit") ?? "") ?? DEFAULT_BOARD_CONFIG.fit;
+  const behaviour =
+    parseBehaviour(params.get("behaviour") ?? "") ??
+    parseBehaviour(params.get("mode") ?? "") ??
+    DEFAULT_BOARD_CONFIG.behaviour;
 
   const arrivals: BoardArrivalsConfig = {};
   const rows = parseArrivalsRows(params.get("a.rows"));
   if (rows !== undefined) arrivals.rows = rows;
   const lineOrder = parseArrivalsLines(params.get("a.lines"));
   if (lineOrder !== undefined) arrivals.lineOrder = lineOrder;
+  const pinFirst = parseBooleanFlag(params.get("a.pinFirst") ?? "");
+  if (pinFirst !== undefined) arrivals.pinFirst = pinFirst;
+
+  const status: BoardStatusConfig = {};
+  const surface = parseStatusSurface(params.get("s.surface") ?? "");
+  if (surface !== undefined) status.surface = surface;
+  const tiles = parseRowsItem(params.get("s.tiles") ?? "");
+  if (tiles !== undefined) status.tiles = Math.max(1, tiles);
+  const statusLines = parseArrivalsLines(params.get("s.lines"));
+  if (statusLines !== undefined) status.lines = statusLines;
+  const overview = parseStatusOverview(params.get("s.overview") ?? "");
+  if (overview !== undefined) status.overview = overview;
+  const dwell = parseDwellSeconds(params.get("s.dwell") ?? "");
+  if (dwell !== undefined) status.dwell = dwell;
 
   return {
     key,
     stop,
     stopName,
-    mode,
-    fit,
+    behaviour,
     arrivals,
+    status,
   };
 };
 
@@ -111,10 +138,17 @@ const encodeSegment = (param: string, value: string): string =>
 const KNOWN_HASH_PARAMS = new Set<string>([
   BOARD_SETTINGS.stop.param,
   BOARD_SETTINGS.stopName.param,
-  BOARD_SETTINGS.mode.param,
-  BOARD_SETTINGS.fit.param,
+  BOARD_SETTINGS.behaviour.param,
   BOARD_SETTINGS.arrivalsRows.param,
   BOARD_SETTINGS.arrivalsLines.param,
+  BOARD_SETTINGS.arrivalsPinFirst.param,
+  BOARD_SETTINGS.statusSurface.param,
+  BOARD_SETTINGS.statusTiles.param,
+  BOARD_SETTINGS.statusLines.param,
+  BOARD_SETTINGS.statusOverview.param,
+  BOARD_SETTINGS.statusDwell.param,
+  "mode",
+  "fit",
   "key",
 ]);
 
@@ -140,6 +174,10 @@ const mergeBoardConfig = (
   arrivals: {
     ...base.arrivals,
     ...next.arrivals,
+  },
+  status: {
+    ...base.status,
+    ...next.status,
   },
 });
 
@@ -167,16 +205,10 @@ export const describeBoardHrefSegments = (
       text: encodeSegment(BOARD_SETTINGS.stopName.param, merged.stopName),
     });
   }
-  if (!BOARD_SETTINGS.mode.isDefault(merged.mode)) {
+  if (!BOARD_SETTINGS.behaviour.isDefault(merged.behaviour)) {
     segments.push({
-      setting: "mode",
-      text: encodeSegment(BOARD_SETTINGS.mode.param, merged.mode),
-    });
-  }
-  if (!BOARD_SETTINGS.fit.isDefault(merged.fit)) {
-    segments.push({
-      setting: "fit",
-      text: encodeSegment(BOARD_SETTINGS.fit.param, merged.fit),
+      setting: "behaviour",
+      text: encodeSegment(BOARD_SETTINGS.behaviour.param, merged.behaviour),
     });
   }
 
@@ -215,6 +247,78 @@ export const describeBoardHrefSegments = (
     });
   }
 
+  if (
+    merged.arrivals.pinFirst !== undefined &&
+    !BOARD_SETTINGS.arrivalsPinFirst.isDefault(merged.arrivals.pinFirst)
+  ) {
+    segments.push({
+      setting: "arrivalsPinFirst",
+      text: encodeSegment(
+        BOARD_SETTINGS.arrivalsPinFirst.param,
+        BOARD_SETTINGS.arrivalsPinFirst.serialize(merged.arrivals.pinFirst),
+      ),
+    });
+  }
+
+  if (
+    merged.status.surface !== undefined &&
+    !BOARD_SETTINGS.statusSurface.isDefault(merged.status.surface)
+  ) {
+    segments.push({
+      setting: "statusSurface",
+      text: encodeSegment(
+        BOARD_SETTINGS.statusSurface.param,
+        merged.status.surface,
+      ),
+    });
+  }
+  if (
+    merged.status.tiles !== undefined &&
+    !BOARD_SETTINGS.statusTiles.isDefault(merged.status.tiles)
+  ) {
+    segments.push({
+      setting: "statusTiles",
+      text: encodeSegment(
+        BOARD_SETTINGS.statusTiles.param,
+        BOARD_SETTINGS.statusTiles.serialize(merged.status.tiles),
+      ),
+    });
+  }
+  const statusLinesSerialized = serializeArrivalsLines(merged.status.lines);
+  if (statusLinesSerialized !== undefined) {
+    segments.push({
+      setting: "statusLines",
+      text: encodeSegment(
+        BOARD_SETTINGS.statusLines.param,
+        statusLinesSerialized,
+      ),
+    });
+  }
+  if (
+    merged.status.overview !== undefined &&
+    !BOARD_SETTINGS.statusOverview.isDefault(merged.status.overview)
+  ) {
+    segments.push({
+      setting: "statusOverview",
+      text: encodeSegment(
+        BOARD_SETTINGS.statusOverview.param,
+        merged.status.overview,
+      ),
+    });
+  }
+  if (
+    merged.status.dwell !== undefined &&
+    !BOARD_SETTINGS.statusDwell.isDefault(merged.status.dwell)
+  ) {
+    segments.push({
+      setting: "statusDwell",
+      text: encodeSegment(
+        BOARD_SETTINGS.statusDwell.param,
+        BOARD_SETTINGS.statusDwell.serialize(merged.status.dwell),
+      ),
+    });
+  }
+
   if (merged.key) {
     segments.push({
       setting: "key",
@@ -227,7 +331,7 @@ export const describeBoardHrefSegments = (
 
 /**
  * Build a shareable `/board/view#…` href.
- * Omits default mode/fit/arrivals. Empty config yields the bare path.
+ * Omits default behaviour/arrivals/status. Empty config yields the bare path.
  * Key is always serialized last when present.
  */
 export const buildBoardHref = (
@@ -252,7 +356,7 @@ export const boardHashFromConfig = (
 /**
  * Parse then re-serialize a hash so common mistakes become the canonical
  * fragment: trim, clamp, drop invalid slots / unknown line ids, omit
- * default mode/fit, strip empty values. Unknown params are kept (J10
+ * default behaviour, strip empty values. Unknown params are kept (J10)
  * forward-compat) and sit just before `key`.
  */
 export const normalizeBoardHash = (

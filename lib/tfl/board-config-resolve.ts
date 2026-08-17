@@ -23,6 +23,15 @@ export type ResolvedArrivalsProps = {
   pageSize?: number;
   /** ID-keyed rows-per-bound override from positional `a.rows`. */
   pageSizeByLine?: Readonly<Record<string, number>>;
+  pinFirst?: boolean;
+};
+
+export type ResolvedStatusProps = {
+  surface: "display" | "strip";
+  tiles: number;
+  detailScope: "network" | "selection" | "none";
+  detailLineIds?: readonly string[];
+  dwellMs?: number;
 };
 
 /** One board section — a single line, or a shared-platform merge. */
@@ -302,6 +311,9 @@ export const resolveArrivalsProps = (
   if (config.arrivals.lineOrder?.length) {
     result.lineOrder = config.arrivals.lineOrder;
   }
+  if (config.arrivals.pinFirst === false) {
+    result.pinFirst = false;
+  }
 
   const rows = config.arrivals.rows;
   if (rows === undefined) {
@@ -322,4 +334,23 @@ export const resolveArrivalsProps = (
   }
 
   return result;
+};
+
+export const resolveStatusProps = (
+  config: BoardConfig,
+): ResolvedStatusProps => {
+  const tiles = Math.max(1, config.status.tiles ?? 4);
+  const dwellMs =
+    config.status.dwell !== undefined
+      ? config.status.dwell * 1000
+      : undefined;
+  return {
+    surface: config.status.surface ?? "display",
+    tiles,
+    detailScope: config.status.overview ?? "network",
+    detailLineIds: config.status.lines?.length
+      ? config.status.lines
+      : undefined,
+    dwellMs,
+  };
 };

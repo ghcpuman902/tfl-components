@@ -154,3 +154,29 @@ export const RailDestinationFilterEmptyDemo = () => (
     />
   </DemoFigure>
 )
+
+export const RailUnattendedDemo = () => (
+  <DemoFigure>
+    <RailArrivalsBoard
+      data={OXFORD_CIRCUS_ARRIVALS}
+      lines={OXFORD_CIRCUS_LINES}
+      stopName="Oxford Circus"
+      headingLevel={2}
+      behaviour="unattended"
+      pageSize={3}
+    />
+  </DemoFigure>
+)
+
+export const BusUnattendedDemo = () => (
+  <DemoFigure>
+    <BusArrivalsBoard
+      data={TRAFALGAR_SQUARE_ARRIVALS}
+      stopName="Trafalgar Square"
+      stopLetter="G"
+      headingLevel={2}
+      behaviour="unattended"
+      pageSize={3}
+    />
+  </DemoFigure>
+)

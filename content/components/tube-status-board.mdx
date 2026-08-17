@@ -1,5 +1,7 @@
 import { StatusAnnouncementsExample } from "@/components/docs/demos/status-announcements-example"
 import { StatusWatchlistExample } from "@/components/docs/demos/status-watchlist-example"
+import TubeStatusDisplayDemo from "@/components/docs/demos/tube-status-display-demo"
+import TubeStatusStripDemo from "@/components/docs/demos/tube-status-strip-demo"
 
 ## Get line status
 
@@ -81,6 +83,32 @@ return <TubeStatusBoard data={data} now={fetchedAt} compact hideHeader />
 Same call with `tfl.line.getStatus({ lineIds: ["victoria", "northern"] })` in the app layer. The board does not fetch.
 
 <StatusWatchlistExample />
+
+## Unattended display
+
+A fixed-height surface with a chosen tile count. The first tile is the phase heading. The rest rotate disrupted lines, then good service.
+
+<TubeStatusDisplayDemo />
+
+```tsx
+import { TubeStatusDisplay } from "@/components/tfl/status/tube-status-display"
+
+<TubeStatusDisplay data={data} now={fetchedAt} tiles={4} />
+```
+
+`detailScope` is `network`, `selection`, or `none`. Use `network` only when the fetch covers every line you mention.
+
+## Status strip
+
+A wide, shallow surface. Two units show the current line and reason. Four or more add the other-line summaries.
+
+<TubeStatusStripDemo />
+
+```tsx
+import { TubeStatusStrip } from "@/components/tfl/status/tube-status-strip"
+
+<TubeStatusStrip data={data} now={fetchedAt} units={4} />
+```
 
 ## Announcements
 

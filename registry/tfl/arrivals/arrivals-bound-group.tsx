@@ -15,6 +15,14 @@ import {
   ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
   CHIP_CAP_TEXT_BOX_CLASS,
 } from "@/components/tfl/arrivals/chip-text"
+import { QuietChip } from "@/components/tfl/arrivals/quiet-chip"
+import { useUnattendedSequence } from "@/hooks/use-unattended-sequence"
+import { buildPinnedFrames } from "@/lib/tfl/arrivals-unattended-frames"
+import type { ArrivalsLockHeight } from "@/lib/tfl/arrivals-prepare"
+import {
+  UNATTENDED_DEFAULT_DWELL_MS,
+  type DisplayBehaviour,
+} from "@/lib/tfl/unattended-sequence"
 import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
 import {
   LineBadge,
@@ -119,6 +127,7 @@ export const ArrivalRowItem = ({
   showRule,
   showLineChip = false,
   hoistPlatform = false,
+  rank,
 }: {
   row: ArrivalsPreparedRow
   mode: ArrivalsBoardMode
@@ -127,6 +136,8 @@ export const ArrivalRowItem = ({
   showLineChip?: boolean
   /** Platform already lives in the subgroup heading — omit the row chip. */
   hoistPlatform?: boolean
+  /** 1-based rank in the full ordered list (unattended). */
+  rank?: number
 }) => {
   const rawDestination =
     usableTflText(row.arrival.towards) ||
@@ -195,6 +206,7 @@ export const ArrivalRowItem = ({
     platformName: row.arrival.platformName,
   })
   const rowLabel = [
+    rank ? `Arrival ${rank}` : null,
     platformNumber ? `Platform ${platformNumber}` : null,
     sharedChipLabel ??
       (lineChipLabel
@@ -223,7 +235,7 @@ export const ArrivalRowItem = ({
     />
   ) : null
 
-  const leading =
+  const identityLead =
     mode === "bus"
       ? routeLabel
         ? <BusNumberChip label={routeLabel} />
@@ -238,6 +250,16 @@ export const ArrivalRowItem = ({
           </div>
         )
         : null
+
+  const leading =
+    rank || identityLead ? (
+      <div className="flex min-w-0 items-center gap-x-2">
+        {rank ? (
+          <QuietChip aria-hidden>{rank}</QuietChip>
+        ) : null}
+        {identityLead}
+      </div>
+    ) : null
 
   return (
     <li
@@ -544,6 +566,7 @@ const PagedArrivalRows = ({
   emptyLabel,
   showLineChip = false,
   hoistPlatform = false,
+  ranks,
 }: {
   rows: readonly ArrivalsPreparedRow[]
   dashCount: number
@@ -553,6 +576,7 @@ const PagedArrivalRows = ({
   emptyLabel: string
   showLineChip?: boolean
   hoistPlatform?: boolean
+  ranks?: readonly number[]
 }) => {
   const trailingCount = dashCount + (showEndMessage ? 1 : 0)
 
@@ -581,6 +605,7 @@ const PagedArrivalRows = ({
             }
             showLineChip={showLineChip}
             hoistPlatform={hoistPlatform}
+            rank={ranks?.[index]}
           />
         ))
       )}
@@ -671,6 +696,73 @@ const ArrivalsPageTrack = ({
           />
         </ul>
       ))}
+    </div>
+  )
+}
+
+type UnattendedArrivalFramesProps = {
+  rows: readonly ArrivalsPreparedRow[]
+  pageSize: number
+  pinFirst?: boolean
+  lockHeight?: ArrivalsLockHeight
+  dwellMs?: number
+  startDelayMs?: number
+  mode: ArrivalsBoardMode
+  isLast: boolean
+  emptyLabel: string
+  className?: string
+  showLineChip?: boolean
+  hoistPlatform?: boolean
+}
+
+const UnattendedArrivalFrames = ({
+  rows,
+  pageSize,
+  pinFirst = true,
+  lockHeight = true,
+  dwellMs = UNATTENDED_DEFAULT_DWELL_MS,
+  startDelayMs = 0,
+  mode,
+  isLast,
+  emptyLabel,
+  className,
+  showLineChip = false,
+  hoistPlatform = false,
+}: UnattendedArrivalFramesProps) => {
+  const { frames } = buildPinnedFrames(rows, pageSize, { pinFirst, lockHeight })
+  const itemIds = frames.map((frame) => frame.id)
+  const sequence = useUnattendedSequence({
+    itemIds,
+    dwellMs,
+    startDelayMs,
+    enabled: itemIds.length > 1,
+  })
+  const frame = frames[sequence.index] ?? frames[0]
+
+  return (
+    <div
+      onPointerEnter={sequence.handlePointerEnter}
+      onPointerLeave={sequence.handlePointerLeave}
+      onFocus={sequence.handleFocus}
+      onBlur={sequence.handleBlur}
+    >
+      <ul
+        data-slot="arrivals-rows"
+        className={cn(LIST_RESET_CLASS, className)}
+        role="list"
+      >
+        <PagedArrivalRows
+          rows={frame?.rows ?? []}
+          dashCount={frame?.dashCount ?? 0}
+          showEndMessage={frame?.showEndMessage ?? false}
+          mode={mode}
+          isLast={isLast}
+          emptyLabel={emptyLabel}
+          showLineChip={showLineChip}
+          hoistPlatform={hoistPlatform}
+          ranks={frame?.ranks}
+        />
+      </ul>
     </div>
   )
 }
@@ -768,6 +860,10 @@ export const ArrivalsBoundGroup = ({
   pageSize = 0,
   showLineChip = false,
   classNames,
+  behaviour = "interactive",
+  pinFirst = true,
+  dwellMs,
+  startDelayMs,
 }: {
   bound: ArrivalsPreparedBound
   mode: ArrivalsBoardMode
@@ -776,15 +872,21 @@ export const ArrivalsBoundGroup = ({
   pageSize?: number
   showLineChip?: boolean
   classNames?: ArrivalsBoardClassNames
+  behaviour?: DisplayBehaviour
+  pinFirst?: boolean
+  dwellMs?: number
+  startDelayMs?: number
 }) => {
   const canPage = Boolean(bound.label) && pageSize > 0
+  const unattended = behaviour === "unattended" && canPage
   const chunked = chunkBoundPages(bound.rows, canPage ? pageSize : 0, {
     lockHeight: canPage,
   })
   const { containerRef, setSlideRef, activePage, handlePrev, handleNext } =
-    useArrivalsPageTrack(chunked.pageCount)
-  const showPager = canPage && chunked.pageCount > 1
+    useArrivalsPageTrack(unattended ? 1 : chunked.pageCount)
+  const showPager = canPage && !unattended && chunked.pageCount > 1
   const emptyScope = bound.label ? `${lineName} ${bound.label}` : lineName
+  const emptyLabel = `${emptyScope}: ${ARRIVALS_LINE_EMPTY_COPY}`
 
   return (
     <li
@@ -812,17 +914,34 @@ export const ArrivalsBoundGroup = ({
           ) : null}
         </div>
       ) : null}
-      <ArrivalsPageTrack
-        pages={chunked.pages}
-        mode={mode}
-        isLast={isLastBound}
-        emptyLabel={`${emptyScope}: ${ARRIVALS_LINE_EMPTY_COPY}`}
-        containerRef={containerRef}
-        setSlideRef={setSlideRef}
-        className={classNames?.rows}
-        showLineChip={showLineChip}
-        hoistPlatform={bound.platformUniform}
-      />
+      {unattended ? (
+        <UnattendedArrivalFrames
+          rows={bound.rows}
+          pageSize={pageSize}
+          pinFirst={pinFirst}
+          lockHeight
+          dwellMs={dwellMs}
+          startDelayMs={startDelayMs}
+          mode={mode}
+          isLast={isLastBound}
+          emptyLabel={emptyLabel}
+          className={classNames?.rows}
+          showLineChip={showLineChip}
+          hoistPlatform={bound.platformUniform}
+        />
+      ) : (
+        <ArrivalsPageTrack
+          pages={chunked.pages}
+          mode={mode}
+          isLast={isLastBound}
+          emptyLabel={emptyLabel}
+          containerRef={containerRef}
+          setSlideRef={setSlideRef}
+          className={classNames?.rows}
+          showLineChip={showLineChip}
+          hoistPlatform={bound.platformUniform}
+        />
+      )}
     </li>
   )
 }
@@ -910,6 +1029,10 @@ export const ArrivalsPagedGroup = ({
   pageSize = 0,
   isLastGroup,
   classNames,
+  behaviour = "interactive",
+  pinFirst = true,
+  dwellMs,
+  startDelayMs,
 }: {
   group: ArrivalsPreparedGroup
   mode: ArrivalsBoardMode
@@ -917,15 +1040,21 @@ export const ArrivalsPagedGroup = ({
   pageSize?: number
   isLastGroup: boolean
   classNames?: ArrivalsBoardClassNames
+  behaviour?: DisplayBehaviour
+  pinFirst?: boolean
+  dwellMs?: number
+  startDelayMs?: number
 }) => {
   const rows = group.bounds.flatMap((bound) => bound.rows)
   const canPage = pageSize > 0
+  const unattended = behaviour === "unattended" && canPage
   const chunked = chunkBoundPages(rows, canPage ? pageSize : 0, {
     lockHeight: canPage ? "when-paged" : false,
   })
   const { containerRef, setSlideRef, activePage, handlePrev, handleNext } =
-    useArrivalsPageTrack(chunked.pageCount)
-  const showPager = canPage && chunked.pageCount > 1
+    useArrivalsPageTrack(unattended ? 1 : chunked.pageCount)
+  const showPager = canPage && !unattended && chunked.pageCount > 1
+  const emptyLabel = `${group.lineName}: ${ARRIVALS_LINE_EMPTY_COPY}`
 
   return (
     <section
@@ -951,15 +1080,30 @@ export const ArrivalsPagedGroup = ({
           ) : null
         }
       />
-      <ArrivalsPageTrack
-        pages={chunked.pages}
-        mode={mode}
-        isLast={isLastGroup}
-        emptyLabel={`${group.lineName}: ${ARRIVALS_LINE_EMPTY_COPY}`}
-        containerRef={containerRef}
-        setSlideRef={setSlideRef}
-        className={classNames?.rows}
-      />
+      {unattended ? (
+        <UnattendedArrivalFrames
+          rows={rows}
+          pageSize={pageSize}
+          pinFirst={pinFirst}
+          lockHeight="when-paged"
+          dwellMs={dwellMs}
+          startDelayMs={startDelayMs}
+          mode={mode}
+          isLast={isLastGroup}
+          emptyLabel={emptyLabel}
+          className={classNames?.rows}
+        />
+      ) : (
+        <ArrivalsPageTrack
+          pages={chunked.pages}
+          mode={mode}
+          isLast={isLastGroup}
+          emptyLabel={emptyLabel}
+          containerRef={containerRef}
+          setSlideRef={setSlideRef}
+          className={classNames?.rows}
+        />
+      )}
     </section>
   )
 }
@@ -970,31 +1114,55 @@ export const ArrivalsPagedList = ({
   mode,
   pageSize = 0,
   classNames,
+  behaviour = "interactive",
+  pinFirst = true,
+  dwellMs,
+  startDelayMs,
 }: {
   rows: readonly ArrivalsPreparedRow[]
   mode: ArrivalsBoardMode
   pageSize?: number
   classNames?: ArrivalsBoardClassNames
+  behaviour?: DisplayBehaviour
+  pinFirst?: boolean
+  dwellMs?: number
+  startDelayMs?: number
 }) => {
   const canPage = pageSize > 0
+  const unattended = behaviour === "unattended" && canPage
   const chunked = chunkBoundPages(rows, canPage ? pageSize : 0, {
     lockHeight: canPage ? "when-paged" : false,
   })
   const { containerRef, setSlideRef, activePage, handlePrev, handleNext } =
-    useArrivalsPageTrack(chunked.pageCount)
-  const showPager = canPage && chunked.pageCount > 1
+    useArrivalsPageTrack(unattended ? 1 : chunked.pageCount)
+  const showPager = canPage && !unattended && chunked.pageCount > 1
 
   return (
     <div className="group/bound min-w-0">
-      <ArrivalsPageTrack
-        pages={chunked.pages}
-        mode={mode}
-        isLast={!showPager}
-        emptyLabel={ARRIVALS_LINE_EMPTY_COPY}
-        containerRef={containerRef}
-        setSlideRef={setSlideRef}
-        className={classNames?.rows}
-      />
+      {unattended ? (
+        <UnattendedArrivalFrames
+          rows={rows}
+          pageSize={pageSize}
+          pinFirst={pinFirst}
+          lockHeight="when-paged"
+          dwellMs={dwellMs}
+          startDelayMs={startDelayMs}
+          mode={mode}
+          isLast
+          emptyLabel={ARRIVALS_LINE_EMPTY_COPY}
+          className={classNames?.rows}
+        />
+      ) : (
+        <ArrivalsPageTrack
+          pages={chunked.pages}
+          mode={mode}
+          isLast={!showPager}
+          emptyLabel={ARRIVALS_LINE_EMPTY_COPY}
+          containerRef={containerRef}
+          setSlideRef={setSlideRef}
+          className={classNames?.rows}
+        />
+      )}
       {showPager ? (
         <div className={cn("relative flex items-center", TILE_CLASS)}>
           <BoundPager

@@ -7,6 +7,7 @@ import {
   resolveArrivalsProps,
   resolveEffectiveLineOrder,
   resolveEffectiveSections,
+  resolveStatusProps,
 } from "./board-config-resolve";
 import {
   getBoardStationLinesIndex,
@@ -272,5 +273,38 @@ describe("shared-platform sections", () => {
       sections.some((section) => section.lineIds.includes("metropolitan") && section.lineIds.length > 1),
       false,
     );
+  });
+});
+
+describe("resolveStatusProps", () => {
+  it("defaults to a four-tile network display", () => {
+    const props = resolveStatusProps(DEFAULT_BOARD_CONFIG);
+    assert.deepEqual(props, {
+      surface: "display",
+      tiles: 4,
+      detailScope: "network",
+      detailLineIds: undefined,
+      dwellMs: undefined,
+    });
+  });
+
+  it("maps s.* config onto display props", () => {
+    const props = resolveStatusProps({
+      ...DEFAULT_BOARD_CONFIG,
+      status: {
+        surface: "strip",
+        tiles: 2,
+        lines: ["central", "victoria"],
+        overview: "selection",
+        dwell: 12,
+      },
+    });
+    assert.deepEqual(props, {
+      surface: "strip",
+      tiles: 2,
+      detailScope: "selection",
+      detailLineIds: ["central", "victoria"],
+      dwellMs: 12_000,
+    });
   });
 });

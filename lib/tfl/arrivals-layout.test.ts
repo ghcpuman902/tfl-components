@@ -244,7 +244,7 @@ describe("arrivals board layout API", () => {
 
     assert.ok(html.includes("1/2") || html.includes("Page 1 of 2"), html)
     const pager = html.match(
-      /<div class="hidden items-center p-0 transition-opacity[^"]*"/
+      /<div class="[^"]*hidden items-center p-0[^"]*"/
     )?.[0] ?? ""
     assert.ok(pager.includes("[@media(hover:hover)]:flex"), pager)
     assert.equal(pager.includes("opacity-0"), false, pager)

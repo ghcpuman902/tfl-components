@@ -455,6 +455,121 @@
           "path": "registry/tfl/arrivals/chip-text.ts",
           "type": "registry:lib",
           "target": "components/tfl/arrivals/chip-text.ts"
+        },
+        {
+          "path": "registry/tfl/arrivals/quiet-chip.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/quiet-chip.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tube-status-display",
+      "type": "registry:component",
+      "title": "Tube Status Display",
+      "description": "Fixed-height unattended Tube and rail status tiles over the shared prepared status model.",
+      "dependencies": [
+        "tfl-ts@^2.9.0"
+      ],
+      "registryDependencies": [
+        "https://tfl.manglekuo.com/r/tfl-colours.json",
+        "https://tfl.manglekuo.com/r/line-badge.json"
+      ],
+      "files": [
+        {
+          "path": "registry/tfl/status/tube-status-display.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/status/tube-status-display.tsx"
+        },
+        {
+          "path": "lib/tfl/status-display.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-display.ts"
+        },
+        {
+          "path": "lib/tfl/status-board.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-board.ts"
+        },
+        {
+          "path": "lib/tfl/status-types.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-types.ts"
+        },
+        {
+          "path": "lib/tfl/status-reason.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-reason.ts"
+        },
+        {
+          "path": "lib/tfl/unattended-sequence.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/unattended-sequence.ts"
+        },
+        {
+          "path": "hooks/use-unattended-sequence.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-unattended-sequence.ts"
+        },
+        {
+          "path": "hooks/use-prefers-reduced-motion.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-prefers-reduced-motion.ts"
+        }
+      ]
+    },
+    {
+      "name": "tube-status-strip",
+      "type": "registry:component",
+      "title": "Tube Status Strip",
+      "description": "Horizontal unattended Tube and rail status strip over the shared prepared status model.",
+      "dependencies": [
+        "tfl-ts@^2.9.0"
+      ],
+      "registryDependencies": [
+        "https://tfl.manglekuo.com/r/tfl-colours.json",
+        "https://tfl.manglekuo.com/r/line-badge.json"
+      ],
+      "files": [
+        {
+          "path": "registry/tfl/status/tube-status-strip.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/status/tube-status-strip.tsx"
+        },
+        {
+          "path": "lib/tfl/status-display.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-display.ts"
+        },
+        {
+          "path": "lib/tfl/status-board.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-board.ts"
+        },
+        {
+          "path": "lib/tfl/status-types.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-types.ts"
+        },
+        {
+          "path": "lib/tfl/status-reason.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-reason.ts"
+        },
+        {
+          "path": "lib/tfl/unattended-sequence.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/unattended-sequence.ts"
+        },
+        {
+          "path": "hooks/use-unattended-sequence.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-unattended-sequence.ts"
+        },
+        {
+          "path": "hooks/use-prefers-reduced-motion.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-prefers-reduced-motion.ts"
         }
       ]
     },
@@ -718,6 +833,26 @@
           "path": "lib/tfl/station-abbreviations.ts",
           "type": "registry:lib",
           "target": "lib/tfl/station-abbreviations.ts"
+        },
+        {
+          "path": "registry/tfl/arrivals/quiet-chip.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/quiet-chip.tsx"
+        },
+        {
+          "path": "lib/tfl/arrivals-unattended-frames.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-unattended-frames.ts"
+        },
+        {
+          "path": "lib/tfl/unattended-sequence.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/unattended-sequence.ts"
+        },
+        {
+          "path": "hooks/use-unattended-sequence.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-unattended-sequence.ts"
         }
       ]
     },
@@ -843,6 +978,26 @@
           "path": "lib/tfl/station-abbreviations.ts",
           "type": "registry:lib",
           "target": "lib/tfl/station-abbreviations.ts"
+        },
+        {
+          "path": "registry/tfl/arrivals/quiet-chip.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/arrivals/quiet-chip.tsx"
+        },
+        {
+          "path": "lib/tfl/arrivals-unattended-frames.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/arrivals-unattended-frames.ts"
+        },
+        {
+          "path": "lib/tfl/unattended-sequence.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/unattended-sequence.ts"
+        },
+        {
+          "path": "hooks/use-unattended-sequence.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-unattended-sequence.ts"
         }
       ]
     },
