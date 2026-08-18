@@ -202,7 +202,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "introduction",
     title: "Introduction",
     description:
-      "Web components for your TfL projects. Use them with tfl-ts for live data, or alone for the look.",
+      "Install React components for London transport displays, or configure a hosted board.",
     group: "start",
     kind: "page",
     href: "/docs",

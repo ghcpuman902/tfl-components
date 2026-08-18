@@ -148,7 +148,7 @@ export default function Page() {
 export const metadata: Metadata = {
   title: "Introduction",
   description:
-    "Web components for your TfL projects. Use them with tfl-ts for live data, or alone for the look.",
+    "Install React components for London transport displays, or configure a hosted board.",
 };
 
 const TFL_API_PORTAL = "https://api-portal.tfl.gov.uk/";
@@ -260,14 +260,13 @@ export default function DocsIntroductionPage() {
                 Board
               </h2>
               <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
-               You don&apos;t need to self host these components! Get a live arrival board running on your old iPad in less than 2 mins! 
-                Full screen, auto refresh, no installation, works on any device with a browser!
+                Configure a live station display in the browser. No install.
               </p>
               <Link
                 href="/board"
                 className="inline-flex w-fit items-center gap-1.5 text-sm text-primary underline underline-offset-4"
               >
-                Try it
+                Create a display
                 <ArrowRightIcon className="size-3.5 shrink-0" aria-hidden />
               </Link>
             </div>

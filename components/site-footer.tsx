@@ -1,7 +1,11 @@
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { GITHUB_REPO } from "@/lib/feedback/constants";
 import { getSiteStats } from "@/lib/site-stats";
+import {
+  SITE_AUTHOR,
+  SITE_INDEPENDENCE,
+} from "@/lib/site";
 import { APP_VERSION_LABEL } from "@/lib/version";
 
 const formatCount = (n: number) =>
@@ -15,8 +19,6 @@ const StatsFallback = () => (
 
 const SiteFooterStats = async () => {
   const { visitors, installs, stars } = await getSiteStats();
-  // A real zero reads as an unearned metric, not proof — show it only once
-  // there's something to point at.
   const showStars = stars !== null && stars > 0;
 
   return (
@@ -41,52 +43,87 @@ const SiteFooterStats = async () => {
   );
 };
 
+const FooterLink = ({
+  href,
+  children,
+  external = false,
+}: {
+  href: string;
+  children: ReactNode;
+  external?: boolean;
+}) => {
+  const className =
+    "underline-offset-4 hover:text-foreground hover:underline";
+  if (external) {
+    return (
+      <a
+        href={href}
+        className={className}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+};
+
 export const SiteFooter = () => {
   return (
-    <footer className="mt-auto border-t border-border px-4 py-3">
-      <div className="mx-auto flex max-w-5xl flex-col items-center gap-1 text-center text-sm text-muted-foreground">
+    <footer className="mt-auto border-t border-border px-4 py-4">
+      <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 text-center text-sm text-muted-foreground">
+        <p className="max-w-prose">{SITE_INDEPENDENCE}</p>
         <p>
-          Open React components for London transport · press{" "}
-          <kbd className="rounded border px-1 text-xs">d</kbd> for dark mode
+          Designed and built by{" "}
+          <a
+            href={SITE_AUTHOR.url}
+            className="text-foreground underline-offset-4 hover:underline"
+            rel="author"
+          >
+            {SITE_AUTHOR.name}
+          </a>
+          .
+        </p>
+        <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
+          {process.env.NODE_ENV === "development" ? (
+            <>
+              <FooterLink href="/tools">Tools</FooterLink>
+              <span aria-hidden>·</span>
+              <FooterLink href="/tools/typography">Typography lab</FooterLink>
+              <span aria-hidden>·</span>
+              <FooterLink href="/drafts">Drafts</FooterLink>
+              <span aria-hidden>·</span>
+            </>
+          ) : null}
+          <FooterLink href={GITHUB_REPO} external>
+            Source
+          </FooterLink>
+          <span aria-hidden>·</span>
+          <FooterLink href="/licence">Licence</FooterLink>
+          <span aria-hidden>·</span>
+          <FooterLink href="/credits">Data and credits</FooterLink>
+          <span aria-hidden>·</span>
+          <FooterLink href="/accessibility">Accessibility</FooterLink>
+          <span aria-hidden>·</span>
+          <FooterLink href="/privacy">Privacy</FooterLink>
+          <span aria-hidden>·</span>
+          <FooterLink href="/how-it-was-built">How it was built</FooterLink>
+          <span aria-hidden>·</span>
+          <FooterLink
+            href={`https://github.com/ghcpuman902/tfl-components/releases/tag/${APP_VERSION_LABEL}`}
+            external
+          >
+            {APP_VERSION_LABEL}
+          </FooterLink>
         </p>
         <Suspense fallback={<StatsFallback />}>
           <SiteFooterStats />
         </Suspense>
-        <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
-          {process.env.NODE_ENV === "development" ? (
-            <>
-              <Link
-                href="/tools"
-                className="underline-offset-4 hover:text-foreground hover:underline"
-              >
-                Tools
-              </Link>
-              <span aria-hidden>·</span>
-              <Link
-                href="/tools/typography"
-                className="underline-offset-4 hover:text-foreground hover:underline"
-              >
-                Typography lab
-              </Link>
-              <span aria-hidden>·</span>
-              <Link
-                href="/drafts"
-                className="underline-offset-4 hover:text-foreground hover:underline"
-              >
-                Drafts
-              </Link>
-              <span aria-hidden>·</span>
-            </>
-          ) : null}
-          <a
-            href={`https://github.com/ghcpuman902/tfl-components/releases/tag/${APP_VERSION_LABEL}`}
-            className="underline-offset-4 hover:text-foreground hover:underline"
-            target="_blank"
-            rel="noreferrer"
-          >
-            {APP_VERSION_LABEL}
-          </a>
-        </p>
       </div>
     </footer>
   );

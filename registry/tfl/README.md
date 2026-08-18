@@ -28,6 +28,8 @@ registry/tfl/
 
 Copied files land under `components/tfl/…` in the consumer app. Shared helpers used by those files live under `lib/tfl/` when a registry item declares them.
 
+This folder is MIT. Keep [LICENSE](./LICENSE) with copied source. TfL marks and datasets are not included in that grant.
+
 ## Releases
 
 Component / registry changes ship on GitHub tags named `vX.Y.Z` (for example `v0.4.0`).

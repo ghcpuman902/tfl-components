@@ -65,6 +65,7 @@ export const metadata: Metadata = {
     template: "%s · tfl-components",
   },
   description: SITE_DESCRIPTION,
+  applicationName: "tfl-components",
   openGraph: {
     type: "website",
     locale: "en_GB",

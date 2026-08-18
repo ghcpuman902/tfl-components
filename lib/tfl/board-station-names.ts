@@ -7,9 +7,41 @@
  * NaPTAN id as the station title.
  */
 
-import { getStationCatalog } from "@/lib/tfl/station-catalog";
+import { getLineNameTiers } from "@/lib/tfl/line-names";
+import {
+  getStationCatalog,
+  STATION_CATALOG_MODES,
+  type CatalogStation,
+} from "@/lib/tfl/station-catalog";
 
 export type BoardStationNamesIndex = Readonly<Record<string, string>>;
+
+export type BoardStationSearchItem = {
+  id: string;
+  name: string;
+  /** Modes, plus line names when another station shares this display name. */
+  context: string;
+  aliasIds: readonly string[];
+};
+
+const MODE_LABEL: Readonly<Record<string, string>> = Object.fromEntries(
+  STATION_CATALOG_MODES.map((mode) => [mode.id, mode.label]),
+);
+
+const modeLabelsOf = (station: CatalogStation): string[] =>
+  station.modes.map((id) => MODE_LABEL[id] ?? id);
+
+const lineLabelsOf = (station: CatalogStation): string[] =>
+  station.lines.slice(0, 3).map((id) => getLineNameTiers(id).middle);
+
+const searchContextOf = (
+  station: CatalogStation,
+  duplicateName: boolean,
+): string => {
+  const parts = modeLabelsOf(station);
+  if (duplicateName) parts.push(...lineLabelsOf(station));
+  return [...new Set(parts)].join(" · ");
+};
 
 /** Compact stop id (+ aliases) → display name map. */
 export const buildBoardStationNamesIndex = (): BoardStationNamesIndex => {
@@ -41,6 +73,44 @@ export const lookupBoardStationName = (
   const id = stopId?.trim();
   if (!id) return undefined;
   return index[id];
+};
+
+export const buildBoardStationSearchIndex = (): BoardStationSearchItem[] => {
+  const catalog = getStationCatalog();
+  const nameCounts = new Map<string, number>();
+  for (const station of catalog) {
+    const key = station.displayName.toLowerCase();
+    nameCounts.set(key, (nameCounts.get(key) ?? 0) + 1);
+  }
+
+  return catalog.map((station) => {
+    const duplicateName =
+      (nameCounts.get(station.displayName.toLowerCase()) ?? 0) > 1;
+    return {
+      id: station.id,
+      name: station.displayName,
+      context: searchContextOf(station, duplicateName),
+      aliasIds: station.aliasIds,
+    };
+  });
+};
+
+let searchMemo: BoardStationSearchItem[] | undefined;
+
+export const getBoardStationSearchIndex = (): BoardStationSearchItem[] => {
+  searchMemo ??= buildBoardStationSearchIndex();
+  return searchMemo;
+};
+
+export const matchBoardStationSearchItem = (
+  items: readonly BoardStationSearchItem[],
+  stopId: string | undefined,
+): BoardStationSearchItem | undefined => {
+  const id = stopId?.trim();
+  if (!id) return undefined;
+  return items.find(
+    (item) => item.id === id || item.aliasIds.includes(id),
+  );
 };
 
 /**

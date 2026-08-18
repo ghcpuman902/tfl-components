@@ -2,6 +2,7 @@
 
 import Link, { useLinkStatus } from "next/link"
 import { DocsSearch } from "@/components/docs/docs-search"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { newMarkerParentClassName } from "@/components/new-marker"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
@@ -101,11 +102,12 @@ export const SiteHeader = ({
             className="flex min-w-0 items-center gap-2"
             aria-label="tfl-components home"
           >
-            <TfLRoundel className="size-5 shrink-0" />
+            <TfLRoundel className="size-5 shrink-0" aria-hidden />
             <span className="hidden truncate text-sm font-medium text-foreground md:inline">
               tfl-components
             </span>
           </Link>
+          <ThemeToggle className="md:hidden" />
         </div>
 
         <nav
@@ -144,6 +146,7 @@ export const SiteHeader = ({
         </div>
 
         <GitHubLink className="ml-2 hidden text-sm md:ml-4 md:inline" />
+        <ThemeToggle className="ml-1 hidden md:inline-flex" />
       </div>
     </header>
   )

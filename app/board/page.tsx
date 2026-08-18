@@ -3,17 +3,21 @@ import { BoardBuilder } from "@/components/board/board-builder"
 import { BoardWipNotice } from "@/components/board/board-wip-notice"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { getBoardStationLinesIndex } from "@/lib/tfl/board-station-lines"
-import { getBoardStationNamesIndex } from "@/lib/tfl/board-station-names"
+import {
+  getBoardStationNamesIndex,
+  getBoardStationSearchIndex,
+} from "@/lib/tfl/board-station-names"
 
 export const metadata: Metadata = {
   title: "Board",
   description:
-    "An experimental full-screen TfL display configured through one URL.",
+    "Configure a live station display and open a bookmarkable URL.",
 }
 
 export default function BoardBuilderPage() {
   const stationLines = getBoardStationLinesIndex()
   const stationNames = getBoardStationNamesIndex()
+  const stations = getBoardStationSearchIndex()
 
   return (
     <DocsReadableWidth>
@@ -21,7 +25,8 @@ export default function BoardBuilderPage() {
         <header>
           <h1 className="tfl-title text-3xl text-foreground">Board</h1>
           <p className="mt-2 max-w-prose text-lg text-muted-foreground">
-            Configure an experimental full-screen TfL display through one URL.
+            Search for a station, preview the display, then copy or open the
+            URL.
           </p>
           <BoardWipNotice />
           <div className="mt-6 max-w-prose space-y-3 text-sm text-muted-foreground">
@@ -39,7 +44,11 @@ export default function BoardBuilderPage() {
           </div>
         </header>
 
-        <BoardBuilder stationLines={stationLines} stationNames={stationNames} />
+        <BoardBuilder
+          stationLines={stationLines}
+          stationNames={stationNames}
+          stations={stations}
+        />
       </article>
     </DocsReadableWidth>
   )

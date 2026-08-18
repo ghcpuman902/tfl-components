@@ -7,6 +7,7 @@ import {
   useState,
   type ChangeEvent,
 } from "react"
+import { BoardStationSearch } from "@/components/board/board-station-search"
 import {
   BoardSegmentBadge,
   boardSegmentIndex,
@@ -27,6 +28,7 @@ import {
   serializeArrivalsLines,
   type BoardSettingId,
 } from "@/lib/tfl/board-settings"
+import type { BoardStationSearchItem } from "@/lib/tfl/board-station-names"
 import {
   type BoardConfig,
   type BoardHrefSegment,
@@ -41,6 +43,7 @@ type BoardConfigFormProps = {
   lineGroups?: readonly BoardStationLineGroup[]
   /** Catalog name for the current Stop ID — placeholder, not a URL value. */
   autoStopName?: string
+  stations?: readonly BoardStationSearchItem[]
   /** Live URL segments for circled field badges (same list as Launch legend). */
   segments?: readonly BoardHrefSegment[]
   onChange: (next: Partial<BoardConfig>) => void
@@ -96,6 +99,7 @@ export const BoardConfigForm = ({
   servingLines,
   lineGroups,
   autoStopName,
+  stations = [],
   segments = [],
   onChange,
 }: BoardConfigFormProps) => {
@@ -172,28 +176,40 @@ export const BoardConfigForm = ({
     >
       {formSettings.includes("stop") ? (
         <div className="space-y-2">
-          <FieldLabel htmlFor="board-stop" setting="stop" segments={segments}>
-            {BOARD_SETTINGS.stop.ui?.label ?? "Stop ID"}
+          <FieldLabel htmlFor="board-station" setting="stop" segments={segments}>
+            Station
           </FieldLabel>
-          <Input
-            id="board-stop"
-            name="stop"
-            value={config.stop ?? ""}
-            onChange={handleStopChange}
-            autoComplete="off"
-            spellCheck={false}
-            aria-describedby="board-stop-hint"
+          <BoardStationSearch
+            stations={stations}
+            stopId={config.stop}
+            onStopChange={(stop) => onChange({ stop })}
           />
-          <p id="board-stop-hint" className="text-sm text-muted-foreground">
-            Station NaPTAN ID. Find it in{" "}
-            <Link
-              href="/docs/explorer"
-              className="text-foreground underline underline-offset-4"
-            >
-              Explorer
-            </Link>
-            .
-          </p>
+          <details className="text-sm">
+            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+              Stop ID
+            </summary>
+            <div className="mt-2 space-y-2">
+              <Input
+                id="board-stop"
+                name="stop"
+                value={config.stop ?? ""}
+                onChange={handleStopChange}
+                autoComplete="off"
+                spellCheck={false}
+                aria-describedby="board-stop-hint"
+              />
+              <p id="board-stop-hint" className="text-muted-foreground">
+                Advanced. Station NaPTAN ID, if you already have one from{" "}
+                <Link
+                  href="/docs/explorer"
+                  className="text-foreground underline underline-offset-4"
+                >
+                  Explorer
+                </Link>
+                .
+              </p>
+            </div>
+          </details>
         </div>
       ) : null}
 

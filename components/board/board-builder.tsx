@@ -34,6 +34,7 @@ import {
   lookupBoardStationName,
   resolveBoardStopNameOverride,
   type BoardStationNamesIndex,
+  type BoardStationSearchItem,
 } from "@/lib/tfl/board-station-names"
 import {
   BOARD_PRESETS,
@@ -204,7 +205,7 @@ const PresetCard = ({
         </CardDescription>
         <CardAction>
           <Badge variant={preset.available ? "default" : "secondary"}>
-            {preset.available ? (active ? "Current" : "Available") : "Coming soon"}
+            {preset.available ? (active ? "Current" : "Available") : "Not yet available"}
           </Badge>
         </CardAction>
       </CardHeader>
@@ -221,11 +222,13 @@ const initialBoardConfig = (): BoardConfig => ({
 type BoardBuilderProps = {
   stationLines: BoardStationLinesIndex
   stationNames: BoardStationNamesIndex
+  stations: readonly BoardStationSearchItem[]
 }
 
 export const BoardBuilder = ({
   stationLines,
   stationNames,
+  stations,
 }: BoardBuilderProps) => {
   const {
     status,
@@ -354,7 +357,7 @@ export const BoardBuilder = ({
         </div>
         {comingSoonPresets.length > 0 ? (
           <p className="px-3 text-sm text-muted-foreground">
-            More layouts coming:{" "}
+            More layouts planned:{" "}
             {comingSoonPresets.map((item) => item.title).join(" · ")}.
           </p>
         ) : null}
@@ -389,19 +392,20 @@ export const BoardBuilder = ({
             servingLines={lookupBoardStationLines(stationLines, config.stop)}
             lineGroups={lookupBoardStationLineGroups(config.stop)}
             autoStopName={autoStopName}
+            stations={stations}
             segments={segments}
             onChange={handleConfigChange}
           />
         </CollapsibleContent>
       </Collapsible>
 
-      <div className="flex items-stretch gap-3 rounded-xl border border-border p-4">
+      <div className="flex flex-col gap-3 rounded-xl border border-border p-4 sm:flex-row sm:items-stretch">
         <BoardUrlLegend
           path={legendPath}
           segments={segments}
           className="min-w-0 flex-1"
         />
-        <div className="flex shrink-0 flex-col gap-2">
+        <div className="flex shrink-0 flex-col gap-2 sm:w-36">
           <Button
             type="button"
             variant="outline"
@@ -414,7 +418,7 @@ export const BoardBuilder = ({
             nativeButton={false}
             render={<a href={href} target="_blank" rel="noreferrer" />}
           >
-            Open board
+            Open full display
           </Button>
         </div>
       </div>
@@ -423,6 +427,9 @@ export const BoardBuilder = ({
         <h2 id="board-preview-heading" className="text-lg font-semibold">
           Preview
         </h2>
+        <p className="text-sm text-muted-foreground md:hidden">
+          On a phone this preview is a crop. Open the full display to use it.
+        </p>
         {hydrated ? (
           <iframe
             key={href}
@@ -437,6 +444,13 @@ export const BoardBuilder = ({
             aria-label="Loading board preview"
           />
         )}
+        <Button
+          nativeButton={false}
+          className="md:hidden"
+          render={<a href={href} target="_blank" rel="noreferrer" />}
+        >
+          Open full display
+        </Button>
       </section>
 
       <section

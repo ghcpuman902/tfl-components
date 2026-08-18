@@ -10,6 +10,11 @@ const STATIC_PATHS = [
   "/blocks",
   "/blocks/week-ahead",
   "/board",
+  "/licence",
+  "/credits",
+  "/accessibility",
+  "/privacy",
+  "/how-it-was-built",
 ] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {

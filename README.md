@@ -4,6 +4,10 @@ React UI for London transport boards, distributed as a [shadcn](https://ui.shadc
 
 This is **not** an npm UI package. You copy source into your app.
 
+**TfL Components is an independent project and is not affiliated with or endorsed by Transport for London.** Designed and built by [MangleKuo](https://manglekuo.com).
+
+Installable component source is MIT. The hosted site, photography, branding, and TfL marks are not. See [LICENCE.md](./LICENCE.md).
+
 ## Install components
 
 Source of truth for installable files: **[`registry/tfl/`](./registry/tfl/)** ([readme](./registry/tfl/README.md)).
@@ -58,7 +62,7 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Press `d` for dark mode. Browse via the header (Docs · Components · Blocks · Explorer · Board).
+Press `d` or the theme control for dark mode. Browse via the header (Docs · Components · Blocks · Explorer · Board).
 
 Frozen Stage 1 IA: [docs/TARGET_ARCHITECTURE.md](./docs/TARGET_ARCHITECTURE.md).
 

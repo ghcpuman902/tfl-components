@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { PauseIcon, PlayIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type HeroSlide = {
@@ -31,7 +32,6 @@ const SLIDES: readonly HeroSlide[] = [
     caption: "Black cabs near Tower Bridge.",
     width: 1400,
     height: 928,
-    // Landscape: tall frame crops to middle; mobile 3:2 shows nearly the full frame
     objectClassName: "object-center",
   },
   {
@@ -41,7 +41,6 @@ const SLIDES: readonly HeroSlide[] = [
     tflCredit: true,
     width: 1400,
     height: 2111,
-    // Keep street / bus in frame when the tall slot crops height
     objectClassName: "object-bottom",
   },
   {
@@ -80,26 +79,34 @@ const SLIDES: readonly HeroSlide[] = [
 ] as const;
 
 const INTERVAL_MS = 5500;
+const STABLE_SLIDE = 0;
+
+const subscribeReducedMotion = (onChange: () => void) => {
+  const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+};
+
+const getReducedMotion = () =>
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /**
  * First-fold LCP image only on initial HTML; later slides mount after idle so
  * ~3MB of carousel JPEGs do not contend with paint / TfL panel streaming.
  */
 export const HomeHeroPhotos = () => {
-  const [index, setIndex] = useState(0);
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const [index, setIndex] = useState(STABLE_SLIDE);
+  const reduceMotion = useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotion,
+    () => false,
+  );
+  const [paused, setPaused] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [loadedThrough, setLoadedThrough] = useState(0);
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => {
-      setReduceMotion(media.matches);
-    };
-    sync();
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
-  }, []);
+  const [failedSrcs, setFailedSrcs] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -127,28 +134,42 @@ export const HomeHeroPhotos = () => {
   }, []);
 
   useEffect(() => {
-    if (!hydrated || reduceMotion) return;
+    if (!hydrated || reduceMotion || paused) return;
 
     const id = window.setInterval(() => {
       setIndex((current) => (current + 1) % SLIDES.length);
     }, INTERVAL_MS);
 
     return () => window.clearInterval(id);
-  }, [hydrated, reduceMotion]);
+  }, [hydrated, reduceMotion, paused]);
 
-  useEffect(() => {
-    setLoadedThrough((through) => Math.max(through, index));
-  }, [index]);
+  const activeIndex = reduceMotion ? STABLE_SLIDE : index;
+  const active = SLIDES[activeIndex] ?? SLIDES[STABLE_SLIDE];
+  const visibleThrough = Math.max(loadedThrough, activeIndex);
+  const activeFailed = failedSrcs.has(active.src);
 
-  const active = SLIDES[index] ?? SLIDES[0];
-  const visibleThrough = Math.max(loadedThrough, index);
+  const handleImageError = (src: string) => {
+    setFailedSrcs((current) => {
+      if (current.has(src)) return current;
+      const next = new Set(current);
+      next.add(src);
+      return next;
+    });
+  };
+
+  const handleTogglePaused = () => {
+    setPaused((current) => !current);
+  };
 
   return (
     <>
+      <div className="absolute inset-0 bg-muted" aria-hidden />
       {SLIDES.map((slide, slideIndex) => {
         if (slideIndex > visibleThrough) return null;
 
-        const isActive = slideIndex === index;
+        const isActive = slideIndex === activeIndex;
+        if (failedSrcs.has(slide.src)) return null;
+
         return (
           // Native img keeps Display P3 ICC; next/image can strip wide-gamut profiles.
           // eslint-disable-next-line @next/next/no-img-element
@@ -162,18 +183,42 @@ export const HomeHeroPhotos = () => {
             loading={slideIndex === 0 ? "eager" : "lazy"}
             fetchPriority={slideIndex === 0 ? "high" : "low"}
             aria-hidden={!isActive}
+            onError={() => handleImageError(slide.src)}
             className={cn(
-              "absolute inset-0 size-full object-cover transition-opacity ease-out",
+              "absolute inset-0 size-full object-cover ease-out",
               slide.objectClassName,
               isActive ? "opacity-100" : "opacity-0",
-              reduceMotion ? "duration-0" : "duration-[900ms]",
+              reduceMotion
+                ? "transition-none"
+                : "transition-opacity duration-[900ms]",
             )}
           />
         );
       })}
+      {activeFailed ? (
+        <p className="absolute inset-0 z-10 flex items-center justify-center px-4 text-center text-sm text-muted-foreground">
+          Photo unavailable.
+        </p>
+      ) : null}
+      {reduceMotion ? null : (
+        <button
+          type="button"
+          className="absolute top-3 right-3 z-20 inline-flex size-8 items-center justify-center rounded-full bg-black/55 text-white hover:bg-black/70 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+          onClick={handleTogglePaused}
+          aria-pressed={paused}
+          aria-label={paused ? "Resume photo slideshow" : "Pause photo slideshow"}
+        >
+          {paused ? (
+            <PlayIcon className="size-4" aria-hidden />
+          ) : (
+            <PauseIcon className="size-4" aria-hidden />
+          )}
+        </button>
+      )}
       <figcaption className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/50 to-transparent px-3 pb-3 pt-10 text-center text-[0.65rem] leading-relaxed text-balance text-white/80">
-        {active.caption} Photo © MangleKuo.
-        {active.tflCredit
+        {activeFailed ? "Photo unavailable. " : `${active.caption} `}
+        Photo © MangleKuo.
+        {active.tflCredit && !activeFailed
           ? " TfL premises and marks © Transport for London."
           : null}
       </figcaption>

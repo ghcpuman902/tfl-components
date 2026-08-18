@@ -3,11 +3,11 @@ import Link from "next/link";
 import { ArrowRightIcon } from "lucide-react";
 import { HomeEditorial } from "@/components/docs/home-editorial";
 import { HomeHeroPhotos } from "@/components/docs/home-hero-photos";
-import { SITE_DESCRIPTION } from "@/lib/site";
+import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "tfl-components",
+    absolute: SITE_NAME,
   },
   description: SITE_DESCRIPTION,
 };
@@ -23,48 +23,45 @@ export default function HomePage() {
             </figure>
 
             <div className="flex min-w-0 flex-col gap-8 md:col-span-6 md:h-[min(66.6667svh,40rem)] md:justify-between md:gap-10 lg:col-span-7">
-              <h1 className="tfl-title text-5xl text-foreground md:text-6xl lg:text-7xl">
-                tfl-components
-              </h1>
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-muted-foreground">
+                  {SITE_NAME}
+                </p>
+                <h1 className="tfl-title text-5xl text-foreground md:text-6xl lg:text-7xl">
+                  Create a live station display
+                </h1>
+              </div>
               <div className="space-y-6 md:space-y-8">
                 <p className="max-w-xl text-lg text-foreground md:text-xl">
-                  Web components for your TfL projects. Built for{" "}
-                  <Link
-                    href="/docs/station-name-labels#width"
-                    className="underline underline-offset-4"
-                  >
-                    every screen size
-                  </Link>
-                  , with{" "}
-                  <Link
-                    href="/docs/station-name-labels#accessibility"
-                    className="underline underline-offset-4"
-                  >
-                    full accessibility
-                  </Link>
-                  . Use with{" "}
-                  <a
-                    href="https://www.npmjs.com/package/tfl-ts"
-                    className="underline underline-offset-4"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    tfl-ts
-                  </a>{" "}
-                  for a live dashboard, or drop them in alone for the look.
+                  Configure a display for a station, explore TfL data, or use
+                  the React components in your own project.
                 </p>
-                <Link
-                  href="/docs/components"
-                  className="inline-flex w-fit items-center gap-1.5 text-lg text-foreground underline underline-offset-4 md:text-xl"
-                >
-                  Start browsing
-                  <ArrowRightIcon
-                    className="size-[2ex] shrink-0"
-                    strokeWidth={3}
-                    absoluteStrokeWidth
-                    aria-hidden
-                  />
-                </Link>
+                <div className="flex flex-col items-start gap-3">
+                  <Link
+                    href="/board"
+                    className="inline-flex w-fit items-center gap-1.5 text-lg text-foreground underline underline-offset-4 md:text-xl"
+                  >
+                    Create a display
+                    <ArrowRightIcon
+                      className="size-[2ex] shrink-0"
+                      strokeWidth={3}
+                      absoluteStrokeWidth
+                      aria-hidden
+                    />
+                  </Link>
+                  <Link
+                    href="/docs/components"
+                    className="text-base text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                  >
+                    React components
+                  </Link>
+                  <Link
+                    href="/docs/explorer"
+                    className="text-base text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                  >
+                    Explorer
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
