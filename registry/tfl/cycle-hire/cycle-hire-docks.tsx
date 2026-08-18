@@ -23,6 +23,7 @@ export {
 } from "@/components/tfl/cycle-hire/cycle-hire-docks-display"
 export type { CycleHireDocksDisplayProps } from "@/components/tfl/cycle-hire/cycle-hire-docks-display"
 export { CycleHireDocksMap } from "@/components/tfl/cycle-hire/cycle-hire-docks-map"
+export type { CycleHireDocksMapProps } from "@/components/tfl/cycle-hire/cycle-hire-docks-map"
 export {
   CYCLE_HIRE_MAP_ATTRIBUTION_FALLBACK_PX,
   CYCLE_HIRE_MAP_EDGE_BREATHING_PX,

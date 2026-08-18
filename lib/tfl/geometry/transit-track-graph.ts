@@ -1,8 +1,8 @@
 /**
  * Collapse OSM route variants into unique track + a welded junction graph.
  *
- * OSM stores every timetable pattern as its own relation (both directions,
- * every branch combo). A snap-grid merge treats twin tracks as the same
+ * OSM stores separate route relations for mapped directions and variants.
+ * A snap-grid merge treats twin tracks as the same
  * corridor where they are tight and as a leftover branch where they splay,
  * which cuts the second track mid-corridor. This module uses metre distance
  * and a parallel-tangent test instead, then welds branch attachments to an

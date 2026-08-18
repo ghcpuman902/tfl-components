@@ -1,0 +1,709 @@
+Line diagram standard
+Issue 4
+Contents
+
+
+      Foreword
+
+1     Typography
+
+2     Mode colours
+
+3     London Underground line colours
+
+4     London Overground line colours
+
+5     Station names and line thickness
+
+6     Radii and angles
+
+7     Arrow heads
+
+8     Interchange circles
+
+9     Interchange flag boxes 			
+      and graphic elements
+
+10    Constructing a line diagram
+
+11    Vertical platform line diagrams
+
+For further information
+
+
+
+
+                                         2
+Foreword
+
+
+
+
+Line diagrams have one of the most
+important roles within the Transport
+for London (TfL) information system.
+They direct the travelling public
+around our networks from departure
+point to destination and confirm
+their chosen route.
+
+Information of this kind must be easy
+to understand and clear to read. This
+document sets out the standards to be
+followed when producing line diagrams
+on behalf of TfL.
+
+More information on TfL design rules
+are available via the TfL website.
+
+
+
+
+                                        3
+1       Typography
+
+
+
+
+Our typeface is Johnston, which
+should be set in mixed upper and
+lower case.
+
+Johnston 100 Medium is the only
+typeface used on all line diagrams
+within the passenger environment,
+as well as signing and a wide range
+of publicity and other material.
+
+
+
+
+                                      4
+2       Mode colours
+
+
+
+
+The colours shown here are those     Transport for London   DLR                     Elizabeth line
+used to identify each mode.          PMS 072                PMS 326                 PMS 266
+                                     C100 M97 Y3 K3         C86 M2 Y41 K0           C67 M83 Y0 K0
+                                     R0 G25 B168            R0 G175 B173            R96 G57 B158
+The Pantone Matching System is to
+                                     NCS S 4060-R80B        NCS S 2050-B50G         NCS N/A
+be used for print purposes and the
+Natural Colour System (NCS) is to
+be used for paint applications.
+                                     London Buses           London Cable Car        London Coaches
+                                     PMS 485                (IFS Cloud Cable Car)   PMS 130
+                                     C6 M98 Y100 K1         PMS N/A                 C2 M38 Y100 K0
+                                     R220 G36 B31           C65 M81 Y0 K0           R255 G166 B0
+                                     NCS S 1085-Y80R        R115 G79 B160           NCS S 1070-Y20R
+                                                            NCS N/A
+
+
+
+                                     London Dial-a-Ride     London Overground       London River Services
+                                     PMS Pantone Purple     PMS 158                 PMS 299
+                                     C35 M88 Y0 K0          C3 M66 Y99 K0           C81 M18 Y0 K0
+                                     R192 G40 B185          R250 G123 B5            R3 G155 B229
+                                     NCS S 2060-R40B        NCS S 0585-Y50R         NCS S 2060-B
+
+
+
+                                     London Trams           London Underground      Santander Cycles
+                                     PMS 368                PMS 072                 PMS N/A
+                                     C59 M2 Y100 K0         C100 M97 Y3 K3          C0 M93 Y100 K0
+                                     R95 G181 B38           R0 G25 B168             R239 G56 B36
+                                     NCS S 0580-G30Y        NCS S 4060-R80B         NCS N/A
+
+
+
+
+                                                                                                       5
+3        London Underground line colours
+
+
+
+
+This section provides the             Bakerloo line       Central line           Circle line
+colour references for all the         PMS 470             PMS 485                PMS 116
+London Underground lines.             C26 M70 Y97 K16     C6 M98 Y100 K1         C0 M18 Y100 K0
+                                      R178 G99 B0         R220 G36 B31           R255 G200 B10
+                                      NCS S 4050-Y50R     NCS S 1085-Y80R        NCS S 0580-Y10R
+
+
+
+                                      District line       Hammersmith            Jubilee line
+                                      PMS 356             & City line            PMS 430
+                                      C96 M27 Y100 K15    PMS 197                C55 M41 Y38 K5
+                                      R0 G125 B50         C3 M48 Y15 K0          R131 G141 B147
+                                      NCS S 3065-G10Y     R245 G137 B166         NCS S 4005-R80B
+                                                          NCS S 0550-R10B
+
+
+
+                                      Metropolitan line   Northern line          Piccadilly line
+                                      PMS 235             PMS Black              PMS 072
+                                      C41 M100 Y41 K21    C0 M0 Y0 K100          C100 M97 Y3 K3
+                                      R155 G0 B88         R0 G0 B0               R0 G25 B168
+                                      NCS S 4050-R30B     NCS S 9000-N           NCS S 4060-R80B
+
+
+
+                                      Victoria line       Waterloo & City line
+                                      PMS 299             PMS 338
+                                      C81 M18 Y0 K0       C55 M0 Y39 K0
+                                      R3 G155 B229        R118 G208 B189
+                                      NCS S 2060-B        NCS S 1040-B80G
+
+
+
+
+                                                                                                   6
+4        London Overground line colours
+
+
+
+
+This section provides the             Liberty line       Lioness line      Mildmay line
+colour references for all the         PMS 6215           PMS 2012          PMS 2383
+London Overground lines.              C50 M40 Y40 K40    C0 M40 Y100 K0    C85 M40 Y5 K10
+                                      R93 G96 B97        R250 G166 B26     R0 G119 B173
+                                      NCS S 6502-B       NCS S 1080-Y20R   NCS S 3050-R90B
+
+
+
+                                      Suffragette line   Weaver line       Windrush line
+                                      PMS 6171           PMS 689           PMS 1795
+                                      C65 M0 Y75 K0      C30 M80 Y20 K35   C0 M100 Y90 K0
+                                      R91 G189 B114      R130 G58 B98      R237 G27 B0
+                                      NCS S 2050-G20Y    NCS S 4040-R30B   NCS S 1080-Y90R
+
+
+
+
+                                                                                             7
+5        Station names and line thickness
+
+
+
+
+                                                                           x
+The construction of a TfL line
+diagram is based around the ‘x’
+height of a station or stop name.
+
+This ‘x’ height is equal to the
+
+                                                                       x
+thickness of the route line. The
+principles of line spacing are also
+based upon the ‘x’ height value
+as shown.
+                                                                       x
+                                                                       x
+Station ticks are 0.66x squared.
+
+On the London Underground Tube
+map, non-Underground lines which         0.66x
+would normally be shown as solid
+lines (such as the DLR, Elizabeth            0.66x
+line and London Overground lines)                    x
+are to be displayed as parallel lines.
+
+
+
+                                                         0.33x
+                                                               0.33x
+                                                         0.33x
+
+
+
+
+                                                                               8
+5.1      Station names and line thickness continued
+
+
+
+
+When a section of line is to be             0.5m
+                                          0.5m
+displayed as being out of use due
+to engineering works, the example
+                                                   0.5m
+shown here is to be followed.                             0.5m 0.5m
+                                                                    0.33x
+                                                          0.5m 0.5m
+‘m’ is equal to 0.33x.
+                                    0.66x
+The line colour is always to be        0.66x
+displayed in black 30 per cent.
+
+
+
+
+                                                                            9
+6       Radii and angles
+
+
+
+
+Where a change of direction is
+necessary, the line must be drawn
+at an angle of 45 or 90 degrees.
+                                          R3x   x
+Where lines run adjacent, 3x is
+applied to the innermost curve.
+
+
+
+
+                                    45º
+
+
+
+
+                                                    10
+7        Arrow heads
+
+
+
+
+Where lines are terminated beyond
+the display area of the line diagram,
+the continuation of the line is         1.5x
+denoted by an arrow head.
+                                                   45˚   45˚
+
+
+                                         x
+
+
+                                                   45˚   45˚
+
+                                        1.5x
+
+
+
+
+                                               x
+
+
+
+
+                                                               11
+8         Interchange circles
+
+
+
+
+1.   Interchange stations are denoted       0.5x 2x 0.5x            0.5x
+     by circles. These circles are always
+     printed in black with the centre
+     left free of any print                                x
+
+2. Where at a station or stop you
+   have two (or even three) lines
+   sharing the same track and
+   platforms, the interchange circle
+   is centred between the lines
+
+3. Where a customer must change
+   platforms to move on to
+                                                               0.5x 0.5x 0.5x
+   another line, then more than one
+   interchange circle is to be shown.
+   The circles are drawn so that the
+   outside ring of the circle touches
+   the inside ring of the adjoining
+   circle. A 0.5x white strip is placed
+   across the two circles, thus
+   creating a bridging effect
+
+4. Where necessary, the dumbbell
+   effect may be used to illustrate
+   the interchange between
+   different platforms
+
+
+
+
+                                                                                12
+9         Interchange flag boxes and graphic elements
+
+
+
+
+Flag boxes are ordered alphabetically.      ,1          ,3
+The first boxes displayed are always
+Underground lines followed by other
+TfL modes (again in alphabetical order)
+and then National Rail stations.
+                                                        ,4
+The boxes print in the appropriate line
+colour, with the type reversed out of
+white, except for the Circle, Hammersmith
+& City and Waterloo & City lines where
+the type is Corporate blue.                             ,5
+
+1.   Interchanges with London
+     Underground lines
+
+2. Interchange with DLR                                 ,6
+3. Interchange with Elizabeth line
+
+4. Interchange with London Trams
+
+5. Interchange with National Rail
+                                                        ,7
+6. Walking interchange with
+   National Rail
+                                            ,2
+7.   Rail interchange with service
+     to airport
+
+
+
+                                                             13
+9.1     Interchange flag boxes and graphic elements continued
+
+
+
+
+8. Interchange with                     ,8                      ,10
+   London Overground lines
+
+9. Walking interchange with
+   London Overground lines
+
+10. Interchange with London Cable Car
+
+11. Interchange with piers                                      ,11
+12. Walking interchanges
+
+
+
+
+                                                                ,12
+                                        ,9
+
+
+
+
+                                                                      14
+9.2      Interchange flag boxes and graphic elements continued
+
+
+
+
+When placed onto a line diagram,
+the flag boxes and graphic
+                                         Station                   Station
+elements are as follows:
+
+1.   Interchange with London                 Circle                 District
+     Underground lines                      District              Hammersmith
+                                                                     & City
+
+2. Interchange with National Rail                                Windrush line
+
+3. Interchange with a London
+   Overground line (always
+   display National Rail logo
+   at Overground stations)               Station                   Station
+4. Interchange with London
+   Underground lines and
+   London Overground station                                     Fenchurch Street
+                                                                        190m
+
+5. Walking interchange with
+   National Rail (interchange
+   ring omitted and rail logo
+   within flag box)                      Station                   Station
+6. Walking interchange with
+   London Overground line
+   (interchange ring omitted             Lioness line             Weaver line
+   and rail logo within flag box)                                Hackney Downs 320m
+
+
+
+
+                                                                                      15
+9.3      Interchange flag boxes and graphic elements continued
+
+
+
+
+Flag boxes come in both single-lined                                                     0.25CH
+or double-lined sizes. The standard
+                                             CH                District                  0.5CH
+                                                                                         0.25CH
+height for a single-lined flag box is
+equal to that of the cap height of
+                                                                                         0.25CH
+the station name. The double-lined
+versions are constructed as shown.           1.75           Hammersmith                  0.25CH
+                                                                                               0.5CH
+                                             CH
+                                                               & City                    0.25CH
+                                                                                               0.5CH
+
+London Overground line flag boxes
+come in a single size. The standard
+height is one and a half times the                                                       0.25CH
+cap height of the station name.
+                                             CH             Elizabeth line               0.5CH
+                                                                                         0.25CH
+
+Where there is an interchange within
+walking distance that is of a different                                      0.25CH
+                                                                                         0.33CH 0.33CH
+name to the Underground station,          0.5CH                                          0.33CH
+                                                                                         0.25CH
+the station name and logo appear             CH             Lioness line                 0.25CH
+                                                                                                0.5CH
+in an outlined box.
+                                                    Equal                        Equal
+
+
+
+                                          0.33CH               Jubilee                   0.25CH
+                                                                 90m
+                                                                                         0.25CH
+                                                                       0.125CH
+
+
+
+                                                      Suffragette line                   0.25CH
+                                                        Wanstead Park 300m                        0.33CH
+                                                                                         0.25CH
+
+                                                    Equal                        Equal
+                                                                                                           16
+9.4     Interchange flag boxes and graphic elements continued
+
+
+
+
+A connection with National Rail
+is denoted by the National Rail
+logo. Where the distance is within
+walking distance and of a different
+name to the Underground station,
+the station name and logo appear
+in an outlined box.
+
+Interchanges with an airport,
+between piers and at Victoria
+Coach Station are denoted
+using the appropriate pictogram
+appearing in an outlined box.
+
+
+
+
+                                                                17
+ 10       Constructing a line diagram
+
+
+
+
+ The image below illustrates how
+ the elements are put together to
+ construct a horizontal line diagram.
+
+ Flag boxes are always centred beneath
+ the interchange circle and never
+ above. When a flag box is required, the
+ station name always appears above
+ the interchange circle.
+
+
+
+
+                                                                   0.5x
+                                                                                     Station
+Station                                              CH
+                                                          Station               CH
+                                                                                      Name
+                  1.66x
+
+
+
+                          1.66x
+
+
+                                  Station
+                                            0.25CH
+                                             0.5CH
+                                            0.25CH
+                                                                           CH        Elizabeth line
+
+                                   Name                      10x          min X
+
+
+
+
+                                                                                                      18
+10.1      Constructing a line diagram continued
+
+
+
+
+1.   Ring to be used where station
+     at the line end is an interchange
+                                                      
+2. Double tab is used to indicate
+   the end of the line
+                                                      
+3. Single tab is used to represent
+   a station or stop
+
+4. Ring is used to represent an
+   interchange station or stop                        
+                                         
+5. Direct joined branch
+   indicates a service that can
+   be reached directly as part
+   of a normal service                                
+6. A double ring bridging a main
+   and branch line indicates an          
+   indirect branch (this can also
+   be used to indicate a very
+   infrequent service)
+                                                  
+7.   Arrows are used to indicate
+     that a line continues beyond
+     the stations shown
+
+
+
+
+                                                          19
+11       Vertical platform line diagrams
+
+
+
+
+Vertical platform line diagrams are an                                        nn 1.5n                 1.5n
+integral part of TfL signage systems.                                           3n
+                                                                                                                 1.5n
+They operate slightly differently to
+the standard line diagram.
+                                                                                      Alopy Hill 3n 1.5n
+                                                                                     Bonnigton                Central
+                                                                                                             Northern
+
+The host station name is always
+to appear first, reversed out of                                                     Cravingh Lane    2n
+                                                                                                         3n
+a Corporate blue box. Station                                                                                                           1.5n
+                                                                                     Dochestelon
+                                                                                                                     Bakerloo
+                                                                                                                     Northern           1.5n
+names are normally ranged left                                                                                      Charing Cross
+                                                                                                                                        1.5n
+                                                                                                 1.5n
+and to the right of the line. In more                                                                         Victoria
+
+
+complex line diagrams, for example                                 4n
+                                                                                     Exontel1.5n
+                                                                                                            Trains to
+                                                                                                         Gatwick Airport
+
+
+the District and Circle lines, the
+names may appear on the left
+                                                                                     Filly Square
+where appropriate.                            Low Street
+                                              x
+                                              x                                      Great Puddington                               Piccadilly
+
+
+
+
+Station name cap heights are 3 x
+                                              Wellington
+                                              x
+                                                              3n
+the route line width, while the                                                      High Longly                  Piccadilly
+
+
+                                                             R4n
+depth of the flag boxes is equal                                                              0.66n
+to 1.5 x the route line width.                                          R3n
+                                            Mainframingon                             0.66n    Inchester Street
+When a vertical platform line
+diagram is used, the flag box is                   Naureen House                               Jumpperly 2n                             Trams
+
+
+
+
+centred with the cap height of                3n
+                                                    Oilipinghi Hill                            Kirkway Hill
+                                              Hammersmith
+                                                 & City
+                                         1.5n   Piccadilly
+the station name.
+                                                                                15n optimum 3n
+
+
+
+
+                                                                                                                                             20
+11.1        Vertical platform line diagrams continued
+
+
+
+
+Where double circles and branch
+lines are required for interchanges,
+the rules shown here, and on the
+following page, are to be followed.
+
+1.     Bridged double circle to
+       denote branch line
+
+2. Branch line with station
+   name shown on the right
+
+3. For triple lines a double
+   ring is used
+
+4. Where two lines run side by
+   side, the space between the
+   two lines is as shown
+
+5. For specific areas such as
+   Heathrow, individual solutions
+   will be established to best
+   suit the situation by the
+   TfL Graphics team
+
+
+
+
+                                                        21
+For further information
+
+
+
+
+This standard intends to outline basic
+principles and therefore cannot cover
+every application or eventuality.
+In case of difficulty or doubt as to
+how to apply these standards, please
+contact the TfL Graphics team.
+
+
+
+
+Issue 4
+January 2025
+
+© Transport for London
+
+MSRV24_098 TfL line diagram standards - Issue04
+

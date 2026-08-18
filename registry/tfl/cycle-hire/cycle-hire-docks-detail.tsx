@@ -20,6 +20,12 @@ export const DEFAULT_CYCLE_HIRE_DOCK_IDS = [
   "BikePoints_46",
 ] as const;
 
+/** One arrivals tile. Heights stay rem literals so the row does not inherit board vars. */
+const DOCK_ROW_HEIGHT_CLASS =
+  "box-border h-[3rem] min-h-[3rem] max-h-[3rem] overflow-clip";
+const DOCK_ROW_TRACK_CLASS =
+  "grid grid-rows-[0.875rem_1.125rem_0.75rem] gap-0.5";
+
 type SlotKind = "standard" | "eBike" | "empty" | "broken";
 
 /** One cell per dock slot so `gap-*` reads between every slot, not only kind changes. */
@@ -76,10 +82,13 @@ export const CycleHireDocksBoardSkeleton = ({
     aria-label="Loading cycle hire docks"
   >
     {Array.from({ length: dockCount }).map((_, i) => (
-      <div key={i} className="flex flex-col gap-2">
-        <Skeleton className="h-5 w-48 max-w-full" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-3 w-40" />
+      <div
+        key={i}
+        className={cn(DOCK_ROW_HEIGHT_CLASS, DOCK_ROW_TRACK_CLASS)}
+      >
+        <Skeleton className="h-full w-48 max-w-full" />
+        <Skeleton className="h-full w-full" />
+        <Skeleton className="h-full w-40" />
       </div>
     ))}
   </div>
@@ -102,9 +111,19 @@ export const CycleHireDockRow = ({
 
   if (totalDocks === 0) {
     return (
-      <div className={cn("flex flex-col gap-1", className)}>
-        <h3 className="text-sm font-semibold text-foreground">{dock.name}</h3>
-        <p className="text-xs text-muted-foreground">No docks reported</p>
+      <div
+        className={cn(
+          DOCK_ROW_HEIGHT_CLASS,
+          "flex flex-col justify-center gap-0.5",
+          className,
+        )}
+      >
+        <h3 className="truncate text-sm leading-none font-semibold text-foreground">
+          {dock.name}
+        </h3>
+        <p className="text-xs leading-none text-muted-foreground">
+          No docks reported
+        </p>
       </div>
     );
   }
@@ -121,11 +140,13 @@ export const CycleHireDockRow = ({
 
   return (
     <div
-      className={cn("flex flex-col gap-2", className)}
+      className={cn(DOCK_ROW_HEIGHT_CLASS, DOCK_ROW_TRACK_CLASS, className)}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h3 className="text-sm font-semibold text-foreground">{dock.name}</h3>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+      <div className="flex min-w-0 items-center justify-between gap-x-3">
+        <h3 className="min-w-0 truncate text-sm leading-none font-semibold text-foreground">
+          {dock.name}
+        </h3>
+        <div className="flex shrink-0 items-center gap-2 text-xs leading-none text-muted-foreground">
           {dock.isLocked ? (
             <span className="font-medium text-destructive">Locked</span>
           ) : null}
@@ -138,7 +159,7 @@ export const CycleHireDockRow = ({
       </div>
 
       <div
-        className="flex h-4 w-full gap-0.5"
+        className="flex h-full w-full gap-0.5"
         role="img"
         aria-label={`${dock.name}: ${ariaParts.join(", ")}`}
       >
@@ -150,18 +171,20 @@ export const CycleHireDockRow = ({
         ))}
       </div>
 
-      <div className="flex items-baseline justify-between gap-4 text-xs font-medium tracking-wide uppercase">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <div className="flex items-center justify-between gap-4 text-xs leading-none font-medium tracking-wide uppercase">
+        <div className="flex min-w-0 items-center gap-x-3 overflow-clip">
           {standardBikes > 0 ? (
-            <span className={cycleHireBikeTextClass}>
+            <span className={cn("whitespace-nowrap", cycleHireBikeTextClass)}>
               {standardBikes} bikes
             </span>
           ) : null}
           {eBikes > 0 ? (
-            <span className={cycleHireEbikeTextClass}>{eBikes} ebikes</span>
+            <span className={cn("whitespace-nowrap", cycleHireEbikeTextClass)}>
+              {eBikes} ebikes
+            </span>
           ) : null}
           {showBrokenCount ? (
-            <span className={cycleHireBrokenTextClass}>
+            <span className={cn("whitespace-nowrap", cycleHireBrokenTextClass)}>
               {brokenDocks} broken
             </span>
           ) : null}

@@ -10,15 +10,22 @@ import { getCachedBikePoints } from "@/lib/tfl/cycle-hire-data"
 const CycleHirePreviewFallback = () => (
   <div className="flex flex-col gap-8">
     <div className="space-y-3">
-      <p className="text-sm font-medium text-foreground">Compact display</p>
+      <p className="text-sm font-medium text-foreground">Unattended display</p>
       <div className="space-y-5">
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">Multiple docks</p>
           <CycleHireDocksDisplaySkeleton tiles={3} />
         </div>
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">One dock</p>
-          <CycleHireDocksDisplaySkeleton tiles={2} />
+          <p className="text-xs text-muted-foreground">One dock with roundel</p>
+          <CycleHireDocksDisplaySkeleton tiles={1} />
+        </div>
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">One dock, stacked</p>
+          <CycleHireDocksDisplaySkeleton
+            tiles={1}
+            singleDockVariant="stacked"
+          />
         </div>
       </div>
     </div>
@@ -26,10 +33,7 @@ const CycleHirePreviewFallback = () => (
       <p className="text-sm font-medium text-foreground">Single dock</p>
       <CycleHireDocksBoardSkeleton dockCount={1} />
     </div>
-    <div className="space-y-3">
-      <p className="text-sm font-medium text-foreground">Nearby docks</p>
-      <div className="h-64 animate-pulse rounded-lg bg-muted" aria-hidden />
-    </div>
+    <div className="h-72 bg-muted" aria-hidden />
   </div>
 )
 

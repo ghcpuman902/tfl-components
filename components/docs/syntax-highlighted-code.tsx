@@ -129,7 +129,7 @@ export const SyntaxHighlightedCode = ({
   return (
     <div
       className={cn(
-        "group/code relative mb-0 mt-6 w-full",
+        "group/code relative mb-4 mt-6 w-full",
         isPeek && "mb-0 mt-0 overflow-hidden rounded-lg bg-muted",
         wrapperClassName,
       )}
@@ -175,7 +175,7 @@ export const SyntaxHighlightedCode = ({
       >
         <pre
           className={cn(
-            "block w-full overflow-x-auto overflow-y-hidden rounded-lg bg-muted py-3 pr-14 pl-4 text-sm leading-normal",
+            "block w-full overflow-x-auto overflow-y-hidden rounded-lg bg-muted pt-3 pr-14 pl-4 text-sm leading-normal",
             isPeek && "rounded-none bg-transparent",
             preClassName,
           )}
@@ -185,7 +185,7 @@ export const SyntaxHighlightedCode = ({
         </pre>
         {isPeek ? (
           <div
-            className="pointer-events-none absolute inset-x-0 -bottom-3 h-12 bg-linear-to-t from-muted to-transparent [[data-code-peek][data-expanded=true]_&]:hidden"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-muted to-transparent [[data-code-peek][data-expanded=true]_&]:hidden"
             aria-hidden
           />
         ) : null}

@@ -1,0 +1,1722 @@
+{
+  "meta": {
+    "source": "osm-route-relations",
+    "note": "Stop-position nodes read directly off each route relation's ordered stop/platform members — not snapped from a separate station catalog.",
+    "relationCount": 40,
+    "retrievedAt": "2026-08-18T00:14:14.377Z"
+  },
+  "stops": [
+    {
+      "nodeId": 818704,
+      "name": "Walthamstow Central",
+      "coordinates": [
+        -0.019972,
+        51.582907
+      ]
+    },
+    {
+      "nodeId": 11249237,
+      "name": "Forest Hill",
+      "coordinates": [
+        -0.0531638,
+        51.4385596
+      ]
+    },
+    {
+      "nodeId": 11249254,
+      "name": "Honor Oak Park",
+      "coordinates": [
+        -0.0453613,
+        51.4500132
+      ]
+    },
+    {
+      "nodeId": 21596118,
+      "name": "Dalston Junction",
+      "coordinates": [
+        -0.074885,
+        51.5446614
+      ]
+    },
+    {
+      "nodeId": 21618358,
+      "name": "Imperial Wharf",
+      "coordinates": [
+        -0.1835546,
+        51.4757858
+      ]
+    },
+    {
+      "nodeId": 21619242,
+      "name": "Battersea Park",
+      "coordinates": [
+        -0.147248,
+        51.4770078
+      ]
+    },
+    {
+      "nodeId": 21661009,
+      "name": "Willesden Junction",
+      "coordinates": [
+        -0.2427584,
+        51.5324338
+      ]
+    },
+    {
+      "nodeId": 25288702,
+      "name": "Kensal Rise",
+      "coordinates": [
+        -0.2197743,
+        51.534626
+      ]
+    },
+    {
+      "nodeId": 25315662,
+      "name": "Caledonian Road & Barnsbury",
+      "coordinates": [
+        -0.1159066,
+        51.5432606
+      ]
+    },
+    {
+      "nodeId": 25317689,
+      "name": "Wanstead Park",
+      "coordinates": [
+        0.0267952,
+        51.5517033
+      ]
+    },
+    {
+      "nodeId": 25324919,
+      "name": "Woodgrange Park",
+      "coordinates": [
+        0.0451566,
+        51.5490932
+      ]
+    },
+    {
+      "nodeId": 26620257,
+      "name": "New Cross Gate",
+      "coordinates": [
+        -0.0402214,
+        51.4754328
+      ]
+    },
+    {
+      "nodeId": 27512037,
+      "name": "Emerson Park Platform 1",
+      "coordinates": [
+        0.2204479,
+        51.5685505
+      ]
+    },
+    {
+      "nodeId": 33101882,
+      "name": "Stamford Hill",
+      "coordinates": [
+        -0.0755747,
+        51.5758362
+      ]
+    },
+    {
+      "nodeId": 41608098,
+      "name": "Shadwell",
+      "coordinates": [
+        -0.0569758,
+        51.5122775
+      ]
+    },
+    {
+      "nodeId": 50944778,
+      "name": "Homerton (Platform 2)",
+      "coordinates": [
+        -0.042501,
+        51.547069
+      ]
+    },
+    {
+      "nodeId": 70594714,
+      "name": "Harlesden",
+      "coordinates": [
+        -0.2574201,
+        51.5361968
+      ]
+    },
+    {
+      "nodeId": 104246905,
+      "name": "Theobalds Grove",
+      "coordinates": [
+        -0.0349608,
+        51.6922734
+      ]
+    },
+    {
+      "nodeId": 182117639,
+      "name": "Gospel Oak",
+      "coordinates": [
+        -0.1518572,
+        51.5555452
+      ]
+    },
+    {
+      "nodeId": 182180403,
+      "name": "Willesden Junction",
+      "coordinates": [
+        -0.2433983,
+        51.5318459
+      ]
+    },
+    {
+      "nodeId": 242307912,
+      "name": "Harringay Green Lanes",
+      "coordinates": [
+        -0.0982831,
+        51.5771192
+      ]
+    },
+    {
+      "nodeId": 249547833,
+      "name": "Acton Central",
+      "coordinates": [
+        -0.2628875,
+        51.5085122
+      ]
+    },
+    {
+      "nodeId": 273412246,
+      "name": "Shepherd's Bush",
+      "coordinates": [
+        -0.2182189,
+        51.5062252
+      ]
+    },
+    {
+      "nodeId": 301170912,
+      "name": "Kensington (Olympia)",
+      "coordinates": [
+        -0.2103206,
+        51.4980499
+      ]
+    },
+    {
+      "nodeId": 426937016,
+      "name": "Highbury & Islington",
+      "coordinates": [
+        -0.1043929,
+        51.5461095
+      ]
+    },
+    {
+      "nodeId": 668065621,
+      "name": "Surrey Quays",
+      "coordinates": [
+        -0.0481307,
+        51.4938462
+      ]
+    },
+    {
+      "nodeId": 822175565,
+      "name": "Clapton",
+      "coordinates": [
+        -0.0554428,
+        51.5628401
+      ]
+    },
+    {
+      "nodeId": 1062975974,
+      "name": "Caledonian Road & Barnsbury",
+      "coordinates": [
+        -0.1145267,
+        51.5437107
+      ]
+    },
+    {
+      "nodeId": 1140859041,
+      "name": "Kilburn High Road",
+      "coordinates": [
+        -0.191953,
+        51.5375214
+      ]
+    },
+    {
+      "nodeId": 1230943492,
+      "name": "West Hampstead",
+      "coordinates": [
+        -0.1913809,
+        51.5474464
+      ]
+    },
+    {
+      "nodeId": 1242474808,
+      "name": "Camden Road",
+      "coordinates": [
+        -0.1399392,
+        51.5419777
+      ]
+    },
+    {
+      "nodeId": 1244081944,
+      "name": "Silver Street",
+      "coordinates": [
+        -0.0667368,
+        51.6155919
+      ]
+    },
+    {
+      "nodeId": 1263242244,
+      "name": "London Euston",
+      "coordinates": [
+        -0.1342485,
+        51.5287401
+      ]
+    },
+    {
+      "nodeId": 1263242268,
+      "name": "London Euston",
+      "coordinates": [
+        -0.1341841,
+        51.5287566
+      ]
+    },
+    {
+      "nodeId": 1266051781,
+      "name": "Hackney Central",
+      "coordinates": [
+        -0.0562916,
+        51.5470743
+      ]
+    },
+    {
+      "nodeId": 1271716496,
+      "name": "London Liverpool Street",
+      "coordinates": [
+        -0.0823805,
+        51.5181231
+      ]
+    },
+    {
+      "nodeId": 1335954349,
+      "name": "Clapham Junction",
+      "coordinates": [
+        -0.1713109,
+        51.4650101
+      ]
+    },
+    {
+      "nodeId": 1341527159,
+      "name": "Romford",
+      "coordinates": [
+        0.1842341,
+        51.5749768
+      ]
+    },
+    {
+      "nodeId": 1395208742,
+      "name": "Clapham High Street",
+      "coordinates": [
+        -0.1326021,
+        51.4656351
+      ]
+    },
+    {
+      "nodeId": 1395208754,
+      "name": "Clapham High Street",
+      "coordinates": [
+        -0.1316478,
+        51.4651611
+      ]
+    },
+    {
+      "nodeId": 1395208789,
+      "name": "Wandsworth Road",
+      "coordinates": [
+        -0.138297,
+        51.4698007
+      ]
+    },
+    {
+      "nodeId": 1505619010,
+      "name": "Rotherhithe",
+      "coordinates": [
+        -0.0521806,
+        51.5010163
+      ]
+    },
+    {
+      "nodeId": 1514296645,
+      "name": "Upminster",
+      "coordinates": [
+        0.251844,
+        51.5591727
+      ]
+    },
+    {
+      "nodeId": 1530400172,
+      "name": "Wapping",
+      "coordinates": [
+        -0.0563101,
+        51.5048911
+      ]
+    },
+    {
+      "nodeId": 1613746731,
+      "name": "Woodgrange Park",
+      "coordinates": [
+        0.0444087,
+        51.5492259
+      ]
+    },
+    {
+      "nodeId": 1613763440,
+      "name": "Shoreditch High Street",
+      "coordinates": [
+        -0.0736728,
+        51.5232591
+      ]
+    },
+    {
+      "nodeId": 1613798337,
+      "name": "Bethnal Green",
+      "coordinates": [
+        -0.0588547,
+        51.5240259
+      ]
+    },
+    {
+      "nodeId": 1634663987,
+      "name": "Stratford",
+      "coordinates": [
+        -0.0037476,
+        51.5426982
+      ]
+    },
+    {
+      "nodeId": 1637984328,
+      "name": "Harringay Green Lanes",
+      "coordinates": [
+        -0.0974216,
+        51.5773769
+      ]
+    },
+    {
+      "nodeId": 1638039864,
+      "name": "Finchley Road & Frognal",
+      "coordinates": [
+        -0.1833592,
+        51.5502054
+      ]
+    },
+    {
+      "nodeId": 1658899071,
+      "name": "West Brompton",
+      "coordinates": [
+        -0.1955884,
+        51.4870575
+      ]
+    },
+    {
+      "nodeId": 1658959505,
+      "name": "Shepherd's Bush",
+      "coordinates": [
+        -0.217866,
+        51.5057148
+      ]
+    },
+    {
+      "nodeId": 1674808343,
+      "name": "Willesden Junction",
+      "coordinates": [
+        -0.2451581,
+        51.5323764
+      ]
+    },
+    {
+      "nodeId": 1674808578,
+      "name": "Kensal Rise",
+      "coordinates": [
+        -0.2206561,
+        51.5342777
+      ]
+    },
+    {
+      "nodeId": 1675109100,
+      "name": "Queen's Park",
+      "coordinates": [
+        -0.2062726,
+        51.5337648
+      ]
+    },
+    {
+      "nodeId": 1675109141,
+      "name": "Queen's Park",
+      "coordinates": [
+        -0.2049092,
+        51.5342345
+      ]
+    },
+    {
+      "nodeId": 1675109602,
+      "name": "South Hampstead",
+      "coordinates": [
+        -0.1797603,
+        51.5412737
+      ]
+    },
+    {
+      "nodeId": 1699980383,
+      "name": "South Kenton",
+      "coordinates": [
+        -0.3085807,
+        51.570252
+      ]
+    },
+    {
+      "nodeId": 1699980457,
+      "name": "Kenton",
+      "coordinates": [
+        -0.3166625,
+        51.5815221
+      ]
+    },
+    {
+      "nodeId": 1700013974,
+      "name": "Brondesbury Park",
+      "coordinates": [
+        -0.2108056,
+        51.5400796
+      ]
+    },
+    {
+      "nodeId": 1700014077,
+      "name": "Brondesbury",
+      "coordinates": [
+        -0.2030876,
+        51.5448479
+      ]
+    },
+    {
+      "nodeId": 1700014181,
+      "name": "West Hampstead",
+      "coordinates": [
+        -0.1928256,
+        51.5471203
+      ]
+    },
+    {
+      "nodeId": 1726375839,
+      "name": "Gunnersbury",
+      "coordinates": [
+        -0.2753247,
+        51.4916596
+      ]
+    },
+    {
+      "nodeId": 1726375848,
+      "name": "Gunnersbury",
+      "coordinates": [
+        -0.2758329,
+        51.4909547
+      ]
+    },
+    {
+      "nodeId": 1726407032,
+      "name": "Richmond",
+      "coordinates": [
+        -0.3011125,
+        51.4632722
+      ]
+    },
+    {
+      "nodeId": 1734066163,
+      "name": "Highbury & Islington",
+      "coordinates": [
+        -0.1047173,
+        51.5458379
+      ]
+    },
+    {
+      "nodeId": 1735516593,
+      "name": "Hackney Central",
+      "coordinates": [
+        -0.0580911,
+        51.5470586
+      ]
+    },
+    {
+      "nodeId": 1735516710,
+      "name": "Hackney Downs",
+      "coordinates": [
+        -0.0600994,
+        51.5479037
+      ]
+    },
+    {
+      "nodeId": 1735516728,
+      "name": "Hackney Downs",
+      "coordinates": [
+        -0.0609527,
+        51.5488503
+      ]
+    },
+    {
+      "nodeId": 1735534641,
+      "name": "Cambridge Heath",
+      "coordinates": [
+        -0.0570151,
+        51.5310456
+      ]
+    },
+    {
+      "nodeId": 1735534945,
+      "name": "London Fields",
+      "coordinates": [
+        -0.0580303,
+        51.5403106
+      ]
+    },
+    {
+      "nodeId": 1735534976,
+      "name": "London Fields",
+      "coordinates": [
+        -0.0577822,
+        51.5415199
+      ]
+    },
+    {
+      "nodeId": 1735591561,
+      "name": "Hackney Wick",
+      "coordinates": [
+        -0.0249209,
+        51.5433901
+      ]
+    },
+    {
+      "nodeId": 1735591780,
+      "name": "Homerton (Platform 1)",
+      "coordinates": [
+        -0.0435036,
+        51.5470791
+      ]
+    },
+    {
+      "nodeId": 1736680135,
+      "name": "South Acton (Platform 1)",
+      "coordinates": [
+        -0.2699093,
+        51.4996989
+      ]
+    },
+    {
+      "nodeId": 1736680137,
+      "name": "South Acton",
+      "coordinates": [
+        -0.2699363,
+        51.499714
+      ]
+    },
+    {
+      "nodeId": 1736680206,
+      "name": "Acton Central",
+      "coordinates": [
+        -0.2628531,
+        51.5085088
+      ]
+    },
+    {
+      "nodeId": 1746322997,
+      "name": "Harrow & Wealdstone",
+      "coordinates": [
+        -0.3344771,
+        51.5918438
+      ]
+    },
+    {
+      "nodeId": 1746323030,
+      "name": "Harrow & Wealdstone",
+      "coordinates": [
+        -0.3343768,
+        51.5918227
+      ]
+    },
+    {
+      "nodeId": 1747503269,
+      "name": "Bushey",
+      "coordinates": [
+        -0.3853453,
+        51.6460533
+      ]
+    },
+    {
+      "nodeId": 1748295889,
+      "name": "Bushey",
+      "coordinates": [
+        -0.3851405,
+        51.6455781
+      ]
+    },
+    {
+      "nodeId": 1748295902,
+      "name": "Carpenders Park",
+      "coordinates": [
+        -0.3851005,
+        51.6272082
+      ]
+    },
+    {
+      "nodeId": 1753084172,
+      "name": "New Cross",
+      "coordinates": [
+        -0.0324674,
+        51.4767351
+      ]
+    },
+    {
+      "nodeId": 1761378369,
+      "name": "Penge West",
+      "coordinates": [
+        -0.060398,
+        51.4178093
+      ]
+    },
+    {
+      "nodeId": 1761379104,
+      "name": "Forest Hill",
+      "coordinates": [
+        -0.0529561,
+        51.4398642
+      ]
+    },
+    {
+      "nodeId": 1761379279,
+      "name": "Honor Oak Park",
+      "coordinates": [
+        -0.0446785,
+        51.4509078
+      ]
+    },
+    {
+      "nodeId": 1761379585,
+      "name": "New Cross Gate",
+      "coordinates": [
+        -0.0409172,
+        51.4760006
+      ]
+    },
+    {
+      "nodeId": 1764573211,
+      "name": "Denmark Hill",
+      "coordinates": [
+        -0.0901397,
+        51.4678251
+      ]
+    },
+    {
+      "nodeId": 1764573221,
+      "name": "Denmark Hill",
+      "coordinates": [
+        -0.0884897,
+        51.468345
+      ]
+    },
+    {
+      "nodeId": 1767812429,
+      "name": "Wapping",
+      "coordinates": [
+        -0.0558997,
+        51.5043221
+      ]
+    },
+    {
+      "nodeId": 1767813945,
+      "name": "Rotherhithe",
+      "coordinates": [
+        -0.0516937,
+        51.5005412
+      ]
+    },
+    {
+      "nodeId": 1767814043,
+      "name": "Whitechapel",
+      "coordinates": [
+        -0.0599897,
+        51.5196919
+      ]
+    },
+    {
+      "nodeId": 1767814050,
+      "name": "Whitechapel",
+      "coordinates": [
+        -0.0609664,
+        51.5202593
+      ]
+    },
+    {
+      "nodeId": 1778049086,
+      "name": "Theobalds Grove",
+      "coordinates": [
+        -0.0367089,
+        51.6913052
+      ]
+    },
+    {
+      "nodeId": 1780406082,
+      "name": "Bruce Grove",
+      "coordinates": [
+        -0.0706826,
+        51.5927311
+      ]
+    },
+    {
+      "nodeId": 1780406113,
+      "name": "Bruce Grove",
+      "coordinates": [
+        -0.069921,
+        51.5940147
+      ]
+    },
+    {
+      "nodeId": 1780446695,
+      "name": "Highams Park",
+      "coordinates": [
+        0.0001446,
+        51.6100584
+      ]
+    },
+    {
+      "nodeId": 1783937161,
+      "name": "Rectory Road",
+      "coordinates": [
+        -0.0683229,
+        51.5586205
+      ]
+    },
+    {
+      "nodeId": 1783937172,
+      "name": "Rectory Road",
+      "coordinates": [
+        -0.0690802,
+        51.5599167
+      ]
+    },
+    {
+      "nodeId": 1783937242,
+      "name": "Stoke Newington",
+      "coordinates": [
+        -0.0714812,
+        51.5641065
+      ]
+    },
+    {
+      "nodeId": 1783937386,
+      "name": "Stamford Hill",
+      "coordinates": [
+        -0.0765772,
+        51.5745092
+      ]
+    },
+    {
+      "nodeId": 1783937526,
+      "name": "White Hart Lane",
+      "coordinates": [
+        -0.0707822,
+        51.6038301
+      ]
+    },
+    {
+      "nodeId": 1783937535,
+      "name": "White Hart Lane",
+      "coordinates": [
+        -0.0710333,
+        51.6051458
+      ]
+    },
+    {
+      "nodeId": 1783937643,
+      "name": "Edmonton Green",
+      "coordinates": [
+        -0.061923,
+        51.623583
+      ]
+    },
+    {
+      "nodeId": 1783937648,
+      "name": "Edmonton Green",
+      "coordinates": [
+        -0.0612349,
+        51.6249696
+      ]
+    },
+    {
+      "nodeId": 1783937886,
+      "name": "Southbury",
+      "coordinates": [
+        -0.0525421,
+        51.6484117
+      ]
+    },
+    {
+      "nodeId": 1783938000,
+      "name": "Turkey Street",
+      "coordinates": [
+        -0.0470925,
+        51.6727635
+      ]
+    },
+    {
+      "nodeId": 1812313823,
+      "name": "Shoreditch High Street",
+      "coordinates": [
+        -0.0760735,
+        51.5232497
+      ]
+    },
+    {
+      "nodeId": 1812313946,
+      "name": "Hoxton",
+      "coordinates": [
+        -0.0756308,
+        51.5311367
+      ]
+    },
+    {
+      "nodeId": 1812313951,
+      "name": "Hoxton",
+      "coordinates": [
+        -0.075686,
+        51.531862
+      ]
+    },
+    {
+      "nodeId": 1812313991,
+      "name": "Haggerston",
+      "coordinates": [
+        -0.0755346,
+        51.5394
+      ]
+    },
+    {
+      "nodeId": 1812314120,
+      "name": "Dalston Junction",
+      "coordinates": [
+        -0.0750614,
+        51.5457322
+      ]
+    },
+    {
+      "nodeId": 1812314121,
+      "name": "Dalston Junction",
+      "coordinates": [
+        -0.0750028,
+        51.5457349
+      ]
+    },
+    {
+      "nodeId": 1834159294,
+      "name": "Kilburn High Road",
+      "coordinates": [
+        -0.1919269,
+        51.5374942
+      ]
+    },
+    {
+      "nodeId": 2022140476,
+      "name": "Kew Gardens",
+      "coordinates": [
+        -0.2851386,
+        51.476592
+      ]
+    },
+    {
+      "nodeId": 2022140536,
+      "name": "Kew Gardens",
+      "coordinates": [
+        -0.2848189,
+        51.4775232
+      ]
+    },
+    {
+      "nodeId": 2084463725,
+      "name": "Canonbury",
+      "coordinates": [
+        -0.092697,
+        51.5486909
+      ]
+    },
+    {
+      "nodeId": 2084463728,
+      "name": "Canonbury",
+      "coordinates": [
+        -0.0935684,
+        51.548499
+      ]
+    },
+    {
+      "nodeId": 2084463730,
+      "name": "Canonbury",
+      "coordinates": [
+        -0.0935476,
+        51.5483232
+      ]
+    },
+    {
+      "nodeId": 2084584512,
+      "name": "Highbury & Islington",
+      "coordinates": [
+        -0.1053821,
+        51.5458523
+      ]
+    },
+    {
+      "nodeId": 2128931382,
+      "name": "Walthamstow Queen's Road",
+      "coordinates": [
+        -0.023484,
+        51.5813917
+      ]
+    },
+    {
+      "nodeId": 2128931383,
+      "name": "Walthamstow Queen's Road",
+      "coordinates": [
+        -0.0238914,
+        51.5815798
+      ]
+    },
+    {
+      "nodeId": 2152302746,
+      "name": "Dalston Junction",
+      "coordinates": [
+        -0.0751985,
+        51.5454343
+      ]
+    },
+    {
+      "nodeId": 2161393539,
+      "name": "Camden Road",
+      "coordinates": [
+        -0.1388901,
+        51.5418944
+      ]
+    },
+    {
+      "nodeId": 2249167869,
+      "name": "Haggerston",
+      "coordinates": [
+        -0.0755655,
+        51.5385622
+      ]
+    },
+    {
+      "nodeId": 2249172956,
+      "name": "Surrey Quays",
+      "coordinates": [
+        -0.0473758,
+        51.4930468
+      ]
+    },
+    {
+      "nodeId": 2266363382,
+      "name": "Brondesbury Park",
+      "coordinates": [
+        -0.2101037,
+        51.5407397
+      ]
+    },
+    {
+      "nodeId": 2330308569,
+      "name": "Crystal Palace",
+      "coordinates": [
+        -0.0719441,
+        51.4178511
+      ]
+    },
+    {
+      "nodeId": 2330319758,
+      "name": "Sydenham",
+      "coordinates": [
+        -0.053883,
+        51.4286501
+      ]
+    },
+    {
+      "nodeId": 2330319764,
+      "name": "Sydenham",
+      "coordinates": [
+        -0.0545599,
+        51.4268339
+      ]
+    },
+    {
+      "nodeId": 2371177238,
+      "name": "Leytonstone High Road",
+      "coordinates": [
+        0.0085247,
+        51.5635606
+      ]
+    },
+    {
+      "nodeId": 2403988560,
+      "name": "Seven Sisters",
+      "coordinates": [
+        -0.075056,
+        51.5839456
+      ]
+    },
+    {
+      "nodeId": 2414177654,
+      "name": "Gospel Oak",
+      "coordinates": [
+        -0.1509435,
+        51.5552186
+      ]
+    },
+    {
+      "nodeId": 2414177657,
+      "name": "Gospel Oak",
+      "coordinates": [
+        -0.1522284,
+        51.5557806
+      ]
+    },
+    {
+      "nodeId": 2438255319,
+      "name": "Canada Water",
+      "coordinates": [
+        -0.0500405,
+        51.4980112
+      ]
+    },
+    {
+      "nodeId": 2438255321,
+      "name": "Canada Water",
+      "coordinates": [
+        -0.0499525,
+        51.4979293
+      ]
+    },
+    {
+      "nodeId": 2438283854,
+      "name": "Clapham Junction",
+      "coordinates": [
+        -0.1719674,
+        51.4648003
+      ]
+    },
+    {
+      "nodeId": 2438287025,
+      "name": "Wandsworth Road",
+      "coordinates": [
+        -0.1379563,
+        51.4695283
+      ]
+    },
+    {
+      "nodeId": 2441945929,
+      "name": "Hampstead Heath",
+      "coordinates": [
+        -0.1659509,
+        51.5550799
+      ]
+    },
+    {
+      "nodeId": 2441945933,
+      "name": "Hampstead Heath",
+      "coordinates": [
+        -0.1649882,
+        51.5553507
+      ]
+    },
+    {
+      "nodeId": 2446748774,
+      "name": "Queens Road Peckham",
+      "coordinates": [
+        -0.0572978,
+        51.4736434
+      ]
+    },
+    {
+      "nodeId": 2446751287,
+      "name": "Queens Road Peckham",
+      "coordinates": [
+        -0.056522,
+        51.4750911
+      ]
+    },
+    {
+      "nodeId": 2458414145,
+      "name": "South Hampstead",
+      "coordinates": [
+        -0.1780774,
+        51.5415516
+      ]
+    },
+    {
+      "nodeId": 2459229670,
+      "name": "Silver Street",
+      "coordinates": [
+        -0.0671339,
+        51.6148449
+      ]
+    },
+    {
+      "nodeId": 2460221100,
+      "name": "Seven Sisters",
+      "coordinates": [
+        -0.0751892,
+        51.5824935
+      ]
+    },
+    {
+      "nodeId": 2468223333,
+      "name": "Penge West",
+      "coordinates": [
+        -0.0612095,
+        51.4168518
+      ]
+    },
+    {
+      "nodeId": 2535817621,
+      "name": "Hackney Wick",
+      "coordinates": [
+        -0.0236938,
+        51.5434754
+      ]
+    },
+    {
+      "nodeId": 2887010311,
+      "name": "Kensington (Olympia)",
+      "coordinates": [
+        -0.2095946,
+        51.4975937
+      ]
+    },
+    {
+      "nodeId": 2894915816,
+      "name": "Kentish Town West",
+      "coordinates": [
+        -0.1466773,
+        51.5466891
+      ]
+    },
+    {
+      "nodeId": 2894915828,
+      "name": "Kentish Town West",
+      "coordinates": [
+        -0.1468723,
+        51.547458
+      ]
+    },
+    {
+      "nodeId": 2908947895,
+      "name": "Kensal Green",
+      "coordinates": [
+        -0.2235717,
+        51.5306818
+      ]
+    },
+    {
+      "nodeId": 2920572849,
+      "name": "Harlesden",
+      "coordinates": [
+        -0.2588874,
+        51.5368262
+      ]
+    },
+    {
+      "nodeId": 2922114987,
+      "name": "Leyton Midland Road",
+      "coordinates": [
+        -0.0066879,
+        51.569329
+      ]
+    },
+    {
+      "nodeId": 2922114995,
+      "name": "Leyton Midland Road",
+      "coordinates": [
+        -0.0074845,
+        51.5695691
+      ]
+    },
+    {
+      "nodeId": 2928924409,
+      "name": "Dalston Kingsland (Platform 2)",
+      "coordinates": [
+        -0.0756534,
+        51.5481741
+      ]
+    },
+    {
+      "nodeId": 2928924414,
+      "name": "Dalston Kingsland (Platform 1)",
+      "coordinates": [
+        -0.0768063,
+        51.5482305
+      ]
+    },
+    {
+      "nodeId": 3256514552,
+      "name": "Canonbury",
+      "coordinates": [
+        -0.0923054,
+        51.548587
+      ]
+    },
+    {
+      "nodeId": 3303235857,
+      "name": "Barking",
+      "coordinates": [
+        0.0805214,
+        51.5395316
+      ]
+    },
+    {
+      "nodeId": 3303235858,
+      "name": "Barking",
+      "coordinates": [
+        0.0791951,
+        51.5400802
+      ]
+    },
+    {
+      "nodeId": 3530749465,
+      "name": "Chingford",
+      "coordinates": [
+        0.0100258,
+        51.633113
+      ]
+    },
+    {
+      "nodeId": 3534208706,
+      "name": "Highams Park",
+      "coordinates": [
+        -0.0002753,
+        51.6082266
+      ]
+    },
+    {
+      "nodeId": 3539029924,
+      "name": "Hackney Downs",
+      "coordinates": [
+        -0.0609157,
+        51.5491975
+      ]
+    },
+    {
+      "nodeId": 3539029925,
+      "name": "Hackney Downs",
+      "coordinates": [
+        -0.0603011,
+        51.5479824
+      ]
+    },
+    {
+      "nodeId": 3541862450,
+      "name": "Cambridge Heath",
+      "coordinates": [
+        -0.0576288,
+        51.5324273
+      ]
+    },
+    {
+      "nodeId": 3737119622,
+      "name": "Richmond",
+      "coordinates": [
+        -0.3010931,
+        51.4631788
+      ]
+    },
+    {
+      "nodeId": 4303519867,
+      "name": "Finchley Road & Frognal",
+      "coordinates": [
+        -0.1846095,
+        51.5497253
+      ]
+    },
+    {
+      "nodeId": 4303526472,
+      "name": "Stratford",
+      "coordinates": [
+        -0.0035587,
+        51.5426497
+      ]
+    },
+    {
+      "nodeId": 4303554689,
+      "name": "Brondesbury (Platform 2)",
+      "coordinates": [
+        -0.2021176,
+        51.5452378
+      ]
+    },
+    {
+      "nodeId": 4304118943,
+      "name": "Imperial Wharf",
+      "coordinates": [
+        -0.1828095,
+        51.4750049
+      ]
+    },
+    {
+      "nodeId": 5462050741,
+      "name": "West Brompton",
+      "coordinates": [
+        -0.1949337,
+        51.4867267
+      ]
+    },
+    {
+      "nodeId": 5585858822,
+      "name": "Stonebridge Park",
+      "coordinates": [
+        -0.2757082,
+        51.5439389
+      ]
+    },
+    {
+      "nodeId": 5585858823,
+      "name": "Stonebridge Park",
+      "coordinates": [
+        -0.2768422,
+        51.5443193
+      ]
+    },
+    {
+      "nodeId": 6119888137,
+      "name": "Wanstead Park",
+      "coordinates": [
+        0.0256206,
+        51.5518096
+      ]
+    },
+    {
+      "nodeId": 6135938649,
+      "name": "Cheshunt",
+      "coordinates": [
+        -0.0239338,
+        51.7027966
+      ]
+    },
+    {
+      "nodeId": 6135938650,
+      "name": "Southbury",
+      "coordinates": [
+        -0.0528839,
+        51.647072
+      ]
+    },
+    {
+      "nodeId": 6135938651,
+      "name": "Turkey Street",
+      "coordinates": [
+        -0.046671,
+        51.6742675
+      ]
+    },
+    {
+      "nodeId": 6135938652,
+      "name": "Bethnal Green",
+      "coordinates": [
+        -0.0609006,
+        51.5238254
+      ]
+    },
+    {
+      "nodeId": 6135938656,
+      "name": "Stoke Newington",
+      "coordinates": [
+        -0.0725849,
+        51.5650453
+      ]
+    },
+    {
+      "nodeId": 6135938657,
+      "name": "Enfield Town",
+      "coordinates": [
+        -0.0791861,
+        51.6518771
+      ]
+    },
+    {
+      "nodeId": 6135938658,
+      "name": "Bush Hill Park",
+      "coordinates": [
+        -0.0700776,
+        51.6424861
+      ]
+    },
+    {
+      "nodeId": 6135938659,
+      "name": "Bush Hill Park",
+      "coordinates": [
+        -0.068926,
+        51.6411816
+      ]
+    },
+    {
+      "nodeId": 6137852388,
+      "name": "Clapton",
+      "coordinates": [
+        -0.0569824,
+        51.5615314
+      ]
+    },
+    {
+      "nodeId": 6430985129,
+      "name": "Kenton",
+      "coordinates": [
+        -0.316622,
+        51.5815321
+      ]
+    },
+    {
+      "nodeId": 6430985132,
+      "name": "South Kenton",
+      "coordinates": [
+        -0.3083952,
+        51.5702551
+      ]
+    },
+    {
+      "nodeId": 6460061009,
+      "name": "North Wembley",
+      "coordinates": [
+        -0.3038645,
+        51.5624292
+      ]
+    },
+    {
+      "nodeId": 6517571245,
+      "name": "Shadwell",
+      "coordinates": [
+        -0.0568883,
+        51.5113808
+      ]
+    },
+    {
+      "nodeId": 6588717406,
+      "name": "Willesden Junction",
+      "coordinates": [
+        -0.2439253,
+        51.532448
+      ]
+    },
+    {
+      "nodeId": 6588727628,
+      "name": "Kensal Green",
+      "coordinates": [
+        -0.2247412,
+        51.5305581
+      ]
+    },
+    {
+      "nodeId": 6589215129,
+      "name": "Watford Junction",
+      "coordinates": [
+        -0.3960902,
+        51.6632766
+      ]
+    },
+    {
+      "nodeId": 6725198576,
+      "name": "West Croydon",
+      "coordinates": [
+        -0.1011599,
+        51.3803355
+      ]
+    },
+    {
+      "nodeId": 6725198577,
+      "name": "West Croydon",
+      "coordinates": [
+        -0.1020548,
+        51.3787465
+      ]
+    },
+    {
+      "nodeId": 6753898813,
+      "name": "Leytonstone High Road",
+      "coordinates": [
+        0.0078247,
+        51.5638332
+      ]
+    },
+    {
+      "nodeId": 6758461485,
+      "name": "Wembley Central",
+      "coordinates": [
+        -0.2968861,
+        51.5522862
+      ]
+    },
+    {
+      "nodeId": 6758461486,
+      "name": "Wembley Central",
+      "coordinates": [
+        -0.296814,
+        51.5522737
+      ]
+    },
+    {
+      "nodeId": 6758466485,
+      "name": "Headstone Lane",
+      "coordinates": [
+        -0.356697,
+        51.6024487
+      ]
+    },
+    {
+      "nodeId": 6758466486,
+      "name": "Carpenders Park",
+      "coordinates": [
+        -0.3857928,
+        51.6282432
+      ]
+    },
+    {
+      "nodeId": 6758466487,
+      "name": "Headstone Lane",
+      "coordinates": [
+        -0.3569613,
+        51.6025397
+      ]
+    },
+    {
+      "nodeId": 6774489109,
+      "name": "Norwood Junction",
+      "coordinates": [
+        -0.074917,
+        51.3965368
+      ]
+    },
+    {
+      "nodeId": 6874036010,
+      "name": "Crouch Hill",
+      "coordinates": [
+        -0.117175,
+        51.5712624
+      ]
+    },
+    {
+      "nodeId": 6874036011,
+      "name": "Crouch Hill",
+      "coordinates": [
+        -0.1165885,
+        51.5715929
+      ]
+    },
+    {
+      "nodeId": 6877101129,
+      "name": "South Tottenham",
+      "coordinates": [
+        -0.0722558,
+        51.5803607
+      ]
+    },
+    {
+      "nodeId": 6877101130,
+      "name": "South Tottenham",
+      "coordinates": [
+        -0.0712894,
+        51.5805184
+      ]
+    },
+    {
+      "nodeId": 6877169323,
+      "name": "Blackhorse Road",
+      "coordinates": [
+        -0.0419387,
+        51.5866056
+      ]
+    },
+    {
+      "nodeId": 6877169324,
+      "name": "Blackhorse Road",
+      "coordinates": [
+        -0.0408236,
+        51.5866309
+      ]
+    },
+    {
+      "nodeId": 7843908037,
+      "name": "Peckham Rye",
+      "coordinates": [
+        -0.0715207,
+        51.4691814
+      ]
+    },
+    {
+      "nodeId": 7843908038,
+      "name": "Peckham Rye",
+      "coordinates": [
+        -0.0695089,
+        51.4697976
+      ]
+    },
+    {
+      "nodeId": 7844013720,
+      "name": "Brockley",
+      "coordinates": [
+        -0.0375857,
+        51.4650165
+      ]
+    },
+    {
+      "nodeId": 7844013721,
+      "name": "Brockley",
+      "coordinates": [
+        -0.037612,
+        51.4638044
+      ]
+    },
+    {
+      "nodeId": 7844013727,
+      "name": "Anerley",
+      "coordinates": [
+        -0.0650122,
+        51.4131902
+      ]
+    },
+    {
+      "nodeId": 7844013728,
+      "name": "Anerley",
+      "coordinates": [
+        -0.0660929,
+        51.4118433
+      ]
+    },
+    {
+      "nodeId": 7844013734,
+      "name": "Norwood Junction",
+      "coordinates": [
+        -0.074027,
+        51.3986668
+      ]
+    },
+    {
+      "nodeId": 7865558518,
+      "name": "Watford Junction",
+      "coordinates": [
+        -0.3959926,
+        51.6633206
+      ]
+    },
+    {
+      "nodeId": 9276423913,
+      "name": "Barking Riverside",
+      "coordinates": [
+        0.1159086,
+        51.5195758
+      ]
+    },
+    {
+      "nodeId": 9401348410,
+      "name": "Barking Riverside",
+      "coordinates": [
+        0.1161168,
+        51.5195524
+      ]
+    }
+  ]
+}

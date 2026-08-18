@@ -45,7 +45,7 @@ export type StaticBranchSegment = {
   previousIds: readonly string[];
 };
 
-type StaticSequenceBranch = {
+export type StaticSequenceBranch = {
   id: number;
   direction: string;
   serviceType: string;
@@ -54,14 +54,14 @@ type StaticSequenceBranch = {
   stationIds: readonly string[];
 };
 
-type StaticSequenceRoute = {
+export type StaticSequenceRoute = {
   name: string;
   direction: string;
   serviceType: string;
   stationIds: readonly string[];
 };
 
-type StaticSequence = {
+export type StaticSequence = {
   lineId: string;
   lineName: string;
   stations: readonly { id: string; name: string }[];

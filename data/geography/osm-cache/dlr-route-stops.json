@@ -1,0 +1,786 @@
+{
+  "meta": {
+    "source": "osm-route-relations",
+    "note": "Stop-position nodes read directly off each route relation's ordered stop/platform members — not snapped from a separate station catalog.",
+    "relationCount": 12,
+    "retrievedAt": "2026-08-18T00:13:32.135Z"
+  },
+  "stops": [
+    {
+      "nodeId": 18037081,
+      "name": "Blackwall Platform 1",
+      "coordinates": [
+        -0.0066576,
+        51.5080368
+      ]
+    },
+    {
+      "nodeId": 18037094,
+      "name": "East India Platform 1",
+      "coordinates": [
+        -0.0016327,
+        51.5095016
+      ]
+    },
+    {
+      "nodeId": 18038030,
+      "name": "Royal Victoria Platform 2",
+      "coordinates": [
+        0.0175752,
+        51.5090966
+      ]
+    },
+    {
+      "nodeId": 18038183,
+      "name": "Custom House for Excel Platform 4",
+      "coordinates": [
+        0.0253894,
+        51.5095953
+      ]
+    },
+    {
+      "nodeId": 18038190,
+      "name": "Prince Regent Platform 2",
+      "coordinates": [
+        0.0325735,
+        51.5094946
+      ]
+    },
+    {
+      "nodeId": 18049618,
+      "name": "Gallions Reach Platform 2",
+      "coordinates": [
+        0.0718183,
+        51.5089272
+      ]
+    },
+    {
+      "nodeId": 18050282,
+      "name": "Crossharbour Platform 2",
+      "coordinates": [
+        -0.014432,
+        51.4961768
+      ]
+    },
+    {
+      "nodeId": 21095031,
+      "name": "Cutty Sark for Maritime Greenwich Platform 2",
+      "coordinates": [
+        -0.0108866,
+        51.4818055
+      ]
+    },
+    {
+      "nodeId": 21095209,
+      "name": "Elverson Road Platform 2",
+      "coordinates": [
+        -0.0164322,
+        51.4687659
+      ]
+    },
+    {
+      "nodeId": 21095219,
+      "name": "Lewisham Platform 6",
+      "coordinates": [
+        -0.0131584,
+        51.4650786
+      ]
+    },
+    {
+      "nodeId": 33104076,
+      "name": "West Silvertown Platform 2",
+      "coordinates": [
+        0.0218222,
+        51.5030375
+      ]
+    },
+    {
+      "nodeId": 33104077,
+      "name": "Pontoon Dock Platform 2",
+      "coordinates": [
+        0.0327128,
+        51.502225
+      ]
+    },
+    {
+      "nodeId": 33104078,
+      "name": "London City Airport Platform 2",
+      "coordinates": [
+        0.0480105,
+        51.5036779
+      ]
+    },
+    {
+      "nodeId": 87393551,
+      "name": "Poplar Platform 1",
+      "coordinates": [
+        -0.0162997,
+        51.5077012
+      ]
+    },
+    {
+      "nodeId": 183377997,
+      "name": "Deptford Bridge Platform 2",
+      "coordinates": [
+        -0.0225521,
+        51.4744871
+      ]
+    },
+    {
+      "nodeId": 458876780,
+      "name": "Poplar Platform 2",
+      "coordinates": [
+        -0.0163229,
+        51.5076416
+      ]
+    },
+    {
+      "nodeId": 567256556,
+      "name": "South Quay Platform 2",
+      "coordinates": [
+        -0.0167577,
+        51.5000731
+      ]
+    },
+    {
+      "nodeId": 1341376408,
+      "name": "Stratford International Platform 1",
+      "coordinates": [
+        -0.0088596,
+        51.5456638
+      ]
+    },
+    {
+      "nodeId": 1536019925,
+      "name": "Tower Gateway Platform 1",
+      "coordinates": [
+        -0.0741792,
+        51.5106217
+      ]
+    },
+    {
+      "nodeId": 1585969860,
+      "name": "Stratford",
+      "coordinates": [
+        -0.005152,
+        51.5401147
+      ]
+    },
+    {
+      "nodeId": 1588587572,
+      "name": "Stratford High Street Platform 2",
+      "coordinates": [
+        -0.0004036,
+        51.5378847
+      ]
+    },
+    {
+      "nodeId": 1596907403,
+      "name": "Stratford",
+      "coordinates": [
+        -0.0044084,
+        51.5407047
+      ]
+    },
+    {
+      "nodeId": 1634664186,
+      "name": "Stratford",
+      "coordinates": [
+        -0.003354,
+        51.5413073
+      ]
+    },
+    {
+      "nodeId": 1690218900,
+      "name": "Canning Town Platform 4",
+      "coordinates": [
+        0.0078454,
+        51.5141245
+      ]
+    },
+    {
+      "nodeId": 1690301265,
+      "name": "Stratford High Street Platform 1",
+      "coordinates": [
+        0.0003306,
+        51.5372734
+      ]
+    },
+    {
+      "nodeId": 1690301361,
+      "name": "Canning Town Platform 1",
+      "coordinates": [
+        0.008566,
+        51.5139677
+      ]
+    },
+    {
+      "nodeId": 1690302035,
+      "name": "West Ham Platform 3",
+      "coordinates": [
+        0.0047034,
+        51.5270191
+      ]
+    },
+    {
+      "nodeId": 1690302074,
+      "name": "Abbey Road Platform 1",
+      "coordinates": [
+        0.0038508,
+        51.5323165
+      ]
+    },
+    {
+      "nodeId": 1752300112,
+      "name": "Royal Albert Platform 1",
+      "coordinates": [
+        0.0460669,
+        51.5084813
+      ]
+    },
+    {
+      "nodeId": 1752300182,
+      "name": "Gallions Reach Platform 1",
+      "coordinates": [
+        0.0717741,
+        51.5089265
+      ]
+    },
+    {
+      "nodeId": 1752300191,
+      "name": "Prince Regent Platform 1",
+      "coordinates": [
+        0.0336563,
+        51.5094912
+      ]
+    },
+    {
+      "nodeId": 1752300218,
+      "name": "Custom House for Excel Platform 3",
+      "coordinates": [
+        0.0267542,
+        51.5096907
+      ]
+    },
+    {
+      "nodeId": 1752300601,
+      "name": "Star Lane Platform 2",
+      "coordinates": [
+        0.0042052,
+        51.5208176
+      ]
+    },
+    {
+      "nodeId": 1752319802,
+      "name": "Pontoon Dock Platform 1",
+      "coordinates": [
+        0.0337457,
+        51.5023057
+      ]
+    },
+    {
+      "nodeId": 1752319884,
+      "name": "West Silvertown Platform 1",
+      "coordinates": [
+        0.0227186,
+        51.5027865
+      ]
+    },
+    {
+      "nodeId": 1752319914,
+      "name": "London City Airport Platform 1",
+      "coordinates": [
+        0.0480876,
+        51.5037717
+      ]
+    },
+    {
+      "nodeId": 1752475037,
+      "name": "West India Quay Platform 3",
+      "coordinates": [
+        -0.0204425,
+        51.5069468
+      ]
+    },
+    {
+      "nodeId": 1752475140,
+      "name": "Blackwall Platform 2",
+      "coordinates": [
+        -0.0075456,
+        51.5078647
+      ]
+    },
+    {
+      "nodeId": 1752475268,
+      "name": "Westferry Platform 2",
+      "coordinates": [
+        -0.0273103,
+        51.5096533
+      ]
+    },
+    {
+      "nodeId": 1752475287,
+      "name": "All Saints Platform 2",
+      "coordinates": [
+        -0.0128653,
+        51.5101868
+      ]
+    },
+    {
+      "nodeId": 1752475413,
+      "name": "Shadwell Platform 2",
+      "coordinates": [
+        -0.0559908,
+        51.5116668
+      ]
+    },
+    {
+      "nodeId": 1752475421,
+      "name": "Shadwell Platform 1",
+      "coordinates": [
+        -0.054987,
+        51.51181
+      ]
+    },
+    {
+      "nodeId": 1752475537,
+      "name": "Devons Road Platform 2",
+      "coordinates": [
+        -0.0170211,
+        51.5218526
+      ]
+    },
+    {
+      "nodeId": 1752782893,
+      "name": "Elverson Road Platform 1",
+      "coordinates": [
+        -0.0160268,
+        51.4683568
+      ]
+    },
+    {
+      "nodeId": 1752783025,
+      "name": "Deptford Bridge Platform 1",
+      "coordinates": [
+        -0.0222192,
+        51.4738959
+      ]
+    },
+    {
+      "nodeId": 1752783163,
+      "name": "Greenwich Platform 4",
+      "coordinates": [
+        -0.0159912,
+        51.4780121
+      ]
+    },
+    {
+      "nodeId": 1752783171,
+      "name": "Greenwich Platform 3",
+      "coordinates": [
+        -0.0152648,
+        51.4780606
+      ]
+    },
+    {
+      "nodeId": 1752783203,
+      "name": "Mudchute Platform 1",
+      "coordinates": [
+        -0.0148661,
+        51.4911998
+      ]
+    },
+    {
+      "nodeId": 1752783277,
+      "name": "Crossharbour Platform 1",
+      "coordinates": [
+        -0.0144407,
+        51.4956614
+      ]
+    },
+    {
+      "nodeId": 1752783365,
+      "name": "South Quay Platform 1",
+      "coordinates": [
+        -0.015949,
+        51.5000189
+      ]
+    },
+    {
+      "nodeId": 1795167284,
+      "name": "Pudding Mill Lane Platform 2",
+      "coordinates": [
+        -0.0140943,
+        51.5335163
+      ]
+    },
+    {
+      "nodeId": 1812425788,
+      "name": "Stratford",
+      "coordinates": [
+        -0.0026811,
+        51.5406616
+      ]
+    },
+    {
+      "nodeId": 1812773651,
+      "name": "West Ham Platform 4",
+      "coordinates": [
+        0.0045318,
+        51.5276309
+      ]
+    },
+    {
+      "nodeId": 1812773891,
+      "name": "Abbey Road Platform 2",
+      "coordinates": [
+        0.0033771,
+        51.5328026
+      ]
+    },
+    {
+      "nodeId": 1813223044,
+      "name": "Langdon Park Platform 2",
+      "coordinates": [
+        -0.0139949,
+        51.5148754
+      ]
+    },
+    {
+      "nodeId": 1813223154,
+      "name": "Langdon Park Platform 1",
+      "coordinates": [
+        -0.0142575,
+        51.515623
+      ]
+    },
+    {
+      "nodeId": 1813223163,
+      "name": "Star Lane Platform 1",
+      "coordinates": [
+        0.0044592,
+        51.5201844
+      ]
+    },
+    {
+      "nodeId": 1813223195,
+      "name": "Pudding Mill Lane Platform 1",
+      "coordinates": [
+        -0.0132276,
+        51.5340107
+      ]
+    },
+    {
+      "nodeId": 1813788330,
+      "name": "West India Quay Platform 2",
+      "coordinates": [
+        -0.0205317,
+        51.5064289
+      ]
+    },
+    {
+      "nodeId": 2318257991,
+      "name": "King George V Platform 2",
+      "coordinates": [
+        0.0617878,
+        51.5019721
+      ]
+    },
+    {
+      "nodeId": 2931492422,
+      "name": "Lewisham Platform 5",
+      "coordinates": [
+        -0.0127937,
+        51.464837
+      ]
+    },
+    {
+      "nodeId": 3153651162,
+      "name": "Bank",
+      "coordinates": [
+        -0.0875952,
+        51.5117032
+      ]
+    },
+    {
+      "nodeId": 3153753719,
+      "name": "Bank",
+      "coordinates": [
+        -0.0882346,
+        51.5120279
+      ]
+    },
+    {
+      "nodeId": 3697926971,
+      "name": "Cutty Sark for Maritime Greenwich Platform 1",
+      "coordinates": [
+        -0.0106459,
+        51.4817118
+      ]
+    },
+    {
+      "nodeId": 5257500826,
+      "name": "All Saints Platform 1",
+      "coordinates": [
+        -0.013098,
+        51.5109254
+      ]
+    },
+    {
+      "nodeId": 5257500827,
+      "name": "Stratford International Platform 2",
+      "coordinates": [
+        -0.0088491,
+        51.5457794
+      ]
+    },
+    {
+      "nodeId": 5257517615,
+      "name": "Devons Road Platform 1",
+      "coordinates": [
+        -0.017472,
+        51.5224824
+      ]
+    },
+    {
+      "nodeId": 5257532208,
+      "name": "Poplar Platform 4",
+      "coordinates": [
+        -0.0174218,
+        51.5076369
+      ]
+    },
+    {
+      "nodeId": 5257532209,
+      "name": "Poplar Platform 3",
+      "coordinates": [
+        -0.0173976,
+        51.5077251
+      ]
+    },
+    {
+      "nodeId": 5257532210,
+      "name": "Westferry Platform 1",
+      "coordinates": [
+        -0.0262331,
+        51.5092698
+      ]
+    },
+    {
+      "nodeId": 5257532211,
+      "name": "Limehouse Platform 4",
+      "coordinates": [
+        -0.0398455,
+        51.51235
+      ]
+    },
+    {
+      "nodeId": 5257532212,
+      "name": "Limehouse Platform 3",
+      "coordinates": [
+        -0.0388153,
+        51.5123341
+      ]
+    },
+    {
+      "nodeId": 5320449850,
+      "name": "Mudchute Platform 2",
+      "coordinates": [
+        -0.0149482,
+        51.4917532
+      ]
+    },
+    {
+      "nodeId": 5455894149,
+      "name": "Canning Town Platform 3",
+      "coordinates": [
+        0.0085574,
+        51.5136888
+      ]
+    },
+    {
+      "nodeId": 5455894277,
+      "name": "Canning Town Platform 2",
+      "coordinates": [
+        0.0082112,
+        51.5141127
+      ]
+    },
+    {
+      "nodeId": 6143744011,
+      "name": "Heron Quays Platform 2",
+      "coordinates": [
+        -0.0214863,
+        51.5031092
+      ]
+    },
+    {
+      "nodeId": 6143744012,
+      "name": "Heron Quays Platform 1",
+      "coordinates": [
+        -0.0215348,
+        51.5026998
+      ]
+    },
+    {
+      "nodeId": 6143744013,
+      "name": "West India Quay Platform 4",
+      "coordinates": [
+        -0.0205978,
+        51.5069585
+      ]
+    },
+    {
+      "nodeId": 6143744014,
+      "name": "Canary Wharf Platforms 1 & 2",
+      "coordinates": [
+        -0.020811,
+        51.5048108
+      ]
+    },
+    {
+      "nodeId": 6143744015,
+      "name": "Canary Wharf Platforms 3 & 4",
+      "coordinates": [
+        -0.0209865,
+        51.5048246
+      ]
+    },
+    {
+      "nodeId": 6143744016,
+      "name": "Canary Wharf Platforms 5 & 6",
+      "coordinates": [
+        -0.0210257,
+        51.5053929
+      ]
+    },
+    {
+      "nodeId": 6143849771,
+      "name": "King George V Platform 1",
+      "coordinates": [
+        0.0628621,
+        51.5020433
+      ]
+    },
+    {
+      "nodeId": 6143889600,
+      "name": "Royal Albert Platform 2",
+      "coordinates": [
+        0.0456807,
+        51.5083092
+      ]
+    },
+    {
+      "nodeId": 6143889601,
+      "name": "Royal Victoria Platform 1",
+      "coordinates": [
+        0.0181427,
+        51.5092078
+      ]
+    },
+    {
+      "nodeId": 6143889607,
+      "name": "Beckton Platform 1",
+      "coordinates": [
+        0.0611873,
+        51.5142902
+      ]
+    },
+    {
+      "nodeId": 6143889608,
+      "name": "Beckton Platform 2",
+      "coordinates": [
+        0.0625926,
+        51.5145135
+      ]
+    },
+    {
+      "nodeId": 6143889610,
+      "name": "East India Platform 2",
+      "coordinates": [
+        -0.0026431,
+        51.5092843
+      ]
+    },
+    {
+      "nodeId": 6489567948,
+      "name": "Island Gardens Platform 1",
+      "coordinates": [
+        -0.0103151,
+        51.4880046
+      ]
+    },
+    {
+      "nodeId": 6489567949,
+      "name": "Island Gardens Platform 2",
+      "coordinates": [
+        -0.0107018,
+        51.4881617
+      ]
+    },
+    {
+      "nodeId": 6577624219,
+      "name": "Canary Wharf",
+      "coordinates": [
+        -0.0208377,
+        51.5053702
+      ]
+    },
+    {
+      "nodeId": 6577812603,
+      "name": "Tower Gateway Platform 2",
+      "coordinates": [
+        -0.0732628,
+        51.5106259
+      ]
+    },
+    {
+      "nodeId": 6581300919,
+      "name": "Beckton Park Platform 2",
+      "coordinates": [
+        0.0547244,
+        51.5087579
+      ]
+    },
+    {
+      "nodeId": 6581300920,
+      "name": "Beckton Park Platform 1",
+      "coordinates": [
+        0.0552259,
+        51.5087728
+      ]
+    },
+    {
+      "nodeId": 6581314748,
+      "name": "Cyprus Platform 2",
+      "coordinates": [
+        0.0638053,
+        51.5084751
+      ]
+    },
+    {
+      "nodeId": 6581314749,
+      "name": "Cyprus Platform 1",
+      "coordinates": [
+        0.0642133,
+        51.5084903
+      ]
+    },
+    {
+      "nodeId": 6583723428,
+      "name": "Bow Church Platform 2",
+      "coordinates": [
+        -0.0204647,
+        51.5272141
+      ]
+    },
+    {
+      "nodeId": 6583723429,
+      "name": "Bow Church Platform 1",
+      "coordinates": [
+        -0.0208402,
+        51.5276768
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4683 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "source": "osm-route-relations",
+    "note": "Relation tags and ordered stop-position members read directly from each OSM route relation. The top-level stops array remains as a backward-compatible unique-stop index.",
+    "relationCount": 24,
+    "retrievedAt": "2026-08-18T07:48:24.362Z"
+  },
+  "stops": [
+    {
+      "nodeId": 1256535,
+      "name": "Hayes & Harlington",
+      "coordinates": [
+        -0.4203463,
+        51.503021
+      ]
+    },
+    {
+      "nodeId": 21607411,
+      "name": "Gidea Park",
+      "coordinates": [
+        0.2048668,
+        51.5814532
+      ]
+    },
+    {
+      "nodeId": 248576852,
+      "name": "Heathrow Terminals 2 & 3",
+      "coordinates": [
+        -0.4554943,
+        51.4711188
+      ]
+    },
+    {
+      "nodeId": 254350058,
+      "name": "Heathrow Terminal 5",
+      "coordinates": [
+        -0.4877284,
+        51.4723227
+      ]
+    },
+    {
+      "nodeId": 610580378,
+      "name": "Stratford",
+      "coordinates": [
+        -0.0046232,
+        51.5408818
+      ]
+    },
+    {
+      "nodeId": 1264660047,
+      "name": "London Paddington",
+      "coordinates": [
+        -0.1761907,
+        51.5167924
+      ]
+    },
+    {
+      "nodeId": 1264660048,
+      "name": "London Paddington",
+      "coordinates": [
+        -0.1762156,
+        51.5167714
+      ]
+    },
+    {
+      "nodeId": 1271716491,
+      "name": "London Liverpool Street",
+      "coordinates": [
+        -0.0805319,
+        51.5177601
+      ]
+    },
+    {
+      "nodeId": 1271716499,
+      "name": "London Liverpool Street",
+      "coordinates": [
+        -0.0807268,
+        51.5177975
+      ]
+    },
+    {
+      "nodeId": 1445773686,
+      "name": "Acton Main Line",
+      "coordinates": [
+        -0.2668959,
+        51.5172361
+      ]
+    },
+    {
+      "nodeId": 1508864707,
+      "name": "Heathrow Terminal 5",
+      "coordinates": [
+        -0.4877252,
+        51.4721177
+      ]
+    },
+    {
+      "nodeId": 1604248452,
+      "name": "Goodmayes",
+      "coordinates": [
+        0.1109129,
+        51.5656484
+      ]
+    },
+    {
+      "nodeId": 1604248512,
+      "name": "Goodmayes",
+      "coordinates": [
+        0.1135009,
+        51.5660308
+      ]
+    },
+    {
+      "nodeId": 1607808499,
+      "name": "Stratford",
+      "coordinates": [
+        -0.003218,
+        51.5420869
+      ]
+    },
+    {
+      "nodeId": 1610994152,
+      "name": "Manor Park",
+      "coordinates": [
+        0.045881,
+        51.5523218
+      ]
+    },
+    {
+      "nodeId": 1610994156,
+      "name": "Manor Park",
+      "coordinates": [
+        0.0438028,
+        51.5518713
+      ]
+    },
+    {
+      "nodeId": 1611054890,
+      "name": "Ilford",
+      "coordinates": [
+        0.0671718,
+        51.558608
+      ]
+    },
+    {
+      "nodeId": 1611054933,
+      "name": "Ilford",
+      "coordinates": [
+        0.0695798,
+        51.5591784
+      ]
+    },
+    {
+      "nodeId": 1611090218,
+      "name": "Seven Kings",
+      "coordinates": [
+        0.0963006,
+        51.5639733
+      ]
+    },
+    {
+      "nodeId": 1611925654,
+      "name": "Harold Wood",
+      "coordinates": [
+        0.233493,
+        51.5929863
+      ]
+    },
+    {
+      "nodeId": 1612592270,
+      "name": "Romford",
+      "coordinates": [
+        0.1826521,
+        51.5748178
+      ]
+    },
+    {
+      "nodeId": 1612592304,
+      "name": "Gidea Park",
+      "coordinates": [
+        0.2070473,
+        51.5824424
+      ]
+    },
+    {
+      "nodeId": 1613686266,
+      "name": "Maryland",
+      "coordinates": [
+        0.0070254,
+        51.5462071
+      ]
+    },
+    {
+      "nodeId": 1613694959,
+      "name": "Maryland",
+      "coordinates": [
+        0.0048271,
+        51.5457178
+      ]
+    },
+    {
+      "nodeId": 1613746627,
+      "name": "Forest Gate",
+      "coordinates": [
+        0.0244116,
+        51.5493897
+      ]
+    },
+    {
+      "nodeId": 1655787181,
+      "name": "Paddington",
+      "coordinates": [
+        -0.1771694,
+        51.515862
+      ]
+    },
+    {
+      "nodeId": 1676851993,
+      "name": "Heathrow Terminals 2 & 3",
+      "coordinates": [
+        -0.4544923,
+        51.4720878
+      ]
+    },
+    {
+      "nodeId": 1719253826,
+      "name": "Hanwell",
+      "coordinates": [
+        -0.3396882,
+        51.5116448
+      ]
+    },
+    {
+      "nodeId": 1719254892,
+      "name": "Ealing Broadway",
+      "coordinates": [
+        -0.2993554,
+        51.5149014
+      ]
+    },
+    {
+      "nodeId": 1719372056,
+      "name": "Hayes & Harlington",
+      "coordinates": [
+        -0.417267,
+        51.5029209
+      ]
+    },
+    {
+      "nodeId": 1721798022,
+      "name": "West Drayton",
+      "coordinates": [
+        -0.4719928,
+        51.509838
+      ]
+    },
+    {
+      "nodeId": 1790325864,
+      "name": "Reading",
+      "coordinates": [
+        -0.9743345,
+        51.4597595
+      ]
+    },
+    {
+      "nodeId": 2046973818,
+      "name": "Southall",
+      "coordinates": [
+        -0.3783614,
+        51.5060123
+      ]
+    },
+    {
+      "nodeId": 2156650848,
+      "name": "Paddington",
+      "coordinates": [
+        -0.1788127,
+        51.51681
+      ]
+    },
+    {
+      "nodeId": 2156683125,
+      "name": "Bond Street",
+      "coordinates": [
+        -0.1486131,
+        51.5131895
+      ]
+    },
+    {
+      "nodeId": 2156683126,
+      "name": "Bond Street",
+      "coordinates": [
+        -0.1460497,
+        51.5138845
+      ]
+    },
+    {
+      "nodeId": 2156700180,
+      "name": "Tottenham Court Road",
+      "coordinates": [
+        -0.1339519,
+        51.5150094
+      ]
+    },
+    {
+      "nodeId": 2156950442,
+      "name": "Farringdon",
+      "coordinates": [
+        -0.1038374,
+        51.5194647
+      ]
+    },
+    {
+      "nodeId": 2156956840,
+      "name": "Liverpool Street",
+      "coordinates": [
+        -0.087972,
+        51.5177539
+      ]
+    },
+    {
+      "nodeId": 2157123321,
+      "name": "Liverpool Street",
+      "coordinates": [
+        -0.084972,
+        51.5176229
+      ]
+    },
+    {
+      "nodeId": 2158526444,
+      "name": "Whitechapel",
+      "coordinates": [
+        -0.0605312,
+        51.5199698
+      ]
+    },
+    {
+      "nodeId": 2158526705,
+      "name": "Whitechapel",
+      "coordinates": [
+        -0.0578158,
+        51.5205222
+      ]
+    },
+    {
+      "nodeId": 3092621014,
+      "name": "Slough",
+      "coordinates": [
+        -0.5924,
+        51.5123304
+      ]
+    },
+    {
+      "nodeId": 3536484563,
+      "name": "Forest Gate",
+      "coordinates": [
+        0.0232856,
+        51.5491621
+      ]
+    },
+    {
+      "nodeId": 3551128875,
+      "name": "Chadwell Heath",
+      "coordinates": [
+        0.1270087,
+        51.5678294
+      ]
+    },
+    {
+      "nodeId": 3551128876,
+      "name": "Chadwell Heath",
+      "coordinates": [
+        0.1290172,
+        51.5681287
+      ]
+    },
+    {
+      "nodeId": 3759030918,
+      "name": "Southall",
+      "coordinates": [
+        -0.3763005,
+        51.506364
+      ]
+    },
+    {
+      "nodeId": 3909808792,
+      "name": "Harold Wood",
+      "coordinates": [
+        0.2348137,
+        51.5935358
+      ]
+    },
+    {
+      "nodeId": 3909808793,
+      "name": "Brentwood",
+      "coordinates": [
+        0.3012493,
+        51.6135416
+      ]
+    },
+    {
+      "nodeId": 3909808794,
+      "name": "Shenfield",
+      "coordinates": [
+        0.3288913,
+        51.6295442
+      ]
+    },
+    {
+      "nodeId": 3912018686,
+      "name": "Brentwood",
+      "coordinates": [
+        0.2996612,
+        51.6136506
+      ]
+    },
+    {
+      "nodeId": 3912037574,
+      "name": "Seven Kings",
+      "coordinates": [
+        0.0945051,
+        51.5637789
+      ]
+    },
+    {
+      "nodeId": 3912037575,
+      "name": "Romford",
+      "coordinates": [
+        0.1812359,
+        51.5743754
+      ]
+    },
+    {
+      "nodeId": 4277751275,
+      "name": "Hanwell",
+      "coordinates": [
+        -0.337757,
+        51.5119294
+      ]
+    },
+    {
+      "nodeId": 4277758996,
+      "name": "West Ealing",
+      "coordinates": [
+        -0.3200495,
+        51.5135952
+      ]
+    },
+    {
+      "nodeId": 5479654165,
+      "name": "Farringdon",
+      "coordinates": [
+        -0.1006893,
+        51.5201946
+      ]
+    },
+    {
+      "nodeId": 5723419635,
+      "name": "Abbey Wood",
+      "coordinates": [
+        0.1181837,
+        51.4910176
+      ]
+    },
+    {
+      "nodeId": 5723419669,
+      "name": "Woolwich",
+      "coordinates": [
+        0.0703949,
+        51.4919328
+      ]
+    },
+    {
+      "nodeId": 5723419714,
+      "name": "Abbey Wood",
+      "coordinates": [
+        0.1206131,
+        51.491211
+      ]
+    },
+    {
+      "nodeId": 6140748770,
+      "name": "Canary Wharf",
+      "coordinates": [
+        -0.0192428,
+        51.5062218
+      ]
+    },
+    {
+      "nodeId": 6606393497,
+      "name": "Slough",
+      "coordinates": [
+        -0.5902364,
+        51.5120164
+      ]
+    },
+    {
+      "nodeId": 6652280933,
+      "name": "Acton Main Line",
+      "coordinates": [
+        -0.2688176,
+        51.5167798
+      ]
+    },
+    {
+      "nodeId": 6652280935,
+      "name": "Heathrow Terminal 4",
+      "coordinates": [
+        -0.4457182,
+        51.4594858
+      ]
+    },
+    {
+      "nodeId": 6652280937,
+      "name": "West Ealing",
+      "coordinates": [
+        -0.3218347,
+        51.5134065
+      ]
+    },
+    {
+      "nodeId": 6652280938,
+      "name": "Ealing Broadway",
+      "coordinates": [
+        -0.3013504,
+        51.514788
+      ]
+    },
+    {
+      "nodeId": 6703264960,
+      "name": "Heathrow Terminal 4",
+      "coordinates": [
+        -0.4453868,
+        51.4593196
+      ]
+    },
+    {
+      "nodeId": 6742652961,
+      "name": "Shenfield",
+      "coordinates": [
+        0.329428,
+        51.6305094
+      ]
+    },
+    {
+      "nodeId": 7390606174,
+      "name": "Twyford",
+      "coordinates": [
+        -0.8637746,
+        51.4752397
+      ]
+    },
+    {
+      "nodeId": 7390606175,
+      "name": "Twyford",
+      "coordinates": [
+        -0.8621195,
+        51.4758231
+      ]
+    },
+    {
+      "nodeId": 7390784358,
+      "name": "Maidenhead",
+      "coordinates": [
+        -0.7236262,
+        51.5182838
+      ]
+    },
+    {
+      "nodeId": 7390784359,
+      "name": "Maidenhead",
+      "coordinates": [
+        -0.7216136,
+        51.5186573
+      ]
+    },
+    {
+      "nodeId": 7391174238,
+      "name": "Taplow",
+      "coordinates": [
+        -0.6805125,
+        51.5235527
+      ]
+    },
+    {
+      "nodeId": 7391174239,
+      "name": "Taplow",
+      "coordinates": [
+        -0.6828973,
+        51.523288
+      ]
+    },
+    {
+      "nodeId": 7391185514,
+      "name": "Iver",
+      "coordinates": [
+        -0.507961,
+        51.5085494
+      ]
+    },
+    {
+      "nodeId": 7391185515,
+      "name": "Iver",
+      "coordinates": [
+        -0.505864,
+        51.5087483
+      ]
+    },
+    {
+      "nodeId": 7391188502,
+      "name": "Burnham",
+      "coordinates": [
+        -0.648297,
+        51.5234368
+      ]
+    },
+    {
+      "nodeId": 7391188503,
+      "name": "Burnham",
+      "coordinates": [
+        -0.6461031,
+        51.5233707
+      ]
+    },
+    {
+      "nodeId": 7391222425,
+      "name": "Langley",
+      "coordinates": [
+        -0.5420721,
+        51.5079053
+      ]
+    },
+    {
+      "nodeId": 7391222426,
+      "name": "Langley",
+      "coordinates": [
+        -0.5399981,
+        51.5078772
+      ]
+    },
+    {
+      "nodeId": 7391240294,
+      "name": "West Drayton",
+      "coordinates": [
+        -0.4710215,
+        51.5098116
+      ]
+    },
+    {
+      "nodeId": 9736044744,
+      "name": "Woolwich",
+      "coordinates": [
+        0.0742896,
+        51.4913058
+      ]
+    },
+    {
+      "nodeId": 9742158593,
+      "name": "Canary Wharf",
+      "coordinates": [
+        -0.0156917,
+        51.5060095
+      ]
+    },
+    {
+      "nodeId": 9760704353,
+      "name": "Tottenham Court Road",
+      "coordinates": [
+        -0.1311403,
+        51.5157211
+      ]
+    },
+    {
+      "nodeId": 9760735057,
+      "name": "Custom House",
+      "coordinates": [
+        0.0250529,
+        51.509758
+      ]
+    },
+    {
+      "nodeId": 9760735058,
+      "name": "Custom House",
+      "coordinates": [
+        0.0290679,
+        51.5098888
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "relationId": 5642190,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "London Liverpool Street",
+        "name": "Elizabeth line: Liverpool Street → Shenfield",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "partial",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Shenfield",
+        "type": "route",
+        "wikidata": "Q130546470"
+      },
+      "stops": [
+        {
+          "nodeId": 1271716499,
+          "role": "stop_entry_only",
+          "name": "London Liverpool Street",
+          "coordinates": [
+            -0.0807268,
+            51.5177975
+          ]
+        },
+        {
+          "nodeId": 1607808499,
+          "role": "stop",
+          "name": "Stratford",
+          "coordinates": [
+            -0.003218,
+            51.5420869
+          ]
+        },
+        {
+          "nodeId": 1613686266,
+          "role": "stop",
+          "name": "Maryland",
+          "coordinates": [
+            0.0070254,
+            51.5462071
+          ]
+        },
+        {
+          "nodeId": 1613746627,
+          "role": "stop",
+          "name": "Forest Gate",
+          "coordinates": [
+            0.0244116,
+            51.5493897
+          ]
+        },
+        {
+          "nodeId": 1610994152,
+          "role": "stop",
+          "name": "Manor Park",
+          "coordinates": [
+            0.045881,
+            51.5523218
+          ]
+        },
+        {
+          "nodeId": 1611054933,
+          "role": "stop",
+          "name": "Ilford",
+          "coordinates": [
+            0.0695798,
+            51.5591784
+          ]
+        },
+        {
+          "nodeId": 1611090218,
+          "role": "stop",
+          "name": "Seven Kings",
+          "coordinates": [
+            0.0963006,
+            51.5639733
+          ]
+        },
+        {
+          "nodeId": 1604248512,
+          "role": "stop",
+          "name": "Goodmayes",
+          "coordinates": [
+            0.1135009,
+            51.5660308
+          ]
+        },
+        {
+          "nodeId": 3551128876,
+          "role": "stop",
+          "name": "Chadwell Heath",
+          "coordinates": [
+            0.1290172,
+            51.5681287
+          ]
+        },
+        {
+          "nodeId": 1612592270,
+          "role": "stop",
+          "name": "Romford",
+          "coordinates": [
+            0.1826521,
+            51.5748178
+          ]
+        },
+        {
+          "nodeId": 1612592304,
+          "role": "stop",
+          "name": "Gidea Park",
+          "coordinates": [
+            0.2070473,
+            51.5824424
+          ]
+        },
+        {
+          "nodeId": 3909808792,
+          "role": "stop",
+          "name": "Harold Wood",
+          "coordinates": [
+            0.2348137,
+            51.5935358
+          ]
+        },
+        {
+          "nodeId": 3909808793,
+          "role": "stop",
+          "name": "Brentwood",
+          "coordinates": [
+            0.3012493,
+            51.6135416
+          ]
+        },
+        {
+          "nodeId": 6742652961,
+          "role": "stop_exit_only",
+          "name": "Shenfield",
+          "coordinates": [
+            0.329428,
+            51.6305094
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 5793620,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Shenfield",
+        "name": "Elizabeth line: Shenfield → Liverpool Street",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "partial",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "London Liverpool Street",
+        "type": "route",
+        "wikidata": "Q130546470"
+      },
+      "stops": [
+        {
+          "nodeId": 3909808794,
+          "role": "stop_entry_only",
+          "name": "Shenfield",
+          "coordinates": [
+            0.3288913,
+            51.6295442
+          ]
+        },
+        {
+          "nodeId": 3912018686,
+          "role": "stop",
+          "name": "Brentwood",
+          "coordinates": [
+            0.2996612,
+            51.6136506
+          ]
+        },
+        {
+          "nodeId": 1611925654,
+          "role": "stop",
+          "name": "Harold Wood",
+          "coordinates": [
+            0.233493,
+            51.5929863
+          ]
+        },
+        {
+          "nodeId": 21607411,
+          "role": "stop",
+          "name": "Gidea Park",
+          "coordinates": [
+            0.2048668,
+            51.5814532
+          ]
+        },
+        {
+          "nodeId": 3912037575,
+          "role": "stop",
+          "name": "Romford",
+          "coordinates": [
+            0.1812359,
+            51.5743754
+          ]
+        },
+        {
+          "nodeId": 3551128875,
+          "role": "stop",
+          "name": "Chadwell Heath",
+          "coordinates": [
+            0.1270087,
+            51.5678294
+          ]
+        },
+        {
+          "nodeId": 1604248452,
+          "role": "stop",
+          "name": "Goodmayes",
+          "coordinates": [
+            0.1109129,
+            51.5656484
+          ]
+        },
+        {
+          "nodeId": 3912037574,
+          "role": "stop",
+          "name": "Seven Kings",
+          "coordinates": [
+            0.0945051,
+            51.5637789
+          ]
+        },
+        {
+          "nodeId": 1611054890,
+          "role": "stop",
+          "name": "Ilford",
+          "coordinates": [
+            0.0671718,
+            51.558608
+          ]
+        },
+        {
+          "nodeId": 1610994156,
+          "role": "stop",
+          "name": "Manor Park",
+          "coordinates": [
+            0.0438028,
+            51.5518713
+          ]
+        },
+        {
+          "nodeId": 3536484563,
+          "role": "stop",
+          "name": "Forest Gate",
+          "coordinates": [
+            0.0232856,
+            51.5491621
+          ]
+        },
+        {
+          "nodeId": 1613694959,
+          "role": "stop",
+          "name": "Maryland",
+          "coordinates": [
+            0.0048271,
+            51.5457178
+          ]
+        },
+        {
+          "nodeId": 610580378,
+          "role": "stop",
+          "name": "Stratford",
+          "coordinates": [
+            -0.0046232,
+            51.5408818
+          ]
+        },
+        {
+          "nodeId": 1271716491,
+          "role": "stop_exit_only",
+          "name": "London Liverpool Street",
+          "coordinates": [
+            -0.0805319,
+            51.5177601
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 6375986,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Heathrow Terminal 4",
+        "name": "Elizabeth line: Heathrow Terminal 4 → Paddington",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "London Paddington",
+        "type": "route",
+        "wikidata": "Q130546459"
+      },
+      "stops": [
+        {
+          "nodeId": 6703264960,
+          "role": "stop_entry_only",
+          "name": "Heathrow Terminal 4",
+          "coordinates": [
+            -0.4453868,
+            51.4593196
+          ]
+        },
+        {
+          "nodeId": 1676851993,
+          "role": "stop",
+          "name": "Heathrow Terminals 2 & 3",
+          "coordinates": [
+            -0.4544923,
+            51.4720878
+          ]
+        },
+        {
+          "nodeId": 1719372056,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.417267,
+            51.5029209
+          ]
+        },
+        {
+          "nodeId": 3759030918,
+          "role": "stop",
+          "name": "Southall",
+          "coordinates": [
+            -0.3763005,
+            51.506364
+          ]
+        },
+        {
+          "nodeId": 4277751275,
+          "role": "stop",
+          "name": "Hanwell",
+          "coordinates": [
+            -0.337757,
+            51.5119294
+          ]
+        },
+        {
+          "nodeId": 4277758996,
+          "role": "stop",
+          "name": "West Ealing",
+          "coordinates": [
+            -0.3200495,
+            51.5135952
+          ]
+        },
+        {
+          "nodeId": 1719254892,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.2993554,
+            51.5149014
+          ]
+        },
+        {
+          "nodeId": 1445773686,
+          "role": "stop",
+          "name": "Acton Main Line",
+          "coordinates": [
+            -0.2668959,
+            51.5172361
+          ]
+        },
+        {
+          "nodeId": 1264660048,
+          "role": "stop_exit_only",
+          "name": "London Paddington",
+          "coordinates": [
+            -0.1762156,
+            51.5167714
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 7022860,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "London Paddington",
+        "name": "Elizabeth line: Paddington → Heathrow Terminal 4",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Heathrow Terminal 4",
+        "type": "route",
+        "wikidata": "Q130546459"
+      },
+      "stops": [
+        {
+          "nodeId": 1264660048,
+          "role": "stop_entry_only",
+          "name": "London Paddington",
+          "coordinates": [
+            -0.1762156,
+            51.5167714
+          ]
+        },
+        {
+          "nodeId": 6652280933,
+          "role": "stop",
+          "name": "Acton Main Line",
+          "coordinates": [
+            -0.2688176,
+            51.5167798
+          ]
+        },
+        {
+          "nodeId": 6652280938,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.3013504,
+            51.514788
+          ]
+        },
+        {
+          "nodeId": 6652280937,
+          "role": "stop",
+          "name": "West Ealing",
+          "coordinates": [
+            -0.3218347,
+            51.5134065
+          ]
+        },
+        {
+          "nodeId": 1719253826,
+          "role": "stop",
+          "name": "Hanwell",
+          "coordinates": [
+            -0.3396882,
+            51.5116448
+          ]
+        },
+        {
+          "nodeId": 2046973818,
+          "role": "stop",
+          "name": "Southall",
+          "coordinates": [
+            -0.3783614,
+            51.5060123
+          ]
+        },
+        {
+          "nodeId": 1256535,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.4203463,
+            51.503021
+          ]
+        },
+        {
+          "nodeId": 248576852,
+          "role": "stop",
+          "name": "Heathrow Terminals 2 & 3",
+          "coordinates": [
+            -0.4554943,
+            51.4711188
+          ]
+        },
+        {
+          "nodeId": 6652280935,
+          "role": "stop_exit_only",
+          "name": "Heathrow Terminal 4",
+          "coordinates": [
+            -0.4457182,
+            51.4594858
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 9845544,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Maidenhead",
+        "name": "Elizabeth line: Maidenhead → Paddington",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "partial",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "London Paddington",
+        "type": "route",
+        "wikidata": "Q130546452"
+      },
+      "stops": [
+        {
+          "nodeId": 7390784359,
+          "role": "stop_entry_only",
+          "name": "Maidenhead",
+          "coordinates": [
+            -0.7216136,
+            51.5186573
+          ]
+        },
+        {
+          "nodeId": 7391188503,
+          "role": "stop",
+          "name": "Burnham",
+          "coordinates": [
+            -0.6461031,
+            51.5233707
+          ]
+        },
+        {
+          "nodeId": 6606393497,
+          "role": "stop",
+          "name": "Slough",
+          "coordinates": [
+            -0.5902364,
+            51.5120164
+          ]
+        },
+        {
+          "nodeId": 7391222426,
+          "role": "stop",
+          "name": "Langley",
+          "coordinates": [
+            -0.5399981,
+            51.5078772
+          ]
+        },
+        {
+          "nodeId": 7391185515,
+          "role": "stop",
+          "name": "Iver",
+          "coordinates": [
+            -0.505864,
+            51.5087483
+          ]
+        },
+        {
+          "nodeId": 7391240294,
+          "role": "stop",
+          "name": "West Drayton",
+          "coordinates": [
+            -0.4710215,
+            51.5098116
+          ]
+        },
+        {
+          "nodeId": 1719372056,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.417267,
+            51.5029209
+          ]
+        },
+        {
+          "nodeId": 3759030918,
+          "role": "stop",
+          "name": "Southall",
+          "coordinates": [
+            -0.3763005,
+            51.506364
+          ]
+        },
+        {
+          "nodeId": 1719254892,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.2993554,
+            51.5149014
+          ]
+        },
+        {
+          "nodeId": 1264660047,
+          "role": "stop_exit_only",
+          "name": "London Paddington",
+          "coordinates": [
+            -0.1761907,
+            51.5167924
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 9845545,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "London Paddington",
+        "name": "Elizabeth line: Paddington → Maidenhead",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "partial",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Maidenhead",
+        "type": "route",
+        "wikidata": "Q130546452"
+      },
+      "stops": [
+        {
+          "nodeId": 1264660047,
+          "role": "stop_entry_only",
+          "name": "London Paddington",
+          "coordinates": [
+            -0.1761907,
+            51.5167924
+          ]
+        },
+        {
+          "nodeId": 6652280938,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.3013504,
+            51.514788
+          ]
+        },
+        {
+          "nodeId": 2046973818,
+          "role": "stop",
+          "name": "Southall",
+          "coordinates": [
+            -0.3783614,
+            51.5060123
+          ]
+        },
+        {
+          "nodeId": 1256535,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.4203463,
+            51.503021
+          ]
+        },
+        {
+          "nodeId": 1721798022,
+          "role": "stop",
+          "name": "West Drayton",
+          "coordinates": [
+            -0.4719928,
+            51.509838
+          ]
+        },
+        {
+          "nodeId": 7391185514,
+          "role": "stop",
+          "name": "Iver",
+          "coordinates": [
+            -0.507961,
+            51.5085494
+          ]
+        },
+        {
+          "nodeId": 7391222425,
+          "role": "stop",
+          "name": "Langley",
+          "coordinates": [
+            -0.5420721,
+            51.5079053
+          ]
+        },
+        {
+          "nodeId": 3092621014,
+          "role": "stop",
+          "name": "Slough",
+          "coordinates": [
+            -0.5924,
+            51.5123304
+          ]
+        },
+        {
+          "nodeId": 7391188502,
+          "role": "stop",
+          "name": "Burnham",
+          "coordinates": [
+            -0.648297,
+            51.5234368
+          ]
+        },
+        {
+          "nodeId": 7390784358,
+          "role": "stop_exit_only",
+          "name": "Maidenhead",
+          "coordinates": [
+            -0.7236262,
+            51.5182838
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 10969853,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Reading",
+        "name": "Elizabeth line: Reading → Paddington",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "partial",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "London Paddington",
+        "type": "route",
+        "wikidata": "Q130546447"
+      },
+      "stops": [
+        {
+          "nodeId": 1790325864,
+          "role": "stop_entry_only",
+          "name": "Reading",
+          "coordinates": [
+            -0.9743345,
+            51.4597595
+          ]
+        },
+        {
+          "nodeId": 7390606175,
+          "role": "stop",
+          "name": "Twyford",
+          "coordinates": [
+            -0.8621195,
+            51.4758231
+          ]
+        },
+        {
+          "nodeId": 7390784359,
+          "role": "stop",
+          "name": "Maidenhead",
+          "coordinates": [
+            -0.7216136,
+            51.5186573
+          ]
+        },
+        {
+          "nodeId": 7391174238,
+          "role": "stop",
+          "name": "Taplow",
+          "coordinates": [
+            -0.6805125,
+            51.5235527
+          ]
+        },
+        {
+          "nodeId": 7391188503,
+          "role": "stop",
+          "name": "Burnham",
+          "coordinates": [
+            -0.6461031,
+            51.5233707
+          ]
+        },
+        {
+          "nodeId": 6606393497,
+          "role": "stop",
+          "name": "Slough",
+          "coordinates": [
+            -0.5902364,
+            51.5120164
+          ]
+        },
+        {
+          "nodeId": 7391222426,
+          "role": "stop",
+          "name": "Langley",
+          "coordinates": [
+            -0.5399981,
+            51.5078772
+          ]
+        },
+        {
+          "nodeId": 7391240294,
+          "role": "stop",
+          "name": "West Drayton",
+          "coordinates": [
+            -0.4710215,
+            51.5098116
+          ]
+        },
+        {
+          "nodeId": 1719372056,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.417267,
+            51.5029209
+          ]
+        },
+        {
+          "nodeId": 3759030918,
+          "role": "stop",
+          "name": "Southall",
+          "coordinates": [
+            -0.3763005,
+            51.506364
+          ]
+        },
+        {
+          "nodeId": 1719254892,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.2993554,
+            51.5149014
+          ]
+        },
+        {
+          "nodeId": 1264660047,
+          "role": "stop_exit_only",
+          "name": "London Paddington",
+          "coordinates": [
+            -0.1761907,
+            51.5167924
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 10969854,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "London Paddington",
+        "name": "Elizabeth line: Paddington → Reading",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "partial",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Reading",
+        "type": "route",
+        "wikidata": "Q130546447"
+      },
+      "stops": [
+        {
+          "nodeId": 1264660047,
+          "role": "stop_entry_only",
+          "name": "London Paddington",
+          "coordinates": [
+            -0.1761907,
+            51.5167924
+          ]
+        },
+        {
+          "nodeId": 6652280938,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.3013504,
+            51.514788
+          ]
+        },
+        {
+          "nodeId": 2046973818,
+          "role": "stop",
+          "name": "Southall",
+          "coordinates": [
+            -0.3783614,
+            51.5060123
+          ]
+        },
+        {
+          "nodeId": 1256535,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.4203463,
+            51.503021
+          ]
+        },
+        {
+          "nodeId": 1721798022,
+          "role": "stop",
+          "name": "West Drayton",
+          "coordinates": [
+            -0.4719928,
+            51.509838
+          ]
+        },
+        {
+          "nodeId": 7391222425,
+          "role": "stop",
+          "name": "Langley",
+          "coordinates": [
+            -0.5420721,
+            51.5079053
+          ]
+        },
+        {
+          "nodeId": 3092621014,
+          "role": "stop",
+          "name": "Slough",
+          "coordinates": [
+            -0.5924,
+            51.5123304
+          ]
+        },
+        {
+          "nodeId": 7391188502,
+          "role": "stop",
+          "name": "Burnham",
+          "coordinates": [
+            -0.648297,
+            51.5234368
+          ]
+        },
+        {
+          "nodeId": 7391174239,
+          "role": "stop",
+          "name": "Taplow",
+          "coordinates": [
+            -0.6828973,
+            51.523288
+          ]
+        },
+        {
+          "nodeId": 7390784358,
+          "role": "stop",
+          "name": "Maidenhead",
+          "coordinates": [
+            -0.7236262,
+            51.5182838
+          ]
+        },
+        {
+          "nodeId": 7390606174,
+          "role": "stop",
+          "name": "Twyford",
+          "coordinates": [
+            -0.8637746,
+            51.4752397
+          ]
+        },
+        {
+          "nodeId": 1790325864,
+          "role": "stop_exit_only",
+          "name": "Reading",
+          "coordinates": [
+            -0.9743345,
+            51.4597595
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 11085983,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "London Liverpool Street",
+        "name": "Elizabeth line: Liverpool Street → Gidea Park",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Gidea Park",
+        "type": "route",
+        "wikidata": "Q130546470"
+      },
+      "stops": [
+        {
+          "nodeId": 1271716499,
+          "role": "stop_entry_only",
+          "name": "London Liverpool Street",
+          "coordinates": [
+            -0.0807268,
+            51.5177975
+          ]
+        },
+        {
+          "nodeId": 1607808499,
+          "role": "stop",
+          "name": "Stratford",
+          "coordinates": [
+            -0.003218,
+            51.5420869
+          ]
+        },
+        {
+          "nodeId": 1613686266,
+          "role": "stop",
+          "name": "Maryland",
+          "coordinates": [
+            0.0070254,
+            51.5462071
+          ]
+        },
+        {
+          "nodeId": 1613746627,
+          "role": "stop",
+          "name": "Forest Gate",
+          "coordinates": [
+            0.0244116,
+            51.5493897
+          ]
+        },
+        {
+          "nodeId": 1610994152,
+          "role": "stop",
+          "name": "Manor Park",
+          "coordinates": [
+            0.045881,
+            51.5523218
+          ]
+        },
+        {
+          "nodeId": 1611054933,
+          "role": "stop",
+          "name": "Ilford",
+          "coordinates": [
+            0.0695798,
+            51.5591784
+          ]
+        },
+        {
+          "nodeId": 1611090218,
+          "role": "stop",
+          "name": "Seven Kings",
+          "coordinates": [
+            0.0963006,
+            51.5639733
+          ]
+        },
+        {
+          "nodeId": 1604248512,
+          "role": "stop",
+          "name": "Goodmayes",
+          "coordinates": [
+            0.1135009,
+            51.5660308
+          ]
+        },
+        {
+          "nodeId": 3551128876,
+          "role": "stop",
+          "name": "Chadwell Heath",
+          "coordinates": [
+            0.1290172,
+            51.5681287
+          ]
+        },
+        {
+          "nodeId": 1612592270,
+          "role": "stop",
+          "name": "Romford",
+          "coordinates": [
+            0.1826521,
+            51.5748178
+          ]
+        },
+        {
+          "nodeId": 1612592304,
+          "role": "stop_exit_only",
+          "name": "Gidea Park",
+          "coordinates": [
+            0.2070473,
+            51.5824424
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 11085984,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Gidea Park",
+        "name": "Elizabeth line: Gidea Park → Liverpool Street",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "London Liverpool Street",
+        "type": "route",
+        "wikidata": "Q130546470"
+      },
+      "stops": [
+        {
+          "nodeId": 21607411,
+          "role": "stop_entry_only",
+          "name": "Gidea Park",
+          "coordinates": [
+            0.2048668,
+            51.5814532
+          ]
+        },
+        {
+          "nodeId": 3912037575,
+          "role": "stop",
+          "name": "Romford",
+          "coordinates": [
+            0.1812359,
+            51.5743754
+          ]
+        },
+        {
+          "nodeId": 3551128875,
+          "role": "stop",
+          "name": "Chadwell Heath",
+          "coordinates": [
+            0.1270087,
+            51.5678294
+          ]
+        },
+        {
+          "nodeId": 1604248452,
+          "role": "stop",
+          "name": "Goodmayes",
+          "coordinates": [
+            0.1109129,
+            51.5656484
+          ]
+        },
+        {
+          "nodeId": 3912037574,
+          "role": "stop",
+          "name": "Seven Kings",
+          "coordinates": [
+            0.0945051,
+            51.5637789
+          ]
+        },
+        {
+          "nodeId": 1611054890,
+          "role": "stop",
+          "name": "Ilford",
+          "coordinates": [
+            0.0671718,
+            51.558608
+          ]
+        },
+        {
+          "nodeId": 1610994156,
+          "role": "stop",
+          "name": "Manor Park",
+          "coordinates": [
+            0.0438028,
+            51.5518713
+          ]
+        },
+        {
+          "nodeId": 3536484563,
+          "role": "stop",
+          "name": "Forest Gate",
+          "coordinates": [
+            0.0232856,
+            51.5491621
+          ]
+        },
+        {
+          "nodeId": 1613694959,
+          "role": "stop",
+          "name": "Maryland",
+          "coordinates": [
+            0.0048271,
+            51.5457178
+          ]
+        },
+        {
+          "nodeId": 610580378,
+          "role": "stop",
+          "name": "Stratford",
+          "coordinates": [
+            -0.0046232,
+            51.5408818
+          ]
+        },
+        {
+          "nodeId": 1271716491,
+          "role": "stop_exit_only",
+          "name": "London Liverpool Street",
+          "coordinates": [
+            -0.0805319,
+            51.5177601
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 12843954,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "London Paddington",
+        "name": "Elizabeth line: Paddington → Heathrow Terminal 5",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Heathrow Terminal 5",
+        "type": "route",
+        "wikidata": "Q130546467"
+      },
+      "stops": [
+        {
+          "nodeId": 1264660048,
+          "role": "stop_entry_only",
+          "name": "London Paddington",
+          "coordinates": [
+            -0.1762156,
+            51.5167714
+          ]
+        },
+        {
+          "nodeId": 6652280938,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.3013504,
+            51.514788
+          ]
+        },
+        {
+          "nodeId": 6652280937,
+          "role": "stop",
+          "name": "West Ealing",
+          "coordinates": [
+            -0.3218347,
+            51.5134065
+          ]
+        },
+        {
+          "nodeId": 1256535,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.4203463,
+            51.503021
+          ]
+        },
+        {
+          "nodeId": 248576852,
+          "role": "stop",
+          "name": "Heathrow Terminals 2 & 3",
+          "coordinates": [
+            -0.4554943,
+            51.4711188
+          ]
+        },
+        {
+          "nodeId": 1508864707,
+          "role": "stop_exit_only",
+          "name": "Heathrow Terminal 5",
+          "coordinates": [
+            -0.4877252,
+            51.4721177
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 12843955,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Heathrow Terminal 5",
+        "name": "Elizabeth line: Heathrow Terminal 5 → Paddington",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "London Paddington",
+        "type": "route",
+        "wikidata": "Q130546467"
+      },
+      "stops": [
+        {
+          "nodeId": 254350058,
+          "role": "stop_entry_only",
+          "name": "Heathrow Terminal 5",
+          "coordinates": [
+            -0.4877284,
+            51.4723227
+          ]
+        },
+        {
+          "nodeId": 1676851993,
+          "role": "stop",
+          "name": "Heathrow Terminals 2 & 3",
+          "coordinates": [
+            -0.4544923,
+            51.4720878
+          ]
+        },
+        {
+          "nodeId": 1719372056,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.417267,
+            51.5029209
+          ]
+        },
+        {
+          "nodeId": 4277758996,
+          "role": "stop",
+          "name": "West Ealing",
+          "coordinates": [
+            -0.3200495,
+            51.5135952
+          ]
+        },
+        {
+          "nodeId": 1719254892,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.2993554,
+            51.5149014
+          ]
+        },
+        {
+          "nodeId": 1264660048,
+          "role": "stop_exit_only",
+          "name": "London Paddington",
+          "coordinates": [
+            -0.1762156,
+            51.5167714
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 14773901,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Shenfield",
+        "name": "Elizabeth line: Shenfield → Paddington",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "partial",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Paddington",
+        "type": "route",
+        "wikidata": "Q130546470"
+      },
+      "stops": [
+        {
+          "nodeId": 3909808794,
+          "role": "stop_entry_only",
+          "name": "Shenfield",
+          "coordinates": [
+            0.3288913,
+            51.6295442
+          ]
+        },
+        {
+          "nodeId": 3912018686,
+          "role": "stop",
+          "name": "Brentwood",
+          "coordinates": [
+            0.2996612,
+            51.6136506
+          ]
+        },
+        {
+          "nodeId": 1611925654,
+          "role": "stop",
+          "name": "Harold Wood",
+          "coordinates": [
+            0.233493,
+            51.5929863
+          ]
+        },
+        {
+          "nodeId": 21607411,
+          "role": "stop",
+          "name": "Gidea Park",
+          "coordinates": [
+            0.2048668,
+            51.5814532
+          ]
+        },
+        {
+          "nodeId": 3912037575,
+          "role": "stop",
+          "name": "Romford",
+          "coordinates": [
+            0.1812359,
+            51.5743754
+          ]
+        },
+        {
+          "nodeId": 3551128875,
+          "role": "stop",
+          "name": "Chadwell Heath",
+          "coordinates": [
+            0.1270087,
+            51.5678294
+          ]
+        },
+        {
+          "nodeId": 1604248452,
+          "role": "stop",
+          "name": "Goodmayes",
+          "coordinates": [
+            0.1109129,
+            51.5656484
+          ]
+        },
+        {
+          "nodeId": 3912037574,
+          "role": "stop",
+          "name": "Seven Kings",
+          "coordinates": [
+            0.0945051,
+            51.5637789
+          ]
+        },
+        {
+          "nodeId": 1611054890,
+          "role": "stop",
+          "name": "Ilford",
+          "coordinates": [
+            0.0671718,
+            51.558608
+          ]
+        },
+        {
+          "nodeId": 1610994156,
+          "role": "stop",
+          "name": "Manor Park",
+          "coordinates": [
+            0.0438028,
+            51.5518713
+          ]
+        },
+        {
+          "nodeId": 3536484563,
+          "role": "stop",
+          "name": "Forest Gate",
+          "coordinates": [
+            0.0232856,
+            51.5491621
+          ]
+        },
+        {
+          "nodeId": 1613694959,
+          "role": "stop",
+          "name": "Maryland",
+          "coordinates": [
+            0.0048271,
+            51.5457178
+          ]
+        },
+        {
+          "nodeId": 610580378,
+          "role": "stop",
+          "name": "Stratford",
+          "coordinates": [
+            -0.0046232,
+            51.5408818
+          ]
+        },
+        {
+          "nodeId": 2158526444,
+          "role": "stop",
+          "name": "Whitechapel",
+          "coordinates": [
+            -0.0605312,
+            51.5199698
+          ]
+        },
+        {
+          "nodeId": 2156956840,
+          "role": "stop",
+          "name": "Liverpool Street",
+          "coordinates": [
+            -0.087972,
+            51.5177539
+          ]
+        },
+        {
+          "nodeId": 2156950442,
+          "role": "stop",
+          "name": "Farringdon",
+          "coordinates": [
+            -0.1038374,
+            51.5194647
+          ]
+        },
+        {
+          "nodeId": 2156700180,
+          "role": "stop",
+          "name": "Tottenham Court Road",
+          "coordinates": [
+            -0.1339519,
+            51.5150094
+          ]
+        },
+        {
+          "nodeId": 2156683125,
+          "role": "stop",
+          "name": "Bond Street",
+          "coordinates": [
+            -0.1486131,
+            51.5131895
+          ]
+        },
+        {
+          "nodeId": 2156650848,
+          "role": "stop_exit_only",
+          "name": "Paddington",
+          "coordinates": [
+            -0.1788127,
+            51.51681
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 14773902,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Gidea Park",
+        "name": "Elizabeth line: Gidea Park → Paddington",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Paddington",
+        "type": "route",
+        "wikidata": "Q130546470"
+      },
+      "stops": [
+        {
+          "nodeId": 21607411,
+          "role": "stop_entry_only",
+          "name": "Gidea Park",
+          "coordinates": [
+            0.2048668,
+            51.5814532
+          ]
+        },
+        {
+          "nodeId": 3912037575,
+          "role": "stop",
+          "name": "Romford",
+          "coordinates": [
+            0.1812359,
+            51.5743754
+          ]
+        },
+        {
+          "nodeId": 3551128875,
+          "role": "stop",
+          "name": "Chadwell Heath",
+          "coordinates": [
+            0.1270087,
+            51.5678294
+          ]
+        },
+        {
+          "nodeId": 1604248452,
+          "role": "stop",
+          "name": "Goodmayes",
+          "coordinates": [
+            0.1109129,
+            51.5656484
+          ]
+        },
+        {
+          "nodeId": 3912037574,
+          "role": "stop",
+          "name": "Seven Kings",
+          "coordinates": [
+            0.0945051,
+            51.5637789
+          ]
+        },
+        {
+          "nodeId": 1611054890,
+          "role": "stop",
+          "name": "Ilford",
+          "coordinates": [
+            0.0671718,
+            51.558608
+          ]
+        },
+        {
+          "nodeId": 1610994156,
+          "role": "stop",
+          "name": "Manor Park",
+          "coordinates": [
+            0.0438028,
+            51.5518713
+          ]
+        },
+        {
+          "nodeId": 3536484563,
+          "role": "stop",
+          "name": "Forest Gate",
+          "coordinates": [
+            0.0232856,
+            51.5491621
+          ]
+        },
+        {
+          "nodeId": 1613694959,
+          "role": "stop",
+          "name": "Maryland",
+          "coordinates": [
+            0.0048271,
+            51.5457178
+          ]
+        },
+        {
+          "nodeId": 610580378,
+          "role": "stop",
+          "name": "Stratford",
+          "coordinates": [
+            -0.0046232,
+            51.5408818
+          ]
+        },
+        {
+          "nodeId": 2158526444,
+          "role": "stop",
+          "name": "Whitechapel",
+          "coordinates": [
+            -0.0605312,
+            51.5199698
+          ]
+        },
+        {
+          "nodeId": 2156956840,
+          "role": "stop",
+          "name": "Liverpool Street",
+          "coordinates": [
+            -0.087972,
+            51.5177539
+          ]
+        },
+        {
+          "nodeId": 2156950442,
+          "role": "stop",
+          "name": "Farringdon",
+          "coordinates": [
+            -0.1038374,
+            51.5194647
+          ]
+        },
+        {
+          "nodeId": 2156700180,
+          "role": "stop",
+          "name": "Tottenham Court Road",
+          "coordinates": [
+            -0.1339519,
+            51.5150094
+          ]
+        },
+        {
+          "nodeId": 2156683125,
+          "role": "stop",
+          "name": "Bond Street",
+          "coordinates": [
+            -0.1486131,
+            51.5131895
+          ]
+        },
+        {
+          "nodeId": 2156650848,
+          "role": "stop_exit_only",
+          "name": "Paddington",
+          "coordinates": [
+            -0.1788127,
+            51.51681
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 14773903,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Paddington",
+        "name": "Elizabeth line: Paddington → Shenfield",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "partial",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Shenfield",
+        "type": "route",
+        "wikidata": "Q130546470"
+      },
+      "stops": [
+        {
+          "nodeId": 1655787181,
+          "role": "stop_entry_only",
+          "name": "Paddington",
+          "coordinates": [
+            -0.1771694,
+            51.515862
+          ]
+        },
+        {
+          "nodeId": 2156683126,
+          "role": "stop",
+          "name": "Bond Street",
+          "coordinates": [
+            -0.1460497,
+            51.5138845
+          ]
+        },
+        {
+          "nodeId": 9760704353,
+          "role": "stop",
+          "name": "Tottenham Court Road",
+          "coordinates": [
+            -0.1311403,
+            51.5157211
+          ]
+        },
+        {
+          "nodeId": 5479654165,
+          "role": "stop",
+          "name": "Farringdon",
+          "coordinates": [
+            -0.1006893,
+            51.5201946
+          ]
+        },
+        {
+          "nodeId": 2157123321,
+          "role": "stop",
+          "name": "Liverpool Street",
+          "coordinates": [
+            -0.084972,
+            51.5176229
+          ]
+        },
+        {
+          "nodeId": 2158526705,
+          "role": "stop",
+          "name": "Whitechapel",
+          "coordinates": [
+            -0.0578158,
+            51.5205222
+          ]
+        },
+        {
+          "nodeId": 1607808499,
+          "role": "stop",
+          "name": "Stratford",
+          "coordinates": [
+            -0.003218,
+            51.5420869
+          ]
+        },
+        {
+          "nodeId": 1613686266,
+          "role": "stop",
+          "name": "Maryland",
+          "coordinates": [
+            0.0070254,
+            51.5462071
+          ]
+        },
+        {
+          "nodeId": 1613746627,
+          "role": "stop",
+          "name": "Forest Gate",
+          "coordinates": [
+            0.0244116,
+            51.5493897
+          ]
+        },
+        {
+          "nodeId": 1610994152,
+          "role": "stop",
+          "name": "Manor Park",
+          "coordinates": [
+            0.045881,
+            51.5523218
+          ]
+        },
+        {
+          "nodeId": 1611054933,
+          "role": "stop",
+          "name": "Ilford",
+          "coordinates": [
+            0.0695798,
+            51.5591784
+          ]
+        },
+        {
+          "nodeId": 1611090218,
+          "role": "stop",
+          "name": "Seven Kings",
+          "coordinates": [
+            0.0963006,
+            51.5639733
+          ]
+        },
+        {
+          "nodeId": 1604248512,
+          "role": "stop",
+          "name": "Goodmayes",
+          "coordinates": [
+            0.1135009,
+            51.5660308
+          ]
+        },
+        {
+          "nodeId": 3551128876,
+          "role": "stop",
+          "name": "Chadwell Heath",
+          "coordinates": [
+            0.1290172,
+            51.5681287
+          ]
+        },
+        {
+          "nodeId": 1612592270,
+          "role": "stop",
+          "name": "Romford",
+          "coordinates": [
+            0.1826521,
+            51.5748178
+          ]
+        },
+        {
+          "nodeId": 1612592304,
+          "role": "stop",
+          "name": "Gidea Park",
+          "coordinates": [
+            0.2070473,
+            51.5824424
+          ]
+        },
+        {
+          "nodeId": 3909808792,
+          "role": "stop",
+          "name": "Harold Wood",
+          "coordinates": [
+            0.2348137,
+            51.5935358
+          ]
+        },
+        {
+          "nodeId": 3909808793,
+          "role": "stop",
+          "name": "Brentwood",
+          "coordinates": [
+            0.3012493,
+            51.6135416
+          ]
+        },
+        {
+          "nodeId": 6742652961,
+          "role": "stop_exit_only",
+          "name": "Shenfield",
+          "coordinates": [
+            0.329428,
+            51.6305094
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 14773904,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Paddington",
+        "name": "Elizabeth line: Paddington → Gidea Park",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Gidea Park",
+        "type": "route",
+        "wikidata": "Q130546470"
+      },
+      "stops": [
+        {
+          "nodeId": 1655787181,
+          "role": "stop_entry_only",
+          "name": "Paddington",
+          "coordinates": [
+            -0.1771694,
+            51.515862
+          ]
+        },
+        {
+          "nodeId": 2156683126,
+          "role": "stop",
+          "name": "Bond Street",
+          "coordinates": [
+            -0.1460497,
+            51.5138845
+          ]
+        },
+        {
+          "nodeId": 9760704353,
+          "role": "stop",
+          "name": "Tottenham Court Road",
+          "coordinates": [
+            -0.1311403,
+            51.5157211
+          ]
+        },
+        {
+          "nodeId": 5479654165,
+          "role": "stop",
+          "name": "Farringdon",
+          "coordinates": [
+            -0.1006893,
+            51.5201946
+          ]
+        },
+        {
+          "nodeId": 2157123321,
+          "role": "stop",
+          "name": "Liverpool Street",
+          "coordinates": [
+            -0.084972,
+            51.5176229
+          ]
+        },
+        {
+          "nodeId": 2158526705,
+          "role": "stop",
+          "name": "Whitechapel",
+          "coordinates": [
+            -0.0578158,
+            51.5205222
+          ]
+        },
+        {
+          "nodeId": 1607808499,
+          "role": "stop",
+          "name": "Stratford",
+          "coordinates": [
+            -0.003218,
+            51.5420869
+          ]
+        },
+        {
+          "nodeId": 1613686266,
+          "role": "stop",
+          "name": "Maryland",
+          "coordinates": [
+            0.0070254,
+            51.5462071
+          ]
+        },
+        {
+          "nodeId": 1613746627,
+          "role": "stop",
+          "name": "Forest Gate",
+          "coordinates": [
+            0.0244116,
+            51.5493897
+          ]
+        },
+        {
+          "nodeId": 1610994152,
+          "role": "stop",
+          "name": "Manor Park",
+          "coordinates": [
+            0.045881,
+            51.5523218
+          ]
+        },
+        {
+          "nodeId": 1611054933,
+          "role": "stop",
+          "name": "Ilford",
+          "coordinates": [
+            0.0695798,
+            51.5591784
+          ]
+        },
+        {
+          "nodeId": 1611090218,
+          "role": "stop",
+          "name": "Seven Kings",
+          "coordinates": [
+            0.0963006,
+            51.5639733
+          ]
+        },
+        {
+          "nodeId": 1604248512,
+          "role": "stop",
+          "name": "Goodmayes",
+          "coordinates": [
+            0.1135009,
+            51.5660308
+          ]
+        },
+        {
+          "nodeId": 3551128876,
+          "role": "stop",
+          "name": "Chadwell Heath",
+          "coordinates": [
+            0.1290172,
+            51.5681287
+          ]
+        },
+        {
+          "nodeId": 1612592270,
+          "role": "stop",
+          "name": "Romford",
+          "coordinates": [
+            0.1826521,
+            51.5748178
+          ]
+        },
+        {
+          "nodeId": 1612592304,
+          "role": "stop_exit_only",
+          "name": "Gidea Park",
+          "coordinates": [
+            0.2070473,
+            51.5824424
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 14773905,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Heathrow Terminal 5",
+        "name": "Elizabeth line: Heathrow Terminal 5 → Shenfield",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "partial",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Shenfield",
+        "type": "route",
+        "wikidata": "Q130546467"
+      },
+      "stops": [
+        {
+          "nodeId": 254350058,
+          "role": "stop_entry_only",
+          "name": "Heathrow Terminal 5",
+          "coordinates": [
+            -0.4877284,
+            51.4723227
+          ]
+        },
+        {
+          "nodeId": 1676851993,
+          "role": "stop",
+          "name": "Heathrow Terminals 2 & 3",
+          "coordinates": [
+            -0.4544923,
+            51.4720878
+          ]
+        },
+        {
+          "nodeId": 1719372056,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.417267,
+            51.5029209
+          ]
+        },
+        {
+          "nodeId": 4277758996,
+          "role": "stop",
+          "name": "West Ealing",
+          "coordinates": [
+            -0.3200495,
+            51.5135952
+          ]
+        },
+        {
+          "nodeId": 1719254892,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.2993554,
+            51.5149014
+          ]
+        },
+        {
+          "nodeId": 1655787181,
+          "role": "stop",
+          "name": "Paddington",
+          "coordinates": [
+            -0.1771694,
+            51.515862
+          ]
+        },
+        {
+          "nodeId": 2156683126,
+          "role": "stop",
+          "name": "Bond Street",
+          "coordinates": [
+            -0.1460497,
+            51.5138845
+          ]
+        },
+        {
+          "nodeId": 9760704353,
+          "role": "stop",
+          "name": "Tottenham Court Road",
+          "coordinates": [
+            -0.1311403,
+            51.5157211
+          ]
+        },
+        {
+          "nodeId": 5479654165,
+          "role": "stop",
+          "name": "Farringdon",
+          "coordinates": [
+            -0.1006893,
+            51.5201946
+          ]
+        },
+        {
+          "nodeId": 2157123321,
+          "role": "stop",
+          "name": "Liverpool Street",
+          "coordinates": [
+            -0.084972,
+            51.5176229
+          ]
+        },
+        {
+          "nodeId": 2158526705,
+          "role": "stop",
+          "name": "Whitechapel",
+          "coordinates": [
+            -0.0578158,
+            51.5205222
+          ]
+        },
+        {
+          "nodeId": 1607808499,
+          "role": "stop",
+          "name": "Stratford",
+          "coordinates": [
+            -0.003218,
+            51.5420869
+          ]
+        },
+        {
+          "nodeId": 1613686266,
+          "role": "stop",
+          "name": "Maryland",
+          "coordinates": [
+            0.0070254,
+            51.5462071
+          ]
+        },
+        {
+          "nodeId": 1613746627,
+          "role": "stop",
+          "name": "Forest Gate",
+          "coordinates": [
+            0.0244116,
+            51.5493897
+          ]
+        },
+        {
+          "nodeId": 1610994152,
+          "role": "stop",
+          "name": "Manor Park",
+          "coordinates": [
+            0.045881,
+            51.5523218
+          ]
+        },
+        {
+          "nodeId": 1611054933,
+          "role": "stop",
+          "name": "Ilford",
+          "coordinates": [
+            0.0695798,
+            51.5591784
+          ]
+        },
+        {
+          "nodeId": 1611090218,
+          "role": "stop",
+          "name": "Seven Kings",
+          "coordinates": [
+            0.0963006,
+            51.5639733
+          ]
+        },
+        {
+          "nodeId": 1604248512,
+          "role": "stop",
+          "name": "Goodmayes",
+          "coordinates": [
+            0.1135009,
+            51.5660308
+          ]
+        },
+        {
+          "nodeId": 3551128876,
+          "role": "stop",
+          "name": "Chadwell Heath",
+          "coordinates": [
+            0.1290172,
+            51.5681287
+          ]
+        },
+        {
+          "nodeId": 1612592270,
+          "role": "stop",
+          "name": "Romford",
+          "coordinates": [
+            0.1826521,
+            51.5748178
+          ]
+        },
+        {
+          "nodeId": 1612592304,
+          "role": "stop",
+          "name": "Gidea Park",
+          "coordinates": [
+            0.2070473,
+            51.5824424
+          ]
+        },
+        {
+          "nodeId": 3909808792,
+          "role": "stop",
+          "name": "Harold Wood",
+          "coordinates": [
+            0.2348137,
+            51.5935358
+          ]
+        },
+        {
+          "nodeId": 3909808793,
+          "role": "stop",
+          "name": "Brentwood",
+          "coordinates": [
+            0.3012493,
+            51.6135416
+          ]
+        },
+        {
+          "nodeId": 6742652961,
+          "role": "stop",
+          "name": "Shenfield",
+          "coordinates": [
+            0.329428,
+            51.6305094
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 14773906,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Abbey Wood",
+        "name": "Elizabeth line: Abbey Wood → Heathrow Terminal 4",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Heathrow Terminal 4",
+        "type": "route",
+        "wikidata": "Q130546459"
+      },
+      "stops": [
+        {
+          "nodeId": 5723419635,
+          "role": "stop_entry_only",
+          "name": "Abbey Wood",
+          "coordinates": [
+            0.1181837,
+            51.4910176
+          ]
+        },
+        {
+          "nodeId": 5723419669,
+          "role": "stop",
+          "name": "Woolwich",
+          "coordinates": [
+            0.0703949,
+            51.4919328
+          ]
+        },
+        {
+          "nodeId": 9760735057,
+          "role": "stop",
+          "name": "Custom House",
+          "coordinates": [
+            0.0250529,
+            51.509758
+          ]
+        },
+        {
+          "nodeId": 6140748770,
+          "role": "stop",
+          "name": "Canary Wharf",
+          "coordinates": [
+            -0.0192428,
+            51.5062218
+          ]
+        },
+        {
+          "nodeId": 2158526444,
+          "role": "stop",
+          "name": "Whitechapel",
+          "coordinates": [
+            -0.0605312,
+            51.5199698
+          ]
+        },
+        {
+          "nodeId": 2156956840,
+          "role": "stop",
+          "name": "Liverpool Street",
+          "coordinates": [
+            -0.087972,
+            51.5177539
+          ]
+        },
+        {
+          "nodeId": 2156950442,
+          "role": "stop",
+          "name": "Farringdon",
+          "coordinates": [
+            -0.1038374,
+            51.5194647
+          ]
+        },
+        {
+          "nodeId": 2156700180,
+          "role": "stop",
+          "name": "Tottenham Court Road",
+          "coordinates": [
+            -0.1339519,
+            51.5150094
+          ]
+        },
+        {
+          "nodeId": 2156683125,
+          "role": "stop",
+          "name": "Bond Street",
+          "coordinates": [
+            -0.1486131,
+            51.5131895
+          ]
+        },
+        {
+          "nodeId": 2156650848,
+          "role": "stop",
+          "name": "Paddington",
+          "coordinates": [
+            -0.1788127,
+            51.51681
+          ]
+        },
+        {
+          "nodeId": 6652280933,
+          "role": "stop",
+          "name": "Acton Main Line",
+          "coordinates": [
+            -0.2688176,
+            51.5167798
+          ]
+        },
+        {
+          "nodeId": 6652280938,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.3013504,
+            51.514788
+          ]
+        },
+        {
+          "nodeId": 6652280937,
+          "role": "stop",
+          "name": "West Ealing",
+          "coordinates": [
+            -0.3218347,
+            51.5134065
+          ]
+        },
+        {
+          "nodeId": 1719253826,
+          "role": "stop",
+          "name": "Hanwell",
+          "coordinates": [
+            -0.3396882,
+            51.5116448
+          ]
+        },
+        {
+          "nodeId": 2046973818,
+          "role": "stop",
+          "name": "Southall",
+          "coordinates": [
+            -0.3783614,
+            51.5060123
+          ]
+        },
+        {
+          "nodeId": 1256535,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.4203463,
+            51.503021
+          ]
+        },
+        {
+          "nodeId": 248576852,
+          "role": "stop",
+          "name": "Heathrow Terminals 2 & 3",
+          "coordinates": [
+            -0.4554943,
+            51.4711188
+          ]
+        },
+        {
+          "nodeId": 6652280935,
+          "role": "stop_exit_only",
+          "name": "Heathrow Terminal 4",
+          "coordinates": [
+            -0.4457182,
+            51.4594858
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 14773907,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Shenfield",
+        "name": "Elizabeth line: Shenfield → Heathrow Terminal 5",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "partial",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Heathrow Terminal 5",
+        "type": "route",
+        "wikidata": "Q130546467"
+      },
+      "stops": [
+        {
+          "nodeId": 3909808794,
+          "role": "stop",
+          "name": "Shenfield",
+          "coordinates": [
+            0.3288913,
+            51.6295442
+          ]
+        },
+        {
+          "nodeId": 3912018686,
+          "role": "stop",
+          "name": "Brentwood",
+          "coordinates": [
+            0.2996612,
+            51.6136506
+          ]
+        },
+        {
+          "nodeId": 1611925654,
+          "role": "stop",
+          "name": "Harold Wood",
+          "coordinates": [
+            0.233493,
+            51.5929863
+          ]
+        },
+        {
+          "nodeId": 21607411,
+          "role": "stop",
+          "name": "Gidea Park",
+          "coordinates": [
+            0.2048668,
+            51.5814532
+          ]
+        },
+        {
+          "nodeId": 3912037575,
+          "role": "stop",
+          "name": "Romford",
+          "coordinates": [
+            0.1812359,
+            51.5743754
+          ]
+        },
+        {
+          "nodeId": 3551128875,
+          "role": "stop",
+          "name": "Chadwell Heath",
+          "coordinates": [
+            0.1270087,
+            51.5678294
+          ]
+        },
+        {
+          "nodeId": 1604248452,
+          "role": "stop",
+          "name": "Goodmayes",
+          "coordinates": [
+            0.1109129,
+            51.5656484
+          ]
+        },
+        {
+          "nodeId": 3912037574,
+          "role": "stop",
+          "name": "Seven Kings",
+          "coordinates": [
+            0.0945051,
+            51.5637789
+          ]
+        },
+        {
+          "nodeId": 1611054890,
+          "role": "stop",
+          "name": "Ilford",
+          "coordinates": [
+            0.0671718,
+            51.558608
+          ]
+        },
+        {
+          "nodeId": 1610994156,
+          "role": "stop",
+          "name": "Manor Park",
+          "coordinates": [
+            0.0438028,
+            51.5518713
+          ]
+        },
+        {
+          "nodeId": 3536484563,
+          "role": "stop",
+          "name": "Forest Gate",
+          "coordinates": [
+            0.0232856,
+            51.5491621
+          ]
+        },
+        {
+          "nodeId": 1613694959,
+          "role": "stop",
+          "name": "Maryland",
+          "coordinates": [
+            0.0048271,
+            51.5457178
+          ]
+        },
+        {
+          "nodeId": 610580378,
+          "role": "stop",
+          "name": "Stratford",
+          "coordinates": [
+            -0.0046232,
+            51.5408818
+          ]
+        },
+        {
+          "nodeId": 2158526444,
+          "role": "stop",
+          "name": "Whitechapel",
+          "coordinates": [
+            -0.0605312,
+            51.5199698
+          ]
+        },
+        {
+          "nodeId": 2156956840,
+          "role": "stop",
+          "name": "Liverpool Street",
+          "coordinates": [
+            -0.087972,
+            51.5177539
+          ]
+        },
+        {
+          "nodeId": 2156950442,
+          "role": "stop",
+          "name": "Farringdon",
+          "coordinates": [
+            -0.1038374,
+            51.5194647
+          ]
+        },
+        {
+          "nodeId": 2156700180,
+          "role": "stop",
+          "name": "Tottenham Court Road",
+          "coordinates": [
+            -0.1339519,
+            51.5150094
+          ]
+        },
+        {
+          "nodeId": 2156683125,
+          "role": "stop",
+          "name": "Bond Street",
+          "coordinates": [
+            -0.1486131,
+            51.5131895
+          ]
+        },
+        {
+          "nodeId": 2156650848,
+          "role": "stop",
+          "name": "Paddington",
+          "coordinates": [
+            -0.1788127,
+            51.51681
+          ]
+        },
+        {
+          "nodeId": 6652280938,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.3013504,
+            51.514788
+          ]
+        },
+        {
+          "nodeId": 6652280937,
+          "role": "stop",
+          "name": "West Ealing",
+          "coordinates": [
+            -0.3218347,
+            51.5134065
+          ]
+        },
+        {
+          "nodeId": 1256535,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.4203463,
+            51.503021
+          ]
+        },
+        {
+          "nodeId": 248576852,
+          "role": "stop",
+          "name": "Heathrow Terminals 2 & 3",
+          "coordinates": [
+            -0.4554943,
+            51.4711188
+          ]
+        },
+        {
+          "nodeId": 1508864707,
+          "role": "stop_exit_only",
+          "name": "Heathrow Terminal 5",
+          "coordinates": [
+            -0.4877252,
+            51.4721177
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 14773908,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Heathrow Terminal 4",
+        "name": "Elizabeth line: Heathrow Terminal 4 → Abbey Wood",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Abbey Wood",
+        "type": "route",
+        "wikidata": "Q130546459"
+      },
+      "stops": [
+        {
+          "nodeId": 6703264960,
+          "role": "stop_entry_only",
+          "name": "Heathrow Terminal 4",
+          "coordinates": [
+            -0.4453868,
+            51.4593196
+          ]
+        },
+        {
+          "nodeId": 1676851993,
+          "role": "stop",
+          "name": "Heathrow Terminals 2 & 3",
+          "coordinates": [
+            -0.4544923,
+            51.4720878
+          ]
+        },
+        {
+          "nodeId": 1719372056,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.417267,
+            51.5029209
+          ]
+        },
+        {
+          "nodeId": 3759030918,
+          "role": "stop",
+          "name": "Southall",
+          "coordinates": [
+            -0.3763005,
+            51.506364
+          ]
+        },
+        {
+          "nodeId": 4277751275,
+          "role": "stop",
+          "name": "Hanwell",
+          "coordinates": [
+            -0.337757,
+            51.5119294
+          ]
+        },
+        {
+          "nodeId": 4277758996,
+          "role": "stop",
+          "name": "West Ealing",
+          "coordinates": [
+            -0.3200495,
+            51.5135952
+          ]
+        },
+        {
+          "nodeId": 1719254892,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.2993554,
+            51.5149014
+          ]
+        },
+        {
+          "nodeId": 1445773686,
+          "role": "stop",
+          "name": "Acton Main Line",
+          "coordinates": [
+            -0.2668959,
+            51.5172361
+          ]
+        },
+        {
+          "nodeId": 1655787181,
+          "role": "stop",
+          "name": "Paddington",
+          "coordinates": [
+            -0.1771694,
+            51.515862
+          ]
+        },
+        {
+          "nodeId": 2156683126,
+          "role": "stop",
+          "name": "Bond Street",
+          "coordinates": [
+            -0.1460497,
+            51.5138845
+          ]
+        },
+        {
+          "nodeId": 9760704353,
+          "role": "stop",
+          "name": "Tottenham Court Road",
+          "coordinates": [
+            -0.1311403,
+            51.5157211
+          ]
+        },
+        {
+          "nodeId": 5479654165,
+          "role": "stop",
+          "name": "Farringdon",
+          "coordinates": [
+            -0.1006893,
+            51.5201946
+          ]
+        },
+        {
+          "nodeId": 2157123321,
+          "role": "stop",
+          "name": "Liverpool Street",
+          "coordinates": [
+            -0.084972,
+            51.5176229
+          ]
+        },
+        {
+          "nodeId": 2158526705,
+          "role": "stop",
+          "name": "Whitechapel",
+          "coordinates": [
+            -0.0578158,
+            51.5205222
+          ]
+        },
+        {
+          "nodeId": 9742158593,
+          "role": "stop",
+          "name": "Canary Wharf",
+          "coordinates": [
+            -0.0156917,
+            51.5060095
+          ]
+        },
+        {
+          "nodeId": 9760735058,
+          "role": "stop",
+          "name": "Custom House",
+          "coordinates": [
+            0.0290679,
+            51.5098888
+          ]
+        },
+        {
+          "nodeId": 9736044744,
+          "role": "stop",
+          "name": "Woolwich",
+          "coordinates": [
+            0.0742896,
+            51.4913058
+          ]
+        },
+        {
+          "nodeId": 5723419714,
+          "role": "stop_exit_only",
+          "name": "Abbey Wood",
+          "coordinates": [
+            0.1206131,
+            51.491211
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 14773909,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Maidenhead",
+        "name": "Elizabeth line: Maidenhead → Abbey Wood",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "partial",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Abbey Wood",
+        "type": "route",
+        "wikidata": "Q130546452"
+      },
+      "stops": [
+        {
+          "nodeId": 7390784359,
+          "role": "stop_entry_only",
+          "name": "Maidenhead",
+          "coordinates": [
+            -0.7216136,
+            51.5186573
+          ]
+        },
+        {
+          "nodeId": 7391188503,
+          "role": "stop",
+          "name": "Burnham",
+          "coordinates": [
+            -0.6461031,
+            51.5233707
+          ]
+        },
+        {
+          "nodeId": 6606393497,
+          "role": "stop",
+          "name": "Slough",
+          "coordinates": [
+            -0.5902364,
+            51.5120164
+          ]
+        },
+        {
+          "nodeId": 7391222426,
+          "role": "stop",
+          "name": "Langley",
+          "coordinates": [
+            -0.5399981,
+            51.5078772
+          ]
+        },
+        {
+          "nodeId": 7391185515,
+          "role": "stop",
+          "name": "Iver",
+          "coordinates": [
+            -0.505864,
+            51.5087483
+          ]
+        },
+        {
+          "nodeId": 7391240294,
+          "role": "stop",
+          "name": "West Drayton",
+          "coordinates": [
+            -0.4710215,
+            51.5098116
+          ]
+        },
+        {
+          "nodeId": 1719372056,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.417267,
+            51.5029209
+          ]
+        },
+        {
+          "nodeId": 3759030918,
+          "role": "stop",
+          "name": "Southall",
+          "coordinates": [
+            -0.3763005,
+            51.506364
+          ]
+        },
+        {
+          "nodeId": 1719254892,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.2993554,
+            51.5149014
+          ]
+        },
+        {
+          "nodeId": 1655787181,
+          "role": "stop",
+          "name": "Paddington",
+          "coordinates": [
+            -0.1771694,
+            51.515862
+          ]
+        },
+        {
+          "nodeId": 2156683126,
+          "role": "stop",
+          "name": "Bond Street",
+          "coordinates": [
+            -0.1460497,
+            51.5138845
+          ]
+        },
+        {
+          "nodeId": 9760704353,
+          "role": "stop",
+          "name": "Tottenham Court Road",
+          "coordinates": [
+            -0.1311403,
+            51.5157211
+          ]
+        },
+        {
+          "nodeId": 5479654165,
+          "role": "stop",
+          "name": "Farringdon",
+          "coordinates": [
+            -0.1006893,
+            51.5201946
+          ]
+        },
+        {
+          "nodeId": 2157123321,
+          "role": "stop",
+          "name": "Liverpool Street",
+          "coordinates": [
+            -0.084972,
+            51.5176229
+          ]
+        },
+        {
+          "nodeId": 2158526705,
+          "role": "stop",
+          "name": "Whitechapel",
+          "coordinates": [
+            -0.0578158,
+            51.5205222
+          ]
+        },
+        {
+          "nodeId": 9742158593,
+          "role": "stop",
+          "name": "Canary Wharf",
+          "coordinates": [
+            -0.0156917,
+            51.5060095
+          ]
+        },
+        {
+          "nodeId": 9760735058,
+          "role": "stop",
+          "name": "Custom House",
+          "coordinates": [
+            0.0290679,
+            51.5098888
+          ]
+        },
+        {
+          "nodeId": 9736044744,
+          "role": "stop",
+          "name": "Woolwich",
+          "coordinates": [
+            0.0742896,
+            51.4913058
+          ]
+        },
+        {
+          "nodeId": 5723419714,
+          "role": "stop_exit_only",
+          "name": "Abbey Wood",
+          "coordinates": [
+            0.1206131,
+            51.491211
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 14773910,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Abbey Wood",
+        "name": "Elizabeth line: Abbey Wood → Maidenhead",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "partial",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Maidenhead",
+        "type": "route",
+        "wikidata": "Q130546452"
+      },
+      "stops": [
+        {
+          "nodeId": 5723419635,
+          "role": "stop_entry_only",
+          "name": "Abbey Wood",
+          "coordinates": [
+            0.1181837,
+            51.4910176
+          ]
+        },
+        {
+          "nodeId": 5723419669,
+          "role": "stop",
+          "name": "Woolwich",
+          "coordinates": [
+            0.0703949,
+            51.4919328
+          ]
+        },
+        {
+          "nodeId": 9760735057,
+          "role": "stop",
+          "name": "Custom House",
+          "coordinates": [
+            0.0250529,
+            51.509758
+          ]
+        },
+        {
+          "nodeId": 6140748770,
+          "role": "stop",
+          "name": "Canary Wharf",
+          "coordinates": [
+            -0.0192428,
+            51.5062218
+          ]
+        },
+        {
+          "nodeId": 2158526444,
+          "role": "stop",
+          "name": "Whitechapel",
+          "coordinates": [
+            -0.0605312,
+            51.5199698
+          ]
+        },
+        {
+          "nodeId": 2156956840,
+          "role": "stop",
+          "name": "Liverpool Street",
+          "coordinates": [
+            -0.087972,
+            51.5177539
+          ]
+        },
+        {
+          "nodeId": 2156950442,
+          "role": "stop",
+          "name": "Farringdon",
+          "coordinates": [
+            -0.1038374,
+            51.5194647
+          ]
+        },
+        {
+          "nodeId": 2156700180,
+          "role": "stop",
+          "name": "Tottenham Court Road",
+          "coordinates": [
+            -0.1339519,
+            51.5150094
+          ]
+        },
+        {
+          "nodeId": 2156683125,
+          "role": "stop",
+          "name": "Bond Street",
+          "coordinates": [
+            -0.1486131,
+            51.5131895
+          ]
+        },
+        {
+          "nodeId": 2156650848,
+          "role": "stop",
+          "name": "Paddington",
+          "coordinates": [
+            -0.1788127,
+            51.51681
+          ]
+        },
+        {
+          "nodeId": 6652280938,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.3013504,
+            51.514788
+          ]
+        },
+        {
+          "nodeId": 2046973818,
+          "role": "stop",
+          "name": "Southall",
+          "coordinates": [
+            -0.3783614,
+            51.5060123
+          ]
+        },
+        {
+          "nodeId": 1256535,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.4203463,
+            51.503021
+          ]
+        },
+        {
+          "nodeId": 1721798022,
+          "role": "stop",
+          "name": "West Drayton",
+          "coordinates": [
+            -0.4719928,
+            51.509838
+          ]
+        },
+        {
+          "nodeId": 7391185514,
+          "role": "stop",
+          "name": "Iver",
+          "coordinates": [
+            -0.507961,
+            51.5085494
+          ]
+        },
+        {
+          "nodeId": 7391222425,
+          "role": "stop",
+          "name": "Langley",
+          "coordinates": [
+            -0.5420721,
+            51.5079053
+          ]
+        },
+        {
+          "nodeId": 3092621014,
+          "role": "stop",
+          "name": "Slough",
+          "coordinates": [
+            -0.5924,
+            51.5123304
+          ]
+        },
+        {
+          "nodeId": 7391188502,
+          "role": "stop",
+          "name": "Burnham",
+          "coordinates": [
+            -0.648297,
+            51.5234368
+          ]
+        },
+        {
+          "nodeId": 7390784358,
+          "role": "stop_exit_only",
+          "name": "Maidenhead",
+          "coordinates": [
+            -0.7236262,
+            51.5182838
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 14773911,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Reading",
+        "name": "Elizabeth line: Reading → Abbey Wood",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "partial",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Abbey Wood",
+        "type": "route",
+        "wikidata": "Q130546447"
+      },
+      "stops": [
+        {
+          "nodeId": 1790325864,
+          "role": "stop_entry_only",
+          "name": "Reading",
+          "coordinates": [
+            -0.9743345,
+            51.4597595
+          ]
+        },
+        {
+          "nodeId": 7390606175,
+          "role": "stop",
+          "name": "Twyford",
+          "coordinates": [
+            -0.8621195,
+            51.4758231
+          ]
+        },
+        {
+          "nodeId": 7390784359,
+          "role": "stop",
+          "name": "Maidenhead",
+          "coordinates": [
+            -0.7216136,
+            51.5186573
+          ]
+        },
+        {
+          "nodeId": 7391174238,
+          "role": "stop",
+          "name": "Taplow",
+          "coordinates": [
+            -0.6805125,
+            51.5235527
+          ]
+        },
+        {
+          "nodeId": 7391188503,
+          "role": "stop",
+          "name": "Burnham",
+          "coordinates": [
+            -0.6461031,
+            51.5233707
+          ]
+        },
+        {
+          "nodeId": 6606393497,
+          "role": "stop",
+          "name": "Slough",
+          "coordinates": [
+            -0.5902364,
+            51.5120164
+          ]
+        },
+        {
+          "nodeId": 7391222426,
+          "role": "stop",
+          "name": "Langley",
+          "coordinates": [
+            -0.5399981,
+            51.5078772
+          ]
+        },
+        {
+          "nodeId": 7391240294,
+          "role": "stop",
+          "name": "West Drayton",
+          "coordinates": [
+            -0.4710215,
+            51.5098116
+          ]
+        },
+        {
+          "nodeId": 1719372056,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.417267,
+            51.5029209
+          ]
+        },
+        {
+          "nodeId": 3759030918,
+          "role": "stop",
+          "name": "Southall",
+          "coordinates": [
+            -0.3763005,
+            51.506364
+          ]
+        },
+        {
+          "nodeId": 1719254892,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.2993554,
+            51.5149014
+          ]
+        },
+        {
+          "nodeId": 1655787181,
+          "role": "stop",
+          "name": "Paddington",
+          "coordinates": [
+            -0.1771694,
+            51.515862
+          ]
+        },
+        {
+          "nodeId": 2156683126,
+          "role": "stop",
+          "name": "Bond Street",
+          "coordinates": [
+            -0.1460497,
+            51.5138845
+          ]
+        },
+        {
+          "nodeId": 9760704353,
+          "role": "stop",
+          "name": "Tottenham Court Road",
+          "coordinates": [
+            -0.1311403,
+            51.5157211
+          ]
+        },
+        {
+          "nodeId": 5479654165,
+          "role": "stop",
+          "name": "Farringdon",
+          "coordinates": [
+            -0.1006893,
+            51.5201946
+          ]
+        },
+        {
+          "nodeId": 2157123321,
+          "role": "stop",
+          "name": "Liverpool Street",
+          "coordinates": [
+            -0.084972,
+            51.5176229
+          ]
+        },
+        {
+          "nodeId": 2158526705,
+          "role": "stop",
+          "name": "Whitechapel",
+          "coordinates": [
+            -0.0578158,
+            51.5205222
+          ]
+        },
+        {
+          "nodeId": 9742158593,
+          "role": "stop",
+          "name": "Canary Wharf",
+          "coordinates": [
+            -0.0156917,
+            51.5060095
+          ]
+        },
+        {
+          "nodeId": 9760735058,
+          "role": "stop",
+          "name": "Custom House",
+          "coordinates": [
+            0.0290679,
+            51.5098888
+          ]
+        },
+        {
+          "nodeId": 9736044744,
+          "role": "stop",
+          "name": "Woolwich",
+          "coordinates": [
+            0.0742896,
+            51.4913058
+          ]
+        },
+        {
+          "nodeId": 5723419714,
+          "role": "stop_exit_only",
+          "name": "Abbey Wood",
+          "coordinates": [
+            0.1206131,
+            51.491211
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 14773912,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "colour": "#9364cc",
+        "colour:infill": "#ffffff",
+        "from": "Abbey Wood",
+        "name": "Elizabeth line: Abbey Wood → Reading",
+        "network": "National Rail",
+        "network:metro": "Elizabeth line",
+        "network:wikidata": "Q26334",
+        "network:wikipedia": "en:National Rail",
+        "operator": "GTS Rail Operations",
+        "operator:wikidata": "Q131632302",
+        "operator:wikipedia": "en:GTS Rail Operations",
+        "payment:contactless": "yes",
+        "payment:oyster": "partial",
+        "public_transport:version": "2",
+        "ref": "Elizabeth",
+        "ref:colour": "#9364cc",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "train",
+        "service": "commuter",
+        "to": "Reading",
+        "type": "route",
+        "wikidata": "Q130546447"
+      },
+      "stops": [
+        {
+          "nodeId": 5723419635,
+          "role": "stop_entry_only",
+          "name": "Abbey Wood",
+          "coordinates": [
+            0.1181837,
+            51.4910176
+          ]
+        },
+        {
+          "nodeId": 5723419669,
+          "role": "stop",
+          "name": "Woolwich",
+          "coordinates": [
+            0.0703949,
+            51.4919328
+          ]
+        },
+        {
+          "nodeId": 9760735057,
+          "role": "stop",
+          "name": "Custom House",
+          "coordinates": [
+            0.0250529,
+            51.509758
+          ]
+        },
+        {
+          "nodeId": 6140748770,
+          "role": "stop",
+          "name": "Canary Wharf",
+          "coordinates": [
+            -0.0192428,
+            51.5062218
+          ]
+        },
+        {
+          "nodeId": 2158526444,
+          "role": "stop",
+          "name": "Whitechapel",
+          "coordinates": [
+            -0.0605312,
+            51.5199698
+          ]
+        },
+        {
+          "nodeId": 2156956840,
+          "role": "stop",
+          "name": "Liverpool Street",
+          "coordinates": [
+            -0.087972,
+            51.5177539
+          ]
+        },
+        {
+          "nodeId": 2156950442,
+          "role": "stop",
+          "name": "Farringdon",
+          "coordinates": [
+            -0.1038374,
+            51.5194647
+          ]
+        },
+        {
+          "nodeId": 2156700180,
+          "role": "stop",
+          "name": "Tottenham Court Road",
+          "coordinates": [
+            -0.1339519,
+            51.5150094
+          ]
+        },
+        {
+          "nodeId": 2156683125,
+          "role": "stop",
+          "name": "Bond Street",
+          "coordinates": [
+            -0.1486131,
+            51.5131895
+          ]
+        },
+        {
+          "nodeId": 2156650848,
+          "role": "stop",
+          "name": "Paddington",
+          "coordinates": [
+            -0.1788127,
+            51.51681
+          ]
+        },
+        {
+          "nodeId": 6652280938,
+          "role": "stop",
+          "name": "Ealing Broadway",
+          "coordinates": [
+            -0.3013504,
+            51.514788
+          ]
+        },
+        {
+          "nodeId": 2046973818,
+          "role": "stop",
+          "name": "Southall",
+          "coordinates": [
+            -0.3783614,
+            51.5060123
+          ]
+        },
+        {
+          "nodeId": 1256535,
+          "role": "stop",
+          "name": "Hayes & Harlington",
+          "coordinates": [
+            -0.4203463,
+            51.503021
+          ]
+        },
+        {
+          "nodeId": 1721798022,
+          "role": "stop",
+          "name": "West Drayton",
+          "coordinates": [
+            -0.4719928,
+            51.509838
+          ]
+        },
+        {
+          "nodeId": 7391222425,
+          "role": "stop",
+          "name": "Langley",
+          "coordinates": [
+            -0.5420721,
+            51.5079053
+          ]
+        },
+        {
+          "nodeId": 3092621014,
+          "role": "stop",
+          "name": "Slough",
+          "coordinates": [
+            -0.5924,
+            51.5123304
+          ]
+        },
+        {
+          "nodeId": 7391188502,
+          "role": "stop",
+          "name": "Burnham",
+          "coordinates": [
+            -0.648297,
+            51.5234368
+          ]
+        },
+        {
+          "nodeId": 7391174239,
+          "role": "stop",
+          "name": "Taplow",
+          "coordinates": [
+            -0.6828973,
+            51.523288
+          ]
+        },
+        {
+          "nodeId": 7390784358,
+          "role": "stop",
+          "name": "Maidenhead",
+          "coordinates": [
+            -0.7236262,
+            51.5182838
+          ]
+        },
+        {
+          "nodeId": 7390606174,
+          "role": "stop",
+          "name": "Twyford",
+          "coordinates": [
+            -0.8637746,
+            51.4752397
+          ]
+        },
+        {
+          "nodeId": 1790325864,
+          "role": "stop_exit_only",
+          "name": "Reading",
+          "coordinates": [
+            -0.9743345,
+            51.4597595
+          ]
+        }
+      ]
+    }
+  ]
+}

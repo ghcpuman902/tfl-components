@@ -8,12 +8,13 @@ They are **not** produced by the TfL Unified API alone. Line track geometry orig
 
 | Layer | Path | Purpose |
 |-------|------|---------|
-| **Full OSM route variants** | `{tube,elizabeth,overground,dlr,tram}-geometry.json` (+ `osm-cache/`) | Every timetable pattern / direction as its own relation. Kept for internal analysis, explorer station coords, and rebuilds. **Not** what the map draws. |
+| **Full OSM route variants** | `{tube,elizabeth,overground,dlr,tram}-geometry.json` (+ `osm-cache/`) | Every mapped route relation and direction. Kept for pattern analysis, explorer station coordinates, and rebuilds. **Not** what the map draws. |
+| **OSM relation evidence** | `osm-cache/{mode}-route-stops.json` | Relation tags and ordered stop-position members, plus a unique-stop index. Supports route-pattern inspection; it does not supply trip frequency or a service calendar. |
 | **Merged centreline** | `unique-track/{mode}/{full,preview}.json` → `public/data/geography/{mode}-geometry.json` | Directional twin tracks collapsed to one corridor; real branches kept. Default map paint. |
 | **Dual directional tracks** | `unique-track/{mode}/dual-{full,preview}.json` → `public/data/geography/{mode}-geometry-dual.json` | Both directions kept as continuous polylines (`trackGroup` 0 / 1). |
 | **Welded junction graph** | `unique-track/{mode}/graph.json` → `public/data/geography/{mode}-graph.json` | Nodes (junction / terminus) and edges. Branch attachments share the exact same vertex (6 decimal places) as the corridor they leave. |
 
-OSM stores every service pattern as its own route. Drawing all variants stacks the same corridor many times (Elizabeth 24 → 5; Tube 208 → 31). Preview is a cheaper LOD of the **same** unique track, not a different overlapping set. Rebuild with `pnpm geography:unique-track`.
+OSM stores separate route relations for mapped directions and variants. Drawing all of them stacks the same corridor many times (Elizabeth 24 → 5; Tube 208 → 31). A relation count is not a train frequency. Preview is a cheaper LOD of the **same** unique track, not a different overlapping set. Rebuild with `pnpm geography:unique-track`.
 
 ## Provenance
 

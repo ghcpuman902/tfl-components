@@ -1,6 +1,6 @@
 {
   "description": "Unique-track OSM geometry: merged centreline, dual directional tracks, and a welded junction graph. Full route variants stay in data/geography/{mode}-geometry.json; maps serve public/ copies of unique-track full.",
-  "snapshottedAt": "2026-08-17T22:51:10.592Z",
+  "snapshottedAt": "2026-08-18T00:01:58.971Z",
   "modes": [
     {
       "mode": "tube",
@@ -13,10 +13,10 @@
       "dualPreviewLines": 56,
       "graphNodes": 60,
       "graphEdges": 63,
-      "fullBytes": 122806,
-      "previewBytes": 88388,
-      "dualFullBytes": 180850,
-      "graphBytes": 73200,
+      "fullBytes": 126548,
+      "previewBytes": 91830,
+      "dualFullBytes": 187956,
+      "graphBytes": 76946,
       "lineSource": "osm-route-network"
     },
     {
@@ -30,10 +30,10 @@
       "dualPreviewLines": 27,
       "graphNodes": 26,
       "graphEdges": 29,
-      "fullBytes": 46829,
-      "previewBytes": 34667,
-      "dualFullBytes": 68820,
-      "graphBytes": 27587,
+      "fullBytes": 47505,
+      "previewBytes": 35751,
+      "dualFullBytes": 70443,
+      "graphBytes": 28261,
       "lineSource": "osm-route-network"
     },
     {
@@ -47,10 +47,10 @@
       "dualPreviewLines": 10,
       "graphNodes": 10,
       "graphEdges": 12,
-      "fullBytes": 19547,
-      "previewBytes": 13539,
-      "dualFullBytes": 30337,
-      "graphBytes": 12686,
+      "fullBytes": 20121,
+      "previewBytes": 13840,
+      "dualFullBytes": 31176,
+      "graphBytes": 13258,
       "lineSource": "osm-route-network"
     },
     {
@@ -64,10 +64,10 @@
       "dualPreviewLines": 10,
       "graphNodes": 10,
       "graphEdges": 10,
-      "fullBytes": 16913,
-      "previewBytes": 13007,
-      "dualFullBytes": 24032,
-      "graphBytes": 8799,
+      "fullBytes": 17433,
+      "previewBytes": 13461,
+      "dualFullBytes": 24936,
+      "graphBytes": 9319,
       "lineSource": "osm-route-network"
     },
     {
@@ -81,10 +81,10 @@
       "dualPreviewLines": 6,
       "graphNodes": 8,
       "graphEdges": 12,
-      "fullBytes": 15766,
-      "previewBytes": 11874,
-      "dualFullBytes": 18983,
-      "graphBytes": 9258,
+      "fullBytes": 16040,
+      "previewBytes": 12229,
+      "dualFullBytes": 19667,
+      "graphBytes": 9530,
       "lineSource": "osm-route-network"
     }
   ]

@@ -357,103 +357,151 @@ const DisplayHeader = ({
   </div>
 )
 
-const SingleDockDisplay = ({
+const SingleDockRoundelTile = ({
   dock,
-  tiles,
   showBroken,
 }: {
   dock: CycleHireDock
-  tiles: number
   showBroken: boolean
 }) => {
   const counts = getDockCounts(dock)
   const { standardBikes, eBikes, emptyDocks, brokenDocks, totalDocks } = counts
-  const bodyRows = Math.max(0, tiles - 1)
   const showBrokenCount = showBroken && brokenDocks > 0
 
   return (
     <div
-      className="flex h-full w-full flex-col overflow-hidden"
+      className={cn(
+        TILE_CLASS,
+        "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-2 pb-1 text-sm"
+      )}
       aria-label={`${dock.name}: ${standardBikes} bikes, ${eBikes} e-bikes, ${emptyDocks} spaces${showBrokenCount ? `, ${brokenDocks} broken` : ""}`}
     >
-      <div
-        className={cn(
-          TILE_CLASS,
-          ROW_RULE_CLASS,
-          "flex items-center gap-3 px-2 text-sm font-semibold"
-        )}
-      >
-        <TfLRoundel variant="cycles" className="size-8 shrink-0" />
-        <div
-          className="flex min-w-0 flex-1 items-center gap-2"
-          aria-hidden="true"
-        >
-          <div className="min-w-0 flex-1">
-            <StationName
-              name={dock.name}
-              layout="auto"
-              maxLines={1}
-              allowAbbreviation
-              allowScaleDown
-              className="leading-none font-medium"
-            />
-          </div>
-          {dock.isTemporary ? (
-            <span className="shrink-0 text-xs font-normal text-muted-foreground">
-              <span className="hidden md:inline">Temporary</span>
-              <span className="md:hidden">Temp</span>
-            </span>
-          ) : null}
+      <TfLRoundel variant="cycles" className="size-8 shrink-0" />
+      <div className="flex min-w-0 items-center gap-2" aria-hidden="true">
+        <div className="min-w-0 flex-1">
+          <StationName
+            name={dock.name}
+            layout="auto"
+            maxLines={1}
+            allowAbbreviation
+            allowScaleDown
+            className="leading-none font-medium"
+          />
         </div>
-        <div
-          className="flex shrink-0 items-center gap-3 text-xs font-semibold"
-          aria-hidden="true"
-        >
-          {dock.isLocked ? (
-            <span className="text-destructive">Locked</span>
-          ) : totalDocks === 0 ? (
-            <span className="font-normal text-muted-foreground">
-              No docks reported
-            </span>
-          ) : (
-            <>
-              <Count
-                value={standardBikes}
-                fullLabel={standardBikes === 1 ? "Bike" : "Bikes"}
-                shortLabel="B"
-                className={cycleHireBikeTextClass}
-              />
-              <Count
-                value={eBikes}
-                fullLabel={eBikes === 1 ? "E-bike" : "E-bikes"}
-                shortLabel="E"
-                className={cycleHireEbikeTextClass}
-              />
-              <Count
-                value={emptyDocks}
-                fullLabel={emptyDocks === 1 ? "Space" : "Spaces"}
-                shortLabel="S"
-                className="text-muted-foreground"
-              />
-              {showBrokenCount ? (
-                <Count
-                  value={brokenDocks}
-                  fullLabel="Broken"
-                  shortLabel="X"
-                  className={cycleHireBrokenTextClass}
-                />
-              ) : null}
-            </>
-          )}
-        </div>
+        {dock.isTemporary ? (
+          <span className="shrink-0 text-xs text-muted-foreground">
+            Temporary
+          </span>
+        ) : null}
       </div>
-      {bodyRows > 0 ? (
-        <DockSlotBlocks
-          dock={dock}
-          showBroken={showBroken}
-          className="w-full flex-1"
+      <div
+        className="flex shrink-0 items-center gap-3 text-xs font-semibold"
+        aria-hidden="true"
+      >
+        {dock.isLocked ? (
+          <span className="text-destructive">Locked</span>
+        ) : totalDocks === 0 ? (
+          <span className="font-normal text-muted-foreground">
+            No docks reported
+          </span>
+        ) : (
+          <>
+            <Count
+              value={standardBikes}
+              fullLabel={standardBikes === 1 ? "Bike" : "Bikes"}
+              shortLabel="B"
+              className={cycleHireBikeTextClass}
+            />
+            <Count
+              value={eBikes}
+              fullLabel={eBikes === 1 ? "E-bike" : "E-bikes"}
+              shortLabel="E"
+              className={cycleHireEbikeTextClass}
+            />
+            <Count
+              value={emptyDocks}
+              fullLabel={emptyDocks === 1 ? "Space" : "Spaces"}
+              shortLabel="S"
+              className="text-muted-foreground"
+            />
+            {showBrokenCount ? (
+              <Count
+                value={brokenDocks}
+                fullLabel="Broken"
+                shortLabel="X"
+                className={cycleHireBrokenTextClass}
+              />
+            ) : null}
+          </>
+        )}
+      </div>
+      <DockSlotBlocks
+        dock={dock}
+        showBroken={showBroken}
+        className="absolute inset-x-0 bottom-0 h-1"
+      />
+    </div>
+  )
+}
+
+const SingleDockStackedTile = ({
+  dock,
+  showBroken,
+}: {
+  dock: CycleHireDock
+  showBroken: boolean
+}) => {
+  const counts = getDockCounts(dock)
+  const { standardBikes, eBikes, emptyDocks, brokenDocks, totalDocks } = counts
+  const showBrokenCount = showBroken && brokenDocks > 0
+
+  return (
+    <div
+      className={cn(TILE_CLASS, "grid grid-rows-3 text-[0.6875rem]")}
+      aria-label={`${dock.name}: ${standardBikes} bikes, ${eBikes} e-bikes, ${emptyDocks} spaces${showBrokenCount ? `, ${brokenDocks} broken` : ""}`}
+    >
+      <div className="flex min-w-0 items-center px-2" aria-hidden="true">
+        <StationName
+          name={dock.name}
+          layout="auto"
+          maxLines={1}
+          allowAbbreviation
+          allowScaleDown
+          className="leading-none font-medium"
         />
-      ) : null}
+      </div>
+      <DockSlotBlocks dock={dock} showBroken={showBroken} className="w-full" />
+      <div
+        className="flex items-center justify-between gap-3 px-2 font-medium tracking-wide uppercase"
+        aria-hidden="true"
+      >
+        {dock.isLocked ? (
+          <span className="text-destructive">Locked</span>
+        ) : totalDocks === 0 ? (
+          <span className="text-muted-foreground">No docks reported</span>
+        ) : (
+          <>
+            <span className="flex items-center gap-3">
+              <span className={cn("tabular-nums", cycleHireBikeTextClass)}>
+                {standardBikes} {standardBikes === 1 ? "Bike" : "Bikes"}
+              </span>
+              <span className={cn("tabular-nums", cycleHireEbikeTextClass)}>
+                {eBikes} {eBikes === 1 ? "E-bike" : "E-bikes"}
+              </span>
+            </span>
+            <span className="flex items-center gap-3 text-muted-foreground">
+              {showBrokenCount ? (
+                <span className={cn("tabular-nums", cycleHireBrokenTextClass)}>
+                  {brokenDocks} Broken
+                </span>
+              ) : null}
+              <span className="tabular-nums">
+                {emptyDocks} {emptyDocks === 1 ? "Space" : "Spaces"}
+              </span>
+            </span>
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -622,8 +670,9 @@ const useUnattendedDockPage = ({
 export type CycleHireDocksDisplayProps = {
   /** Normalised bike points. Omit when rendered under `CycleHireDocks`. */
   data?: readonly CycleHireDock[]
-  /** Total 48px tiles, including the header tile. */
+  /** Total 48px tiles for multiple docks. A single dock always uses one tile. */
   tiles?: number
+  singleDockVariant?: "roundel" | "stacked"
   behaviour?: DisplayBehaviour
   dwellMs?: number
   startDelayMs?: number
@@ -636,6 +685,7 @@ export type CycleHireDocksDisplayProps = {
 export const CycleHireDocksDisplay = ({
   data: dataProp,
   tiles: tilesProp,
+  singleDockVariant = "roundel",
   behaviour = "interactive",
   dwellMs,
   startDelayMs,
@@ -645,7 +695,8 @@ export const CycleHireDocksDisplay = ({
   className,
 }: CycleHireDocksDisplayProps) => {
   const data = useCycleHireDocksData(dataProp)
-  const tiles = normalizeCycleHireDisplayTiles(tilesProp)
+  const tiles =
+    data.length === 1 && !error ? 1 : normalizeCycleHireDisplayTiles(tilesProp)
   const bodyRows = Math.max(0, tiles - 1)
   const pages = useMemo(
     () => buildCycleHireDisplayPages(data, bodyRows),
@@ -693,7 +744,11 @@ export const CycleHireDocksDisplay = ({
     const dock = data[0]
     return (
       <div className={cn("w-full overflow-hidden", className)} style={style}>
-        <SingleDockDisplay dock={dock} tiles={tiles} showBroken={showBroken} />
+        {singleDockVariant === "stacked" ? (
+          <SingleDockStackedTile dock={dock} showBroken={showBroken} />
+        ) : (
+          <SingleDockRoundelTile dock={dock} showBroken={showBroken} />
+        )}
       </div>
     )
   }
@@ -761,9 +816,57 @@ export const CycleHireDocksDisplay = ({
 
 export const CycleHireDocksDisplaySkeleton = ({
   tiles: tilesProp,
+  singleDockVariant = "roundel",
   className,
-}: Pick<CycleHireDocksDisplayProps, "tiles" | "className">) => {
+}: Pick<
+  CycleHireDocksDisplayProps,
+  "tiles" | "singleDockVariant" | "className"
+>) => {
   const tiles = normalizeCycleHireDisplayTiles(tilesProp)
+  if (tiles === 1) {
+    return (
+      <div
+        className={cn("w-full overflow-hidden", className)}
+        style={{
+          ...BOARD_RHYTHM_VARS,
+          height: "var(--arrivals-row)",
+        }}
+        aria-busy="true"
+        aria-label="Loading cycle hire dock"
+      >
+        {singleDockVariant === "stacked" ? (
+          <div className={cn(TILE_CLASS, "grid grid-rows-3")} aria-hidden>
+            <div className="flex items-center px-2">
+              <span className="h-2.5 w-2/5 rounded-sm bg-muted" />
+            </div>
+            <div className="flex gap-0.5">
+              {Array.from({ length: 12 }, (_, index) => (
+                <span key={index} className="min-w-0 flex-1 bg-muted" />
+              ))}
+            </div>
+            <div className="flex items-center justify-between px-2">
+              <span className="h-2 w-1/3 rounded-sm bg-muted" />
+              <span className="h-2 w-1/5 rounded-sm bg-muted" />
+            </div>
+          </div>
+        ) : (
+          <div
+            className={cn(
+              TILE_CLASS,
+              "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-2 pb-1"
+            )}
+            aria-hidden
+          >
+            <TfLRoundel variant="cycles" className="size-8 shrink-0" />
+            <span className="h-3 w-2/5 rounded-sm bg-muted" />
+            <span className="h-3 w-40 max-w-full rounded-sm bg-muted" />
+            <span className="absolute inset-x-0 bottom-0 h-1 bg-muted" />
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div
       className={cn("w-full overflow-hidden", className)}

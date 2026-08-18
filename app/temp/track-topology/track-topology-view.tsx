@@ -1,0 +1,956 @@
+"use client"
+
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type PointerEvent as ReactPointerEvent,
+  type WheelEvent as ReactWheelEvent,
+} from "react"
+import type {
+  TrackModel,
+  TransitGeometryBundle,
+  TransitMode,
+} from "@/lib/tfl/geography-types"
+import { TRANSIT_MODE_LABELS } from "@/lib/tfl/geography-types"
+import {
+  type ContractedEdge,
+  type ContractedNode,
+  type ContractedTopology,
+} from "@/lib/tfl/geometry/contract-track-topology"
+import { TflGeographicMap } from "@/registry/tfl/geography/tfl-geographic-map"
+import { officialTrackTopology } from "@/lib/tfl/geometry/official-track-topology"
+import {
+  mergeOsmStationPositions,
+  type OsmRouteStopsFile,
+} from "@/lib/tfl/geometry/osm-route-stops"
+import tubeStops from "@/data/geography/osm-cache/tube-route-stops.json"
+import overgroundStops from "@/data/geography/osm-cache/overground-route-stops.json"
+import elizabethStops from "@/data/geography/osm-cache/elizabeth-route-stops.json"
+import dlrStops from "@/data/geography/osm-cache/dlr-route-stops.json"
+import tramStops from "@/data/geography/osm-cache/tram-route-stops.json"
+import {
+  STRESS_MIN_SEP,
+  createStressState,
+  finishStressLayout,
+  orientToGeo,
+  stepStress,
+  stressGraphFromLngLats,
+  type StressState,
+} from "@/lib/tfl/geometry/stress-layout"
+import type {
+  LngLat,
+  TrackStation,
+} from "@/lib/tfl/geometry/transit-track-graph"
+import {
+  movementPairs,
+  tflMovementsForTopology,
+  type TopologyMovementPair,
+} from "@/lib/tfl/geometry/topology-movements"
+import { servicePatternEvidenceForLine } from "@/lib/tfl/service-pattern-evidence"
+import { cn } from "@/lib/utils"
+import { RoutePatternInspector } from "./route-pattern-inspector"
+
+type BundlesByMode = Partial<Record<TransitMode, TransitGeometryBundle>>
+
+type TrackTopologyViewProps = {
+  variants: BundlesByMode
+  centreline: BundlesByMode
+  dual: BundlesByMode
+}
+
+type LineOption = {
+  lineId: string
+  lineName: string
+  color: string
+  mode: TransitMode
+}
+
+type LaidOutNode = ContractedNode & {
+  x: number
+  y: number
+  labelX: number
+  labelY: number
+  labelAnchor: "start" | "end" | "middle"
+}
+
+type Simulation = {
+  nodes: ContractedNode[]
+  edges: ContractedEdge[]
+  state: StressState
+}
+
+const TRACK_MODELS: { id: TrackModel; label: string }[] = [
+  { id: "centreline", label: "Merged centreline" },
+  { id: "dual", label: "Both tracks" },
+]
+
+const WIDTH = 1100
+const HEIGHT = 720
+const LABEL_W = 108
+const LABEL_H = 16
+const STEPS_PER_FRAME = 4
+const SETTLE_MOVE = 0.08
+const MIN_ZOOM = 0.75
+const MAX_ZOOM = 8
+
+type ZoomState = {
+  scale: number
+  x: number
+  y: number
+}
+
+type DragState = {
+  pointerId: number
+  clientX: number
+  clientY: number
+  x: number
+  y: number
+}
+
+const stationsFromBundle = (bundle: TransitGeometryBundle): TrackStation[] =>
+  (bundle.stations.features ?? []).flatMap((feature) => {
+    if (feature.geometry?.type !== "Point") return []
+    const coords = feature.geometry.coordinates
+    if (coords.length < 2) return []
+    return [
+      {
+        id: String(feature.id ?? feature.properties.featureId),
+        name: feature.properties.name,
+        label: feature.properties.label,
+        coordinates: [coords[0]!, coords[1]!] as LngLat,
+      },
+    ]
+  })
+
+const linesFromBundles = (bundles: BundlesByMode): LineOption[] => {
+  const seen = new Set<string>()
+  const options: LineOption[] = []
+  for (const mode of Object.keys(bundles) as TransitMode[]) {
+    const bundle = bundles[mode]
+    if (!bundle) continue
+    for (const feature of bundle.lines.features ?? []) {
+      const lineId = feature.properties.lineId
+      if (seen.has(lineId)) continue
+      seen.add(lineId)
+      options.push({
+        lineId,
+        lineName: feature.properties.lineName,
+        color: feature.properties.color,
+        mode,
+      })
+    }
+  }
+  return options
+}
+
+const nodeLabel = (node: ContractedNode): string => {
+  if (node.kind === "station") return node.stationName ?? "station"
+  if (node.kind === "junction") {
+    return node.nearStationName ? `junc · ${node.nearStationName}` : "junction"
+  }
+  return node.stationName ?? "terminus"
+}
+
+const seedSimulation = (
+  nodes: readonly ContractedNode[],
+  edges: readonly ContractedEdge[],
+  movements: readonly TopologyMovementPair[]
+): Simulation | null => {
+  if (nodes.length === 0) return null
+  return {
+    nodes: [...nodes],
+    edges: [...edges],
+    state: createStressState(
+      stressGraphFromLngLats(
+        nodes,
+        edges,
+        movements.map((movement) => ({
+          from: movement.a,
+          via: movement.via,
+          to: movement.b,
+        }))
+      )
+    ),
+  }
+}
+
+const positioned = (sim: Simulation) =>
+  sim.nodes.map((node, index) => ({
+    ...node,
+    x: sim.state.x[index]!,
+    y: sim.state.y[index]!,
+  }))
+
+const LABEL_SLOTS: {
+  x: number
+  y: number
+  anchor: "start" | "end" | "middle"
+}[] = [
+  { x: 10, y: 4, anchor: "start" },
+  { x: -10, y: 4, anchor: "end" },
+  { x: 10, y: -8, anchor: "start" },
+  { x: -10, y: -8, anchor: "end" },
+  { x: 0, y: -16, anchor: "middle" },
+  { x: 0, y: 18, anchor: "middle" },
+  { x: 10, y: 16, anchor: "start" },
+  { x: -10, y: 16, anchor: "end" },
+]
+
+const labelBox = (
+  node: { x: number; y: number },
+  slot: (typeof LABEL_SLOTS)[number]
+) => {
+  const left =
+    slot.anchor === "end"
+      ? node.x + slot.x - LABEL_W
+      : slot.anchor === "middle"
+        ? node.x + slot.x - LABEL_W / 2
+        : node.x + slot.x
+  return {
+    left,
+    top: node.y + slot.y - LABEL_H + 4,
+    right: left + LABEL_W,
+    bottom: node.y + slot.y + 4,
+  }
+}
+
+const boxesOverlap = (
+  a: { left: number; top: number; right: number; bottom: number },
+  b: { left: number; top: number; right: number; bottom: number }
+) =>
+  a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+
+const snapshotLayout = (sim: Simulation): LaidOutNode[] => {
+  const nodes = positioned(sim)
+  const chosen = new Map<string, (typeof LABEL_SLOTS)[number]>()
+  for (const node of nodes) {
+    let best = LABEL_SLOTS[0]!
+    let bestHits = Number.POSITIVE_INFINITY
+    for (const slot of LABEL_SLOTS) {
+      const box = labelBox(node, slot)
+      let hits = 0
+      for (const other of nodes) {
+        if (other.id === node.id) continue
+        if (
+          other.x > box.left - 6 &&
+          other.x < box.right + 6 &&
+          other.y > box.top - 6 &&
+          other.y < box.bottom + 6
+        ) {
+          hits += 3
+        }
+        const otherSlot = chosen.get(other.id) ?? LABEL_SLOTS[0]!
+        if (boxesOverlap(box, labelBox(other, otherSlot))) hits += 1
+      }
+      if (hits < bestHits) {
+        bestHits = hits
+        best = slot
+      }
+    }
+    chosen.set(node.id, best)
+  }
+
+  return nodes.map((node) => {
+    const slot = chosen.get(node.id) ?? LABEL_SLOTS[0]!
+    return {
+      id: node.id,
+      coordinates: node.coordinates,
+      stationId: node.stationId,
+      stationName: node.stationName,
+      nearStationName: node.nearStationName,
+      kind: node.kind,
+      x: node.x,
+      y: node.y,
+      labelX: slot.x,
+      labelY: slot.y,
+      labelAnchor: slot.anchor,
+    }
+  })
+}
+
+const fitViewBox = (nodes: readonly LaidOutNode[]) => {
+  if (nodes.length === 0) return { x: 0, y: 0, w: WIDTH, h: HEIGHT }
+  let minX = Number.POSITIVE_INFINITY
+  let minY = Number.POSITIVE_INFINITY
+  let maxX = Number.NEGATIVE_INFINITY
+  let maxY = Number.NEGATIVE_INFINITY
+  for (const node of nodes) {
+    const box = labelBox(node, {
+      x: node.labelX,
+      y: node.labelY,
+      anchor: node.labelAnchor,
+    })
+    minX = Math.min(minX, node.x - 14, box.left)
+    minY = Math.min(minY, node.y - 14, box.top)
+    maxX = Math.max(maxX, node.x + 14, box.right)
+    maxY = Math.max(maxY, node.y + 14, box.bottom)
+  }
+  const pad = 48
+  return {
+    x: minX - pad,
+    y: minY - pad,
+    w: Math.max(maxX - minX + pad * 2, 240),
+    h: Math.max(maxY - minY + pad * 2, 240),
+  }
+}
+
+const offsetEdge = (
+  from: LaidOutNode,
+  to: LaidOutNode,
+  trackGroup: 0 | 1 | undefined
+): { x1: number; y1: number; x2: number; y2: number } => {
+  if (trackGroup == null) {
+    return { x1: from.x, y1: from.y, x2: to.x, y2: to.y }
+  }
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  const length = Math.hypot(dx, dy) || 1
+  const side = trackGroup === 1 ? 1 : -1
+  const ox = (-dy / length) * 5 * side
+  const oy = (dx / length) * 5 * side
+  return {
+    x1: from.x + ox,
+    y1: from.y + oy,
+    x2: to.x + ox,
+    y2: to.y + oy,
+  }
+}
+
+const movementCurve = (
+  from: LaidOutNode,
+  via: LaidOutNode,
+  to: LaidOutNode
+): string => {
+  const fromDx = from.x - via.x
+  const fromDy = from.y - via.y
+  const toDx = to.x - via.x
+  const toDy = to.y - via.y
+  const fromLength = Math.hypot(fromDx, fromDy) || 1
+  const toLength = Math.hypot(toDx, toDy) || 1
+  const fromUnit = { x: fromDx / fromLength, y: fromDy / fromLength }
+  const toUnit = { x: toDx / toLength, y: toDy / toLength }
+  const radius = Math.max(18, Math.min(38, fromLength * 0.4, toLength * 0.4))
+  const normalOffset = Math.max(6, Math.min(9, radius * 0.28))
+  const bisectorX = fromUnit.x + toUnit.x
+  const bisectorY = fromUnit.y + toUnit.y
+  const bisectorLength = Math.hypot(bisectorX, bisectorY)
+  const wedge =
+    bisectorLength > 0.05
+      ? { x: bisectorX / bisectorLength, y: bisectorY / bisectorLength }
+      : { x: -fromUnit.y, y: fromUnit.x }
+
+  const normalTowardWedge = (unit: { x: number; y: number }) => {
+    const left = { x: -unit.y, y: unit.x }
+    const side = left.x * wedge.x + left.y * wedge.y >= 0 ? 1 : -1
+    return { x: left.x * side, y: left.y * side }
+  }
+
+  const fromNormal = normalTowardWedge(fromUnit)
+  const toNormal = normalTowardWedge(toUnit)
+  const startX = via.x + fromUnit.x * radius + fromNormal.x * normalOffset
+  const startY = via.y + fromUnit.y * radius + fromNormal.y * normalOffset
+  const endX = via.x + toUnit.x * radius + toNormal.x * normalOffset
+  const endY = via.y + toUnit.y * radius + toNormal.y * normalOffset
+  const controlX = via.x + wedge.x * normalOffset * 1.7
+  const controlY = via.y + wedge.y * normalOffset * 1.7
+  return `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`
+}
+
+const zoomAround = (
+  current: ZoomState,
+  scale: number,
+  anchor: { x: number; y: number }
+): ZoomState => {
+  const nextScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale))
+  const ratio = nextScale / current.scale
+  return {
+    scale: nextScale,
+    x: anchor.x - (anchor.x - current.x) * ratio,
+    y: anchor.y - (anchor.y - current.y) * ratio,
+  }
+}
+
+const emptyTopology = (): ContractedTopology => ({ nodes: [], edges: [] })
+
+const OSM_STOPS_BY_MODE: Partial<Record<TransitMode, OsmRouteStopsFile>> = {
+  tube: tubeStops as unknown as OsmRouteStopsFile,
+  overground: overgroundStops as unknown as OsmRouteStopsFile,
+  elizabeth: elizabethStops as unknown as OsmRouteStopsFile,
+  dlr: dlrStops as unknown as OsmRouteStopsFile,
+  tram: tramStops as unknown as OsmRouteStopsFile,
+}
+
+const useLaidOutTopology = (
+  topology: ContractedTopology,
+  movements: readonly TopologyMovementPair[]
+) => {
+  const seeded = useMemo(
+    () => seedSimulation(topology.nodes, topology.edges, movements),
+    [topology, movements]
+  )
+  const [laidNodes, setLaidNodes] = useState<LaidOutNode[]>([])
+  const simRef = useRef<Simulation | null>(null)
+
+  useEffect(() => {
+    simRef.current = seeded
+    if (!seeded) return
+    let frame = 0
+    let raf = 0
+    const tick = () => {
+      const current = simRef.current
+      if (!current) return
+      let move = 0
+      for (let step = 0; step < STEPS_PER_FRAME; step += 1) {
+        move = stepStress(current.state)
+      }
+      const { state } = current
+      orientToGeo(state.x, state.y, state.geoX, state.geoY)
+      frame += 1
+      const settled = move <= SETTLE_MOVE || frame >= 200
+      if (settled) finishStressLayout(state, STRESS_MIN_SEP)
+      if (frame % 2 === 0 || settled) setLaidNodes(snapshotLayout(current))
+      if (!settled) {
+        raf = requestAnimationFrame(tick)
+      }
+    }
+    raf = requestAnimationFrame(tick)
+    return () => {
+      cancelAnimationFrame(raf)
+    }
+  }, [seeded])
+
+  return useMemo(() => {
+    if (!seeded) return []
+    const seededIds = seeded.nodes.map((node) => node.id).join("\0")
+    const laidIds = laidNodes.map((node) => node.id).join("\0")
+    return laidIds === seededIds ? laidNodes : snapshotLayout(seeded)
+  }, [seeded, laidNodes])
+}
+
+type TopologyPlotProps = {
+  title: string
+  source: string
+  topology: ContractedTopology
+  color: string
+  lineName: string
+  movements?: readonly TopologyMovementPair[]
+  showMovementCurves?: boolean
+  showDirectionArrows?: boolean
+  dual?: boolean
+  empty?: string
+}
+
+const TopologyPlot = ({
+  title,
+  source,
+  topology,
+  color,
+  lineName,
+  movements = [],
+  showMovementCurves = false,
+  showDirectionArrows = false,
+  dual = false,
+  empty,
+}: TopologyPlotProps) => {
+  const markerId = useId().replace(/:/g, "")
+  const svgRef = useRef<SVGSVGElement | null>(null)
+  const dragRef = useRef<DragState | null>(null)
+  const [zoom, setZoom] = useState<ZoomState>({ scale: 1, x: 0, y: 0 })
+  const painted = useLaidOutTopology(topology, movements)
+  const nodeById = useMemo(
+    () => new Map(painted.map((node) => [node.id, node])),
+    [painted]
+  )
+  const viewBox = useMemo(() => fitViewBox(painted), [painted])
+  const junctionCount = topology.nodes.filter(
+    (node) => node.kind === "junction"
+  ).length
+  const visibleMovements = useMemo(() => {
+    const neighbors = new Map<string, Set<string>>()
+    const addNeighbor = (from: string, to: string) => {
+      const values = neighbors.get(from) ?? new Set<string>()
+      values.add(to)
+      neighbors.set(from, values)
+    }
+    for (const edge of topology.edges) {
+      addNeighbor(edge.from, edge.to)
+      addNeighbor(edge.to, edge.from)
+    }
+    return movements.filter(
+      (movement) => (neighbors.get(movement.via)?.size ?? 0) >= 3
+    )
+  }, [movements, topology.edges])
+
+  const viewPoint = (clientX: number, clientY: number) => {
+    const rect = svgRef.current?.getBoundingClientRect()
+    if (!rect || rect.width === 0 || rect.height === 0) return null
+    return {
+      x: viewBox.x + ((clientX - rect.left) / rect.width) * viewBox.w,
+      y: viewBox.y + ((clientY - rect.top) / rect.height) * viewBox.h,
+    }
+  }
+
+  const handleWheel = (event: ReactWheelEvent<SVGSVGElement>) => {
+    event.preventDefault()
+    const anchor = viewPoint(event.clientX, event.clientY)
+    if (!anchor) return
+    const factor = Math.exp(-event.deltaY * 0.0015)
+    setZoom((current) => zoomAround(current, current.scale * factor, anchor))
+  }
+
+  const handlePointerDown = (event: ReactPointerEvent<SVGSVGElement>) => {
+    if (event.button !== 0) return
+    event.currentTarget.setPointerCapture(event.pointerId)
+    dragRef.current = {
+      pointerId: event.pointerId,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      x: zoom.x,
+      y: zoom.y,
+    }
+  }
+
+  const handlePointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
+    const drag = dragRef.current
+    const rect = svgRef.current?.getBoundingClientRect()
+    if (!drag || drag.pointerId !== event.pointerId || !rect) return
+    const dx = ((event.clientX - drag.clientX) / rect.width) * viewBox.w
+    const dy = ((event.clientY - drag.clientY) / rect.height) * viewBox.h
+    setZoom((current) => ({ ...current, x: drag.x + dx, y: drag.y + dy }))
+  }
+
+  const finishDrag = (event: ReactPointerEvent<SVGSVGElement>) => {
+    if (dragRef.current?.pointerId !== event.pointerId) return
+    dragRef.current = null
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
+
+  const changeZoom = (factor: number) => {
+    const anchor = {
+      x: viewBox.x + viewBox.w / 2,
+      y: viewBox.y + viewBox.h / 2,
+    }
+    setZoom((current) => zoomAround(current, current.scale * factor, anchor))
+  }
+
+  const symbolScale = 1 / zoom.scale
+  const labelScreenScale = Math.max(1.08, Math.min(2.15, zoom.scale ** 0.52))
+  const labelScale = labelScreenScale / zoom.scale
+
+  return (
+    <section className="min-w-0 space-y-2">
+      <div className="space-y-0.5">
+        <h3 className="text-sm font-medium">{title}</h3>
+        <p className="text-xs text-muted-foreground">{source}</p>
+        <p className="text-xs text-muted-foreground">
+          {topology.nodes.length} nodes · {topology.edges.length} edges ·{" "}
+          {junctionCount} junctions · {movements.length} layout continuities ·{" "}
+          {visibleMovements.length} marked branch pairs
+        </p>
+      </div>
+      <div className="relative overflow-hidden rounded-lg border border-border bg-muted/30">
+        {empty && topology.nodes.length === 0 ? (
+          <p className="px-3 py-8 text-sm text-muted-foreground">{empty}</p>
+        ) : (
+          <>
+            <div className="absolute top-2 right-2 z-10 flex overflow-hidden rounded-md border border-border bg-background/90 shadow-sm">
+              <button
+                type="button"
+                onClick={() => changeZoom(1.35)}
+                className="h-8 w-8 border-r border-border text-sm"
+                aria-label={`Zoom in on ${title}`}
+              >
+                +
+              </button>
+              <button
+                type="button"
+                onClick={() => changeZoom(1 / 1.35)}
+                className="h-8 w-8 border-r border-border text-sm"
+                aria-label={`Zoom out of ${title}`}
+              >
+                -
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoom({ scale: 1, x: 0, y: 0 })}
+                className="h-8 px-2 text-[10px] tabular-nums"
+                aria-label={`Reset zoom on ${title}`}
+              >
+                {Math.round(zoom.scale * 100)}%
+              </button>
+            </div>
+            <svg
+              ref={svgRef}
+              viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
+              className="h-[min(60vh,36rem)] w-full cursor-grab touch-none select-none active:cursor-grabbing"
+              role="img"
+              aria-label={`${lineName} ${title}. Scroll to zoom and drag to pan.`}
+              onWheel={handleWheel}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={finishDrag}
+              onPointerCancel={finishDrag}
+            >
+              <defs>
+                <marker
+                  id={`${markerId}-arrow`}
+                  viewBox="0 0 8 8"
+                  refX="6.5"
+                  refY="4"
+                  markerWidth={2.4 * symbolScale}
+                  markerHeight={2.4 * symbolScale}
+                  markerUnits="userSpaceOnUse"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M 0 1 L 7 4 L 0 7 z" fill={color} />
+                </marker>
+              </defs>
+              <g
+                transform={`translate(${zoom.x} ${zoom.y}) scale(${zoom.scale})`}
+              >
+                {topology.edges.map((edge) => {
+                  const from = nodeById.get(edge.from)
+                  const to = nodeById.get(edge.to)
+                  if (!from || !to) return null
+                  const line = offsetEdge(from, to, edge.trackGroup)
+                  return (
+                    <line
+                      key={edge.id}
+                      x1={line.x1}
+                      y1={line.y1}
+                      x2={line.x2}
+                      y2={line.y2}
+                      stroke={color}
+                      strokeWidth={dual ? 2.2 : 3}
+                      strokeLinecap="round"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  )
+                })}
+                {showMovementCurves &&
+                  visibleMovements.map((pair) => {
+                    const a = nodeById.get(pair.a)
+                    const via = nodeById.get(pair.via)
+                    const b = nodeById.get(pair.b)
+                    if (!a || !via || !b) return null
+                    const curve = movementCurve(a, via, b)
+                    const patternIds = [
+                      ...new Set(
+                        pair.directions.flatMap(
+                          (direction) => direction.patternIds
+                        )
+                      ),
+                    ]
+                    return (
+                      <g key={pair.id}>
+                        <path
+                          d={curve}
+                          fill="none"
+                          stroke="var(--background)"
+                          strokeWidth={dual ? 5.5 : 6.5}
+                          strokeLinecap="round"
+                          vectorEffect="non-scaling-stroke"
+                        />
+                        <path
+                          d={curve}
+                          fill="none"
+                          stroke={color}
+                          strokeWidth={dual ? 1.8 : 2.2}
+                          strokeLinecap="round"
+                          vectorEffect="non-scaling-stroke"
+                        >
+                          <title>
+                            {`${pair.directions.length} permitted direction${pair.directions.length === 1 ? "" : "s"}; ${patternIds.length} supporting pattern${patternIds.length === 1 ? "" : "s"}`}
+                          </title>
+                        </path>
+                        {showDirectionArrows &&
+                          pair.directions.map((direction) => {
+                            const from = nodeById.get(direction.from)
+                            const to = nodeById.get(direction.to)
+                            if (!from || !to) return null
+                            return (
+                              <path
+                                key={direction.id}
+                                d={movementCurve(from, via, to)}
+                                fill="none"
+                                stroke="transparent"
+                                strokeWidth="6"
+                                vectorEffect="non-scaling-stroke"
+                                markerEnd={`url(#${markerId}-arrow)`}
+                              />
+                            )
+                          })}
+                      </g>
+                    )
+                  })}
+                {painted.map((node) => (
+                  <g key={node.id} transform={`translate(${node.x} ${node.y})`}>
+                    <circle
+                      r={
+                        node.kind === "junction"
+                          ? 6 * symbolScale
+                          : node.kind === "station"
+                            ? 5 * symbolScale
+                            : 4 * symbolScale
+                      }
+                      fill={
+                        node.kind === "junction" ? color : "var(--background)"
+                      }
+                      stroke={
+                        node.kind === "junction"
+                          ? "var(--background)"
+                          : "var(--foreground)"
+                      }
+                      strokeWidth={
+                        (node.kind === "junction" ? 2 : 1.4) * symbolScale
+                      }
+                    />
+                    <text
+                      x={node.labelX * labelScale}
+                      y={node.labelY * labelScale}
+                      textAnchor={node.labelAnchor}
+                      className={
+                        node.kind === "junction"
+                          ? "fill-muted-foreground"
+                          : "fill-foreground"
+                      }
+                      fontSize={
+                        (node.kind === "junction" ? 10 : 11) * labelScale
+                      }
+                      style={{ fontFamily: "var(--font-sans)" }}
+                    >
+                      {nodeLabel(node)}
+                    </text>
+                  </g>
+                ))}
+              </g>
+            </svg>
+          </>
+        )}
+      </div>
+    </section>
+  )
+}
+
+export const TrackTopologyView = ({
+  variants,
+  centreline,
+  dual,
+}: TrackTopologyViewProps) => {
+  const lineOptions = useMemo(() => linesFromBundles(centreline), [centreline])
+  const [lineId, setLineId] = useState(
+    () =>
+      lineOptions.find((option) => option.lineId === "elizabeth")?.lineId ??
+      lineOptions[0]?.lineId ??
+      ""
+  )
+  const [trackModel, setTrackModel] = useState<TrackModel>("centreline")
+  const [showMovementCurves, setShowMovementCurves] = useState(true)
+  const [showDirectionArrows, setShowDirectionArrows] = useState(true)
+
+  const selected = lineOptions.find((option) => option.lineId === lineId)
+  const centrelineBundle = selected ? centreline[selected.mode] : undefined
+  const physicalBundle = selected
+    ? (trackModel === "dual" ? dual : centreline)[selected.mode]
+    : undefined
+  const variantsBundle = selected ? variants[selected.mode] : undefined
+  const physicalData = useMemo<BundlesByMode>(
+    () =>
+      selected && physicalBundle ? { [selected.mode]: physicalBundle } : {},
+    [physicalBundle, selected]
+  )
+  const stations = useMemo(() => {
+    if (!centrelineBundle) return []
+    const tflStations = stationsFromBundle(centrelineBundle)
+    const osmStops = selected
+      ? OSM_STOPS_BY_MODE[selected.mode]?.stops
+      : undefined
+    return osmStops
+      ? mergeOsmStationPositions(tflStations, osmStops)
+      : tflStations
+  }, [centrelineBundle, selected])
+
+  const tflTopology = useMemo(() => {
+    if (!selected) return emptyTopology()
+    return officialTrackTopology(selected.lineId, stations) ?? emptyTopology()
+  }, [selected, stations])
+
+  const servicePatterns = useMemo(
+    () => (selected ? servicePatternEvidenceForLine(selected.lineId) : null),
+    [selected]
+  )
+
+  const tflMovementPairs = useMemo(
+    () => movementPairs(tflMovementsForTopology(tflTopology, servicePatterns)),
+    [tflTopology, servicePatterns]
+  )
+
+  const handleLineChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    setLineId(event.target.value)
+  }
+
+  return (
+    <div className="space-y-10">
+      <div className="flex flex-wrap items-end gap-4 rounded-lg border border-border bg-muted/20 p-3">
+        <label className="space-y-1 text-sm">
+          <span className="text-muted-foreground">Line</span>
+          <select
+            value={lineId}
+            onChange={handleLineChange}
+            className="block rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+          >
+            {(Object.keys(TRANSIT_MODE_LABELS) as TransitMode[]).map((mode) => {
+              const group = lineOptions.filter((option) => option.mode === mode)
+              if (group.length === 0) return null
+              return (
+                <optgroup key={mode} label={TRANSIT_MODE_LABELS[mode]}>
+                  {group.map((option) => (
+                    <option key={option.lineId} value={option.lineId}>
+                      {option.lineName}
+                    </option>
+                  ))}
+                </optgroup>
+              )
+            })}
+          </select>
+        </label>
+      </div>
+
+      <section className="space-y-4" aria-labelledby="passenger-model-heading">
+        <div className="space-y-1">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Model 1
+          </p>
+          <h2 id="passenger-model-heading" className="text-lg font-medium">
+            Passenger topology
+          </h2>
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            TfL station sequences define station adjacency, service continuity,
+            and the branches passengers can travel through.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-4">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={showMovementCurves}
+              onChange={(event) => setShowMovementCurves(event.target.checked)}
+            />
+            Branch movement marks
+          </label>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={showDirectionArrows}
+              disabled={!showMovementCurves}
+              onChange={(event) => setShowDirectionArrows(event.target.checked)}
+            />
+            Direction arrows
+          </label>
+        </div>
+        <div className="rounded-lg border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+          Movement marks appear only at branches. Two-leg continuations still
+          straighten the layout. A missing branch mark means the selected TfL
+          sequences do not support that movement.
+        </div>
+        <TopologyPlot
+          key={`tfl-${lineId}`}
+          title={`${selected?.lineName ?? "Line"} station graph`}
+          source="TfL ordered station sequences. Physical track junctions are omitted."
+          topology={tflTopology}
+          color={selected?.color ?? "#888"}
+          lineName={selected?.lineName ?? "Line"}
+          movements={tflMovementPairs}
+          showMovementCurves={showMovementCurves}
+          showDirectionArrows={showDirectionArrows}
+          empty="No TfL sequence for this line id."
+        />
+      </section>
+
+      <section className="space-y-4" aria-labelledby="physical-model-heading">
+        <div className="space-y-1">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Model 2
+          </p>
+          <h2 id="physical-model-heading" className="text-lg font-medium">
+            Physical topology
+          </h2>
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            OSM places tracks, stations, and branch junctions in geographic
+            space. It does not define the passenger station graph.
+          </p>
+        </div>
+        <div
+          className="flex flex-wrap gap-2"
+          role="group"
+          aria-label="Physical track model"
+        >
+          {TRACK_MODELS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={trackModel === option.id}
+              onClick={() => setTrackModel(option.id)}
+              className={cn(
+                "rounded-full border border-border px-2.5 py-1 text-xs",
+                trackModel === option.id
+                  ? "bg-foreground text-background"
+                  : "bg-background text-foreground"
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        {selected && physicalBundle ? (
+          <div className="h-[min(72vh,42rem)] overflow-hidden rounded-lg border border-border">
+            <TflGeographicMap
+              key={`physical-${lineId}-${trackModel}`}
+              data={physicalData}
+              modes={[selected.mode]}
+              lineIds={[selected.lineId]}
+              trackModel={trackModel}
+              className="h-full"
+            />
+          </div>
+        ) : (
+          <p className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
+            No physical geometry is available for this line.
+          </p>
+        )}
+      </section>
+
+      {selected && (
+        <section className="space-y-4" aria-labelledby="evidence-model-heading">
+          <div className="space-y-1">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              Model 3
+            </p>
+            <h2 id="evidence-model-heading" className="text-lg font-medium">
+              Pattern evidence
+            </h2>
+            <p className="max-w-3xl text-sm text-muted-foreground">
+              TfL sequences are the passenger record. OSM route relations add
+              geographic paths and an independent inventory for comparison.
+              Relation counts are not service frequencies.
+            </p>
+          </div>
+          <RoutePatternInspector
+            lineId={selected.lineId}
+            lineName={selected.lineName}
+            color={selected.color}
+            variantsBundle={variantsBundle}
+            stopsFile={OSM_STOPS_BY_MODE[selected.mode]}
+            dataset={servicePatterns}
+          />
+        </section>
+      )}
+    </div>
+  )
+}

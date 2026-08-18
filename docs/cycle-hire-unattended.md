@@ -1,6 +1,6 @@
 # Cycle hire unattended display
 
-**Status: implemented.** The map, expanding detail list, and compact
+**Status: implemented.** The map, expanding detail list, and unattended
 fixed-height display share the same dock data.
 
 ## Purpose
@@ -9,13 +9,12 @@ A person checking one dock needs its name, standard-bike count, e-bike count,
 and empty-space count. The occupancy bar helps compare nearby docks, but it
 does not replace the exact counts.
 
-Unattended use does not add more information. It only fixes the display height
-and advances when the supplied docks exceed that allocation. One dock stays
-still and refreshes in place.
+Unattended use does not add more information. It fixes the display height and
+advances when the supplied docks exceed that allocation. One dock uses one tile
+and refreshes in place.
 
-The panel height is configurable. The tile height is not. `tiles` sets the
-total number of 48px tiles. The first tile carries the cycle roundel and
-identity; the rest show dock or slot information.
+The multi-dock panel height is configurable. The tile height is not. `tiles`
+sets its total number of 48px tiles. A single dock always uses one tile.
 
 ## Component boundary
 
@@ -25,12 +24,12 @@ Keep the three forms on the existing Cycle hire docks documentation page:
   inspectors.
 - `CycleHireDocksMap` remains the geographic comparison. It has no interactive
   or unattended behaviour prop.
-- `CycleHireDocksDisplay` is a compact sibling over the same dock data. It
+- `CycleHireDocksDisplay` is an unattended sibling over the same dock data. It
   composes a reusable one-tile dock row and owns fixed-height paging.
 
-Do not hide the compact anatomy behind a density branch in
+Do not hide the unattended anatomy behind a density branch in
 `CycleHireDocksDetail`. The current detail row uses three lines and natural
-height. The compact row has a locked height, one-line identity, fixed count
+height. The unattended row has a locked height, one-line identity, fixed count
 positions, and paging rules.
 
 `CycleHireDockTile` owns one row. `CycleHireDocksDisplay` owns the fixed-height
@@ -38,30 +37,32 @@ allocation and paging.
 
 ## Configuration
 
-`tiles` is a positive integer with a default of `2`. The outer height is
-`tiles * 48px` in live, empty, loading, and error states.
+For several docks, `tiles` is a positive integer with a default of `2`. The
+outer height is `tiles * 48px` in live, empty, loading, and error states. For
+one dock, the outer height is always 48px.
 
 ```tsx
 <CycleHireDocksDisplay data={data} tiles={3} behaviour="unattended" />
 ```
 
-| Prop           | Type                            | Behaviour                                                                            |
-| -------------- | ------------------------------- | ------------------------------------------------------------------------------------ |
-| `data`         | `readonly CycleHireDock[]`      | Dock rows in display order. Missing or empty data renders the fixed empty state.     |
-| `tiles`        | `number`                        | Total tile allocation, including the heading. Default `2`. Does not resize a row.    |
-| `behaviour`    | `"interactive" \| "unattended"` | Manual pages, or automatic pages using the same allocation. Default `"interactive"`. |
-| `dwellMs`      | `number`                        | Unattended page interval. Defaults to the shared 10 seconds.                         |
-| `startDelayMs` | `number`                        | Delay before unattended paging starts. Default `0`.                                  |
-| `idleReturnMs` | `number`                        | Delay before an interactive display returns to page one. Default 30 seconds.         |
-| `showBroken`   | `boolean`                       | Include broken slots in the counts and slot blocks. Default `false`.                 |
-| `error`        | `string \| null`                | Replace dock content with a fixed-height error state.                                |
-| `className`    | `string`                        | Classes for width and placement. Does not override the tile allocation.              |
+| Prop                | Type                            | Behaviour                                                                            |
+| ------------------- | ------------------------------- | ------------------------------------------------------------------------------------ |
+| `data`              | `readonly CycleHireDock[]`      | Dock rows in display order. Missing or empty data renders the fixed empty state.     |
+| `tiles`             | `number`                        | Total multi-dock allocation, including the heading. Default `2`.                     |
+| `singleDockVariant` | `"roundel" \| "stacked"`        | One-tile single-dock anatomy. Default `"roundel"`.                                   |
+| `behaviour`         | `"interactive" \| "unattended"` | Manual pages, or automatic pages using the same allocation. Default `"interactive"`. |
+| `dwellMs`           | `number`                        | Unattended page interval. Defaults to the shared 10 seconds.                         |
+| `startDelayMs`      | `number`                        | Delay before unattended paging starts. Default `0`.                                  |
+| `idleReturnMs`      | `number`                        | Delay before an interactive display returns to page one. Default 30 seconds.         |
+| `showBroken`        | `boolean`                       | Include broken slots in the counts and slot blocks. Default `false`.                 |
+| `error`             | `string \| null`                | Replace dock content with a fixed-height error state.                                |
+| `className`         | `string`                        | Classes for width and placement. Does not override the tile allocation.              |
 
 Do not accept a pixel height or fit rows automatically. A Board author chooses
-the tile count. A standalone map still takes its height from `className`; the
-Board wrapper can size that map to a whole number of the same 48px rows.
+the multi-dock tile count. The map accepts its own `tiles` value and uses the
+same 48px unit.
 
-## One dock tile
+## Multi-dock row
 
 One dock occupies one arrivals tile, `3rem` or 48px. It follows the same box
 rules as arrivals and the fixed-height status display.
@@ -94,13 +95,16 @@ when controls appear. The remaining tiles show one dock each.
 
 ## One dock
 
-When `data` contains one dock, use the first tile for the cycle roundel, dock
-name, and exact Bike, E-bike, and Space counts. Use every remaining tile for a
-single enlarged slot field. Each physical slot remains a separate block with a
-visible gap. Do not repeat the dock name in a body row or show paging chrome.
+Both single-dock variants occupy exactly one 48px tile:
 
-A one-tile allocation can only show the dock heading and counts. Use two or
-more tiles when the slot field matters.
+- `roundel` uses one horizontal identity line: cycle roundel, dock name, and
+  exact counts. A one-slot-high strip sits inside the bottom edge, matching the
+  multi-dock row.
+- `stacked` divides the tile into three equal horizontal bands: dock name, slot
+  blocks, then counts. It has no roundel.
+
+Both variants keep one separated block per physical slot. Neither accepts a
+second content tile or shows paging chrome.
 
 ## Behaviour
 
@@ -108,7 +112,7 @@ One page contains `tiles - 1` dock rows in the supplied order. Extra docks
 create more pages.
 
 ```text
-1 tile:             heading only
+1 tile, many docks: heading only
 2 tiles, 3 docks:   heading + 1 -> 2 -> 3
 3 tiles, 5 docks:   heading + 1 2 -> 3 4 -> 5 —
 ```
@@ -150,12 +154,11 @@ segments: movement would imply that bikes changed while the page was visible.
 
 ## Map
 
-The current map already suits unattended use. Give it a fixed height in whole
-Board tiles and refresh its markers in place. It does not join the dock paging
-sequence.
+The map accepts `tiles` and uses the same 48px unit as the display. Refresh its
+markers in place; it does not join the dock paging sequence.
 
 Keep the marker as a ratio glance. Three exact values around every marker would
-make nearby docks harder to compare. Compose the compact dock display beside or
+make nearby docks harder to compare. Compose the unattended dock display beside or
 below the map when exact counts matter. Do not add a selected metric or
 map-detail linkage until a real use case establishes which count should win.
 
@@ -166,7 +169,8 @@ location helps someone compare two or more docks.
 
 Cover these before admitting cycle hire to the hosted Board:
 
-- one dock with its name and counts in the heading and a full slot field below;
+- one roundel single-dock tile with its slot strip inside the bottom edge;
+- one stacked single-dock tile with name, slot blocks, and counts;
 - several docks that fit exactly;
 - a short final page with quiet empty rows and no overlap;
 - long dock names at narrow and wide widths;

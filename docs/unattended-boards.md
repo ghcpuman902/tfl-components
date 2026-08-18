@@ -109,16 +109,16 @@ the public component boundary.
 
 ## Cycle hire docks
 
-Keep the existing map and expanding detail list. A compact sibling display uses
+Keep the existing map and expanding detail list. An unattended sibling display uses
 the same 48px tile as arrivals and status. Its `tiles` setting chooses the
 total fixed panel height and does not change the height of an individual row.
 With several docks, the first tile shows the cycle roundel, `Cycle hire docks`,
 and the sequence indicator. The remaining `tiles - 1` rows show docks with
 their exact counts and one separated block per reported slot.
 
-With one dock, put the cycle roundel, dock name, and exact counts in the first
-tile. Use the full remaining allocation for the separated slot blocks. Do not
-repeat the dock in a body row or show a sequence indicator.
+With one dock, always use one tile. The roundel variant puts roundel, name, and
+counts on one line with a slot strip at the bottom. The stacked variant divides
+the tile into name, slot blocks, and counts. Neither shows a sequence indicator.
 
 `behaviour="interactive"` uses manual pages and stays live. After inactivity on
 a later page, it returns to the first. `behaviour="unattended"` advances the
@@ -126,9 +126,9 @@ same pages automatically. Counts update in place; changed membership and order
 wait for the next page boundary. One page stays still. Pages are sequential;
 a short final page uses quiet empty rows instead of repeating a dock.
 
-The map has no display behaviour prop. Give it a fixed height in whole Board
-tiles and refresh markers in place. Keep ratio markers free of exact counts.
-Compose the compact dock display with the map when exact counts matter. See
+The map has no display behaviour prop. Its `tiles` value sets a fixed height in
+the same 48px rhythm. Refresh markers in place and keep ratio markers free of exact counts.
+Compose the unattended dock display with the map when exact counts matter. See
 [`cycle-hire-unattended.md`](./cycle-hire-unattended.md) for the full anatomy,
 refresh rules, and acceptance cases.
 
@@ -258,7 +258,7 @@ The installable components should use a hybrid API:
   branch in that component.
 - Keep both status surfaces on the existing Tube and rail status documentation
   page. Do not create Interactive and Unattended sidebar groups.
-- Keep the current Cycle hire Detail and Map components. Add the compact
+- Keep the current Cycle hire Detail and Map components. Add the unattended
   fixed-height dock display as a sibling over the same dock data. Keep all three
   forms on the existing Cycle hire docks documentation page.
 
@@ -280,7 +280,7 @@ need deterministic coverage.
 | Arrivals pinned frames and rank chips       | About 450 lines of current paging and page paint                    | 150 to 240 lines, plus the shared controller | Extending the existing arrivals components avoids duplicating row rendering.                                             |
 | Fixed-height status display                 | 518-line expanding renderer and 110-line prepared model             | 300 to 450 lines, plus the shared controller | A sibling keeps the existing renderer readable and shares the prepared model.                                            |
 | Status as a branch inside `TubeStatusBoard` | Same 628-line base                                                  |                     Similar 280 to 420 lines | It saves a public export, not much logic. The main file would approach 800 to 950 lines with two incompatible anatomies. |
-| Cycle hire compact display                  | 248-line Detail and 47-line compound root                           | 180 to 280 lines, plus the shared controller | A sibling preserves Detail's natural-height rows and owns tile paging.                                                   |
+| Cycle hire unattended display               | 248-line Detail and 47-line compound root                           | 180 to 280 lines, plus the shared controller | A sibling preserves Detail's natural-height rows and owns tile paging.                                                   |
 | Hosted Board mode plumbing                  | About 1,170 lines across display, settings, resolver, and URL state |                              80 to 140 lines | Keep it as orchestration that passes intent down, not a second rendering system.                                         |
 
 The size estimate favours the hybrid. One prop everywhere would make the status
