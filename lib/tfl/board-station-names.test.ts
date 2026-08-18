@@ -7,6 +7,7 @@ import {
   getBoardStationNamesIndex,
   lookupBoardStationName,
   matchBoardStationSearchItem,
+  parseBoardStationPick,
   resolveBoardStopNameOverride,
 } from "./board-station-names";
 
@@ -55,6 +56,46 @@ describe("buildBoardStationSearchIndex", () => {
     );
     if (duplicates.length === 0) return;
     assert.ok(duplicates.every((item) => item.context.includes("·")));
+  });
+});
+
+describe("parseBoardStationPick", () => {
+  it("reads id and name from a search item", () => {
+    assert.deepEqual(
+      parseBoardStationPick({
+        id: "940GZZLUPAC",
+        name: "Paddington",
+        context: "Elizabeth line · Tube",
+        aliasIds: [],
+      }),
+      { id: "940GZZLUPAC", name: "Paddington" },
+    );
+  });
+
+  it("reads id from JSON serialised by the combobox", () => {
+    const json = JSON.stringify({
+      id: "940GZZLUPAC",
+      name: "Paddington",
+      context: "Elizabeth line · Tube",
+      aliasIds: ["HUBPAD"],
+    });
+    assert.deepEqual(parseBoardStationPick(json), {
+      id: "940GZZLUPAC",
+      name: "Paddington",
+    });
+  });
+
+  it("treats a bare NaPTAN id as a pick", () => {
+    assert.deepEqual(parseBoardStationPick("940GZZLUPAC"), {
+      id: "940GZZLUPAC",
+    });
+  });
+
+  it("returns undefined for empty or invalid values", () => {
+    assert.equal(parseBoardStationPick(undefined), undefined);
+    assert.equal(parseBoardStationPick(""), undefined);
+    assert.equal(parseBoardStationPick("{not-json"), undefined);
+    assert.equal(parseBoardStationPick({ name: "Paddington" }), undefined);
   });
 });
 

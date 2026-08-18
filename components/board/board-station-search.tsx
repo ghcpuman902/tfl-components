@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Combobox,
   ComboboxContent,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/combobox"
 import {
   matchBoardStationSearchItem,
+  parseBoardStationPick,
   type BoardStationSearchItem,
 } from "@/lib/tfl/board-station-names"
 
@@ -45,19 +46,46 @@ export const BoardStationSearch = ({
   )
 
   const handleValueChange = (value: BoardStationSearchItem | null) => {
-    if (!value) {
+    const pick = parseBoardStationPick(value)
+    if (!pick) {
       onStopChange("")
       setQuery("")
       return
     }
-    onStopChange(value.id)
-    setQuery(value.name)
+    onStopChange(pick.id)
+    setQuery(pick.name ?? "")
   }
 
-  const handleInputValueChange = (value: string) => {
+  useEffect(() => {
+    if (!query.trim().startsWith("{")) return
+    const pick = parseBoardStationPick(query)
+    if (!pick) return
+    onStopChange(pick.id)
+    setQuery(pick.name ?? pick.id)
+  }, [onStopChange, query])
+
+  const handleInputValueChange = (
+    value: string,
+    details?: { reason?: string },
+  ) => {
+    const trimmed = value.trim()
+    if (trimmed.startsWith("{")) {
+      const pick = parseBoardStationPick(trimmed)
+      if (pick) {
+        onStopChange(pick.id)
+        setQuery(pick.name ?? pick.id)
+        return
+      }
+    }
+
     setQuery(value)
+
+    // Combobox fills the input after a pick (`item-press`) and when syncing
+    // the selected label (`none`). Those must not clear the Stop ID.
+    if (details?.reason === "item-press" || details?.reason === "none") return
+
     if (!selected) return
-    if (value.trim().toLowerCase() === selected.name.toLowerCase()) return
+    if (trimmed.toLowerCase() === selected.name.toLowerCase()) return
     onStopChange("")
   }
 
@@ -69,7 +97,8 @@ export const BoardStationSearch = ({
         onValueChange={handleValueChange}
         inputValue={inputValue}
         onInputValueChange={handleInputValueChange}
-        itemToStringValue={(item) => item.name}
+        itemToStringLabel={(item) => item.name}
+        itemToStringValue={(item) => item.id}
         isItemEqualToValue={(item, value) => item.id === value.id}
         filter={null}
       >

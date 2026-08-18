@@ -113,6 +113,48 @@ export const matchBoardStationSearchItem = (
   );
 };
 
+export type BoardStationPick = {
+  id: string;
+  name?: string;
+};
+
+const pickFromRecord = (
+  value: Record<string, unknown>,
+): BoardStationPick | undefined => {
+  const id = typeof value.id === "string" ? value.id.trim() : "";
+  if (!id) return undefined;
+  const name = typeof value.name === "string" ? value.name.trim() : "";
+  return name ? { id, name } : { id };
+};
+
+/**
+ * Combobox pick → Stop ID. Accepts a search item, a NaPTAN id, or the JSON
+ * object Base UI serialises when `itemToStringLabel` is missing.
+ */
+export const parseBoardStationPick = (
+  value: unknown,
+): BoardStationPick | undefined => {
+  if (value == null) return undefined;
+
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return pickFromRecord(value as Record<string, unknown>);
+  }
+
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  if (trimmed.startsWith("{")) {
+    try {
+      return parseBoardStationPick(JSON.parse(trimmed) as unknown);
+    } catch {
+      return undefined;
+    }
+  }
+
+  return { id: trimmed };
+};
+
 /**
  * URL / config override only. Empty, or a value that matches the catalog
  * name for this stop, is not an override — the board resolves the heading.
