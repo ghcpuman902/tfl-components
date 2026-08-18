@@ -1,6 +1,6 @@
 # Product architecture
 
-**Status: FROZEN (Stage 1) + human amendments J1 / J6.** Do not reshape to match file placement without a new decision. Record unresolved conflicts for human review.
+**Status: FROZEN (Stage 1) + human amendments J1 / J6 / J18.** Do not reshape to match file placement without a new decision. Record unresolved conflicts for human review.
 
 This is the durable product and information-architecture spec for the TfL developer environment (`tfl-ts` + `tfl-components` + this website). Optimised for humans and coding agents.
 
@@ -49,6 +49,10 @@ Not: *Which legacy TfL endpoint contains this?*
 ## 3. Two layers inside `tfl-components`
 
 ```text
+raw TfL / OSM / GTFS sources
+        ↓
+network model (GTFS-shaped records)
+        ↓
 normalised TfL data
         ↓
 data-aware component
@@ -59,6 +63,8 @@ rendering primitives
         ↓
 finished interface
 ```
+
+The **network model** (J18) is the GTFS-shaped contract for maps and line diagrams: `Line`, `Station`, `StationHub`, `ServicePattern`, `PatternCall`, `PatternCalendar`, `PatternFrequency`, `PhysicalPath`, `PatternPathMatch`, `PermittedMovement`, `MapProductPolicy`, `SourceSnapshot`. Types live in `lib/tfl/network-model/`. Provenance is documented on [Data model](/docs/data-model). Station name labels are outside this layer.
 
 ### Rendering primitives
 

@@ -1,0 +1,49 @@
+import { NetworkModelDiagram } from "@/components/docs/network-model-diagram"
+import {
+  NetworkModelStatusLegend,
+  NetworkModelStatusTable,
+} from "@/components/docs/network-model-status-table"
+
+Carriage diagrams, platform diagrams, the Tube map, and the geographic map share one passenger network: lines, stations, the patterns that run on them, and the tracks those patterns follow.
+
+The library will ship a small derived set of that network — enough to put lines on a map that look as people expect. It is rebuilt from public sources when those sources change. It is not a hand-drawn copy, and it is not a full national timetable.
+
+Station name labels are a separate concern.
+
+## The model
+
+<NetworkModelDiagram />
+
+In-carriage and platform maps use the same records. Their difference is layout. The Tube map keeps the usual branches. The geographic map draws the tracks.
+
+## Status
+
+<NetworkModelStatusLegend />
+
+<NetworkModelStatusTable />
+
+## Where it comes from
+
+Line identity and station order come from TfL. Track geometry comes from OpenStreetMap, simplified for a map. Timetables come from public feeds. This package ships a small derived set; the sources below are what you would use if you need more than that.
+
+| Source | Covers | When to use it |
+|---|---|---|
+| [TfL Unified API](https://api-portal.tfl.gov.uk/) via `tfl-ts` | Lines, stations, hubs, arrivals, status | Everyday boards and Explorer. Free key. |
+| [TfL station-data GTFS](https://api.tfl.gov.uk/stationdata/tfl-stationdata-gtfs.zip) | Stations, platforms, hubs, step-free pathways | Interchange grouping and platform geometry. No timetables. |
+| OpenStreetMap | Track geometry | Geographic maps. Already the basis of the simplified unique-track set. |
+| [DfT BODS London GTFS](https://data.bus-data.dft.gov.uk/timetable/download/gtfs-file/london/) | Underground, DLR, Tram, cable car, river, buses | Official calendars, trips, and shapes. No Elizabeth line or Overground. No key for the bulk file. |
+| [BODS live vehicles](https://data.bus-data.dft.gov.uk/) | Buses (SIRI-VM / GTFS-RT) | Live bus positions. Free key; fetch per user, like TfL arrivals. |
+| [Aubin / Transitous Great Britain GTFS](https://beta.aubin.app/gtfs/great_britain_gtfs.zip) | Underground, DLR, Tram, Elizabeth line, Overground, National Rail, buses | One combined GB timetable. The only current file that includes Elizabeth line and all six Overground lines. Third-party, built from BODS, National Rail Enquiries, and OSM. |
+| [National Rail Enquiries](https://opendata.nationalrail.co.uk/) | National Rail, including Elizabeth line and Overground | Official rail timetables if you want them at the source. Attribution required. |
+| [TfL Journey Planner timetables](https://tfl.gov.uk/info-for/open-data-users/our-open-data) | Underground, bus, DLR, tram, cable car, river | TfL’s own weekly timetable dump. Registration required. No Elizabeth line or Overground. |
+| [Transitland TfL GTFS](https://www.transit.land/feeds/f-transport~for~london) | Underground, DLR, Tram, river | Another packaging of the same TfL modes as BODS. Account required. |
+| [UK2GTFS](https://itsleeds.github.io/UK2GTFS/) | TransXChange and National Rail CIF → GTFS | Convert the official UK files yourself. |
+
+## Next
+
+1. Derive the small map set from the [Aubin / Transitous Great Britain GTFS](https://beta.aubin.app/gtfs/great_britain_gtfs.zip) — the only current feed that includes Elizabeth line and Overground as well as Underground, DLR, and Tram.
+2. Keep the simplified OpenStreetMap tracks for the geographic map. The Great Britain feed has trip shapes for Elizabeth line and Overground; Underground, DLR, and Tram trips in that feed do not.
+3. Keep [BODS](https://data.bus-data.dft.gov.uk/) for live buses only. Its London timetable file is already inside the Great Britain feed and does not add Elizabeth line or Overground.
+4. Point the geographic map and the line / branch strips at this model.
+
+See [Map – Tube & Rail (Geo)](/docs/map-geographic), [Simple line strip](/docs/line-strip), [Branch strip — horizontal](/docs/branch-strip-horizontal), and [Branch strip — vertical](/docs/branch-strip-vertical).

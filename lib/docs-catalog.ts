@@ -91,7 +91,7 @@ export const DOCS_GROUPS: readonly DocsGroup[] = [
   {
     id: "start",
     title: "Get started",
-    description: "Introduction, explorer, brand basics, and troubleshoot.",
+    description: "Introduction, explorer, brand basics, troubleshoot, and data model.",
   },
   {
     id: "explore",
@@ -279,6 +279,17 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     href: "/docs/troubleshoot",
     sidebarSection: "get-started",
     sidebarOrder: 190,
+  },
+  {
+    slug: "data-model",
+    title: "Data model",
+    description:
+      "The shared passenger network behind maps and line diagrams — a small derived set, not a full timetable.",
+    group: "start",
+    kind: "page",
+    href: "/docs/data-model",
+    sidebarSection: "get-started",
+    sidebarOrder: 195,
   },
   {
     slug: "licensing",

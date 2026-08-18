@@ -1,6 +1,6 @@
 # Target information architecture
 
-**Status: FROZEN (Stage 1) + human amendments J1 / J6 / J8 / J9.** Derived from [product-architecture.md](./product-architecture.md). Do not reshape to match current file placement without a new decision.
+**Status: FROZEN (Stage 1) + human amendments J1 / J6 / J8 / J9 / J18.** Derived from [product-architecture.md](./product-architecture.md). Do not reshape to match current file placement without a new decision.
 
 Transport domains (Tube & rail, Bus, River, Cycle, Roads / traffic, Cable car, …) are **filters / metadata / markers**, not top-level nav trees.
 
@@ -44,6 +44,7 @@ Orient before picking a surface:
 - Colours
 - Roundel
 - Troubleshoot (`/docs/troubleshoot`) — below the Components list; setup, common problems, and FAQ. Install lives on Introduction. Old `/docs/installation` redirects here.
+- Data model (`/docs/data-model`) — below Troubleshoot; GTFS-shaped network records for maps and line diagrams, with provenance and a fill-in roadmap (J18).
 - TfL brand licensing (and Skills for AI when present)
 
 ### Components (flat list)
@@ -67,6 +68,10 @@ Super lower-level or guidance leftovers that do not fit Get started or the prefe
 These remain the product model for pages, APIs, and catalogue badges:
 
 ```text
+raw TfL / OSM / GTFS sources
+ ↓
+network model (GTFS-shaped Line, Station, ServicePattern, …)
+ ↓
 normalised tfl-ts data
  ↓
 data-aware component
@@ -82,6 +87,7 @@ finished UI
 
 | Layer | Role |
 |-------|------|
+| **Network model** | GTFS-shaped Line / Station / ServicePattern records shared by maps and line diagrams (J18) |
 | **Data-aware** | Accept normalised data as props; strongest GET DATA → RENDER path |
 | **Rendering primitives** | Explicit values; useful without `tfl-ts` where practical |
 | **Foundations** | Shared brand/visual language and licensing |

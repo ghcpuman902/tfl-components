@@ -30,6 +30,10 @@ pnpm dlx shadcn@latest add https://tfl.manglekuo.com/r/<name>.json
 ## Composition contract (layers)
 
 ```text
+raw TfL / OSM / GTFS sources
+        ↓
+network model (GTFS-shaped Line, Station, ServicePattern, …)
+        ↓
 normalised tfl-ts data
         ↓
 data-aware Interface (props)

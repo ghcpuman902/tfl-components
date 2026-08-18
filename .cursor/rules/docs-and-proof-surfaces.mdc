@@ -116,7 +116,7 @@ Rule of thumb: if a reader who copies the snippet would still poll the wrong Sto
 Navigation answers: *What is the developer trying to understand, render, or build?*
 
 - Persistent header: **Docs · Components · Blocks · Explorer · Board** (+ Search, GitHub); logo → `/`; Docs lands on Introduction
-- Docs sidebar: **Get started** + flat **Components** (preferred mode markers) + **Troubleshoot** below Components + **Primitives & Foundations** tail
+- Docs sidebar: **Get started** + flat **Components** (preferred mode markers) + **Troubleshoot** then **Data model** below Components + **Primitives & Foundations** tail
 - Homepage full-width (no sidebar). Blocks and Board builder: header only (no docs sidebar). `/board/view` is chromeless. Tools and Drafts: footer, development only
 - Transport domains are **filters/markers**, not top-level duplicated feature trees
 - Do **not** make shadcn UI atoms (Button, Dialog, Card) the product discovery path — they are chrome under `components/ui/`

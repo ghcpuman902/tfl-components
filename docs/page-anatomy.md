@@ -1,6 +1,6 @@
 # Page anatomy
 
-**Status: FROZEN (Stage 1).** Consistent documentation anatomies for the groups in [TARGET_ARCHITECTURE.md](./TARGET_ARCHITECTURE.md). Section titles may be worded for tone; the **concepts and order of emphasis** are normative.
+**Status: FROZEN (Stage 1) + J18.** Consistent documentation anatomies for the groups in [TARGET_ARCHITECTURE.md](./TARGET_ARCHITECTURE.md). Section titles may be worded for tone; the **concepts and order of emphasis** are normative.
 
 Site chrome (global install command, preview host) may wrap these sections; do not omit the conceptual separations.
 
@@ -27,6 +27,22 @@ Site chrome (global install command, preview host) may wrap these sections; do n
 7. **Notes / limits** — coverage, freshness, domain filters  
 
 Do not structure as a raw endpoint catalog.
+
+---
+
+## Data model / provenance page
+
+Public page (`/docs/data-model`). Write for someone drawing a map, not for the ingest pipeline.
+
+1. **Purpose** — one passenger network for maps and line diagrams; a small derived set, not a full timetable
+2. **The model** — records and relationships (diagram)
+3. **Status** — what each record is, and whether it is ready (from `summary` / classification)
+4. **Where it comes from** — TfL, OSM, public timetables; live buses stay live
+5. **Next** — product outcomes (ship the small set, add days/frequencies, close mode gaps, wire maps)
+
+Keep file paths, feed fallbacks, git, and build steps out of this page. Those belong in an internal note later.
+
+Do not treat this as a component page. Do not lead with install.
 
 ---
 
