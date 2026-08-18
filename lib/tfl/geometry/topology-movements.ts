@@ -141,26 +141,51 @@ const nearestLeg = (
   return bestCos >= 0.35 ? best : null
 }
 
+const directedMovementKey = (
+  from: string,
+  via: string,
+  to: string
+): string => `${from}|${via}|${to}`
+
+const upsertDirectedMovement = (
+  movements: Map<string, DirectedTopologyMovement>,
+  movement: Omit<DirectedTopologyMovement, "id"> & { id?: string }
+) => {
+  const key = directedMovementKey(movement.from, movement.via, movement.to)
+  const existing = movements.get(key)
+  if (!existing) {
+    movements.set(key, {
+      id: key,
+      from: movement.from,
+      via: movement.via,
+      to: movement.to,
+      patternIds: [...movement.patternIds],
+      source: movement.source,
+      confidence: movement.confidence,
+    })
+    return
+  }
+  for (const patternId of movement.patternIds) {
+    if (!existing.patternIds.includes(patternId)) {
+      existing.patternIds.push(patternId)
+    }
+  }
+  if (movement.confidence === "declared") existing.confidence = "declared"
+  if (movement.source === "tfl-station-pattern") {
+    existing.source = "tfl-station-pattern"
+  }
+}
+
 const addMovement = (
   movements: Map<string, DirectedTopologyMovement>,
   movement: Omit<DirectedTopologyMovement, "id" | "patternIds"> & {
     patternId: string
   }
 ) => {
-  const key = `${movement.from}|${movement.via}|${movement.to}`
-  const existing = movements.get(key) ?? {
-    id: key,
-    from: movement.from,
-    via: movement.via,
-    to: movement.to,
-    patternIds: [],
-    source: movement.source,
-    confidence: movement.confidence,
-  }
-  if (!existing.patternIds.includes(movement.patternId)) {
-    existing.patternIds.push(movement.patternId)
-  }
-  movements.set(key, existing)
+  upsertDirectedMovement(movements, {
+    ...movement,
+    patternIds: [movement.patternId],
+  })
 }
 
 export const osmMovementsForTopology = (
@@ -223,36 +248,40 @@ export const tflMovementsForTopology = (
       node.stationId ? [[node.stationId, node.id] as const] : []
     )
   )
-  return dataset.movements.flatMap((movement) => {
+  const movements = new Map<string, DirectedTopologyMovement>()
+  for (const movement of dataset.movements) {
     const from = nodeByStationId.get(movement.fromStationId)
     const via = nodeByStationId.get(movement.viaStationId)
     const to = nodeByStationId.get(movement.toStationId)
-    if (!from || !via || !to) return []
-    if ((adjacency.get(via)?.length ?? 0) < 2) return []
+    if (!from || !via || !to) continue
+    if ((adjacency.get(via)?.length ?? 0) < 2) continue
     if (
       !adjacency.get(via)?.includes(from) ||
       !adjacency.get(via)?.includes(to)
     ) {
-      return []
+      continue
     }
-    return [
-      {
-        id: `${from}|${via}|${to}`,
-        from,
-        via,
-        to,
-        patternIds: movement.patternIds,
-        source: "tfl-station-pattern" as const,
-        confidence: "declared" as const,
-      },
-    ]
-  })
+    upsertDirectedMovement(movements, {
+      from,
+      via,
+      to,
+      patternIds: movement.patternIds,
+      source: "tfl-station-pattern",
+      confidence: "declared",
+    })
+  }
+  return [...movements.values()]
 }
 
 export const movementPairs = (
   movements: readonly DirectedTopologyMovement[]
 ): TopologyMovementPair[] => {
-  const byPair = new Map<string, TopologyMovementPair>()
+  const byPair = new Map<
+    string,
+    Omit<TopologyMovementPair, "directions"> & {
+      directions: Map<string, DirectedTopologyMovement>
+    }
+  >()
   for (const movement of movements) {
     const [a, b] = [movement.from, movement.to].sort()
     const key = `${movement.via}|${a}|${b}`
@@ -261,10 +290,16 @@ export const movementPairs = (
       a: a!,
       via: movement.via,
       b: b!,
-      directions: [],
+      directions: new Map(),
     }
-    pair.directions.push(movement)
+    upsertDirectedMovement(pair.directions, movement)
     byPair.set(key, pair)
   }
-  return [...byPair.values()]
+  return [...byPair.values()].map((pair) => ({
+    id: pair.id,
+    a: pair.a,
+    via: pair.via,
+    b: pair.b,
+    directions: [...pair.directions.values()],
+  }))
 }

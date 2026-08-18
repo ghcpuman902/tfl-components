@@ -17,6 +17,12 @@ import {
   matchExternalStopPatterns,
   normalisePatternStationName,
 } from "@/lib/tfl/cross-source-pattern-matching"
+import type { LineNetworkSlice } from "@/lib/tfl/network-model/line-slice"
+import {
+  formatDaysOfWeek,
+  formatHeadway,
+  patternLabel,
+} from "@/lib/tfl/network-model/line-slice"
 
 type OsmVariantSummary = {
   relationId: number
@@ -229,56 +235,128 @@ const RelationMiniMap = ({
   </svg>
 )
 
+type TflPatternRow =
+  | { kind: "pair"; id: string; outbound: ServicePatternEvidence; inbound: ServicePatternEvidence }
+  | { kind: "single"; id: string; pattern: ServicePatternEvidence }
+
+const sequenceWidth = (stationCount: number): number =>
+  Math.max(180, (stationCount - 1) * 14 + 12)
+
+const stationDotX = (
+  index: number,
+  stationCount: number,
+  width: number
+): number =>
+  stationCount === 1
+    ? width / 2
+    : 6 + (index / (stationCount - 1)) * (width - 12)
+
+const tflPatternRows = (
+  dataset: ServicePatternDataset | null
+): TflPatternRow[] => {
+  if (!dataset) return []
+  const byId = new Map(
+    dataset.patterns.map((pattern) => [pattern.id, pattern])
+  )
+  return dataset.directionPairs.flatMap((pair) => {
+    const patterns = pair.patternIds.flatMap((patternId) => {
+      const pattern = byId.get(patternId)
+      return pattern ? [pattern] : []
+    })
+    if (patterns.length === 0) return []
+    if (!pair.paired || patterns.length < 2) {
+      return patterns.map((pattern) => ({
+        kind: "single" as const,
+        id: pattern.id,
+        pattern,
+      }))
+    }
+    const outbound =
+      patterns.find((pattern) => pattern.direction === "outbound") ??
+      patterns[0]!
+    const inbound =
+      patterns.find((pattern) => pattern.direction === "inbound") ??
+      patterns.find((pattern) => pattern.id !== outbound.id) ??
+      patterns[1]!
+    return [{ kind: "pair" as const, id: pair.id, outbound, inbound }]
+  })
+}
+
 const StopSequence = ({
-  pattern,
+  patterns,
   color,
 }: {
-  pattern: ServicePatternEvidence
+  patterns: readonly ServicePatternEvidence[]
   color: string
 }) => {
-  const width = Math.max(180, (pattern.stationIds.length - 1) * 14 + 12)
+  const primary = patterns[0]
+  if (!primary) return null
+  const width = sequenceWidth(primary.stationIds.length)
+  const laneCount = patterns.length
+  const height = laneCount === 1 ? 18 : 28
+  const indexByStationId = new Map(
+    primary.stationIds.map((stationId, index) => [stationId, index])
+  )
+  const ariaLabel = patterns
+    .map(
+      (pattern) =>
+        `${pattern.direction} ${pattern.name}, ${pattern.stationIds.length} station calls`
+    )
+    .join("; ")
+
   return (
     <div className="min-w-0 space-y-1">
       <div className="flex justify-between gap-3 text-[11px] text-muted-foreground">
-        <span>{pattern.stationNames[0]}</span>
+        <span>{primary.stationNames[0]}</span>
         <span className="text-right">
-          {pattern.stationNames[pattern.stationNames.length - 1]}
+          {primary.stationNames[primary.stationNames.length - 1]}
         </span>
       </div>
       <div className="overflow-x-auto pb-1">
         <svg
-          viewBox={`0 0 ${width} 18`}
+          viewBox={`0 0 ${width} ${height}`}
           style={{ minWidth: width }}
-          className="h-[18px]"
+          className={laneCount === 1 ? "h-[18px]" : "h-7"}
           role="img"
-          aria-label={`${pattern.name}, ${pattern.stationIds.length} station calls`}
+          aria-label={ariaLabel}
         >
-          <line
-            x1="6"
-            y1="9"
-            x2={width - 6}
-            y2="9"
-            stroke={color}
-            strokeWidth="2.4"
-            strokeLinecap="round"
-          />
-          {pattern.stationIds.map((stationId, index) => {
-            const x =
-              pattern.stationIds.length === 1
-                ? width / 2
-                : 6 + (index / (pattern.stationIds.length - 1)) * (width - 12)
+          {patterns.map((pattern, lane) => {
+            const y = laneCount === 1 ? 9 : 7 + lane * 14
             return (
-              <circle
-                key={`${stationId}-${index}`}
-                cx={x}
-                cy="9"
-                r="2.7"
-                fill="var(--background)"
-                stroke={color}
-                strokeWidth="1.5"
-              >
-                <title>{pattern.stationNames[index]}</title>
-              </circle>
+              <g key={pattern.id}>
+                <line
+                  x1="6"
+                  y1={y}
+                  x2={width - 6}
+                  y2={y}
+                  stroke={color}
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                />
+                {pattern.stationIds.map((stationId, index) => {
+                  const alignedIndex =
+                    lane === 0
+                      ? index
+                      : (indexByStationId.get(stationId) ?? index)
+                  return (
+                    <circle
+                      key={`${pattern.id}-${stationId}-${index}`}
+                      cx={stationDotX(
+                        alignedIndex,
+                        primary.stationIds.length,
+                        width
+                      )}
+                      cy={y}
+                      r="2.7"
+                      fill="var(--background)"
+                      stroke={color}
+                      strokeWidth="1.5"
+                    >
+                      <title>{pattern.stationNames[index]}</title>
+                    </circle>
+                  )
+                })}
+              </g>
             )
           })}
         </svg>
@@ -294,59 +372,90 @@ const stateClass = (state: "present" | "partial" | "missing") =>
       ? "bg-amber-500/12 text-amber-800 dark:text-amber-300"
       : "bg-destructive/10 text-destructive"
 
-const GtfsLens = ({ dataset }: { dataset: ServicePatternDataset | null }) => {
+const GtfsLens = ({
+  dataset,
+  snapshot,
+}: {
+  dataset: ServicePatternDataset | null
+  snapshot: LineNetworkSlice | null
+}) => {
+  const snapshotShapes = snapshot?.paths.length ?? 0
   const rows = [
     {
       gtfs: "routes.txt",
       concept: "A public-facing line",
-      here: dataset ? dataset.lineName : "No TfL sequence",
-      state: dataset ? ("present" as const) : ("missing" as const),
+      here: snapshot?.line.shortName ?? dataset?.lineName ?? "No line row",
+      state: snapshot || dataset ? ("present" as const) : ("missing" as const),
     },
     {
       gtfs: "trips.txt",
       concept: "One dated vehicle run",
-      here: "Not stored. An ordered route is a pattern, not proof of a particular train.",
-      state: "missing" as const,
+      here: snapshot
+        ? "Dated trips were collapsed into unique call sequences. Individual trip ids are not kept."
+        : "Not stored. An ordered route is a pattern, not proof of a particular train.",
+      state: snapshot ? ("partial" as const) : ("missing" as const),
     },
     {
       gtfs: "stop_times.txt",
       concept: "Ordered calls with times",
-      here: dataset
-        ? "Call order is present; arrival, departure, pickup, and drop-off times are absent."
-        : "Missing",
-      state: dataset ? ("partial" as const) : ("missing" as const),
+      here: snapshot
+        ? "Call order is stored. Clock times were used only to derive headway bands."
+        : dataset
+          ? "Call order is present; arrival, departure, pickup, and drop-off times are absent."
+          : "Missing",
+      state: snapshot || dataset ? ("partial" as const) : ("missing" as const),
     },
     {
       gtfs: "stops.txt",
       concept: "Stop and platform identity",
-      here: "TfL NaPTAN ids and OSM stop nodes exist, but their one-to-one match is incomplete.",
-      state: "partial" as const,
+      here: snapshot
+        ? `${snapshot.stations.length} stops used by this line, grouped to GTFS parents where present.`
+        : "TfL NaPTAN ids and OSM stop nodes exist, but their one-to-one match is incomplete.",
+      state: snapshot ? ("present" as const) : ("partial" as const),
     },
     {
       gtfs: "shapes.txt",
       concept: "The path followed by a trip",
-      here: "OSM route geometry exists. It is not yet matched one-to-one with each TfL pattern.",
-      state: "partial" as const,
+      here: snapshotShapes
+        ? `${snapshotShapes} low-resolution Elizabeth / Overground shapes, one most-common path per pattern.`
+        : snapshot
+          ? "This line has no timetable shapes. OSM unique-track remains the map paint."
+          : "OSM route geometry exists. It is not yet matched one-to-one with each TfL pattern.",
+      state: snapshotShapes
+        ? ("present" as const)
+        : snapshot
+          ? ("missing" as const)
+          : ("partial" as const),
     },
     {
       gtfs: "calendar.txt / calendar_dates.txt",
       concept: "Days and exceptions",
-      here: "Missing",
-      state: "missing" as const,
+      here: snapshot
+        ? `${snapshot.calendars.length} typical day-class rows (weekday / Saturday / Sunday). Dated exceptions were not kept.`
+        : "Missing",
+      state: snapshot ? ("present" as const) : ("missing" as const),
     },
     {
       gtfs: "frequencies.txt or stop times",
       concept: "How often the pattern runs",
-      here: "Missing",
-      state: "missing" as const,
+      here: snapshot
+        ? `${snapshot.frequencies.length} headway bands from first-stop times.`
+        : "Missing",
+      state: snapshot ? ("present" as const) : ("missing" as const),
     },
     {
       gtfs: "route_patterns extension",
       concept: "Reusable trip pattern and typicality",
-      here: dataset
-        ? `${dataset.patterns.length} ordered routes resemble patterns; canonical and typicality fields are missing.`
-        : "Missing",
-      state: dataset ? ("partial" as const) : ("missing" as const),
+      here: snapshot
+        ? `${snapshot.patterns.length} collapsed timetable patterns.`
+        : dataset
+          ? `${dataset.patterns.length} ordered routes resemble patterns; canonical and typicality fields are missing.`
+          : "Missing",
+      state: snapshot
+        ? ("present" as const)
+        : dataset
+          ? ("partial" as const)
+          : ("missing" as const),
     },
   ]
 
@@ -355,8 +464,8 @@ const GtfsLens = ({ dataset }: { dataset: ServicePatternDataset | null }) => {
       <div>
         <h3 className="text-base font-medium">GTFS lens</h3>
         <p className="text-xs text-muted-foreground">
-          This is a conceptual crosswalk. The repository does not contain a GTFS
-          feed.
+          Conceptual crosswalk to the derived timetable snapshot, not a full
+          GTFS extract.
         </p>
       </div>
       <div className="overflow-x-auto rounded-lg border border-border">
@@ -400,6 +509,7 @@ export const RoutePatternInspector = ({
   variantsBundle,
   stopsFile,
   dataset,
+  snapshot,
 }: {
   lineId: string
   lineName: string
@@ -407,6 +517,7 @@ export const RoutePatternInspector = ({
   variantsBundle: TransitGeometryBundle | undefined
   stopsFile: OsmRouteStopsFile | undefined
   dataset: ServicePatternDataset | null
+  snapshot: LineNetworkSlice | null
 }) => {
   const osmVariants = osmVariantSummaries(variantsBundle, lineId, stopsFile)
   const bounds = boundsFor(osmVariants)
@@ -468,6 +579,12 @@ export const RoutePatternInspector = ({
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border border-border p-3">
+            <p className="text-2xl">{snapshot?.patterns.length ?? 0}</p>
+            <p className="text-xs text-muted-foreground">
+              Timetable snapshot patterns
+            </p>
+          </div>
+          <div className="rounded-lg border border-border p-3">
             <p className="text-2xl">{dataset?.patterns.length ?? 0}</p>
             <p className="text-xs text-muted-foreground">TfL ordered routes</p>
           </div>
@@ -510,36 +627,133 @@ export const RoutePatternInspector = ({
         </div>
       </section>
 
+      {snapshot && (
+        <section className="space-y-2">
+          <div>
+            <h3 className="text-base font-medium">Timetable snapshot patterns</h3>
+            <p className="text-xs text-muted-foreground">
+              Collapsed Aubin sequences with typical days and peak-ish headways.
+              Hover a dot for its station name.
+            </p>
+          </div>
+          <div className="overflow-hidden rounded-lg border border-border">
+            <div className="max-h-[42rem] divide-y divide-border overflow-y-auto">
+              {snapshot.patterns.map((pattern) => {
+                const calendar = snapshot.calendars.find(
+                  (row) => row.patternId === pattern.id
+                )
+                const peak = snapshot.frequencies.find(
+                  (row) =>
+                    row.patternId === pattern.id &&
+                    row.timeWindow.startsWith("weekday 07:00")
+                )
+                const evidence = {
+                  id: pattern.id,
+                  source: "tfl-static-sequence" as const,
+                  name: patternLabel(pattern, snapshot.stations),
+                  direction: pattern.direction,
+                  serviceType: calendar
+                    ? formatDaysOfWeek(calendar.daysOfWeek)
+                    : "unknown days",
+                  stationIds: pattern.callIds,
+                  stationNames: pattern.callIds.map((stationId) => {
+                    const station = snapshot.stations.find(
+                      (entry) => entry.id === stationId
+                    )
+                    return station?.name ?? stationId
+                  }),
+                }
+                return (
+                  <details key={pattern.id} className="group px-3 py-2">
+                    <summary className="grid cursor-pointer list-none gap-2 sm:grid-cols-[minmax(12rem,0.8fr)_minmax(18rem,1.2fr)_auto] sm:items-center">
+                      <div>
+                        <p className="text-xs font-medium">{evidence.name}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {pattern.direction} · {evidence.serviceType} ·{" "}
+                          {pattern.callIds.length} calls
+                          {peak?.headwaySeconds
+                            ? ` · weekday am ${formatHeadway(peak.headwaySeconds)}`
+                            : ""}
+                        </p>
+                      </div>
+                      <StopSequence patterns={[evidence]} color={color} />
+                      <span className="text-[11px] text-muted-foreground group-open:hidden">
+                        raw
+                      </span>
+                    </summary>
+                    <pre className="mt-2 max-h-52 overflow-auto rounded-md bg-muted/40 p-2 text-[10px] leading-relaxed">
+                      {JSON.stringify(
+                        {
+                          pattern,
+                          calendar,
+                          frequencies: snapshot.frequencies.filter(
+                            (row) => row.patternId === pattern.id
+                          ),
+                          pathMatch: snapshot.pathMatches.find(
+                            (row) => row.patternId === pattern.id
+                          ),
+                        },
+                        null,
+                        2
+                      )}
+                    </pre>
+                  </details>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="space-y-2">
         <div>
           <h3 className="text-base font-medium">TfL ordered routes</h3>
           <p className="text-xs text-muted-foreground">
-            Every row remains a complete source station sequence. Hover a dot
-            for its station name.
+            Reciprocal inbound and outbound sequences share a row as two
+            tracks. Hover a dot for its station name.
           </p>
         </div>
         <div className="overflow-hidden rounded-lg border border-border">
           <div className="max-h-[42rem] divide-y divide-border overflow-y-auto">
-            {(dataset?.patterns ?? []).map((pattern) => (
-              <details key={pattern.id} className="group px-3 py-2">
-                <summary className="grid cursor-pointer list-none gap-2 sm:grid-cols-[minmax(12rem,0.8fr)_minmax(18rem,1.2fr)_auto] sm:items-center">
-                  <div>
-                    <p className="text-xs font-medium">{pattern.name}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {pattern.direction} · {pattern.serviceType} ·{" "}
-                      {pattern.stationIds.length} calls
-                    </p>
-                  </div>
-                  <StopSequence pattern={pattern} color={color} />
-                  <span className="text-[11px] text-muted-foreground group-open:hidden">
-                    raw
-                  </span>
-                </summary>
-                <pre className="mt-2 max-h-52 overflow-auto rounded-md bg-muted/40 p-2 text-[10px] leading-relaxed">
-                  {JSON.stringify(pattern, null, 2)}
-                </pre>
-              </details>
-            ))}
+            {tflPatternRows(dataset).map((row) => {
+              const patterns =
+                row.kind === "pair"
+                  ? [row.outbound, row.inbound]
+                  : [row.pattern]
+              const title = patterns[0]!.name
+              const directions = patterns
+                .map((pattern) => pattern.direction)
+                .join(" / ")
+              const serviceTypes = [
+                ...new Set(patterns.map((pattern) => pattern.serviceType)),
+              ].join(" / ")
+              return (
+                <details key={row.id} className="group px-3 py-2">
+                  <summary className="grid cursor-pointer list-none gap-2 sm:grid-cols-[minmax(12rem,0.8fr)_minmax(18rem,1.2fr)_auto] sm:items-center">
+                    <div>
+                      <p className="text-xs font-medium">{title}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {directions} · {serviceTypes} ·{" "}
+                        {patterns[0]!.stationIds.length} calls
+                      </p>
+                    </div>
+                    <StopSequence patterns={patterns} color={color} />
+                    <span className="text-[11px] text-muted-foreground group-open:hidden">
+                      raw
+                    </span>
+                  </summary>
+                  <pre className="mt-2 max-h-52 overflow-auto rounded-md bg-muted/40 p-2 text-[10px] leading-relaxed">
+                    {JSON.stringify(
+                      row.kind === "pair"
+                        ? { outbound: row.outbound, inbound: row.inbound }
+                        : row.pattern,
+                      null,
+                      2
+                    )}
+                  </pre>
+                </details>
+              )
+            })}
           </div>
         </div>
       </section>
@@ -658,7 +872,7 @@ export const RoutePatternInspector = ({
         </div>
       </section>
 
-      <GtfsLens dataset={dataset} />
+      <GtfsLens dataset={dataset} snapshot={snapshot} />
 
       <section className="space-y-2">
         <h3 className="text-base font-medium">Data sufficiency</h3>
@@ -731,7 +945,15 @@ export const RoutePatternInspector = ({
               Source: cached OSM relation tags
             </p>
           </div>
-          {(dataset?.fields ?? []).map((field) => (
+          {(dataset?.fields ?? [])
+            .filter((field) => {
+              if (!snapshot) return true
+              return (
+                field.field !== "Calendar and time windows" &&
+                field.field !== "Frequency and typicality"
+              )
+            })
+            .map((field) => (
             <div
               key={field.field}
               className="rounded-lg border border-border p-3"
@@ -756,6 +978,14 @@ export const RoutePatternInspector = ({
       <section className="space-y-2">
         <h3 className="text-base font-medium">Whole derived records</h3>
         <div className="grid gap-3 lg:grid-cols-2">
+          <details className="rounded-lg border border-border p-3">
+            <summary className="cursor-pointer text-sm font-medium">
+              Timetable snapshot slice for {lineName}
+            </summary>
+            <pre className="mt-3 max-h-[36rem] overflow-auto rounded-md bg-muted/40 p-2 text-[10px] leading-relaxed">
+              {JSON.stringify(snapshot, null, 2)}
+            </pre>
+          </details>
           <details className="rounded-lg border border-border p-3">
             <summary className="cursor-pointer text-sm font-medium">
               TfL service-pattern dataset for {lineName}

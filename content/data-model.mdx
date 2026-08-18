@@ -41,7 +41,7 @@ Line identity and station order come from TfL. Track geometry comes from OpenStr
 
 ## Next
 
-1. Derive the small map set from the [Aubin / Transitous Great Britain GTFS](https://beta.aubin.app/gtfs/great_britain_gtfs.zip) — the only current feed that includes Elizabeth line and Overground as well as Underground, DLR, and Tram.
+1. Rebuild the small map set with `pnpm network-model:snapshot` when the [Great Britain feed](https://beta.aubin.app/gtfs/great_britain_gtfs.zip) changes.
 2. Keep the simplified OpenStreetMap tracks for the geographic map. The Great Britain feed has trip shapes for Elizabeth line and Overground; Underground, DLR, and Tram trips in that feed do not.
 3. Keep [BODS](https://data.bus-data.dft.gov.uk/) for live buses only. Its London timetable file is already inside the Great Britain feed and does not add Elizabeth line or Overground.
 4. Point the geographic map and the line / branch strips at this model.

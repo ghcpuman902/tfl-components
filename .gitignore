@@ -47,3 +47,6 @@ PUSH_NOTES.md
 VERCEL_PRIVATE_NOTES.md
 scratch/
 .env*
+
+# large source feeds kept until a derived snapshot exists
+.cache/

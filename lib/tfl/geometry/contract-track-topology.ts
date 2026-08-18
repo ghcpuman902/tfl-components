@@ -33,6 +33,15 @@ export type ContractedEdge = {
   trackGroup?: 0 | 1
   /** Source-track run between the retained nodes. Used for local junction tangents. */
   coordinates?: LngLat[]
+  /**
+   * Timetable hop class.
+   * Spine is the default passenger corridor.
+   * Fast is a regular scheduled skip or express.
+   * Occasional is weekend-only or a rare adjustment.
+   */
+  service?: "spine" | "fast" | "occasional"
+  /** Short reason for the hop class, for hover titles. */
+  serviceNote?: string
 }
 
 export type ContractedTopology = {

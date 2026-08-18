@@ -16,12 +16,16 @@ import overgroundVariants from "@/data/geography/overground-geometry.json"
 import elizabethVariants from "@/data/geography/elizabeth-geometry.json"
 import dlrVariants from "@/data/geography/dlr-geometry.json"
 import tramVariants from "@/data/geography/tram-geometry.json"
+import type { NetworkModelSnapshot } from "@/lib/tfl/network-model/from-gtfs"
+import type { NetworkModelManifest } from "@/lib/tfl/network-model/line-slice"
+import snapshotJson from "@/data/network-model/snapshot.json"
+import manifestJson from "@/data/network-model/manifest.json"
 import { TrackTopologyView } from "./track-topology-view"
 
 export const metadata: Metadata = {
   title: "Line topology source models (temp)",
   description:
-    "Compare passenger topology, physical track, and route-pattern evidence.",
+    "Compare TfL sequences, OSM track, and the derived timetable snapshot.",
 }
 
 const asBundle = (value: unknown): TransitGeometryBundle =>
@@ -37,15 +41,16 @@ export default function TrackTopologyTempPage() {
         <h1 className="text-2xl font-semibold">Line topology source models</h1>
         <p className="max-w-prose text-sm text-muted-foreground">
           TfL sequences describe passenger movement. OSM describes physical
-          track and geographic paths. Pattern records show where the sources
-          agree and what each one omits.
+          track. The timetable snapshot adds collapsed Aubin patterns,
+          typical calendars, headways, and low-resolution Elizabeth /
+          Overground shapes.
         </p>
         <p className="text-sm">
           <Link
             href="/temp/track-topology/junctions"
             className="underline underline-offset-2"
           >
-            Junction grammar reference table →
+            Real junction windows →
           </Link>
         </p>
       </header>
@@ -71,6 +76,8 @@ export default function TrackTopologyTempPage() {
           dlr: asBundle(dlrDual),
           tram: asBundle(tramDual),
         }}
+        networkModel={snapshotJson as NetworkModelSnapshot}
+        networkManifest={manifestJson as NetworkModelManifest}
       />
     </div>
   )

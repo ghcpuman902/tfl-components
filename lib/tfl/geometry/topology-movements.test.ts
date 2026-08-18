@@ -3,7 +3,10 @@ import { describe, it } from "node:test"
 import type { Feature, LineString } from "geojson"
 import type { LineSegmentProperties } from "@/lib/tfl/geography-types"
 import type { ContractedTopology } from "./contract-track-topology"
-import { osmMovementsForTopology } from "./topology-movements"
+import {
+  movementPairs,
+  osmMovementsForTopology,
+} from "./topology-movements"
 
 const topology: ContractedTopology = {
   nodes: [
@@ -104,5 +107,37 @@ describe("osmMovementsForTopology", () => {
           movement.to === "east"
       )
     )
+  })
+})
+
+describe("movementPairs", () => {
+  it("merges directions that share the same from-via-to after station aliases collapse", () => {
+    const pairs = movementPairs([
+      {
+        id: "s:910GSTHALL|s:910GEALINGB|s:940GZZLUPAC",
+        from: "s:910GSTHALL",
+        via: "s:910GEALINGB",
+        to: "s:940GZZLUPAC",
+        patternIds: ["elizabeth/fast"],
+        source: "tfl-station-pattern",
+        confidence: "declared",
+      },
+      {
+        id: "s:910GSTHALL|s:910GEALINGB|s:940GZZLUPAC",
+        from: "s:910GSTHALL",
+        via: "s:910GEALINGB",
+        to: "s:940GZZLUPAC",
+        patternIds: ["elizabeth/allstop"],
+        source: "tfl-station-pattern",
+        confidence: "declared",
+      },
+    ])
+
+    assert.equal(pairs.length, 1)
+    assert.equal(pairs[0]?.directions.length, 1)
+    assert.deepEqual(pairs[0]?.directions[0]?.patternIds, [
+      "elizabeth/fast",
+      "elizabeth/allstop",
+    ])
   })
 })

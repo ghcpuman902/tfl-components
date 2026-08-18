@@ -1,0 +1,41 @@
+{
+  "publisher": "Aubin",
+  "publisherUrl": "https://aubin.app/",
+  "retrievedAt": "2026-08-18T10:10:23.662Z",
+  "feedVersion": "c2dde3f2-0236-431d-aef9-a497ba86ddb7",
+  "feedStartDate": "20260817",
+  "feedEndDate": "20261109",
+  "sourceUrl": "https://beta.aubin.app/gtfs/great_britain_gtfs.zip",
+  "agencyFilter": [
+    "LULD",
+    "LDLR",
+    "TRAM",
+    "IFSC",
+    "=XR",
+    "=LO"
+  ],
+  "droppedRouteTypes": [
+    "714"
+  ],
+  "shapeSimplifyM": 39,
+  "counts": {
+    "lines": 21,
+    "stations": 475,
+    "hubs": 475,
+    "patterns": 786,
+    "calls": 13860,
+    "calendars": 784,
+    "frequencies": 4183,
+    "paths": 187,
+    "pathMatches": 206,
+    "movements": 1164
+  },
+  "attribution": [
+    "Transport for London open data",
+    "DfT Bus Open Data Service (OGL)",
+    "Powered by National Rail Enquiries",
+    "© OpenStreetMap contributors",
+    "Aubin / Transitous Great Britain GTFS"
+  ],
+  "note": "Raw zip stays in .cache/gtfs until this snapshot is the agreed low-resolution mapping. Do not delete it from the script."
+}

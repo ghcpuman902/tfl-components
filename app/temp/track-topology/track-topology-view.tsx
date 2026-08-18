@@ -51,6 +51,16 @@ import {
   type TopologyMovementPair,
 } from "@/lib/tfl/geometry/topology-movements"
 import { servicePatternEvidenceForLine } from "@/lib/tfl/service-pattern-evidence"
+import type { NetworkModelSnapshot } from "@/lib/tfl/network-model/from-gtfs"
+import {
+  isTimetableSkip,
+  sliceNetworkModel,
+  snapshotMovementsForTopology,
+  snapshotPassengerTopology,
+  snapshotPathsBundle,
+  transitModeForSnapshotLine,
+  type NetworkModelManifest,
+} from "@/lib/tfl/network-model/line-slice"
 import { cn } from "@/lib/utils"
 import { RoutePatternInspector } from "./route-pattern-inspector"
 
@@ -60,13 +70,18 @@ type TrackTopologyViewProps = {
   variants: BundlesByMode
   centreline: BundlesByMode
   dual: BundlesByMode
+  networkModel: NetworkModelSnapshot
+  networkManifest: NetworkModelManifest
 }
+
+type PassengerSource = "tfl" | "snapshot"
+type PhysicalModel = TrackModel | "timetable"
 
 type LineOption = {
   lineId: string
   lineName: string
   color: string
-  mode: TransitMode
+  mode?: TransitMode
 }
 
 type LaidOutNode = ContractedNode & {
@@ -83,9 +98,15 @@ type Simulation = {
   state: StressState
 }
 
-const TRACK_MODELS: { id: TrackModel; label: string }[] = [
+const TRACK_MODELS: { id: PhysicalModel; label: string }[] = [
   { id: "centreline", label: "Merged centreline" },
   { id: "dual", label: "Both tracks" },
+  { id: "timetable", label: "Timetable shapes" },
+]
+
+const PASSENGER_SOURCES: { id: PassengerSource; label: string }[] = [
+  { id: "tfl", label: "TfL sequences" },
+  { id: "snapshot", label: "Timetable snapshot" },
 ]
 
 const WIDTH = 1100
@@ -619,6 +640,9 @@ const TopologyPlot = ({
                   const to = nodeById.get(edge.to)
                   if (!from || !to) return null
                   const line = offsetEdge(from, to, edge.trackGroup)
+                  const fast = edge.service === "fast"
+                  const occasional = edge.service === "occasional"
+                  const skip = fast || occasional
                   return (
                     <line
                       key={edge.id}
@@ -626,11 +650,22 @@ const TopologyPlot = ({
                       y1={line.y1}
                       x2={line.x2}
                       y2={line.y2}
-                      stroke={color}
-                      strokeWidth={dual ? 2.2 : 3}
+                      stroke={occasional ? "var(--muted-foreground)" : color}
+                      strokeWidth={dual || skip ? 2.2 : 3}
+                      strokeDasharray={
+                        occasional ? "2 5" : fast ? "7 5" : undefined
+                      }
+                      strokeOpacity={occasional ? 0.55 : fast ? 0.85 : 1}
                       strokeLinecap="round"
                       vectorEffect="non-scaling-stroke"
-                    />
+                    >
+                      <title>
+                        {edge.serviceNote ??
+                          (skip
+                            ? "Skip-stop or short working. Some trains omit stations between these two."
+                            : "Usual passenger hop on this corridor.")}
+                      </title>
+                    </line>
                   )
                 })}
                 {showMovementCurves &&
@@ -742,33 +777,63 @@ export const TrackTopologyView = ({
   variants,
   centreline,
   dual,
+  networkModel,
+  networkManifest,
 }: TrackTopologyViewProps) => {
-  const lineOptions = useMemo(() => linesFromBundles(centreline), [centreline])
+  const lineOptions = useMemo(() => {
+    const fromOsm = linesFromBundles(centreline)
+    const seen = new Set(fromOsm.map((option) => option.lineId))
+    const extra = networkModel.lines
+      .filter((line) => !seen.has(line.id))
+      .map((line) => ({
+        lineId: line.id,
+        lineName: line.longName || line.shortName,
+        color: line.color,
+        mode: transitModeForSnapshotLine(line),
+      }))
+    return [...fromOsm, ...extra]
+  }, [centreline, networkModel.lines])
   const [lineId, setLineId] = useState(
     () =>
       lineOptions.find((option) => option.lineId === "elizabeth")?.lineId ??
       lineOptions[0]?.lineId ??
       ""
   )
-  const [trackModel, setTrackModel] = useState<TrackModel>("centreline")
+  const [passengerSource, setPassengerSource] =
+    useState<PassengerSource>("snapshot")
+  const [trackModel, setTrackModel] = useState<PhysicalModel>("centreline")
   const [showMovementCurves, setShowMovementCurves] = useState(true)
   const [showDirectionArrows, setShowDirectionArrows] = useState(true)
+  const [showSkipHops, setShowSkipHops] = useState(true)
 
   const selected = lineOptions.find((option) => option.lineId === lineId)
-  const centrelineBundle = selected ? centreline[selected.mode] : undefined
-  const physicalBundle = selected
+  const snapshotSlice = useMemo(
+    () => (selected ? sliceNetworkModel(networkModel, selected.lineId) : null),
+    [networkModel, selected]
+  )
+  const timetableBundle = useMemo(
+    () => (snapshotSlice ? snapshotPathsBundle(snapshotSlice) : null),
+    [snapshotSlice]
+  )
+  const centrelineBundle = selected?.mode
+    ? centreline[selected.mode]
+    : undefined
+  const osmPhysicalBundle = selected?.mode
     ? (trackModel === "dual" ? dual : centreline)[selected.mode]
     : undefined
-  const variantsBundle = selected ? variants[selected.mode] : undefined
+  const variantsBundle = selected?.mode ? variants[selected.mode] : undefined
+  const mapMode = selected?.mode ?? "elizabeth"
+  const physicalBundle =
+    trackModel === "timetable" ? timetableBundle : osmPhysicalBundle
   const physicalData = useMemo<BundlesByMode>(
     () =>
-      selected && physicalBundle ? { [selected.mode]: physicalBundle } : {},
-    [physicalBundle, selected]
+      physicalBundle ? { [mapMode]: physicalBundle } : {},
+    [mapMode, physicalBundle]
   )
   const stations = useMemo(() => {
     if (!centrelineBundle) return []
     const tflStations = stationsFromBundle(centrelineBundle)
-    const osmStops = selected
+    const osmStops = selected?.mode
       ? OSM_STOPS_BY_MODE[selected.mode]?.stops
       : undefined
     return osmStops
@@ -781,6 +846,23 @@ export const TrackTopologyView = ({
     return officialTrackTopology(selected.lineId, stations) ?? emptyTopology()
   }, [selected, stations])
 
+  const snapshotTopology = useMemo(
+    () =>
+      snapshotSlice ? snapshotPassengerTopology(snapshotSlice) : emptyTopology(),
+    [snapshotSlice]
+  )
+
+  const passengerTopology = useMemo(() => {
+    if (passengerSource !== "snapshot") return tflTopology
+    if (showSkipHops) return snapshotTopology
+    return {
+      nodes: snapshotTopology.nodes,
+      edges: snapshotTopology.edges.filter(
+        (edge) => !isTimetableSkip(edge.service),
+      ),
+    }
+  }, [passengerSource, showSkipHops, snapshotTopology, tflTopology])
+
   const servicePatterns = useMemo(
     () => (selected ? servicePatternEvidenceForLine(selected.lineId) : null),
     [selected]
@@ -791,9 +873,40 @@ export const TrackTopologyView = ({
     [tflTopology, servicePatterns]
   )
 
+  const snapshotMovementPairs = useMemo(
+    () =>
+      snapshotSlice
+        ? movementPairs(
+            snapshotMovementsForTopology(snapshotSlice, snapshotTopology)
+          )
+        : [],
+    [snapshotSlice, snapshotTopology]
+  )
+
+  const passengerMovements =
+    passengerSource === "snapshot" ? snapshotMovementPairs : tflMovementPairs
+
+  const lineGroups = useMemo(() => {
+    const groups: { label: string; options: LineOption[] }[] = (
+      Object.keys(TRANSIT_MODE_LABELS) as TransitMode[]
+    ).map((mode) => ({
+      label: TRANSIT_MODE_LABELS[mode],
+      options: lineOptions.filter((option) => option.mode === mode),
+    }))
+    const other = lineOptions.filter((option) => !option.mode)
+    if (other.length > 0) groups.push({ label: "Cable Car", options: other })
+    return groups.filter((group) => group.options.length > 0)
+  }, [lineOptions])
+
   const handleLineChange = (event: ChangeEvent<HTMLSelectElement>) => {
     setLineId(event.target.value)
   }
+
+  useEffect(() => {
+    if (trackModel === "timetable" && !timetableBundle) {
+      setTrackModel(selected?.mode ? "centreline" : "centreline")
+    }
+  }, [selected?.mode, timetableBundle, trackModel])
 
   return (
     <div className="space-y-10">
@@ -805,21 +918,24 @@ export const TrackTopologyView = ({
             onChange={handleLineChange}
             className="block rounded-md border border-border bg-background px-2 py-1.5 text-sm"
           >
-            {(Object.keys(TRANSIT_MODE_LABELS) as TransitMode[]).map((mode) => {
-              const group = lineOptions.filter((option) => option.mode === mode)
-              if (group.length === 0) return null
-              return (
-                <optgroup key={mode} label={TRANSIT_MODE_LABELS[mode]}>
-                  {group.map((option) => (
-                    <option key={option.lineId} value={option.lineId}>
-                      {option.lineName}
-                    </option>
-                  ))}
-                </optgroup>
-              )
-            })}
+            {lineGroups.map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.options.map((option) => (
+                  <option key={option.lineId} value={option.lineId}>
+                    {option.lineName}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
           </select>
         </label>
+        <p className="max-w-xl text-xs text-muted-foreground">
+          Timetable snapshot: {networkManifest.publisher},{" "}
+          {networkManifest.feedStartDate}–{networkManifest.feedEndDate}.{" "}
+          {snapshotSlice
+            ? `${snapshotSlice.patterns.length} patterns, ${snapshotSlice.calendars.length} calendars, ${snapshotSlice.paths.length} shapes.`
+            : "No snapshot rows for this line."}
+        </p>
       </div>
 
       <section className="space-y-4" aria-labelledby="passenger-model-heading">
@@ -831,9 +947,32 @@ export const TrackTopologyView = ({
             Passenger topology
           </h2>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            TfL station sequences define station adjacency, service continuity,
-            and the branches passengers can travel through.
+            TfL sequences are the carriage-map spine. The timetable says which
+            of those stations a train actually calls at, and how often — not a
+            second set of tracks.
           </p>
+        </div>
+        <div
+          className="flex flex-wrap gap-2"
+          role="group"
+          aria-label="Passenger topology source"
+        >
+          {PASSENGER_SOURCES.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={passengerSource === option.id}
+              onClick={() => setPassengerSource(option.id)}
+              className={cn(
+                "rounded-full border border-border px-2.5 py-1 text-xs",
+                passengerSource === option.id
+                  ? "bg-foreground text-background"
+                  : "bg-background text-foreground"
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
         <div className="flex flex-wrap gap-4">
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -853,23 +992,41 @@ export const TrackTopologyView = ({
             />
             Direction arrows
           </label>
+          {passengerSource === "snapshot" && (
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={showSkipHops}
+                onChange={(event) => setShowSkipHops(event.target.checked)}
+              />
+              Skip-stop hops (dashed regular / dotted occasional)
+            </label>
+          )}
         </div>
         <div className="rounded-lg border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
           Movement marks appear only at branches. Two-leg continuations still
-          straighten the layout. A missing branch mark means the selected TfL
-          sequences do not support that movement.
+          straighten the layout. A missing branch mark means the selected
+          source does not support that movement.
         </div>
         <TopologyPlot
-          key={`tfl-${lineId}`}
+          key={`passenger-${passengerSource}-${lineId}`}
           title={`${selected?.lineName ?? "Line"} station graph`}
-          source="TfL ordered station sequences. Physical track junctions are omitted."
-          topology={tflTopology}
-          color={selected?.color ?? "#888"}
+          source={
+            passengerSource === "snapshot"
+              ? "Timetable spine after merging NR/Tube twins. Dashed hops are regular weekday skip-stop; dotted hops are evening, weekend-only, or rare adjustments."
+              : "TfL ordered station sequences. Physical track junctions are omitted."
+          }
+          topology={passengerTopology}
+          color={selected?.color ?? snapshotSlice?.line.color ?? "#888"}
           lineName={selected?.lineName ?? "Line"}
-          movements={tflMovementPairs}
+          movements={passengerMovements}
           showMovementCurves={showMovementCurves}
           showDirectionArrows={showDirectionArrows}
-          empty="No TfL sequence for this line id."
+          empty={
+            passengerSource === "snapshot"
+              ? "No timetable snapshot patterns for this line."
+              : "No TfL sequence for this line id."
+          }
         />
       </section>
 
@@ -882,8 +1039,8 @@ export const TrackTopologyView = ({
             Physical topology
           </h2>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            OSM places tracks, stations, and branch junctions in geographic
-            space. It does not define the passenger station graph.
+            OSM unique-track is the map paint. Elizabeth line and Overground
+            also have low-resolution timetable shapes from the snapshot.
           </p>
         </div>
         <div
@@ -891,37 +1048,47 @@ export const TrackTopologyView = ({
           role="group"
           aria-label="Physical track model"
         >
-          {TRACK_MODELS.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              aria-pressed={trackModel === option.id}
-              onClick={() => setTrackModel(option.id)}
-              className={cn(
-                "rounded-full border border-border px-2.5 py-1 text-xs",
-                trackModel === option.id
-                  ? "bg-foreground text-background"
-                  : "bg-background text-foreground"
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
+          {TRACK_MODELS.map((option) => {
+            const disabled =
+              option.id === "timetable"
+                ? !timetableBundle
+                : !selected?.mode || !osmPhysicalBundle
+            return (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={trackModel === option.id}
+                disabled={disabled}
+                onClick={() => setTrackModel(option.id)}
+                className={cn(
+                  "rounded-full border border-border px-2.5 py-1 text-xs",
+                  trackModel === option.id
+                    ? "bg-foreground text-background"
+                    : "bg-background text-foreground",
+                  disabled && "cursor-not-allowed opacity-40"
+                )}
+              >
+                {option.label}
+              </button>
+            )
+          })}
         </div>
         {selected && physicalBundle ? (
           <div className="h-[min(72vh,42rem)] overflow-hidden rounded-lg border border-border">
             <TflGeographicMap
               key={`physical-${lineId}-${trackModel}`}
               data={physicalData}
-              modes={[selected.mode]}
+              modes={[mapMode]}
               lineIds={[selected.lineId]}
-              trackModel={trackModel}
+              trackModel={trackModel === "timetable" ? "centreline" : trackModel}
               className="h-full"
             />
           </div>
         ) : (
           <p className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
-            No physical geometry is available for this line.
+            {trackModel === "timetable"
+              ? "This timetable has no trip shapes for this line. Underground, DLR, and Tram stay on OSM unique-track."
+              : "No physical geometry is available for this line."}
           </p>
         )}
       </section>
@@ -936,9 +1103,9 @@ export const TrackTopologyView = ({
               Pattern evidence
             </h2>
             <p className="max-w-3xl text-sm text-muted-foreground">
-              TfL sequences are the passenger record. OSM route relations add
-              geographic paths and an independent inventory for comparison.
-              Relation counts are not service frequencies.
+              TfL sequences are the published passenger record. The timetable
+              snapshot adds calendars and headways. OSM route relations remain
+              an independent geographic inventory.
             </p>
           </div>
           <RoutePatternInspector
@@ -946,8 +1113,9 @@ export const TrackTopologyView = ({
             lineName={selected.lineName}
             color={selected.color}
             variantsBundle={variantsBundle}
-            stopsFile={OSM_STOPS_BY_MODE[selected.mode]}
+            stopsFile={selected.mode ? OSM_STOPS_BY_MODE[selected.mode] : undefined}
             dataset={servicePatterns}
+            snapshot={snapshotSlice}
           />
         </section>
       )}

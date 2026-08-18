@@ -26,3 +26,21 @@ export type {
   Weekday,
 } from "@/lib/tfl/network-model/types"
 export { NETWORK_MODEL_STATUS } from "@/lib/tfl/network-model/status"
+export {
+  KEPT_AGENCY_IDS,
+  SHAPE_SIMPLIFY_M,
+  buildNetworkSnapshot,
+  isKeptRoute,
+} from "@/lib/tfl/network-model/from-gtfs"
+export type { NetworkModelSnapshot } from "@/lib/tfl/network-model/from-gtfs"
+export {
+  classifySkipHop,
+  isTimetableSkip,
+  sliceNetworkModel,
+  snapshotPassengerTopology,
+  snapshotPathsBundle,
+} from "@/lib/tfl/network-model/line-slice"
+export type {
+  LineNetworkSlice,
+  NetworkModelManifest,
+} from "@/lib/tfl/network-model/line-slice"
