@@ -851,7 +851,10 @@ export const computeBranchSchematicLayout = (
     const start = existingAt(seed.stationIds[0]!);
     const end = existingAt(seed.stationIds[seed.stationIds.length - 1]!);
     const attachment = start ?? end;
-    const pull = orientation === "horizontal" ? pullOf(group) : { sign: 0, strength: 0 };
+    const pull: CompassPull =
+      orientation === "horizontal"
+        ? pullOf(group)
+        : { sign: 0, strength: 0 };
     if (
       start &&
       pull.sign === 0 &&
