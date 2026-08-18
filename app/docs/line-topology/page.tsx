@@ -21,9 +21,7 @@ import elizabethVariants from "@/data/geography/elizabeth-geometry.json"
 import dlrVariants from "@/data/geography/dlr-geometry.json"
 import tramVariants from "@/data/geography/tram-geometry.json"
 import type { NetworkModelSnapshot } from "@/lib/tfl/network-model/from-gtfs"
-import type { NetworkModelManifest } from "@/lib/tfl/network-model/line-slice"
 import snapshotJson from "@/data/network-model/snapshot.json"
-import manifestJson from "@/data/network-model/manifest.json"
 import { TrackTopologyView } from "./track-topology-view"
 
 const entry = getDocsEntry("line-topology")!
@@ -59,7 +57,6 @@ const topologyViewProps = {
     tram: asBundle(tramDual),
   },
   networkModel: snapshotJson as NetworkModelSnapshot,
-  networkManifest: manifestJson as NetworkModelManifest,
   hopTimes: (hopTimesJson as LineHopTimesSnapshot).lines,
 }
 
