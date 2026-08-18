@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test 'lib/tfl/**/*.test.ts' 'lib/feedback/**/*.test.ts' && tsx scripts/check-no-server-appkey.ts && tsx scripts/check-registry-urls.ts && tsx scripts/verify-track-graph.ts",
     "geography:unique-track": "tsx scripts/snapshot-unique-track-geometry.ts",
+    "hop-times:snapshot": "tsx scripts/snapshot-line-hop-times.ts",
     "network-model:snapshot": "tsx scripts/snapshot-network-model.ts",
     "schematics:build": "tsx scripts/build-branch-schematics.ts",
     "registry:build": "tsx scripts/build-colour-tokens.ts && shadcn build"

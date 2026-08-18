@@ -1,9 +1,10 @@
 {
   "meta": {
+    "schemaVersion": 2,
     "source": "osm-route-relations",
-    "note": "Stop-position nodes read directly off each route relation's ordered stop/platform members — not snapped from a separate station catalog.",
+    "note": "Relation tags and ordered stop-position members read directly from each OSM route relation. The top-level stops array remains as a backward-compatible unique-stop index.",
     "relationCount": 12,
-    "retrievedAt": "2026-08-18T00:13:32.135Z"
+    "retrievedAt": "2026-08-18T10:54:34.754Z"
   },
   "stops": [
     {
@@ -780,6 +781,1877 @@
       "coordinates": [
         -0.0208402,
         51.5276768
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "relationId": 7772549,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#00afad",
+        "colour:infill": "#ffffff",
+        "from": "Canary Wharf",
+        "name": "DLR: Canary Wharf → Stratford",
+        "network": "Docklands Light Railway",
+        "network:short": "DLR",
+        "network:wikidata": "Q216360",
+        "network:wikipedia": "en:Docklands Light Railway",
+        "operator": "KeolisAmey Docklands Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "S-L",
+        "ref:colour": "#00AFAD",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "light_rail",
+        "to": "Stratford",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q115770034"
+      },
+      "stops": [
+        {
+          "nodeId": 6577624219,
+          "role": "stop_entry_only",
+          "name": "Canary Wharf",
+          "coordinates": [
+            -0.0208377,
+            51.5053702
+          ]
+        },
+        {
+          "nodeId": 1752475037,
+          "role": "stop",
+          "name": "West India Quay Platform 3",
+          "coordinates": [
+            -0.0204425,
+            51.5069468
+          ]
+        },
+        {
+          "nodeId": 458876780,
+          "role": "stop",
+          "name": "Poplar Platform 2",
+          "coordinates": [
+            -0.0163229,
+            51.5076416
+          ]
+        },
+        {
+          "nodeId": 5257500826,
+          "role": "stop",
+          "name": "All Saints Platform 1",
+          "coordinates": [
+            -0.013098,
+            51.5109254
+          ]
+        },
+        {
+          "nodeId": 1813223154,
+          "role": "stop",
+          "name": "Langdon Park Platform 1",
+          "coordinates": [
+            -0.0142575,
+            51.515623
+          ]
+        },
+        {
+          "nodeId": 5257517615,
+          "role": "stop",
+          "name": "Devons Road Platform 1",
+          "coordinates": [
+            -0.017472,
+            51.5224824
+          ]
+        },
+        {
+          "nodeId": 6583723429,
+          "role": "stop",
+          "name": "Bow Church Platform 1",
+          "coordinates": [
+            -0.0208402,
+            51.5276768
+          ]
+        },
+        {
+          "nodeId": 1813223195,
+          "role": "stop",
+          "name": "Pudding Mill Lane Platform 1",
+          "coordinates": [
+            -0.0132276,
+            51.5340107
+          ]
+        },
+        {
+          "nodeId": 1596907403,
+          "role": "stop_exit_only",
+          "name": "Stratford",
+          "coordinates": [
+            -0.0044084,
+            51.5407047
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 7772550,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#00afad",
+        "colour:infill": "#ffffff",
+        "from": "Stratford",
+        "name": "DLR: Stratford → Canary Wharf",
+        "network": "Docklands Light Railway",
+        "network:short": "DLR",
+        "network:wikidata": "Q216360",
+        "network:wikipedia": "en:Docklands Light Railway",
+        "operator": "KeolisAmey Docklands Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "S-L",
+        "ref:colour": "#00AFAD",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "light_rail",
+        "to": "Canary Wharf",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q115770034"
+      },
+      "stops": [
+        {
+          "nodeId": 1585969860,
+          "role": "stop_entry_only",
+          "name": "Stratford",
+          "coordinates": [
+            -0.005152,
+            51.5401147
+          ]
+        },
+        {
+          "nodeId": 1795167284,
+          "role": "stop",
+          "name": "Pudding Mill Lane Platform 2",
+          "coordinates": [
+            -0.0140943,
+            51.5335163
+          ]
+        },
+        {
+          "nodeId": 6583723428,
+          "role": "stop",
+          "name": "Bow Church Platform 2",
+          "coordinates": [
+            -0.0204647,
+            51.5272141
+          ]
+        },
+        {
+          "nodeId": 1752475537,
+          "role": "stop",
+          "name": "Devons Road Platform 2",
+          "coordinates": [
+            -0.0170211,
+            51.5218526
+          ]
+        },
+        {
+          "nodeId": 1813223044,
+          "role": "stop",
+          "name": "Langdon Park Platform 2",
+          "coordinates": [
+            -0.0139949,
+            51.5148754
+          ]
+        },
+        {
+          "nodeId": 1752475287,
+          "role": "stop",
+          "name": "All Saints Platform 2",
+          "coordinates": [
+            -0.0128653,
+            51.5101868
+          ]
+        },
+        {
+          "nodeId": 5257532209,
+          "role": "stop",
+          "name": "Poplar Platform 3",
+          "coordinates": [
+            -0.0173976,
+            51.5077251
+          ]
+        },
+        {
+          "nodeId": 1813788330,
+          "role": "stop",
+          "name": "West India Quay Platform 2",
+          "coordinates": [
+            -0.0205317,
+            51.5064289
+          ]
+        },
+        {
+          "nodeId": 6143744015,
+          "role": "stop_exit_only",
+          "name": "Canary Wharf Platforms 3 & 4",
+          "coordinates": [
+            -0.0209865,
+            51.5048246
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 7772551,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#00afad",
+        "colour:infill": "#ffffff",
+        "from": "Woolwich Arsenal",
+        "name": "DLR: Woolwich Arsenal → Stratford International",
+        "network": "Docklands Light Railway",
+        "network:short": "DLR",
+        "network:wikidata": "Q216360",
+        "network:wikipedia": "en:Docklands Light Railway",
+        "operator": "KeolisAmey Docklands Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "SI-WA",
+        "ref:colour": "#00AFAD",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "light_rail",
+        "to": "Stratford International",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q110167188"
+      },
+      "stops": [
+        {
+          "nodeId": 2318257991,
+          "role": "stop",
+          "name": "King George V Platform 2",
+          "coordinates": [
+            0.0617878,
+            51.5019721
+          ]
+        },
+        {
+          "nodeId": 33104078,
+          "role": "stop",
+          "name": "London City Airport Platform 2",
+          "coordinates": [
+            0.0480105,
+            51.5036779
+          ]
+        },
+        {
+          "nodeId": 33104077,
+          "role": "stop",
+          "name": "Pontoon Dock Platform 2",
+          "coordinates": [
+            0.0327128,
+            51.502225
+          ]
+        },
+        {
+          "nodeId": 33104076,
+          "role": "stop",
+          "name": "West Silvertown Platform 2",
+          "coordinates": [
+            0.0218222,
+            51.5030375
+          ]
+        },
+        {
+          "nodeId": 5455894277,
+          "role": "stop",
+          "name": "Canning Town Platform 2",
+          "coordinates": [
+            0.0082112,
+            51.5141127
+          ]
+        },
+        {
+          "nodeId": 1752300601,
+          "role": "stop",
+          "name": "Star Lane Platform 2",
+          "coordinates": [
+            0.0042052,
+            51.5208176
+          ]
+        },
+        {
+          "nodeId": 1812773651,
+          "role": "stop",
+          "name": "West Ham Platform 4",
+          "coordinates": [
+            0.0045318,
+            51.5276309
+          ]
+        },
+        {
+          "nodeId": 1812773891,
+          "role": "stop",
+          "name": "Abbey Road Platform 2",
+          "coordinates": [
+            0.0033771,
+            51.5328026
+          ]
+        },
+        {
+          "nodeId": 1588587572,
+          "role": "stop",
+          "name": "Stratford High Street Platform 2",
+          "coordinates": [
+            -0.0004036,
+            51.5378847
+          ]
+        },
+        {
+          "nodeId": 1634664186,
+          "role": "stop",
+          "name": "Stratford",
+          "coordinates": [
+            -0.003354,
+            51.5413073
+          ]
+        },
+        {
+          "nodeId": 5257500827,
+          "role": "stop_exit_only",
+          "name": "Stratford International Platform 2",
+          "coordinates": [
+            -0.0088491,
+            51.5457794
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 7772552,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#00afad",
+        "colour:infill": "#ffffff",
+        "from": "Stratford International",
+        "name": "DLR: Stratford International → Woolwich Arsenal",
+        "network": "Docklands Light Railway",
+        "network:short": "DLR",
+        "network:wikidata": "Q216360",
+        "network:wikipedia": "en:Docklands Light Railway",
+        "operator": "KeolisAmey Docklands Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "SI-WA",
+        "ref:colour": "#00AFAD",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "light_rail",
+        "to": "Woolwich Arsenal",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q110167188"
+      },
+      "stops": [
+        {
+          "nodeId": 1341376408,
+          "role": "stop_entry_only",
+          "name": "Stratford International Platform 1",
+          "coordinates": [
+            -0.0088596,
+            51.5456638
+          ]
+        },
+        {
+          "nodeId": 1812425788,
+          "role": "stop",
+          "name": "Stratford",
+          "coordinates": [
+            -0.0026811,
+            51.5406616
+          ]
+        },
+        {
+          "nodeId": 1690301265,
+          "role": "stop",
+          "name": "Stratford High Street Platform 1",
+          "coordinates": [
+            0.0003306,
+            51.5372734
+          ]
+        },
+        {
+          "nodeId": 1690302074,
+          "role": "stop",
+          "name": "Abbey Road Platform 1",
+          "coordinates": [
+            0.0038508,
+            51.5323165
+          ]
+        },
+        {
+          "nodeId": 1690302035,
+          "role": "stop",
+          "name": "West Ham Platform 3",
+          "coordinates": [
+            0.0047034,
+            51.5270191
+          ]
+        },
+        {
+          "nodeId": 1813223163,
+          "role": "stop",
+          "name": "Star Lane Platform 1",
+          "coordinates": [
+            0.0044592,
+            51.5201844
+          ]
+        },
+        {
+          "nodeId": 1690301361,
+          "role": "stop",
+          "name": "Canning Town Platform 1",
+          "coordinates": [
+            0.008566,
+            51.5139677
+          ]
+        },
+        {
+          "nodeId": 1752319884,
+          "role": "stop",
+          "name": "West Silvertown Platform 1",
+          "coordinates": [
+            0.0227186,
+            51.5027865
+          ]
+        },
+        {
+          "nodeId": 1752319802,
+          "role": "stop",
+          "name": "Pontoon Dock Platform 1",
+          "coordinates": [
+            0.0337457,
+            51.5023057
+          ]
+        },
+        {
+          "nodeId": 1752319914,
+          "role": "stop",
+          "name": "London City Airport Platform 1",
+          "coordinates": [
+            0.0480876,
+            51.5037717
+          ]
+        },
+        {
+          "nodeId": 6143849771,
+          "role": "stop",
+          "name": "King George V Platform 1",
+          "coordinates": [
+            0.0628621,
+            51.5020433
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 7772553,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#00afad",
+        "colour:infill": "#ffffff",
+        "from": "Lewisham",
+        "name": "DLR: Lewisham → Stratford",
+        "network": "Docklands Light Railway",
+        "network:short": "DLR",
+        "network:wikidata": "Q216360",
+        "network:wikipedia": "en:Docklands Light Railway",
+        "operator": "KeolisAmey Docklands Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "S-L",
+        "ref:colour": "#00AFAD",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "light_rail",
+        "to": "Stratford",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q115770034"
+      },
+      "stops": [
+        {
+          "nodeId": 21095219,
+          "role": "stop_entry_only",
+          "name": "Lewisham Platform 6",
+          "coordinates": [
+            -0.0131584,
+            51.4650786
+          ]
+        },
+        {
+          "nodeId": 21095209,
+          "role": "stop",
+          "name": "Elverson Road Platform 2",
+          "coordinates": [
+            -0.0164322,
+            51.4687659
+          ]
+        },
+        {
+          "nodeId": 183377997,
+          "role": "stop",
+          "name": "Deptford Bridge Platform 2",
+          "coordinates": [
+            -0.0225521,
+            51.4744871
+          ]
+        },
+        {
+          "nodeId": 1752783171,
+          "role": "stop",
+          "name": "Greenwich Platform 3",
+          "coordinates": [
+            -0.0152648,
+            51.4780606
+          ]
+        },
+        {
+          "nodeId": 21095031,
+          "role": "stop",
+          "name": "Cutty Sark for Maritime Greenwich Platform 2",
+          "coordinates": [
+            -0.0108866,
+            51.4818055
+          ]
+        },
+        {
+          "nodeId": 6489567949,
+          "role": "stop",
+          "name": "Island Gardens Platform 2",
+          "coordinates": [
+            -0.0107018,
+            51.4881617
+          ]
+        },
+        {
+          "nodeId": 5320449850,
+          "role": "stop",
+          "name": "Mudchute Platform 2",
+          "coordinates": [
+            -0.0149482,
+            51.4917532
+          ]
+        },
+        {
+          "nodeId": 18050282,
+          "role": "stop",
+          "name": "Crossharbour Platform 2",
+          "coordinates": [
+            -0.014432,
+            51.4961768
+          ]
+        },
+        {
+          "nodeId": 567256556,
+          "role": "stop",
+          "name": "South Quay Platform 2",
+          "coordinates": [
+            -0.0167577,
+            51.5000731
+          ]
+        },
+        {
+          "nodeId": 6143744011,
+          "role": "stop",
+          "name": "Heron Quays Platform 2",
+          "coordinates": [
+            -0.0214863,
+            51.5031092
+          ]
+        },
+        {
+          "nodeId": 6143744016,
+          "role": "stop",
+          "name": "Canary Wharf Platforms 5 & 6",
+          "coordinates": [
+            -0.0210257,
+            51.5053929
+          ]
+        },
+        {
+          "nodeId": 1752475037,
+          "role": "stop",
+          "name": "West India Quay Platform 3",
+          "coordinates": [
+            -0.0204425,
+            51.5069468
+          ]
+        },
+        {
+          "nodeId": 458876780,
+          "role": "stop",
+          "name": "Poplar Platform 2",
+          "coordinates": [
+            -0.0163229,
+            51.5076416
+          ]
+        },
+        {
+          "nodeId": 5257500826,
+          "role": "stop",
+          "name": "All Saints Platform 1",
+          "coordinates": [
+            -0.013098,
+            51.5109254
+          ]
+        },
+        {
+          "nodeId": 1813223154,
+          "role": "stop",
+          "name": "Langdon Park Platform 1",
+          "coordinates": [
+            -0.0142575,
+            51.515623
+          ]
+        },
+        {
+          "nodeId": 5257517615,
+          "role": "stop",
+          "name": "Devons Road Platform 1",
+          "coordinates": [
+            -0.017472,
+            51.5224824
+          ]
+        },
+        {
+          "nodeId": 6583723429,
+          "role": "stop",
+          "name": "Bow Church Platform 1",
+          "coordinates": [
+            -0.0208402,
+            51.5276768
+          ]
+        },
+        {
+          "nodeId": 1813223195,
+          "role": "stop",
+          "name": "Pudding Mill Lane Platform 1",
+          "coordinates": [
+            -0.0132276,
+            51.5340107
+          ]
+        },
+        {
+          "nodeId": 1596907403,
+          "role": "stop_exit_only",
+          "name": "Stratford",
+          "coordinates": [
+            -0.0044084,
+            51.5407047
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 7772554,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#00afad",
+        "colour:infill": "#ffffff",
+        "from": "Stratford",
+        "name": "DLR: Stratford → Lewisham",
+        "network": "Docklands Light Railway",
+        "network:short": "DLR",
+        "network:wikidata": "Q216360",
+        "network:wikipedia": "en:Docklands Light Railway",
+        "operator": "KeolisAmey Docklands Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "S-L",
+        "ref:colour": "#00AFAD",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "light_rail",
+        "to": "Lewisham",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q115770034"
+      },
+      "stops": [
+        {
+          "nodeId": 1585969860,
+          "role": "stop_entry_only",
+          "name": "Stratford",
+          "coordinates": [
+            -0.005152,
+            51.5401147
+          ]
+        },
+        {
+          "nodeId": 1795167284,
+          "role": "stop",
+          "name": "Pudding Mill Lane Platform 2",
+          "coordinates": [
+            -0.0140943,
+            51.5335163
+          ]
+        },
+        {
+          "nodeId": 6583723428,
+          "role": "stop",
+          "name": "Bow Church Platform 2",
+          "coordinates": [
+            -0.0204647,
+            51.5272141
+          ]
+        },
+        {
+          "nodeId": 1752475537,
+          "role": "stop",
+          "name": "Devons Road Platform 2",
+          "coordinates": [
+            -0.0170211,
+            51.5218526
+          ]
+        },
+        {
+          "nodeId": 1813223044,
+          "role": "stop",
+          "name": "Langdon Park Platform 2",
+          "coordinates": [
+            -0.0139949,
+            51.5148754
+          ]
+        },
+        {
+          "nodeId": 1752475287,
+          "role": "stop",
+          "name": "All Saints Platform 2",
+          "coordinates": [
+            -0.0128653,
+            51.5101868
+          ]
+        },
+        {
+          "nodeId": 5257532209,
+          "role": "stop",
+          "name": "Poplar Platform 3",
+          "coordinates": [
+            -0.0173976,
+            51.5077251
+          ]
+        },
+        {
+          "nodeId": 1813788330,
+          "role": "stop",
+          "name": "West India Quay Platform 2",
+          "coordinates": [
+            -0.0205317,
+            51.5064289
+          ]
+        },
+        {
+          "nodeId": 6143744014,
+          "role": "stop",
+          "name": "Canary Wharf Platforms 1 & 2",
+          "coordinates": [
+            -0.020811,
+            51.5048108
+          ]
+        },
+        {
+          "nodeId": 6143744012,
+          "role": "stop",
+          "name": "Heron Quays Platform 1",
+          "coordinates": [
+            -0.0215348,
+            51.5026998
+          ]
+        },
+        {
+          "nodeId": 1752783365,
+          "role": "stop",
+          "name": "South Quay Platform 1",
+          "coordinates": [
+            -0.015949,
+            51.5000189
+          ]
+        },
+        {
+          "nodeId": 1752783277,
+          "role": "stop",
+          "name": "Crossharbour Platform 1",
+          "coordinates": [
+            -0.0144407,
+            51.4956614
+          ]
+        },
+        {
+          "nodeId": 1752783203,
+          "role": "stop",
+          "name": "Mudchute Platform 1",
+          "coordinates": [
+            -0.0148661,
+            51.4911998
+          ]
+        },
+        {
+          "nodeId": 6489567948,
+          "role": "stop",
+          "name": "Island Gardens Platform 1",
+          "coordinates": [
+            -0.0103151,
+            51.4880046
+          ]
+        },
+        {
+          "nodeId": 3697926971,
+          "role": "stop",
+          "name": "Cutty Sark for Maritime Greenwich Platform 1",
+          "coordinates": [
+            -0.0106459,
+            51.4817118
+          ]
+        },
+        {
+          "nodeId": 1752783163,
+          "role": "stop",
+          "name": "Greenwich Platform 4",
+          "coordinates": [
+            -0.0159912,
+            51.4780121
+          ]
+        },
+        {
+          "nodeId": 1752783025,
+          "role": "stop",
+          "name": "Deptford Bridge Platform 1",
+          "coordinates": [
+            -0.0222192,
+            51.4738959
+          ]
+        },
+        {
+          "nodeId": 1752782893,
+          "role": "stop",
+          "name": "Elverson Road Platform 1",
+          "coordinates": [
+            -0.0160268,
+            51.4683568
+          ]
+        },
+        {
+          "nodeId": 2931492422,
+          "role": "stop_exit_only",
+          "name": "Lewisham Platform 5",
+          "coordinates": [
+            -0.0127937,
+            51.464837
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 7772555,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#00afad",
+        "colour:infill": "#ffffff",
+        "from": "Lewisham",
+        "name": "DLR: Lewisham → Bank",
+        "network": "Docklands Light Railway",
+        "network:short": "DLR",
+        "network:wikidata": "Q216360",
+        "network:wikipedia": "en:Docklands Light Railway",
+        "operator": "KeolisAmey Docklands Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "B-L",
+        "ref:colour": "#00AFAD",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "light_rail",
+        "to": "Bank",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q110165973"
+      },
+      "stops": [
+        {
+          "nodeId": 21095219,
+          "role": "stop_entry_only",
+          "name": "Lewisham Platform 6",
+          "coordinates": [
+            -0.0131584,
+            51.4650786
+          ]
+        },
+        {
+          "nodeId": 21095209,
+          "role": "stop",
+          "name": "Elverson Road Platform 2",
+          "coordinates": [
+            -0.0164322,
+            51.4687659
+          ]
+        },
+        {
+          "nodeId": 183377997,
+          "role": "stop",
+          "name": "Deptford Bridge Platform 2",
+          "coordinates": [
+            -0.0225521,
+            51.4744871
+          ]
+        },
+        {
+          "nodeId": 1752783171,
+          "role": "stop",
+          "name": "Greenwich Platform 3",
+          "coordinates": [
+            -0.0152648,
+            51.4780606
+          ]
+        },
+        {
+          "nodeId": 21095031,
+          "role": "stop",
+          "name": "Cutty Sark for Maritime Greenwich Platform 2",
+          "coordinates": [
+            -0.0108866,
+            51.4818055
+          ]
+        },
+        {
+          "nodeId": 6489567949,
+          "role": "stop",
+          "name": "Island Gardens Platform 2",
+          "coordinates": [
+            -0.0107018,
+            51.4881617
+          ]
+        },
+        {
+          "nodeId": 5320449850,
+          "role": "stop",
+          "name": "Mudchute Platform 2",
+          "coordinates": [
+            -0.0149482,
+            51.4917532
+          ]
+        },
+        {
+          "nodeId": 18050282,
+          "role": "stop",
+          "name": "Crossharbour Platform 2",
+          "coordinates": [
+            -0.014432,
+            51.4961768
+          ]
+        },
+        {
+          "nodeId": 567256556,
+          "role": "stop",
+          "name": "South Quay Platform 2",
+          "coordinates": [
+            -0.0167577,
+            51.5000731
+          ]
+        },
+        {
+          "nodeId": 6143744011,
+          "role": "stop",
+          "name": "Heron Quays Platform 2",
+          "coordinates": [
+            -0.0214863,
+            51.5031092
+          ]
+        },
+        {
+          "nodeId": 6143744016,
+          "role": "stop",
+          "name": "Canary Wharf Platforms 5 & 6",
+          "coordinates": [
+            -0.0210257,
+            51.5053929
+          ]
+        },
+        {
+          "nodeId": 6143744013,
+          "role": "stop",
+          "name": "West India Quay Platform 4",
+          "coordinates": [
+            -0.0205978,
+            51.5069585
+          ]
+        },
+        {
+          "nodeId": 1752475268,
+          "role": "stop",
+          "name": "Westferry Platform 2",
+          "coordinates": [
+            -0.0273103,
+            51.5096533
+          ]
+        },
+        {
+          "nodeId": 5257532211,
+          "role": "stop",
+          "name": "Limehouse Platform 4",
+          "coordinates": [
+            -0.0398455,
+            51.51235
+          ]
+        },
+        {
+          "nodeId": 1752475413,
+          "role": "stop",
+          "name": "Shadwell Platform 2",
+          "coordinates": [
+            -0.0559908,
+            51.5116668
+          ]
+        },
+        {
+          "nodeId": 3153753719,
+          "role": "stop_exit_only",
+          "name": "Bank",
+          "coordinates": [
+            -0.0882346,
+            51.5120279
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 7772556,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#00afad",
+        "colour:infill": "#ffffff",
+        "from": "Bank",
+        "name": "DLR: Bank → Lewisham",
+        "network": "Docklands Light Railway",
+        "network:short": "DLR",
+        "network:wikidata": "Q216360",
+        "network:wikipedia": "en:Docklands Light Railway",
+        "operator": "KeolisAmey Docklands Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "B-L",
+        "ref:colour": "#00AFAD",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "light_rail",
+        "to": "Lewisham",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q110165973"
+      },
+      "stops": [
+        {
+          "nodeId": 3153651162,
+          "role": "stop_entry_only",
+          "name": "Bank",
+          "coordinates": [
+            -0.0875952,
+            51.5117032
+          ]
+        },
+        {
+          "nodeId": 1752475421,
+          "role": "stop",
+          "name": "Shadwell Platform 1",
+          "coordinates": [
+            -0.054987,
+            51.51181
+          ]
+        },
+        {
+          "nodeId": 5257532212,
+          "role": "stop",
+          "name": "Limehouse Platform 3",
+          "coordinates": [
+            -0.0388153,
+            51.5123341
+          ]
+        },
+        {
+          "nodeId": 5257532210,
+          "role": "stop",
+          "name": "Westferry Platform 1",
+          "coordinates": [
+            -0.0262331,
+            51.5092698
+          ]
+        },
+        {
+          "nodeId": 6143744014,
+          "role": "stop",
+          "name": "Canary Wharf Platforms 1 & 2",
+          "coordinates": [
+            -0.020811,
+            51.5048108
+          ]
+        },
+        {
+          "nodeId": 6143744012,
+          "role": "stop",
+          "name": "Heron Quays Platform 1",
+          "coordinates": [
+            -0.0215348,
+            51.5026998
+          ]
+        },
+        {
+          "nodeId": 1752783365,
+          "role": "stop",
+          "name": "South Quay Platform 1",
+          "coordinates": [
+            -0.015949,
+            51.5000189
+          ]
+        },
+        {
+          "nodeId": 1752783277,
+          "role": "stop",
+          "name": "Crossharbour Platform 1",
+          "coordinates": [
+            -0.0144407,
+            51.4956614
+          ]
+        },
+        {
+          "nodeId": 1752783203,
+          "role": "stop",
+          "name": "Mudchute Platform 1",
+          "coordinates": [
+            -0.0148661,
+            51.4911998
+          ]
+        },
+        {
+          "nodeId": 6489567948,
+          "role": "stop",
+          "name": "Island Gardens Platform 1",
+          "coordinates": [
+            -0.0103151,
+            51.4880046
+          ]
+        },
+        {
+          "nodeId": 3697926971,
+          "role": "stop",
+          "name": "Cutty Sark for Maritime Greenwich Platform 1",
+          "coordinates": [
+            -0.0106459,
+            51.4817118
+          ]
+        },
+        {
+          "nodeId": 1752783163,
+          "role": "stop",
+          "name": "Greenwich Platform 4",
+          "coordinates": [
+            -0.0159912,
+            51.4780121
+          ]
+        },
+        {
+          "nodeId": 1752783025,
+          "role": "stop",
+          "name": "Deptford Bridge Platform 1",
+          "coordinates": [
+            -0.0222192,
+            51.4738959
+          ]
+        },
+        {
+          "nodeId": 1752782893,
+          "role": "stop",
+          "name": "Elverson Road Platform 1",
+          "coordinates": [
+            -0.0160268,
+            51.4683568
+          ]
+        },
+        {
+          "nodeId": 2931492422,
+          "role": "stop_exit_only",
+          "name": "Lewisham Platform 5",
+          "coordinates": [
+            -0.0127937,
+            51.464837
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 7772557,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#00afad",
+        "colour:infill": "#ffffff",
+        "from": "Woolwich Arsenal",
+        "name": "DLR: Woolwich Arsenal → Bank",
+        "network": "Docklands Light Railway",
+        "network:short": "DLR",
+        "network:wikidata": "Q216360",
+        "network:wikipedia": "en:Docklands Light Railway",
+        "operator": "KeolisAmey Docklands Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "B-WA",
+        "ref:colour": "#00AFAD",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "light_rail",
+        "to": "Bank",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q115768816"
+      },
+      "stops": [
+        {
+          "nodeId": 2318257991,
+          "role": "stop",
+          "name": "King George V Platform 2",
+          "coordinates": [
+            0.0617878,
+            51.5019721
+          ]
+        },
+        {
+          "nodeId": 33104078,
+          "role": "stop",
+          "name": "London City Airport Platform 2",
+          "coordinates": [
+            0.0480105,
+            51.5036779
+          ]
+        },
+        {
+          "nodeId": 33104077,
+          "role": "stop",
+          "name": "Pontoon Dock Platform 2",
+          "coordinates": [
+            0.0327128,
+            51.502225
+          ]
+        },
+        {
+          "nodeId": 33104076,
+          "role": "stop",
+          "name": "West Silvertown Platform 2",
+          "coordinates": [
+            0.0218222,
+            51.5030375
+          ]
+        },
+        {
+          "nodeId": 1690218900,
+          "role": "stop",
+          "name": "Canning Town Platform 4",
+          "coordinates": [
+            0.0078454,
+            51.5141245
+          ]
+        },
+        {
+          "nodeId": 6143889610,
+          "role": "stop",
+          "name": "East India Platform 2",
+          "coordinates": [
+            -0.0026431,
+            51.5092843
+          ]
+        },
+        {
+          "nodeId": 1752475140,
+          "role": "stop",
+          "name": "Blackwall Platform 2",
+          "coordinates": [
+            -0.0075456,
+            51.5078647
+          ]
+        },
+        {
+          "nodeId": 5257532208,
+          "role": "stop",
+          "name": "Poplar Platform 4",
+          "coordinates": [
+            -0.0174218,
+            51.5076369
+          ]
+        },
+        {
+          "nodeId": 1752475268,
+          "role": "stop",
+          "name": "Westferry Platform 2",
+          "coordinates": [
+            -0.0273103,
+            51.5096533
+          ]
+        },
+        {
+          "nodeId": 5257532211,
+          "role": "stop",
+          "name": "Limehouse Platform 4",
+          "coordinates": [
+            -0.0398455,
+            51.51235
+          ]
+        },
+        {
+          "nodeId": 1752475413,
+          "role": "stop",
+          "name": "Shadwell Platform 2",
+          "coordinates": [
+            -0.0559908,
+            51.5116668
+          ]
+        },
+        {
+          "nodeId": 3153753719,
+          "role": "stop_exit_only",
+          "name": "Bank",
+          "coordinates": [
+            -0.0882346,
+            51.5120279
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 7772558,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#00afad",
+        "colour:infill": "#ffffff",
+        "from": "Bank",
+        "name": "DLR: Bank → Woolwich Arsenal",
+        "network": "Docklands Light Railway",
+        "network:short": "DLR",
+        "network:wikidata": "Q216360",
+        "network:wikipedia": "en:Docklands Light Railway",
+        "operator": "KeolisAmey Docklands Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "B-WA",
+        "ref:colour": "#00AFAD",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "light_rail",
+        "to": "Woolwich Arsenal",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q115768816"
+      },
+      "stops": [
+        {
+          "nodeId": 3153651162,
+          "role": "stop_entry_only",
+          "name": "Bank",
+          "coordinates": [
+            -0.0875952,
+            51.5117032
+          ]
+        },
+        {
+          "nodeId": 1752475421,
+          "role": "stop",
+          "name": "Shadwell Platform 1",
+          "coordinates": [
+            -0.054987,
+            51.51181
+          ]
+        },
+        {
+          "nodeId": 5257532212,
+          "role": "stop",
+          "name": "Limehouse Platform 3",
+          "coordinates": [
+            -0.0388153,
+            51.5123341
+          ]
+        },
+        {
+          "nodeId": 5257532210,
+          "role": "stop",
+          "name": "Westferry Platform 1",
+          "coordinates": [
+            -0.0262331,
+            51.5092698
+          ]
+        },
+        {
+          "nodeId": 87393551,
+          "role": "stop",
+          "name": "Poplar Platform 1",
+          "coordinates": [
+            -0.0162997,
+            51.5077012
+          ]
+        },
+        {
+          "nodeId": 18037081,
+          "role": "stop",
+          "name": "Blackwall Platform 1",
+          "coordinates": [
+            -0.0066576,
+            51.5080368
+          ]
+        },
+        {
+          "nodeId": 18037094,
+          "role": "stop",
+          "name": "East India Platform 1",
+          "coordinates": [
+            -0.0016327,
+            51.5095016
+          ]
+        },
+        {
+          "nodeId": 5455894149,
+          "role": "stop",
+          "name": "Canning Town Platform 3",
+          "coordinates": [
+            0.0085574,
+            51.5136888
+          ]
+        },
+        {
+          "nodeId": 1752319884,
+          "role": "stop",
+          "name": "West Silvertown Platform 1",
+          "coordinates": [
+            0.0227186,
+            51.5027865
+          ]
+        },
+        {
+          "nodeId": 1752319802,
+          "role": "stop",
+          "name": "Pontoon Dock Platform 1",
+          "coordinates": [
+            0.0337457,
+            51.5023057
+          ]
+        },
+        {
+          "nodeId": 1752319914,
+          "role": "stop",
+          "name": "London City Airport Platform 1",
+          "coordinates": [
+            0.0480876,
+            51.5037717
+          ]
+        },
+        {
+          "nodeId": 6143849771,
+          "role": "stop",
+          "name": "King George V Platform 1",
+          "coordinates": [
+            0.0628621,
+            51.5020433
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 7772559,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#00afad",
+        "colour:infill": "#ffffff",
+        "from": "Beckton",
+        "name": "DLR: Beckton → Tower Gateway",
+        "network": "Docklands Light Railway",
+        "network:short": "DLR",
+        "network:wikidata": "Q216360",
+        "network:wikipedia": "en:Docklands Light Railway",
+        "operator": "KeolisAmey Docklands Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "TG-B",
+        "ref:colour": "#00AFAD",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "light_rail",
+        "to": "Tower Gateway",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q110167827"
+      },
+      "stops": [
+        {
+          "nodeId": 6143889608,
+          "role": "stop_entry_only",
+          "name": "Beckton Platform 2",
+          "coordinates": [
+            0.0625926,
+            51.5145135
+          ]
+        },
+        {
+          "nodeId": 18049618,
+          "role": "stop",
+          "name": "Gallions Reach Platform 2",
+          "coordinates": [
+            0.0718183,
+            51.5089272
+          ]
+        },
+        {
+          "nodeId": 6581314748,
+          "role": "stop",
+          "name": "Cyprus Platform 2",
+          "coordinates": [
+            0.0638053,
+            51.5084751
+          ]
+        },
+        {
+          "nodeId": 6581300919,
+          "role": "stop",
+          "name": "Beckton Park Platform 2",
+          "coordinates": [
+            0.0547244,
+            51.5087579
+          ]
+        },
+        {
+          "nodeId": 6143889600,
+          "role": "stop",
+          "name": "Royal Albert Platform 2",
+          "coordinates": [
+            0.0456807,
+            51.5083092
+          ]
+        },
+        {
+          "nodeId": 18038190,
+          "role": "stop",
+          "name": "Prince Regent Platform 2",
+          "coordinates": [
+            0.0325735,
+            51.5094946
+          ]
+        },
+        {
+          "nodeId": 18038183,
+          "role": "stop",
+          "name": "Custom House for Excel Platform 4",
+          "coordinates": [
+            0.0253894,
+            51.5095953
+          ]
+        },
+        {
+          "nodeId": 18038030,
+          "role": "stop",
+          "name": "Royal Victoria Platform 2",
+          "coordinates": [
+            0.0175752,
+            51.5090966
+          ]
+        },
+        {
+          "nodeId": 1690218900,
+          "role": "stop",
+          "name": "Canning Town Platform 4",
+          "coordinates": [
+            0.0078454,
+            51.5141245
+          ]
+        },
+        {
+          "nodeId": 6143889610,
+          "role": "stop",
+          "name": "East India Platform 2",
+          "coordinates": [
+            -0.0026431,
+            51.5092843
+          ]
+        },
+        {
+          "nodeId": 1752475140,
+          "role": "stop",
+          "name": "Blackwall Platform 2",
+          "coordinates": [
+            -0.0075456,
+            51.5078647
+          ]
+        },
+        {
+          "nodeId": 5257532208,
+          "role": "stop",
+          "name": "Poplar Platform 4",
+          "coordinates": [
+            -0.0174218,
+            51.5076369
+          ]
+        },
+        {
+          "nodeId": 1752475268,
+          "role": "stop",
+          "name": "Westferry Platform 2",
+          "coordinates": [
+            -0.0273103,
+            51.5096533
+          ]
+        },
+        {
+          "nodeId": 5257532211,
+          "role": "stop",
+          "name": "Limehouse Platform 4",
+          "coordinates": [
+            -0.0398455,
+            51.51235
+          ]
+        },
+        {
+          "nodeId": 1752475413,
+          "role": "stop",
+          "name": "Shadwell Platform 2",
+          "coordinates": [
+            -0.0559908,
+            51.5116668
+          ]
+        },
+        {
+          "nodeId": 1536019925,
+          "role": "stop_exit_only",
+          "name": "Tower Gateway Platform 1",
+          "coordinates": [
+            -0.0741792,
+            51.5106217
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 7772560,
+      "tags": {
+        "bicycle": "yes",
+        "bicycle:conditional": "no @ (Mo-Fr 07:30-09:30,16:00-19:00; PH off; \"except folded bicycles\")",
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#00afad",
+        "colour:infill": "#ffffff",
+        "from": "Tower Gateway",
+        "name": "DLR: Tower Gateway → Beckton",
+        "network": "Docklands Light Railway",
+        "network:short": "DLR",
+        "network:wikidata": "Q216360",
+        "network:wikipedia": "en:Docklands Light Railway",
+        "operator": "KeolisAmey Docklands Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "TG-B",
+        "ref:colour": "#00AFAD",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "light_rail",
+        "to": "Beckton",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q110167827"
+      },
+      "stops": [
+        {
+          "nodeId": 6577812603,
+          "role": "stop_entry_only",
+          "name": "Tower Gateway Platform 2",
+          "coordinates": [
+            -0.0732628,
+            51.5106259
+          ]
+        },
+        {
+          "nodeId": 1752475421,
+          "role": "stop",
+          "name": "Shadwell Platform 1",
+          "coordinates": [
+            -0.054987,
+            51.51181
+          ]
+        },
+        {
+          "nodeId": 5257532212,
+          "role": "stop",
+          "name": "Limehouse Platform 3",
+          "coordinates": [
+            -0.0388153,
+            51.5123341
+          ]
+        },
+        {
+          "nodeId": 5257532210,
+          "role": "stop",
+          "name": "Westferry Platform 1",
+          "coordinates": [
+            -0.0262331,
+            51.5092698
+          ]
+        },
+        {
+          "nodeId": 87393551,
+          "role": "stop",
+          "name": "Poplar Platform 1",
+          "coordinates": [
+            -0.0162997,
+            51.5077012
+          ]
+        },
+        {
+          "nodeId": 18037081,
+          "role": "stop",
+          "name": "Blackwall Platform 1",
+          "coordinates": [
+            -0.0066576,
+            51.5080368
+          ]
+        },
+        {
+          "nodeId": 18037094,
+          "role": "stop",
+          "name": "East India Platform 1",
+          "coordinates": [
+            -0.0016327,
+            51.5095016
+          ]
+        },
+        {
+          "nodeId": 5455894149,
+          "role": "stop",
+          "name": "Canning Town Platform 3",
+          "coordinates": [
+            0.0085574,
+            51.5136888
+          ]
+        },
+        {
+          "nodeId": 6143889601,
+          "role": "stop",
+          "name": "Royal Victoria Platform 1",
+          "coordinates": [
+            0.0181427,
+            51.5092078
+          ]
+        },
+        {
+          "nodeId": 1752300218,
+          "role": "stop",
+          "name": "Custom House for Excel Platform 3",
+          "coordinates": [
+            0.0267542,
+            51.5096907
+          ]
+        },
+        {
+          "nodeId": 1752300191,
+          "role": "stop",
+          "name": "Prince Regent Platform 1",
+          "coordinates": [
+            0.0336563,
+            51.5094912
+          ]
+        },
+        {
+          "nodeId": 1752300112,
+          "role": "stop",
+          "name": "Royal Albert Platform 1",
+          "coordinates": [
+            0.0460669,
+            51.5084813
+          ]
+        },
+        {
+          "nodeId": 6581300920,
+          "role": "stop",
+          "name": "Beckton Park Platform 1",
+          "coordinates": [
+            0.0552259,
+            51.5087728
+          ]
+        },
+        {
+          "nodeId": 6581314749,
+          "role": "stop",
+          "name": "Cyprus Platform 1",
+          "coordinates": [
+            0.0642133,
+            51.5084903
+          ]
+        },
+        {
+          "nodeId": 1752300182,
+          "role": "stop",
+          "name": "Gallions Reach Platform 1",
+          "coordinates": [
+            0.0717741,
+            51.5089265
+          ]
+        },
+        {
+          "nodeId": 6143889607,
+          "role": "stop_exit_only",
+          "name": "Beckton Platform 1",
+          "coordinates": [
+            0.0611873,
+            51.5142902
+          ]
+        }
       ]
     }
   ]

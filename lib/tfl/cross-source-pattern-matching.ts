@@ -21,6 +21,9 @@ export const normalisePatternStationName = (name: string): string =>
     .replace(/\brail station\b/g, "")
     .replace(/\bunderground station\b/g, "")
     .replace(/\bdlr station\b/g, "")
+    // OSM route relations tag each stop-position node with its platform,
+    // e.g. "Poplar Platform 2" — not part of the station identity.
+    .replace(/\bplatform\s*\d+[a-z]?\b/g, "")
     .replace(/\s*&\s*/g, " and ")
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")

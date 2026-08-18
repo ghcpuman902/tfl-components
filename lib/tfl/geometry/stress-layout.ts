@@ -13,7 +13,7 @@ export type StressPoint = { x: number; y: number }
 
 export type StressGraph = {
   ids: string[]
-  edges: { from: string; to: string }[]
+  edges: { from: string; to: string; length?: number }[]
   geo: StressPoint[]
   straightThrough?: {
     from: string
@@ -36,19 +36,34 @@ export const geoToPlane = (lng: number, lat: number): StressPoint => ({
   y: -lat * METERS_PER_DEG_LAT,
 })
 
-const hopDistances = (count: number, adj: number[][]): number[][] => {
+const hopDistances = (
+  count: number,
+  adj: { to: number; length: number }[][]
+): number[][] => {
   const dist: number[][] = Array.from({ length: count }, () =>
-    Array.from({ length: count }, () => count)
+    Array.from({ length: count }, () => Number.POSITIVE_INFINITY)
   )
   for (let source = 0; source < count; source += 1) {
     dist[source]![source] = 0
-    const queue = [source]
-    for (let head = 0; head < queue.length; head += 1) {
-      const node = queue[head]!
-      for (const next of adj[node] ?? []) {
-        if (dist[source]![next]! <= dist[source]![node]! + 1) continue
-        dist[source]![next] = dist[source]![node]! + 1
-        queue.push(next)
+    const used = new Set<number>()
+    for (let step = 0; step < count; step += 1) {
+      let best = -1
+      let bestDist = Number.POSITIVE_INFINITY
+      for (let node = 0; node < count; node += 1) {
+        if (used.has(node)) continue
+        const value = dist[source]![node]!
+        if (value < bestDist) {
+          best = node
+          bestDist = value
+        }
+      }
+      if (best < 0 || !Number.isFinite(bestDist)) break
+      used.add(best)
+      for (const next of adj[best] ?? []) {
+        const candidate = bestDist + next.length
+        if (candidate < dist[source]![next.to]!) {
+          dist[source]![next.to] = candidate
+        }
       }
     }
   }
@@ -60,13 +75,17 @@ const adjacency = (
   edges: StressGraph["edges"],
   index: Map<string, number>
 ) => {
-  const adj: number[][] = Array.from({ length: count }, () => [])
+  const adj: { to: number; length: number }[][] = Array.from(
+    { length: count },
+    () => []
+  )
   for (const edge of edges) {
     const from = index.get(edge.from)
     const to = index.get(edge.to)
     if (from == null || to == null || from === to) continue
-    adj[from]!.push(to)
-    adj[to]!.push(from)
+    const length = edge.length && edge.length > 0 ? edge.length : 1
+    adj[from]!.push({ to, length })
+    adj[to]!.push({ to: from, length })
   }
   return adj
 }
@@ -183,9 +202,20 @@ export const createStressState = (
   const count = ids.length
   const adj = adjacency(count, edges, index)
   const hops = hopDistances(count, adj)
-  const delta = hops.map((row) => row.map((value) => value * hop))
+  const typicalLength =
+    median(
+      edges.flatMap((edge) =>
+        edge.length && edge.length > 0 ? [edge.length] : []
+      )
+    ) || 1
+  const scale = hop / typicalLength
+  const delta = hops.map((row) =>
+    row.map((value) => (Number.isFinite(value) ? value * scale : 0))
+  )
   const weight = hops.map((row) =>
-    row.map((value) => (value === 0 ? 0 : 1 / (value * value)))
+    row.map((value) =>
+      value === 0 || !Number.isFinite(value) ? 0 : 1 / (value * value)
+    )
   )
 
   const geoX = geo.map((point) => point.x)
@@ -410,11 +440,15 @@ export const settleStressLayout = (
 
 export const stressGraphFromLngLats = (
   nodes: readonly { id: string; coordinates: readonly [number, number] }[],
-  edges: readonly { from: string; to: string }[],
+  edges: readonly { from: string; to: string; length?: number }[],
   straightThrough: readonly { from: string; via: string; to: string }[] = []
 ): StressGraph => ({
   ids: nodes.map((node) => node.id),
-  edges: edges.map((edge) => ({ from: edge.from, to: edge.to })),
+  edges: edges.map((edge) => ({
+    from: edge.from,
+    to: edge.to,
+    ...(edge.length != null ? { length: edge.length } : {}),
+  })),
   geo: nodes.map((node) =>
     geoToPlane(node.coordinates[0], node.coordinates[1])
   ),

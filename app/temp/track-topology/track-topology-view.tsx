@@ -2,7 +2,6 @@
 
 import {
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -50,6 +49,11 @@ import {
   tflMovementsForTopology,
   type TopologyMovementPair,
 } from "@/lib/tfl/geometry/topology-movements"
+import {
+  edgeLengthsFromHopTimes,
+  type LineHopTimesByLine,
+} from "@/lib/tfl/geometry/line-hop-times"
+import { hopGraphForRailLine } from "@/lib/tfl/vehicle-hop-graph"
 import { servicePatternEvidenceForLine } from "@/lib/tfl/service-pattern-evidence"
 import type { NetworkModelSnapshot } from "@/lib/tfl/network-model/from-gtfs"
 import {
@@ -63,6 +67,10 @@ import {
 } from "@/lib/tfl/network-model/line-slice"
 import { cn } from "@/lib/utils"
 import { RoutePatternInspector } from "./route-pattern-inspector"
+import {
+  stationGraphScales,
+  useSvgViewport,
+} from "./station-graph-scale"
 
 type BundlesByMode = Partial<Record<TransitMode, TransitGeometryBundle>>
 
@@ -72,6 +80,7 @@ type TrackTopologyViewProps = {
   dual: BundlesByMode
   networkModel: NetworkModelSnapshot
   networkManifest: NetworkModelManifest
+  hopTimes?: LineHopTimesByLine
 }
 
 type PassengerSource = "tfl" | "snapshot"
@@ -105,8 +114,8 @@ const TRACK_MODELS: { id: PhysicalModel; label: string }[] = [
 ]
 
 const PASSENGER_SOURCES: { id: PassengerSource; label: string }[] = [
-  { id: "tfl", label: "TfL sequences" },
-  { id: "snapshot", label: "Timetable snapshot" },
+  { id: "tfl", label: "TfL sequences (default)" },
+  { id: "snapshot", label: "Timetable typicality overlay" },
 ]
 
 const WIDTH = 1100
@@ -179,16 +188,29 @@ const nodeLabel = (node: ContractedNode): string => {
 const seedSimulation = (
   nodes: readonly ContractedNode[],
   edges: readonly ContractedEdge[],
-  movements: readonly TopologyMovementPair[]
+  movements: readonly TopologyMovementPair[],
+  hopTimes?: LineHopTimesByLine[string],
+  lineId?: string
 ): Simulation | null => {
   if (nodes.length === 0) return null
+  const nodeStationId = new Map(
+    nodes.map((node) => [node.id, node.stationId ?? node.id])
+  )
+  const canonical = lineId
+    ? hopGraphForRailLine(lineId).canonical
+    : (id: string) => id
   return {
     nodes: [...nodes],
     edges: [...edges],
     state: createStressState(
       stressGraphFromLngLats(
         nodes,
-        edges,
+        edgeLengthsFromHopTimes(
+          edges,
+          nodeStationId,
+          hopTimes?.hops,
+          canonical
+        ),
         movements.map((movement) => ({
           from: movement.a,
           via: movement.via,
@@ -407,11 +429,14 @@ const OSM_STOPS_BY_MODE: Partial<Record<TransitMode, OsmRouteStopsFile>> = {
 
 const useLaidOutTopology = (
   topology: ContractedTopology,
-  movements: readonly TopologyMovementPair[]
+  movements: readonly TopologyMovementPair[],
+  hopTimes?: LineHopTimesByLine[string],
+  lineId?: string
 ) => {
   const seeded = useMemo(
-    () => seedSimulation(topology.nodes, topology.edges, movements),
-    [topology, movements]
+    () =>
+      seedSimulation(topology.nodes, topology.edges, movements, hopTimes, lineId),
+    [topology, movements, hopTimes, lineId]
   )
   const [laidNodes, setLaidNodes] = useState<LaidOutNode[]>([])
   const simRef = useRef<Simulation | null>(null)
@@ -458,9 +483,9 @@ type TopologyPlotProps = {
   topology: ContractedTopology
   color: string
   lineName: string
+  lineId?: string
   movements?: readonly TopologyMovementPair[]
-  showMovementCurves?: boolean
-  showDirectionArrows?: boolean
+  hopTimes?: LineHopTimesByLine[string]
   dual?: boolean
   empty?: string
 }
@@ -471,17 +496,16 @@ const TopologyPlot = ({
   topology,
   color,
   lineName,
+  lineId,
   movements = [],
-  showMovementCurves = false,
-  showDirectionArrows = false,
+  hopTimes,
   dual = false,
   empty,
 }: TopologyPlotProps) => {
-  const markerId = useId().replace(/:/g, "")
   const svgRef = useRef<SVGSVGElement | null>(null)
   const dragRef = useRef<DragState | null>(null)
   const [zoom, setZoom] = useState<ZoomState>({ scale: 1, x: 0, y: 0 })
-  const painted = useLaidOutTopology(topology, movements)
+  const painted = useLaidOutTopology(topology, movements, hopTimes, lineId)
   const nodeById = useMemo(
     () => new Map(painted.map((node) => [node.id, node])),
     [painted]
@@ -560,9 +584,12 @@ const TopologyPlot = ({
     setZoom((current) => zoomAround(current, current.scale * factor, anchor))
   }
 
-  const symbolScale = 1 / zoom.scale
-  const labelScreenScale = Math.max(1.08, Math.min(2.15, zoom.scale ** 0.52))
-  const labelScale = labelScreenScale / zoom.scale
+  const viewport = useSvgViewport(svgRef)
+  const { symbolScale, labelScale } = stationGraphScales(
+    zoom.scale,
+    viewBox,
+    viewport
+  )
 
   return (
     <section className="min-w-0 space-y-2">
@@ -573,6 +600,9 @@ const TopologyPlot = ({
           {topology.nodes.length} nodes · {topology.edges.length} edges ·{" "}
           {junctionCount} junctions · {movements.length} layout continuities ·{" "}
           {visibleMovements.length} marked branch pairs
+          {hopTimes
+            ? ` · ${hopTimes.timedHopCount} hops seeded from TfL travel time`
+            : ""}
         </p>
       </div>
       <div className="relative overflow-hidden rounded-lg border border-border bg-muted/30">
@@ -618,20 +648,6 @@ const TopologyPlot = ({
               onPointerUp={finishDrag}
               onPointerCancel={finishDrag}
             >
-              <defs>
-                <marker
-                  id={`${markerId}-arrow`}
-                  viewBox="0 0 8 8"
-                  refX="6.5"
-                  refY="4"
-                  markerWidth={2.4 * symbolScale}
-                  markerHeight={2.4 * symbolScale}
-                  markerUnits="userSpaceOnUse"
-                  orient="auto-start-reverse"
-                >
-                  <path d="M 0 1 L 7 4 L 0 7 z" fill={color} />
-                </marker>
-              </defs>
               <g
                 transform={`translate(${zoom.x} ${zoom.y}) scale(${zoom.scale})`}
               >
@@ -668,8 +684,7 @@ const TopologyPlot = ({
                     </line>
                   )
                 })}
-                {showMovementCurves &&
-                  visibleMovements.map((pair) => {
+                {visibleMovements.map((pair) => {
                     const a = nodeById.get(pair.a)
                     const via = nodeById.get(pair.via)
                     const b = nodeById.get(pair.b)
@@ -704,23 +719,6 @@ const TopologyPlot = ({
                             {`${pair.directions.length} permitted direction${pair.directions.length === 1 ? "" : "s"}; ${patternIds.length} supporting pattern${patternIds.length === 1 ? "" : "s"}`}
                           </title>
                         </path>
-                        {showDirectionArrows &&
-                          pair.directions.map((direction) => {
-                            const from = nodeById.get(direction.from)
-                            const to = nodeById.get(direction.to)
-                            if (!from || !to) return null
-                            return (
-                              <path
-                                key={direction.id}
-                                d={movementCurve(from, via, to)}
-                                fill="none"
-                                stroke="transparent"
-                                strokeWidth="6"
-                                vectorEffect="non-scaling-stroke"
-                                markerEnd={`url(#${markerId}-arrow)`}
-                              />
-                            )
-                          })}
                       </g>
                     )
                   })}
@@ -779,6 +777,7 @@ export const TrackTopologyView = ({
   dual,
   networkModel,
   networkManifest,
+  hopTimes,
 }: TrackTopologyViewProps) => {
   const lineOptions = useMemo(() => {
     const fromOsm = linesFromBundles(centreline)
@@ -800,10 +799,8 @@ export const TrackTopologyView = ({
       ""
   )
   const [passengerSource, setPassengerSource] =
-    useState<PassengerSource>("snapshot")
+    useState<PassengerSource>("tfl")
   const [trackModel, setTrackModel] = useState<PhysicalModel>("centreline")
-  const [showMovementCurves, setShowMovementCurves] = useState(true)
-  const [showDirectionArrows, setShowDirectionArrows] = useState(true)
   const [showSkipHops, setShowSkipHops] = useState(true)
 
   const selected = lineOptions.find((option) => option.lineId === lineId)
@@ -947,9 +944,10 @@ export const TrackTopologyView = ({
             Passenger topology
           </h2>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            TfL sequences are the carriage-map spine. The timetable says which
-            of those stations a train actually calls at, and how often — not a
-            second set of tracks.
+            TfL sequences are the spine for the carriage map, platform map,
+            and Tube map, and stay the default here. The timetable overlay
+            only classifies how typical a skip or branch is — it is decision
+            support, not an alternative station graph.
           </p>
         </div>
         <div
@@ -974,25 +972,8 @@ export const TrackTopologyView = ({
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap gap-4">
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={showMovementCurves}
-              onChange={(event) => setShowMovementCurves(event.target.checked)}
-            />
-            Branch movement marks
-          </label>
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={showDirectionArrows}
-              disabled={!showMovementCurves}
-              onChange={(event) => setShowDirectionArrows(event.target.checked)}
-            />
-            Direction arrows
-          </label>
-          {passengerSource === "snapshot" && (
+        {passengerSource === "snapshot" && (
+          <div className="flex flex-wrap gap-4">
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <input
                 type="checkbox"
@@ -1001,27 +982,22 @@ export const TrackTopologyView = ({
               />
               Skip-stop hops (dashed regular / dotted occasional)
             </label>
-          )}
-        </div>
-        <div className="rounded-lg border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-          Movement marks appear only at branches. Two-leg continuations still
-          straighten the layout. A missing branch mark means the selected
-          source does not support that movement.
-        </div>
+          </div>
+        )}
         <TopologyPlot
           key={`passenger-${passengerSource}-${lineId}`}
           title={`${selected?.lineName ?? "Line"} station graph`}
           source={
             passengerSource === "snapshot"
-              ? "Timetable spine after merging NR/Tube twins. Dashed hops are regular weekday skip-stop; dotted hops are evening, weekend-only, or rare adjustments."
-              : "TfL ordered station sequences. Physical track junctions are omitted."
+              ? "Typicality overlay after merging NR/Tube twins, for comparison only. Dashed hops are regular weekday skip-stop; dotted hops are evening, weekend-only, or rare adjustments. Segment length follows TfL travel time where known."
+              : "TfL ordered station sequences — the default render source for carriage, platform, and Tube map products. Segment length follows TfL travel time. Physical track junctions are omitted."
           }
           topology={passengerTopology}
           color={selected?.color ?? snapshotSlice?.line.color ?? "#888"}
           lineName={selected?.lineName ?? "Line"}
+          lineId={selected?.lineId}
           movements={passengerMovements}
-          showMovementCurves={showMovementCurves}
-          showDirectionArrows={showDirectionArrows}
+          hopTimes={selected ? hopTimes?.[selected.lineId] : undefined}
           empty={
             passengerSource === "snapshot"
               ? "No timetable snapshot patterns for this line."

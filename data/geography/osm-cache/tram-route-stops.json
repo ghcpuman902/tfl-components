@@ -1,9 +1,10 @@
 {
   "meta": {
+    "schemaVersion": 2,
     "source": "osm-route-relations",
-    "note": "Stop-position nodes read directly off each route relation's ordered stop/platform members — not snapped from a separate station catalog.",
+    "note": "Relation tags and ordered stop-position members read directly from each OSM route relation. The top-level stops array remains as a backward-compatible unique-stop index.",
     "relationCount": 10,
-    "retrievedAt": "2026-08-18T00:14:47.741Z"
+    "retrievedAt": "2026-08-18T10:54:50.172Z"
   },
   "stops": [
     {
@@ -548,6 +549,2572 @@
       "coordinates": [
         -0.0582218,
         51.3915834
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "relationId": 142794,
+      "tags": {
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#00ff00",
+        "from": "New Addington",
+        "name": "London Trams: New Addington → West Croydon loop",
+        "network": "London Trams",
+        "operator": "Tram Operations Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "3",
+        "ref:colour": "#3FAB35",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "tram",
+        "to": "New Addington",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q7833152"
+      },
+      "stops": [
+        {
+          "nodeId": 6754023080,
+          "role": "stop_entry_only",
+          "name": "New Addington",
+          "coordinates": [
+            -0.0174316,
+            51.3426682
+          ]
+        },
+        {
+          "nodeId": 1763988021,
+          "role": "stop",
+          "name": "King Henry's Drive",
+          "coordinates": [
+            -0.0203926,
+            51.3455073
+          ]
+        },
+        {
+          "nodeId": 1763988092,
+          "role": "stop",
+          "name": "Fieldway",
+          "coordinates": [
+            -0.0242146,
+            51.3509698
+          ]
+        },
+        {
+          "nodeId": 7696310663,
+          "role": "stop",
+          "name": "Addington Village",
+          "coordinates": [
+            -0.0328853,
+            51.3562243
+          ]
+        },
+        {
+          "nodeId": 1763988253,
+          "role": "stop",
+          "name": "Gravel Hill",
+          "coordinates": [
+            -0.0428615,
+            51.3545293
+          ]
+        },
+        {
+          "nodeId": 1763988764,
+          "role": "stop",
+          "name": "Coombe Lane",
+          "coordinates": [
+            -0.0600865,
+            51.3597826
+          ]
+        },
+        {
+          "nodeId": 1763989211,
+          "role": "stop",
+          "name": "Lloyd Park",
+          "coordinates": [
+            -0.0806955,
+            51.3641661
+          ]
+        },
+        {
+          "nodeId": 8403500917,
+          "role": "stop",
+          "name": "Sandilands",
+          "coordinates": [
+            -0.0777578,
+            51.3749371
+          ]
+        },
+        {
+          "nodeId": 1763989881,
+          "role": "stop",
+          "name": "Lebanon Road",
+          "coordinates": [
+            -0.0855558,
+            51.3752049
+          ]
+        },
+        {
+          "nodeId": 6753994726,
+          "role": "stop",
+          "name": "East Croydon",
+          "coordinates": [
+            -0.0927623,
+            51.3747991
+          ]
+        },
+        {
+          "nodeId": 83701443,
+          "role": "stop",
+          "name": "George Street",
+          "coordinates": [
+            -0.0989116,
+            51.3739003
+          ]
+        },
+        {
+          "nodeId": 245736992,
+          "role": "stop",
+          "name": "Church Street",
+          "coordinates": [
+            -0.1041797,
+            51.373648
+          ]
+        },
+        {
+          "nodeId": 312676581,
+          "role": "stop",
+          "name": "Centrale",
+          "coordinates": [
+            -0.1037838,
+            51.3758669
+          ]
+        },
+        {
+          "nodeId": 1760244804,
+          "role": "stop",
+          "name": "West Croydon",
+          "coordinates": [
+            -0.1016245,
+            51.3790494
+          ]
+        },
+        {
+          "nodeId": 128665478,
+          "role": "stop",
+          "name": "Wellesley Road",
+          "coordinates": [
+            -0.0976166,
+            51.3756242
+          ]
+        },
+        {
+          "nodeId": 1760245005,
+          "role": "stop",
+          "name": "East Croydon",
+          "coordinates": [
+            -0.0926493,
+            51.3749169
+          ]
+        },
+        {
+          "nodeId": 1763987970,
+          "role": "stop",
+          "name": "Lebanon Road",
+          "coordinates": [
+            -0.0845187,
+            51.3751861
+          ]
+        },
+        {
+          "nodeId": 60306534,
+          "role": "stop",
+          "name": "Sandilands",
+          "coordinates": [
+            -0.0777467,
+            51.3749647
+          ]
+        },
+        {
+          "nodeId": 1803040291,
+          "role": "stop",
+          "name": "Lloyd Park",
+          "coordinates": [
+            -0.0805814,
+            51.3642061
+          ]
+        },
+        {
+          "nodeId": 166725697,
+          "role": "stop",
+          "name": "Coombe Lane",
+          "coordinates": [
+            -0.0600802,
+            51.3598192
+          ]
+        },
+        {
+          "nodeId": 21622249,
+          "role": "stop",
+          "name": "Gravel Hill",
+          "coordinates": [
+            -0.0429213,
+            51.3545721
+          ]
+        },
+        {
+          "nodeId": 82626213,
+          "role": "stop",
+          "name": "Addington Village",
+          "coordinates": [
+            -0.0328821,
+            51.3562667
+          ]
+        },
+        {
+          "nodeId": 82626520,
+          "role": "stop",
+          "name": "Fieldway",
+          "coordinates": [
+            -0.0241702,
+            51.3509685
+          ]
+        },
+        {
+          "nodeId": 82627515,
+          "role": "stop",
+          "name": "King Henry's Drive",
+          "coordinates": [
+            -0.0202322,
+            51.3453762
+          ]
+        },
+        {
+          "nodeId": 82627519,
+          "role": "stop_exit_only",
+          "name": "New Addington",
+          "coordinates": [
+            -0.0175057,
+            51.3426259
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 142807,
+      "tags": {
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#ff0000",
+        "from": "Beckenham Junction",
+        "name": "London Trams: Beckenham Junction → Wimbledon",
+        "network": "London Trams",
+        "operator": "Tram Operations Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "2",
+        "ref:colour": "#3FAB35",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "tram",
+        "to": "Wimbledon",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q7833150"
+      },
+      "stops": [
+        {
+          "nodeId": 107262646,
+          "role": "stop",
+          "name": "Beckenham Road",
+          "coordinates": [
+            -0.0431569,
+            51.4096366
+          ]
+        },
+        {
+          "nodeId": 1763991632,
+          "role": "stop",
+          "name": "Avenue Road",
+          "coordinates": [
+            -0.0498755,
+            51.4065809
+          ]
+        },
+        {
+          "nodeId": 107260025,
+          "role": "stop",
+          "name": "Birkbeck",
+          "coordinates": [
+            -0.0561355,
+            51.4035603
+          ]
+        },
+        {
+          "nodeId": 8403501017,
+          "role": "stop",
+          "name": "Harrington Road",
+          "coordinates": [
+            -0.0604262,
+            51.3996825
+          ]
+        },
+        {
+          "nodeId": 8403501217,
+          "role": "stop",
+          "name": "Arena",
+          "coordinates": [
+            -0.0582218,
+            51.3915834
+          ]
+        },
+        {
+          "nodeId": 8403500918,
+          "role": "stop",
+          "name": "Woodside",
+          "coordinates": [
+            -0.0656032,
+            51.3869317
+          ]
+        },
+        {
+          "nodeId": 1763990296,
+          "role": "stop",
+          "name": "Blackhorse Lane",
+          "coordinates": [
+            -0.0703122,
+            51.3848854
+          ]
+        },
+        {
+          "nodeId": 1763990102,
+          "role": "stop",
+          "name": "Addiscombe",
+          "coordinates": [
+            -0.0732071,
+            51.3798207
+          ]
+        },
+        {
+          "nodeId": 8403500917,
+          "role": "stop",
+          "name": "Sandilands",
+          "coordinates": [
+            -0.0777578,
+            51.3749371
+          ]
+        },
+        {
+          "nodeId": 1763989881,
+          "role": "stop",
+          "name": "Lebanon Road",
+          "coordinates": [
+            -0.0855558,
+            51.3752049
+          ]
+        },
+        {
+          "nodeId": 6753994726,
+          "role": "stop",
+          "name": "East Croydon",
+          "coordinates": [
+            -0.0927623,
+            51.3747991
+          ]
+        },
+        {
+          "nodeId": 83701443,
+          "role": "stop",
+          "name": "George Street",
+          "coordinates": [
+            -0.0989116,
+            51.3739003
+          ]
+        },
+        {
+          "nodeId": 245736992,
+          "role": "stop",
+          "name": "Church Street",
+          "coordinates": [
+            -0.1041797,
+            51.373648
+          ]
+        },
+        {
+          "nodeId": 8403500817,
+          "role": "stop",
+          "name": "Wandle Park",
+          "coordinates": [
+            -0.1134151,
+            51.3734688
+          ]
+        },
+        {
+          "nodeId": 1763990028,
+          "role": "stop",
+          "name": "Waddon Marsh",
+          "coordinates": [
+            -0.1178974,
+            51.3770038
+          ]
+        },
+        {
+          "nodeId": 8403501117,
+          "role": "stop",
+          "name": "Ampere Way",
+          "coordinates": [
+            -0.1239146,
+            51.3824656
+          ]
+        },
+        {
+          "nodeId": 1763990397,
+          "role": "stop",
+          "name": "Therapia Lane",
+          "coordinates": [
+            -0.1292711,
+            51.3857203
+          ]
+        },
+        {
+          "nodeId": 1763990955,
+          "role": "stop",
+          "name": "Beddington Lane",
+          "coordinates": [
+            -0.1428702,
+            51.3894384
+          ]
+        },
+        {
+          "nodeId": 6207516953,
+          "role": "stop",
+          "name": "Mitcham Junction",
+          "coordinates": [
+            -0.1576137,
+            51.3927176
+          ]
+        },
+        {
+          "nodeId": 25279123,
+          "role": "stop",
+          "name": "Mitcham",
+          "coordinates": [
+            -0.1711521,
+            51.3975335
+          ]
+        },
+        {
+          "nodeId": 1763991404,
+          "role": "stop",
+          "name": "Belgrave Walk",
+          "coordinates": [
+            -0.1786543,
+            51.40109
+          ]
+        },
+        {
+          "nodeId": 1763991547,
+          "role": "stop",
+          "name": "Phipps Bridge",
+          "coordinates": [
+            -0.182544,
+            51.4035285
+          ]
+        },
+        {
+          "nodeId": 2867978674,
+          "role": "stop",
+          "name": "Morden Road",
+          "coordinates": [
+            -0.1931478,
+            51.4089702
+          ]
+        },
+        {
+          "nodeId": 2875405812,
+          "role": "stop",
+          "name": "Merton Park",
+          "coordinates": [
+            -0.201498,
+            51.4138674
+          ]
+        },
+        {
+          "nodeId": 2864267809,
+          "role": "stop",
+          "name": "Dundonald Road",
+          "coordinates": [
+            -0.2077975,
+            51.4177292
+          ]
+        },
+        {
+          "nodeId": 3817927775,
+          "role": "stop_exit_only",
+          "name": "Wimbledon",
+          "coordinates": [
+            -0.2050412,
+            51.421556
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 6994815,
+      "tags": {
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#b5e61d",
+        "from": "Elmers End",
+        "name": "London Trams: Elmers End → Wimbledon",
+        "network": "London Trams",
+        "operator": "Tram Operations Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "4",
+        "ref:colour": "#3FAB35",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "tram",
+        "to": "Wimbledon",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q7833148"
+      },
+      "stops": [
+        {
+          "nodeId": 311222450,
+          "role": "stop_entry_only",
+          "name": "Elmers End",
+          "coordinates": [
+            -0.0495263,
+            51.3983499
+          ]
+        },
+        {
+          "nodeId": 8403501217,
+          "role": "stop",
+          "name": "Arena",
+          "coordinates": [
+            -0.0582218,
+            51.3915834
+          ]
+        },
+        {
+          "nodeId": 8403500918,
+          "role": "stop",
+          "name": "Woodside",
+          "coordinates": [
+            -0.0656032,
+            51.3869317
+          ]
+        },
+        {
+          "nodeId": 1763990296,
+          "role": "stop",
+          "name": "Blackhorse Lane",
+          "coordinates": [
+            -0.0703122,
+            51.3848854
+          ]
+        },
+        {
+          "nodeId": 1763990102,
+          "role": "stop",
+          "name": "Addiscombe",
+          "coordinates": [
+            -0.0732071,
+            51.3798207
+          ]
+        },
+        {
+          "nodeId": 8403500917,
+          "role": "stop",
+          "name": "Sandilands",
+          "coordinates": [
+            -0.0777578,
+            51.3749371
+          ]
+        },
+        {
+          "nodeId": 1763989881,
+          "role": "stop",
+          "name": "Lebanon Road",
+          "coordinates": [
+            -0.0855558,
+            51.3752049
+          ]
+        },
+        {
+          "nodeId": 6753994726,
+          "role": "stop",
+          "name": "East Croydon",
+          "coordinates": [
+            -0.0927623,
+            51.3747991
+          ]
+        },
+        {
+          "nodeId": 83701443,
+          "role": "stop",
+          "name": "George Street",
+          "coordinates": [
+            -0.0989116,
+            51.3739003
+          ]
+        },
+        {
+          "nodeId": 245736992,
+          "role": "stop",
+          "name": "Church Street",
+          "coordinates": [
+            -0.1041797,
+            51.373648
+          ]
+        },
+        {
+          "nodeId": 8403500817,
+          "role": "stop",
+          "name": "Wandle Park",
+          "coordinates": [
+            -0.1134151,
+            51.3734688
+          ]
+        },
+        {
+          "nodeId": 1763990028,
+          "role": "stop",
+          "name": "Waddon Marsh",
+          "coordinates": [
+            -0.1178974,
+            51.3770038
+          ]
+        },
+        {
+          "nodeId": 8403501117,
+          "role": "stop",
+          "name": "Ampere Way",
+          "coordinates": [
+            -0.1239146,
+            51.3824656
+          ]
+        },
+        {
+          "nodeId": 1763990397,
+          "role": "stop",
+          "name": "Therapia Lane",
+          "coordinates": [
+            -0.1292711,
+            51.3857203
+          ]
+        },
+        {
+          "nodeId": 1763990955,
+          "role": "stop",
+          "name": "Beddington Lane",
+          "coordinates": [
+            -0.1428702,
+            51.3894384
+          ]
+        },
+        {
+          "nodeId": 6207516953,
+          "role": "stop",
+          "name": "Mitcham Junction",
+          "coordinates": [
+            -0.1576137,
+            51.3927176
+          ]
+        },
+        {
+          "nodeId": 25279123,
+          "role": "stop",
+          "name": "Mitcham",
+          "coordinates": [
+            -0.1711521,
+            51.3975335
+          ]
+        },
+        {
+          "nodeId": 1763991404,
+          "role": "stop",
+          "name": "Belgrave Walk",
+          "coordinates": [
+            -0.1786543,
+            51.40109
+          ]
+        },
+        {
+          "nodeId": 1763991547,
+          "role": "stop",
+          "name": "Phipps Bridge",
+          "coordinates": [
+            -0.182544,
+            51.4035285
+          ]
+        },
+        {
+          "nodeId": 2867978674,
+          "role": "stop",
+          "name": "Morden Road",
+          "coordinates": [
+            -0.1931478,
+            51.4089702
+          ]
+        },
+        {
+          "nodeId": 2875405812,
+          "role": "stop",
+          "name": "Merton Park",
+          "coordinates": [
+            -0.201498,
+            51.4138674
+          ]
+        },
+        {
+          "nodeId": 2864267809,
+          "role": "stop",
+          "name": "Dundonald Road",
+          "coordinates": [
+            -0.2077975,
+            51.4177292
+          ]
+        },
+        {
+          "nodeId": 3817927775,
+          "role": "stop_exit_only",
+          "name": "Wimbledon",
+          "coordinates": [
+            -0.2050412,
+            51.421556
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 7560898,
+      "tags": {
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#b5e61d",
+        "from": "Wimbledon",
+        "name": "London Trams: Wimbledon → Elmers End",
+        "network": "London Trams",
+        "operator": "Tram Operations Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "4",
+        "ref:colour": "#3FAB35",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "tram",
+        "to": "Elmers End",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q7833148"
+      },
+      "stops": [
+        {
+          "nodeId": 307542330,
+          "role": "stop_entry_only",
+          "name": "Wimbledon",
+          "coordinates": [
+            -0.2054816,
+            51.4212978
+          ]
+        },
+        {
+          "nodeId": 2864267808,
+          "role": "stop",
+          "name": "Dundonald Road",
+          "coordinates": [
+            -0.207536,
+            51.4174546
+          ]
+        },
+        {
+          "nodeId": 2875405810,
+          "role": "stop",
+          "name": "Merton Park",
+          "coordinates": [
+            -0.2011713,
+            51.4135914
+          ]
+        },
+        {
+          "nodeId": 2867978661,
+          "role": "stop",
+          "name": "Morden Road",
+          "coordinates": [
+            -0.1926742,
+            51.4087733
+          ]
+        },
+        {
+          "nodeId": 1763991540,
+          "role": "stop",
+          "name": "Phipps Bridge",
+          "coordinates": [
+            -0.1821142,
+            51.4033515
+          ]
+        },
+        {
+          "nodeId": 1763991367,
+          "role": "stop",
+          "name": "Belgrave Walk",
+          "coordinates": [
+            -0.1781763,
+            51.400872
+          ]
+        },
+        {
+          "nodeId": 8403501018,
+          "role": "stop",
+          "name": "Mitcham",
+          "coordinates": [
+            -0.1710527,
+            51.3975433
+          ]
+        },
+        {
+          "nodeId": 26478123,
+          "role": "stop",
+          "name": "Mitcham Junction",
+          "coordinates": [
+            -0.1571316,
+            51.3926327
+          ]
+        },
+        {
+          "nodeId": 25279249,
+          "role": "stop",
+          "name": "Beddington Lane",
+          "coordinates": [
+            -0.1428504,
+            51.3894605
+          ]
+        },
+        {
+          "nodeId": 25279257,
+          "role": "stop",
+          "name": "Therapia Lane",
+          "coordinates": [
+            -0.1290915,
+            51.3856974
+          ]
+        },
+        {
+          "nodeId": 25279260,
+          "role": "stop",
+          "name": "Ampere Way",
+          "coordinates": [
+            -0.1236871,
+            51.3823591
+          ]
+        },
+        {
+          "nodeId": 25279390,
+          "role": "stop",
+          "name": "Waddon Marsh",
+          "coordinates": [
+            -0.1178267,
+            51.3770031
+          ]
+        },
+        {
+          "nodeId": 25279393,
+          "role": "stop",
+          "name": "Wandle Park",
+          "coordinates": [
+            -0.1133617,
+            51.3734814
+          ]
+        },
+        {
+          "nodeId": 83683573,
+          "role": "stop",
+          "name": "Reeves Corner",
+          "coordinates": [
+            -0.1062524,
+            51.374803
+          ]
+        },
+        {
+          "nodeId": 312676581,
+          "role": "stop",
+          "name": "Centrale",
+          "coordinates": [
+            -0.1037838,
+            51.3758669
+          ]
+        },
+        {
+          "nodeId": 1760244804,
+          "role": "stop",
+          "name": "West Croydon",
+          "coordinates": [
+            -0.1016245,
+            51.3790494
+          ]
+        },
+        {
+          "nodeId": 128665478,
+          "role": "stop",
+          "name": "Wellesley Road",
+          "coordinates": [
+            -0.0976166,
+            51.3756242
+          ]
+        },
+        {
+          "nodeId": 1760245005,
+          "role": "stop",
+          "name": "East Croydon",
+          "coordinates": [
+            -0.0926493,
+            51.3749169
+          ]
+        },
+        {
+          "nodeId": 1763987970,
+          "role": "stop",
+          "name": "Lebanon Road",
+          "coordinates": [
+            -0.0845187,
+            51.3751861
+          ]
+        },
+        {
+          "nodeId": 60306534,
+          "role": "stop",
+          "name": "Sandilands",
+          "coordinates": [
+            -0.0777467,
+            51.3749647
+          ]
+        },
+        {
+          "nodeId": 299665006,
+          "role": "stop",
+          "name": "Addiscombe",
+          "coordinates": [
+            -0.0732562,
+            51.3799341
+          ]
+        },
+        {
+          "nodeId": 21577771,
+          "role": "stop",
+          "name": "Blackhorse Lane",
+          "coordinates": [
+            -0.070221,
+            51.3849891
+          ]
+        },
+        {
+          "nodeId": 21577769,
+          "role": "stop",
+          "name": "Woodside",
+          "coordinates": [
+            -0.0653411,
+            51.3870849
+          ]
+        },
+        {
+          "nodeId": 299664774,
+          "role": "stop",
+          "name": "Arena",
+          "coordinates": [
+            -0.0582529,
+            51.3916054
+          ]
+        },
+        {
+          "nodeId": 311222450,
+          "role": "stop_exit_only",
+          "name": "Elmers End",
+          "coordinates": [
+            -0.0495263,
+            51.3983499
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 8057977,
+      "tags": {
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#ff0000",
+        "from": "Wimbledon",
+        "name": "London Trams: Wimbledon → Beckenham Junction",
+        "network": "London Trams",
+        "operator": "Tram Operations Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "2",
+        "ref:colour": "#3FAB35",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "tram",
+        "to": "Beckenham Junction",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q7833150"
+      },
+      "stops": [
+        {
+          "nodeId": 3817927775,
+          "role": "stop_entry_only",
+          "name": "Wimbledon",
+          "coordinates": [
+            -0.2050412,
+            51.421556
+          ]
+        },
+        {
+          "nodeId": 2864267808,
+          "role": "stop",
+          "name": "Dundonald Road",
+          "coordinates": [
+            -0.207536,
+            51.4174546
+          ]
+        },
+        {
+          "nodeId": 2875405810,
+          "role": "stop",
+          "name": "Merton Park",
+          "coordinates": [
+            -0.2011713,
+            51.4135914
+          ]
+        },
+        {
+          "nodeId": 2867978661,
+          "role": "stop",
+          "name": "Morden Road",
+          "coordinates": [
+            -0.1926742,
+            51.4087733
+          ]
+        },
+        {
+          "nodeId": 1763991540,
+          "role": "stop",
+          "name": "Phipps Bridge",
+          "coordinates": [
+            -0.1821142,
+            51.4033515
+          ]
+        },
+        {
+          "nodeId": 1763991367,
+          "role": "stop",
+          "name": "Belgrave Walk",
+          "coordinates": [
+            -0.1781763,
+            51.400872
+          ]
+        },
+        {
+          "nodeId": 8403501018,
+          "role": "stop",
+          "name": "Mitcham",
+          "coordinates": [
+            -0.1710527,
+            51.3975433
+          ]
+        },
+        {
+          "nodeId": 26478123,
+          "role": "stop",
+          "name": "Mitcham Junction",
+          "coordinates": [
+            -0.1571316,
+            51.3926327
+          ]
+        },
+        {
+          "nodeId": 25279249,
+          "role": "stop",
+          "name": "Beddington Lane",
+          "coordinates": [
+            -0.1428504,
+            51.3894605
+          ]
+        },
+        {
+          "nodeId": 25279257,
+          "role": "stop",
+          "name": "Therapia Lane",
+          "coordinates": [
+            -0.1290915,
+            51.3856974
+          ]
+        },
+        {
+          "nodeId": 25279260,
+          "role": "stop",
+          "name": "Ampere Way",
+          "coordinates": [
+            -0.1236871,
+            51.3823591
+          ]
+        },
+        {
+          "nodeId": 25279390,
+          "role": "stop",
+          "name": "Waddon Marsh",
+          "coordinates": [
+            -0.1178267,
+            51.3770031
+          ]
+        },
+        {
+          "nodeId": 25279393,
+          "role": "stop",
+          "name": "Wandle Park",
+          "coordinates": [
+            -0.1133617,
+            51.3734814
+          ]
+        },
+        {
+          "nodeId": 83683573,
+          "role": "stop",
+          "name": "Reeves Corner",
+          "coordinates": [
+            -0.1062524,
+            51.374803
+          ]
+        },
+        {
+          "nodeId": 312676581,
+          "role": "stop",
+          "name": "Centrale",
+          "coordinates": [
+            -0.1037838,
+            51.3758669
+          ]
+        },
+        {
+          "nodeId": 1760244804,
+          "role": "stop",
+          "name": "West Croydon",
+          "coordinates": [
+            -0.1016245,
+            51.3790494
+          ]
+        },
+        {
+          "nodeId": 128665478,
+          "role": "stop",
+          "name": "Wellesley Road",
+          "coordinates": [
+            -0.0976166,
+            51.3756242
+          ]
+        },
+        {
+          "nodeId": 1760245005,
+          "role": "stop",
+          "name": "East Croydon",
+          "coordinates": [
+            -0.0926493,
+            51.3749169
+          ]
+        },
+        {
+          "nodeId": 1763987970,
+          "role": "stop",
+          "name": "Lebanon Road",
+          "coordinates": [
+            -0.0845187,
+            51.3751861
+          ]
+        },
+        {
+          "nodeId": 60306534,
+          "role": "stop",
+          "name": "Sandilands",
+          "coordinates": [
+            -0.0777467,
+            51.3749647
+          ]
+        },
+        {
+          "nodeId": 299665006,
+          "role": "stop",
+          "name": "Addiscombe",
+          "coordinates": [
+            -0.0732562,
+            51.3799341
+          ]
+        },
+        {
+          "nodeId": 21577771,
+          "role": "stop",
+          "name": "Blackhorse Lane",
+          "coordinates": [
+            -0.070221,
+            51.3849891
+          ]
+        },
+        {
+          "nodeId": 21577769,
+          "role": "stop",
+          "name": "Woodside",
+          "coordinates": [
+            -0.0653411,
+            51.3870849
+          ]
+        },
+        {
+          "nodeId": 299664774,
+          "role": "stop",
+          "name": "Arena",
+          "coordinates": [
+            -0.0582529,
+            51.3916054
+          ]
+        },
+        {
+          "nodeId": 107260045,
+          "role": "stop",
+          "name": "Harrington Road",
+          "coordinates": [
+            -0.0604811,
+            51.399663
+          ]
+        },
+        {
+          "nodeId": 107260025,
+          "role": "stop",
+          "name": "Birkbeck",
+          "coordinates": [
+            -0.0561355,
+            51.4035603
+          ]
+        },
+        {
+          "nodeId": 298024001,
+          "role": "stop",
+          "name": "Avenue Road",
+          "coordinates": [
+            -0.049519,
+            51.4067969
+          ]
+        },
+        {
+          "nodeId": 107262646,
+          "role": "stop",
+          "name": "Beckenham Road",
+          "coordinates": [
+            -0.0431569,
+            51.4096366
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 9976022,
+      "tags": {
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#ff0000",
+        "from": "Beckenham Junction",
+        "name": "London Trams: Beckenham Junction → Wimbledon",
+        "network": "London Trams",
+        "operator": "Tram Operations Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "2",
+        "ref:colour": "#3FAB35",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "tram",
+        "to": "Wimbledon",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q7833150"
+      },
+      "stops": [
+        {
+          "nodeId": 389044640,
+          "role": "stop_entry_only",
+          "name": "Beckenham Junction",
+          "coordinates": [
+            -0.0264385,
+            51.4107268
+          ]
+        },
+        {
+          "nodeId": 107262646,
+          "role": "stop",
+          "name": "Beckenham Road",
+          "coordinates": [
+            -0.0431569,
+            51.4096366
+          ]
+        },
+        {
+          "nodeId": 1763991632,
+          "role": "stop",
+          "name": "Avenue Road",
+          "coordinates": [
+            -0.0498755,
+            51.4065809
+          ]
+        },
+        {
+          "nodeId": 107260025,
+          "role": "stop",
+          "name": "Birkbeck",
+          "coordinates": [
+            -0.0561355,
+            51.4035603
+          ]
+        },
+        {
+          "nodeId": 8403501017,
+          "role": "stop",
+          "name": "Harrington Road",
+          "coordinates": [
+            -0.0604262,
+            51.3996825
+          ]
+        },
+        {
+          "nodeId": 8403501217,
+          "role": "stop",
+          "name": "Arena",
+          "coordinates": [
+            -0.0582218,
+            51.3915834
+          ]
+        },
+        {
+          "nodeId": 8403500918,
+          "role": "stop",
+          "name": "Woodside",
+          "coordinates": [
+            -0.0656032,
+            51.3869317
+          ]
+        },
+        {
+          "nodeId": 1763990296,
+          "role": "stop",
+          "name": "Blackhorse Lane",
+          "coordinates": [
+            -0.0703122,
+            51.3848854
+          ]
+        },
+        {
+          "nodeId": 1763990102,
+          "role": "stop",
+          "name": "Addiscombe",
+          "coordinates": [
+            -0.0732071,
+            51.3798207
+          ]
+        },
+        {
+          "nodeId": 8403500917,
+          "role": "stop",
+          "name": "Sandilands",
+          "coordinates": [
+            -0.0777578,
+            51.3749371
+          ]
+        },
+        {
+          "nodeId": 1763989881,
+          "role": "stop",
+          "name": "Lebanon Road",
+          "coordinates": [
+            -0.0855558,
+            51.3752049
+          ]
+        },
+        {
+          "nodeId": 6753994726,
+          "role": "stop",
+          "name": "East Croydon",
+          "coordinates": [
+            -0.0927623,
+            51.3747991
+          ]
+        },
+        {
+          "nodeId": 83701443,
+          "role": "stop",
+          "name": "George Street",
+          "coordinates": [
+            -0.0989116,
+            51.3739003
+          ]
+        },
+        {
+          "nodeId": 245736992,
+          "role": "stop",
+          "name": "Church Street",
+          "coordinates": [
+            -0.1041797,
+            51.373648
+          ]
+        },
+        {
+          "nodeId": 8403500817,
+          "role": "stop",
+          "name": "Wandle Park",
+          "coordinates": [
+            -0.1134151,
+            51.3734688
+          ]
+        },
+        {
+          "nodeId": 1763990028,
+          "role": "stop",
+          "name": "Waddon Marsh",
+          "coordinates": [
+            -0.1178974,
+            51.3770038
+          ]
+        },
+        {
+          "nodeId": 8403501117,
+          "role": "stop",
+          "name": "Ampere Way",
+          "coordinates": [
+            -0.1239146,
+            51.3824656
+          ]
+        },
+        {
+          "nodeId": 1763990397,
+          "role": "stop",
+          "name": "Therapia Lane",
+          "coordinates": [
+            -0.1292711,
+            51.3857203
+          ]
+        },
+        {
+          "nodeId": 1763990955,
+          "role": "stop",
+          "name": "Beddington Lane",
+          "coordinates": [
+            -0.1428702,
+            51.3894384
+          ]
+        },
+        {
+          "nodeId": 6207516953,
+          "role": "stop",
+          "name": "Mitcham Junction",
+          "coordinates": [
+            -0.1576137,
+            51.3927176
+          ]
+        },
+        {
+          "nodeId": 25279123,
+          "role": "stop",
+          "name": "Mitcham",
+          "coordinates": [
+            -0.1711521,
+            51.3975335
+          ]
+        },
+        {
+          "nodeId": 1763991404,
+          "role": "stop",
+          "name": "Belgrave Walk",
+          "coordinates": [
+            -0.1786543,
+            51.40109
+          ]
+        },
+        {
+          "nodeId": 1763991547,
+          "role": "stop",
+          "name": "Phipps Bridge",
+          "coordinates": [
+            -0.182544,
+            51.4035285
+          ]
+        },
+        {
+          "nodeId": 2867978674,
+          "role": "stop",
+          "name": "Morden Road",
+          "coordinates": [
+            -0.1931478,
+            51.4089702
+          ]
+        },
+        {
+          "nodeId": 2875405812,
+          "role": "stop",
+          "name": "Merton Park",
+          "coordinates": [
+            -0.201498,
+            51.4138674
+          ]
+        },
+        {
+          "nodeId": 2864267809,
+          "role": "stop",
+          "name": "Dundonald Road",
+          "coordinates": [
+            -0.2077975,
+            51.4177292
+          ]
+        },
+        {
+          "nodeId": 307542330,
+          "role": "stop_exit_only",
+          "name": "Wimbledon",
+          "coordinates": [
+            -0.2054816,
+            51.4212978
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 9976023,
+      "tags": {
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#ff0000",
+        "from": "Wimbledon",
+        "name": "London Trams: Wimbledon → Beckenham Junction",
+        "network": "London Trams",
+        "operator": "Tram Operations Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "2",
+        "ref:colour": "#3FAB35",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "tram",
+        "to": "Beckenham Junction",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q7833150"
+      },
+      "stops": [
+        {
+          "nodeId": 307542330,
+          "role": "stop_entry_only",
+          "name": "Wimbledon",
+          "coordinates": [
+            -0.2054816,
+            51.4212978
+          ]
+        },
+        {
+          "nodeId": 2864267808,
+          "role": "stop",
+          "name": "Dundonald Road",
+          "coordinates": [
+            -0.207536,
+            51.4174546
+          ]
+        },
+        {
+          "nodeId": 2875405810,
+          "role": "stop",
+          "name": "Merton Park",
+          "coordinates": [
+            -0.2011713,
+            51.4135914
+          ]
+        },
+        {
+          "nodeId": 2867978661,
+          "role": "stop",
+          "name": "Morden Road",
+          "coordinates": [
+            -0.1926742,
+            51.4087733
+          ]
+        },
+        {
+          "nodeId": 1763991540,
+          "role": "stop",
+          "name": "Phipps Bridge",
+          "coordinates": [
+            -0.1821142,
+            51.4033515
+          ]
+        },
+        {
+          "nodeId": 1763991367,
+          "role": "stop",
+          "name": "Belgrave Walk",
+          "coordinates": [
+            -0.1781763,
+            51.400872
+          ]
+        },
+        {
+          "nodeId": 8403501018,
+          "role": "stop",
+          "name": "Mitcham",
+          "coordinates": [
+            -0.1710527,
+            51.3975433
+          ]
+        },
+        {
+          "nodeId": 26478123,
+          "role": "stop",
+          "name": "Mitcham Junction",
+          "coordinates": [
+            -0.1571316,
+            51.3926327
+          ]
+        },
+        {
+          "nodeId": 25279249,
+          "role": "stop",
+          "name": "Beddington Lane",
+          "coordinates": [
+            -0.1428504,
+            51.3894605
+          ]
+        },
+        {
+          "nodeId": 25279257,
+          "role": "stop",
+          "name": "Therapia Lane",
+          "coordinates": [
+            -0.1290915,
+            51.3856974
+          ]
+        },
+        {
+          "nodeId": 25279260,
+          "role": "stop",
+          "name": "Ampere Way",
+          "coordinates": [
+            -0.1236871,
+            51.3823591
+          ]
+        },
+        {
+          "nodeId": 25279390,
+          "role": "stop",
+          "name": "Waddon Marsh",
+          "coordinates": [
+            -0.1178267,
+            51.3770031
+          ]
+        },
+        {
+          "nodeId": 25279393,
+          "role": "stop",
+          "name": "Wandle Park",
+          "coordinates": [
+            -0.1133617,
+            51.3734814
+          ]
+        },
+        {
+          "nodeId": 83683573,
+          "role": "stop",
+          "name": "Reeves Corner",
+          "coordinates": [
+            -0.1062524,
+            51.374803
+          ]
+        },
+        {
+          "nodeId": 312676581,
+          "role": "stop",
+          "name": "Centrale",
+          "coordinates": [
+            -0.1037838,
+            51.3758669
+          ]
+        },
+        {
+          "nodeId": 1760244804,
+          "role": "stop",
+          "name": "West Croydon",
+          "coordinates": [
+            -0.1016245,
+            51.3790494
+          ]
+        },
+        {
+          "nodeId": 128665478,
+          "role": "stop",
+          "name": "Wellesley Road",
+          "coordinates": [
+            -0.0976166,
+            51.3756242
+          ]
+        },
+        {
+          "nodeId": 1760245005,
+          "role": "stop",
+          "name": "East Croydon",
+          "coordinates": [
+            -0.0926493,
+            51.3749169
+          ]
+        },
+        {
+          "nodeId": 1763987970,
+          "role": "stop",
+          "name": "Lebanon Road",
+          "coordinates": [
+            -0.0845187,
+            51.3751861
+          ]
+        },
+        {
+          "nodeId": 60306534,
+          "role": "stop",
+          "name": "Sandilands",
+          "coordinates": [
+            -0.0777467,
+            51.3749647
+          ]
+        },
+        {
+          "nodeId": 299665006,
+          "role": "stop",
+          "name": "Addiscombe",
+          "coordinates": [
+            -0.0732562,
+            51.3799341
+          ]
+        },
+        {
+          "nodeId": 21577771,
+          "role": "stop",
+          "name": "Blackhorse Lane",
+          "coordinates": [
+            -0.070221,
+            51.3849891
+          ]
+        },
+        {
+          "nodeId": 21577769,
+          "role": "stop",
+          "name": "Woodside",
+          "coordinates": [
+            -0.0653411,
+            51.3870849
+          ]
+        },
+        {
+          "nodeId": 299664774,
+          "role": "stop",
+          "name": "Arena",
+          "coordinates": [
+            -0.0582529,
+            51.3916054
+          ]
+        },
+        {
+          "nodeId": 107260045,
+          "role": "stop",
+          "name": "Harrington Road",
+          "coordinates": [
+            -0.0604811,
+            51.399663
+          ]
+        },
+        {
+          "nodeId": 107260025,
+          "role": "stop",
+          "name": "Birkbeck",
+          "coordinates": [
+            -0.0561355,
+            51.4035603
+          ]
+        },
+        {
+          "nodeId": 298024001,
+          "role": "stop",
+          "name": "Avenue Road",
+          "coordinates": [
+            -0.049519,
+            51.4067969
+          ]
+        },
+        {
+          "nodeId": 107262646,
+          "role": "stop",
+          "name": "Beckenham Road",
+          "coordinates": [
+            -0.0431569,
+            51.4096366
+          ]
+        },
+        {
+          "nodeId": 389044640,
+          "role": "stop_exit_only",
+          "name": "Beckenham Junction",
+          "coordinates": [
+            -0.0264385,
+            51.4107268
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 9976065,
+      "tags": {
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#b5e61d",
+        "from": "Wimbledon",
+        "name": "London Trams: Wimbledon → Elmers End",
+        "network": "London Trams",
+        "operator": "Tram Operations Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "4",
+        "ref:colour": "#3FAB35",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "tram",
+        "to": "Elmers End",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q7833148"
+      },
+      "stops": [
+        {
+          "nodeId": 3817927775,
+          "role": "stop_entry_only",
+          "name": "Wimbledon",
+          "coordinates": [
+            -0.2050412,
+            51.421556
+          ]
+        },
+        {
+          "nodeId": 2864267808,
+          "role": "stop",
+          "name": "Dundonald Road",
+          "coordinates": [
+            -0.207536,
+            51.4174546
+          ]
+        },
+        {
+          "nodeId": 2875405810,
+          "role": "stop",
+          "name": "Merton Park",
+          "coordinates": [
+            -0.2011713,
+            51.4135914
+          ]
+        },
+        {
+          "nodeId": 2867978661,
+          "role": "stop",
+          "name": "Morden Road",
+          "coordinates": [
+            -0.1926742,
+            51.4087733
+          ]
+        },
+        {
+          "nodeId": 1763991540,
+          "role": "stop",
+          "name": "Phipps Bridge",
+          "coordinates": [
+            -0.1821142,
+            51.4033515
+          ]
+        },
+        {
+          "nodeId": 1763991367,
+          "role": "stop",
+          "name": "Belgrave Walk",
+          "coordinates": [
+            -0.1781763,
+            51.400872
+          ]
+        },
+        {
+          "nodeId": 8403501018,
+          "role": "stop",
+          "name": "Mitcham",
+          "coordinates": [
+            -0.1710527,
+            51.3975433
+          ]
+        },
+        {
+          "nodeId": 26478123,
+          "role": "stop",
+          "name": "Mitcham Junction",
+          "coordinates": [
+            -0.1571316,
+            51.3926327
+          ]
+        },
+        {
+          "nodeId": 25279249,
+          "role": "stop",
+          "name": "Beddington Lane",
+          "coordinates": [
+            -0.1428504,
+            51.3894605
+          ]
+        },
+        {
+          "nodeId": 25279257,
+          "role": "stop",
+          "name": "Therapia Lane",
+          "coordinates": [
+            -0.1290915,
+            51.3856974
+          ]
+        },
+        {
+          "nodeId": 25279260,
+          "role": "stop",
+          "name": "Ampere Way",
+          "coordinates": [
+            -0.1236871,
+            51.3823591
+          ]
+        },
+        {
+          "nodeId": 25279390,
+          "role": "stop",
+          "name": "Waddon Marsh",
+          "coordinates": [
+            -0.1178267,
+            51.3770031
+          ]
+        },
+        {
+          "nodeId": 25279393,
+          "role": "stop",
+          "name": "Wandle Park",
+          "coordinates": [
+            -0.1133617,
+            51.3734814
+          ]
+        },
+        {
+          "nodeId": 83683573,
+          "role": "stop",
+          "name": "Reeves Corner",
+          "coordinates": [
+            -0.1062524,
+            51.374803
+          ]
+        },
+        {
+          "nodeId": 312676581,
+          "role": "stop",
+          "name": "Centrale",
+          "coordinates": [
+            -0.1037838,
+            51.3758669
+          ]
+        },
+        {
+          "nodeId": 1760244804,
+          "role": "stop",
+          "name": "West Croydon",
+          "coordinates": [
+            -0.1016245,
+            51.3790494
+          ]
+        },
+        {
+          "nodeId": 128665478,
+          "role": "stop",
+          "name": "Wellesley Road",
+          "coordinates": [
+            -0.0976166,
+            51.3756242
+          ]
+        },
+        {
+          "nodeId": 1760245005,
+          "role": "stop",
+          "name": "East Croydon",
+          "coordinates": [
+            -0.0926493,
+            51.3749169
+          ]
+        },
+        {
+          "nodeId": 1763987970,
+          "role": "stop",
+          "name": "Lebanon Road",
+          "coordinates": [
+            -0.0845187,
+            51.3751861
+          ]
+        },
+        {
+          "nodeId": 60306534,
+          "role": "stop",
+          "name": "Sandilands",
+          "coordinates": [
+            -0.0777467,
+            51.3749647
+          ]
+        },
+        {
+          "nodeId": 299665006,
+          "role": "stop",
+          "name": "Addiscombe",
+          "coordinates": [
+            -0.0732562,
+            51.3799341
+          ]
+        },
+        {
+          "nodeId": 21577771,
+          "role": "stop",
+          "name": "Blackhorse Lane",
+          "coordinates": [
+            -0.070221,
+            51.3849891
+          ]
+        },
+        {
+          "nodeId": 21577769,
+          "role": "stop",
+          "name": "Woodside",
+          "coordinates": [
+            -0.0653411,
+            51.3870849
+          ]
+        },
+        {
+          "nodeId": 299664774,
+          "role": "stop",
+          "name": "Arena",
+          "coordinates": [
+            -0.0582529,
+            51.3916054
+          ]
+        },
+        {
+          "nodeId": 311222450,
+          "role": "stop_exit_only",
+          "name": "Elmers End",
+          "coordinates": [
+            -0.0495263,
+            51.3983499
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 9976066,
+      "tags": {
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#b5e61d",
+        "from": "Elmers End",
+        "name": "London Trams: Elmers End → Wimbledon",
+        "network": "London Trams",
+        "operator": "Tram Operations Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "4",
+        "ref:colour": "#3FAB35",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "tram",
+        "to": "Wimbledon",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q7833148"
+      },
+      "stops": [
+        {
+          "nodeId": 311222450,
+          "role": "stop_entry_only",
+          "name": "Elmers End",
+          "coordinates": [
+            -0.0495263,
+            51.3983499
+          ]
+        },
+        {
+          "nodeId": 8403501217,
+          "role": "stop",
+          "name": "Arena",
+          "coordinates": [
+            -0.0582218,
+            51.3915834
+          ]
+        },
+        {
+          "nodeId": 8403500918,
+          "role": "stop",
+          "name": "Woodside",
+          "coordinates": [
+            -0.0656032,
+            51.3869317
+          ]
+        },
+        {
+          "nodeId": 1763990296,
+          "role": "stop",
+          "name": "Blackhorse Lane",
+          "coordinates": [
+            -0.0703122,
+            51.3848854
+          ]
+        },
+        {
+          "nodeId": 1763990102,
+          "role": "stop",
+          "name": "Addiscombe",
+          "coordinates": [
+            -0.0732071,
+            51.3798207
+          ]
+        },
+        {
+          "nodeId": 8403500917,
+          "role": "stop",
+          "name": "Sandilands",
+          "coordinates": [
+            -0.0777578,
+            51.3749371
+          ]
+        },
+        {
+          "nodeId": 1763989881,
+          "role": "stop",
+          "name": "Lebanon Road",
+          "coordinates": [
+            -0.0855558,
+            51.3752049
+          ]
+        },
+        {
+          "nodeId": 6753994726,
+          "role": "stop",
+          "name": "East Croydon",
+          "coordinates": [
+            -0.0927623,
+            51.3747991
+          ]
+        },
+        {
+          "nodeId": 83701443,
+          "role": "stop",
+          "name": "George Street",
+          "coordinates": [
+            -0.0989116,
+            51.3739003
+          ]
+        },
+        {
+          "nodeId": 245736992,
+          "role": "stop",
+          "name": "Church Street",
+          "coordinates": [
+            -0.1041797,
+            51.373648
+          ]
+        },
+        {
+          "nodeId": 8403500817,
+          "role": "stop",
+          "name": "Wandle Park",
+          "coordinates": [
+            -0.1134151,
+            51.3734688
+          ]
+        },
+        {
+          "nodeId": 1763990028,
+          "role": "stop",
+          "name": "Waddon Marsh",
+          "coordinates": [
+            -0.1178974,
+            51.3770038
+          ]
+        },
+        {
+          "nodeId": 8403501117,
+          "role": "stop",
+          "name": "Ampere Way",
+          "coordinates": [
+            -0.1239146,
+            51.3824656
+          ]
+        },
+        {
+          "nodeId": 1763990397,
+          "role": "stop",
+          "name": "Therapia Lane",
+          "coordinates": [
+            -0.1292711,
+            51.3857203
+          ]
+        },
+        {
+          "nodeId": 1763990955,
+          "role": "stop",
+          "name": "Beddington Lane",
+          "coordinates": [
+            -0.1428702,
+            51.3894384
+          ]
+        },
+        {
+          "nodeId": 6207516953,
+          "role": "stop",
+          "name": "Mitcham Junction",
+          "coordinates": [
+            -0.1576137,
+            51.3927176
+          ]
+        },
+        {
+          "nodeId": 25279123,
+          "role": "stop",
+          "name": "Mitcham",
+          "coordinates": [
+            -0.1711521,
+            51.3975335
+          ]
+        },
+        {
+          "nodeId": 1763991404,
+          "role": "stop",
+          "name": "Belgrave Walk",
+          "coordinates": [
+            -0.1786543,
+            51.40109
+          ]
+        },
+        {
+          "nodeId": 1763991547,
+          "role": "stop",
+          "name": "Phipps Bridge",
+          "coordinates": [
+            -0.182544,
+            51.4035285
+          ]
+        },
+        {
+          "nodeId": 2867978674,
+          "role": "stop",
+          "name": "Morden Road",
+          "coordinates": [
+            -0.1931478,
+            51.4089702
+          ]
+        },
+        {
+          "nodeId": 2875405812,
+          "role": "stop",
+          "name": "Merton Park",
+          "coordinates": [
+            -0.201498,
+            51.4138674
+          ]
+        },
+        {
+          "nodeId": 2864267809,
+          "role": "stop",
+          "name": "Dundonald Road",
+          "coordinates": [
+            -0.2077975,
+            51.4177292
+          ]
+        },
+        {
+          "nodeId": 307542330,
+          "role": "stop_exit_only",
+          "name": "Wimbledon",
+          "coordinates": [
+            -0.2054816,
+            51.4212978
+          ]
+        }
+      ]
+    },
+    {
+      "relationId": 9976096,
+      "tags": {
+        "brand": "Transport for London",
+        "brand:wikidata": "Q682520",
+        "colour": "#00ff00",
+        "from": "New Addington",
+        "name": "London Trams: New Addington → West Croydon loop",
+        "network": "London Trams",
+        "operator": "Tram Operations Ltd",
+        "payment:contactless": "yes",
+        "payment:oyster": "yes",
+        "public_transport:version": "2",
+        "ref": "3",
+        "ref:colour": "#3FAB35",
+        "ref:colour_bg": "white",
+        "ref:colour_tx": "white",
+        "route": "tram",
+        "to": "New Addington",
+        "type": "route",
+        "wheelchair": "yes",
+        "wikidata": "Q7833152"
+      },
+      "stops": [
+        {
+          "nodeId": 82627519,
+          "role": "stop_entry_only",
+          "name": "New Addington",
+          "coordinates": [
+            -0.0175057,
+            51.3426259
+          ]
+        },
+        {
+          "nodeId": 1763988021,
+          "role": "stop",
+          "name": "King Henry's Drive",
+          "coordinates": [
+            -0.0203926,
+            51.3455073
+          ]
+        },
+        {
+          "nodeId": 1763988092,
+          "role": "stop",
+          "name": "Fieldway",
+          "coordinates": [
+            -0.0242146,
+            51.3509698
+          ]
+        },
+        {
+          "nodeId": 7696310663,
+          "role": "stop",
+          "name": "Addington Village",
+          "coordinates": [
+            -0.0328853,
+            51.3562243
+          ]
+        },
+        {
+          "nodeId": 1763988253,
+          "role": "stop",
+          "name": "Gravel Hill",
+          "coordinates": [
+            -0.0428615,
+            51.3545293
+          ]
+        },
+        {
+          "nodeId": 1763988764,
+          "role": "stop",
+          "name": "Coombe Lane",
+          "coordinates": [
+            -0.0600865,
+            51.3597826
+          ]
+        },
+        {
+          "nodeId": 1763989211,
+          "role": "stop",
+          "name": "Lloyd Park",
+          "coordinates": [
+            -0.0806955,
+            51.3641661
+          ]
+        },
+        {
+          "nodeId": 8403500917,
+          "role": "stop",
+          "name": "Sandilands",
+          "coordinates": [
+            -0.0777578,
+            51.3749371
+          ]
+        },
+        {
+          "nodeId": 1763989881,
+          "role": "stop",
+          "name": "Lebanon Road",
+          "coordinates": [
+            -0.0855558,
+            51.3752049
+          ]
+        },
+        {
+          "nodeId": 6753994726,
+          "role": "stop",
+          "name": "East Croydon",
+          "coordinates": [
+            -0.0927623,
+            51.3747991
+          ]
+        },
+        {
+          "nodeId": 83701443,
+          "role": "stop",
+          "name": "George Street",
+          "coordinates": [
+            -0.0989116,
+            51.3739003
+          ]
+        },
+        {
+          "nodeId": 245736992,
+          "role": "stop",
+          "name": "Church Street",
+          "coordinates": [
+            -0.1041797,
+            51.373648
+          ]
+        },
+        {
+          "nodeId": 312676581,
+          "role": "stop",
+          "name": "Centrale",
+          "coordinates": [
+            -0.1037838,
+            51.3758669
+          ]
+        },
+        {
+          "nodeId": 1760244804,
+          "role": "stop",
+          "name": "West Croydon",
+          "coordinates": [
+            -0.1016245,
+            51.3790494
+          ]
+        },
+        {
+          "nodeId": 128665478,
+          "role": "stop",
+          "name": "Wellesley Road",
+          "coordinates": [
+            -0.0976166,
+            51.3756242
+          ]
+        },
+        {
+          "nodeId": 1760245005,
+          "role": "stop",
+          "name": "East Croydon",
+          "coordinates": [
+            -0.0926493,
+            51.3749169
+          ]
+        },
+        {
+          "nodeId": 1763987970,
+          "role": "stop",
+          "name": "Lebanon Road",
+          "coordinates": [
+            -0.0845187,
+            51.3751861
+          ]
+        },
+        {
+          "nodeId": 60306534,
+          "role": "stop",
+          "name": "Sandilands",
+          "coordinates": [
+            -0.0777467,
+            51.3749647
+          ]
+        },
+        {
+          "nodeId": 1803040291,
+          "role": "stop",
+          "name": "Lloyd Park",
+          "coordinates": [
+            -0.0805814,
+            51.3642061
+          ]
+        },
+        {
+          "nodeId": 166725697,
+          "role": "stop",
+          "name": "Coombe Lane",
+          "coordinates": [
+            -0.0600802,
+            51.3598192
+          ]
+        },
+        {
+          "nodeId": 21622249,
+          "role": "stop",
+          "name": "Gravel Hill",
+          "coordinates": [
+            -0.0429213,
+            51.3545721
+          ]
+        },
+        {
+          "nodeId": 82626213,
+          "role": "stop",
+          "name": "Addington Village",
+          "coordinates": [
+            -0.0328821,
+            51.3562667
+          ]
+        },
+        {
+          "nodeId": 82626520,
+          "role": "stop",
+          "name": "Fieldway",
+          "coordinates": [
+            -0.0241702,
+            51.3509685
+          ]
+        },
+        {
+          "nodeId": 82627515,
+          "role": "stop",
+          "name": "King Henry's Drive",
+          "coordinates": [
+            -0.0202322,
+            51.3453762
+          ]
+        },
+        {
+          "nodeId": 6754023080,
+          "role": "stop_exit_only",
+          "name": "New Addington",
+          "coordinates": [
+            -0.0174316,
+            51.3426682
+          ]
+        }
       ]
     }
   ]

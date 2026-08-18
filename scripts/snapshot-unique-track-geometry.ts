@@ -103,7 +103,7 @@ await writeFile(
   `${JSON.stringify(
     {
       description:
-        "Unique-track OSM geometry: merged centreline, dual directional tracks, and a welded junction graph. Full route variants stay in data/geography/{mode}-geometry.json; maps serve public/ copies of unique-track full.",
+        "Unique-track OSM geometry: centreline is unique-track of the longer mapped direction; dual keeps both directions; welded junction graph. Full route variants stay in data/geography/{mode}-geometry.json; maps serve public/ copies of unique-track full.",
       snapshottedAt: new Date().toISOString(),
       modes: manifest.map(({ reports: _reports, ...entry }) => entry),
     },

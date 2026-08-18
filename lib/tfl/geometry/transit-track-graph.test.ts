@@ -5,6 +5,7 @@ import {
   buildLineTracks,
   connectedComponentCount,
   lineLengthMetres,
+  stripDeadEndSpurs,
   type LngLat,
 } from "./transit-track-graph";
 
@@ -54,8 +55,40 @@ const stations = [
   },
 ];
 
+describe("stripDeadEndSpurs", () => {
+  it("drops a Bank-style terminus stub that teleports back to the junction", () => {
+    const junction: LngLat = [east(0), north(1000)];
+    const bank: LngLat = [east(300), north(1050)];
+    const stub: LngLat[] = [
+      junction,
+      [east(120), north(1020)],
+      [east(220), north(1040)],
+      bank,
+      junction,
+    ];
+    const main: LngLat[] = [];
+    for (let metres = 80; metres <= 2200; metres += 100) {
+      main.push([east(-metres), north(1000)]);
+    }
+    const stripped = stripDeadEndSpurs([...stub, ...main]);
+    assert.equal(stripped[0], junction);
+    assert.ok(
+      !stripped.some(
+        (point, index) =>
+          index > 0 &&
+          Math.hypot(
+            (point[0]! - bank[0]!) * METERS_PER_DEG_LNG,
+            (point[1]! - bank[1]!) * METERS_PER_DEG_LAT,
+          ) < 20,
+      ),
+      "Bank stub must not remain on the line",
+    );
+    assert.ok(lineLengthMetres(stripped) > 1800);
+  });
+});
+
 describe("buildLineTracks", () => {
-  it("merges directional twin tracks into one centreline and keeps both dual tracks", () => {
+  it("paints one direction as the centreline and keeps both dual tracks", () => {
     const spine = corridor(0);
     const twin = [...corridor(20)].reverse();
     const result = buildLineTracks({
@@ -101,6 +134,74 @@ describe("buildLineTracks", () => {
     assert.ok(shared, "branch must reuse a spine vertex object");
     assert.equal(connectedComponentCount(result.graph), 1);
     assert.ok(result.graph.nodes.some((node) => node.kind === "junction"));
+  });
+
+  it("welds a branch at the tangent-matched spine point, not the nearest", () => {
+    // L-shaped spine: north, then east, then north again. A westbound
+    // branch sits 50 m north of the east-west run, so the nearest spine
+    // point is on the second northbound leg (perpendicular). The
+    // tangent-matched weld is the corner, where both bearings run east-west.
+    const spine: LngLat[] = [
+      [east(0), north(0)],
+      [east(0), north(400)],
+      [east(0), north(800)],
+      [east(200), north(800)],
+      [east(400), north(800)],
+      [east(400), north(1200)],
+      [east(400), north(2000)],
+    ];
+    const branch: LngLat[] = [
+      [east(1000), north(850)],
+      [east(800), north(850)],
+      [east(600), north(850)],
+      [east(500), north(850)],
+      [east(430), north(850)],
+    ];
+    const result = buildLineTracks({
+      lineId: "test",
+      lineName: "Test",
+      color: "#000",
+      variants: [spine, branch],
+      stations,
+    });
+
+    assert.equal(result.centreline.length, 2);
+    const leftover = result.centreline.find(
+      (coords) => lineLengthMetres(coords) < 1500,
+    );
+    assert.ok(leftover);
+    const weld = leftover[leftover.length - 1]!;
+    const corner: LngLat = [east(400), north(800)];
+    const nearestWrong: LngLat = [east(400), north(850)];
+    const toCorner = Math.hypot(
+      (weld[0]! - corner[0]!) * METERS_PER_DEG_LNG,
+      (weld[1]! - corner[1]!) * METERS_PER_DEG_LAT,
+    );
+    const toWrong = Math.hypot(
+      (weld[0]! - nearestWrong[0]!) * METERS_PER_DEG_LNG,
+      (weld[1]! - nearestWrong[1]!) * METERS_PER_DEG_LAT,
+    );
+    assert.ok(
+      toCorner < toWrong,
+      `weld should sit at the east-west corner, not the perpendicular northbound point (corner ${toCorner.toFixed(1)} m, nearest ${toWrong.toFixed(1)} m)`,
+    );
+    assert.ok(toCorner < 40, `weld should land near the corner, got ${toCorner.toFixed(1)} m`);
+  });
+
+  it("does not add the opposite direction as a second centreline stroke", () => {
+    const spine = corridor(0);
+    const opposite = [...corridor(160)].reverse();
+    const result = buildLineTracks({
+      lineId: "test",
+      lineName: "Test",
+      color: "#000",
+      variants: [spine, opposite],
+      stations,
+    });
+
+    assert.equal(result.centreline.length, 1);
+    assert.equal(result.dual.length, 2);
+    assert.ok(lineLengthMetres(result.centreline[0]!) > 1800);
   });
 
   it("drops an 80 m rejoining wobble instead of emitting a stub", () => {

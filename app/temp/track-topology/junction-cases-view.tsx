@@ -36,6 +36,10 @@ import {
   type StressState,
 } from "@/lib/tfl/geometry/stress-layout"
 import type { TopologyMovementPair } from "@/lib/tfl/geometry/topology-movements"
+import {
+  stationGraphScales,
+  useSvgViewport,
+} from "./station-graph-scale"
 
 type JunctionCasesViewProps = {
   variants: BundlesByMode
@@ -451,9 +455,12 @@ const GraphPlot = ({
     }
   }
 
-  const symbolScale = 1 / zoom.scale
-  const labelScale =
-    Math.max(1.08, Math.min(2.15, zoom.scale ** 0.52)) / zoom.scale
+  const viewport = useSvgViewport(svgRef)
+  const { symbolScale, labelScale } = stationGraphScales(
+    zoom.scale,
+    viewBox,
+    viewport
+  )
 
   return (
     <section className="min-w-0 space-y-2">

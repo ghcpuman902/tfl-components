@@ -170,4 +170,24 @@ describe("stress majorization layout", () => {
     assert.ok(permittedLower < 35, `lower turn ${permittedLower.toFixed(1)}°`)
     assert.ok(unsupported > 90, `unsupported turn ${unsupported.toFixed(1)}°`)
   })
+
+  it("makes a longer scheduled hop occupy more layout length", () => {
+    const graph: StressGraph = {
+      ids: ["a", "b", "c"],
+      edges: [
+        { from: "a", to: "b", length: 1 },
+        { from: "b", to: "c", length: 3 },
+      ],
+      geo: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 20, y: 0 },
+      ],
+    }
+    const state = createStressState(graph)
+    settleStressLayout(state, { steps: 80 })
+    const short = Math.hypot(state.x[1]! - state.x[0]!, state.y[1]! - state.y[0]!)
+    const long = Math.hypot(state.x[2]! - state.x[1]!, state.y[2]! - state.y[1]!)
+    assert.ok(long > short * 2, `long ${long.toFixed(1)} vs short ${short.toFixed(1)}`)
+  })
 })

@@ -258,7 +258,7 @@ const tflPatternRows = (
   const byId = new Map(
     dataset.patterns.map((pattern) => [pattern.id, pattern])
   )
-  return dataset.directionPairs.flatMap((pair) => {
+  return dataset.directionPairs.flatMap((pair): TflPatternRow[] => {
     const patterns = pair.patternIds.flatMap((patternId) => {
       const pattern = byId.get(patternId)
       return pattern ? [pattern] : []

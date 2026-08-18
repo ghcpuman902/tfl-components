@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import type { TransitGeometryBundle } from "@/lib/tfl/geography-types"
+import type { LineHopTimesSnapshot } from "@/lib/tfl/geometry/line-hop-times"
+import hopTimesJson from "@/data/geography/line-hop-times.json"
 import tubeCentre from "@/data/geography/unique-track/tube/full.json"
 import overgroundCentre from "@/data/geography/unique-track/overground/full.json"
 import elizabethCentre from "@/data/geography/unique-track/elizabeth/full.json"
@@ -31,6 +33,33 @@ export const metadata: Metadata = {
 const asBundle = (value: unknown): TransitGeometryBundle =>
   value as TransitGeometryBundle
 
+const topologyViewProps = {
+  variants: {
+    tube: asBundle(tubeVariants),
+    overground: asBundle(overgroundVariants),
+    elizabeth: asBundle(elizabethVariants),
+    dlr: asBundle(dlrVariants),
+    tram: asBundle(tramVariants),
+  },
+  centreline: {
+    tube: asBundle(tubeCentre),
+    overground: asBundle(overgroundCentre),
+    elizabeth: asBundle(elizabethCentre),
+    dlr: asBundle(dlrCentre),
+    tram: asBundle(tramCentre),
+  },
+  dual: {
+    tube: asBundle(tubeDual),
+    overground: asBundle(overgroundDual),
+    elizabeth: asBundle(elizabethDual),
+    dlr: asBundle(dlrDual),
+    tram: asBundle(tramDual),
+  },
+  networkModel: snapshotJson as NetworkModelSnapshot,
+  networkManifest: manifestJson as NetworkModelManifest,
+  hopTimes: (hopTimesJson as LineHopTimesSnapshot).lines,
+}
+
 export default function TrackTopologyTempPage() {
   return (
     <div className="mx-auto max-w-[96rem] space-y-6 px-4 py-10">
@@ -54,31 +83,7 @@ export default function TrackTopologyTempPage() {
           </Link>
         </p>
       </header>
-      <TrackTopologyView
-        variants={{
-          tube: asBundle(tubeVariants),
-          overground: asBundle(overgroundVariants),
-          elizabeth: asBundle(elizabethVariants),
-          dlr: asBundle(dlrVariants),
-          tram: asBundle(tramVariants),
-        }}
-        centreline={{
-          tube: asBundle(tubeCentre),
-          overground: asBundle(overgroundCentre),
-          elizabeth: asBundle(elizabethCentre),
-          dlr: asBundle(dlrCentre),
-          tram: asBundle(tramCentre),
-        }}
-        dual={{
-          tube: asBundle(tubeDual),
-          overground: asBundle(overgroundDual),
-          elizabeth: asBundle(elizabethDual),
-          dlr: asBundle(dlrDual),
-          tram: asBundle(tramDual),
-        }}
-        networkModel={snapshotJson as NetworkModelSnapshot}
-        networkManifest={manifestJson as NetworkModelManifest}
-      />
+      <TrackTopologyView {...topologyViewProps} />
     </div>
   )
 }

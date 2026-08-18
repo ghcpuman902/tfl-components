@@ -75,7 +75,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     refresh: "manual",
     coverage: "Underground, DLR, Tram, Cable Car, Elizabeth line, Overground",
     summary: "Which days a pattern typically runs.",
-    note: "Weekday / Saturday / Sunday flags rolled up from Aubin calendar.txt. Agencies LULD, LDLR, TRAM, IFSC, =XR, =LO. Rebuild with pnpm network-model:snapshot.",
+    note: "Weekday / Saturday / Sunday flags rolled up from Aubin calendar.txt. Agencies LULD, LDLR, TRAM, IFSC, =XR, =LO. Used with PatternFrequency to classify a skip hop as regular versus occasional (classifySkipHop in line-slice.ts) — not rendered as a second station graph. Rebuild with pnpm network-model:snapshot.",
     sources: [
       {
         label: "Aubin / Transitous GB GTFS",
@@ -92,7 +92,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     refresh: "manual",
     coverage: "Underground, DLR, Tram, Cable Car, Elizabeth line, Overground",
     summary: "How often a pattern typically runs.",
-    note: "Headway bands from first-stop departure times in the Aubin feed, not frequencies.txt. Rebuild with pnpm network-model:snapshot.",
+    note: "Headway bands from first-stop departure times in the Aubin feed, not frequencies.txt. A decision-support signal for typicality/emphasis, not a source of station order. Rebuild with pnpm network-model:snapshot.",
     sources: [
       {
         label: "Aubin / Transitous GB GTFS",
@@ -138,11 +138,13 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     origin: "processed",
     cachedIn: "none",
     refresh: "n/a",
-    coverage: "Underground, DLR, Tram, Cable Car",
-    summary: "Which track a passenger pattern follows. Still inferred from OSM unique-track.",
-    note: "Aubin trips for these modes have empty shape_id. Do not copy unique-track into the timetable snapshot. A name-sequence matcher exists for later joining.",
+    coverage: "Underground (89/96 relations), Tram (8/10), DLR (5/12)",
+    summary: "Which track a passenger pattern follows.",
+    note: "Aubin trips for these modes have empty shape_id, so this never comes from GTFS. Matched by OSM route-relation stop membership (ordered stop names on the relation), not by snapping station points onto nearby track — proximity snapping mis-assigns stations at shared-track stretches such as Waterloo & City, which this method matches to exactly its own two stops. Remaining gaps are name-normalisation mismatches (e.g. \"Custom House (for ExCel)\" vs OSM's \"Custom House for Excel\") and lines built after the pinned tfl-ts LINE_STATION_SEQUENCES snapshot (Northern line Battersea Power Station extension), not proximity errors. Cable car has no cached OSM route relation yet.",
     sources: [
       { label: "data/geography/ORIGIN.md" },
+      { label: "data/geography/osm-cache" },
+      { label: "lib/tfl/geometry/osm-pattern-path-match.ts" },
       { label: "lib/tfl/cross-source-pattern-matching.ts" },
     ],
   },

@@ -5,8 +5,14 @@
  * A snap-grid merge treats twin tracks as the same
  * corridor where they are tight and as a leftover branch where they splay,
  * which cuts the second track mid-corridor. This module uses metre distance
- * and a parallel-tangent test instead, then welds branch attachments to an
- * exact shared vertex so the output is a usable network.
+ * and a parallel-tangent test instead, then welds each leftover branch onto
+ * the spine at the point whose local bearing matches the branch approach —
+ * not the nearest vertex, which produced meaningless right-angle joins.
+ *
+ * The painted "centreline" is unique-track of the longer mapped direction
+ * only. Merging both directions invented leftover strokes (Kennington loop
+ * drawn twice, White City depot splay) that are wider than any single OSM
+ * relation. Dual track still keeps both directions.
  */
 import type { Feature, LineString } from "geojson";
 import type {
@@ -31,6 +37,10 @@ export const TRACK_GRAPH = {
   STATION_SNAP_M: 250,
   DIRECTION_OVERLAP_M: 200,
   CONNECT_WELD_M: 400,
+  /** Pin vertices this close to a weld so DP cannot flatten the real approach. */
+  WELD_PIN_M: 80,
+  /** Revisit of the start/end within this distance is a dead-end spur to strip. */
+  SPUR_REVISIT_M: 8,
 } as const;
 
 export type LngLat = [number, number];
@@ -167,6 +177,36 @@ const createIntern = () => {
   };
   return intern;
 };
+
+/**
+ * OSM route relations sometimes prepend a terminus stub then jump back
+ * to the junction (Waterloo & City at Bank). That paints as a second
+ * track / eye. Drop a prefix or suffix that returns to the start/end
+ * when a longer continuation remains.
+ */
+export const stripDeadEndSpurs = (coordinates: readonly LngLat[]): LngLat[] => {
+  if (coordinates.length < 4) return [...coordinates]
+  const stripPrefix = (coords: LngLat[]): LngLat[] => {
+    const start = coords[0]!
+    for (let index = 2; index < coords.length - 2; index += 1) {
+      if (metresBetween(start, coords[index]!) > TRACK_GRAPH.SPUR_REVISIT_M) {
+        continue
+      }
+      const prefix = lineLengthMetres(coords.slice(0, index + 1))
+      const rest = lineLengthMetres(coords.slice(index))
+      if (rest >= TRACK_GRAPH.MIN_RUN_M && prefix < rest) {
+        return coords.slice(index)
+      }
+    }
+    return coords
+  }
+  const stripSuffix = (coords: LngLat[]): LngLat[] => {
+    const reversed = stripPrefix([...coords].reverse())
+    return reversed.reverse()
+  }
+  const stripped = stripSuffix(stripPrefix([...coordinates]))
+  return stripped.length >= 2 ? stripped : [...coordinates]
+}
 
 const densifyLine = (
   coordinates: readonly LngLat[],
@@ -328,6 +368,36 @@ class SegmentIndex {
     }
     return best;
   }
+
+  hitsWithin(point: LngLat, radiusM: number): SegHit[] {
+    const p = toXY(point);
+    const reach = Math.ceil(radiusM / this.cellSize);
+    const cx = Math.floor(p.x / this.cellSize);
+    const cy = Math.floor(p.y / this.cellSize);
+    const hits: SegHit[] = [];
+    const seen = new Set<Segment>();
+    for (let x = cx - reach; x <= cx + reach; x += 1) {
+      for (let y = cy - reach; y <= cy + reach; y += 1) {
+        const list = this.cells.get(`${x},${y}`);
+        if (!list) continue;
+        for (const segment of list) {
+          if (seen.has(segment)) continue;
+          seen.add(segment);
+          const hit = projectOnSegment(point, segment.a, segment.b);
+          if (hit.dist > radiusM) continue;
+          hits.push({
+            dist: hit.dist,
+            point: hit.point,
+            shapeIndex: segment.shapeIndex,
+            segIndex: segment.segIndex,
+            t: hit.t,
+            tangent: hit.tangent,
+          });
+        }
+      }
+    }
+    return hits;
+  }
 }
 
 const rebuildIndex = (
@@ -430,6 +500,49 @@ const isRealBranch = (
   return !freeHit || freeHit.dist > TRACK_GRAPH.BRANCH_DEVIATION_M;
 };
 
+/** Direction of a branch as it arrives at `endIndex` (interior → end). */
+const branchEndTangent = (
+  coords: readonly LngLat[],
+  endIndex: number,
+): Projected => {
+  const towardInterior = tangentAt(coords, endIndex);
+  if (endIndex === 0) {
+    return { x: -towardInterior.x, y: -towardInterior.y };
+  }
+  return towardInterior;
+};
+
+const tangentAgreement = (left: Projected, right: Projected): number =>
+  Math.abs(left.x * right.x + left.y * right.y);
+
+/**
+ * Among spine hits within `radiusM`, pick the one whose local bearing
+ * agrees with the branch approach. Distance is only a tie-break.
+ */
+const bestWeldHit = (
+  point: LngLat,
+  tangent: Projected,
+  index: SegmentIndex,
+  radiusM: number,
+): SegHit | null => {
+  const hits = index.hitsWithin(point, radiusM);
+  if (hits.length === 0) return null;
+  let best = hits[0]!;
+  let bestAgree = tangentAgreement(tangent, best.tangent);
+  for (const hit of hits.slice(1)) {
+    const agree = tangentAgreement(tangent, hit.tangent);
+    if (agree > bestAgree + 1e-6) {
+      best = hit;
+      bestAgree = agree;
+      continue;
+    }
+    if (Math.abs(agree - bestAgree) <= 1e-6 && hit.dist < best.dist) {
+      best = hit;
+    }
+  }
+  return best;
+};
+
 const insertVertex = (
   coords: LngLat[],
   hit: SegHit,
@@ -475,7 +588,12 @@ const weldRun = (
   const weldRadius = Math.max(coverTolM * 2, 180);
 
   for (const end of ends) {
-    const hit = index.nearest(end.point, weldRadius);
+    const hit = bestWeldHit(
+      end.point,
+      branchEndTangent(welded, end.index),
+      index,
+      weldRadius,
+    );
     if (!hit) continue;
     const shape = accepted[hit.shapeIndex];
     if (!shape) continue;
@@ -483,9 +601,16 @@ const weldRun = (
     welded[end.index] = shared;
   }
 
-  const startHit = index.nearest(welded[0]!, TRACK_GRAPH.CONNECT_WELD_M);
-  const endHit = index.nearest(
+  const startHit = bestWeldHit(
+    welded[0]!,
+    branchEndTangent(welded, 0),
+    index,
+    TRACK_GRAPH.CONNECT_WELD_M,
+  );
+  const endHit = bestWeldHit(
     welded[welded.length - 1]!,
+    branchEndTangent(welded, welded.length - 1),
+    index,
     TRACK_GRAPH.CONNECT_WELD_M,
   );
   const startWelded = startHit && startHit.dist <= weldRadius;
@@ -670,6 +795,55 @@ const endpointKeysOf = (shapes: readonly AcceptedShape[]): Set<string> => {
   return keys;
 };
 
+const metresBetween = (left: LngLat, right: LngLat): number => {
+  const a = toXY(left);
+  const b = toXY(right);
+  return Math.hypot(b.x - a.x, b.y - a.y);
+};
+
+/** Vertices that appear on two or more accepted shapes — the weld points. */
+const sharedVertexPoints = (shapes: readonly AcceptedShape[]): LngLat[] => {
+  const first = new Map<string, LngLat>();
+  const shared: LngLat[] = [];
+  const seenShared = new Set<string>();
+  for (const shape of shapes) {
+    const onShape = new Set<string>();
+    for (const point of shape.coords) {
+      const key = pointKey(point);
+      if (onShape.has(key)) continue;
+      onShape.add(key);
+      const existing = first.get(key);
+      if (!existing) {
+        first.set(key, point);
+        continue;
+      }
+      if (!seenShared.has(key)) {
+        seenShared.add(key);
+        shared.push(existing);
+      }
+    }
+  }
+  return shared;
+};
+
+/**
+ * Endpoints plus a short run of vertices approaching each weld, so
+ * Douglas-Peucker cannot flatten the real approach curve.
+ */
+const pinKeysForSimplify = (shapes: readonly AcceptedShape[]): Set<string> => {
+  const pinned = endpointKeysOf(shapes);
+  const welds = sharedVertexPoints(shapes);
+  if (welds.length === 0) return pinned;
+  for (const shape of shapes) {
+    for (const point of shape.coords) {
+      if (welds.some((weld) => metresBetween(point, weld) <= TRACK_GRAPH.WELD_PIN_M)) {
+        pinned.add(pointKey(point));
+      }
+    }
+  }
+  return pinned;
+};
+
 const splitAtPinned = (
   coords: readonly LngLat[],
   pinnedKeys: ReadonlySet<string>,
@@ -776,7 +950,7 @@ const internedShapes = (
   intern: (point: LngLat) => LngLat,
   epsilonM: number,
 ): AcceptedShape[] => {
-  const pinned = endpointKeysOf(shapes);
+  const pinned = pinKeysForSimplify(shapes);
   return shapes.map((shape) => ({
     coords: simplifyPinned(shape.coords, epsilonM, pinned, intern),
   }));
@@ -800,9 +974,23 @@ type CollapsedLine = {
   centreAccepted: AcceptedShape[];
 };
 
+const groupLengthMetres = (polylines: readonly LngLat[][]): number =>
+  polylines.reduce((sum, coords) => sum + lineLengthMetres(coords), 0);
+
+/** Longer mapped direction — the centreline source. Empty group loses. */
+const longerDirectionGroup = (
+  groups: readonly [LngLat[][], LngLat[][]],
+): 0 | 1 => {
+  if (groups[0].length === 0) return 1;
+  if (groups[1].length === 0) return 0;
+  return groupLengthMetres(groups[0]) >= groupLengthMetres(groups[1]) ? 0 : 1;
+};
+
 const collapseLine = (input: TrackBuildInput): CollapsedLine => {
   const intern = createIntern();
-  const variants = input.variants.filter((coords) => coords.length >= 2);
+  const variants = input.variants
+    .map((coords) => stripDeadEndSpurs(coords))
+    .filter((coords) => coords.length >= 2);
   const groups = groupByDirection(variants);
   return {
     intern,
@@ -813,7 +1001,7 @@ const collapseLine = (input: TrackBuildInput): CollapsedLine => {
       collapseToUnique(groups[1], TRACK_GRAPH.SAME_DIR_TOL_M, intern),
     ],
     centreAccepted: collapseToUnique(
-      variants,
+      groups[longerDirectionGroup(groups)],
       TRACK_GRAPH.MERGE_TOL_M,
       intern,
     ),

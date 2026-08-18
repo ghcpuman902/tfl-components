@@ -4,6 +4,22 @@ This directory holds the **small derived TfL rail network** used by the Data mod
 
 It is **not** unique-track geometry, **not** a full GTFS feed, and **not** live buses.
 
+## What this snapshot is for (and isn't)
+
+Three sources, three jobs, not one graph competing with another:
+
+| Question | Source of truth | This snapshot's role |
+|---|---|---|
+| Which stations, in what order, does this product call at? | **TfL** (`tfl-ts` `LINE_STATION_SEQUENCES`) | Not involved. TfL sequences already answer this for the carriage map, the platform map, and the Tube map. |
+| Which metres of track does that product follow? | **OSM** route relations (station membership, not proximity), Aubin shapes only for Elizabeth/Overground | This snapshot supplies the Elizabeth/Overground shape only — OSM unique-track stays the source everywhere else. |
+| Is this hop/branch typical, and how often does it run? | **This snapshot** (`PatternCalendar` + `PatternFrequency`) | The one thing nothing else in this repo provides. Used to classify a skip hop as a regular scheduled fast versus an occasional/weekend adjustment (`classifySkipHop` in `lib/tfl/network-model/line-slice.ts`), not rendered as a second station graph. |
+
+A GTFS trip is a scheduled working, not a recording of what ran — this snapshot never reads real-time or historical actuals. It collapses thousands of dated trips into ~786 **patterns** (one row per unique line/direction/stop-list), because the trip is the wrong grain: nobody wants "the 08:03," they want "the fast service." GTFS does not name that service as its own object; unioning every distinct stop-list and trusting the union as a map is what produced a jumbled Elizabeth line graph earlier — the fix was to keep the union for typicality scoring only, and let the TfL sequence stay the drawn spine.
+
+### Why this is cached and OSM mostly isn't
+
+OSM's Overpass API is a live, open, queryable primitive — any consumer can requery it, point at a mirror, or pull a fresher extract against the same schema. Caching OSM here is a build-time convenience, not a dependency on us. The Aubin GTFS bundle is different in kind: it is a third party's own aggregation of upstream feeds, ~1 GB, with no equivalent live per-line query. A consumer cannot bring their own live copy without redoing the same collapse-and-classify pipeline this snapshot already does. That asymmetry is why this snapshot's surface stays deliberately narrow (skip-typicality + two modes' shapes) rather than growing into a general-purpose timetable API.
+
 ## Rebuild
 
 ```bash
