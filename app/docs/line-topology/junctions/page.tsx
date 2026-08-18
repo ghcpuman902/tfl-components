@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { getDocsEntry } from "@/lib/docs-catalog"
 import type { TransitGeometryBundle } from "@/lib/tfl/geography-types"
 import tubeCentre from "@/data/geography/unique-track/tube/full.json"
 import overgroundCentre from "@/data/geography/unique-track/overground/full.json"
@@ -18,38 +20,28 @@ import dlrVariants from "@/data/geography/dlr-geometry.json"
 import tramVariants from "@/data/geography/tram-geometry.json"
 import { JunctionCasesView } from "../junction-cases-view"
 
+const entry = getDocsEntry("line-topology-junctions")!
+
 export const metadata: Metadata = {
-  title: "Junction windows (temp)",
-  description:
-    "Real London junctions cropped from OSM dual track and TfL sequences: geographic zoom, dual graph, and schematic gestalt with permitted-route constraints.",
+  title: entry.title,
+  description: entry.description,
 }
 
 const asBundle = (value: unknown): TransitGeometryBundle =>
   value as TransitGeometryBundle
 
-export default function JunctionWindowsTempPage() {
+export default function DocsJunctionWindowsPage() {
   return (
-    <div className="mx-auto max-w-[96rem] space-y-6 px-4 py-10">
-      <header className="space-y-2">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Temp research — not linked in nav
-        </p>
-        <h1 className="text-2xl font-semibold">Junction windows</h1>
-        <p className="max-w-prose text-sm text-muted-foreground">
-          Each window is a real place on the network. The map is OSM dual track,
-          zoomed in. The dual graph is that same both-track topology,
-          contracted. Schematic gestalt is the stress layout after from–via–to
-          permitted-route constraints straighten the moves trains actually make.
-        </p>
-        <p className="text-sm">
-          <Link
-            href="/temp/track-topology"
-            className="underline underline-offset-2"
-          >
-            ← Line topology source models
-          </Link>
-        </p>
-      </header>
+    <article className="mx-auto w-full max-w-[96rem] space-y-8">
+      <DocsPageHeader entry={entry} />
+      <p className="text-sm text-muted-foreground">
+        <Link
+          href="/docs/line-topology"
+          className="underline underline-offset-2"
+        >
+          Line topology
+        </Link>
+      </p>
       <JunctionCasesView
         variants={{
           tube: asBundle(tubeVariants),
@@ -73,6 +65,6 @@ export default function JunctionWindowsTempPage() {
           tram: asBundle(tramDual),
         }}
       />
-    </div>
+    </article>
   )
 }

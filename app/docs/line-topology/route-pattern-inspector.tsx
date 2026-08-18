@@ -23,6 +23,11 @@ import {
   formatHeadway,
   patternLabel,
 } from "@/lib/tfl/network-model/line-slice"
+import {
+  MINI_MAP_HEIGHT,
+  MINI_MAP_WIDTH,
+  miniPath,
+} from "./relation-mini-map"
 
 type OsmVariantSummary = {
   relationId: number
@@ -35,13 +40,6 @@ type OsmVariantSummary = {
   direction?: string
   service?: string
   relation?: OsmRouteRelation
-}
-
-type Bounds = {
-  minLng: number
-  maxLng: number
-  minLat: number
-  maxLat: number
 }
 
 const relationIdFromFeature = (
@@ -175,63 +173,30 @@ const reciprocalPairStats = (variants: readonly OsmVariantSummary[]) => {
   }
 }
 
-const boundsFor = (variants: readonly OsmVariantSummary[]): Bounds | null => {
-  let minLng = Number.POSITIVE_INFINITY
-  let maxLng = Number.NEGATIVE_INFINITY
-  let minLat = Number.POSITIVE_INFINITY
-  let maxLat = Number.NEGATIVE_INFINITY
-  for (const variant of variants) {
-    for (const path of variant.paths) {
-      for (const point of path) {
-        minLng = Math.min(minLng, point[0])
-        maxLng = Math.max(maxLng, point[0])
-        minLat = Math.min(minLat, point[1])
-        maxLat = Math.max(maxLat, point[1])
-      }
-    }
-  }
-  return Number.isFinite(minLng) ? { minLng, maxLng, minLat, maxLat } : null
-}
-
-const miniPath = (path: readonly LngLat[], bounds: Bounds): string => {
-  const width = Math.max(bounds.maxLng - bounds.minLng, 0.000001)
-  const height = Math.max(bounds.maxLat - bounds.minLat, 0.000001)
-  return path
-    .map((point, index) => {
-      const x = 4 + ((point[0] - bounds.minLng) / width) * 132
-      const y = 44 - ((point[1] - bounds.minLat) / height) * 40
-      return `${index === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`
-    })
-    .join(" ")
-}
-
 const RelationMiniMap = ({
   variant,
-  bounds,
   color,
 }: {
   variant: OsmVariantSummary
-  bounds: Bounds | null
   color: string
 }) => (
   <svg
-    viewBox="0 0 140 48"
-    className="h-12 w-36 rounded border border-border bg-muted/20"
+    viewBox={`0 0 ${MINI_MAP_WIDTH} ${MINI_MAP_HEIGHT}`}
+    className="h-24 w-36 rounded border border-border bg-muted/20"
     role="img"
     aria-label={`${variant.from} to ${variant.to} route geometry`}
   >
-    {bounds &&
-      variant.paths.map((path, index) => (
-        <path
-          key={variant.featureIds[index] ?? index}
-          d={miniPath(path, bounds)}
-          fill="none"
-          stroke={color}
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ))}
+    {variant.paths.map((path, index) => (
+      <path
+        key={variant.featureIds[index] ?? index}
+        d={miniPath(path)}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    ))}
   </svg>
 )
 
@@ -372,136 +337,6 @@ const stateClass = (state: "present" | "partial" | "missing") =>
       ? "bg-amber-500/12 text-amber-800 dark:text-amber-300"
       : "bg-destructive/10 text-destructive"
 
-const GtfsLens = ({
-  dataset,
-  snapshot,
-}: {
-  dataset: ServicePatternDataset | null
-  snapshot: LineNetworkSlice | null
-}) => {
-  const snapshotShapes = snapshot?.paths.length ?? 0
-  const rows = [
-    {
-      gtfs: "routes.txt",
-      concept: "A public-facing line",
-      here: snapshot?.line.shortName ?? dataset?.lineName ?? "No line row",
-      state: snapshot || dataset ? ("present" as const) : ("missing" as const),
-    },
-    {
-      gtfs: "trips.txt",
-      concept: "One dated vehicle run",
-      here: snapshot
-        ? "Dated trips were collapsed into unique call sequences. Individual trip ids are not kept."
-        : "Not stored. An ordered route is a pattern, not proof of a particular train.",
-      state: snapshot ? ("partial" as const) : ("missing" as const),
-    },
-    {
-      gtfs: "stop_times.txt",
-      concept: "Ordered calls with times",
-      here: snapshot
-        ? "Call order is stored. Clock times were used only to derive headway bands."
-        : dataset
-          ? "Call order is present; arrival, departure, pickup, and drop-off times are absent."
-          : "Missing",
-      state: snapshot || dataset ? ("partial" as const) : ("missing" as const),
-    },
-    {
-      gtfs: "stops.txt",
-      concept: "Stop and platform identity",
-      here: snapshot
-        ? `${snapshot.stations.length} stops used by this line, grouped to GTFS parents where present.`
-        : "TfL NaPTAN ids and OSM stop nodes exist, but their one-to-one match is incomplete.",
-      state: snapshot ? ("present" as const) : ("partial" as const),
-    },
-    {
-      gtfs: "shapes.txt",
-      concept: "The path followed by a trip",
-      here: snapshotShapes
-        ? `${snapshotShapes} low-resolution Elizabeth / Overground shapes, one most-common path per pattern.`
-        : snapshot
-          ? "This line has no timetable shapes. OSM unique-track remains the map paint."
-          : "OSM route geometry exists. It is not yet matched one-to-one with each TfL pattern.",
-      state: snapshotShapes
-        ? ("present" as const)
-        : snapshot
-          ? ("missing" as const)
-          : ("partial" as const),
-    },
-    {
-      gtfs: "calendar.txt / calendar_dates.txt",
-      concept: "Days and exceptions",
-      here: snapshot
-        ? `${snapshot.calendars.length} typical day-class rows (weekday / Saturday / Sunday). Dated exceptions were not kept.`
-        : "Missing",
-      state: snapshot ? ("present" as const) : ("missing" as const),
-    },
-    {
-      gtfs: "frequencies.txt or stop times",
-      concept: "How often the pattern runs",
-      here: snapshot
-        ? `${snapshot.frequencies.length} headway bands from first-stop times.`
-        : "Missing",
-      state: snapshot ? ("present" as const) : ("missing" as const),
-    },
-    {
-      gtfs: "route_patterns extension",
-      concept: "Reusable trip pattern and typicality",
-      here: snapshot
-        ? `${snapshot.patterns.length} collapsed timetable patterns.`
-        : dataset
-          ? `${dataset.patterns.length} ordered routes resemble patterns; canonical and typicality fields are missing.`
-          : "Missing",
-      state: snapshot
-        ? ("present" as const)
-        : dataset
-          ? ("partial" as const)
-          : ("missing" as const),
-    },
-  ]
-
-  return (
-    <section className="space-y-2">
-      <div>
-        <h3 className="text-base font-medium">GTFS lens</h3>
-        <p className="text-xs text-muted-foreground">
-          Conceptual crosswalk to the derived timetable snapshot, not a full
-          GTFS extract.
-        </p>
-      </div>
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full min-w-[760px] text-left text-xs">
-          <thead className="border-b border-border bg-muted/30 text-muted-foreground">
-            <tr>
-              <th className="px-3 py-2 font-medium">GTFS table or extension</th>
-              <th className="px-3 py-2 font-medium">Meaning</th>
-              <th className="px-3 py-2 font-medium">What this repo has</th>
-              <th className="px-3 py-2 font-medium">State</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {rows.map((row) => (
-              <tr key={row.gtfs}>
-                <td className="px-3 py-2 font-mono">{row.gtfs}</td>
-                <td className="px-3 py-2">{row.concept}</td>
-                <td className="max-w-lg px-3 py-2 text-muted-foreground">
-                  {row.here}
-                </td>
-                <td className="px-3 py-2">
-                  <span
-                    className={`inline-flex rounded-full px-2 py-0.5 ${stateClass(row.state)}`}
-                  >
-                    {row.state}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  )
-}
-
 export const RoutePatternInspector = ({
   lineId,
   lineName,
@@ -520,7 +355,6 @@ export const RoutePatternInspector = ({
   snapshot: LineNetworkSlice | null
 }) => {
   const osmVariants = osmVariantSummaries(variantsBundle, lineId, stopsFile)
-  const bounds = boundsFor(osmVariants)
   const pairStats = reciprocalPairStats(osmVariants)
   const tflPaired =
     dataset?.directionPairs.filter((pair) => pair.paired).length ?? 0
@@ -556,32 +390,21 @@ export const RoutePatternInspector = ({
   const limitedStopMatchCount = crossSourceMatches.filter(
     (match) => match.kind === "limited-stop"
   ).length
-  const osmScheduleTags = [
-    "opening_hours",
-    "interval",
-    "frequency",
-    "service_times",
-  ]
-  const relationsWithScheduleTags = relationData.filter((relation) =>
-    osmScheduleTags.some((tag) => relation.tags[tag])
-  ).length
-
   return (
     <div className="space-y-8">
       <section className="space-y-3">
         <div>
           <h3 className="text-base font-medium">Source record counts</h3>
           <p className="max-w-3xl text-xs text-muted-foreground">
-            These counts describe source records, not trains per hour.
-            Reciprocal pairs are exact reversals for TfL and matching endpoint
-            directions for OSM.
+            Counts are source records. Reciprocal pairs are exact reversals on
+            TfL and matching endpoint directions on OSM.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border border-border p-3">
             <p className="text-2xl">{snapshot?.patterns.length ?? 0}</p>
             <p className="text-xs text-muted-foreground">
-              Timetable snapshot patterns
+              Inspect snapshot patterns
             </p>
           </div>
           <div className="rounded-lg border border-border p-3">
@@ -630,10 +453,10 @@ export const RoutePatternInspector = ({
       {snapshot && (
         <section className="space-y-2">
           <div>
-            <h3 className="text-base font-medium">Timetable snapshot patterns</h3>
+            <h3 className="text-base font-medium">Inspect snapshot patterns</h3>
             <p className="text-xs text-muted-foreground">
-              Collapsed Aubin sequences with typical days and peak-ish headways.
-              Hover a dot for its station name.
+              Collapsed call sequences from the optional timetable snapshot.
+              Not an input to the four maps.
             </p>
           </div>
           <div className="overflow-hidden rounded-lg border border-border">
@@ -709,8 +532,7 @@ export const RoutePatternInspector = ({
         <div>
           <h3 className="text-base font-medium">TfL ordered routes</h3>
           <p className="text-xs text-muted-foreground">
-            Reciprocal inbound and outbound sequences share a row as two
-            tracks. Hover a dot for its station name.
+            Reciprocal inbound and outbound sequences share a row.
           </p>
         </div>
         <div className="overflow-hidden rounded-lg border border-border">
@@ -762,9 +584,8 @@ export const RoutePatternInspector = ({
         <div>
           <h3 className="text-base font-medium">OSM route relations</h3>
           <p className="text-xs text-muted-foreground">
-            Every thumbnail uses the same geographic bounds, so branch and
-            terminal differences remain comparable. Relation stop order and tags
-            appear when the version 2 cache is available.
+            Every thumbnail uses the same Greater London frame, at 3:2, so
+            branches stay comparable and unskewed.
           </p>
         </div>
         <div className="overflow-x-auto rounded-lg border border-border">
@@ -789,7 +610,6 @@ export const RoutePatternInspector = ({
                     <td className="px-3 py-2">
                       <RelationMiniMap
                         variant={variant}
-                        bounds={bounds}
                         color={color}
                       />
                     </td>
@@ -872,8 +692,6 @@ export const RoutePatternInspector = ({
         </div>
       </section>
 
-      <GtfsLens dataset={dataset} snapshot={snapshot} />
-
       <section className="space-y-2">
         <h3 className="text-base font-medium">Data sufficiency</h3>
         <div className="grid gap-2 md:grid-cols-2">
@@ -882,19 +700,22 @@ export const RoutePatternInspector = ({
               <p className="text-sm font-medium">OSM relation membership</p>
               <span
                 className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${stateClass(
-                  relationData.length === osmVariants.length
+                  relationData.length === osmVariants.length &&
+                    osmVariants.length > 0
                     ? "present"
                     : "partial"
                 )}`}
               >
-                {relationData.length === osmVariants.length
+                {relationData.length === osmVariants.length &&
+                osmVariants.length > 0
                   ? "present"
                   : "partial"}
               </span>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               {relationData.length} of {osmVariants.length} route relations have
-              cached tags and ordered stop members.
+              cached tags and ordered stop members. The geographic map joins a
+              pattern to track by these members.
             </p>
             <p className="mt-2 text-[11px] text-muted-foreground">
               Source: OSM public_transport route relations
@@ -905,12 +726,14 @@ export const RoutePatternInspector = ({
               <p className="text-sm font-medium">Cross-source stop matching</p>
               <span
                 className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${stateClass(
-                  crossSourceMatches.length === osmVariants.length
+                  crossSourceMatches.length === osmVariants.length &&
+                    osmVariants.length > 0
                     ? "present"
                     : "partial"
                 )}`}
               >
-                {crossSourceMatches.length === osmVariants.length
+                {crossSourceMatches.length === osmVariants.length &&
+                osmVariants.length > 0
                   ? "present"
                   : "partial"}
               </span>
@@ -924,36 +747,7 @@ export const RoutePatternInspector = ({
               Source: derived from both pattern sets
             </p>
           </div>
-          <div className="rounded-lg border border-border p-3">
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-sm font-medium">OSM service schedule</p>
-              <span
-                className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${stateClass(
-                  relationsWithScheduleTags > 0 ? "partial" : "missing"
-                )}`}
-              >
-                {relationsWithScheduleTags > 0 ? "partial" : "missing"}
-              </span>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {relationsWithScheduleTags} of {relationData.length} cached
-              relations have an opening-hours, interval, frequency, or
-              service-times tag. Bicycle restrictions are not train operating
-              times.
-            </p>
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              Source: cached OSM relation tags
-            </p>
-          </div>
-          {(dataset?.fields ?? [])
-            .filter((field) => {
-              if (!snapshot) return true
-              return (
-                field.field !== "Calendar and time windows" &&
-                field.field !== "Frequency and typicality"
-              )
-            })
-            .map((field) => (
+          {(dataset?.fields ?? []).map((field) => (
             <div
               key={field.field}
               className="rounded-lg border border-border p-3"
@@ -980,7 +774,7 @@ export const RoutePatternInspector = ({
         <div className="grid gap-3 lg:grid-cols-2">
           <details className="rounded-lg border border-border p-3">
             <summary className="cursor-pointer text-sm font-medium">
-              Timetable snapshot slice for {lineName}
+              Inspect snapshot slice for {lineName}
             </summary>
             <pre className="mt-3 max-h-[36rem] overflow-auto rounded-md bg-muted/40 p-2 text-[10px] leading-relaxed">
               {JSON.stringify(snapshot, null, 2)}

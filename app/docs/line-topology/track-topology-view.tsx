@@ -5,7 +5,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type ChangeEvent,
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react"
@@ -14,7 +13,7 @@ import type {
   TransitGeometryBundle,
   TransitMode,
 } from "@/lib/tfl/geography-types"
-import { TRANSIT_MODE_LABELS } from "@/lib/tfl/geography-types"
+import { LineBadge } from "@/components/tfl/brand/line-badge"
 import {
   type ContractedEdge,
   type ContractedNode,
@@ -22,6 +21,7 @@ import {
 } from "@/lib/tfl/geometry/contract-track-topology"
 import { TflGeographicMap } from "@/registry/tfl/geography/tfl-geographic-map"
 import { officialTrackTopology } from "@/lib/tfl/geometry/official-track-topology"
+import { splitBondedThroughStations } from "@/lib/tfl/geometry/split-bonded-stations"
 import {
   mergeOsmStationPositions,
   type OsmRouteStopsFile,
@@ -38,6 +38,7 @@ import {
   orientToGeo,
   stepStress,
   stressGraphFromLngLats,
+  untangleHubLegs,
   type StressState,
 } from "@/lib/tfl/geometry/stress-layout"
 import type {
@@ -114,8 +115,8 @@ const TRACK_MODELS: { id: PhysicalModel; label: string }[] = [
 ]
 
 const PASSENGER_SOURCES: { id: PassengerSource; label: string }[] = [
-  { id: "tfl", label: "TfL sequences (default)" },
-  { id: "snapshot", label: "Timetable typicality overlay" },
+  { id: "tfl", label: "TfL sequences" },
+  { id: "snapshot", label: "Typicality overlay" },
 ]
 
 const WIDTH = 1100
@@ -177,7 +178,11 @@ const linesFromBundles = (bundles: BundlesByMode): LineOption[] => {
   return options
 }
 
+const isSecondSplitHalf = (node: ContractedNode): boolean =>
+  node.splitFrom != null && node.id.endsWith("~b")
+
 const nodeLabel = (node: ContractedNode): string => {
+  if (isSecondSplitHalf(node)) return ""
   if (node.kind === "station") return node.stationName ?? "station"
   if (node.kind === "junction") {
     return node.nearStationName ? `junc · ${node.nearStationName}` : "junction"
@@ -215,7 +220,10 @@ const seedSimulation = (
           from: movement.a,
           via: movement.via,
           to: movement.b,
-        }))
+        })),
+        edges
+          .filter((edge) => edge.kind === "bond")
+          .map((edge) => ({ a: edge.from, b: edge.to }))
       )
     ),
   }
@@ -419,6 +427,28 @@ const zoomAround = (
 
 const emptyTopology = (): ContractedTopology => ({ nodes: [], edges: [] })
 
+const LINE_QUERY_PARAM = "line"
+const ZOOM_SCALE_PARAM = "z"
+const ZOOM_X_PARAM = "zx"
+const ZOOM_Y_PARAM = "zy"
+
+const DEFAULT_ZOOM: ZoomState = { scale: 1, x: 0, y: 0 }
+
+const readZoomFromUrl = (): ZoomState => {
+  const params = new URLSearchParams(window.location.search)
+  const scale = Number(params.get(ZOOM_SCALE_PARAM))
+  const x = Number(params.get(ZOOM_X_PARAM))
+  const y = Number(params.get(ZOOM_Y_PARAM))
+  return {
+    scale:
+      Number.isFinite(scale) && scale > 0
+        ? Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale))
+        : 1,
+    x: Number.isFinite(x) ? x : 0,
+    y: Number.isFinite(y) ? y : 0,
+  }
+}
+
 const OSM_STOPS_BY_MODE: Partial<Record<TransitMode, OsmRouteStopsFile>> = {
   tube: tubeStops as unknown as OsmRouteStopsFile,
   overground: overgroundStops as unknown as OsmRouteStopsFile,
@@ -455,6 +485,7 @@ const useLaidOutTopology = (
       }
       const { state } = current
       orientToGeo(state.x, state.y, state.geoX, state.geoY)
+      untangleHubLegs(state)
       frame += 1
       const settled = move <= SETTLE_MOVE || frame >= 200
       if (settled) finishStressLayout(state, STRESS_MIN_SEP)
@@ -478,7 +509,7 @@ const useLaidOutTopology = (
 }
 
 type TopologyPlotProps = {
-  title: string
+  title?: string
   source: string
   topology: ContractedTopology
   color: string
@@ -504,7 +535,8 @@ const TopologyPlot = ({
 }: TopologyPlotProps) => {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const dragRef = useRef<DragState | null>(null)
-  const [zoom, setZoom] = useState<ZoomState>({ scale: 1, x: 0, y: 0 })
+  const [zoom, setZoom] = useState<ZoomState>(DEFAULT_ZOOM)
+  const zoomUrlReady = useRef(false)
   const painted = useLaidOutTopology(topology, movements, hopTimes, lineId)
   const nodeById = useMemo(
     () => new Map(painted.map((node) => [node.id, node])),
@@ -522,6 +554,7 @@ const TopologyPlot = ({
       neighbors.set(from, values)
     }
     for (const edge of topology.edges) {
+      if (edge.kind === "bond") continue
       addNeighbor(edge.from, edge.to)
       addNeighbor(edge.to, edge.from)
     }
@@ -591,10 +624,44 @@ const TopologyPlot = ({
     viewport
   )
 
+  useEffect(() => {
+    if (!zoomUrlReady.current) {
+      zoomUrlReady.current = true
+      const fromUrl = readZoomFromUrl()
+      if (
+        fromUrl.scale !== zoom.scale ||
+        fromUrl.x !== zoom.x ||
+        fromUrl.y !== zoom.y
+      ) {
+        setZoom(fromUrl)
+        return
+      }
+    }
+    const url = new URL(window.location.href)
+    const scale = zoom.scale.toFixed(2)
+    const x = zoom.x.toFixed(1)
+    const y = zoom.y.toFixed(1)
+    const same =
+      url.searchParams.get(ZOOM_SCALE_PARAM) === scale &&
+      url.searchParams.get(ZOOM_X_PARAM) === x &&
+      url.searchParams.get(ZOOM_Y_PARAM) === y
+    if (same) return
+    if (zoom.scale === 1 && zoom.x === 0 && zoom.y === 0) {
+      url.searchParams.delete(ZOOM_SCALE_PARAM)
+      url.searchParams.delete(ZOOM_X_PARAM)
+      url.searchParams.delete(ZOOM_Y_PARAM)
+    } else {
+      url.searchParams.set(ZOOM_SCALE_PARAM, scale)
+      url.searchParams.set(ZOOM_X_PARAM, x)
+      url.searchParams.set(ZOOM_Y_PARAM, y)
+    }
+    window.history.replaceState(null, "", url)
+  }, [zoom])
+
   return (
     <section className="min-w-0 space-y-2">
       <div className="space-y-0.5">
-        <h3 className="text-sm font-medium">{title}</h3>
+        {title ? <h3 className="text-sm font-medium">{title}</h3> : null}
         <p className="text-xs text-muted-foreground">{source}</p>
         <p className="text-xs text-muted-foreground">
           {topology.nodes.length} nodes · {topology.edges.length} edges ·{" "}
@@ -615,7 +682,7 @@ const TopologyPlot = ({
                 type="button"
                 onClick={() => changeZoom(1.35)}
                 className="h-8 w-8 border-r border-border text-sm"
-                aria-label={`Zoom in on ${title}`}
+                aria-label={`Zoom in on ${title ?? lineName}`}
               >
                 +
               </button>
@@ -623,7 +690,7 @@ const TopologyPlot = ({
                 type="button"
                 onClick={() => changeZoom(1 / 1.35)}
                 className="h-8 w-8 border-r border-border text-sm"
-                aria-label={`Zoom out of ${title}`}
+                aria-label={`Zoom out of ${title ?? lineName}`}
               >
                 -
               </button>
@@ -631,7 +698,7 @@ const TopologyPlot = ({
                 type="button"
                 onClick={() => setZoom({ scale: 1, x: 0, y: 0 })}
                 className="h-8 px-2 text-[10px] tabular-nums"
-                aria-label={`Reset zoom on ${title}`}
+                aria-label={`Reset zoom on ${title ?? lineName}`}
               >
                 {Math.round(zoom.scale * 100)}%
               </button>
@@ -655,6 +722,23 @@ const TopologyPlot = ({
                   const from = nodeById.get(edge.from)
                   const to = nodeById.get(edge.to)
                   if (!from || !to) return null
+                  if (edge.kind === "bond") {
+                    return (
+                      <line
+                        key={edge.id}
+                        x1={from.x}
+                        y1={from.y}
+                        x2={to.x}
+                        y2={to.y}
+                        stroke="var(--muted-foreground)"
+                        strokeWidth={3 * symbolScale}
+                        strokeLinecap="round"
+                        vectorEffect="non-scaling-stroke"
+                      >
+                        <title>Same station — two through-corridors</title>
+                      </line>
+                    )
+                  }
                   const line = offsetEdge(from, to, edge.trackGroup)
                   const fast = edge.service === "fast"
                   const occasional = edge.service === "occasional"
@@ -744,22 +828,24 @@ const TopologyPlot = ({
                         (node.kind === "junction" ? 2 : 1.4) * symbolScale
                       }
                     />
-                    <text
-                      x={node.labelX * labelScale}
-                      y={node.labelY * labelScale}
-                      textAnchor={node.labelAnchor}
-                      className={
-                        node.kind === "junction"
-                          ? "fill-muted-foreground"
-                          : "fill-foreground"
-                      }
-                      fontSize={
-                        (node.kind === "junction" ? 10 : 11) * labelScale
-                      }
-                      style={{ fontFamily: "var(--font-sans)" }}
-                    >
-                      {nodeLabel(node)}
-                    </text>
+                    {!isSecondSplitHalf(node) && (
+                      <text
+                        x={node.labelX * labelScale}
+                        y={node.labelY * labelScale}
+                        textAnchor={node.labelAnchor}
+                        className={
+                          node.kind === "junction"
+                            ? "fill-muted-foreground"
+                            : "fill-foreground"
+                        }
+                        fontSize={
+                          (node.kind === "junction" ? 10 : 11) * labelScale
+                        }
+                        style={{ fontFamily: "var(--font-sans)" }}
+                      >
+                        {nodeLabel(node)}
+                      </text>
+                    )}
                   </g>
                 ))}
               </g>
@@ -802,6 +888,29 @@ export const TrackTopologyView = ({
     useState<PassengerSource>("tfl")
   const [trackModel, setTrackModel] = useState<PhysicalModel>("centreline")
   const [showSkipHops, setShowSkipHops] = useState(true)
+  const lineUrlReady = useRef(false)
+
+  useEffect(() => {
+    if (!lineUrlReady.current) {
+      lineUrlReady.current = true
+      const requested = new URLSearchParams(window.location.search).get(
+        LINE_QUERY_PARAM
+      )
+      if (
+        requested &&
+        requested !== lineId &&
+        lineOptions.some((option) => option.lineId === requested)
+      ) {
+        setLineId(requested)
+        return
+      }
+    }
+    if (!lineId) return
+    const url = new URL(window.location.href)
+    if (url.searchParams.get(LINE_QUERY_PARAM) === lineId) return
+    url.searchParams.set(LINE_QUERY_PARAM, lineId)
+    window.history.replaceState(null, "", url)
+  }, [lineId, lineOptions])
 
   const selected = lineOptions.find((option) => option.lineId === lineId)
   const snapshotSlice = useMemo(
@@ -838,16 +947,43 @@ export const TrackTopologyView = ({
       : tflStations
   }, [centrelineBundle, selected])
 
-  const tflTopology = useMemo(() => {
-    if (!selected) return emptyTopology()
-    return officialTrackTopology(selected.lineId, stations) ?? emptyTopology()
-  }, [selected, stations])
-
-  const snapshotTopology = useMemo(
-    () =>
-      snapshotSlice ? snapshotPassengerTopology(snapshotSlice) : emptyTopology(),
-    [snapshotSlice]
+  const servicePatterns = useMemo(
+    () => (selected ? servicePatternEvidenceForLine(selected.lineId) : null),
+    [selected]
   )
+
+  const tflSplit = useMemo(() => {
+    const raw = selected
+      ? officialTrackTopology(selected.lineId, stations)
+      : null
+    if (!raw) {
+      return {
+        topology: emptyTopology(),
+        movements: [] as ReturnType<typeof tflMovementsForTopology>,
+      }
+    }
+    return splitBondedThroughStations(
+      raw,
+      tflMovementsForTopology(raw, servicePatterns)
+    )
+  }, [selected, stations, servicePatterns])
+
+  const snapshotSplit = useMemo(() => {
+    if (!snapshotSlice) {
+      return {
+        topology: emptyTopology(),
+        movements: [] as ReturnType<typeof snapshotMovementsForTopology>,
+      }
+    }
+    const raw = snapshotPassengerTopology(snapshotSlice)
+    return splitBondedThroughStations(
+      raw,
+      snapshotMovementsForTopology(snapshotSlice, raw)
+    )
+  }, [snapshotSlice])
+
+  const tflTopology = tflSplit.topology
+  const snapshotTopology = snapshotSplit.topology
 
   const passengerTopology = useMemo(() => {
     if (passengerSource !== "snapshot") return tflTopology
@@ -860,120 +996,92 @@ export const TrackTopologyView = ({
     }
   }, [passengerSource, showSkipHops, snapshotTopology, tflTopology])
 
-  const servicePatterns = useMemo(
-    () => (selected ? servicePatternEvidenceForLine(selected.lineId) : null),
-    [selected]
-  )
-
   const tflMovementPairs = useMemo(
-    () => movementPairs(tflMovementsForTopology(tflTopology, servicePatterns)),
-    [tflTopology, servicePatterns]
+    () => movementPairs(tflSplit.movements),
+    [tflSplit.movements]
   )
 
   const snapshotMovementPairs = useMemo(
-    () =>
-      snapshotSlice
-        ? movementPairs(
-            snapshotMovementsForTopology(snapshotSlice, snapshotTopology)
-          )
-        : [],
-    [snapshotSlice, snapshotTopology]
+    () => movementPairs(snapshotSplit.movements),
+    [snapshotSplit.movements]
   )
 
   const passengerMovements =
     passengerSource === "snapshot" ? snapshotMovementPairs : tflMovementPairs
 
-  const lineGroups = useMemo(() => {
-    const groups: { label: string; options: LineOption[] }[] = (
-      Object.keys(TRANSIT_MODE_LABELS) as TransitMode[]
-    ).map((mode) => ({
-      label: TRANSIT_MODE_LABELS[mode],
-      options: lineOptions.filter((option) => option.mode === mode),
-    }))
-    const other = lineOptions.filter((option) => !option.mode)
-    if (other.length > 0) groups.push({ label: "Cable Car", options: other })
-    return groups.filter((group) => group.options.length > 0)
-  }, [lineOptions])
-
-  const handleLineChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setLineId(event.target.value)
+  const handleLineSelect = (nextLineId: string) => {
+    setLineId(nextLineId)
   }
 
   useEffect(() => {
     if (trackModel === "timetable" && !timetableBundle) {
-      setTrackModel(selected?.mode ? "centreline" : "centreline")
+      setTrackModel("centreline")
     }
   }, [selected?.mode, timetableBundle, trackModel])
 
   return (
     <div className="space-y-10">
-      <div className="flex flex-wrap items-end gap-4 rounded-lg border border-border bg-muted/20 p-3">
-        <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">Line</span>
-          <select
-            value={lineId}
-            onChange={handleLineChange}
-            className="block rounded-md border border-border bg-background px-2 py-1.5 text-sm"
-          >
-            {lineGroups.map((group) => (
-              <optgroup key={group.label} label={group.label}>
-                {group.options.map((option) => (
-                  <option key={option.lineId} value={option.lineId}>
-                    {option.lineName}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </label>
-        <p className="max-w-xl text-xs text-muted-foreground">
-          Timetable snapshot: {networkManifest.publisher},{" "}
-          {networkManifest.feedStartDate}–{networkManifest.feedEndDate}.{" "}
-          {snapshotSlice
-            ? `${snapshotSlice.patterns.length} patterns, ${snapshotSlice.calendars.length} calendars, ${snapshotSlice.paths.length} shapes.`
-            : "No snapshot rows for this line."}
-        </p>
-      </div>
-
-      <section className="space-y-4" aria-labelledby="passenger-model-heading">
-        <div className="space-y-1">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Model 1
-          </p>
+      <section className="space-y-3" aria-labelledby="passenger-model-heading">
+        <div
+          className="flex flex-wrap gap-1.5"
+          role="group"
+          aria-label="Line"
+        >
+          {lineOptions.map((option) => {
+            const selectedLine = option.lineId === lineId
+            return (
+              <button
+                key={option.lineId}
+                type="button"
+                aria-pressed={selectedLine}
+                aria-label={option.lineName}
+                onClick={() => handleLineSelect(option.lineId)}
+                className={cn(
+                  "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  selectedLine
+                    ? "outline-solid outline-2 outline-offset-1 outline-foreground"
+                    : "opacity-60 hover:opacity-100"
+                )}
+              >
+                <LineBadge
+                  lineId={option.lineId}
+                  name={option.lineName}
+                  color={option.color}
+                  diagram={option.lineId === "cable-car"}
+                />
+              </button>
+            )
+          })}
+        </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h2 id="passenger-model-heading" className="text-lg font-medium">
             Passenger topology
           </h2>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            TfL sequences are the spine for the carriage map, platform map,
-            and Tube map, and stay the default here. The timetable overlay
-            only classifies how typical a skip or branch is — it is decision
-            support, not an alternative station graph.
-          </p>
-        </div>
-        <div
-          className="flex flex-wrap gap-2"
-          role="group"
-          aria-label="Passenger topology source"
-        >
-          {PASSENGER_SOURCES.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              aria-pressed={passengerSource === option.id}
-              onClick={() => setPassengerSource(option.id)}
-              className={cn(
-                "rounded-full border border-border px-2.5 py-1 text-xs",
-                passengerSource === option.id
-                  ? "bg-foreground text-background"
-                  : "bg-background text-foreground"
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
+          <div
+            className="flex flex-wrap gap-2"
+            role="group"
+            aria-label="Passenger topology source"
+          >
+            {PASSENGER_SOURCES.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={passengerSource === option.id}
+                onClick={() => setPassengerSource(option.id)}
+                className={cn(
+                  "rounded-full border border-border px-2.5 py-1 text-xs",
+                  passengerSource === option.id
+                    ? "bg-foreground text-background"
+                    : "bg-background text-foreground"
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
         {passengerSource === "snapshot" && (
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <input
                 type="checkbox"
@@ -982,15 +1090,22 @@ export const TrackTopologyView = ({
               />
               Skip-stop hops (dashed regular / dotted occasional)
             </label>
+            <p className="max-w-xl text-xs text-muted-foreground">
+              Marks how typical a skip or branch is. Not a second station
+              graph.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {networkManifest.publisher}, {networkManifest.feedStartDate}–
+              {networkManifest.feedEndDate}
+            </p>
           </div>
         )}
         <TopologyPlot
           key={`passenger-${passengerSource}-${lineId}`}
-          title={`${selected?.lineName ?? "Line"} station graph`}
           source={
             passengerSource === "snapshot"
-              ? "Typicality overlay after merging NR/Tube twins, for comparison only. Dashed hops are regular weekday skip-stop; dotted hops are evening, weekend-only, or rare adjustments. Segment length follows TfL travel time where known."
-              : "TfL ordered station sequences — the default render source for carriage, platform, and Tube map products. Segment length follows TfL travel time. Physical track junctions are omitted."
+              ? "Dashed hops are regular weekday skips. Dotted hops are evening, weekend-only, or rare. Segment length follows travel time."
+              : "Segment length follows travel time. Track junctions are omitted."
           }
           topology={passengerTopology}
           color={selected?.color ?? snapshotSlice?.line.color ?? "#888"}
@@ -1001,22 +1116,20 @@ export const TrackTopologyView = ({
           empty={
             passengerSource === "snapshot"
               ? "No timetable snapshot patterns for this line."
-              : "No TfL sequence for this line id."
+              : "No TfL sequence for this line."
           }
         />
       </section>
 
       <section className="space-y-4" aria-labelledby="physical-model-heading">
         <div className="space-y-1">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Model 2
-          </p>
           <h2 id="physical-model-heading" className="text-lg font-medium">
             Physical topology
           </h2>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            OSM unique-track is the map paint. Elizabeth line and Overground
-            also have low-resolution timetable shapes from the snapshot.
+            Track the geographic map paints. Merged centreline is one stroke
+            per corridor. Both tracks keeps the running lines. Elizabeth line
+            and Overground also have low-resolution timetable shapes.
           </p>
         </div>
         <div
@@ -1063,8 +1176,8 @@ export const TrackTopologyView = ({
         ) : (
           <p className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
             {trackModel === "timetable"
-              ? "This timetable has no trip shapes for this line. Underground, DLR, and Tram stay on OSM unique-track."
-              : "No physical geometry is available for this line."}
+              ? "No timetable shapes for this line. Underground, DLR, and Tram use OSM track."
+              : "No physical geometry for this line."}
           </p>
         )}
       </section>
@@ -1072,16 +1185,12 @@ export const TrackTopologyView = ({
       {selected && (
         <section className="space-y-4" aria-labelledby="evidence-model-heading">
           <div className="space-y-1">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              Model 3
-            </p>
             <h2 id="evidence-model-heading" className="text-lg font-medium">
-              Pattern evidence
+              Sources for this line
             </h2>
             <p className="max-w-3xl text-sm text-muted-foreground">
-              TfL sequences are the published passenger record. The timetable
-              snapshot adds calendars and headways. OSM route relations remain
-              an independent geographic inventory.
+              The same line as three inventories: TfL routes, timetable
+              patterns, and OSM relations.
             </p>
           </div>
           <RoutePatternInspector

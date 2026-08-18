@@ -116,12 +116,19 @@ export const hopGraphFromOrderedStops = (
   return graphFromEdges(edges, aliasGroups);
 };
 
+const railHopGraphCache = new Map<string, HopGraph>()
+
 /** Rail hop graph from static `LINE_STATION_SEQUENCES`, with hub aliases. */
-export const hopGraphForRailLine = (lineId: string): HopGraph =>
-  hopGraphFromTopology(
+export const hopGraphForRailLine = (lineId: string): HopGraph => {
+  const cached = railHopGraphCache.get(lineId)
+  if (cached) return cached
+  const graph = hopGraphFromTopology(
     buildLineTopologyFromStaticBranches(lineId),
     stationHubAliasGroups(),
-  );
+  )
+  railHopGraphCache.set(lineId, graph)
+  return graph
+}
 
 export const areAdjacent = (
   graph: HopGraph,

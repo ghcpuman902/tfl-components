@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { getDocsEntry } from "@/lib/docs-catalog"
 import type { TransitGeometryBundle } from "@/lib/tfl/geography-types"
 import type { LineHopTimesSnapshot } from "@/lib/tfl/geometry/line-hop-times"
 import hopTimesJson from "@/data/geography/line-hop-times.json"
@@ -24,10 +26,11 @@ import snapshotJson from "@/data/network-model/snapshot.json"
 import manifestJson from "@/data/network-model/manifest.json"
 import { TrackTopologyView } from "./track-topology-view"
 
+const entry = getDocsEntry("line-topology")!
+
 export const metadata: Metadata = {
-  title: "Line topology source models (temp)",
-  description:
-    "Compare TfL sequences, OSM track, and the derived timetable snapshot.",
+  title: entry.title,
+  description: entry.description,
 }
 
 const asBundle = (value: unknown): TransitGeometryBundle =>
@@ -60,30 +63,25 @@ const topologyViewProps = {
   hopTimes: (hopTimesJson as LineHopTimesSnapshot).lines,
 }
 
-export default function TrackTopologyTempPage() {
+export default function DocsLineTopologyPage() {
   return (
-    <div className="mx-auto max-w-[96rem] space-y-6 px-4 py-10">
-      <header className="space-y-2">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Temp research, not linked in nav
-        </p>
-        <h1 className="text-2xl font-semibold">Line topology source models</h1>
-        <p className="max-w-prose text-sm text-muted-foreground">
-          TfL sequences describe passenger movement. OSM describes physical
-          track. The timetable snapshot adds collapsed Aubin patterns,
-          typical calendars, headways, and low-resolution Elizabeth /
-          Overground shapes.
-        </p>
-        <p className="text-sm">
-          <Link
-            href="/temp/track-topology/junctions"
-            className="underline underline-offset-2"
-          >
-            Real junction windows →
-          </Link>
-        </p>
-      </header>
+    <article className="mx-auto w-full max-w-[96rem] space-y-8">
+      <DocsPageHeader entry={entry} />
       <TrackTopologyView {...topologyViewProps} />
-    </div>
+      <p className="max-w-prose text-sm text-muted-foreground">
+        A timetable is not required to draw the four maps. Records live on{" "}
+        <Link href="/docs/data-model" className="underline underline-offset-2">
+          Data model
+        </Link>
+        .{" "}
+        <Link
+          href="/docs/line-topology/junctions"
+          className="underline underline-offset-2"
+        >
+          Junction windows
+        </Link>{" "}
+        crop one place at a time.
+      </p>
+    </article>
   )
 }

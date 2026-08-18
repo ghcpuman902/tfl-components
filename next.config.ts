@@ -93,6 +93,12 @@ const nextConfig: NextConfig = {
       // one level up, at `/docs/<slug>`.
       { source: "/docs/components/:slug", destination: "/docs/:slug", permanent: true },
       { source: "/blocks/live-vehicles", destination: "/docs/live-bus-vehicles", permanent: true },
+      { source: "/temp/track-topology", destination: "/docs/line-topology", permanent: true },
+      {
+        source: "/temp/track-topology/junctions",
+        destination: "/docs/line-topology/junctions",
+        permanent: true,
+      },
     ];
   },
 };

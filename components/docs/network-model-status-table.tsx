@@ -5,6 +5,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import {
+  MAP_PRODUCT_USE_LABEL,
   NETWORK_MODEL_CLASSIFICATION_LABEL,
   SOURCE_ORIGIN_LABEL,
   type NetworkModelClassification,
@@ -61,11 +62,15 @@ const OriginLabel = ({ origin }: { origin: SourceOrigin }) => {
   )
 }
 
+const PUBLIC_ROWS = NETWORK_MODEL_STATUS.filter((row) => row.usedOn)
+
+const USED_CLASSIFICATIONS = [
+  ...new Set(PUBLIC_ROWS.map((row) => row.classification)),
+] as NetworkModelClassification[]
+
 export const NetworkModelStatusLegend = () => (
   <ul className="my-4 max-w-prose space-y-2 text-sm leading-6">
-    {(
-      Object.keys(CLASSIFICATION_BLURB) as NetworkModelClassification[]
-    ).map((classification) => (
+    {USED_CLASSIFICATIONS.map((classification) => (
       <li key={classification} className="flex items-start gap-2">
         <ClassificationChip classification={classification} />
         <span className="text-muted-foreground">
@@ -76,15 +81,11 @@ export const NetworkModelStatusLegend = () => (
   </ul>
 )
 
-const PUBLIC_ROWS = NETWORK_MODEL_STATUS.filter(
-  (row) => row.record !== "SourceSnapshot",
-)
-
 export const NetworkModelStatusTable = () => (
   <div className="my-6 w-full overflow-x-auto">
     <table className="w-full caption-bottom text-sm">
       <caption className="sr-only">
-        Network-model records, readiness, origin, and what each is for
+        Network-model records the four maps draw, with readiness, origin, and use
       </caption>
       <thead className="[&_tr]:border-b">
         <tr className="m-0 border-t border-b p-0">
@@ -96,6 +97,9 @@ export const NetworkModelStatusTable = () => (
           </th>
           <th className="h-10 border px-4 py-2 text-left align-middle font-bold">
             Origin
+          </th>
+          <th className="h-10 border px-4 py-2 text-left align-middle font-bold">
+            Maps
           </th>
           <th className="h-10 border px-4 py-2 text-left align-middle font-bold">
             What it is
@@ -121,6 +125,9 @@ export const NetworkModelStatusTable = () => (
             </td>
             <td className="border px-4 py-2 text-left align-top whitespace-nowrap">
               <OriginLabel origin={row.origin} />
+            </td>
+            <td className="border px-4 py-2 text-left align-top whitespace-nowrap">
+              {row.usedOn ? MAP_PRODUCT_USE_LABEL[row.usedOn] : null}
             </td>
             <td className="border px-4 py-2 text-left align-top min-w-56">
               {row.summary}

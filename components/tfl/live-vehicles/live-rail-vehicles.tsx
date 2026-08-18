@@ -44,6 +44,7 @@ export const LiveRailVehicles = ({
           modes={railModesForLineIds(railLineIds)}
           lineIds={railLineIds}
           vehicles={tracking.rail}
+          vehiclePolylines={tracking.railPolylines}
           coast
           showNavigation={false}
         />

@@ -284,12 +284,34 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "data-model",
     title: "Data model",
     description:
-      "The shared passenger network behind maps and line diagrams — a small derived set, not a full timetable.",
+      "The shared passenger network behind the four maps — station order, track, and which patterns each map shows.",
     group: "start",
     kind: "page",
     href: "/docs/data-model",
     sidebarSection: "get-started",
     sidebarOrder: 195,
+  },
+  {
+    slug: "line-topology",
+    title: "Line topology",
+    description:
+      "How TfL station order and OSM track become a passenger line.",
+    group: "start",
+    kind: "page",
+    href: "/docs/line-topology",
+    sidebarSection: "get-started",
+    sidebarOrder: 196,
+  },
+  {
+    slug: "line-topology-junctions",
+    title: "Junction windows",
+    description:
+      "Compare a real junction as geography, dual track, and schematic.",
+    group: "start",
+    kind: "page",
+    href: "/docs/line-topology/junctions",
+    sidebarSection: "hidden",
+    sidebarOrder: 0,
   },
   {
     slug: "licensing",

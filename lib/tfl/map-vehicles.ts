@@ -1,7 +1,10 @@
 import type { FeatureCollection, LineString, Point } from "geojson";
+import { hopGraphForRailLine } from "@/lib/tfl/vehicle-hop-graph";
 import {
+  orientLineToBearing,
   segmentAroundPoint,
   vehicleLengthMeters,
+  vehicleStrokeScale,
   type RoutePolyline,
 } from "@/lib/tfl/vehicle-progress";
 
@@ -31,6 +34,8 @@ export type VehiclePosition = {
   fromStopId?: string;
   /** Remaining km to `nextStop`. Drains while coasting; never increases on a locked hop. */
   remainingKm?: number;
+  /** Epoch ms when this hop's remaining km first hit 0. */
+  arrivedAtMs?: number;
 };
 
 export type VehiclePointProperties = {
@@ -45,6 +50,7 @@ export type VehicleSegmentProperties = {
   vehicleId: string;
   lineId: string;
   destinationName: string;
+  widthScale: number;
 };
 
 export const vehiclesToGeoJSON = (
@@ -90,12 +96,19 @@ export const vehiclesToSegmentGeoJSON = (
         vehicleId: vehicle.vehicleId,
         lineId: vehicle.lineId,
         destinationName: vehicle.destinationName,
+        widthScale: vehicleStrokeScale(vehicle.lineId),
       },
-      geometry: segmentAroundPoint({
-        at: { lat: vehicle.lat, lon: vehicle.lon },
-        lengthMeters: vehicle.lengthMeters ?? vehicleLengthMeters(vehicle.lineId),
-        lineId: vehicle.lineId,
-        polylines,
-      }),
+      geometry: orientLineToBearing(
+        segmentAroundPoint({
+          at: { lat: vehicle.lat, lon: vehicle.lon },
+          lengthMeters: vehicle.lengthMeters ?? vehicleLengthMeters(vehicle.lineId),
+          lineId: vehicle.lineId,
+          polylines,
+          fromStopId: vehicle.fromStopId,
+          toStopId: vehicle.nextStopId,
+          canonical: hopGraphForRailLine(vehicle.lineId).canonical,
+        }),
+        vehicle.bearingDeg,
+      ),
     })),
 });

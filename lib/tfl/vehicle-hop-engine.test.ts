@@ -140,6 +140,64 @@ describe("ingestVehicleHops", () => {
     assert.equal(tracks.size, 0)
   })
 
+  it("holds at the arrived stop while dwelling instead of starting the next hop", () => {
+    const tracks = new Map<string, VehicleHopTrack>()
+    ingest(
+      tracks,
+      [prediction({ vehicleId: "241", naptanId: "A", timeToStation: 0 })],
+      1_000,
+    )
+    const [held] = ingestVehicleHops({
+      tracks,
+      predictions: [
+        prediction({ vehicleId: "241", naptanId: "B", timeToStation: 40 }),
+      ],
+      stationsById: STATIONS,
+      polylines: [EAST_LINE],
+      graph: GRAPH,
+      asOf: 2_000,
+      viscosity: {
+        curvatureWeight: 1,
+        stationApproachKm: 0.16,
+        stationWeight: 1.6,
+        dwellSec: 18,
+      },
+    })
+    assert.ok(held)
+    assert.equal(held.nextStopId, "A")
+    assert.equal(held.remainingKm, 0)
+  })
+
+  it("caps a long ETA to the tagged hop length", () => {
+    const tracks = new Map<string, VehicleHopTrack>()
+    const hop = {
+      lineId: "victoria",
+      fromStationId: "A",
+      toStationId: "B",
+      line: {
+        type: "LineString" as const,
+        coordinates: [
+          [-0.14, 51.5],
+          [-0.13, 51.5],
+        ],
+      },
+    }
+    const [position] = ingestVehicleHops({
+      tracks,
+      predictions: [
+        prediction({ vehicleId: "241", naptanId: "B", timeToStation: 600 }),
+      ],
+      stationsById: STATIONS,
+      polylines: [hop],
+      graph: GRAPH,
+      asOf: 1_000,
+    })
+    assert.ok(position)
+    assert.equal(position.fromStopId, "A")
+    assert.ok((position.remainingKm ?? 9) < 0.9)
+    assert.ok(position.lon >= -0.141)
+  })
+
   it("keeps the same vehicleId on two lines as separate tracks", () => {
     const tracks = new Map<string, VehicleHopTrack>()
     const placed = ingest(

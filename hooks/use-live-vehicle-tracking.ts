@@ -30,6 +30,7 @@ import {
   type HopGraph,
 } from "@/lib/tfl/vehicle-hop-graph";
 import type { VehiclePosition } from "@/lib/tfl/map-vehicles";
+import type { RoutePolyline } from "@/lib/tfl/vehicle-progress";
 import {
   computeBatchedPollIntervalMs,
   SITE_POLL_MS,
@@ -69,6 +70,7 @@ export type UseLiveVehicleTrackingResult = {
   bus: VehiclePosition[];
   algorithms: LineAlgorithmRow[];
   busGeometries: BusRouteGeometry[];
+  railPolylines: RoutePolyline[];
   fetchedAt: number | null;
   loading: boolean;
   error: string | null;
@@ -455,6 +457,7 @@ export const useLiveVehicleTracking = ({
       bus: [],
       algorithms,
       busGeometries,
+      railPolylines,
       fetchedAt,
       loading: false,
       error: INVALID_KEY_MESSAGE,
@@ -470,6 +473,7 @@ export const useLiveVehicleTracking = ({
     bus,
     algorithms,
     busGeometries,
+    railPolylines,
     fetchedAt,
     loading,
     error,

@@ -79,9 +79,14 @@ type DragState = {
   y: number
 }
 
+/** The second half of a split flying junction (see `splitFlyingJunctions`) skips its own label — the bonded pair reads as one place, not two. */
+const isSecondSplitHalf = (node: ContractedNode): boolean =>
+  node.splitFrom != null && node.id.endsWith("~b")
+
 const nodeLabel = (node: ContractedNode): string => {
   if (node.kind === "station") return node.stationName ?? "station"
   if (node.kind === "junction") {
+    if (isSecondSplitHalf(node)) return ""
     return node.nearStationName ? `junc · ${node.nearStationName}` : "junction"
   }
   return node.stationName ?? "terminus"
@@ -104,7 +109,10 @@ const seedSimulation = (
           from: movement.a,
           via: movement.via,
           to: movement.b,
-        }))
+        })),
+        edges
+          .filter((edge) => edge.kind === "bond")
+          .map((edge) => ({ a: edge.from, b: edge.to }))
       )
     ),
   }
@@ -507,6 +515,21 @@ const GraphPlot = ({
                 const from = nodeById.get(edge.from)
                 const to = nodeById.get(edge.to)
                 if (!from || !to) return null
+                if (edge.kind === "bond") {
+                  return (
+                    <line
+                      key={edge.id}
+                      x1={from.x}
+                      y1={from.y}
+                      x2={to.x}
+                      y2={to.y}
+                      stroke="var(--muted-foreground)"
+                      strokeWidth={3 * symbolScale}
+                      strokeLinecap="round"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  )
+                }
                 const line = offsetEdge(from, to, edge.trackGroup)
                 return (
                   <line
@@ -587,20 +610,24 @@ const GraphPlot = ({
                       (node.kind === "junction" ? 2 : 1.4) * symbolScale
                     }
                   />
-                  <text
-                    x={node.labelX * labelScale}
-                    y={node.labelY * labelScale}
-                    textAnchor={node.labelAnchor}
-                    className={
-                      node.kind === "junction"
-                        ? "fill-muted-foreground"
-                        : "fill-foreground"
-                    }
-                    fontSize={(node.kind === "junction" ? 10 : 11) * labelScale}
-                    style={{ fontFamily: "var(--font-sans)" }}
-                  >
-                    {nodeLabel(node)}
-                  </text>
+                  {!isSecondSplitHalf(node) && (
+                    <text
+                      x={node.labelX * labelScale}
+                      y={node.labelY * labelScale}
+                      textAnchor={node.labelAnchor}
+                      className={
+                        node.kind === "junction"
+                          ? "fill-muted-foreground"
+                          : "fill-foreground"
+                      }
+                      fontSize={
+                        (node.kind === "junction" ? 10 : 11) * labelScale
+                      }
+                      style={{ fontFamily: "var(--font-sans)" }}
+                    >
+                      {nodeLabel(node)}
+                    </text>
+                  )}
                 </g>
               ))}
             </g>
@@ -701,8 +728,7 @@ const JunctionWindowPanels = ({ window }: { window: JunctionWindow }) => {
           <div className="space-y-0.5">
             <h3 className="text-sm font-medium">Geographic zoom</h3>
             <p className="text-xs text-muted-foreground">
-              OSM dual tracks around {window.case.name}, cropped to{" "}
-              {window.case.radiusM} m. Real geography, both running lines.
+              Both running lines around {window.case.name}.
             </p>
           </div>
           <div className="h-[min(42vh,22rem)] overflow-hidden rounded-lg border border-border">
@@ -720,7 +746,7 @@ const JunctionWindowPanels = ({ window }: { window: JunctionWindow }) => {
         <GraphPlot
           key={`dual-${window.case.id}`}
           title="Dual graph"
-          source="Contracted both-track graph at geographic positions. Parallel twins stay as two edges."
+          source="Both-track graph at geographic positions. Parallel twins stay as two edges."
           topology={window.topology}
           movements={window.movements}
           color={window.color}
@@ -732,7 +758,7 @@ const JunctionWindowPanels = ({ window }: { window: JunctionWindow }) => {
         <GraphPlot
           key={`gestalt-${window.case.id}`}
           title="Schematic gestalt"
-          source="Stress layout plus from–via–to straightening for every permitted continuation."
+          source="Schematic layout, straightened along permitted moves."
           topology={window.topology}
           movements={window.movements}
           color={window.color}
@@ -747,9 +773,9 @@ const JunctionWindowPanels = ({ window }: { window: JunctionWindow }) => {
           Permitted route constraints
         </h3>
         <p className="max-w-3xl text-xs text-muted-foreground">
-          A constraint is a from–via–to triple taken from OSM route geometry and
-          TfL station sequences. Two-leg corridors still straighten. Branch
-          marks appear only where three or more legs meet.
+          A permitted move is a from–via–to triple from OSM track and TfL
+          station order. Two-leg corridors still straighten. Branch marks
+          appear only where three or more legs meet.
         </p>
         {branchMovements.length === 0 ? (
           <p className="text-sm text-muted-foreground">

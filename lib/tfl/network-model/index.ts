@@ -1,4 +1,5 @@
 export {
+  MAP_PRODUCT_USE_LABEL,
   NETWORK_MODEL_CLASSIFICATION_LABEL,
   SOURCE_CACHE_LABEL,
   SOURCE_ORIGIN_LABEL,
@@ -8,6 +9,7 @@ export type {
   Line,
   MapProduct,
   MapProductPolicy,
+  MapProductUse,
   NetworkModelClassification,
   PatternCalendar,
   PatternCall,

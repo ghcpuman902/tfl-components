@@ -23,7 +23,15 @@ export type ContractedNode = {
   /** Nearest station to a junction — for inspect labels, not identity. */
   nearStationName?: string
   kind: ContractedNodeKind
+  /**
+   * Set when this node is one half of a flying-junction split (see
+   * `splitFlyingJunctions`): the id of the weld vertex it was split from,
+   * shared by both halves.
+   */
+  splitFrom?: string
 }
+
+export type ContractedEdgeKind = "track" | "bond"
 
 export type ContractedEdge = {
   id: string
@@ -42,6 +50,12 @@ export type ContractedEdge = {
   service?: "spine" | "fast" | "occasional"
   /** Short reason for the hop class, for hover titles. */
   serviceNote?: string
+  /**
+   * "bond" marks the short synthetic link `splitFlyingJunctions` adds between
+   * the two halves of a split weld vertex — not a real running track.
+   * Absent (or "track") means an ordinary running-track edge.
+   */
+  kind?: ContractedEdgeKind
 }
 
 export type ContractedTopology = {
@@ -229,5 +243,158 @@ export const contractTrackTopology = (
     }
   })
 
-  return { nodes: labelled, edges }
+  return splitFlyingJunctions({ nodes: labelled, edges })
+}
+
+/** Metres the two halves of a split weld sit either side of the original point. */
+const SPLIT_OFFSET_M = 6
+
+const groupEdgesByFeature = (
+  edges: readonly ContractedEdge[]
+): ContractedEdge[][] => {
+  const groups = new Map<string, ContractedEdge[]>()
+  for (const edge of edges) {
+    const group = groups.get(edge.featureId) ?? []
+    group.push(edge)
+    groups.set(edge.featureId, group)
+  }
+  return [...groups.values()]
+}
+
+/**
+ * Direction (in metres, junction-local) that `edge` heads away from `originId`,
+ * preferring the retained polyline tangent over the straight line to the
+ * neighbour node so curved approaches still separate sensibly.
+ */
+const edgeTangentFrom = (
+  edge: ContractedEdge,
+  originId: string,
+  origin: ContractedNode,
+  nodeById: ReadonlyMap<string, ContractedNode>
+): { x: number; y: number } => {
+  const coordinates = edge.coordinates
+  if (coordinates && coordinates.length >= 2) {
+    const oriented = edge.to === originId ? [...coordinates].reverse() : coordinates
+    const start = oriented[0]!
+    for (let index = 1; index < oriented.length; index += 1) {
+      const point = oriented[index]!
+      const dx = (point[0] - start[0]) * METERS_PER_DEG_LNG
+      const dy = (point[1] - start[1]) * METERS_PER_DEG_LAT
+      if (Math.hypot(dx, dy) > 1) return { x: dx, y: dy }
+    }
+  }
+  const otherId = edge.from === originId ? edge.to : edge.from
+  const other = nodeById.get(otherId)
+  if (!other) return { x: 0, y: 0 }
+  return {
+    x: (other.coordinates[0] - origin.coordinates[0]) * METERS_PER_DEG_LNG,
+    y: (other.coordinates[1] - origin.coordinates[1]) * METERS_PER_DEG_LAT,
+  }
+}
+
+const offsetCoordinates = (
+  point: LngLat,
+  dxM: number,
+  dyM: number
+): LngLat => [point[0] + dxM / METERS_PER_DEG_LNG, point[1] + dyM / METERS_PER_DEG_LAT]
+
+/**
+ * Splits a "diamond"/flying-junction weld — one geometric point where two
+ * independent through-routes cross — into a pair of adjacent nodes joined by
+ * a short synthetic bond edge, instead of one vertex with every leg fanning
+ * out of it. Mirrors the printed Tube map's own device for this shape (e.g.
+ * Kennington, Euston, Camden Town): the crossing itself is never a station,
+ * so it never becomes a single congested vertex — each real through-route
+ * keeps its own point, and the two points sit close enough to read as one
+ * place. Only fires when a junction's incident edges split cleanly into
+ * groups of exactly two sharing a `featureId` (one through-route each); any
+ * messier shape is left as a single junction node.
+ */
+export const splitFlyingJunctions = (
+  topology: ContractedTopology
+): ContractedTopology => {
+  const nodeById = new Map(topology.nodes.map((node) => [node.id, node]))
+  const incidentByNode = new Map<string, ContractedEdge[]>()
+  for (const edge of topology.edges) {
+    incidentByNode.set(edge.from, [...(incidentByNode.get(edge.from) ?? []), edge])
+    incidentByNode.set(edge.to, [...(incidentByNode.get(edge.to) ?? []), edge])
+  }
+
+  const nodes: ContractedNode[] = []
+  const endpointRemap = new Map<string, Map<string, string>>()
+  const bonds: ContractedEdge[] = []
+
+  for (const node of topology.nodes) {
+    const incident = incidentByNode.get(node.id) ?? []
+    if (node.kind !== "junction" || incident.length < 4) {
+      nodes.push(node)
+      continue
+    }
+
+    const groups = groupEdgesByFeature(incident)
+    const cleanSplit =
+      groups.length === 2 &&
+      groups.every((group) => group.length === 2) &&
+      groups.reduce((sum, group) => sum + group.length, 0) === incident.length
+    if (!cleanSplit) {
+      nodes.push(node)
+      continue
+    }
+
+    const [groupA, groupB] = groups as [ContractedEdge[], ContractedEdge[]]
+    const tangentA = edgeTangentFrom(groupA[0]!, node.id, node, nodeById)
+    const tangentLength = Math.hypot(tangentA.x, tangentA.y) || 1
+    const perp = { x: -tangentA.y / tangentLength, y: tangentA.x / tangentLength }
+
+    const idA = `${node.id}~a`
+    const idB = `${node.id}~b`
+    nodes.push({
+      ...node,
+      id: idA,
+      coordinates: offsetCoordinates(
+        node.coordinates,
+        perp.x * SPLIT_OFFSET_M,
+        perp.y * SPLIT_OFFSET_M
+      ),
+      splitFrom: node.id,
+    })
+    nodes.push({
+      ...node,
+      id: idB,
+      coordinates: offsetCoordinates(
+        node.coordinates,
+        -perp.x * SPLIT_OFFSET_M,
+        -perp.y * SPLIT_OFFSET_M
+      ),
+      splitFrom: node.id,
+    })
+
+    const remap = endpointRemap.get(node.id) ?? new Map<string, string>()
+    for (const edge of groupA) remap.set(edge.id, idA)
+    for (const edge of groupB) remap.set(edge.id, idB)
+    endpointRemap.set(node.id, remap)
+
+    bonds.push({
+      id: `${node.id}-bond`,
+      from: idA,
+      to: idB,
+      featureId: `${node.id}-bond`,
+      kind: "bond",
+    })
+  }
+
+  if (endpointRemap.size === 0) return topology
+
+  const edges = topology.edges.map((edge) => {
+    const fromReplacement = endpointRemap.get(edge.from)?.get(edge.id)
+    const toReplacement = endpointRemap.get(edge.to)?.get(edge.id)
+    if (!fromReplacement && !toReplacement) return edge
+    return {
+      ...edge,
+      from: fromReplacement ?? edge.from,
+      to: toReplacement ?? edge.to,
+    }
+  })
+
+  return { nodes, edges: [...edges, ...bonds] }
 }

@@ -1,6 +1,6 @@
 # Product architecture
 
-**Status: FROZEN (Stage 1) + human amendments J1 / J6 / J18.** Do not reshape to match file placement without a new decision. Record unresolved conflicts for human review.
+**Status: FROZEN (Stage 1) + human amendments J1 / J6 / J18 / J19 / J20.** Do not reshape to match file placement without a new decision. Record unresolved conflicts for human review.
 
 This is the durable product and information-architecture spec for the TfL developer environment (`tfl-ts` + `tfl-components` + this website). Optimised for humans and coding agents.
 
@@ -64,7 +64,7 @@ rendering primitives
 finished interface
 ```
 
-The **network model** (J18) is the GTFS-shaped contract for maps and line diagrams: `Line`, `Station`, `StationHub`, `ServicePattern`, `PatternCall`, `PatternCalendar`, `PatternFrequency`, `PhysicalPath`, `PatternPathMatch`, `PermittedMovement`, `MapProductPolicy`, `SourceSnapshot`. Types live in `lib/tfl/network-model/`. Provenance is documented on [Data model](/docs/data-model). Station name labels are outside this layer.
+The **network model** (J18, J20) is the contract for the four maps: `Line`, `Station`, `StationHub`, `ServicePattern`, `PatternCall`, `PhysicalPath`, `PatternPathMatch`, `PermittedMovement`, `MapProductPolicy`. `PatternCalendar` and `PatternFrequency` are inspect overlays, not map inputs. Types live in `lib/tfl/network-model/`. Provenance is documented on [Data model](/docs/data-model). Inspect a line on [Line topology](/docs/line-topology). Station name labels are outside this layer.
 
 ### Rendering primitives
 

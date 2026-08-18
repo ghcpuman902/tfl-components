@@ -168,25 +168,13 @@ export const servicePatternEvidenceForLine = (
         field: "Physical route geometry",
         state: "present",
         source: "OSM route relations",
-        note: "Geometry exists as separate route-relation variants, but it is not yet matched one-to-one with the TfL patterns.",
-      },
-      {
-        field: "Calendar and time windows",
-        state: "missing",
-        source: "No static timetable calendar in this repository",
-        note: "Regular does not mean daily, frequent, or canonical. Weekend and peak-only claims need another source or a dated editorial rule.",
-      },
-      {
-        field: "Frequency and typicality",
-        state: "missing",
-        source: "No trip-level timetable in this repository",
-        note: "Relation count and ordered-route count must not be treated as trains per hour.",
+        note: "Geometry exists as separate route-relation variants. The geographic map still needs each TfL pattern joined to the matching relation.",
       },
       {
         field: "Editorial map priority",
         state: "missing",
         source: "Renderer policy not yet authored",
-        note: "The data does not say which pattern belongs on a carriage, platform, network, or geographic map.",
+        note: "The data does not say which pattern belongs on a carriage, platform, Tube, or geographic map.",
       },
     ],
   }

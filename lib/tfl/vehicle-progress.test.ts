@@ -2,12 +2,19 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import type { LineString } from "geojson"
 import {
+  curvatureEaseFactor,
+  orientLineToBearing,
+  pathTurnRadians,
+  pickHopPolyline,
   pointBetweenStations,
   positionApproachingStop,
+  positionBehindStop,
   progressBetweenStops,
+  remainingKmForHop,
   segmentAroundPoint,
   vehicleLengthMeters,
   vehicleSpeedMetersPerSec,
+  vehicleStrokeScale,
 } from "@/lib/tfl/vehicle-progress"
 
 const EAST_LINE: LineString = {
@@ -132,6 +139,106 @@ describe("vehicleLengthMeters", () => {
 
   it("treats numbered routes as buses", () => {
     assert.equal(vehicleLengthMeters("24"), 12)
+  })
+
+  it("keeps a tram shorter than DLR stock", () => {
+    assert.ok(vehicleLengthMeters("tram") < vehicleLengthMeters("dlr"))
+    assert.ok(vehicleStrokeScale("tram") < vehicleStrokeScale("dlr"))
+    assert.ok(vehicleStrokeScale("tram") < vehicleStrokeScale("victoria"))
+  })
+})
+
+describe("orientLineToBearing", () => {
+  it("reverses a slice that points against travel", () => {
+    const oriented = orientLineToBearing(EAST_LINE, 270)
+    assert.equal(oriented.coordinates[0]?.[0], -0.13)
+    assert.equal(oriented.coordinates.at(-1)?.[0], -0.14)
+  })
+})
+
+describe("pathTurnRadians", () => {
+  it("is zero on a straight line and rises on a right-angle bend", () => {
+    assert.ok(pathTurnRadians(EAST_LINE.coordinates) < 0.01)
+    const bend = [
+      [-0.14, 51.5],
+      [-0.13, 51.5],
+      [-0.13, 51.51],
+    ]
+    assert.ok(pathTurnRadians(bend) > 1.4)
+    assert.ok(pathTurnRadians(bend) < 1.8)
+  })
+
+  it("stretches ease duration when the path turns", () => {
+    assert.equal(curvatureEaseFactor(0), 1)
+    assert.ok(curvatureEaseFactor(Math.PI / 2) > 1.4)
+    assert.ok(curvatureEaseFactor(Math.PI / 2) < curvatureEaseFactor(Math.PI))
+  })
+})
+
+describe("remainingKmForHop", () => {
+  it("scales remaining distance by timetable minutes", () => {
+    assert.equal(
+      remainingKmForHop({
+        lineId: "victoria",
+        timeToNextSec: 60,
+        hopKm: 1.2,
+        hopMinutes: 2,
+      }),
+      0.6,
+    )
+  })
+
+  it("caps assumed-speed distance to the hop length", () => {
+    const remaining = remainingKmForHop({
+      lineId: "victoria",
+      timeToNextSec: 600,
+      hopKm: 0.8,
+    })
+    assert.equal(remaining, 0.8)
+  })
+})
+
+describe("pickHopPolyline", () => {
+  it("selects the tagged hop even when another line is closer", () => {
+    const hop = pickHopPolyline(
+      [
+        {
+          lineId: "victoria",
+          fromStationId: "A",
+          toStationId: "B",
+          line: EAST_LINE,
+        },
+        { lineId: "victoria", line: LONG_EAST_LINE },
+      ],
+      "A",
+      "B",
+    )
+    assert.ok(hop)
+    assert.equal(hop.fromStationId, "A")
+    assert.equal(hop.line.coordinates.length, EAST_LINE.coordinates.length)
+  })
+})
+
+describe("positionBehindStop hop lock", () => {
+  it("stays on the hop when remaining distance exceeds the hop length", () => {
+    const point = positionBehindStop({
+      nextStop: TO,
+      remainingKm: 40,
+      lineId: "victoria",
+      fromStopId: "A",
+      toStopId: "B",
+      polylines: [
+        {
+          lineId: "victoria",
+          fromStationId: "A",
+          toStationId: "B",
+          line: EAST_LINE,
+        },
+        { lineId: "victoria", line: LONG_EAST_LINE },
+      ],
+    })
+    assert.ok(Math.abs(point.lon - FROM.lon) < 0.0008)
+    assert.ok(Math.abs(point.lat - FROM.lat) < 0.0008)
   })
 })
 

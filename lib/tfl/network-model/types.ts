@@ -122,6 +122,9 @@ export type SourceRef = {
   href?: string
 }
 
+/** Which of the four map products consume this record. Absent = not a map input. */
+export type MapProductUse = "all-four" | "geographic"
+
 /**
  * Provenance for a network-model record.
  * GTFS: `feed_info.txt` (publisher, validity) plus our cache and refresh metadata.
@@ -138,6 +141,8 @@ export type SourceSnapshot = {
   note: string
   coverage?: string
   sources?: readonly SourceRef[]
+  /** Set on records the four maps actually draw. */
+  usedOn?: MapProductUse
 }
 
 export const NETWORK_MODEL_CLASSIFICATION_LABEL: Record<
@@ -168,4 +173,9 @@ export const SOURCE_REFRESH_LABEL: Record<SourceRefresh, string> = {
   manual: "Manual",
   live: "Live",
   "n/a": "n/a",
+}
+
+export const MAP_PRODUCT_USE_LABEL: Record<MapProductUse, string> = {
+  "all-four": "All four maps",
+  geographic: "Geographic",
 }

@@ -4,13 +4,13 @@ import {
   NetworkModelStatusTable,
 } from "@/components/docs/network-model-status-table"
 
-Carriage diagrams, platform diagrams, the Tube map, and the geographic map share one passenger network: lines, stations, the patterns that run on them, and the tracks those patterns follow. Three different sources answer three different questions about that network, and none of them substitutes for another.
+Carriage diagrams, platform diagrams, the Tube map, and the geographic map share one passenger network: lines, stations, the patterns that run on them, and — for the geographic map — the tracks those patterns follow.
 
-- **TfL** says which stations a service calls at, in what order. This is already complete enough to drive the carriage map, the platform map, and the Tube map.
-- **OpenStreetMap** says which metres of track a service actually runs on. This drives the geographic map, once a pattern is joined to a route by station membership rather than by snapping a station point onto the nearest track.
-- **A public timetable feed** says how typical a hop or branch is — a regular scheduled fast versus an occasional or weekend-only adjustment. That's a decision signal for how a map paints a branch, not a fourth map of its own.
+- **TfL** says which stations a service calls at, in what order. That is enough for the carriage map, the platform map, and the Tube map.
+- **OpenStreetMap** says which metres of track a service runs on. That is what the geographic map draws, once a pattern is joined to a route by station membership rather than by snapping a station onto the nearest track.
+- **MapProductPolicy** is authored here. No feed decides which patterns belong on a carriage map, a platform map, the Tube map, or the geographic map.
 
-The library ships a small derived set of that network — enough to put lines on a map that look as people expect. It is rebuilt from public sources when those sources change. It is not a hand-drawn copy, and it is not a full national timetable.
+A public timetable is not required to draw these four maps. How often a pattern runs does not change station order or track.
 
 Station name labels are a separate concern.
 
@@ -28,26 +28,18 @@ In-carriage and platform maps use the same records. Their difference is layout. 
 
 ## Where it comes from
 
-Line identity and station order come from TfL. Track geometry comes from OpenStreetMap, simplified for a map and joined to a pattern by matching the ordered stations on an OSM route relation — not by finding the nearest surviving track vertex, which mis-assigns stations wherever lines run close together (Waterloo & City is the clearest example). Typicality — how often a hop or branch runs — comes from a public timetable feed and stays internal to layout decisions; it is not exposed as an alternative station graph. This package ships a small derived set; the sources below are what you would use if you need more than that.
+Line identity and station order come from TfL. Track geometry comes from OpenStreetMap, simplified for a map and joined to a pattern by matching the ordered stations on an OSM route relation. Inspect a line on [Line topology](/docs/line-topology).
 
 | Source | Covers | When to use it |
 |---|---|---|
-| [TfL Unified API](https://api-portal.tfl.gov.uk/) via `tfl-ts` | Lines, stations, hubs, arrivals, status | Everyday boards and Explorer. Free key. |
-| [TfL station-data GTFS](https://api.tfl.gov.uk/stationdata/tfl-stationdata-gtfs.zip) | Stations, platforms, hubs, step-free pathways | Interchange grouping and platform geometry. No timetables. |
+| [TfL Unified API](https://api-portal.tfl.gov.uk/) via `tfl-ts` | Lines, stations, hubs, arrivals, status | Everyday boards and the three schematic maps. Free key. |
+| [TfL station-data GTFS](https://api.tfl.gov.uk/stationdata/tfl-stationdata-gtfs.zip) | Stations, platforms, hubs, step-free pathways | Interchange grouping and platform identity. No timetables. |
 | OpenStreetMap | Track geometry | Geographic maps. Already the basis of the simplified unique-track set. |
-| [DfT BODS London GTFS](https://data.bus-data.dft.gov.uk/timetable/download/gtfs-file/london/) | Underground, DLR, Tram, cable car, river, buses | Official calendars, trips, and shapes. No Elizabeth line or Overground. No key for the bulk file. |
-| [BODS live vehicles](https://data.bus-data.dft.gov.uk/) | Buses (SIRI-VM / GTFS-RT) | Live bus positions. Free key; fetch per user, like TfL arrivals. |
-| [Aubin / Transitous Great Britain GTFS](https://beta.aubin.app/gtfs/great_britain_gtfs.zip) | Underground, DLR, Tram, Elizabeth line, Overground, National Rail, buses | One combined GB timetable. The only current file that includes Elizabeth line and all six Overground lines. Third-party, built from BODS, National Rail Enquiries, and OSM. |
-| [National Rail Enquiries](https://opendata.nationalrail.co.uk/) | National Rail, including Elizabeth line and Overground | Official rail timetables if you want them at the source. Attribution required. |
-| [TfL Journey Planner timetables](https://tfl.gov.uk/info-for/open-data-users/our-open-data) | Underground, bus, DLR, tram, cable car, river | TfL’s own weekly timetable dump. Registration required. No Elizabeth line or Overground. |
-| [Transitland TfL GTFS](https://www.transit.land/feeds/f-transport~for~london) | Underground, DLR, Tram, river | Another packaging of the same TfL modes as BODS. Account required. |
-| [UK2GTFS](https://itsleeds.github.io/UK2GTFS/) | TransXChange and National Rail CIF → GTFS | Convert the official UK files yourself. |
 
 ## Next
 
-1. Join Underground, DLR, and Tram patterns to OSM route relations by ordered station membership, replacing nearest-vertex snapping. This is what the geographic map actually needs to draw a branch correctly at a fork.
-2. Rebuild the small map set with `pnpm network-model:snapshot` when the [Great Britain feed](https://beta.aubin.app/gtfs/great_britain_gtfs.zip) changes; keep it scoped to Elizabeth/Overground shapes plus typicality, not a growing timetable surface.
-3. Keep [BODS](https://data.bus-data.dft.gov.uk/) for live buses only. Its London timetable file is already inside the Great Britain feed and does not add Elizabeth line or Overground.
-4. Point the geographic map and the line / branch strips at this model.
+1. Join Underground, DLR, and Tram patterns to OSM route relations by ordered station membership, replacing nearest-vertex snapping. This is what the geographic map needs to draw a branch correctly at a fork.
+2. Author `MapProductPolicy` for the four maps — which patterns belong on a carriage diagram, a platform diagram, the Tube map, and the geographic map.
+3. Point the geographic map and the line / branch strips at this model.
 
 See [Map – Tube & Rail (Geo)](/docs/map-geographic), [Simple line strip](/docs/line-strip), [Branch strip — horizontal](/docs/branch-strip-horizontal), and [Branch strip — vertical](/docs/branch-strip-vertical).

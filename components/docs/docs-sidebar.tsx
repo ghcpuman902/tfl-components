@@ -1,6 +1,11 @@
 "use client";
 
-import type { ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  type ReactNode,
+  type Ref,
+} from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search } from "lucide-react";
@@ -45,6 +50,31 @@ const COLOURS_DOT_HEXES = Object.values(UNDERGROUND_LINE_COLOURS)
 const isActive = (pathname: string, entry: DocsEntry) => {
   if (entry.href === "/docs") return pathname === "/docs";
   return pathname === entry.href || pathname.startsWith(`${entry.href}/`);
+};
+
+const REVEAL_PADDING = 24;
+
+/**
+ * Scroll only the sidebar pane. `scrollIntoView` also moves `html`, which
+ * jumps the reading position on docs pages.
+ */
+const revealInScrollContainer = (container: HTMLElement, item: HTMLElement) => {
+  const containerRect = container.getBoundingClientRect();
+  const itemRect = item.getBoundingClientRect();
+  const visible =
+    itemRect.top >= containerRect.top + REVEAL_PADDING &&
+    itemRect.bottom <= containerRect.bottom - REVEAL_PADDING;
+  if (visible) return;
+
+  const itemCenter = itemRect.top + itemRect.height / 2;
+  const containerCenter = containerRect.top + containerRect.height / 2;
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+  container.scrollTo({
+    top: container.scrollTop + (itemCenter - containerCenter),
+    behavior: reducedMotion ? "auto" : "smooth",
+  });
 };
 
 /** Weak marks after Get started labels — sized to match sidebar text, not left-side mode markers. */
@@ -139,10 +169,12 @@ const GET_STARTED_ADORNMENT_SLUGS = new Set([
 const EntryList = ({
   entries,
   pathname,
+  activeItemRef,
   withGetStartedAdornments = false,
 }: {
   entries: DocsEntry[];
   pathname: string;
+  activeItemRef: Ref<HTMLLIElement>;
   /** Text-sized marks after Explorer / Typography / Colours / Roundel labels. */
   withGetStartedAdornments?: boolean;
 }) => (
@@ -151,12 +183,16 @@ const EntryList = ({
       const showAdornment =
         withGetStartedAdornments &&
         GET_STARTED_ADORNMENT_SLUGS.has(entry.slug);
+      const active = isActive(pathname, entry);
 
       return (
-        <SidebarMenuItem key={entry.slug}>
+        <SidebarMenuItem
+          key={entry.slug}
+          ref={active ? activeItemRef : undefined}
+        >
           <SidebarMenuButton
             render={<Link href={entry.href} />}
-            isActive={isActive(pathname, entry)}
+            isActive={active}
             tooltip={entry.title}
           >
             {entry.preferred && entry.modeMarker ? (
@@ -184,6 +220,8 @@ const EntryList = ({
 
 export const DocsSidebar = () => {
   const pathname = usePathname();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const activeItemRef = useRef<HTMLLIElement>(null);
   const getStarted = getSidebarEntries("get-started");
   const getStartedTop = getStarted.filter(
     (entry) => entry.sidebarOrder < GET_STARTED_BOTTOM_FROM,
@@ -194,19 +232,29 @@ export const DocsSidebar = () => {
   const components = getSidebarEntries("components");
   const primitivesFoundations = getSidebarEntries("primitives-foundations");
 
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      const container = contentRef.current;
+      const item = activeItemRef.current;
+      if (container && item) revealInScrollContainer(container, item);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname]);
+
   return (
     <Sidebar
       collapsible="offcanvas"
       variant="sidebar"
       className="top-12 h-[calc(100svh-3rem)]"
     >
-      <SidebarContent>
+      <SidebarContent ref={contentRef}>
         <SidebarGroup>
           <SidebarGroupLabel>Get started</SidebarGroupLabel>
           <SidebarGroupContent>
             <EntryList
               entries={getStartedTop}
               pathname={pathname}
+              activeItemRef={activeItemRef}
               withGetStartedAdornments
             />
           </SidebarGroupContent>
@@ -215,14 +263,22 @@ export const DocsSidebar = () => {
         <SidebarGroup>
           <SidebarGroupLabel>Components</SidebarGroupLabel>
           <SidebarGroupContent>
-            <EntryList entries={components} pathname={pathname} />
+            <EntryList
+              entries={components}
+              pathname={pathname}
+              activeItemRef={activeItemRef}
+            />
           </SidebarGroupContent>
         </SidebarGroup>
 
         {getStartedBottom.length > 0 ? (
           <SidebarGroup>
             <SidebarGroupContent>
-              <EntryList entries={getStartedBottom} pathname={pathname} />
+              <EntryList
+                entries={getStartedBottom}
+                pathname={pathname}
+                activeItemRef={activeItemRef}
+              />
             </SidebarGroupContent>
           </SidebarGroup>
         ) : null}
@@ -231,7 +287,11 @@ export const DocsSidebar = () => {
           <SidebarGroup>
             <SidebarGroupLabel>Primitives & Foundations</SidebarGroupLabel>
             <SidebarGroupContent>
-              <EntryList entries={primitivesFoundations} pathname={pathname} />
+              <EntryList
+                entries={primitivesFoundations}
+                pathname={pathname}
+                activeItemRef={activeItemRef}
+              />
             </SidebarGroupContent>
           </SidebarGroup>
         ) : null}

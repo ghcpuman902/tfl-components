@@ -64,6 +64,11 @@ type TflGeographicMapProps = {
   trackModel?: TrackModel;
   /** Live vehicles. Positions are derived by the caller; this map paints track segments. */
   vehicles?: readonly VehiclePosition[];
+  /**
+   * Hop-indexed unique-track polylines used to paint and coast vehicles.
+   * When omitted, the map falls back to whole-line unique-track features.
+   */
+  vehiclePolylines?: readonly RoutePolyline[];
   /** Keep vehicles walking along the track between arrival snapshots. */
   coast?: boolean;
   /** Show station circles and names. Default true. */
@@ -126,6 +131,11 @@ const LINE_LAYOUT = {
   "line-cap": "round" as const,
 };
 
+const VEHICLE_LAYOUT = {
+  "line-join": "bevel" as const,
+  "line-cap": "butt" as const,
+};
+
 const LINE_WIDTH: ExpressionSpecification = [
   "interpolate",
   ["linear"],
@@ -167,11 +177,23 @@ const VEHICLE_LINE_WIDTH: ExpressionSpecification = [
   ["linear"],
   ["zoom"],
   10,
-  5.5,
+  ["*", 5.5, ["coalesce", ["get", "widthScale"], 1]],
   14,
-  10,
+  ["*", 9, ["coalesce", ["get", "widthScale"], 1]],
   16,
+  ["*", 12, ["coalesce", ["get", "widthScale"], 1]],
+];
+
+const VEHICLE_LINE_OFFSET: ExpressionSpecification = [
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  10,
+  -2,
   14,
+  -3.5,
+  16,
+  -5,
 ];
 
 const STATION_LABEL_SIZE: ExpressionSpecification = [
@@ -393,10 +415,11 @@ const addTransitLayers = (
       id: "rail-vehicles",
       type: "line",
       source: "rail-vehicles",
-      layout: LINE_LAYOUT,
+      layout: VEHICLE_LAYOUT,
       paint: {
         "line-color": dark ? "#9ca3af" : "#4b5563",
         "line-width": VEHICLE_LINE_WIDTH,
+        "line-offset": VEHICLE_LINE_OFFSET,
         "line-opacity": 0.96,
       },
     });
@@ -424,6 +447,7 @@ export const TflGeographicMap = ({
   lineIds,
   trackModel = "centreline",
   vehicles,
+  vehiclePolylines,
   coast = false,
   showStations = true,
   showLines = true,
@@ -496,10 +520,15 @@ export const TflGeographicMap = ({
 
   const loadGeometryRef = useRef(loadGeometry);
   loadGeometryRef.current = loadGeometry;
+  const vehiclePolylinesRef = useRef(vehiclePolylines);
+  vehiclePolylinesRef.current = vehiclePolylines;
 
   const getPolylines = useCallback(
-    (): RoutePolyline[] =>
-      polylinesFromBundles(bundlesRef.current ?? [], lineIds),
+    (): RoutePolyline[] => {
+      const hops = vehiclePolylinesRef.current;
+      if (hops && hops.length > 0) return [...hops];
+      return polylinesFromBundles(bundlesRef.current ?? [], lineIds);
+    },
     // lineIds identity is represented by lineIdsKey.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [lineIdsKey],

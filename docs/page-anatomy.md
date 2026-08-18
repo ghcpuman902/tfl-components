@@ -1,6 +1,6 @@
 # Page anatomy
 
-**Status: FROZEN (Stage 1) + J18.** Consistent documentation anatomies for the groups in [TARGET_ARCHITECTURE.md](./TARGET_ARCHITECTURE.md). Section titles may be worded for tone; the **concepts and order of emphasis** are normative.
+**Status: FROZEN (Stage 1) + J18 / J19.** Consistent documentation anatomies for the groups in [TARGET_ARCHITECTURE.md](./TARGET_ARCHITECTURE.md). Section titles may be worded for tone; the **concepts and order of emphasis** are normative.
 
 Site chrome (global install command, preview host) may wrap these sections; do not omit the conceptual separations.
 
@@ -34,15 +34,28 @@ Do not structure as a raw endpoint catalog.
 
 Public page (`/docs/data-model`). Write for someone drawing a map, not for the ingest pipeline.
 
-1. **Purpose** — one passenger network for maps and line diagrams; a small derived set, not a full timetable
+1. **Purpose** — one passenger network for the four maps; station order, track, and which patterns each map shows
 2. **The model** — records and relationships (diagram)
 3. **Status** — what each record is, and whether it is ready (from `summary` / classification)
-4. **Where it comes from** — TfL, OSM, public timetables; live buses stay live
-5. **Next** — product outcomes (ship the small set, add days/frequencies, close mode gaps, wire maps)
+4. **Where it comes from** — TfL and OSM; a public timetable is not required to draw the four maps
+5. **Next** — join patterns to OSM track, author map policy, wire maps
 
-Keep file paths, feed fallbacks, git, and build steps out of this page. Those belong in an internal note later.
+Keep file paths, feed fallbacks, git, and build steps out of this page. Inspect and pipeline detail live on [Line topology](/docs/line-topology).
 
 Do not treat this as a component page. Do not lead with install.
+
+---
+
+## Line topology / inspect page
+
+Public page (`/docs/line-topology`). Write for someone checking how a passenger line is assembled, not for a component install.
+
+1. **Purpose** — inspect TfL station order and OSM track as one line
+2. **Preview** — pick a line; passenger graph, physical track, and source inventories
+3. **Pipeline** — what each source answers, and what it must not replace
+4. **Related** — Data model for the records; Junction windows for one place at a time
+
+Do not treat this as a Component. Do not lead with install, caches, or feed filenames.
 
 ---
 

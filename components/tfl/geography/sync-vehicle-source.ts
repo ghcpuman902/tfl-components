@@ -8,8 +8,18 @@ import {
   type VehiclePosition,
   type VehicleSegmentProperties,
 } from "@/lib/tfl/map-vehicles";
+import { hopGraphForRailLine } from "@/lib/tfl/vehicle-hop-graph";
 import { advanceHopPosition } from "@/lib/tfl/vehicle-hop-engine";
-import type { RoutePolyline } from "@/lib/tfl/vehicle-progress";
+import {
+  pathTurnBetween,
+  positionBehindStop,
+  type RoutePolyline,
+} from "@/lib/tfl/vehicle-progress";
+import {
+  DEFAULT_VEHICLE_VISCOSITY,
+  stillDwelling,
+  viscosityFactor,
+} from "@/lib/tfl/vehicle-viscosity";
 
 const COAST_FRAME_MS = 80;
 const EASE_MS = 1_200;
@@ -35,7 +45,70 @@ const easeInOut = (t: number): number =>
 type EaseState = {
   fromLat: number;
   fromLon: number;
+  fromRemainingKm?: number;
+  fromStopId?: string;
+  toStopId?: string;
   startMs: number;
+  durationMs: number;
+};
+
+const easeDurationMs = (
+  from: VehiclePosition,
+  to: VehiclePosition,
+  polylines: readonly RoutePolyline[],
+): number => {
+  const turn = pathTurnBetween({
+    from: { lat: from.lat, lon: from.lon },
+    to: { lat: to.lat, lon: to.lon },
+    lineId: to.lineId,
+    polylines,
+    fromStopId: to.fromStopId ?? from.fromStopId,
+    toStopId: to.nextStopId ?? from.nextStopId,
+    canonical: hopGraphForRailLine(to.lineId).canonical,
+  });
+  const remainingKm = Math.min(
+    from.remainingKm ?? Number.POSITIVE_INFINITY,
+    to.remainingKm ?? Number.POSITIVE_INFINITY,
+  );
+  return (
+    EASE_MS *
+    viscosityFactor({
+      turnRadians: turn,
+      remainingKm: Number.isFinite(remainingKm) ? remainingKm : undefined,
+      params: DEFAULT_VEHICLE_VISCOSITY,
+    })
+  );
+};
+
+const placeAlongHop = (
+  vehicle: VehiclePosition,
+  remainingKm: number,
+  polylines: readonly RoutePolyline[],
+): VehiclePosition => {
+  if (vehicle.nextStopLat == null || vehicle.nextStopLon == null) {
+    return { ...vehicle, remainingKm };
+  }
+  const followingStop =
+    vehicle.followingStopLat != null && vehicle.followingStopLon != null
+      ? { lat: vehicle.followingStopLat, lon: vehicle.followingStopLon }
+      : undefined;
+  const placed = positionBehindStop({
+    nextStop: { lat: vehicle.nextStopLat, lon: vehicle.nextStopLon },
+    followingStop,
+    remainingKm,
+    lineId: vehicle.lineId,
+    polylines,
+    fromStopId: vehicle.fromStopId,
+    toStopId: vehicle.nextStopId,
+    canonical: hopGraphForRailLine(vehicle.lineId).canonical,
+  });
+  return {
+    ...vehicle,
+    lat: placed.lat,
+    lon: placed.lon,
+    bearingDeg: placed.bearingDeg,
+    remainingKm,
+  };
 };
 
 /**
@@ -125,7 +198,11 @@ export const useVehicleSegmentSource = ({
               nextEases.set(key, {
                 fromLat: rendered.lat,
                 fromLon: rendered.lon,
+                fromRemainingKm: rendered.remainingKm,
+                fromStopId: rendered.fromStopId,
+                toStopId: rendered.nextStopId,
                 startMs: clock,
+                durationMs: easeDurationMs(rendered, vehicle, polylines),
               });
             }
           }
@@ -139,11 +216,43 @@ export const useVehicleSegmentSource = ({
             const ease = easesRef.current.get(vehicleKey(vehicle));
             if (!ease) return committed;
             const t = easeInOut(
-              Math.min(1, Math.max(0, (clock - ease.startMs) / EASE_MS)),
+              Math.min(1, Math.max(0, (clock - ease.startMs) / ease.durationMs)),
             );
             if (t >= 1) {
               easesRef.current.delete(vehicleKey(vehicle));
               return committed;
+            }
+            const hopChanged =
+              ease.toStopId != null &&
+              committed.nextStopId != null &&
+              ease.toStopId !== committed.nextStopId;
+            if (
+              hopChanged &&
+              stillDwelling(
+                committed.arrivedAtMs ?? ease.startMs,
+                clock,
+                DEFAULT_VEHICLE_VISCOSITY,
+              )
+            ) {
+              return {
+                ...committed,
+                lat: ease.fromLat,
+                lon: ease.fromLon,
+                remainingKm: 0,
+              };
+            }
+            const sameHop =
+              ease.fromRemainingKm != null &&
+              committed.remainingKm != null &&
+              !hopChanged &&
+              (ease.fromStopId == null ||
+                committed.fromStopId == null ||
+                ease.fromStopId === committed.fromStopId);
+            if (sameHop) {
+              const remainingKm =
+                ease.fromRemainingKm! +
+                (committed.remainingKm! - ease.fromRemainingKm!) * t;
+              return placeAlongHop(committed, remainingKm, polylines);
             }
             return {
               ...committed,

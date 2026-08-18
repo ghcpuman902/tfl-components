@@ -25,7 +25,12 @@ const north = (m: number): LngLat => [-0.12, 51.5 + m / 111_320];
 const east = (m: number): LngLat => [-0.12 + m / 69_300, 51.5];
 
 describe("contractTrackTopology", () => {
-  it("keeps a weld as its own junction even when it sits on a station", () => {
+  it("splits a weld into a bonded junction pair when a station forks through doubled track", () => {
+    // Two physical tracks share the "B" side of this weld (spine passes
+    // through, branch starts there) and diverge to C and D respectively —
+    // the same shape as the real Kennington / Euston / Camden Town welds.
+    // `splitFlyingJunctions` keeps each track's own through-move on its own
+    // node instead of fanning both onto one congested vertex.
     const spine = [
       ORIGIN,
       north(200),
@@ -50,10 +55,34 @@ describe("contractTrackTopology", () => {
       .map((node) => node.stationName)
       .sort();
     assert.deepEqual(stationsFound, ["A", "B", "C", "D"]);
+
     const junctions = result.nodes.filter((node) => node.kind === "junction");
-    assert.equal(junctions.length, 1);
-    assert.ok(junctions[0]!.id.startsWith("j:"));
-    assert.notEqual(junctions[0]!.id, "s:b");
+    assert.equal(junctions.length, 2, "the weld splits into a bonded pair");
+    for (const junction of junctions) {
+      assert.ok(junction.id.startsWith("j:"));
+      assert.notEqual(junction.id, "s:b");
+      assert.ok(junction.splitFrom, "each half records the weld it split from");
+    }
+    assert.equal(junctions[0]!.splitFrom, junctions[1]!.splitFrom);
+
+    const bond = result.edges.find((edge) => edge.kind === "bond");
+    assert.ok(bond, "a bond edge links the two halves");
+    assert.deepEqual(
+      [bond!.from, bond!.to].sort(),
+      junctions.map((junction) => junction.id).sort(),
+    );
+
+    // Each half keeps only its own branch's two edges — no vertex fans out
+    // to every leg.
+    for (const junction of junctions) {
+      const incident = result.edges.filter(
+        (edge) =>
+          (edge.from === junction.id || edge.to === junction.id) &&
+          edge.kind !== "bond",
+      );
+      assert.equal(incident.length, 2);
+      assert.ok(incident.every((edge) => edge.featureId === incident[0]!.featureId));
+    }
   });
 
   it("does not merge an offset weld into the nearby station", () => {

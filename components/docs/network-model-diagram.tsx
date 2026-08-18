@@ -1,7 +1,5 @@
 const EDGES = [
   "Line → ServicePattern → PatternCall → Station → StationHub",
-  "ServicePattern → PatternCalendar",
-  "ServicePattern → PatternFrequency",
   "ServicePattern → PermittedMovement (via consecutive PatternCalls)",
   "ServicePattern → PhysicalPath (via PatternPathMatch)",
 ] as const
@@ -14,10 +12,8 @@ export const NetworkModelDiagram = () => (
     <pre className="m-0 overflow-x-auto font-mono text-sm leading-6 text-foreground">
       {`Line ── ServicePattern ── PatternCall ── Station ── StationHub
                 │                                       │
-                ├── PatternCalendar        PhysicalPath ┘
-                ├── PatternFrequency           (via PatternPathMatch)
-                └── PermittedMovement
-                    (via consecutive PatternCalls)
+                └── PermittedMovement      PhysicalPath ┘
+                    (via consecutive PatternCalls)  (via PatternPathMatch)
 
 MapProductPolicy   — which patterns each map shows`}
     </pre>

@@ -1,18 +1,16 @@
 # Network model snapshot — origin
 
-This directory holds the **small derived TfL rail network** used by the Data model page: lines, stations, collapsed service patterns, typical calendars, headway bands, Elizabeth / Overground low-resolution shapes, and through-movements.
+This directory holds an **optional inspect snapshot**: collapsed service patterns, calendars, headway bands, and Elizabeth / Overground low-resolution shapes.
 
-It is **not** unique-track geometry, **not** a full GTFS feed, and **not** live buses.
+It is **not** required to draw the four maps, **not** unique-track geometry, **not** a full GTFS feed, and **not** live buses. The carriage map, platform map, and Tube map draw from TfL station order. The geographic map draws OSM unique-track, joined by station membership.
 
 ## What this snapshot is for (and isn't)
 
-Three sources, three jobs, not one graph competing with another:
-
 | Question | Source of truth | This snapshot's role |
 |---|---|---|
-| Which stations, in what order, does this product call at? | **TfL** (`tfl-ts` `LINE_STATION_SEQUENCES`) | Not involved. TfL sequences already answer this for the carriage map, the platform map, and the Tube map. |
-| Which metres of track does that product follow? | **OSM** route relations (station membership, not proximity), Aubin shapes only for Elizabeth/Overground | This snapshot supplies the Elizabeth/Overground shape only — OSM unique-track stays the source everywhere else. |
-| Is this hop/branch typical, and how often does it run? | **This snapshot** (`PatternCalendar` + `PatternFrequency`) | The one thing nothing else in this repo provides. Used to classify a skip hop as a regular scheduled fast versus an occasional/weekend adjustment (`classifySkipHop` in `lib/tfl/network-model/line-slice.ts`), not rendered as a second station graph. |
+| Which stations, in what order, does this product call at? | **TfL** (`tfl-ts` `LINE_STATION_SEQUENCES`) | Not involved. |
+| Which metres of track does that product follow? | **OSM** route relations (station membership, not proximity) | Not required. OSM unique-track already covers Elizabeth line and Overground. |
+| Is this hop/branch typical, and how often does it run? | **This snapshot** (`PatternCalendar` + `PatternFrequency`) | Inspect overlay only. Not an input to the four maps. |
 
 A GTFS trip is a scheduled working, not a recording of what ran — this snapshot never reads real-time or historical actuals. It collapses thousands of dated trips into ~786 **patterns** (one row per unique line/direction/stop-list), because the trip is the wrong grain: nobody wants "the 08:03," they want "the fast service." GTFS does not name that service as its own object; unioning every distinct stop-list and trusting the union as a map is what produced a jumbled Elizabeth line graph earlier — the fix was to keep the union for typicality scoring only, and let the TfL sequence stay the drawn spine.
 

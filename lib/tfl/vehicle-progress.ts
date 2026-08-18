@@ -3,6 +3,7 @@ import { point } from "@turf/helpers";
 import length from "@turf/length";
 import { lineSlice } from "@turf/line-slice";
 import type { LineString, Position } from "geojson";
+import { undirectedHopKey } from "@/lib/tfl/geometry/line-hop-times";
 
 export type StationCoord = {
   lat: number;
@@ -173,14 +174,73 @@ export const pointBetweenStations = ({
 export type RoutePolyline = {
   lineId?: string;
   line: LineString;
+  /** Canonical station id at one end of a passenger hop. */
+  fromStationId?: string;
+  /** Canonical station id at the other end of a passenger hop. */
+  toStationId?: string;
+  /** Typical timetable minutes for this hop, when known. */
+  hopMinutes?: number;
 };
 
-const asRoutePolylines = (
+export const asRoutePolylines = (
   polylines: readonly (LineString | RoutePolyline)[],
 ): RoutePolyline[] =>
   polylines.map((entry) =>
     "line" in entry ? entry : { line: entry },
   );
+
+const identity = (id: string): string => id;
+
+/**
+ * Prefer the unique-track hop tagged with these two stations.
+ * `canonical` maps arrival naptans / hub ids onto the hop's station ids.
+ */
+export const pickHopPolyline = (
+  polylines: readonly (LineString | RoutePolyline)[],
+  fromId?: string,
+  toId?: string,
+  canonical: (id: string) => string = identity,
+): RoutePolyline | null => {
+  if (!fromId || !toId) return null;
+  const want = undirectedHopKey(canonical(fromId), canonical(toId));
+  let best: RoutePolyline | null = null;
+  for (const row of asRoutePolylines(polylines)) {
+    if (!row.fromStationId || !row.toStationId) continue;
+    const key = undirectedHopKey(
+      canonical(row.fromStationId),
+      canonical(row.toStationId),
+    );
+    if (key !== want) continue;
+    if (!best || row.line.coordinates.length > best.line.coordinates.length) {
+      best = row;
+    }
+  }
+  return best;
+};
+
+/**
+ * Remaining distance on a locked hop. Prefer timetable minutes when the
+ * hop length is known so a 1-minute hop and a 4-minute hop do not share
+ * the same assumed speed. Always stays on the hop.
+ */
+export const remainingKmForHop = ({
+  lineId,
+  timeToNextSec,
+  hopKm,
+  hopMinutes,
+}: {
+  lineId: string;
+  timeToNextSec: number;
+  hopKm?: number;
+  hopMinutes?: number;
+}): number => {
+  const tts = Math.max(0, timeToNextSec);
+  if (hopKm != null && hopKm > 0 && hopMinutes != null && hopMinutes > 0) {
+    return hopKm * Math.min(1, tts / (hopMinutes * 60));
+  }
+  const fromSpeed = (vehicleSpeedMetersPerSec(lineId) * tts) / 1000;
+  return hopKm != null && hopKm > 0 ? Math.min(hopKm, fromSpeed) : fromSpeed;
+};
 
 const lerpPosition = (a: Position, b: Position, t: number): Position => [
   (a[0] ?? 0) + ((b[0] ?? 0) - (a[0] ?? 0)) * t,
@@ -267,12 +327,18 @@ export const positionBehindStop = ({
   remainingKm,
   lineId,
   polylines,
+  fromStopId,
+  toStopId,
+  canonical,
 }: {
   nextStop: StationCoord;
   followingStop?: StationCoord;
   remainingKm: number;
   lineId?: string;
   polylines: readonly (LineString | RoutePolyline)[];
+  fromStopId?: string;
+  toStopId?: string;
+  canonical?: (id: string) => string;
 }): RoutePoint => {
   const nextPos: Position = [nextStop.lon, nextStop.lat];
   const followingPos: Position | undefined = followingStop
@@ -287,12 +353,15 @@ export const positionBehindStop = ({
   );
   const preferred = lineId ? rows.filter((row) => row.lineId === lineId) : rows;
   const pool = preferred.length > 0 ? preferred : rows;
-  const line = pickPolyline(
-    pool.map((row) => row.line),
-    nextPos,
-    followingPos ?? nextPos,
-    travelBearingDeg,
-  );
+  const hop = pickHopPolyline(pool, fromStopId, toStopId, canonical);
+  const line =
+    hop?.line ??
+    pickPolyline(
+      pool.map((row) => row.line),
+      nextPos,
+      followingPos ?? nextPos,
+      travelBearingDeg,
+    );
 
   if (!line) {
     return { lat: nextStop.lat, lon: nextStop.lon, bearingDeg: 0 };
@@ -300,13 +369,24 @@ export const positionBehindStop = ({
 
   const totalKm = lengthKm(line);
   const dNext = nearestOnLine(line, nextPos).distanceKm;
-  const goingForward = followingPos
-    ? nearestOnLine(line, followingPos).distanceKm >= dNext
-    : true;
-  const distanceBackKm = Math.max(0, remainingKm);
-  const targetKm = goingForward
-    ? Math.max(0, dNext - distanceBackKm)
-    : Math.min(totalKm, dNext + distanceBackKm);
+  const distanceBackKm = Math.min(Math.max(0, remainingKm), totalKm);
+  let targetKm: number;
+  if (hop && hop.line.coordinates.length >= 2) {
+    const start = hop.line.coordinates[0]!;
+    const end = hop.line.coordinates[hop.line.coordinates.length - 1]!;
+    const fromIsStart =
+      squaredDistance(start, nextPos) > squaredDistance(end, nextPos);
+    targetKm = fromIsStart
+      ? Math.max(0, dNext - distanceBackKm)
+      : Math.min(totalKm, dNext + distanceBackKm);
+  } else {
+    const goingForward = followingPos
+      ? nearestOnLine(line, followingPos).distanceKm >= dNext
+      : true;
+    targetKm = goingForward
+      ? Math.max(0, dNext - distanceBackKm)
+      : Math.min(totalKm, dNext + distanceBackKm);
+  }
 
   const at = along(asLineFeature(line), targetKm, { units: "kilometers" });
   const coord = at.geometry.coordinates;
@@ -323,19 +403,30 @@ export const hopLengthKm = ({
   to,
   lineId,
   polylines,
+  fromStopId,
+  toStopId,
+  canonical,
 }: {
   from: StationCoord;
   to: StationCoord;
   lineId?: string;
   polylines: readonly (LineString | RoutePolyline)[];
+  fromStopId?: string;
+  toStopId?: string;
+  canonical?: (id: string) => string;
 }): number => {
-  const start: Position = [from.lon, from.lat];
-  const end: Position = [to.lon, to.lat];
   const rows = asRoutePolylines(polylines).filter(
     (row) => row.line.coordinates.length >= 2,
   );
   const preferred = lineId ? rows.filter((row) => row.lineId === lineId) : rows;
   const pool = preferred.length > 0 ? preferred : rows;
+  const hop = pickHopPolyline(pool, fromStopId, toStopId, canonical);
+  if (hop) {
+    const km = lengthKm(hop.line);
+    return Number.isFinite(km) ? km : 0;
+  }
+  const start: Position = [from.lon, from.lat];
+  const end: Position = [to.lon, to.lat];
   const line = pickPolyline(
     pool.map((row) => row.line),
     start,
@@ -367,6 +458,9 @@ export const positionApproachingStop = ({
   speedMetersPerSec,
   lineId,
   polylines,
+  fromStopId,
+  toStopId,
+  canonical,
 }: {
   nextStop: StationCoord;
   followingStop?: StationCoord;
@@ -374,6 +468,9 @@ export const positionApproachingStop = ({
   speedMetersPerSec: number;
   lineId?: string;
   polylines: readonly (LineString | RoutePolyline)[];
+  fromStopId?: string;
+  toStopId?: string;
+  canonical?: (id: string) => string;
 }): RoutePoint =>
   positionBehindStop({
     nextStop,
@@ -381,6 +478,9 @@ export const positionApproachingStop = ({
     remainingKm: (speedMetersPerSec * Math.max(0, timeToNextSec)) / 1000,
     lineId,
     polylines,
+    fromStopId,
+    toStopId,
+    canonical,
   });
 
 const sliceLineByKm = (
@@ -417,15 +517,95 @@ const sliceLineByKm = (
 
 /**
  * In-service length along the track. Elizabeth is a 9-car Class 345;
- * most Tube stock is shorter. Bus routes are the vehicle, not a train.
+ * most Tube stock is shorter. Trams are a single short unit. Bus routes
+ * are the vehicle, not a train.
  */
 export const vehicleLengthMeters = (lineId: string): number => {
   if (lineId === "elizabeth") return 205;
   if (lineId === "metropolitan") return 160;
   if (lineId === "dlr") return 56;
-  if (lineId === "tram") return 32;
+  if (lineId === "tram") return 20;
   if (/^\d/.test(lineId) || /^n\d/i.test(lineId)) return 12;
   return 133;
+};
+
+/** Stroke scale so short stock is not as fat as a Tube train. */
+export const vehicleStrokeScale = (lineId: string): number => {
+  if (lineId === "tram") return 0.52;
+  if (lineId === "dlr") return 0.72;
+  if (/^\d/.test(lineId) || /^n\d/i.test(lineId)) return 0.55;
+  return 1;
+};
+
+/** Order a slice so it points the same way the vehicle is travelling. */
+export const orientLineToBearing = (
+  line: LineString,
+  travelBearingDeg: number,
+): LineString => {
+  const coords = line.coordinates;
+  if (coords.length < 2) return line;
+  const start = coords[0];
+  const end = coords[coords.length - 1];
+  if (!start || !end) return line;
+  if (angleDiffDeg(bearingDeg(start, end), travelBearingDeg) <= 90) return line;
+  return { type: "LineString", coordinates: [...coords].reverse() };
+};
+
+/** Total turning, in radians, along a polyline. */
+export const pathTurnRadians = (coordinates: readonly Position[]): number => {
+  let turn = 0;
+  let previous: number | null = null;
+  for (let index = 0; index < coordinates.length - 1; index += 1) {
+    const from = coordinates[index];
+    const to = coordinates[index + 1];
+    if (!from || !to) continue;
+    const heading = bearingDeg(from, to);
+    if (previous != null) turn += toRad(angleDiffDeg(previous, heading));
+    previous = heading;
+  }
+  return turn;
+};
+
+/**
+ * Stretch an ease when the path between two points bends.
+ * 0 turn → 1; a half-turn → about 1.5; capped at 2.6.
+ */
+export const curvatureEaseFactor = (turnRadians: number): number =>
+  1 + Math.min(1.6, Math.max(0, turnRadians) / Math.PI);
+
+export const pathTurnBetween = ({
+  from,
+  to,
+  lineId,
+  polylines,
+  fromStopId,
+  toStopId,
+  canonical,
+}: {
+  from: StationCoord;
+  to: StationCoord;
+  lineId?: string;
+  polylines: readonly (LineString | RoutePolyline)[];
+  fromStopId?: string;
+  toStopId?: string;
+  canonical?: (id: string) => string;
+}): number => {
+  const start: Position = [from.lon, from.lat];
+  const end: Position = [to.lon, to.lat];
+  const rows = asRoutePolylines(polylines).filter(
+    (row) => row.line.coordinates.length >= 2,
+  );
+  const preferred = lineId ? rows.filter((row) => row.lineId === lineId) : rows;
+  const pool = preferred.length > 0 ? preferred : rows;
+  const hop = pickHopPolyline(pool, fromStopId, toStopId, canonical);
+  const line =
+    hop?.line ??
+    pickPolyline(pool.map((row) => row.line), start, end);
+  if (!line) return 0;
+  const a = nearestOnLine(line, start).distanceKm;
+  const b = nearestOnLine(line, end).distanceKm;
+  const coordinates = sliceLineByKm(line, Math.min(a, b), Math.max(a, b));
+  return pathTurnRadians(coordinates.length >= 2 ? coordinates : line.coordinates);
 };
 
 /**
@@ -437,11 +617,17 @@ export const segmentAroundPoint = ({
   lengthMeters,
   lineId,
   polylines,
+  fromStopId,
+  toStopId,
+  canonical,
 }: {
   at: StationCoord;
   lengthMeters: number;
   lineId?: string;
   polylines: readonly (LineString | RoutePolyline)[];
+  fromStopId?: string;
+  toStopId?: string;
+  canonical?: (id: string) => string;
 }): LineString => {
   const target: Position = [at.lon, at.lat];
   const rows = asRoutePolylines(polylines).filter(
@@ -451,16 +637,34 @@ export const segmentAroundPoint = ({
     ? rows.filter((row) => row.lineId === lineId)
     : rows;
   const pool = preferred.length > 0 ? preferred : rows;
+  const hop = pickHopPolyline(pool, fromStopId, toStopId, canonical);
+  const halfKm = Math.max(lengthMeters, 8) / 2000;
   let best: RoutePolyline | null = null;
   let bestHit = { distanceKm: 0, score: Number.POSITIVE_INFINITY };
+  let bestSpan = -1;
+  const hopHit = hop ? nearestOnLine(hop.line, target) : null;
+  const nearScore = hopHit
+    ? hopHit.score * 8 + 1e-14
+    : Number.POSITIVE_INFINITY;
   for (const row of pool) {
     const hit = nearestOnLine(row.line, target);
-    if (hit.score < bestHit.score) {
+    if (hopHit && hit.score > nearScore && hit.score > hopHit.score) continue;
+    const total = lengthKm(row.line);
+    const span =
+      Math.min(hit.distanceKm, halfKm) +
+      Math.min(Math.max(0, total - hit.distanceKm), halfKm);
+    const closer = hit.score < bestHit.score * 0.5;
+    const roomier = span > bestSpan + 1e-6 && hit.score <= bestHit.score * 8;
+    if (!best || closer || (roomier && hit.score <= nearScore)) {
       best = row;
       bestHit = hit;
+      bestSpan = span;
     }
   }
-  const halfKm = Math.max(lengthMeters, 8) / 2000;
+  if (!best && hop) {
+    best = hop;
+    bestHit = hopHit ?? nearestOnLine(hop.line, target);
+  }
   if (!best) {
     return {
       type: "LineString",

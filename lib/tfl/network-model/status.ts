@@ -14,6 +14,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     summary: "Name, colour, and mode for each line.",
     note: "Line identity, colour, and mode come from TfL line records shipped with tfl-ts.",
     sources: [{ label: "tfl-ts line metadata" }],
+    usedOn: "all-four",
   },
   {
     record: "Station",
@@ -30,6 +31,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
         href: "https://api.tfl.gov.uk/stationdata/tfl-stationdata-gtfs.zip",
       },
     ],
+    usedOn: "all-four",
   },
   {
     record: "StationHub",
@@ -46,6 +48,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
         href: "https://api.tfl.gov.uk/stationdata/tfl-stationdata-gtfs.zip",
       },
     ],
+    usedOn: "all-four",
   },
   {
     record: "ServicePattern",
@@ -54,8 +57,9 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     cachedIn: "tfl-ts",
     refresh: "build-time",
     summary: "The ordered stations a service calls at.",
-    note: "Ordered routes and service types ship as LINE_STATION_SEQUENCES.",
+    note: "Ordered routes and service types ship as LINE_STATION_SEQUENCES. Enough for the carriage map, the platform map, and the Tube map.",
     sources: [{ label: "tfl-ts LINE_STATION_SEQUENCES" }],
+    usedOn: "all-four",
   },
   {
     record: "PatternCall",
@@ -66,6 +70,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     summary: "One stop on a pattern, in order.",
     note: "Stop sequence is present on each static ordered route. Times are not stored here.",
     sources: [{ label: "tfl-ts LINE_STATION_SEQUENCES" }],
+    usedOn: "all-four",
   },
   {
     record: "PatternCalendar",
@@ -75,7 +80,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     refresh: "manual",
     coverage: "Underground, DLR, Tram, Cable Car, Elizabeth line, Overground",
     summary: "Which days a pattern typically runs.",
-    note: "Weekday / Saturday / Sunday flags rolled up from Aubin calendar.txt. Agencies LULD, LDLR, TRAM, IFSC, =XR, =LO. Used with PatternFrequency to classify a skip hop as regular versus occasional (classifySkipHop in line-slice.ts) — not rendered as a second station graph. Rebuild with pnpm network-model:snapshot.",
+    note: "Not required to draw the four maps. Kept only as an inspect overlay for skip-typicality. Rebuild with pnpm network-model:snapshot.",
     sources: [
       {
         label: "Aubin / Transitous GB GTFS",
@@ -92,7 +97,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     refresh: "manual",
     coverage: "Underground, DLR, Tram, Cable Car, Elizabeth line, Overground",
     summary: "How often a pattern typically runs.",
-    note: "Headway bands from first-stop departure times in the Aubin feed, not frequencies.txt. A decision-support signal for typicality/emphasis, not a source of station order. Rebuild with pnpm network-model:snapshot.",
+    note: "Not required to draw the four maps. How often a pattern runs does not change station order or track. Kept only as an inspect overlay.",
     sources: [
       {
         label: "Aubin / Transitous GB GTFS",
@@ -108,12 +113,13 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     cachedIn: "this-repo",
     refresh: "manual",
     coverage: "OSM unique-track (all rail modes)",
-    summary: "Simplified track geometry for maps.",
+    summary: "Simplified track geometry. Geographic map only.",
     note: "Centreline, dual, and graph snapshots live under data/geography/unique-track. Rebuild with pnpm geography:unique-track. Default map paint is the preview LOD.",
     sources: [
       { label: "data/geography/ORIGIN.md" },
       { label: "Map – Tube & Rail (Geo)", href: "/docs/map-geographic" },
     ],
+    usedOn: "geographic",
   },
   {
     record: "PhysicalPath",
@@ -123,7 +129,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     refresh: "manual",
     coverage: "Elizabeth line, Overground (timetable shapes)",
     summary: "Low-resolution line geometry from the timetable, for those two modes only.",
-    note: "One most-common Aubin shape per pattern, simplified to unique-track preview tolerance (39 m). Underground / DLR / Tram / cable car trips in that feed have no shapes — keep OSM unique-track.",
+    note: "Not required to draw the geographic map. OSM unique-track already covers Elizabeth line and Overground. Kept as an inspect overlay.",
     sources: [
       {
         label: "Aubin / Transitous GB GTFS",
@@ -139,7 +145,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     cachedIn: "none",
     refresh: "n/a",
     coverage: "Underground (89/96 relations), Tram (8/10), DLR (5/12)",
-    summary: "Which track a passenger pattern follows.",
+    summary: "Which OSM track a passenger pattern follows.",
     note: "Aubin trips for these modes have empty shape_id, so this never comes from GTFS. Matched by OSM route-relation stop membership (ordered stop names on the relation), not by snapping station points onto nearby track — proximity snapping mis-assigns stations at shared-track stretches such as Waterloo & City, which this method matches to exactly its own two stops. Remaining gaps are name-normalisation mismatches (e.g. \"Custom House (for ExCel)\" vs OSM's \"Custom House for Excel\") and lines built after the pinned tfl-ts LINE_STATION_SEQUENCES snapshot (Northern line Battersea Power Station extension), not proximity errors. Cable car has no cached OSM route relation yet.",
     sources: [
       { label: "data/geography/ORIGIN.md" },
@@ -147,6 +153,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
       { label: "lib/tfl/geometry/osm-pattern-path-match.ts" },
       { label: "lib/tfl/cross-source-pattern-matching.ts" },
     ],
+    usedOn: "geographic",
   },
   {
     record: "PatternPathMatch",
@@ -156,7 +163,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     refresh: "manual",
     coverage: "Elizabeth line, Overground",
     summary: "Which track a passenger pattern follows.",
-    note: "Exact assignment from the winning Aubin shape_id on each collapsed pattern.",
+    note: "Not required to draw the geographic map. Prefer OSM route-relation membership over a timetable shape_id.",
     sources: [
       {
         label: "Aubin / Transitous GB GTFS",
@@ -172,11 +179,12 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     cachedIn: "this-repo",
     refresh: "manual",
     summary: "Which ways a train can continue through a junction.",
-    note: "Consecutive station triples on collapsed Aubin patterns, persisted in the snapshot. Request-time OSM inference remains available for unique-track variants.",
+    note: "Derived from consecutive TfL station triples on LINE_STATION_SEQUENCES. The Aubin snapshot is an inspect overlay, not the map input.",
     sources: [
-      { label: "data/network-model/ORIGIN.md" },
+      { label: "tfl-ts LINE_STATION_SEQUENCES" },
       { label: "lib/tfl/geometry/topology-movements.ts" },
     ],
+    usedOn: "all-four",
   },
   {
     record: "MapProductPolicy",
@@ -186,6 +194,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     refresh: "n/a",
     summary: "Which patterns belong on a carriage map, a platform map, the Tube map, or the geographic map.",
     note: "No feed decides which pattern belongs on a carriage, platform, Tube map, or geographic map.",
+    usedOn: "all-four",
   },
   {
     record: "SourceSnapshot",

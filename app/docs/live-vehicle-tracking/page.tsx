@@ -28,11 +28,12 @@ const DATA_SNIPPET = `const arrivals = await client.line.getArrivals({
   lineIds: ["victoria", "northern"],
 })
 
-const point = positionApproachingStop({
+const point = positionBehindStop({
   nextStop,
-  timeToNextSec: timeToStation,
-  speedMetersPerSec: vehicleSpeedMetersPerSec(lineId),
-  polylines,
+  remainingKm: hopKm * (timeToStation / hopSeconds),
+  fromStopId,
+  toStopId,
+  polylines, // unique-track hop between those stops
 })`;
 
 export default function LiveRailVehiclesPage() {
@@ -84,8 +85,9 @@ export default function LiveRailVehiclesPage() {
             TfL arrivals have no coordinates —{" "}
             <code className="text-xs">line.getArrivals</code> only gives a{" "}
             <code className="text-xs">timeToStation</code> countdown. One call
-            covers every tracked line. The tracker locks each train to a hop
-            and walks it forward as the countdown runs.
+            covers every tracked line. The tracker locks each train to the
+            unique-track hop between the previous and next stop, then walks
+            it forward as the countdown runs.
           </p>
           <SyntaxHighlightedCode
             code={DATA_SNIPPET}

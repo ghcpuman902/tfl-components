@@ -3,17 +3,27 @@ import type { RealtimePrediction } from "tfl-ts";
 import type { VehiclePosition } from "@/lib/tfl/map-vehicles";
 import {
   areAdjacent,
+  hopGraphForRailLine,
   hopGraphHasEdges,
   uniqueIncoming,
   type HopGraph,
 } from "@/lib/tfl/vehicle-hop-graph";
 import {
   hopLengthKm,
+  pathTurnBetween,
+  pickHopPolyline,
   positionBehindStop,
+  remainingKmForHop,
   vehicleSpeedMetersPerSec,
   type RoutePolyline,
   type StationCoord,
 } from "@/lib/tfl/vehicle-progress";
+import {
+  DEFAULT_VEHICLE_VISCOSITY,
+  stillDwelling,
+  viscousDrainKm,
+  type VehicleViscosityParams,
+} from "@/lib/tfl/vehicle-viscosity";
 
 export type VehicleAlgorithm =
   | "branch-aware"
@@ -36,6 +46,8 @@ export type VehicleHopTrack = {
   nextStopLon: number;
   followingStopLat?: number;
   followingStopLon?: number;
+  /** Epoch ms when remaining km first hit 0 on this hop. */
+  arrivedAtMs?: number;
 };
 
 export const vehicleTrackKey = (lineId: string, vehicleId: string): string =>
@@ -82,19 +94,100 @@ const groupPredictions = (
   return out;
 };
 
-const remainingFromEta = (lineId: string, timeToNextSec: number): number =>
-  (vehicleSpeedMetersPerSec(lineId) * Math.max(0, timeToNextSec)) / 1000;
+const remainingFromEta = (
+  lineId: string,
+  timeToNextSec: number,
+  hopKm?: number,
+  hopMinutes?: number,
+): number =>
+  remainingKmForHop({
+    lineId,
+    timeToNextSec,
+    hopKm,
+    hopMinutes,
+  });
+
+const hopLookup = (
+  polylines: readonly (LineString | RoutePolyline)[],
+  fromId: string | undefined,
+  toId: string,
+  graph: HopGraph | null,
+) =>
+  pickHopPolyline(
+    polylines,
+    fromId,
+    toId,
+    graph?.canonical,
+  );
+
+const hopKmBetween = ({
+  from,
+  to,
+  fromId,
+  toId,
+  lineId,
+  polylines,
+  graph,
+}: {
+  from?: StationCoord;
+  to: StationCoord;
+  fromId?: string;
+  toId: string;
+  lineId: string;
+  polylines: readonly (LineString | RoutePolyline)[];
+  graph: HopGraph | null;
+}): { hopKm?: number; hopMinutes?: number } => {
+  const hop = hopLookup(polylines, fromId, toId, graph);
+  if (hop) {
+    const hopKm = hopLengthKm({
+      from: from ?? to,
+      to,
+      lineId,
+      polylines: [hop],
+      fromStopId: fromId,
+      toStopId: toId,
+      canonical: graph?.canonical,
+    });
+    return {
+      hopKm: hopKm > 0 ? hopKm : undefined,
+      hopMinutes: hop.hopMinutes,
+    };
+  }
+  if (!from) return {};
+  const hopKm = hopLengthKm({
+    from,
+    to,
+    lineId,
+    polylines,
+    fromStopId: fromId,
+    toStopId: toId,
+    canonical: graph?.canonical,
+  });
+  return { hopKm: hopKm > 0 ? hopKm : undefined };
+};
 
 const coastRemaining = (
   track: VehicleHopTrack,
   nowMs: number,
   lineId: string,
+  viscosity?: VehicleViscosityParams,
 ): number => {
   const elapsedSec = Math.max(0, (nowMs - track.lastSeenAsOf) / 1000);
-  const drained =
-    (vehicleSpeedMetersPerSec(lineId) * elapsedSec) / 1000;
-  return Math.max(0, track.remainingKm - drained);
+  return viscousDrainKm({
+    remainingKm: track.remainingKm,
+    elapsedSec,
+    speedMetersPerSec: vehicleSpeedMetersPerSec(lineId),
+    params: viscosity,
+  }).remainingKm;
 };
+
+const markArrival = (
+  track: VehicleHopTrack,
+  asOf: number,
+): VehicleHopTrack =>
+  track.remainingKm <= 0
+    ? { ...track, remainingKm: 0, arrivedAtMs: track.arrivedAtMs ?? asOf }
+    : { ...track, arrivedAtMs: undefined };
 
 const toPosition = (
   track: VehicleHopTrack,
@@ -117,11 +210,13 @@ const toPosition = (
   nextStopId: track.toStationId,
   fromStopId: track.fromStationId,
   remainingKm: track.remainingKm,
+  arrivedAtMs: track.arrivedAtMs,
 });
 
 const placeTrack = (
   track: VehicleHopTrack,
   polylines: readonly (LineString | RoutePolyline)[],
+  graph: HopGraph | null,
 ): { lat: number; lon: number; bearingDeg: number } =>
   positionBehindStop({
     nextStop: { lat: track.nextStopLat, lon: track.nextStopLon },
@@ -132,6 +227,9 @@ const placeTrack = (
     remainingKm: track.remainingKm,
     lineId: track.lineId,
     polylines,
+    fromStopId: track.fromStationId,
+    toStopId: track.toStationId,
+    canonical: graph?.canonical,
   });
 
 const seedTrack = ({
@@ -144,6 +242,7 @@ const seedTrack = ({
   destinationName,
   asOf,
   graph,
+  polylines,
 }: {
   lineId: string;
   vehicleId: string;
@@ -154,15 +253,29 @@ const seedTrack = ({
   destinationName: string;
   asOf: number;
   graph: HopGraph | null;
+  polylines: readonly (LineString | RoutePolyline)[];
 }): VehicleHopTrack => {
   const inferred = graph ? uniqueIncoming(graph, toStationId) : undefined;
+  const hop = hopKmBetween({
+    to: nextStop,
+    fromId: inferred?.stationId,
+    toId: toStationId,
+    lineId,
+    polylines,
+    graph,
+  });
   return {
     lineId,
     vehicleId,
     toStationId,
     fromStationId: inferred?.stationId,
     branchId: inferred?.branchId,
-    remainingKm: remainingFromEta(lineId, timeToNextSec),
+    remainingKm: remainingFromEta(
+      lineId,
+      timeToNextSec,
+      hop.hopKm,
+      hop.hopMinutes,
+    ),
     hopDurationSecEstimate: Math.max(timeToNextSec, 1),
     lastSeenAsOf: asOf,
     dueSinceMs: timeToNextSec <= DUE_TTS_SEC ? asOf : undefined,
@@ -188,6 +301,7 @@ export const ingestVehicleHops = ({
   graphForLine,
   asOf,
   staleDueMs = STALE_DUE_MS,
+  viscosity = DEFAULT_VEHICLE_VISCOSITY,
 }: {
   tracks: Map<string, VehicleHopTrack>;
   predictions: readonly RealtimePrediction[];
@@ -197,6 +311,7 @@ export const ingestVehicleHops = ({
   graphForLine?: (lineId: string) => HopGraph | null;
   asOf: number;
   staleDueMs?: number;
+  viscosity?: VehicleViscosityParams;
 }): VehiclePosition[] => {
   const seen = new Set<string>();
   const scopedLines = new Set<string>();
@@ -232,6 +347,7 @@ export const ingestVehicleHops = ({
         destinationName,
         asOf,
         graph: hopGraph,
+        polylines,
       });
     } else {
       const sameHop = hopGraph
@@ -239,44 +355,94 @@ export const ingestVehicleHops = ({
           hopGraph.canonical(next.naptanId)
         : prev.toStationId === next.naptanId;
 
-      if (sameHop) {
-        const coasted = coastRemaining(prev, asOf, group.lineId);
-        const fromEta = remainingFromEta(group.lineId, ttsNext);
-        track = {
-          ...prev,
-          remainingKm: Math.min(coasted, fromEta),
-          lastSeenAsOf: asOf,
-          destinationName,
-          nextStopLat: nextStop.lat,
-          nextStopLon: nextStop.lon,
-          followingStopLat: followingStop?.lat,
-          followingStopLon: followingStop?.lon,
-          dueSinceMs:
-            ttsNext <= DUE_TTS_SEC ? (prev.dueSinceMs ?? asOf) : undefined,
-        };
+        if (sameHop) {
+        const hop = hopKmBetween({
+          from: {
+            lat: prev.nextStopLat,
+            lon: prev.nextStopLon,
+          },
+          to: nextStop,
+          fromId: prev.fromStationId,
+          toId: next.naptanId,
+          lineId: group.lineId,
+          polylines,
+          graph: hopGraph,
+        });
+        const coasted = coastRemaining(prev, asOf, group.lineId, viscosity);
+        const fromEta = remainingFromEta(
+          group.lineId,
+          ttsNext,
+          hop.hopKm,
+          hop.hopMinutes,
+        );
+        track = markArrival(
+          {
+            ...prev,
+            remainingKm: Math.min(coasted, fromEta),
+            lastSeenAsOf: asOf,
+            destinationName,
+            nextStopLat: nextStop.lat,
+            nextStopLon: nextStop.lon,
+            followingStopLat: followingStop?.lat,
+            followingStopLon: followingStop?.lon,
+            dueSinceMs:
+              ttsNext <= DUE_TTS_SEC ? (prev.dueSinceMs ?? asOf) : undefined,
+          },
+          asOf,
+        );
       } else {
         const adjacent = hopGraph
           ? areAdjacent(hopGraph, prev.toStationId, next.naptanId)
           : true;
         if (!adjacent) {
-          const coasted = coastRemaining(prev, asOf, group.lineId);
-          track = {
-            ...prev,
-            remainingKm: coasted,
-            lastSeenAsOf: asOf,
-          };
+          const coasted = coastRemaining(prev, asOf, group.lineId, viscosity);
+          track = markArrival(
+            {
+              ...prev,
+              remainingKm: coasted,
+              lastSeenAsOf: asOf,
+            },
+            asOf,
+          );
+        } else if (stillDwelling(prev.arrivedAtMs, asOf, viscosity)) {
+          track = markArrival(
+            {
+              ...prev,
+              remainingKm: 0,
+              lastSeenAsOf: asOf,
+              arrivedAtMs: prev.arrivedAtMs ?? asOf,
+            },
+            asOf,
+          );
         } else {
           const fromCoord = {
             lat: prev.nextStopLat,
             lon: prev.nextStopLon,
           };
-          const hopKm = hopLengthKm({
+          const hop = hopKmBetween({
+            from: fromCoord,
+            to: nextStop,
+            fromId: prev.toStationId,
+            toId: next.naptanId,
+            lineId: group.lineId,
+            polylines,
+            graph: hopGraph,
+          });
+          const hopKm = hop.hopKm ?? hopLengthKm({
             from: fromCoord,
             to: nextStop,
             lineId: group.lineId,
             polylines,
+            fromStopId: prev.toStationId,
+            toStopId: next.naptanId,
+            canonical: hopGraph?.canonical,
           });
-          const fromEta = remainingFromEta(group.lineId, ttsNext);
+          const fromEta = remainingFromEta(
+            group.lineId,
+            ttsNext,
+            hopKm > 0 ? hopKm : undefined,
+            hop.hopMinutes,
+          );
           const incoming = hopGraph
             ? uniqueIncoming(hopGraph, next.naptanId)
             : undefined;
@@ -299,6 +465,7 @@ export const ingestVehicleHops = ({
         }
       }
     }
+    track = markArrival(track, asOf);
 
     if (
       track.dueSinceMs != null &&
@@ -309,7 +476,7 @@ export const ingestVehicleHops = ({
     }
 
     tracks.set(key, track);
-    const placed = placeTrack(track, polylines);
+    const placed = placeTrack(track, polylines, hopGraph);
     out.push(toPosition(track, placed, ttsNext, asOf));
   }
 
@@ -327,6 +494,7 @@ export const advanceHopPosition = (
   vehicle: VehiclePosition,
   nowMs: number,
   polylines: readonly (LineString | RoutePolyline)[],
+  viscosity: VehicleViscosityParams = DEFAULT_VEHICLE_VISCOSITY,
 ): VehiclePosition => {
   if (
     vehicle.asOf == null ||
@@ -335,13 +503,41 @@ export const advanceHopPosition = (
   ) {
     return vehicle;
   }
+  if (stillDwelling(vehicle.arrivedAtMs, nowMs, viscosity)) {
+    return {
+      ...vehicle,
+      lat: vehicle.nextStopLat,
+      lon: vehicle.nextStopLon,
+      remainingKm: 0,
+    };
+  }
   const elapsedSec = Math.max(0, (nowMs - vehicle.asOf) / 1000);
   const speed = vehicleSpeedMetersPerSec(vehicle.lineId);
+  const turnRadians = pathTurnBetween({
+    from: { lat: vehicle.lat, lon: vehicle.lon },
+    to: { lat: vehicle.nextStopLat, lon: vehicle.nextStopLon },
+    lineId: vehicle.lineId,
+    polylines,
+    fromStopId: vehicle.fromStopId,
+    toStopId: vehicle.nextStopId,
+    canonical: hopGraphForRailLine(vehicle.lineId).canonical,
+  });
   const remainingKm =
     vehicle.remainingKm != null
-      ? Math.max(0, vehicle.remainingKm - (speed * elapsedSec) / 1000)
-      : (speed * Math.max(0, vehicle.timeToNextStationSec - elapsedSec)) /
-        1000;
+      ? viscousDrainKm({
+          remainingKm: vehicle.remainingKm,
+          elapsedSec,
+          speedMetersPerSec: speed,
+          turnRadians,
+          params: viscosity,
+        }).remainingKm
+      : viscousDrainKm({
+          remainingKm: (speed * Math.max(0, vehicle.timeToNextStationSec)) / 1000,
+          elapsedSec,
+          speedMetersPerSec: speed,
+          turnRadians,
+          params: viscosity,
+        }).remainingKm;
   const ttsNext = Math.max(0, vehicle.timeToNextStationSec - elapsedSec);
   if (remainingKm <= 0 || ttsNext <= 0) {
     return {
@@ -349,6 +545,7 @@ export const advanceHopPosition = (
       lat: vehicle.nextStopLat,
       lon: vehicle.nextStopLon,
       remainingKm: 0,
+      arrivedAtMs: vehicle.arrivedAtMs ?? nowMs,
     };
   }
   const followingStop =
@@ -361,6 +558,9 @@ export const advanceHopPosition = (
     remainingKm,
     lineId: vehicle.lineId,
     polylines,
+    fromStopId: vehicle.fromStopId,
+    toStopId: vehicle.nextStopId,
+    canonical: hopGraphForRailLine(vehicle.lineId).canonical,
   });
   return {
     ...vehicle,
