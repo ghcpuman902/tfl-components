@@ -58,7 +58,15 @@ export default function CreditsPage() {
         <p>
           Public examples on this site may use the project key with a short
           server cache. A personal Board should use your own key. Stale or
-          sample data is labelled when a refresh fails.
+          sample data is labelled when a refresh fails. Line, stop, and route
+          metadata is also{" "}
+          <Link
+            href="/observatory"
+            className="text-foreground underline underline-offset-4"
+          >
+            observed independently
+          </Link>
+          .
         </p>
         <p>
           Station names mixed into geographic bundles are the same TfL Open

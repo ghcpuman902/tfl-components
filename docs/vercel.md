@@ -25,6 +25,8 @@ vercel env pull .env.local
 
 `.env.local` is gitignored.
 
+The metadata observatory cron needs `CRON_SECRET` on Production in addition to the existing `REDIS_URL` and `TFL_APP_KEY`. See [env.md](./env.md#metadata-observatory).
+
 ## CLI workflow (optional)
 
 ```bash
