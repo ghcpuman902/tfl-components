@@ -1,4 +1,8 @@
 import { getTflClient } from "@/lib/tfl/client"
+import {
+  type CensusId,
+  VERIFIED_CENSUS_COUNTS,
+} from "@/lib/tfl/observatory/census"
 import { OBSERVED_MODES } from "@/lib/tfl/observatory/inventory"
 import type {
   ObservatoryDirection,
@@ -14,6 +18,7 @@ export type MetadataFetcher = {
     lineId: string,
     direction: ObservatoryDirection
   ) => Promise<RawRouteSequence>
+  getCensusCount: (id: CensusId) => Promise<number>
 }
 
 const asRawLines = (value: unknown): RawLine[] =>
@@ -24,7 +29,8 @@ const asRawStops = (value: unknown): RawStopPoint[] =>
 
 /**
  * Live Unified API reads through the site tfl-ts client.
- * The observatory baseline is independent of tfl-ts snapshots.
+ * Rail catalogues keep an observed baseline. Count checks compare
+ * to yesterday's last good total.
  */
 export const createTflMetadataFetcher = (): MetadataFetcher => {
   const client = getTflClient()
@@ -48,6 +54,20 @@ export const createTflMetadataFetcher = (): MetadataFetcher => {
       })
       return sequence as RawRouteSequence
     },
+    getCensusCount: async (id) => {
+      if (id === "bus-lines") {
+        return asRawLines(await client.line.get({ modes: ["bus"] })).length
+      }
+      if (id === "bike-points") {
+        const points = await client.bikePoint.get()
+        return Array.isArray(points) ? points.length : 0
+      }
+      const result = await client.stopPoint.getByMode({
+        modes: ["bus"],
+        page: 1,
+      })
+      return result.total ?? result.stopPoints?.length ?? 0
+    },
   }
 }
 
@@ -55,10 +75,12 @@ export const createStaticMetadataFetcher = (input: {
   lines?: RawLine[]
   stops?: Record<string, RawStopPoint[]>
   routes?: Record<string, RawRouteSequence>
+  census?: Partial<Record<CensusId, number>>
   failures?: {
     lines?: Error
     stops?: Record<string, Error>
     routes?: Record<string, Error>
+    census?: Partial<Record<CensusId, Error>>
   }
 }): MetadataFetcher => ({
   getLinesByModes: async () => {
@@ -82,5 +104,10 @@ export const createStaticMetadataFetcher = (input: {
         stopPointSequences: [],
       }
     )
+  },
+  getCensusCount: async (id) => {
+    const failure = input.failures?.census?.[id]
+    if (failure) throw failure
+    return input.census?.[id] ?? VERIFIED_CENSUS_COUNTS[id]
   },
 })

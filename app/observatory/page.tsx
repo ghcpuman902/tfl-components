@@ -10,7 +10,7 @@ import { loadObservatoryPageData } from "@/lib/tfl/observatory/load-page-data"
 export const metadata: Metadata = {
   title: "TfL metadata",
   description:
-    "Independent observation of TfL line, stop, and route metadata. Not an official TfL status service.",
+    "Independent observation of TfL line, stop, and route metadata. Not line status.",
 }
 
 const ObservatoryBody = async () => {

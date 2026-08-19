@@ -44,7 +44,39 @@ export const env = envSchema.parse(process.env)
 
 ## Metadata observatory
 
-The daily cron at `/api/cron/tfl-metadata` needs `REDIS_URL` and `CRON_SECRET` in production. Optional Resend settings reuse the feedback mail path for confirmed changes or TfL response problems.
+`/observatory` only reads Redis. Writes happen from `GET /api/cron/tfl-metadata` (`15 4 * * *` in `vercel.json`). Vercel Cron runs on **Production** only and sends `Authorization: Bearer $CRON_SECRET`.
+
+| Variable | Production | Why |
+|---|---|---|
+| `REDIS_URL` | Required (already used for site stats) | Baseline, lock, history |
+| `CRON_SECRET` | Required | Authorise the cron and any manual curl |
+| `TFL_APP_KEY` | Required | Unified API reads |
+| `RESEND_API_KEY`, `FEEDBACK_FROM`, `FEEDBACK_TO` | Optional | Email only on confirmed **Changed**, **Incomplete**, or **Unavailable** |
+
+Generate a secret once and use the same value locally and on Vercel:
+
+```bash
+openssl rand -base64 32
+```
+
+Add it to Production (required) and Preview (optional, for manual curls):
+
+```bash
+printf '%s' 'PASTE_SECRET_HERE' | vercel env add CRON_SECRET production
+printf '%s' 'PASTE_SECRET_HERE' | vercel env add CRON_SECRET preview
+```
+
+Do not commit the value. Put it in `.env.local` (or `.env.development.local`) as `CRON_SECRET=…`.
+
+After Production has `CRON_SECRET`, merge to `main`. The next production deploy picks up the var and registers the cron. Confirm with:
+
+```bash
+vercel env ls
+curl -sS -H "Authorization: Bearer $CRON_SECRET" \
+  "https://tfl.manglekuo.com/api/cron/tfl-metadata"
+```
+
+A matching baseline already in that Redis will show **Current** on `/observatory` immediately. The daily job is then only a re-check.
 
 ## Security
 

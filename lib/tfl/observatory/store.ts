@@ -19,6 +19,7 @@ export const emptyObservatoryStore = (nowIso: string): ObservatoryStore => ({
   latestCompleteAt: null,
   subjects: {},
   history: [],
+  census: {},
   lastNotified: {},
 })
 

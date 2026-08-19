@@ -4,8 +4,8 @@ import type {
 } from "@/lib/tfl/observatory/types"
 
 /**
- * Rail (and river) modes this site already treats as first-class.
- * Bus stop catalogues are out of scope for the first observatory.
+ * Rail (and river) modes watched as hashed catalogues.
+ * Bus and cycle hire are count-only checks against yesterday's last good count.
  */
 export const OBSERVED_MODES = [
   "tube",
@@ -22,7 +22,7 @@ export const OBSERVED_MODE_SET: ReadonlySet<string> = new Set(OBSERVED_MODES)
 
 export const LINE_CATALOGUE_SUBJECT_ID = "lines"
 
-export const HISTORY_LIMIT = 120
+export const HISTORY_LIMIT = 2000
 export const FETCH_CONCURRENCY = 4
 export const OBSERVATORY_LOCK_TTL_SECONDS = 10 * 60
 export const SMALL_SET_ITEM_FLOOR = 3

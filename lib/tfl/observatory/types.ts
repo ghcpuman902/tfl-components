@@ -1,3 +1,7 @@
+import type { CensusId } from "@/lib/tfl/observatory/census"
+
+export type { CensusId }
+
 /** Product states for one observed metadata subject. */
 export const OBSERVATORY_STATES = [
   "current",
@@ -148,6 +152,14 @@ export type ObservatorySubject = {
   }
 }
 
+export type HistoryCountSnapshot = {
+  id: string
+  label: string
+  observedCount: number | null
+  baselineCount: number
+  state: ObservatoryState
+}
+
 export type ObservatoryHistoryEvent = {
   id: string
   at: string
@@ -157,6 +169,16 @@ export type ObservatoryHistoryEvent = {
   state: ObservatoryState | "observed"
   summary: string
   details: string[]
+  counts?: HistoryCountSnapshot[]
+}
+
+export type ObservatoryCensusRecord = {
+  id: CensusId
+  observedCount: number | null
+  baselineCount: number
+  at: string
+  state: ObservatoryState
+  summary: string
 }
 
 export type ObservatoryStore = {
@@ -165,6 +187,9 @@ export type ObservatoryStore = {
   latestCompleteAt: string | null
   subjects: Record<string, ObservatorySubject>
   history: ObservatoryHistoryEvent[]
+  census?: Partial<Record<CensusId, ObservatoryCensusRecord>>
+  lastGoodItemCounts?: Partial<Record<DatasetId, number>>
+  previousItemCounts?: Partial<Record<DatasetId, number>>
   lastNotified: Record<
     string,
     { state: ObservatoryState; fingerprint: string; at: string }
@@ -192,8 +217,21 @@ export type ObservatoryPageDataset = {
   description: string
   state: ObservatoryState | "unknown"
   subjectCount: number
+  itemCount: number | null
+  delta: number | null
   attentionCount: number
   subjects: ObservatoryPageSubject[]
+}
+
+export type ObservatoryPageCensus = {
+  id: CensusId
+  title: string
+  baselineCount: number
+  observedCount: number | null
+  delta: number | null
+  state: ObservatoryState | "unknown"
+  summary: string | null
+  at: string | null
 }
 
 export type ObservatoryPageData = {
@@ -201,6 +239,7 @@ export type ObservatoryPageData = {
   latestCompleteAt: string | null
   updatedAt: string | null
   datasets: ObservatoryPageDataset[]
+  census: ObservatoryPageCensus[]
   attention: ObservatoryPageSubject[]
   history: ObservatoryHistoryEvent[]
   emptyReason: "no-store" | "no-observations" | null

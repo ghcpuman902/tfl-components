@@ -1,5 +1,14 @@
+import {
+  CENSUS_IDS,
+  CENSUS_LABELS,
+  VERIFIED_CENSUS_COUNTS,
+  assessCensusCount,
+  censusSubjectId,
+  isCensusSubjectId,
+} from "@/lib/tfl/observatory/census"
 import type {
   DatasetId,
+  ObservatoryPageCensus,
   ObservatoryPageData,
   ObservatoryPageDataset,
   ObservatoryPageSubject,
@@ -76,7 +85,7 @@ const DATASETS: {
   {
     id: "stops",
     title: "Stop points",
-    description: "Stations and piers that belong to those lines.",
+    description: "Stations and piers on the watched lines.",
     match: (subject) => subject.kind === "stop-points",
   },
   {
@@ -96,6 +105,80 @@ const compareSubjects = (
   return a.label.localeCompare(b.label, "en")
 }
 
+const toPageCensus = (
+  store: ObservatoryStore | null
+): ObservatoryPageCensus[] =>
+  CENSUS_IDS.map((id) => {
+    const record = store?.census?.[id]
+    const baselineCount =
+      record?.baselineCount ?? VERIFIED_CENSUS_COUNTS[id]
+    if (!record) {
+      return {
+        id,
+        title: CENSUS_LABELS[id],
+        baselineCount,
+        observedCount: null,
+        delta: null,
+        state: "unknown",
+        summary: null,
+        at: null,
+      }
+    }
+
+    const assessed = assessCensusCount({
+      observed: record.observedCount,
+      baseline: baselineCount,
+    })
+
+    return {
+      id,
+      title: CENSUS_LABELS[id],
+      baselineCount,
+      observedCount: record.observedCount,
+      delta: assessed.delta,
+      state: assessed.state,
+      summary: assessed.summary,
+      at: record.at,
+    }
+  })
+
+const emptyDatasets = (): ObservatoryPageDataset[] =>
+  DATASETS.map((dataset) => ({
+    id: dataset.id,
+    title: dataset.title,
+    description: dataset.description,
+    state: "unknown",
+    subjectCount: 0,
+    itemCount: null,
+    delta: null,
+    attentionCount: 0,
+    subjects: [],
+  }))
+
+const toPageHistory = (
+  store: ObservatoryStore,
+  census: ObservatoryPageCensus[]
+): ObservatoryStore["history"] =>
+  store.history
+    .filter(
+      (event) =>
+        !(isCensusSubjectId(event.subjectId) && event.state === "current")
+    )
+    .map((event) => {
+      if (event.subjectId !== null || event.counts?.length) return event
+      if (event.at !== store.updatedAt) return event
+      return {
+        ...event,
+        counts: census.map((row) => ({
+          id: row.id,
+          label: row.title,
+          observedCount: row.observedCount,
+          baselineCount: row.baselineCount,
+          state: row.state === "unknown" ? "current" : row.state,
+        })),
+      }
+    })
+
 export const toObservatoryPageData = (
   store: ObservatoryStore | null
 ): ObservatoryPageData => {
@@ -104,15 +187,8 @@ export const toObservatoryPageData = (
       overallState: "unknown",
       latestCompleteAt: null,
       updatedAt: null,
-      datasets: DATASETS.map((dataset) => ({
-        id: dataset.id,
-        title: dataset.title,
-        description: dataset.description,
-        state: "unknown",
-        subjectCount: 0,
-        attentionCount: 0,
-        subjects: [],
-      })),
+      datasets: emptyDatasets(),
+      census: toPageCensus(null),
       attention: [],
       history: [],
       emptyReason: "no-store",
@@ -121,21 +197,15 @@ export const toObservatoryPageData = (
 
   const subjects = Object.values(store.subjects)
   if (subjects.length === 0) {
+    const census = toPageCensus(store)
     return {
       overallState: "unknown",
       latestCompleteAt: store.latestCompleteAt,
       updatedAt: store.updatedAt,
-      datasets: DATASETS.map((dataset) => ({
-        id: dataset.id,
-        title: dataset.title,
-        description: dataset.description,
-        state: "unknown",
-        subjectCount: 0,
-        attentionCount: 0,
-        subjects: [],
-      })),
+      datasets: emptyDatasets(),
+      census,
       attention: [],
-      history: store.history,
+      history: toPageHistory(store, census),
       emptyReason: "no-observations",
     }
   }
@@ -146,29 +216,59 @@ export const toObservatoryPageData = (
       .map(toPageSubject)
       .sort(compareSubjects)
     const attentionCount = rows.filter((row) => row.state !== "current").length
+    const itemTotal = rows.reduce(
+      (sum, row) => sum + (row.itemCount ?? 0),
+      0
+    )
     return {
       id: dataset.id,
       title: dataset.title,
       description: dataset.description,
       state: worstState(rows.map((row) => row.state)),
       subjectCount: rows.length,
+      itemCount: rows.length > 0 ? itemTotal : null,
+      delta:
+        rows.length > 0 && store.previousItemCounts?.[dataset.id] != null
+          ? itemTotal - store.previousItemCounts[dataset.id]!
+          : null,
       attentionCount,
       subjects: rows,
     }
   })
 
-  const attention = datasets
-    .flatMap((dataset) => dataset.subjects)
-    .filter((subject) => subject.state !== "current")
-    .sort(compareSubjects)
+  const census = toPageCensus(store)
+  const censusAttention = census.flatMap((row) => {
+    if (row.state !== "incomplete" && row.state !== "unavailable") return []
+    return [
+      {
+        id: censusSubjectId(row.id),
+        label: row.title,
+        state: row.state,
+        itemCount: row.observedCount,
+        summary: row.summary,
+        changeDetails: row.summary ? [row.summary] : [],
+      },
+    ]
+  })
+
+  const attention = [
+    ...datasets
+      .flatMap((dataset) => dataset.subjects)
+      .filter((subject) => subject.state !== "current"),
+    ...censusAttention,
+  ].sort(compareSubjects)
 
   return {
-    overallState: worstState(datasets.map((dataset) => dataset.state)),
+    overallState: worstState([
+      ...datasets.map((dataset) => dataset.state),
+      ...census.map((row) => row.state),
+    ]),
     latestCompleteAt: store.latestCompleteAt,
     updatedAt: store.updatedAt,
     datasets,
+    census,
     attention,
-    history: store.history,
+    history: toPageHistory(store, census),
     emptyReason: null,
   }
 }

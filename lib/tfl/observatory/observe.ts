@@ -7,6 +7,15 @@ import { selectNewObservatoryAlerts } from "@/lib/tfl/observatory/email"
 import type { MetadataFetcher } from "@/lib/tfl/observatory/fetch"
 import { itemCount } from "@/lib/tfl/observatory/hash"
 import {
+  CENSUS_IDS,
+  CENSUS_LABELS,
+  CENSUS_TRIES,
+  assessCensusCount,
+  censusSubjectId,
+  previousCensusBaseline,
+  type CensusId,
+} from "@/lib/tfl/observatory/census"
+import {
   FETCH_CONCURRENCY,
   LINE_CATALOGUE_SUBJECT_ID,
   OBSERVED_MODES,
@@ -30,10 +39,14 @@ import {
 } from "@/lib/tfl/observatory/store"
 import type {
   CanonicalPayload,
+  DatasetId,
+  HistoryCountSnapshot,
+  ObservatoryCensusRecord,
   ObservatoryDirection,
   ObservatoryHistoryEvent,
   ObservatoryPassResult,
   ObservatoryRunKind,
+  ObservatoryState,
   ObservatoryStore,
   ObservatorySubject,
   ObservatorySubjectKind,
@@ -265,7 +278,7 @@ const applyResult = (
 const historyEvent = (
   at: string,
   kind: ObservatoryRunKind,
-  subject: ObservatorySubject | null,
+  subject: Pick<ObservatorySubject, "id" | "label"> | null,
   summary: string,
   details: string[],
   state: ObservatoryHistoryEvent["state"]
@@ -281,6 +294,118 @@ const historyEvent = (
   summary,
   details,
 })
+
+const readCensusCount = async (
+  fetcher: MetadataFetcher,
+  id: CensusId
+): Promise<number | null> => {
+  try {
+    const count = await fetcher.getCensusCount(id)
+    return Number.isFinite(count) ? count : null
+  } catch {
+    return null
+  }
+}
+
+const datasetKind = (
+  id: DatasetId
+): ObservatorySubjectKind => {
+  if (id === "lines") return "line-catalogue"
+  if (id === "stops") return "stop-points"
+  return "route-sequence"
+}
+
+const subjectsMatchState = (
+  subjects: Record<string, ObservatorySubject>,
+  id: DatasetId
+): ObservatoryState => {
+  const kind = datasetKind(id)
+  let worst: ObservatoryState = "current"
+  let rank = 0
+  const rankOf: Record<ObservatoryState, number> = {
+    current: 1,
+    changed: 2,
+    suspect: 3,
+    incomplete: 4,
+    unavailable: 5,
+  }
+  for (const subject of Object.values(subjects)) {
+    if (subject.kind !== kind) continue
+    const next = rankOf[subject.state]
+    if (next > rank) {
+      worst = subject.state
+      rank = next
+    }
+  }
+  return worst
+}
+
+const itemCountsFromSubjects = (
+  subjects: Record<string, ObservatorySubject>
+): Record<DatasetId, number> => {
+  const counts: Record<DatasetId, number> = {
+    lines: 0,
+    stops: 0,
+    routes: 0,
+  }
+  for (const subject of Object.values(subjects)) {
+    const n =
+      subject.lastObservation?.itemCount ?? subject.baseline?.itemCount ?? 0
+    if (subject.kind === "line-catalogue") counts.lines += n
+    else if (subject.kind === "stop-points") counts.stops += n
+    else counts.routes += n
+  }
+  return counts
+}
+
+const observeCensus = async (
+  fetcher: MetadataFetcher,
+  at: string,
+  kind: ObservatoryRunKind,
+  previous: ObservatoryStore["census"]
+): Promise<{
+  records: Record<CensusId, ObservatoryCensusRecord>
+  events: ObservatoryHistoryEvent[]
+}> => {
+  const records = {} as Record<CensusId, ObservatoryCensusRecord>
+  const events: ObservatoryHistoryEvent[] = []
+
+  for (const id of CENSUS_IDS) {
+    const baseline = previousCensusBaseline(previous?.[id], id)
+    let observed = await readCensusCount(fetcher, id)
+    let assessed = assessCensusCount({ observed, baseline })
+
+    for (let tryIndex = 1; tryIndex < CENSUS_TRIES; tryIndex += 1) {
+      if (assessed.state === "current") break
+      observed = await readCensusCount(fetcher, id)
+      assessed = assessCensusCount({ observed, baseline })
+    }
+
+    records[id] = {
+      id,
+      observedCount: observed,
+      baselineCount: baseline,
+      at,
+      state: assessed.state,
+      summary: assessed.summary,
+    }
+
+    if (assessed.state !== "current") {
+      events.push(
+        historyEvent(
+          at,
+          kind,
+          { id: censusSubjectId(id), label: CENSUS_LABELS[id] },
+          assessed.summary,
+          [],
+          assessed.state
+        )
+      )
+    }
+  }
+
+  return { records, events }
+}
 
 const catalogueWork = (): SubjectWork => ({
   id: LINE_CATALOGUE_SUBJECT_ID,
@@ -502,9 +627,42 @@ export const runObservatoryPass = async ({
             attentionSubjects === 1 ? "dataset needs" : "datasets need"
           } attention.`
 
-    events.unshift(
-      historyEvent(at, "scheduled", null, runSummary, [], "observed")
+    const census = await observeCensus(
+      fetcher,
+      at,
+      "scheduled",
+      loaded.census
     )
+    events.push(...census.events)
+
+    const todayItemCounts = itemCountsFromSubjects(subjects)
+    const previousItemCounts = loaded.lastGoodItemCounts ?? {}
+    const counts: HistoryCountSnapshot[] = [
+      ...(["lines", "stops", "routes"] as const).map((id) => ({
+        id,
+        label:
+          id === "lines"
+            ? "Line catalogue"
+            : id === "stops"
+              ? "Stop points"
+              : "Route sequences",
+        observedCount: todayItemCounts[id],
+        baselineCount: previousItemCounts[id] ?? todayItemCounts[id],
+        state: subjectsMatchState(subjects, id),
+      })),
+      ...CENSUS_IDS.map((id) => ({
+        id,
+        label: CENSUS_LABELS[id],
+        observedCount: census.records[id]!.observedCount,
+        baselineCount: census.records[id]!.baselineCount,
+        state: census.records[id]!.state,
+      })),
+    ]
+
+    events.unshift({
+      ...historyEvent(at, "scheduled", null, runSummary, [], "observed"),
+      counts,
+    })
 
     const notableEvents = events.filter(
       (event) =>
@@ -525,6 +683,11 @@ export const runObservatoryPass = async ({
         latestCompleteAt: runWasComplete ? at : loaded.latestCompleteAt,
         subjects,
         history: loaded.history,
+        census: census.records,
+        previousItemCounts,
+        lastGoodItemCounts: runWasComplete
+          ? todayItemCounts
+          : loaded.lastGoodItemCounts,
         lastNotified: nextNotified,
       },
       events

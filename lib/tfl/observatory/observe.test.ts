@@ -58,6 +58,7 @@ const routesFor = (lineId: string) => ({
 const completeFetcher = (overrides?: {
   lines?: RawLine[]
   stops?: Record<string, RawStopPoint[]>
+  census?: Partial<Record<"bus-lines" | "bus-points" | "bike-points", number>>
 }) =>
   createStaticMetadataFetcher({
     lines: overrides?.lines ?? lines,
@@ -69,6 +70,7 @@ const completeFetcher = (overrides?: {
       ...routesFor("district"),
       ...routesFor("victoria"),
     },
+    census: overrides?.census,
   })
 
 describe("observatory persistence and confirmation", () => {
@@ -89,6 +91,89 @@ describe("observatory persistence and confirmation", () => {
     assert.ok(result.store.latestCompleteAt)
     assert.equal(
       result.store.history[0]?.summary.includes("No metadata change"),
+      true
+    )
+    assert.equal(result.store.census?.["bus-lines"]?.state, "current")
+    assert.equal(result.store.census?.["bus-points"]?.state, "current")
+    assert.equal(result.store.census?.["bike-points"]?.state, "current")
+    assert.equal(
+      result.store.history.filter((event) => event.subjectId === null).length,
+      1
+    )
+    assert.equal(
+      result.store.history.some((event) =>
+        (event.subjectId ?? "").startsWith("census:")
+      ),
+      false
+    )
+  })
+
+  it("records a one-stop bus count drift without raising attention", async () => {
+    const repo = createMemoryObservatoryRepository()
+    const result = await runObservatoryPass({
+      fetcher: completeFetcher({
+        census: { "bus-points": 32_555 },
+      }),
+      store: repo,
+      nowMs: Date.parse("2026-08-19T04:15:00.000Z"),
+    })
+
+    assert.equal(result.store.census?.["bus-points"]?.state, "current")
+    assert.match(
+      result.store.census?.["bus-points"]?.summary ?? "",
+      /\+1/
+    )
+    const page = toObservatoryPageData(result.store)
+    assert.equal(
+      page.attention.some((item) => item.id === "census:bus-points"),
+      false
+    )
+    assert.equal(
+      page.census.find((row) => row.id === "bus-points")?.delta,
+      1
+    )
+  })
+
+  it("compares the next census count to yesterday, not the seed", async () => {
+    const repo = createMemoryObservatoryRepository()
+    await runObservatoryPass({
+      fetcher: completeFetcher({
+        census: { "bus-points": 32_560 },
+      }),
+      store: repo,
+      nowMs: Date.parse("2026-08-19T04:15:00.000Z"),
+    })
+    const second = await runObservatoryPass({
+      fetcher: completeFetcher({
+        census: { "bus-points": 32_561 },
+      }),
+      store: repo,
+      nowMs: Date.parse("2026-08-20T04:15:00.000Z"),
+    })
+    assert.equal(second.store.census?.["bus-points"]?.baselineCount, 32_560)
+    assert.equal(second.store.census?.["bus-points"]?.observedCount, 32_561)
+    const page = toObservatoryPageData(second.store)
+    assert.equal(
+      page.census.find((row) => row.id === "bus-points")?.delta,
+      1
+    )
+  })
+
+  it("flags a census count outside the 10% band", async () => {
+    const repo = createMemoryObservatoryRepository()
+    const result = await runObservatoryPass({
+      fetcher: completeFetcher({
+        census: { "bike-points": 500 },
+      }),
+      store: repo,
+      nowMs: Date.parse("2026-08-19T04:15:00.000Z"),
+    })
+
+    assert.equal(result.store.census?.["bike-points"]?.state, "incomplete")
+    const page = toObservatoryPageData(result.store)
+    assert.equal(page.overallState, "incomplete")
+    assert.equal(
+      page.attention.some((item) => item.id === "census:bike-points"),
       true
     )
   })
@@ -127,6 +212,12 @@ describe("observatory persistence and confirmation", () => {
       second.store.history.some((event) => event.state === "changed"),
       true
     )
+    const page = toObservatoryPageData(second.store)
+    assert.equal(
+      page.datasets.find((dataset) => dataset.id === "stops")?.delta,
+      2
+    )
+    assert.equal(second.store.previousItemCounts?.stops, 24)
   })
 
   it("does not persist an empty District stop list as a baseline update", async () => {
@@ -212,7 +303,17 @@ describe("page data", () => {
       page.datasets.find((dataset) => dataset.id === "stops")?.state,
       "changed"
     )
+    assert.equal(
+      page.datasets.find((dataset) => dataset.id === "stops")?.delta,
+      1
+    )
     assert.ok(page.history.length > 0)
+    assert.equal(
+      page.history.filter((event) =>
+        (event.subjectId ?? "").startsWith("census:")
+      ).length,
+      0
+    )
   })
 
   it("ranks unavailable above a metadata change", () => {
