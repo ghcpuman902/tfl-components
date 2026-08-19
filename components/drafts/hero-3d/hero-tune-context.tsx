@@ -13,6 +13,7 @@ import {
   MAIN_DISPLAY,
   MEDIA_UNIT,
   SUN,
+  TREE,
   type Vec3,
 } from "@/components/drafts/hero-3d/composition"
 
@@ -26,6 +27,20 @@ export type HeroTune = {
   displayX: number
   displayY: number
   mediaUnitHeight: number
+  treeX: number
+  treeZ: number
+  treeYaw: number
+  treeScale: number
+  barkHue: number
+  barkSat: number
+  barkLit: number
+  leafHue: number
+  leafSat: number
+  leafLit: number
+  barkRoughness: number
+  leafRoughness: number
+  leafAlphaTest: number
+  treeAnimationSpeed: number
 }
 
 const DEFAULT_TUNE: HeroTune = {
@@ -38,6 +53,20 @@ const DEFAULT_TUNE: HeroTune = {
   displayX: MAIN_DISPLAY.x,
   displayY: MAIN_DISPLAY.y,
   mediaUnitHeight: MEDIA_UNIT.height,
+  treeX: TREE.x,
+  treeZ: TREE.z,
+  treeYaw: TREE.yaw,
+  treeScale: TREE.scale,
+  barkHue: TREE.bark.h,
+  barkSat: TREE.bark.s,
+  barkLit: TREE.bark.l,
+  leafHue: TREE.leaf.h,
+  leafSat: TREE.leaf.s,
+  leafLit: TREE.leaf.l,
+  barkRoughness: TREE.barkRoughness,
+  leafRoughness: TREE.leafRoughness,
+  leafAlphaTest: TREE.leafAlphaTest,
+  treeAnimationSpeed: TREE.animationSpeed,
 }
 
 type HeroTuneContextValue = {

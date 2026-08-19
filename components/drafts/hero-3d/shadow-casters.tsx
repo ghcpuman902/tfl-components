@@ -9,37 +9,41 @@ import {
   type Group,
   type Texture,
 } from "three"
-import { useTexture } from "@react-three/drei"
 import {
-  ASSETS,
   SHADOW_CASTERS,
   lerpAlong,
   sunPositionFromAngles,
   type Vec3,
 } from "@/components/drafts/hero-3d/composition"
 import { useHeroTune } from "@/components/drafts/hero-3d/hero-tune-context"
-import { stencilToAlphaMap } from "@/components/drafts/hero-3d/textures"
+import {
+  makeLeafLayerAlphaMap,
+  makeWindowApertureAlphaMap,
+} from "@/components/drafts/hero-3d/textures"
 
-const ROOM_AIM: Vec3 = [0, 1.25, 0.15]
+/** Wall aim — casters face the set so sun projects leaves → panes → wall. */
+const ROOM_AIM: Vec3 = [0, 1.4, 0.1]
 
 const CutoutPlane = ({
   alphaMap,
   size,
   position,
+  alphaTest = 0.28,
 }: {
   alphaMap: Texture
   size: readonly [number, number]
   position: Vec3
+  alphaTest?: number
 }) => {
   const depthMaterial = useMemo(
     () =>
       new MeshDepthMaterial({
         alphaMap,
-        alphaTest: 0.35,
+        alphaTest,
         depthPacking: RGBADepthPacking,
         side: DoubleSide,
       }),
-    [alphaMap]
+    [alphaMap, alphaTest]
   )
 
   return (
@@ -48,12 +52,14 @@ const CutoutPlane = ({
       lookAt={ROOM_AIM}
       castShadow
       customDepthMaterial={depthMaterial}
+      frustumCulled={false}
     >
       <planeGeometry args={[size[0], size[1]]} />
       <meshBasicMaterial
         alphaMap={alphaMap}
-        alphaTest={0.35}
+        alphaTest={alphaTest}
         colorWrite={false}
+        depthWrite={false}
         shadowSide={DoubleSide}
         side={DoubleSide}
         toneMapped={false}
@@ -64,8 +70,6 @@ const CutoutPlane = ({
 
 export const ShadowCasters = () => {
   const { tune } = useHeroTune()
-  const windowSource = useTexture(ASSETS.window) as Texture
-  const leafSource = useTexture(ASSETS.leaves) as Texture
   const leafGroup = useRef<Group>(null)
   const reducedMotion = useMemo(
     () =>
@@ -74,42 +78,52 @@ export const ShadowCasters = () => {
     []
   )
 
-  const windowAlpha = useMemo(
-    () => stencilToAlphaMap(windowSource),
-    [windowSource]
-  )
-  const leafAlpha = useMemo(
-    () => stencilToAlphaMap(leafSource),
-    [leafSource]
+  // Generated gobos — no PNG dependency for window / foliage.
+  const windowAlpha = useMemo(() => makeWindowApertureAlphaMap(), [])
+  const leafLayers = useMemo(
+    () =>
+      SHADOW_CASTERS.leafLayers.map((layer) => ({
+        ...layer,
+        alphaMap: makeLeafLayerAlphaMap(layer.seed, 1600, 1600, layer.density),
+      })),
+    []
   )
 
   const sun = sunPositionFromAngles(tune.sunAzimuth, tune.sunElevation)
+  // Closer to sun first: foliage dapples the beam, then aperture shapes the pool.
   const windowPos = lerpAlong(sun, ROOM_AIM, SHADOW_CASTERS.windowT)
-  const leafPos = lerpAlong(sun, ROOM_AIM, SHADOW_CASTERS.leafT)
 
   useFrame((state) => {
     const group = leafGroup.current
     if (!group || reducedMotion) return
     const t = state.clock.elapsedTime
-    group.rotation.z = Math.sin(t * 0.28) * 0.014
-    group.rotation.y = Math.sin(t * 0.17) * 0.01
-    group.position.x = Math.sin(t * 0.21) * 0.02
+    group.rotation.z = Math.sin(t * 0.22) * 0.012
+    group.rotation.y = Math.sin(t * 0.15) * 0.008
+    group.children.forEach((child, index) => {
+      child.position.x = Math.sin(t * 0.18 + index * 1.1) * 0.018
+      child.rotation.z = Math.sin(t * 0.25 + index) * 0.01
+    })
   })
 
   return (
     <group>
+      <group ref={leafGroup}>
+        {leafLayers.map((layer) => (
+          <CutoutPlane
+            key={layer.seed}
+            alphaMap={layer.alphaMap}
+            size={layer.size}
+            position={lerpAlong(sun, ROOM_AIM, layer.t)}
+            alphaTest={0.22}
+          />
+        ))}
+      </group>
       <CutoutPlane
         alphaMap={windowAlpha}
         size={SHADOW_CASTERS.windowSize}
         position={windowPos}
+        alphaTest={0.4}
       />
-      <group ref={leafGroup}>
-        <CutoutPlane
-          alphaMap={leafAlpha}
-          size={SHADOW_CASTERS.leafSize}
-          position={leafPos}
-        />
-      </group>
     </group>
   )
 }

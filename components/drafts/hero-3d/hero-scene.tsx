@@ -3,7 +3,7 @@
 import { Suspense, useMemo } from "react"
 import { Canvas } from "@react-three/fiber"
 import { ContactShadows } from "@react-three/drei"
-import { PCFSoftShadowMap } from "three"
+import { PCFShadowMap } from "three"
 import { CameraRig } from "@/components/drafts/hero-3d/camera-rig"
 import {
   CAMERA_STATES,
@@ -14,7 +14,7 @@ import {
 } from "@/components/drafts/hero-3d/composition"
 import { useHeroTune } from "@/components/drafts/hero-3d/hero-tune-context"
 import { MediaUnit } from "@/components/drafts/hero-3d/media-unit"
-import { PlantBillboard } from "@/components/drafts/hero-3d/plant-billboard"
+import { HeroTree } from "@/components/drafts/hero-3d/hero-tree"
 import { SceneProps } from "@/components/drafts/hero-3d/props"
 import { ShadowCasters } from "@/components/drafts/hero-3d/shadow-casters"
 import { WallObjects } from "@/components/drafts/hero-3d/wall-objects"
@@ -54,19 +54,31 @@ const Lights = () => {
         intensity={SUN.hemisphereIntensity}
       />
       <directionalLight
+        position={[-4.6, 2.1, 2.4]}
+        intensity={SUN.sideIntensity}
+        color={SUN.sideSky}
+        castShadow={false}
+      />
+      <directionalLight
+        position={[4.8, 1.9, 2.2]}
+        intensity={SUN.sideIntensity * 0.85}
+        color={SUN.sideSky}
+        castShadow={false}
+      />
+      <directionalLight
         position={[...sun]}
         intensity={SUN.intensity}
         color={SUN.color}
         castShadow
         shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.00025}
-        shadow-normalBias={0.03}
-        shadow-camera-near={1.5}
-        shadow-camera-far={20}
-        shadow-camera-left={-4}
-        shadow-camera-right={4}
-        shadow-camera-top={3.6}
-        shadow-camera-bottom={-2.4}
+        shadow-bias={-0.0002}
+        shadow-normalBias={0.02}
+        shadow-camera-near={1.2}
+        shadow-camera-far={22}
+        shadow-camera-left={-4.4}
+        shadow-camera-right={4.4}
+        shadow-camera-top={4.6}
+        shadow-camera-bottom={-2.8}
       />
     </>
   )
@@ -74,7 +86,7 @@ const Lights = () => {
 
 export const HeroScene = () => (
   <Canvas
-    shadows
+    shadows="percentage"
     dpr={[1, 1.75]}
     gl={{ antialias: true }}
     camera={{
@@ -85,7 +97,7 @@ export const HeroScene = () => (
     }}
     onCreated={({ gl }) => {
       gl.shadowMap.enabled = true
-      gl.shadowMap.type = PCFSoftShadowMap
+      gl.shadowMap.type = PCFShadowMap
     }}
     style={{ background: "#d7c7b0" }}
   >
@@ -95,7 +107,7 @@ export const HeroScene = () => (
       <Room />
       <WallObjects />
       <MediaUnit />
-      <PlantBillboard />
+      <HeroTree />
       <SceneProps />
       <ShadowCasters />
       <ContactShadows

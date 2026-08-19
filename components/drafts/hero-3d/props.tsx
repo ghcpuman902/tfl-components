@@ -57,8 +57,8 @@ export const SceneProps = () => {
         </mesh>
         <pointLight
           position={[0, 0.34, 0]}
-          intensity={0.35}
-          distance={1.8}
+          intensity={0.18}
+          distance={1.4}
           color="#ffe8c4"
         />
       </group>

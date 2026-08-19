@@ -222,6 +222,126 @@ export const DebugPanel = () => {
           step={0.005}
           onChange={(mediaUnitHeight) => setTune({ mediaUnitHeight })}
         />
+        <p className="pt-1 text-[10px] font-medium tracking-wide text-white/50 uppercase">
+          Tree
+        </p>
+        <p className="text-[10px] leading-snug text-white/50">
+          Blockout until you drop a Grove export at{" "}
+          <span className="text-white/70">public/drafts/hero-3d/tree.glb</span>.
+          Raise lightness / drop saturation to show baked textures.
+        </p>
+        <RangeField
+          label="Tree X"
+          value={tune.treeX}
+          min={-1.6}
+          max={0.2}
+          step={0.01}
+          onChange={(treeX) => setTune({ treeX })}
+        />
+        <RangeField
+          label="Tree Z"
+          value={tune.treeZ}
+          min={0.12}
+          max={0.7}
+          step={0.01}
+          onChange={(treeZ) => setTune({ treeZ })}
+        />
+        <RangeField
+          label="Tree yaw"
+          value={tune.treeYaw}
+          min={-Math.PI}
+          max={Math.PI}
+          step={0.01}
+          onChange={(treeYaw) => setTune({ treeYaw })}
+        />
+        <RangeField
+          label="Tree scale"
+          value={tune.treeScale}
+          min={0.4}
+          max={2.4}
+          step={0.01}
+          onChange={(treeScale) => setTune({ treeScale })}
+        />
+        <RangeField
+          label="Bark hue"
+          value={tune.barkHue}
+          min={0}
+          max={360}
+          step={1}
+          onChange={(barkHue) => setTune({ barkHue })}
+        />
+        <RangeField
+          label="Bark sat"
+          value={tune.barkSat}
+          min={0}
+          max={1}
+          step={0.01}
+          onChange={(barkSat) => setTune({ barkSat })}
+        />
+        <RangeField
+          label="Bark light"
+          value={tune.barkLit}
+          min={0.05}
+          max={0.85}
+          step={0.01}
+          onChange={(barkLit) => setTune({ barkLit })}
+        />
+        <RangeField
+          label="Bark roughness"
+          value={tune.barkRoughness}
+          min={0.15}
+          max={1}
+          step={0.01}
+          onChange={(barkRoughness) => setTune({ barkRoughness })}
+        />
+        <RangeField
+          label="Leaf hue"
+          value={tune.leafHue}
+          min={0}
+          max={360}
+          step={1}
+          onChange={(leafHue) => setTune({ leafHue })}
+        />
+        <RangeField
+          label="Leaf sat"
+          value={tune.leafSat}
+          min={0}
+          max={1}
+          step={0.01}
+          onChange={(leafSat) => setTune({ leafSat })}
+        />
+        <RangeField
+          label="Leaf light"
+          value={tune.leafLit}
+          min={0.08}
+          max={0.85}
+          step={0.01}
+          onChange={(leafLit) => setTune({ leafLit })}
+        />
+        <RangeField
+          label="Leaf roughness"
+          value={tune.leafRoughness}
+          min={0.15}
+          max={1}
+          step={0.01}
+          onChange={(leafRoughness) => setTune({ leafRoughness })}
+        />
+        <RangeField
+          label="Leaf shadow clip"
+          value={tune.leafAlphaTest}
+          min={0.1}
+          max={0.8}
+          step={0.01}
+          onChange={(leafAlphaTest) => setTune({ leafAlphaTest })}
+        />
+        <RangeField
+          label="Sway speed"
+          value={tune.treeAnimationSpeed}
+          min={0}
+          max={2}
+          step={0.05}
+          onChange={(treeAnimationSpeed) => setTune({ treeAnimationSpeed })}
+        />
       </div>
     </aside>
   )
