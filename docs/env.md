@@ -42,6 +42,10 @@ const envSchema = z.object({
 export const env = envSchema.parse(process.env)
 ```
 
+## Metadata observatory
+
+The daily cron at `/api/cron/tfl-metadata` needs `REDIS_URL` and `CRON_SECRET` in production. Optional Resend settings reuse the feedback mail path for confirmed changes or TfL response problems.
+
 ## Security
 
 - Do not log secrets.

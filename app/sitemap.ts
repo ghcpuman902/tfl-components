@@ -15,6 +15,7 @@ const STATIC_PATHS = [
   "/accessibility",
   "/privacy",
   "/how-it-was-built",
+  "/observatory",
 ] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {

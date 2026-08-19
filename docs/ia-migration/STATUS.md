@@ -17,4 +17,4 @@ Use [`lib/docs-catalog.ts`](../../lib/docs-catalog.ts) and [VERIFY.md](./VERIFY.
 
 ## Conflicts
 
-All closed — [CONFLICTS.md](./CONFLICTS.md).
+Open items remain in [CONFLICTS.md](./CONFLICTS.md), including C10 for the public metadata observatory.

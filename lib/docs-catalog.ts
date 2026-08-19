@@ -303,6 +303,17 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 196,
   },
   {
+    slug: "observatory",
+    title: "TfL metadata",
+    description:
+      "Independent observation of TfL line, stop, and route metadata.",
+    group: "start",
+    kind: "page",
+    href: "/observatory",
+    sidebarSection: "hidden",
+    sidebarOrder: 0,
+  },
+  {
     slug: "line-topology-junctions",
     title: "Junction windows",
     description:

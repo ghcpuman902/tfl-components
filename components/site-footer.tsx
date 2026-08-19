@@ -114,6 +114,8 @@ export const SiteFooter = () => {
           <span aria-hidden>·</span>
           <FooterLink href="/how-it-was-built">How it was built</FooterLink>
           <span aria-hidden>·</span>
+          <FooterLink href="/observatory">TfL metadata</FooterLink>
+          <span aria-hidden>·</span>
           <FooterLink
             href={`https://github.com/ghcpuman902/tfl-components/releases/tag/${APP_VERSION_LABEL}`}
             external

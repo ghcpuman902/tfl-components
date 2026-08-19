@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/tfl-metadata",
+      "schedule": "15 4 * * *"
+    }
+  ]
+}
