@@ -1,6 +1,7 @@
 import {
   CanvasTexture,
   LinearFilter,
+  NoColorSpace,
   SRGBColorSpace,
   type Texture,
 } from "three"
@@ -25,15 +26,23 @@ const imageSize = (image: TexImageSource) => {
   return { width: 1024, height: 1024 }
 }
 
-/** Black stencil on white → white-opaque alphaMap (Three.js: white = opaque). */
-export const stencilToAlphaMap = (texture: Texture) => {
-  const image = texture.image as TexImageSource
+/**
+ * Black ink on white paper → alphaMap for shadow cutouts.
+ * Three.js alphaMap: white = opaque (casts shadow), black = discarded (light passes).
+ * Returns a fresh CanvasTexture so the GPU never keeps the raw stencil polarity.
+ */
+export const stencilToAlphaMap = (source: Texture) => {
+  const image = source.image as TexImageSource
   const { width, height } = imageSize(image)
+  if (width < 1 || height < 1) {
+    throw new Error("stencilToAlphaMap: source image has no dimensions")
+  }
   const { canvas, context } = drawToCanvas(image, width, height)
   const pixels = context.getImageData(0, 0, width, height)
   const data = pixels.data
   for (let i = 0; i < data.length; i += 4) {
     const lum = luminance(data[i] ?? 0, data[i + 1] ?? 0, data[i + 2] ?? 0)
+    // Dark ink blocks light; paper stays open.
     const opaque = lum < 140 ? 255 : 0
     data[i] = opaque
     data[i + 1] = opaque
@@ -41,12 +50,16 @@ export const stencilToAlphaMap = (texture: Texture) => {
     data[i + 3] = 255
   }
   context.putImageData(pixels, 0, 0)
-  texture.image = canvas
-  texture.colorSpace = SRGBColorSpace
-  texture.minFilter = LinearFilter
-  texture.magFilter = LinearFilter
-  texture.needsUpdate = true
-  return texture
+  const alpha = new CanvasTexture(canvas)
+  alpha.colorSpace = NoColorSpace
+  alpha.flipY = source.flipY
+  alpha.wrapS = source.wrapS
+  alpha.wrapT = source.wrapT
+  alpha.minFilter = LinearFilter
+  alpha.magFilter = LinearFilter
+  alpha.generateMipmaps = false
+  alpha.needsUpdate = true
+  return alpha
 }
 
 /** Plant on black → alpha from non-black pixels. */

@@ -37,6 +37,7 @@ const CutoutPlane = ({
         alphaMap,
         alphaTest: 0.35,
         depthPacking: RGBADepthPacking,
+        side: DoubleSide,
       }),
     [alphaMap]
   )
@@ -74,11 +75,11 @@ export const ShadowCasters = () => {
   )
 
   const windowAlpha = useMemo(
-    () => stencilToAlphaMap(windowSource.clone()),
+    () => stencilToAlphaMap(windowSource),
     [windowSource]
   )
   const leafAlpha = useMemo(
-    () => stencilToAlphaMap(leafSource.clone()),
+    () => stencilToAlphaMap(leafSource),
     [leafSource]
   )
 
