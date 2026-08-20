@@ -1,30 +1,29 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { HOME_HERO_SLIDES } from "@/components/docs/home-hero-photos"
+import type { HomeHeroSlide } from "@/components/docs/home-hero-photos"
 
 type MirrorPhotoLoopProps = {
-  startOffset: number
+  slides: readonly HomeHeroSlide[]
   frozen: boolean
+  intervalMs: number
 }
 
 export const MirrorPhotoLoop = ({
-  startOffset,
+  slides,
   frozen,
+  intervalMs,
 }: MirrorPhotoLoopProps) => {
-  const [index, setIndex] = useState(startOffset % HOME_HERO_SLIDES.length)
-  const slide = HOME_HERO_SLIDES[index] ?? HOME_HERO_SLIDES[0]
+  const [index, setIndex] = useState(0)
+  const slide = slides[index] ?? slides[0]
 
   useEffect(() => {
-    if (frozen) return
-    const id = window.setInterval(
-      () => {
-        setIndex((current) => (current + 1) % HOME_HERO_SLIDES.length)
-      },
-      4200 + startOffset * 400
-    )
+    if (frozen || slides.length < 2) return
+    const id = window.setInterval(() => {
+      setIndex((current) => (current + 1) % slides.length)
+    }, intervalMs)
     return () => window.clearInterval(id)
-  }, [frozen, startOffset])
+  }, [frozen, intervalMs, slides.length])
 
   if (!slide) return null
 

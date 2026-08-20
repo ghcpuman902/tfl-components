@@ -30,13 +30,13 @@ describe("resolveEffectiveLineOrder", () => {
     );
   });
 
-  it("honors explicit order then remainder canonical", () => {
+  it("treats explicit a.lines as a visible set, not order-plus-remainder", () => {
     assert.deepEqual(
       resolveEffectiveLineOrder(
         base({ lineOrder: ["victoria", "bakerloo"] }),
         HOME_RAIL_LINES,
       ),
-      ["victoria", "bakerloo", "central"],
+      ["victoria", "bakerloo"],
     );
   });
 
@@ -46,7 +46,7 @@ describe("resolveEffectiveLineOrder", () => {
         base({ lineOrder: ["jubilee", "victoria"] }),
         HOME_RAIL_LINES,
       ),
-      ["victoria", "central", "bakerloo"],
+      ["victoria"],
     );
   });
 
@@ -86,6 +86,18 @@ describe("resolveArrivalsProps", () => {
       victoria: 2,
       bakerloo: 2,
     });
+  });
+
+  it("filters the seeded lines list to the exclusive a.lines set", () => {
+    const props = resolveArrivalsProps(
+      base({ lineOrder: ["victoria", "bakerloo"] }),
+      HOME_RAIL_LINES,
+    );
+    assert.deepEqual(
+      props.lines?.map((line) => line.lineId),
+      ["victoria", "bakerloo"],
+    );
+    assert.deepEqual(props.lineOrder, ["victoria", "bakerloo"]);
   });
 
   it("zips positional rows by explicit lineOrder", () => {
@@ -135,7 +147,7 @@ describe("resolveArrivalsProps", () => {
     });
   });
 
-  it("explicit order omitting a serving line keeps it after with default rows", () => {
+  it("explicit a.lines hides unlisted serving lines", () => {
     const props = resolveArrivalsProps(
       base({
         rows: [6, 2],
@@ -147,8 +159,14 @@ describe("resolveArrivalsProps", () => {
       victoria: 6,
       central: 2,
     });
-    // bakerloo present in lines seed, not in pageSizeByLine → component default
-    assert.ok(props.lines?.some((l) => l.lineId === "bakerloo"));
+    assert.deepEqual(
+      props.lines?.map((line) => line.lineId),
+      ["victoria", "central"],
+    );
+    assert.equal(
+      props.lines?.some((line) => line.lineId === "bakerloo"),
+      false,
+    );
   });
 });
 
@@ -241,6 +259,19 @@ describe("shared-platform sections", () => {
       elizabeth: 2,
       weaver: 2,
     });
+  });
+
+  it("does not pull unlisted merge members when a.lines is exclusive", () => {
+    const sections = resolveEffectiveSections(
+      livst({ lineOrder: ["elizabeth"] }),
+      serving,
+      [],
+      groups,
+    );
+    assert.deepEqual(
+      sections.map((section) => section.lineId),
+      ["elizabeth"],
+    );
   });
 
   it("keeps Oxford Circus ungrouped", () => {

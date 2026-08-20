@@ -111,11 +111,82 @@ describe("parseBoardConfig", () => {
       "bakerloo",
     ]);
   });
+
+  it("defaults omitted p1/p2 to empty slots (display resolves rail+status)", () => {
+    const config = parseBoardConfig("stop=940GZZLUOXC");
+    assert.deepEqual(config.slots, {});
+  });
+
+  it("parses p1 and empty p2 as a single-column board", () => {
+    const config = parseBoardConfig("p1=rail&stop=940GZZLUOXC");
+    assert.deepEqual(config.slots.p1, ["rail"]);
+    assert.equal(config.slots.p2, undefined);
+  });
+
+  it("parses stacked p1 and p2", () => {
+    const config = parseBoardConfig(
+      "p1=rail,bus,cycle&p2=status&b.stop=490000091G&b.routes=73,n8&c.docks=237,BikePoints_46",
+    );
+    assert.deepEqual(config.slots.p1, ["rail", "bus", "cycle"]);
+    assert.deepEqual(config.slots.p2, ["status"]);
+    assert.equal(config.bus.stop, "490000091G");
+    assert.deepEqual(config.bus.routes, ["73", "n8"]);
+    assert.deepEqual(config.cycle.docks, ["BikePoints_237", "BikePoints_46"]);
+  });
+
+  it("parses river and keeps behaviour independent of slots", () => {
+    const config = parseBoardConfig(
+      "behaviour=unattended&p1=river&r.stop=930GCAW&r.rows=4",
+    );
+    assert.equal(config.behaviour, "unattended");
+    assert.deepEqual(config.slots.p1, ["river"]);
+    assert.equal(config.slots.p2, undefined);
+    assert.equal(config.river.stop, "930GCAW");
+    assert.equal(config.river.rows, 4);
+  });
+
+  it("treats p1= as an explicit empty wide slot", () => {
+    const config = parseBoardConfig("p1=&p2=status");
+    assert.deepEqual(config.slots.p1, []);
+    assert.deepEqual(config.slots.p2, ["status"]);
+  });
 });
 
 describe("buildBoardHref", () => {
   it("returns bare path for defaults", () => {
     assert.equal(buildBoardHref({}), BOARD_VIEW_PATH);
+  });
+
+  it("omits default rail+status slots", () => {
+    assert.equal(
+      buildBoardHref({
+        stop: "940GZZLUOXC",
+        slots: { p1: ["rail"], p2: ["status"] },
+      }),
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`,
+    );
+  });
+
+  it("serializes a single-slot arrivals board", () => {
+    assert.equal(
+      buildBoardHref({
+        stop: "940GZZLUOXC",
+        slots: { p1: ["rail"], p2: [] },
+      }),
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&p1=rail`,
+    );
+  });
+
+  it("serializes a mix stack and domain ids", () => {
+    assert.equal(
+      buildBoardHref({
+        stop: "940GZZLIVST",
+        slots: { p1: ["rail", "bus", "cycle"], p2: ["status"] },
+        bus: { stop: "490000091G" },
+        cycle: { docks: ["BikePoints_237", "BikePoints_46"] },
+      }),
+      `${BOARD_VIEW_PATH}#stop=940GZZLIVST&p1=rail,bus,cycle&p2=status&b.stop=490000091G&c.docks=BikePoints_237,BikePoints_46`,
+    );
   });
 
   it("omits default behaviour", () => {
@@ -199,7 +270,11 @@ describe("buildBoardHref", () => {
       stopName: "Oxford Circus",
       behaviour: "unattended" as const,
       key: "secretkey",
+      slots: {},
       arrivals: {},
+      bus: {},
+      river: {},
+      cycle: {},
       status: {},
     };
     const href = buildBoardHref(original);
@@ -241,6 +316,29 @@ describe("describeBoardHrefSegments", () => {
       [
         { setting: "stop", text: "stop=940GZZLUOXC" },
         { setting: "arrivalsRows", text: "a.rows=3" },
+      ],
+    );
+  });
+
+  it("lists p1/p2 and domain ids when they are not the default station board", () => {
+    assert.deepEqual(
+      describeBoardHrefSegments({
+        stop: "940GZZLIVST",
+        slots: { p1: ["rail", "bus"], p2: [] },
+        bus: { stop: "490000091G", routes: ["73"] },
+        river: { stop: "930GCAW" },
+        cycle: { docks: ["BikePoints_237"] },
+        status: { lines: ["elizabeth"], overview: "selection" },
+      }).map((segment) => segment.setting),
+      [
+        "stop",
+        "slot1",
+        "busStop",
+        "busRoutes",
+        "riverStop",
+        "cycleDocks",
+        "statusLines",
+        "statusOverview",
       ],
     );
   });

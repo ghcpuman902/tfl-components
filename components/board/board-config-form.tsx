@@ -7,6 +7,8 @@ import {
   useState,
   type ChangeEvent,
 } from "react"
+import { BoardPlaceSearch } from "@/components/board/board-place-search"
+import { BoardSlotEditor } from "@/components/board/board-slot-editor"
 import { BoardStationSearch } from "@/components/board/board-station-search"
 import {
   BoardSegmentBadge,
@@ -21,6 +23,12 @@ import {
   resolveEffectiveSections,
 } from "@/lib/tfl/board-config-resolve"
 import type { BoardStationLineGroup } from "@/lib/tfl/board-station-lines"
+import {
+  parseDockIdList,
+  parseRouteIdList,
+  serializeDockIdList,
+  serializeRouteIdList,
+} from "@/lib/tfl/board-panels"
 import {
   BOARD_SETTINGS,
   parseArrivalsLines,
@@ -248,7 +256,7 @@ export const BoardConfigForm = ({
             setting="arrivalsLines"
             segments={segments}
           >
-            {BOARD_SETTINGS.arrivalsLines.ui?.label ?? "Line order (optional)"}
+            {BOARD_SETTINGS.arrivalsLines.ui?.label ?? "Lines (optional)"}
           </FieldLabel>
           <Input
             id="board-lines"
@@ -298,6 +306,402 @@ export const BoardConfigForm = ({
           <p id="board-rows-hint" className="text-sm text-muted-foreground">
             {BOARD_SETTINGS.arrivalsRows.ui?.help}
           </p>
+        </div>
+      ) : null}
+
+      {formSettings.includes("arrivalsPinFirst") ? (
+        <div className="space-y-2">
+          <FieldLabel
+            htmlFor="board-pin-first"
+            setting="arrivalsPinFirst"
+            segments={segments}
+          >
+            {BOARD_SETTINGS.arrivalsPinFirst.ui?.label ?? "Pin first arrival"}
+          </FieldLabel>
+          <select
+            id="board-pin-first"
+            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
+            value={String(config.arrivals.pinFirst ?? true)}
+            onChange={(event) =>
+              onChange({
+                arrivals: {
+                  ...config.arrivals,
+                  pinFirst: event.target.value === "true",
+                },
+              })
+            }
+          >
+            {BOARD_SETTINGS.arrivalsPinFirst.ui?.options?.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-sm text-muted-foreground">
+            {BOARD_SETTINGS.arrivalsPinFirst.ui?.help}
+          </p>
+        </div>
+      ) : null}
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-foreground">Slots</p>
+        <BoardSlotEditor
+          slots={config.slots}
+          onChange={(slots) => onChange({ slots })}
+        />
+      </div>
+
+      {formSettings.includes("busStop") ? (
+        <div className="space-y-2">
+          <FieldLabel htmlFor="board-bus-search" setting="busStop" segments={segments}>
+            {BOARD_SETTINGS.busStop.ui?.label ?? "Bus stop"}
+          </FieldLabel>
+          <BoardPlaceSearch
+            kind="bus"
+            selectedId={config.bus.stop}
+            onSelect={(place) =>
+              onChange({ bus: { ...config.bus, stop: place.id } })
+            }
+            inputId="board-bus-search"
+            placeholder="Search for a bus stop"
+            emptyMessage="No bus stops match that search."
+          />
+          <details className="text-sm">
+            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+              Stop ID
+            </summary>
+            <Input
+              id="board-bus-stop"
+              className="mt-2"
+              value={config.bus.stop ?? ""}
+              onChange={(event) =>
+                onChange({ bus: { ...config.bus, stop: event.target.value } })
+              }
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </details>
+          <p className="text-sm text-muted-foreground">
+            {BOARD_SETTINGS.busStop.ui?.help}
+          </p>
+        </div>
+      ) : null}
+
+      {formSettings.includes("busRoutes") ? (
+        <div className="space-y-2">
+          <FieldLabel
+            htmlFor="board-bus-routes"
+            setting="busRoutes"
+            segments={segments}
+          >
+            {BOARD_SETTINGS.busRoutes.ui?.label ?? "Bus routes"}
+          </FieldLabel>
+          <Input
+            id="board-bus-routes"
+            value={serializeRouteIdList(config.bus.routes) ?? ""}
+            onChange={(event) =>
+              onChange({
+                bus: {
+                  ...config.bus,
+                  routes: parseRouteIdList(event.target.value || null),
+                },
+              })
+            }
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="73,n8"
+          />
+        </div>
+      ) : null}
+
+      {formSettings.includes("busRows") ? (
+        <div className="space-y-2">
+          <FieldLabel htmlFor="board-bus-rows" setting="busRows" segments={segments}>
+            {BOARD_SETTINGS.busRows.ui?.label ?? "Bus rows"}
+          </FieldLabel>
+          <Input
+            id="board-bus-rows"
+            type="number"
+            min={0}
+            max={16}
+            value={config.bus.rows ?? ""}
+            onChange={(event) => {
+              const raw = event.target.value
+              onChange({
+                bus: {
+                  ...config.bus,
+                  rows: raw === "" ? undefined : Number(raw),
+                },
+              })
+            }}
+          />
+        </div>
+      ) : null}
+
+      {formSettings.includes("riverStop") ? (
+        <div className="space-y-2">
+          <FieldLabel
+            htmlFor="board-river-search"
+            setting="riverStop"
+            segments={segments}
+          >
+            {BOARD_SETTINGS.riverStop.ui?.label ?? "Pier"}
+          </FieldLabel>
+          <BoardPlaceSearch
+            kind="river"
+            selectedId={config.river.stop}
+            onSelect={(place) =>
+              onChange({ river: { ...config.river, stop: place.id } })
+            }
+            inputId="board-river-search"
+            placeholder="Search for a river pier"
+            emptyMessage="No piers match that search."
+          />
+          <details className="text-sm">
+            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+              Pier ID
+            </summary>
+            <Input
+              id="board-river-stop"
+              className="mt-2"
+              value={config.river.stop ?? ""}
+              onChange={(event) =>
+                onChange({
+                  river: { ...config.river, stop: event.target.value },
+                })
+              }
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="930GCAW"
+            />
+          </details>
+        </div>
+      ) : null}
+
+      {formSettings.includes("riverRows") ? (
+        <div className="space-y-2">
+          <FieldLabel
+            htmlFor="board-river-rows"
+            setting="riverRows"
+            segments={segments}
+          >
+            {BOARD_SETTINGS.riverRows.ui?.label ?? "River rows"}
+          </FieldLabel>
+          <Input
+            id="board-river-rows"
+            type="number"
+            min={0}
+            max={16}
+            value={config.river.rows ?? ""}
+            onChange={(event) => {
+              const raw = event.target.value
+              onChange({
+                river: {
+                  ...config.river,
+                  rows: raw === "" ? undefined : Number(raw),
+                },
+              })
+            }}
+          />
+        </div>
+      ) : null}
+
+      {formSettings.includes("cycleDocks") ? (
+        <div className="space-y-2">
+          <FieldLabel
+            htmlFor="board-cycle-search"
+            setting="cycleDocks"
+            segments={segments}
+          >
+            {BOARD_SETTINGS.cycleDocks.ui?.label ?? "Cycle docks"}
+          </FieldLabel>
+          <BoardPlaceSearch
+            kind="cycle"
+            onSelect={(place) => {
+              const current = config.cycle.docks ?? []
+              if (current.includes(place.id)) return
+              onChange({
+                cycle: {
+                  ...config.cycle,
+                  docks: [...current, place.id],
+                },
+              })
+            }}
+            inputId="board-cycle-search"
+            placeholder="Search for a cycle dock"
+            emptyMessage="No docks match that search."
+          />
+          <Input
+            id="board-cycle-docks"
+            value={serializeDockIdList(config.cycle.docks) ?? ""}
+            onChange={(event) =>
+              onChange({
+                cycle: {
+                  ...config.cycle,
+                  docks: parseDockIdList(event.target.value || null),
+                },
+              })
+            }
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="BikePoints_237,BikePoints_46"
+            aria-label="Cycle dock ids"
+          />
+        </div>
+      ) : null}
+
+      {formSettings.includes("cycleTiles") ? (
+        <div className="space-y-2">
+          <FieldLabel
+            htmlFor="board-cycle-tiles"
+            setting="cycleTiles"
+            segments={segments}
+          >
+            {BOARD_SETTINGS.cycleTiles.ui?.label ?? "Cycle tiles"}
+          </FieldLabel>
+          <Input
+            id="board-cycle-tiles"
+            type="number"
+            min={1}
+            max={16}
+            value={config.cycle.tiles ?? ""}
+            onChange={(event) => {
+              const raw = event.target.value
+              onChange({
+                cycle: {
+                  ...config.cycle,
+                  tiles: raw === "" ? undefined : Number(raw),
+                },
+              })
+            }}
+          />
+        </div>
+      ) : null}
+
+      {formSettings.includes("statusSurface") ? (
+        <div className="space-y-2">
+          <FieldLabel
+            htmlFor="board-status-surface"
+            setting="statusSurface"
+            segments={segments}
+          >
+            {BOARD_SETTINGS.statusSurface.ui?.label ?? "Status surface"}
+          </FieldLabel>
+          <select
+            id="board-status-surface"
+            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
+            value={config.status.surface ?? "display"}
+            onChange={(event) =>
+              onChange({
+                status: {
+                  ...config.status,
+                  surface: event.target.value as NonNullable<
+                    BoardConfig["status"]["surface"]
+                  >,
+                },
+              })
+            }
+          >
+            {BOARD_SETTINGS.statusSurface.ui?.options?.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+
+      {formSettings.includes("statusTiles") ? (
+        <div className="space-y-2">
+          <FieldLabel
+            htmlFor="board-status-tiles"
+            setting="statusTiles"
+            segments={segments}
+          >
+            {BOARD_SETTINGS.statusTiles.ui?.label ?? "Status tiles"}
+          </FieldLabel>
+          <Input
+            id="board-status-tiles"
+            type="number"
+            min={1}
+            max={16}
+            value={config.status.tiles ?? ""}
+            onChange={(event) => {
+              const raw = event.target.value
+              onChange({
+                status: {
+                  ...config.status,
+                  tiles: raw === "" ? undefined : Number(raw),
+                },
+              })
+            }}
+          />
+          <p className="text-sm text-muted-foreground">
+            {BOARD_SETTINGS.statusTiles.ui?.help}
+          </p>
+        </div>
+      ) : null}
+
+      {formSettings.includes("statusLines") ? (
+        <div className="space-y-2">
+          <FieldLabel
+            htmlFor="board-status-lines"
+            setting="statusLines"
+            segments={segments}
+          >
+            {BOARD_SETTINGS.statusLines.ui?.label ?? "Status lines"}
+          </FieldLabel>
+          <Input
+            id="board-status-lines"
+            value={serializeArrivalsLines(config.status.lines) ?? ""}
+            onChange={(event) =>
+              onChange({
+                status: {
+                  ...config.status,
+                  lines: parseArrivalsLines(event.target.value || null),
+                },
+              })
+            }
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="elizabeth,central"
+          />
+          <p className="text-sm text-muted-foreground">
+            {BOARD_SETTINGS.statusLines.ui?.help}
+          </p>
+        </div>
+      ) : null}
+
+      {formSettings.includes("statusOverview") ? (
+        <div className="space-y-2">
+          <FieldLabel
+            htmlFor="board-status-overview"
+            setting="statusOverview"
+            segments={segments}
+          >
+            {BOARD_SETTINGS.statusOverview.ui?.label ?? "Status overview"}
+          </FieldLabel>
+          <select
+            id="board-status-overview"
+            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
+            value={config.status.overview ?? "network"}
+            onChange={(event) =>
+              onChange({
+                status: {
+                  ...config.status,
+                  overview: event.target.value as NonNullable<
+                    BoardConfig["status"]["overview"]
+                  >,
+                },
+              })
+            }
+          >
+            {BOARD_SETTINGS.statusOverview.ui?.options?.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
       ) : null}
 

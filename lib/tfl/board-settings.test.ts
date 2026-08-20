@@ -27,10 +27,18 @@ describe("board-settings allowlist", () => {
     assert.equal(BOARD_SETTINGS.arrivalsRows.form, true);
   });
 
-  it("lists url settings including shell and arrivals", () => {
+  it("lists url settings including shell, slots, and domain namespaces", () => {
     assert.ok(URL_BOARD_SETTING_IDS.includes("stop"));
     assert.ok(URL_BOARD_SETTING_IDS.includes("arrivalsRows"));
     assert.ok(URL_BOARD_SETTING_IDS.includes("arrivalsLines"));
+    assert.ok(URL_BOARD_SETTING_IDS.includes("slot1"));
+    assert.ok(URL_BOARD_SETTING_IDS.includes("busStop"));
+    assert.ok(URL_BOARD_SETTING_IDS.includes("riverStop"));
+    assert.ok(URL_BOARD_SETTING_IDS.includes("cycleDocks"));
+    assert.ok(FORM_BOARD_SETTING_IDS.includes("arrivalsPinFirst"));
+    assert.ok(FORM_BOARD_SETTING_IDS.includes("statusSurface"));
+    assert.ok(FORM_BOARD_SETTING_IDS.includes("statusLines"));
+    assert.ok(FORM_BOARD_SETTING_IDS.includes("statusOverview"));
   });
 });
 

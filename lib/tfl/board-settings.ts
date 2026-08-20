@@ -9,8 +9,23 @@
 
 import { LINE_ORDER, normalizeLineId } from "tfl-ts";
 import { RAIL_ARRIVALS_DEFAULT_PAGE_SIZE } from "@/lib/tfl/arrivals-defaults";
+import { CYCLE_HIRE_DISPLAY_DEFAULT_TILES } from "@/lib/tfl/cycle-hire-display";
+import {
+  parseDockIdItem,
+  parsePanelKind,
+  parseRouteIdItem,
+  type BoardPanelKind,
+} from "@/lib/tfl/board-panels";
 
-export type BoardScope = "shell" | "arrivals" | "status";
+export type { BoardPanelKind };
+
+export type BoardScope =
+  | "shell"
+  | "arrivals"
+  | "status"
+  | "bus"
+  | "river"
+  | "cycle";
 
 export type BoardBehaviour = "interactive" | "unattended";
 export type BoardStatusSurface = "display" | "strip";
@@ -229,8 +244,8 @@ export const BOARD_SETTINGS = {
   } satisfies ScalarSetting<number>,
 
   /**
-   * Explicit line order for positional `a.rows` and section order.
-   * Ordering only — does not filter. Blank uses canonical serving order.
+   * Visible rail lines, in this order. Listed lines are the only sections
+   * shown. Blank uses every serving line in canonical order.
    */
   arrivalsLines: {
     kind: "list",
@@ -243,11 +258,166 @@ export const BOARD_SETTINGS = {
     url: true,
     form: true,
     ui: {
-      label: "Line order (optional)",
-      help: "Comma-separated line ids. Shared-platform lines are one section. Blank uses the station’s default order.",
+      label: "Lines (optional)",
+      help: "Comma-separated line ids to show, in this order. Leave blank for every line at the station.",
       control: "text",
     },
   } satisfies ListSetting<readonly string[]>,
+
+  slot1: {
+    kind: "list",
+    param: "p1",
+    scope: "shell",
+    defaultValue: ["rail"] as readonly BoardPanelKind[],
+    parseItem: parsePanelKind,
+    serializeItem: (value: BoardPanelKind) => value,
+    isDefault: (value: readonly BoardPanelKind[]) =>
+      value.length === 1 && value[0] === "rail",
+    url: true,
+    form: true,
+    ui: {
+      label: "Wide slot",
+      help: "Comma stack: rail, bus, river, cycle, status. First on small screens.",
+      control: "text",
+    },
+  } satisfies ListSetting<readonly BoardPanelKind[]>,
+
+  slot2: {
+    kind: "list",
+    param: "p2",
+    scope: "shell",
+    defaultValue: ["status"] as readonly BoardPanelKind[],
+    parseItem: parsePanelKind,
+    serializeItem: (value: BoardPanelKind) => value,
+    isDefault: (value: readonly BoardPanelKind[]) =>
+      value.length === 1 && value[0] === "status",
+    url: true,
+    form: true,
+    ui: {
+      label: "Narrow slot",
+      help: "Leave empty for a one-panel board.",
+      control: "text",
+    },
+  } satisfies ListSetting<readonly BoardPanelKind[]>,
+
+  busStop: {
+    kind: "scalar",
+    param: "b.stop",
+    scope: "bus",
+    defaultValue: undefined as string | undefined,
+    parse: parseOptionalString,
+    serialize: (value: string | undefined) => value ?? "",
+    isDefault: (value: string | undefined) => !value,
+    url: true,
+    form: true,
+    ui: {
+      label: "Bus stop ID",
+      help: "Boardable bus StopPoint (usually 490…). Search or locate on this page.",
+      control: "text",
+    },
+  } satisfies ScalarSetting<string | undefined>,
+
+  busRoutes: {
+    kind: "list",
+    param: "b.routes",
+    scope: "bus",
+    defaultValue: [] as readonly string[],
+    parseItem: parseRouteIdItem,
+    serializeItem: (value: string) => value,
+    isDefault: (value: readonly string[]) => value.length === 0,
+    url: true,
+    form: true,
+    ui: {
+      label: "Bus routes (optional)",
+      help: "Comma-separated route ids. Leave blank for every route at the stop.",
+      control: "text",
+    },
+  } satisfies ListSetting<readonly string[]>,
+
+  busRows: {
+    kind: "scalar",
+    param: "b.rows",
+    scope: "bus",
+    defaultValue: RAIL_ARRIVALS_DEFAULT_PAGE_SIZE,
+    parse: parseRowsItem,
+    serialize: serializeRowsItem,
+    isDefault: (value: number) => value === RAIL_ARRIVALS_DEFAULT_PAGE_SIZE,
+    url: true,
+    form: true,
+    ui: {
+      label: "Bus rows",
+      help: "Visible arrivals per page. 0 shows every row.",
+      control: "number",
+    },
+  } satisfies ScalarSetting<number>,
+
+  riverStop: {
+    kind: "scalar",
+    param: "r.stop",
+    scope: "river",
+    defaultValue: undefined as string | undefined,
+    parse: parseOptionalString,
+    serialize: (value: string | undefined) => value ?? "",
+    isDefault: (value: string | undefined) => !value,
+    url: true,
+    form: true,
+    ui: {
+      label: "Pier ID",
+      help: "River pier (930G…). Poll the pier, not a berth.",
+      control: "text",
+    },
+  } satisfies ScalarSetting<string | undefined>,
+
+  riverRows: {
+    kind: "scalar",
+    param: "r.rows",
+    scope: "river",
+    defaultValue: RAIL_ARRIVALS_DEFAULT_PAGE_SIZE,
+    parse: parseRowsItem,
+    serialize: serializeRowsItem,
+    isDefault: (value: number) => value === RAIL_ARRIVALS_DEFAULT_PAGE_SIZE,
+    url: true,
+    form: true,
+    ui: {
+      label: "River rows",
+      help: "Visible arrivals per page. 0 shows every row.",
+      control: "number",
+    },
+  } satisfies ScalarSetting<number>,
+
+  cycleDocks: {
+    kind: "list",
+    param: "c.docks",
+    scope: "cycle",
+    defaultValue: [] as readonly string[],
+    parseItem: parseDockIdItem,
+    serializeItem: (value: string) => value,
+    isDefault: (value: readonly string[]) => value.length === 0,
+    url: true,
+    form: true,
+    ui: {
+      label: "Cycle docks",
+      help: "Comma-separated BikePoint ids.",
+      control: "text",
+    },
+  } satisfies ListSetting<readonly string[]>,
+
+  cycleTiles: {
+    kind: "scalar",
+    param: "c.tiles",
+    scope: "cycle",
+    defaultValue: CYCLE_HIRE_DISPLAY_DEFAULT_TILES,
+    parse: parseRowsItem,
+    serialize: serializeRowsItem,
+    isDefault: (value: number) => value === CYCLE_HIRE_DISPLAY_DEFAULT_TILES,
+    url: true,
+    form: true,
+    ui: {
+      label: "Cycle tiles",
+      help: "Fixed height in arrivals-row tiles when more than one dock is shown.",
+      control: "number",
+    },
+  } satisfies ScalarSetting<number>,
 
   arrivalsPinFirst: {
     kind: "scalar",
@@ -319,7 +489,7 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Status lines (optional)",
-      help: "Comma-separated line ids for detail. Blank uses every fetched line.",
+      help: "Comma-separated line ids for detail. Leave blank for every fetched line.",
       control: "text",
     },
   } satisfies ListSetting<readonly string[]>,

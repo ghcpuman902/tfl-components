@@ -151,8 +151,8 @@ const resolveFlatLineOrder = (
     ordered.push(id);
   }
 
-  const remainder = membership.filter((id) => !seen.has(id));
-  return [...ordered, ...remainder];
+  // Listed `a.lines` is a visible set — do not append unlisted remainder.
+  return ordered;
 };
 
 const collapseToSections = (
@@ -161,13 +161,22 @@ const collapseToSections = (
   lineGroups: readonly BoardStationLineGroup[] | undefined,
 ): BoardArrivalsSection[] => {
   const merges = resolveMergeMembership(lineGroups);
+  const listed = new Set(flatOrder.filter(Boolean));
+  const exclusive = Boolean(
+    // When the flat order is a filter (shorter than a merge), only merge
+    // groups whose members were all listed.
+    listed.size > 0,
+  );
   const seen = new Set<string>();
   const sections: BoardArrivalsSection[] = [];
 
   for (const lineId of flatOrder) {
     if (!lineId || seen.has(lineId)) continue;
     const merge = merges.get(lineId);
-    if (merge) {
+    const mergeListed =
+      merge &&
+      (!exclusive || merge.lines.every((id) => listed.has(id)));
+    if (merge && mergeListed) {
       for (const id of merge.lines) seen.add(id);
       sections.push(sectionFromMerge(merge, servingLines));
       continue;
@@ -305,7 +314,17 @@ export const resolveArrivalsProps = (
   const result: ResolvedArrivalsProps = {};
 
   if (servingLines?.length) {
-    result.lines = servingLines;
+    if (config.arrivals.lineOrder?.length) {
+      const byId = new Map(
+        servingLines.map((line) => [normalizeLineId(line.lineId), line] as const),
+      );
+      result.lines = sections
+        .flatMap((section) => section.lineIds)
+        .map((id) => byId.get(id))
+        .filter((line): line is RailArrivalsLine => line !== undefined);
+    } else {
+      result.lines = servingLines;
+    }
   }
 
   if (config.arrivals.lineOrder?.length) {

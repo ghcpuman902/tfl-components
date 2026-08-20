@@ -25,11 +25,26 @@ import {
   type BoardStatusOverview,
   type BoardStatusSurface,
 } from "@/lib/tfl/board-settings";
+import {
+  isDefaultBoardSlots,
+  parseBoardPanels,
+  parseDockIdList,
+  parseRouteIdList,
+  serializeBoardPanels,
+  serializeDockIdList,
+  serializeRouteIdList,
+  type BoardPanelKind,
+} from "@/lib/tfl/board-panels";
 
 export const BOARD_PATH = "/board";
 export const BOARD_VIEW_PATH = "/board/view";
 
-export type { BoardBehaviour, BoardStatusOverview, BoardStatusSurface };
+export type {
+  BoardBehaviour,
+  BoardStatusOverview,
+  BoardStatusSurface,
+};
+export type { BoardPanelKind };
 
 export type BoardArrivalsConfig = {
   /**
@@ -37,9 +52,33 @@ export type BoardArrivalsConfig = {
    * effective line order (explicit `lineOrder`, else offline serving order).
    */
   rows?: number | readonly (number | undefined)[];
-  /** Explicit line section order. Ordering only — does not filter. */
+  /**
+   * Visible rail lines, in this order. When set, unlisted serving lines
+   * are hidden.
+   */
   lineOrder?: readonly string[];
   pinFirst?: boolean;
+};
+
+export type BoardSlotsConfig = {
+  p1?: readonly BoardPanelKind[];
+  p2?: readonly BoardPanelKind[];
+};
+
+export type BoardBusConfig = {
+  stop?: string;
+  routes?: readonly string[];
+  rows?: number;
+};
+
+export type BoardRiverConfig = {
+  stop?: string;
+  rows?: number;
+};
+
+export type BoardCycleConfig = {
+  docks?: readonly string[];
+  tiles?: number;
 };
 
 export type BoardStatusConfig = {
@@ -55,13 +94,21 @@ export type BoardConfig = {
   stop?: string;
   stopName?: string;
   behaviour: BoardBehaviour;
+  slots: BoardSlotsConfig;
   arrivals: BoardArrivalsConfig;
+  bus: BoardBusConfig;
+  river: BoardRiverConfig;
+  cycle: BoardCycleConfig;
   status: BoardStatusConfig;
 };
 
 export const DEFAULT_BOARD_CONFIG: BoardConfig = {
   behaviour: BOARD_SETTINGS.behaviour.defaultValue,
+  slots: {},
   arrivals: {},
+  bus: {},
+  river: {},
+  cycle: {},
   status: {},
 };
 
@@ -106,6 +153,32 @@ export const parseBoardConfig = (
   const pinFirst = parseBooleanFlag(params.get("a.pinFirst") ?? "");
   if (pinFirst !== undefined) arrivals.pinFirst = pinFirst;
 
+  const slots: BoardSlotsConfig = {};
+  const hasP1 = params.has("p1");
+  const hasP2 = params.has("p2");
+  if (hasP1) slots.p1 = parseBoardPanels(params.get("p1")) ?? [];
+  if (hasP2) slots.p2 = parseBoardPanels(params.get("p2")) ?? [];
+
+  const bus: BoardBusConfig = {};
+  const busStop = parseOptionalString(params.get("b.stop") ?? "") ?? undefined;
+  if (busStop) bus.stop = busStop;
+  const busRoutes = parseRouteIdList(params.get("b.routes"));
+  if (busRoutes !== undefined) bus.routes = busRoutes;
+  const busRows = parseRowsItem(params.get("b.rows") ?? "");
+  if (busRows !== undefined) bus.rows = busRows;
+
+  const river: BoardRiverConfig = {};
+  const riverStop = parseOptionalString(params.get("r.stop") ?? "") ?? undefined;
+  if (riverStop) river.stop = riverStop;
+  const riverRows = parseRowsItem(params.get("r.rows") ?? "");
+  if (riverRows !== undefined) river.rows = riverRows;
+
+  const cycle: BoardCycleConfig = {};
+  const docks = parseDockIdList(params.get("c.docks"));
+  if (docks !== undefined) cycle.docks = docks;
+  const cycleTiles = parseRowsItem(params.get("c.tiles") ?? "");
+  if (cycleTiles !== undefined) cycle.tiles = Math.max(1, cycleTiles);
+
   const status: BoardStatusConfig = {};
   const surface = parseStatusSurface(params.get("s.surface") ?? "");
   if (surface !== undefined) status.surface = surface;
@@ -123,7 +196,11 @@ export const parseBoardConfig = (
     stop,
     stopName,
     behaviour,
+    slots,
     arrivals,
+    bus,
+    river,
+    cycle,
     status,
   };
 };
@@ -139,9 +216,18 @@ const KNOWN_HASH_PARAMS = new Set<string>([
   BOARD_SETTINGS.stop.param,
   BOARD_SETTINGS.stopName.param,
   BOARD_SETTINGS.behaviour.param,
+  BOARD_SETTINGS.slot1.param,
+  BOARD_SETTINGS.slot2.param,
   BOARD_SETTINGS.arrivalsRows.param,
   BOARD_SETTINGS.arrivalsLines.param,
   BOARD_SETTINGS.arrivalsPinFirst.param,
+  BOARD_SETTINGS.busStop.param,
+  BOARD_SETTINGS.busRoutes.param,
+  BOARD_SETTINGS.busRows.param,
+  BOARD_SETTINGS.riverStop.param,
+  BOARD_SETTINGS.riverRows.param,
+  BOARD_SETTINGS.cycleDocks.param,
+  BOARD_SETTINGS.cycleTiles.param,
   BOARD_SETTINGS.statusSurface.param,
   BOARD_SETTINGS.statusTiles.param,
   BOARD_SETTINGS.statusLines.param,
@@ -171,9 +257,25 @@ const mergeBoardConfig = (
 ): BoardConfig => ({
   ...base,
   ...next,
+  slots: {
+    ...base.slots,
+    ...next.slots,
+  },
   arrivals: {
     ...base.arrivals,
     ...next.arrivals,
+  },
+  bus: {
+    ...base.bus,
+    ...next.bus,
+  },
+  river: {
+    ...base.river,
+    ...next.river,
+  },
+  cycle: {
+    ...base.cycle,
+    ...next.cycle,
   },
   status: {
     ...base.status,
@@ -204,6 +306,26 @@ export const describeBoardHrefSegments = (
       setting: "stopName",
       text: encodeSegment(BOARD_SETTINGS.stopName.param, merged.stopName),
     });
+  }
+  if (!isDefaultBoardSlots(merged.slots.p1, merged.slots.p2)) {
+    if (merged.slots.p1 !== undefined) {
+      segments.push({
+        setting: "slot1",
+        text: encodeSegment(
+          BOARD_SETTINGS.slot1.param,
+          serializeBoardPanels(merged.slots.p1) ?? "",
+        ),
+      });
+    }
+    if (merged.slots.p2 !== undefined && merged.slots.p2.length > 0) {
+      const slot2 = serializeBoardPanels(merged.slots.p2);
+      if (slot2) {
+        segments.push({
+          setting: "slot2",
+          text: encodeSegment(BOARD_SETTINGS.slot2.param, slot2),
+        });
+      }
+    }
   }
   if (!BOARD_SETTINGS.behaviour.isDefault(merged.behaviour)) {
     segments.push({
@@ -256,6 +378,71 @@ export const describeBoardHrefSegments = (
       text: encodeSegment(
         BOARD_SETTINGS.arrivalsPinFirst.param,
         BOARD_SETTINGS.arrivalsPinFirst.serialize(merged.arrivals.pinFirst),
+      ),
+    });
+  }
+
+  if (merged.bus.stop) {
+    segments.push({
+      setting: "busStop",
+      text: encodeSegment(BOARD_SETTINGS.busStop.param, merged.bus.stop),
+    });
+  }
+  const busRoutesSerialized = serializeRouteIdList(merged.bus.routes);
+  if (busRoutesSerialized !== undefined) {
+    segments.push({
+      setting: "busRoutes",
+      text: encodeSegment(BOARD_SETTINGS.busRoutes.param, busRoutesSerialized),
+    });
+  }
+  if (
+    merged.bus.rows !== undefined &&
+    !BOARD_SETTINGS.busRows.isDefault(merged.bus.rows)
+  ) {
+    segments.push({
+      setting: "busRows",
+      text: encodeSegment(
+        BOARD_SETTINGS.busRows.param,
+        BOARD_SETTINGS.busRows.serialize(merged.bus.rows),
+      ),
+    });
+  }
+
+  if (merged.river.stop) {
+    segments.push({
+      setting: "riverStop",
+      text: encodeSegment(BOARD_SETTINGS.riverStop.param, merged.river.stop),
+    });
+  }
+  if (
+    merged.river.rows !== undefined &&
+    !BOARD_SETTINGS.riverRows.isDefault(merged.river.rows)
+  ) {
+    segments.push({
+      setting: "riverRows",
+      text: encodeSegment(
+        BOARD_SETTINGS.riverRows.param,
+        BOARD_SETTINGS.riverRows.serialize(merged.river.rows),
+      ),
+    });
+  }
+
+  const docksSerialized = serializeDockIdList(merged.cycle.docks);
+  if (docksSerialized !== undefined) {
+    segments.push({
+      setting: "cycleDocks",
+      text: encodeSegment(BOARD_SETTINGS.cycleDocks.param, docksSerialized),
+    });
+  }
+  if (
+    merged.cycle.tiles !== undefined &&
+    !BOARD_SETTINGS.cycleTiles.isDefault(merged.cycle.tiles)
+  ) {
+    segments.push({
+      setting: "cycleTiles",
+      text: encodeSegment(
+        BOARD_SETTINGS.cycleTiles.param,
+        BOARD_SETTINGS.cycleTiles.serialize(merged.cycle.tiles),
       ),
     });
   }

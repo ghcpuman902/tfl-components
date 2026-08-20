@@ -323,9 +323,10 @@ Presets are configuration-side recipes. They help someone produce an ordinary
 URL, but the URL is not constrained to a preset and does not need to name one.
 The first recipes remain:
 
-- station and network status;
-- home weekday, biased toward selected lines, bounds, routes, and docks; and
-- home weekend, with broader directions, routes, and network status.
+- station and network status (omit `p1`/`p2`);
+- near me (`p1=rail,bus,cycle` and status, ids pinned after locate);
+- arrivals only (`p1=rail` or bus/river); and
+- status only (`p1=status`).
 
 The public UI should stay small: examples, a URL preview, and documentation with
 diagrams. A general drag-and-drop Board builder is not required.

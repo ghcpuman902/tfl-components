@@ -525,13 +525,20 @@ export const LANDING_PAPER: Record<LandingScheme, string> = {
  * Resolved fills for the 3D hero SVG. Inline SVG often ignores `var(--*)`
  * on `fill`, so this bakes `oklch()` (and hex-derived) values onto
  * `.landing-cls-*` instead of custom properties.
+ *
+ * `scope` prefixes every selector (e.g. `.dark`) so both schemes can ship
+ * in one sheet and follow the site theme on `<html>`.
  */
-export const heroArtworkStyleSheet = (scheme: LandingScheme): string => {
+export const heroArtworkStyleSheet = (
+  scheme: LandingScheme,
+  scope = "",
+): string => {
+  const prefix = scope === "" ? "" : `${scope} `
   const colourOf = (tokenId: string) => tokenCss(TOKEN_BY_ID[tokenId], scheme)
   const rules: string[] = []
   for (const [clsRaw, tokenId] of Object.entries(CLASS_TO_TOKEN)) {
     const cls = Number(clsRaw)
-    const selector = `.landing-artwork .landing-cls-${cls}`
+    const selector = `${prefix}.landing-artwork .landing-cls-${cls}`
     const colour = colourOf(tokenId)
     if (STROKE_CLASSES.has(cls)) {
       rules.push(
@@ -543,12 +550,29 @@ export const heroArtworkStyleSheet = (scheme: LandingScheme): string => {
     const extra = opacity != null ? ` opacity: ${opacity};` : ""
     rules.push(`${selector} { fill: ${colour};${extra} }`)
   }
-  rules.push(`.landing-artwork #Wall { fill: ${colourOf("wall-mirror")}; }`)
   rules.push(
-    `.landing-artwork #Table .landing-cls-60 { fill: ${colourOf("wood-knob")}; }`,
+    `${prefix}.landing-artwork #Wall { fill: ${colourOf("wall-mirror")}; }`,
+  )
+  rules.push(
+    `${prefix}.landing-artwork #Table .landing-cls-60 { fill: ${colourOf("wood-knob")}; }`,
   )
   return rules.join("\n")
 }
+
+/** Light fills by default; `.dark` on `<html>` swaps to the dark tokens. */
+export const heroArtworkThemeStyleSheet = (): string =>
+  [
+    heroArtworkStyleSheet("light"),
+    heroArtworkStyleSheet("dark", ".dark"),
+    `.landing-hero-paper { background: ${LANDING_PAPER.light}; }`,
+    `.dark .landing-hero-paper { background: ${LANDING_PAPER.dark}; }`,
+    `.landing-hero-wall-fill { background: ${tokenCss(TOKEN_BY_ID["wall-front"], "light")}; }`,
+    `.dark .landing-hero-wall-fill { background: ${tokenCss(TOKEN_BY_ID["wall-front"], "dark")}; }`,
+    `.landing-hero-floor-fill { background: ${tokenCss(TOKEN_BY_ID["floor"], "light")}; }`,
+    `.dark .landing-hero-floor-fill { background: ${tokenCss(TOKEN_BY_ID["floor"], "dark")}; }`,
+    `.landing-hero-copy { color: #3f2a1c; }`,
+    `.dark .landing-hero-copy { color: ${LANDING_PAPER.light}; }`,
+  ].join("\n")
 
 export const getLandingPalette = (
   scheme: LandingScheme,

@@ -25,8 +25,8 @@ export default function BoardBuilderPage() {
         <header>
           <h1 className="tfl-title text-3xl text-foreground">Board</h1>
           <p className="mt-2 max-w-prose text-lg text-muted-foreground">
-            Search for a station, preview the display, then copy or open the
-            URL.
+            Search or locate, pick a layout, preview the display, then copy
+            or open the URL.
           </p>
           <BoardWipNotice />
           <div className="mt-6 max-w-prose space-y-3 text-sm text-muted-foreground">

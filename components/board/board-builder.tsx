@@ -36,13 +36,20 @@ import {
   type BoardStationNamesIndex,
   type BoardStationSearchItem,
 } from "@/lib/tfl/board-station-names"
+import { getBoardNearbyPlaces } from "@/lib/tfl/board-nearby-action"
 import {
+  boardSlotsInclude,
+  resolveBoardSlots,
+} from "@/lib/tfl/board-panels"
+import {
+  applyBoardRecipe,
   BOARD_PRESETS,
   DEFAULT_BOARD_PRESET_ID,
   getBoardPreset,
   type BoardPresetDef,
   type BoardPresetId,
 } from "@/lib/tfl/board-presets"
+import type { BoardSettingId } from "@/lib/tfl/board-settings"
 import {
   BOARD_VIEW_PATH,
   buildBoardHref,
@@ -92,7 +99,7 @@ const PresetDiagram = ({ preset }: { preset: BoardPresetId }) => {
     )
   }
 
-  if (preset === "mixed") {
+  if (preset === "near") {
     return (
       <div className="grid h-24 grid-cols-3 grid-rows-2 gap-1.5 rounded-lg bg-foreground p-2">
         <div className="col-span-2 flex flex-col gap-1 rounded bg-background/20 p-1.5">
@@ -110,33 +117,22 @@ const PresetDiagram = ({ preset }: { preset: BoardPresetId }) => {
     )
   }
 
-  if (preset === "lines") {
+  if (preset === "arrivals") {
     return (
       <div className="flex h-24 flex-col gap-1.5 rounded-lg bg-foreground p-2.5">
         <span className="mb-0.5 h-2.5 w-2/5 rounded-sm bg-background" />
-        <span className="h-3 rounded-sm bg-background/80" />
-        <span className="h-3 w-11/12 rounded-sm bg-background/55" />
-        <span className="h-3 w-4/5 rounded-sm bg-background/70" />
-        <span className="h-3 w-2/3 rounded-sm bg-background/40" />
+        <PreviewRows count={4} />
       </div>
     )
   }
 
   return (
-    <div className="grid h-24 grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-lg bg-foreground p-2.5">
-      <div className="grid h-14 place-items-center rounded bg-background/20 p-1.5">
-        <span className="h-2 w-4/5 rounded-sm bg-background/80" />
-        <span className="h-2 w-1/2 rounded-sm bg-background/45" />
-      </div>
-      <div className="flex items-center">
-        <span className="size-2 rounded-full bg-background" />
-        <span className="h-0.5 w-4 bg-background/60" />
-        <span className="size-2 rounded-full bg-background" />
-      </div>
-      <div className="grid h-14 place-items-center rounded bg-background/35 p-1.5">
-        <span className="h-2 w-3/4 rounded-sm bg-background/75" />
-        <span className="h-2 w-1/2 rounded-sm bg-background/50" />
-      </div>
+    <div className="flex h-24 flex-col gap-1.5 rounded-lg bg-foreground p-2.5">
+      <span className="mb-0.5 h-2.5 w-2/5 rounded-sm bg-background" />
+      <span className="h-3 rounded-sm bg-background/80" />
+      <span className="h-3 w-11/12 rounded-sm bg-background/55" />
+      <span className="h-3 w-4/5 rounded-sm bg-background/70" />
+      <span className="h-3 w-2/3 rounded-sm bg-background/40" />
     </div>
   )
 }
@@ -170,9 +166,11 @@ const PresetCardFeedback = () => (
 const PresetCard = ({
   preset,
   active,
+  onSelect,
 }: {
   preset: BoardPresetDef
   active: boolean
+  onSelect: () => void
 }) => (
   <li
     className="group/preset relative isolate z-0 shrink-0 snap-start px-1.5 py-3 first:pl-3 last:pr-3 hover:z-10 focus-within:z-10"
@@ -187,6 +185,12 @@ const PresetCard = ({
           : "bg-muted/30 text-muted-foreground"
       )}
     >
+      <button
+        type="button"
+        className="absolute inset-0 z-20 rounded-xl"
+        onClick={onSelect}
+        aria-label={`Use ${preset.title} layout`}
+      />
       <CardContent className="px-3">
         <PresetDiagram preset={preset.id} />
       </CardContent>
@@ -241,9 +245,11 @@ export const BoardBuilder = ({
   } = useUserTflCredentials()
   const { scrollRef, showEndFade } = useHorizontalScrollEnd<HTMLUListElement>()
 
-  const [presetId] = useState<BoardPresetId>(DEFAULT_BOARD_PRESET_ID)
+  const [presetId, setPresetId] = useState<BoardPresetId>(DEFAULT_BOARD_PRESET_ID)
   const [config, setConfig] = useState<BoardConfig>(initialBoardConfig)
   const [configOpen, setConfigOpen] = useState(false)
+  const [locateBusy, setLocateBusy] = useState(false)
+  const [locateError, setLocateError] = useState<string | null>(null)
   const origin = useSyncExternalStore(
     subscribeToOrigin,
     getBrowserOrigin,
@@ -251,9 +257,39 @@ export const BoardBuilder = ({
   )
 
   const availablePresets = BOARD_PRESETS.filter((item) => item.available)
-  const comingSoonPresets = BOARD_PRESETS.filter((item) => !item.available)
 
   const preset = getBoardPreset(presetId)
+  const resolvedSlots = resolveBoardSlots(config.slots.p1, config.slots.p2)
+  const formSettings = useMemo(() => {
+    const ids = new Set<BoardSettingId>(preset.formSettings)
+    if (boardSlotsInclude(resolvedSlots, "rail")) {
+      ids.add("stop")
+      ids.add("stopName")
+      ids.add("arrivalsLines")
+      ids.add("arrivalsRows")
+      ids.add("arrivalsPinFirst")
+    }
+    if (boardSlotsInclude(resolvedSlots, "bus")) {
+      ids.add("busStop")
+      ids.add("busRoutes")
+      ids.add("busRows")
+    }
+    if (boardSlotsInclude(resolvedSlots, "river")) {
+      ids.add("riverStop")
+      ids.add("riverRows")
+    }
+    if (boardSlotsInclude(resolvedSlots, "cycle")) {
+      ids.add("cycleDocks")
+      ids.add("cycleTiles")
+    }
+    if (boardSlotsInclude(resolvedSlots, "status")) {
+      ids.add("statusSurface")
+      ids.add("statusTiles")
+      ids.add("statusLines")
+      ids.add("statusOverview")
+    }
+    return [...ids]
+  }, [preset.formSettings, resolvedSlots])
   const appKey = hydrated ? (getAppKey() ?? "") : ""
   const hasKey = Boolean(appKey)
 
@@ -289,9 +325,25 @@ export const BoardBuilder = ({
       const merged: BoardConfig = {
         ...current,
         ...next,
+        slots: {
+          ...current.slots,
+          ...next.slots,
+        },
         arrivals: {
           ...current.arrivals,
           ...next.arrivals,
+        },
+        bus: {
+          ...current.bus,
+          ...next.bus,
+        },
+        river: {
+          ...current.river,
+          ...next.river,
+        },
+        cycle: {
+          ...current.cycle,
+          ...next.cycle,
         },
         status: {
           ...current.status,
@@ -326,6 +378,66 @@ export const BoardBuilder = ({
     openDialog()
   }
 
+  const handleSelectRecipe = (id: BoardPresetId) => {
+    const nextPreset = getBoardPreset(id)
+    setPresetId(id)
+    setConfig((current) => applyBoardRecipe(current, nextPreset))
+    setConfigOpen(true)
+  }
+
+  const handleLocate = () => {
+    if (!navigator.geolocation) {
+      setLocateError("This browser cannot share a location.")
+      return
+    }
+    setLocateBusy(true)
+    setLocateError(null)
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const result = await getBoardNearbyPlaces(
+            position.coords.latitude,
+            position.coords.longitude,
+          )
+          if (!result.ok) {
+            setLocateError(result.error)
+            return
+          }
+          const near = getBoardPreset("near")
+          setPresetId("near")
+          setConfig((current) => {
+            const next = applyBoardRecipe(current, near)
+            const p1 = [...near.slots.p1]
+            if (result.river && !p1.includes("river")) p1.push("river")
+            return {
+              ...next,
+              stop: result.rail?.id ?? next.stop,
+              stopName: undefined,
+              slots: { p1, p2: [...near.slots.p2] },
+              bus: { ...next.bus, stop: result.bus?.id },
+              river: { ...next.river, stop: result.river?.id },
+              cycle: { ...next.cycle, docks: result.docks },
+            }
+          })
+          setConfigOpen(true)
+        } catch (err) {
+          setLocateError(
+            err instanceof Error ? err.message : "Could not find nearby stops.",
+          )
+        } finally {
+          setLocateBusy(false)
+        }
+      },
+      (error) => {
+        setLocateBusy(false)
+        setLocateError(
+          error.message || "Location permission is needed to find nearby stops.",
+        )
+      },
+      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 30_000 },
+    )
+  }
+
   return (
     <div className="space-y-8">
       <section className="space-y-3" aria-labelledby="board-layouts-heading">
@@ -344,6 +456,7 @@ export const BoardBuilder = ({
                 key={item.id}
                 preset={item}
                 active={item.id === presetId}
+                onSelect={() => handleSelectRecipe(item.id)}
               />
             ))}
           </ul>
@@ -355,12 +468,26 @@ export const BoardBuilder = ({
             )}
           />
         </div>
-        {comingSoonPresets.length > 0 ? (
-          <p className="px-3 text-sm text-muted-foreground">
-            More layouts planned:{" "}
-            {comingSoonPresets.map((item) => item.title).join(" · ")}.
-          </p>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-3 px-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleLocate}
+            disabled={locateBusy}
+          >
+            {locateBusy ? "Finding nearby stops…" : "Locate near me"}
+          </Button>
+          {locateError ? (
+            <p className="text-sm text-destructive" role="alert">
+              {locateError}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Pins the nearest rail, bus, and cycle docks into the URL. Does
+              not run on the live display.
+            </p>
+          )}
+        </div>
       </section>
 
       <Collapsible
@@ -388,7 +515,7 @@ export const BoardBuilder = ({
         <CollapsibleContent className="border-t border-border">
           <BoardConfigForm
             config={config}
-            formSettings={preset.formSettings}
+            formSettings={formSettings}
             servingLines={lookupBoardStationLines(stationLines, config.stop)}
             lineGroups={lookupBoardStationLineGroups(config.stop)}
             autoStopName={autoStopName}

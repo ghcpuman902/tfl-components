@@ -1,7 +1,7 @@
 import fs from "node:fs"
 import { optimize } from "svgo"
 
-const SRC = "public/images/landing/landing-reference.svg"
+const SRC = "public/images/landing/landing-source.svg"
 const DEST = "public/images/landing/landing-palette.svg"
 
 const input = fs.readFileSync(SRC, "utf8")

@@ -9,6 +9,23 @@ export const PARALLAX_X = {
   l3: 1,
 } as const
 
+/** Scroll-driven depth, smaller than pointer parallax — a focal-length cue, not a second zoom. */
+export const DOLLY_PARALLAX = {
+  l0: 10,
+  l1: 5,
+  l2: 2,
+  l3: 0.3,
+} as const
+
+export const DOLLY_SCALE = {
+  l0: 0.04,
+  l1: 0.022,
+  l2: 0.01,
+  l3: 0.003,
+} as const
+
+export const PHOTO_OVERLAY_WIDTH = 640
+
 export const DEFOCUS = {
   l0: { blur: 14, opacity: 0.15, duration: 0.5, start: 0 },
   l1: { blur: 8, opacity: 0.4, duration: 0.45, start: 0.18 },

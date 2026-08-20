@@ -11,16 +11,15 @@ type IpadBoardFrameProps = {
   interactive: boolean
 }
 
-const SCALE = IPAD_SCREEN.width / BOARD_IFRAME_WIDTH
+const CORNER = IPAD_SCREEN.rx ?? 6.9508
+/** Top inset to the straight run of the screen, below the rounded corners. */
+const TOP_INSET_PCT = (CORNER / IPAD_SCREEN.height) * 100
 
 export const IpadBoardFrame = ({ interactive }: IpadBoardFrameProps) => (
   <div
-    className="size-full overflow-hidden bg-white"
+    className="size-full"
     style={{
-      width: "100%",
-      height: "100%",
-      overflow: "hidden",
-      borderRadius: `${IPAD_SCREEN.rx}px`,
+      clipPath: `inset(${TOP_INSET_PCT}% 0 -100% 0)`,
       pointerEvents: interactive ? "auto" : "none",
     }}
   >
@@ -34,8 +33,6 @@ export const IpadBoardFrame = ({ interactive }: IpadBoardFrameProps) => (
         width: BOARD_IFRAME_WIDTH,
         height: BOARD_IFRAME_HEIGHT,
         border: 0,
-        transform: `scale(${SCALE})`,
-        transformOrigin: "top left",
         pointerEvents: interactive ? "auto" : "none",
       }}
     />

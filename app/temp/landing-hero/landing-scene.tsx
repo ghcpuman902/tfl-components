@@ -8,15 +8,37 @@ import {
   type KeyboardEvent,
 } from "react"
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
-import { getLandingGsap } from "./gsap-client"
 import { HeroCopyPanel } from "./hero-copy-panel"
 import { IpadBoardFrame } from "./ipad-board-frame"
-import { LandingArtwork } from "./landing-artwork"
+import {
+  BOARD_IFRAME_HEIGHT,
+  BOARD_IFRAME_WIDTH,
+  PICTURE_FRAME_1,
+  PICTURE_FRAME_2,
+  LandingArtwork,
+} from "./landing-artwork"
+import {
+  HOME_HERO_LANDSCAPE_SLIDES,
+  HOME_HERO_PORTRAIT_SLIDES,
+} from "@/components/docs/home-hero-photos"
 import { MirrorPhotoLoop } from "./mirror-photo-loop"
-import { LANDING_PAPER } from "@/app/temp/landing-palette/palette"
-import { HERO_SCROLL_HEIGHT, PARALLAX_X } from "./scene-constants"
+import {
+  DOLLY_PARALLAX,
+  DOLLY_SCALE,
+  HERO_SCROLL_HEIGHT,
+  PARALLAX_X,
+  PHOTO_OVERLAY_WIDTH,
+} from "./scene-constants"
+import { syncOverlayToSvg } from "./sync-overlay"
 import { useIpadZoom } from "./use-ipad-zoom"
 import { useParallaxInput } from "./use-parallax-input"
+
+const PHOTO_1_HEIGHT =
+  PHOTO_OVERLAY_WIDTH * (PICTURE_FRAME_1.height / PICTURE_FRAME_1.width)
+const PHOTO_2_HEIGHT =
+  PHOTO_OVERLAY_WIDTH * (PICTURE_FRAME_2.height / PICTURE_FRAME_2.width)
+
+const LAYER_SMOOTH = 0.16
 
 export const LandingScene = () => {
   const reducedMotion = usePrefersReducedMotion()
@@ -24,6 +46,7 @@ export const LandingScene = () => {
   const stageRef = useRef<HTMLDivElement>(null)
   const compositionRef = useRef<HTMLDivElement>(null)
   const cameraRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
   const copyRef = useRef<HTMLElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const l0Ref = useRef<SVGGElement>(null)
@@ -32,6 +55,12 @@ export const LandingScene = () => {
   const l3Ref = useRef<SVGGElement>(null)
   const iPadRef = useRef<SVGGElement>(null)
   const iPadHitRef = useRef<SVGRectElement>(null)
+  const iPadScreenRef = useRef<SVGRectElement>(null)
+  const pictureMat1Ref = useRef<SVGRectElement>(null)
+  const pictureMat2Ref = useRef<SVGRectElement>(null)
+  const ipadOverlayRef = useRef<HTMLDivElement>(null)
+  const photo1OverlayRef = useRef<HTMLDivElement>(null)
+  const photo2OverlayRef = useRef<HTMLDivElement>(null)
 
   const [zoomComplete, setZoomComplete] = useState(false)
   const [debugOpen, setDebugOpen] = useState(false)
@@ -47,51 +76,107 @@ export const LandingScene = () => {
     enabled: !reducedMotion,
   })
 
-  const { scrollToIpad, setDebugProgress, releaseDebugProgress } = useIpadZoom({
-    wrapperRef,
-    compositionRef,
-    cameraRef,
-    svgRef,
-    iPadRef,
-    l0Ref,
-    l1Ref,
-    copyRef,
-    reducedMotion,
-    onZoomCompleteChange: handleZoomCompleteChange,
-  })
+  const { scrollToIpad, setDebugProgress, releaseDebugProgress, progressRef } =
+    useIpadZoom({
+      wrapperRef,
+      compositionRef,
+      cameraRef,
+      canvasRef,
+      svgRef,
+      iPadRef,
+      l0Ref,
+      l1Ref,
+      copyRef,
+      reducedMotion,
+      onZoomCompleteChange: handleZoomCompleteChange,
+    })
 
   useEffect(() => {
-    if (reducedMotion) return
-    const { gsap } = getLandingGsap()
     const layers = [
-      { el: l0Ref.current, amount: PARALLAX_X.l0 },
-      { el: l1Ref.current, amount: PARALLAX_X.l1 },
-      { el: l2Ref.current, amount: PARALLAX_X.l2 },
-      { el: l3Ref.current, amount: PARALLAX_X.l3 },
-    ]
+      {
+        el: l0Ref.current,
+        xAmount: PARALLAX_X.l0,
+        dollyX: DOLLY_PARALLAX.l0,
+        dollyScale: DOLLY_SCALE.l0,
+        x: 0,
+        scale: 1,
+      },
+      {
+        el: l1Ref.current,
+        xAmount: PARALLAX_X.l1,
+        dollyX: DOLLY_PARALLAX.l1,
+        dollyScale: DOLLY_SCALE.l1,
+        x: 0,
+        scale: 1,
+      },
+      {
+        el: l2Ref.current,
+        xAmount: PARALLAX_X.l2,
+        dollyX: DOLLY_PARALLAX.l2,
+        dollyScale: DOLLY_SCALE.l2,
+        x: 0,
+        scale: 1,
+      },
+      {
+        el: l3Ref.current,
+        xAmount: PARALLAX_X.l3,
+        dollyX: DOLLY_PARALLAX.l3,
+        dollyScale: DOLLY_SCALE.l3,
+        x: 0,
+        scale: 1,
+      },
+    ].filter((layer): layer is typeof layer & { el: SVGGElement } =>
+      Boolean(layer.el)
+    )
 
-    const setters = layers.flatMap((layer) => {
-      if (!layer.el) return []
-      return [
-        {
-          amount: layer.amount,
-          to: gsap.quickTo(layer.el, "x", {
-            duration: 0.45,
-            ease: "power3.out",
-          }),
-        },
-      ]
-    })
+    for (const layer of layers) {
+      layer.el.style.transformOrigin = "50% 50%"
+      layer.el.style.transformBox = "fill-box"
+    }
 
     let frame = 0
     const tick = () => {
-      const value = valueRef.current
-      for (const setter of setters) setter.to(value * setter.amount)
+      const pointer = reducedMotion ? 0 : valueRef.current
+      const dolly = reducedMotion ? 0 : progressRef.current
+      for (const layer of layers) {
+        const targetX = pointer * layer.xAmount + dolly * layer.dollyX
+        const targetScale = 1 + dolly * layer.dollyScale
+        layer.x += (targetX - layer.x) * LAYER_SMOOTH
+        layer.scale += (targetScale - layer.scale) * LAYER_SMOOTH
+        layer.el.style.translate = `${layer.x}px`
+        layer.el.style.scale = String(layer.scale)
+      }
+
+      const host = compositionRef.current
+      if (host) {
+        syncOverlayToSvg(
+          photo1OverlayRef.current,
+          pictureMat1Ref.current,
+          host,
+          PHOTO_OVERLAY_WIDTH,
+          PHOTO_1_HEIGHT
+        )
+        syncOverlayToSvg(
+          photo2OverlayRef.current,
+          pictureMat2Ref.current,
+          host,
+          PHOTO_OVERLAY_WIDTH,
+          PHOTO_2_HEIGHT
+        )
+        syncOverlayToSvg(
+          ipadOverlayRef.current,
+          iPadScreenRef.current,
+          host,
+          BOARD_IFRAME_WIDTH,
+          BOARD_IFRAME_HEIGHT
+        )
+      }
+
       frame = window.requestAnimationFrame(tick)
     }
     frame = window.requestAnimationFrame(tick)
     return () => window.cancelAnimationFrame(frame)
-  }, [reducedMotion, valueRef])
+  }, [progressRef, reducedMotion, valueRef])
 
   useEffect(() => {
     const hit = iPadHitRef.current
@@ -143,12 +228,10 @@ export const LandingScene = () => {
     >
       <div
         ref={stageRef}
-        className="sticky z-0 overflow-hidden"
-        data-landing-scheme="light"
+        className="landing-hero-paper sticky z-0 overflow-hidden"
         style={{
           top: "var(--site-header-height)",
           height: "calc(100dvh - var(--site-header-height))",
-          background: LANDING_PAPER.light,
         }}
       >
         <div
@@ -156,25 +239,58 @@ export const LandingScene = () => {
           className="absolute inset-x-0 top-0 overflow-hidden"
           style={{ height: "calc(100svh - var(--site-header-height))" }}
         >
-          <div ref={cameraRef} className="size-full will-change-transform">
-            <LandingArtwork
-              svgRef={svgRef}
-              l0Ref={l0Ref}
-              l1Ref={l1Ref}
-              l2Ref={l2Ref}
-              l3Ref={l3Ref}
-              iPadRef={iPadRef}
-              iPadHitRef={iPadHitRef}
-              iPadScreen={<IpadBoardFrame interactive={zoomComplete} />}
-              pictureFrame1={
-                <MirrorPhotoLoop startOffset={0} frozen={reducedMotion} />
-              }
-              pictureFrame2={
-                <MirrorPhotoLoop startOffset={3} frozen={reducedMotion} />
-              }
-              onIpadClick={handleIpadClick}
-              onIpadKeyDown={handleIpadKeyDown}
+          <div ref={cameraRef} className="relative size-full">
+            <div ref={canvasRef} className="absolute top-0 left-0">
+              <LandingArtwork
+                svgRef={svgRef}
+                l0Ref={l0Ref}
+                l1Ref={l1Ref}
+                l2Ref={l2Ref}
+                l3Ref={l3Ref}
+                iPadRef={iPadRef}
+                iPadHitRef={iPadHitRef}
+                iPadScreenRef={iPadScreenRef}
+                pictureMat1Ref={pictureMat1Ref}
+                pictureMat2Ref={pictureMat2Ref}
+                onIpadClick={handleIpadClick}
+                onIpadKeyDown={handleIpadKeyDown}
+              />
+            </div>
+          </div>
+
+          <div
+            ref={photo1OverlayRef}
+            aria-hidden
+            className="pointer-events-none absolute top-0 left-0 overflow-hidden"
+            style={{ visibility: "hidden" }}
+          >
+            <MirrorPhotoLoop
+              slides={HOME_HERO_PORTRAIT_SLIDES}
+              frozen={reducedMotion}
+              intervalMs={4200}
             />
+          </div>
+          <div
+            ref={photo2OverlayRef}
+            aria-hidden
+            className="pointer-events-none absolute top-0 left-0 overflow-hidden"
+            style={{ visibility: "hidden" }}
+          >
+            <MirrorPhotoLoop
+              slides={HOME_HERO_LANDSCAPE_SLIDES}
+              frozen={reducedMotion}
+              intervalMs={5400}
+            />
+          </div>
+          <div
+            ref={ipadOverlayRef}
+            className="absolute top-0 left-0"
+            style={{
+              pointerEvents: zoomComplete ? "auto" : "none",
+              visibility: "hidden",
+            }}
+          >
+            <IpadBoardFrame interactive={zoomComplete} />
           </div>
 
           <HeroCopyPanel copyRef={copyRef} />
@@ -185,7 +301,7 @@ export const LandingScene = () => {
               src="/images/landing/landing-reference.svg"
               alt=""
               aria-hidden
-              className="pointer-events-none absolute inset-0 size-full object-contain"
+              className="pointer-events-none absolute inset-0 size-full object-cover"
               style={{ opacity: overlayOpacity }}
             />
           ) : null}

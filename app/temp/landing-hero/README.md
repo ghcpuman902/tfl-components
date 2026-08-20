@@ -7,25 +7,29 @@ Route: `/temp/landing-hero` — not linked in nav, `noindex`.
 ## What to try
 
 - Desktop: move the pointer for parallax; scroll to zoom toward the iPad; click the iPad to jump to the zoomed state.
-- Mobile: “Enable tilt” for device orientation (permission required); otherwise parallax follows scroll. The iPad is fit with `contain` so the whole device stays visible on portrait screens.
+- Mobile: “Enable tilt” for device orientation (permission required); otherwise parallax follows scroll. The **canvas** (artwork) is sized to cover the viewport and slides so the iPad stays in the padded safe area — the camera stays put at rest and only zooms on scroll. Tall screens crop the sides, wide screens crop the sofa.
 - `D` opens a debug panel: reference-SVG overlay + camera scrub slider.
 - `prefers-reduced-motion`: no parallax, no blur, copy fades without moving, photo loops freeze.
 
 ## Regeneration
 
-The React artwork is generated from `public/images/landing/landing-reference.svg`:
+Canonical SVG (open in Illustrator): `public/images/landing/landing-source.svg`. Keep the ids in `svg-ids.mjs` and the `cls-*` classes — don’t expand appearance to RGB fills.
 
 ```bash
+# After editing the SVG:
 node app/temp/landing-hero/convert-svg.mjs
+
+# After editing the React artwork, dump it back out:
+node app/temp/landing-hero/export-svg.mjs
 ```
 
-Re-apply the picture-frame foreignObject order (media under the frame stroke) if you regenerate.
+`convert-svg` reads hole geometry from `#landing-ipad-screen`, `#landing-picture-mat-1`, and `#landing-picture-mat-2`. Mirror photos and the board iframe are HTML overlays (not `foreignObject`) so they stay sharp while the camera zooms.
 
 ## Palette
 
-Light-mode tokens from `/temp/landing-palette` are applied on this page. Fills are baked as `oklch()` on `.landing-cls-*` (inline SVG often ignores `var(--landing-*)`). Dark hex in `landing-artwork.css` is the convert-svg leftover and is overridden.
+Tokens from `/temp/landing-palette` are applied on this page and follow the site theme (`.dark` on `<html>`). Fills are baked as `oklch()` on `.landing-cls-*` (inline SVG often ignores `var(--landing-*)`). Dark hex in `landing-artwork.css` is the convert-svg leftover and is overridden.
 
-Change colours in `app/temp/landing-palette/palette.ts` + `oklch.ts`; this scene reads `heroArtworkStyleSheet("light")`.
+Change colours in `app/temp/landing-palette/palette.ts` + `oklch.ts`; this scene reads `heroArtworkThemeStyleSheet()`.
 
 ## Promotion
 

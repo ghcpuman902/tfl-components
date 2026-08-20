@@ -16,7 +16,7 @@ Three columns, independent of the site theme (`data-landing-scheme`, not `.dark`
 
 ## 3D consumption
 
-`/temp/landing-hero` paints the light tokens via `heroArtworkStyleSheet("light")` — resolved `oklch()` on `.landing-cls-*`, not CSS variables.
+`/temp/landing-hero` paints both schemes via `heroArtworkThemeStyleSheet()` — resolved `oklch()` on `.landing-cls-*`, not CSS variables. Light is the default; `.dark` on `<html>` swaps to the dark tokens.
 
 ```ts
 import { getLandingPalette, heroArtworkStyleSheet } from "@/app/temp/landing-palette/palette"
@@ -31,4 +31,4 @@ const palette = getLandingPalette("light")
 node app/temp/landing-palette/optimize-svg.mjs
 ```
 
-Reads `public/images/landing/landing-reference.svg`, runs SVGO (keeps ids, classes, groups), strips the internal stylesheet, writes `public/images/landing/landing-palette.svg`.
+Reads `public/images/landing/landing-source.svg`, runs SVGO (keeps ids, classes, groups), strips the internal stylesheet, writes `public/images/landing/landing-palette.svg`.

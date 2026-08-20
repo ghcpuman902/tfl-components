@@ -78,6 +78,14 @@ export const HOME_HERO_SLIDES: readonly HomeHeroSlide[] = [
   },
 ]
 
+export const HOME_HERO_LANDSCAPE_SLIDES = HOME_HERO_SLIDES.filter(
+  (slide) => slide.width > slide.height
+)
+
+export const HOME_HERO_PORTRAIT_SLIDES = HOME_HERO_SLIDES.filter(
+  (slide) => slide.width <= slide.height
+)
+
 const INTERVAL_MS = 5500
 const STABLE_SLIDE = 0
 

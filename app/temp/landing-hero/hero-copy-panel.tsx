@@ -10,13 +10,13 @@ type HeroCopyPanelProps = {
 export const HeroCopyPanel = ({ copyRef }: HeroCopyPanelProps) => (
   <section
     ref={copyRef}
-    className="absolute top-[16%] left-4 z-10 max-w-md text-left text-[#3f2a1c] md:left-8 lg:left-12"
+    className="landing-hero-copy absolute top-[16%] left-4 z-10 max-w-md text-left md:left-8 lg:left-12"
   >
-    <p className="text-sm font-medium text-[#3f2a1c]/75">{SITE_NAME}</p>
+    <p className="text-sm font-medium opacity-75">{SITE_NAME}</p>
     <h1 className="tfl-title mt-2 text-4xl md:text-5xl lg:text-6xl">
       Create a live station display
     </h1>
-    <p className="mt-4 max-w-sm text-base text-[#3f2a1c]/85 md:text-lg">
+    <p className="mt-4 max-w-sm text-base opacity-85 md:text-lg">
       {SITE_DESCRIPTION}
     </p>
   </section>

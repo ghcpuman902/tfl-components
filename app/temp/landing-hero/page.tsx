@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
-import { LANDING_PAPER } from "@/app/temp/landing-palette/palette"
+import { heroArtworkThemeStyleSheet } from "@/app/temp/landing-palette/palette"
 import { LandingScene } from "./landing-scene"
 import { PostHeroPlaceholder } from "./post-hero-placeholder"
 
@@ -14,15 +14,10 @@ export const metadata: Metadata = {
 export default function LandingHeroTempPage() {
   return (
     <div className="w-full min-w-0">
+      <style>{heroArtworkThemeStyleSheet()}</style>
       <p className="sr-only">Temp landing hero test — not linked in nav.</p>
       <Suspense
-        fallback={
-          <div
-            className="h-svh"
-            style={{ background: LANDING_PAPER.light }}
-            aria-hidden
-          />
-        }
+        fallback={<div className="landing-hero-paper h-svh" aria-hidden />}
       >
         <LandingScene />
       </Suspense>
