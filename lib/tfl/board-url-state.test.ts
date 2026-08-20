@@ -1,5 +1,5 @@
-import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import assert from "node:assert/strict"
+import { describe, it } from "node:test"
 import {
   BOARD_VIEW_PATH,
   DEFAULT_BOARD_CONFIG,
@@ -7,7 +7,7 @@ import {
   describeBoardHrefSegments,
   normalizeBoardHash,
   parseBoardConfig,
-} from "./board-url-state";
+} from "./board-url-state"
 
 describe("parseBoardConfig", () => {
   it("returns defaults for empty input", () => {
@@ -16,146 +16,146 @@ describe("parseBoardConfig", () => {
       key: undefined,
       stop: undefined,
       stopName: undefined,
-    });
+    })
     assert.deepEqual(parseBoardConfig(), {
       ...DEFAULT_BOARD_CONFIG,
       key: undefined,
       stop: undefined,
       stopName: undefined,
-    });
-  });
+    })
+  })
 
   it("strips a leading hash", () => {
-    const config = parseBoardConfig("#stop=940GZZLUOXC&stopName=Oxford+Circus");
-    assert.equal(config.stop, "940GZZLUOXC");
-    assert.equal(config.stopName, "Oxford Circus");
-  });
+    const config = parseBoardConfig("#stop=940GZZLUOXC&stopName=Oxford+Circus")
+    assert.equal(config.stop, "940GZZLUOXC")
+    assert.equal(config.stopName, "Oxford Circus")
+  })
 
   it("reads the key from the hash only", () => {
-    const config = parseBoardConfig("stop=940GZZLUOXC&key=abc123");
-    assert.equal(config.key, "abc123");
-    assert.equal(config.stop, "940GZZLUOXC");
-  });
+    const config = parseBoardConfig("stop=940GZZLUOXC&key=abc123")
+    assert.equal(config.key, "abc123")
+    assert.equal(config.stop, "940GZZLUOXC")
+  })
 
   it("falls back on invalid behaviour", () => {
-    const config = parseBoardConfig("behaviour=voice");
-    assert.equal(config.behaviour, "interactive");
-  });
+    const config = parseBoardConfig("behaviour=voice")
+    assert.equal(config.behaviour, "interactive")
+  })
 
   it("ignores retired a.pinAdvance", () => {
     const config = parseBoardConfig(
-      "stop=940GZZLUOXC&a.pinAdvance=jump&a.pinFirst=false",
-    );
-    assert.equal(config.arrivals.pinFirst, false);
-    assert.equal("pinAdvance" in config.arrivals, false);
-  });
+      "stop=940GZZLUOXC&a.pinAdvance=jump&a.pinFirst=false"
+    )
+    assert.equal(config.arrivals.pinFirst, false)
+    assert.equal("pinAdvance" in config.arrivals, false)
+  })
 
   it("maps legacy mode values to interactive", () => {
-    const config = parseBoardConfig("mode=touch&fit=fill");
-    assert.equal(config.behaviour, "interactive");
-  });
+    const config = parseBoardConfig("mode=touch&fit=fill")
+    assert.equal(config.behaviour, "interactive")
+  })
 
   it("treats empty stop, stopName, and key as undefined", () => {
-    const config = parseBoardConfig("stop=%20&stopName=&key=");
-    assert.equal(config.stop, undefined);
-    assert.equal(config.stopName, undefined);
-    assert.equal(config.key, undefined);
-  });
+    const config = parseBoardConfig("stop=%20&stopName=&key=")
+    assert.equal(config.stop, undefined)
+    assert.equal(config.stopName, undefined)
+    assert.equal(config.key, undefined)
+  })
 
   it("accepts URLSearchParams", () => {
-    const params = new URLSearchParams("stop=940GZZLUOXC&behaviour=unattended");
-    const config = parseBoardConfig(params);
-    assert.equal(config.stop, "940GZZLUOXC");
-    assert.equal(config.behaviour, "unattended");
-  });
+    const params = new URLSearchParams("stop=940GZZLUOXC&behaviour=unattended")
+    const config = parseBoardConfig(params)
+    assert.equal(config.stop, "940GZZLUOXC")
+    assert.equal(config.behaviour, "unattended")
+  })
 
   it("ignores unknown params", () => {
-    const config = parseBoardConfig("stop=940GZZLUOXC&future=yes&s.filter=tube");
-    assert.equal(config.stop, "940GZZLUOXC");
-    assert.deepEqual(config.arrivals, {});
-  });
+    const config = parseBoardConfig("stop=940GZZLUOXC&future=yes&s.filter=tube")
+    assert.equal(config.stop, "940GZZLUOXC")
+    assert.deepEqual(config.arrivals, {})
+  })
 
   it("parses scalar a.rows", () => {
-    const config = parseBoardConfig("a.rows=6");
-    assert.equal(config.arrivals.rows, 6);
-  });
+    const config = parseBoardConfig("a.rows=6")
+    assert.equal(config.arrivals.rows, 6)
+  })
 
   it("parses a.rows=0 as show-all", () => {
-    const config = parseBoardConfig("a.rows=0");
-    assert.equal(config.arrivals.rows, 0);
-  });
+    const config = parseBoardConfig("a.rows=0")
+    assert.equal(config.arrivals.rows, 0)
+  })
 
   it("clamps a.rows above 16", () => {
-    const config = parseBoardConfig("a.rows=99");
-    assert.equal(config.arrivals.rows, 16);
-  });
+    const config = parseBoardConfig("a.rows=99")
+    assert.equal(config.arrivals.rows, 16)
+  })
 
   it("falls back invalid scalar a.rows", () => {
-    assert.equal(parseBoardConfig("a.rows=-1").arrivals.rows, undefined);
-    assert.equal(parseBoardConfig("a.rows=2.5").arrivals.rows, undefined);
-    assert.equal(parseBoardConfig("a.rows=abc").arrivals.rows, undefined);
-  });
+    assert.equal(parseBoardConfig("a.rows=-1").arrivals.rows, undefined)
+    assert.equal(parseBoardConfig("a.rows=2.5").arrivals.rows, undefined)
+    assert.equal(parseBoardConfig("a.rows=abc").arrivals.rows, undefined)
+  })
 
   it("parses positional a.rows with empty slots", () => {
-    const config = parseBoardConfig("a.rows=6,,2");
-    assert.deepEqual(config.arrivals.rows, [6, undefined, 2]);
-  });
+    const config = parseBoardConfig("a.rows=6,,2")
+    assert.deepEqual(config.arrivals.rows, [6, undefined, 2])
+  })
 
   it("parses a.lines with normalize, dedupe, drop unknown", () => {
     const config = parseBoardConfig(
-      "a.lines=Victoria,central,victoria,not-a-line,bakerloo",
-    );
+      "a.lines=Victoria,central,victoria,not-a-line,bakerloo"
+    )
     assert.deepEqual(config.arrivals.lineOrder, [
       "victoria",
       "central",
       "bakerloo",
-    ]);
-  });
+    ])
+  })
 
   it("defaults omitted p1/p2 to empty slots (display resolves rail+status)", () => {
-    const config = parseBoardConfig("stop=940GZZLUOXC");
-    assert.deepEqual(config.slots, {});
-  });
+    const config = parseBoardConfig("stop=940GZZLUOXC")
+    assert.deepEqual(config.slots, {})
+  })
 
   it("parses p1 and empty p2 as a single-column board", () => {
-    const config = parseBoardConfig("p1=rail&stop=940GZZLUOXC");
-    assert.deepEqual(config.slots.p1, ["rail"]);
-    assert.equal(config.slots.p2, undefined);
-  });
+    const config = parseBoardConfig("p1=rail&stop=940GZZLUOXC")
+    assert.deepEqual(config.slots.p1, ["rail"])
+    assert.equal(config.slots.p2, undefined)
+  })
 
   it("parses stacked p1 and p2", () => {
     const config = parseBoardConfig(
-      "p1=rail,bus,cycle&p2=status&b.stop=490000091G&b.routes=73,n8&c.docks=237,BikePoints_46",
-    );
-    assert.deepEqual(config.slots.p1, ["rail", "bus", "cycle"]);
-    assert.deepEqual(config.slots.p2, ["status"]);
-    assert.equal(config.bus.stop, "490000091G");
-    assert.deepEqual(config.bus.routes, ["73", "n8"]);
-    assert.deepEqual(config.cycle.docks, ["BikePoints_237", "BikePoints_46"]);
-  });
+      "p1=rail,bus,cycle&p2=status&b.stop=490000091G&b.routes=73,n8&c.docks=237,BikePoints_46"
+    )
+    assert.deepEqual(config.slots.p1, ["rail", "bus", "cycle"])
+    assert.deepEqual(config.slots.p2, ["status"])
+    assert.equal(config.bus.stop, "490000091G")
+    assert.deepEqual(config.bus.routes, ["73", "n8"])
+    assert.deepEqual(config.cycle.docks, ["BikePoints_237", "BikePoints_46"])
+  })
 
   it("parses river and keeps behaviour independent of slots", () => {
     const config = parseBoardConfig(
-      "behaviour=unattended&p1=river&r.stop=930GCAW&r.rows=4",
-    );
-    assert.equal(config.behaviour, "unattended");
-    assert.deepEqual(config.slots.p1, ["river"]);
-    assert.equal(config.slots.p2, undefined);
-    assert.equal(config.river.stop, "930GCAW");
-    assert.equal(config.river.rows, 4);
-  });
+      "behaviour=unattended&p1=river&r.stop=930GCAW&r.rows=4"
+    )
+    assert.equal(config.behaviour, "unattended")
+    assert.deepEqual(config.slots.p1, ["river"])
+    assert.equal(config.slots.p2, undefined)
+    assert.equal(config.river.stop, "930GCAW")
+    assert.equal(config.river.rows, 4)
+  })
 
   it("treats p1= as an explicit empty wide slot", () => {
-    const config = parseBoardConfig("p1=&p2=status");
-    assert.deepEqual(config.slots.p1, []);
-    assert.deepEqual(config.slots.p2, ["status"]);
-  });
-});
+    const config = parseBoardConfig("p1=&p2=status")
+    assert.deepEqual(config.slots.p1, [])
+    assert.deepEqual(config.slots.p2, ["status"])
+  })
+})
 
 describe("buildBoardHref", () => {
   it("returns bare path for defaults", () => {
-    assert.equal(buildBoardHref({}), BOARD_VIEW_PATH);
-  });
+    assert.equal(buildBoardHref({}), BOARD_VIEW_PATH)
+  })
 
   it("omits default rail+status slots", () => {
     assert.equal(
@@ -163,9 +163,9 @@ describe("buildBoardHref", () => {
         stop: "940GZZLUOXC",
         slots: { p1: ["rail"], p2: ["status"] },
       }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`,
-    );
-  });
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`
+    )
+  })
 
   it("serializes a single-slot arrivals board", () => {
     assert.equal(
@@ -173,9 +173,9 @@ describe("buildBoardHref", () => {
         stop: "940GZZLUOXC",
         slots: { p1: ["rail"], p2: [] },
       }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&p1=rail`,
-    );
-  });
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&p1=rail`
+    )
+  })
 
   it("serializes a mix stack and domain ids", () => {
     assert.equal(
@@ -185,23 +185,23 @@ describe("buildBoardHref", () => {
         bus: { stop: "490000091G" },
         cycle: { docks: ["BikePoints_237", "BikePoints_46"] },
       }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLIVST&p1=rail,bus,cycle&p2=status&b.stop=490000091G&c.docks=BikePoints_237,BikePoints_46`,
-    );
-  });
+      `${BOARD_VIEW_PATH}#stop=940GZZLIVST&p1=rail,bus,cycle&p2=status&b.stop=490000091G&c.docks=BikePoints_237,BikePoints_46`
+    )
+  })
 
   it("omits default behaviour", () => {
     assert.equal(
       buildBoardHref({ behaviour: "interactive", stop: "940GZZLUOXC" }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`,
-    );
-  });
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`
+    )
+  })
 
   it("omits stopName when unset — the board resolves the heading", () => {
     assert.equal(
       buildBoardHref({ stop: "940GZZLUOXC" }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`,
-    );
-  });
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`
+    )
+  })
 
   it("includes non-default values and the key", () => {
     const href = buildBoardHref({
@@ -209,47 +209,50 @@ describe("buildBoardHref", () => {
       stopName: "Oxford Circus",
       behaviour: "unattended",
       key: "abc123",
-    });
+    })
     assert.equal(
       href,
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&stopName=Oxford+Circus&behaviour=unattended&key=abc123`,
-    );
-  });
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&stopName=Oxford+Circus&behaviour=unattended&key=abc123`
+    )
+  })
 
   it("serializes scalar a.rows=3 as a broadcast, not as omitted", () => {
     const href = buildBoardHref({
       stop: "940GZZLUOXC",
       arrivals: { rows: 3 },
-    });
-    assert.equal(href, `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&a.rows=3`);
-  });
+    })
+    assert.equal(href, `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&a.rows=3`)
+  })
 
   it("keeps a trailing comma so a.rows=3, is first-slot only", () => {
     const href = buildBoardHref({
       stop: "940GZZLUOXC",
       arrivals: { rows: [3, undefined] },
-    });
-    assert.equal(href, `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&a.rows=3,`);
-  });
+    })
+    assert.equal(href, `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&a.rows=3,`)
+  })
 
   it("serializes non-default scalar a.rows", () => {
     const href = buildBoardHref({
       stop: "940GZZLUOXC",
       arrivals: { rows: 6 },
-    });
-    assert.equal(href, `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&a.rows=6`);
-  });
+    })
+    assert.equal(href, `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&a.rows=6`)
+  })
 
   it("serializes positional a.rows with literal commas", () => {
     const href = buildBoardHref({
       stop: "940GZZLUOXC",
-      arrivals: { rows: [6, 2, 2], lineOrder: ["victoria", "central", "bakerloo"] },
-    });
+      arrivals: {
+        rows: [6, 2, 2],
+        lineOrder: ["victoria", "central", "bakerloo"],
+      },
+    })
     assert.equal(
       href,
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&a.rows=6,2,2&a.lines=victoria,central,bakerloo`,
-    );
-  });
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&a.rows=6,2,2&a.lines=victoria,central,bakerloo`
+    )
+  })
 
   it("puts the key last when arrivals settings are present", () => {
     const href = buildBoardHref({
@@ -257,12 +260,12 @@ describe("buildBoardHref", () => {
       arrivals: { rows: 0 },
       key: "abc123",
       behaviour: "unattended",
-    });
+    })
     assert.equal(
       href,
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&behaviour=unattended&a.rows=0&key=abc123`,
-    );
-  });
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&behaviour=unattended&a.rows=0&key=abc123`
+    )
+  })
 
   it("round-trips with parseBoardConfig", () => {
     const original = {
@@ -276,12 +279,12 @@ describe("buildBoardHref", () => {
       river: {},
       cycle: {},
       status: {},
-    };
-    const href = buildBoardHref(original);
-    const hash = href.slice(BOARD_VIEW_PATH.length);
-    const parsed = parseBoardConfig(hash);
-    assert.deepEqual(parsed, original);
-  });
+    }
+    const href = buildBoardHref(original)
+    const hash = href.slice(BOARD_VIEW_PATH.length)
+    const parsed = parseBoardConfig(hash)
+    assert.deepEqual(parsed, original)
+  })
 
   it("round-trips arrivals settings", () => {
     const original = {
@@ -291,20 +294,20 @@ describe("buildBoardHref", () => {
         rows: [6, undefined, 2] as const,
         lineOrder: ["victoria", "central", "bakerloo"] as const,
       },
-    };
-    const href = buildBoardHref(original);
-    const hash = href.slice(BOARD_VIEW_PATH.length);
-    const parsed = parseBoardConfig(hash);
-    assert.equal(parsed.stop, original.stop);
-    assert.deepEqual(parsed.arrivals.rows, [6, undefined, 2]);
-    assert.deepEqual(parsed.arrivals.lineOrder, original.arrivals.lineOrder);
-  });
-});
+    }
+    const href = buildBoardHref(original)
+    const hash = href.slice(BOARD_VIEW_PATH.length)
+    const parsed = parseBoardConfig(hash)
+    assert.equal(parsed.stop, original.stop)
+    assert.deepEqual(parsed.arrivals.rows, [6, undefined, 2])
+    assert.deepEqual(parsed.arrivals.lineOrder, original.arrivals.lineOrder)
+  })
+})
 
 describe("describeBoardHrefSegments", () => {
   it("returns an empty list for defaults", () => {
-    assert.deepEqual(describeBoardHrefSegments({}), []);
-  });
+    assert.deepEqual(describeBoardHrefSegments({}), [])
+  })
 
   it("omits default behaviour; scalar a.rows=3 is a real segment", () => {
     assert.deepEqual(
@@ -316,9 +319,9 @@ describe("describeBoardHrefSegments", () => {
       [
         { setting: "stop", text: "stop=940GZZLUOXC" },
         { setting: "arrivalsRows", text: "a.rows=3" },
-      ],
-    );
-  });
+      ]
+    )
+  })
 
   it("lists p1/p2 and domain ids when they are not the default station board", () => {
     assert.deepEqual(
@@ -339,9 +342,9 @@ describe("describeBoardHrefSegments", () => {
         "cycleDocks",
         "statusLines",
         "statusOverview",
-      ],
-    );
-  });
+      ]
+    )
+  })
 
   it("lists segments in href order with literal commas", () => {
     const segments = describeBoardHrefSegments({
@@ -353,11 +356,11 @@ describe("describeBoardHrefSegments", () => {
         lineOrder: ["victoria", "central", "bakerloo"],
       },
       key: "abc123",
-    });
+    })
     assert.deepEqual(
       segments.map((segment) => segment.setting),
-      ["stop", "stopName", "behaviour", "arrivalsRows", "arrivalsLines", "key"],
-    );
+      ["stop", "stopName", "behaviour", "arrivalsRows", "arrivalsLines", "key"]
+    )
     assert.deepEqual(
       segments.map((segment) => segment.text),
       [
@@ -367,77 +370,79 @@ describe("describeBoardHrefSegments", () => {
         "a.rows=6,2,2",
         "a.lines=victoria,central,bakerloo",
         "key=abc123",
-      ],
-    );
-  });
+      ]
+    )
+  })
 
   it("matches buildBoardHref hash exactly", () => {
     const next = {
       stop: "940GZZLUOXC",
       arrivals: { rows: 0 as const, lineOrder: ["central"] as const },
       key: "secret",
-    };
-    const segments = describeBoardHrefSegments(next);
+    }
+    const segments = describeBoardHrefSegments(next)
     const fromSegments = `${BOARD_VIEW_PATH}#${segments
       .map((segment) => segment.text)
-      .join("&")}`;
-    assert.equal(fromSegments, buildBoardHref(next));
-  });
-});
+      .join("&")}`
+    assert.equal(fromSegments, buildBoardHref(next))
+  })
+})
 
 describe("normalizeBoardHash", () => {
   it("is a no-op for an already-canonical hash", () => {
     assert.equal(
       normalizeBoardHash("#stop=940GZZLUOXC&a.rows=6"),
-      "#stop=940GZZLUOXC&a.rows=6",
-    );
-  });
+      "#stop=940GZZLUOXC&a.rows=6"
+    )
+  })
 
   it("trims, drops invalid slots, and clamps a.rows", () => {
     assert.equal(
       normalizeBoardHash("#stop=940GZZLUOXC&a.rows= 6 , abc ,2"),
-      "#stop=940GZZLUOXC&a.rows=6,,2",
-    );
+      "#stop=940GZZLUOXC&a.rows=6,,2"
+    )
     assert.equal(
       normalizeBoardHash("#stop=940GZZLUOXC&a.rows=99"),
-      "#stop=940GZZLUOXC&a.rows=16",
-    );
-  });
+      "#stop=940GZZLUOXC&a.rows=16"
+    )
+  })
 
   it("normalizes a.lines and omits default behaviour", () => {
     assert.equal(
       normalizeBoardHash(
-        "#stop=940GZZLUOXC&behaviour=interactive&a.lines=Victoria,central,victoria,not-a-line",
+        "#stop=940GZZLUOXC&behaviour=interactive&a.lines=Victoria,central,victoria,not-a-line"
       ),
-      "#stop=940GZZLUOXC&a.lines=victoria,central",
-    );
-  });
+      "#stop=940GZZLUOXC&a.lines=victoria,central"
+    )
+  })
 
   it("drops empty values and invalid behaviour", () => {
     assert.equal(
-      normalizeBoardHash("#stop=940GZZLUOXC&stopName=&behaviour=voice&fit=stretch"),
-      "#stop=940GZZLUOXC",
-    );
-  });
+      normalizeBoardHash(
+        "#stop=940GZZLUOXC&stopName=&behaviour=voice&fit=stretch"
+      ),
+      "#stop=940GZZLUOXC"
+    )
+  })
 
   it("keeps unknown params before the key", () => {
     assert.equal(
       normalizeBoardHash("#stop=940GZZLUOXC&future=yes&s.filter=tube&key=abc"),
-      "#stop=940GZZLUOXC&future=yes&s.filter=tube&key=abc",
-    );
-  });
+      "#stop=940GZZLUOXC&future=yes&s.filter=tube&key=abc"
+    )
+  })
 
   it("applies a stopName override so a catalog name can be stripped", () => {
     assert.equal(
       normalizeBoardHash("#stop=940GZZLUOXC&stopName=Oxford+Circus", {
         stopName: undefined,
       }),
-      "#stop=940GZZLUOXC",
-    );
-  });
+      "#stop=940GZZLUOXC"
+    )
+  })
 
   it("returns an empty fragment for a bare or empty hash", () => {
-    assert.equal(normalizeBoardHash(""), "");
-    assert.equal(normalizeBoardHash("#"), "");
-  });
-});
+    assert.equal(normalizeBoardHash(""), "")
+    assert.equal(normalizeBoardHash("#"), "")
+  })
+})

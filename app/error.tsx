@@ -1,22 +1,24 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link"
+import { useEffect } from "react"
+import { Button } from "@/components/ui/button"
 
 type ErrorPageProps = {
-  error: Error & { digest?: string };
-  reset: () => void;
-};
+  error: Error & { digest?: string }
+  reset: () => void
+}
 
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
   useEffect(() => {
-    console.error(error);
-  }, [error]);
+    console.error(error)
+  }, [error])
 
   return (
     <div className="mx-auto flex min-h-[50vh] max-w-lg flex-col items-start justify-center gap-4 px-4 py-16">
-      <p className="text-sm font-medium text-muted-foreground">Something went wrong</p>
+      <p className="text-sm font-medium text-muted-foreground">
+        Something went wrong
+      </p>
       <h1 className="text-2xl font-medium text-foreground">
         This page could not be loaded
       </h1>
@@ -37,5 +39,5 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
         </Button>
       </div>
     </div>
-  );
+  )
 }

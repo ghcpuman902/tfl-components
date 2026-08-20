@@ -18,7 +18,7 @@ Canonical implementation:
 ## First fold (required order)
 
 1. Breadcrumb (`Home / {group}`) + Copy page + Prev/Next (sidebar order)
-2. Title + one-sentence `entry.description` + **one** badge (`Data-aware` | `Primitive` | `Map` | `Tool` | `Block` | `Draft` | `Coming soon`)
+2. Title + one-sentence `entry.description` + **one** badge (`Data-aware` | `Primitive` | `Map` | `Tool` | `Experimental` | `Draft` | `Coming soon`)
 3. Optional reserved slot for a variant switcher — **do not build until a page needs it**
 4. **Preview** — live demo only. No outer border/card from `renderComponentDocs`. Demos may use their own single border if needed; never wrap again.
 5. **Usage** — code peek (3 lines + View code) as its **own** section under Preview, not nested inside a Preview frame

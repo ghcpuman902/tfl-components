@@ -34,6 +34,7 @@ function ThemeProvider({
   return (
     <NextThemesProvider
       attribute="class"
+      // Empty localStorage follows the OS. setTheme("light"|"dark") persists.
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange

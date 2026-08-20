@@ -1,16 +1,12 @@
-import {
-  GITHUB_COMPARE,
-  GITHUB_ISSUES_NEW,
-  GITHUB_REPO,
-} from "./constants";
+import { GITHUB_COMPARE, GITHUB_ISSUES_NEW, GITHUB_REPO } from "./constants"
 
 export const buildGitHubIssueUrl = (input: {
-  pageUrl: string;
-  pageTitle: string;
+  pageUrl: string
+  pageTitle: string
 }): string => {
   const title = input.pageTitle
     ? `Feedback: ${input.pageTitle}`
-    : "Feedback from docs site";
+    : "Feedback from docs site"
   const body = [
     "## Context",
     "",
@@ -21,15 +17,15 @@ export const buildGitHubIssueUrl = (input: {
     "",
     "<!-- Describe the bug or suggestion -->",
     "",
-  ].join("\n");
+  ].join("\n")
 
   const params = new URLSearchParams({
     title,
     body,
-  });
-  return `${GITHUB_ISSUES_NEW}?${params.toString()}`;
-};
+  })
+  return `${GITHUB_ISSUES_NEW}?${params.toString()}`
+}
 
-export const buildGitHubPrUrl = (): string => GITHUB_COMPARE;
+export const buildGitHubPrUrl = (): string => GITHUB_COMPARE
 
-export { GITHUB_REPO };
+export { GITHUB_REPO }

@@ -1,21 +1,24 @@
-import type { Metadata } from "next";
+import type { Metadata } from "next"
 import {
   componentDocsMetadata,
   renderComponentDocs,
-} from "@/components/docs/render-component-docs";
+} from "@/components/docs/render-component-docs"
 
 export const generateMetadata = (): Promise<Metadata> =>
-  componentDocsMetadata("line-strip");
+  componentDocsMetadata("line-strip")
 
 export default function LineStripDocsPage() {
   return renderComponentDocs({
     slug: "line-strip",
     relatedLinks: [
-      { href: "/docs/branch-strip-horizontal", label: "Branch strip — horizontal" },
+      {
+        href: "/docs/branch-strip-horizontal",
+        label: "Branch strip — horizontal",
+      },
       { href: "/docs/branch-strip-vertical", label: "Branch strip — vertical" },
       { href: "/docs/station-name-labels", label: "Station name labels" },
       { href: "/docs/map-schematic", label: "Schematic & network" },
-      { href: "/blocks/week-ahead", label: "Week ahead Block" },
+      { href: "/labs/week-ahead", label: "Week ahead Lab" },
     ],
-  });
+  })
 }

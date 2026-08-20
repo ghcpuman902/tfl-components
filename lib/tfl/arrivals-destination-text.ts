@@ -24,8 +24,9 @@ const isSamePhrase = (a: string, b: string): boolean =>
  */
 export const isRedundantArrivalsDestination = (
   destination: string,
-  lineName: string,
-): boolean => Boolean(destination && lineName && isSamePhrase(destination, lineName))
+  lineName: string
+): boolean =>
+  Boolean(destination && lineName && isSamePhrase(destination, lineName))
 
 /**
  * Resolve what a rail arrivals row should show as its destination.
@@ -56,7 +57,7 @@ export const resolveArrivalsDestinationText = ({
 }): string => {
   const isCheckFront = isSamePhrase(destination, CHECK_FRONT_OF_TRAIN)
   const isSameAsLine = Boolean(
-    lineName && isRedundantArrivalsDestination(destination, lineName),
+    lineName && isRedundantArrivalsDestination(destination, lineName)
   )
   if (!isCheckFront && !isSameAsLine) return destination
 

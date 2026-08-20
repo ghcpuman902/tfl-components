@@ -48,10 +48,7 @@ describe("observation chart grid", () => {
       day
     )
     assert.equal(rows.length, 2)
-    assert.equal(
-      worstHistoryState(rows.map((row) => row.state)),
-      "changed"
-    )
+    assert.equal(worstHistoryState(rows.map((row) => row.state)), "changed")
   })
 
   it("marks future gray, past gaps as missing, and quiet days as no change", () => {

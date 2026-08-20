@@ -82,10 +82,9 @@ describe("buildStatusDisplayFrames", () => {
   })
 
   it("rotates one disruption then Good service", () => {
-    const sections = partitionStatusBoardLines(
-      [central, bakerloo, victoria],
-      { now: SATURDAY }
-    )
+    const sections = partitionStatusBoardLines([central, bakerloo, victoria], {
+      now: SATURDAY,
+    })
     const frames = buildStatusDisplayFrames(sections, { tiles: 4 })
     assert.equal(frames[0]?.phase, "disruptions")
     assert.equal(frames[0]?.heading, "Service disruptions")
@@ -156,10 +155,9 @@ describe("buildStatusDisplayFrames", () => {
   })
 
   it("scopes network summary to every fetched line and detail to the filter", () => {
-    const sections = partitionStatusBoardLines(
-      [central, bakerloo, victoria],
-      { now: SATURDAY }
-    )
+    const sections = partitionStatusBoardLines([central, bakerloo, victoria], {
+      now: SATURDAY,
+    })
     const frames = buildStatusDisplayFrames(sections, {
       tiles: 4,
       detailScope: "network",
@@ -175,10 +173,9 @@ describe("buildStatusDisplayFrames", () => {
   })
 
   it("scopes selection to the selected lines only", () => {
-    const sections = partitionStatusBoardLines(
-      [central, bakerloo, victoria],
-      { now: SATURDAY }
-    )
+    const sections = partitionStatusBoardLines([central, bakerloo, victoria], {
+      now: SATURDAY,
+    })
     const frames = buildStatusDisplayFrames(sections, {
       tiles: 4,
       detailScope: "selection",
@@ -213,8 +210,14 @@ describe("packAnnouncementPages", () => {
   it("keeps several chip-and-copy blocks on one page when they fit", () => {
     const pages = packAnnouncementPages(
       [
-        { text: "Minor delays through the core.", statusSeverityDescription: "Minor Delays" },
-        { text: "No service after 1930.", statusSeverityDescription: "Part Closure" },
+        {
+          text: "Minor delays through the core.",
+          statusSeverityDescription: "Minor Delays",
+        },
+        {
+          text: "No service after 1930.",
+          statusSeverityDescription: "Part Closure",
+        },
       ],
       { linesPerPage: 6, charsPerLine: 60 }
     )

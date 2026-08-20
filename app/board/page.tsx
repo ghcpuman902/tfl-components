@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 import { BoardBuilder } from "@/components/board/board-builder"
 import { BoardWipNotice } from "@/components/board/board-wip-notice"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
@@ -8,11 +9,7 @@ import {
   getBoardStationSearchIndex,
 } from "@/lib/tfl/board-station-names"
 
-export const metadata: Metadata = {
-  title: "Board",
-  description:
-    "Configure a live station display and open a bookmarkable URL.",
-}
+export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.board)
 
 export default function BoardBuilderPage() {
   const stationLines = getBoardStationLinesIndex()
@@ -25,8 +22,8 @@ export default function BoardBuilderPage() {
         <header>
           <h1 className="tfl-title text-3xl text-foreground">Board</h1>
           <p className="mt-2 max-w-prose text-lg text-muted-foreground">
-            Search or locate, pick a layout, preview the display, then copy
-            or open the URL.
+            Search or locate, pick a layout, preview the display, then copy or
+            open the URL.
           </p>
           <BoardWipNotice />
           <div className="mt-6 max-w-prose space-y-3 text-sm text-muted-foreground">

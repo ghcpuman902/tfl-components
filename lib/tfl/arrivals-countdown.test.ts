@@ -11,7 +11,7 @@ describe("formatArrivalsCountdown", () => {
         expectedArrival: "2026-08-17T19:02:00Z",
         clockFromSeconds: RIVER_COUNTDOWN_CLOCK_FROM_SECONDS,
       }),
-      "29 min",
+      "29 min"
     )
   })
 
@@ -21,7 +21,7 @@ describe("formatArrivalsCountdown", () => {
         expectedArrival: "2026-08-17T19:02:00Z",
         clockFromSeconds: RIVER_COUNTDOWN_CLOCK_FROM_SECONDS,
       }),
-      "20:02",
+      "20:02"
     )
   })
 
@@ -30,7 +30,7 @@ describe("formatArrivalsCountdown", () => {
       formatArrivalsCountdown(40 * 60, {
         clockFromSeconds: RIVER_COUNTDOWN_CLOCK_FROM_SECONDS,
       }),
-      "40 min",
+      "40 min"
     )
   })
 
@@ -39,7 +39,7 @@ describe("formatArrivalsCountdown", () => {
       formatArrivalsCountdown(40 * 60, {
         expectedArrival: "2026-08-17T19:02:00Z",
       }),
-      "40 min",
+      "40 min"
     )
   })
 })

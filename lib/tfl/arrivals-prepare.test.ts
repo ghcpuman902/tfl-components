@@ -156,7 +156,7 @@ describe("prepareRailArrivals", () => {
     }
     const board = prepareRailArrivals({ data: [first, second] })
     const keys = board.groups.flatMap((group) =>
-      group.bounds.flatMap((bound) => bound.rows.map((row) => row.key)),
+      group.bounds.flatMap((bound) => bound.rows.map((row) => row.key))
     )
     assert.equal(keys.length, 2)
     assert.equal(new Set(keys).size, keys.length)
@@ -262,8 +262,8 @@ describe("prepareRailArrivals", () => {
     assert.equal(bakerloo?.hasInformation, true)
     assert.deepEqual(
       idsOf(
-        bakerloo?.bounds.find((bound) => bound.boundId === "northbound")?.rows ??
-          []
+        bakerloo?.bounds.find((bound) => bound.boundId === "northbound")
+          ?.rows ?? []
       ),
       ["b-n"]
     )
@@ -386,7 +386,7 @@ describe("prepareRailArrivals", () => {
     assert.equal(board.groups[0]?.bounds[0]?.kind, "unknown")
     assert.equal(
       board.groups[0]?.bounds[0]?.label,
-      ARRIVALS_PLATFORM_UNKNOWN_HEADING,
+      ARRIVALS_PLATFORM_UNKNOWN_HEADING
     )
   })
 
@@ -492,9 +492,7 @@ describe("prepareRailArrivals", () => {
     })
     const board = prepareRailArrivals({
       data: [circleEast, hcWest, metEast, centralWestOnly],
-      lineGroups: [
-        { lines: ["circle", "hammersmith-city", "metropolitan"] },
-      ],
+      lineGroups: [{ lines: ["circle", "hammersmith-city", "metropolitan"] }],
     })
     assert.deepEqual(groupNames(board.groups), [
       "Central",
@@ -542,7 +540,10 @@ describe("prepareRailArrivals", () => {
     })
     assert.deepEqual(groupNames(board.groups), ["Circle"])
     assert.equal(board.groups[0]?.lineId, "circle")
-    assert.equal(board.groups[0]?.bounds[0]?.rows[0]?.arrival.lineId, "hammersmith-city")
+    assert.equal(
+      board.groups[0]?.bounds[0]?.rows[0]?.arrival.lineId,
+      "hammersmith-city"
+    )
   })
 
   it("leaves an untagged shared-track arrival on its raw line", () => {
@@ -659,14 +660,14 @@ describe("prepareRailArrivals", () => {
       data: [westA, westB, eastA, eastB, known],
     })
     const metropolitan = board.groups.find(
-      (group) => group.lineId === "metropolitan",
+      (group) => group.lineId === "metropolitan"
     )
     assert.ok(metropolitan)
     const west = metropolitan.bounds.find((bound) =>
-      bound.label?.startsWith("Westbound"),
+      bound.label?.startsWith("Westbound")
     )
     const east = metropolitan.bounds.find((bound) =>
-      bound.label?.startsWith("Eastbound"),
+      bound.label?.startsWith("Eastbound")
     )
     assert.deepEqual(idsOf(west?.rows ?? []), [
       "met-wb-a",
@@ -697,7 +698,7 @@ describe("prepareRailArrivals", () => {
     assert.deepEqual(groupNames(board.groups), ["Hammersmith & City"])
     assert.equal(
       board.groups[0]?.bounds[0]?.rows[0]?.arrival.lineId,
-      "hammersmith-city",
+      "hammersmith-city"
     )
   })
 
@@ -758,11 +759,10 @@ describe("prepareRailArrivals", () => {
       lines: hammersmithLines,
       lineGroups: [{ lines: ["circle", "hammersmith-city"] }],
     })
-    assert.deepEqual(new Set(groupNames(board.groups)), new Set([
-      "Circle and Hammersmith & City",
-      "District",
-      "Piccadilly",
-    ]))
+    assert.deepEqual(
+      new Set(groupNames(board.groups)),
+      new Set(["Circle and Hammersmith & City", "District", "Piccadilly"])
+    )
     const merged = board.groups.find((group) => group.lineIds.length > 1)
     assert.ok(merged)
     assert.equal(merged.hasInformation, true)
@@ -1127,9 +1127,7 @@ describe("prepared row identity", () => {
     const first = prepareRailArrivals({ data: [later, soon] })
     const second = prepareRailArrivals({ data: [soon, later] })
     const keyById = (board: ReturnType<typeof prepareRailArrivals>) =>
-      Object.fromEntries(
-        board.rows.map((row) => [row.arrival.id, row.key])
-      )
+      Object.fromEntries(board.rows.map((row) => [row.arrival.id, row.key]))
     assert.deepEqual(keyById(first), keyById(second))
     assert.notEqual(first.rows[0]?.key, first.rows[1]?.key)
   })

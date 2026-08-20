@@ -2,22 +2,20 @@ import {
   TFL_BLUE,
   TFL_MODAL_COLOURS,
   UNDERGROUND_RING_RED,
-} from "@/lib/tfl/brand-colours";
+} from "@/lib/tfl/brand-colours"
 
 /** Wikimedia Commons sources for the common mode roundels. */
 export const ROUNDEL_LOGO_SOURCES = {
-  underground:
-    "https://commons.wikimedia.org/wiki/File:Underground.svg",
+  underground: "https://commons.wikimedia.org/wiki/File:Underground.svg",
   elizabeth:
     "https://commons.wikimedia.org/wiki/File:Elizabeth_line_roundel.svg",
-  overground:
-    "https://commons.wikimedia.org/wiki/File:Overground_roundel.svg",
+  overground: "https://commons.wikimedia.org/wiki/File:Overground_roundel.svg",
   dlr: "https://commons.wikimedia.org/wiki/File:DLR_roundel.svg",
   tram: "https://commons.wikimedia.org/wiki/File:Tramlink_roundel.svg",
   buses: "https://commons.wikimedia.org/wiki/File:London_Buses_roundel.svg",
   nationalRail:
     "https://upload.wikimedia.org/wikipedia/sco/3/31/National_Rail_logo.svg",
-} as const;
+} as const
 
 /** Local copies under `/public/transit-logos` (same files as the Commons versions). */
 export const ROUNDEL_LOGO_PATHS = {
@@ -27,26 +25,26 @@ export const ROUNDEL_LOGO_PATHS = {
   dlr: "/transit-logos/dlr-roundel.svg",
   tram: "/transit-logos/tram-roundel.svg",
   nationalRail: "/transit-logos/national-rail.svg",
-} as const;
+} as const
 
-export type RoundelStyle = "standard" | "outline" | "cycles";
+export type RoundelStyle = "standard" | "outline" | "cycles"
 
 type RoundelPresetDef = {
-  ringColor: string;
-  barColor: string;
-  textColor: string;
-  text: string;
-  label: string;
+  ringColor: string
+  barColor: string
+  textColor: string
+  text: string
+  label: string
   /** Visual variant from Basic Elements §3. */
-  style: RoundelStyle;
+  style: RoundelStyle
   /**
    * Stroke around the bar. TfL Basic Elements: **Cycles only**
    * (white bar with green border). Omit for every other mode.
    */
-  barBorderColor?: string;
-  logoPath?: string;
-  logoSource?: string;
-};
+  barBorderColor?: string
+  logoPath?: string
+  logoSource?: string
+}
 
 /**
  * Mode roundels from TfL Basic Elements §3.
@@ -163,16 +161,16 @@ export const ROUNDEL_PRESETS = {
     /** Basic Elements: Cycles bar is white with a green border. */
     barBorderColor: TFL_MODAL_COLOURS.cycles.hex,
   },
-} as const satisfies Record<string, RoundelPresetDef>;
+} as const satisfies Record<string, RoundelPresetDef>
 
-export type RoundelPreset = keyof typeof ROUNDEL_PRESETS;
+export type RoundelPreset = keyof typeof ROUNDEL_PRESETS
 
 export const getRoundelLogoPath = (
-  variant: RoundelPreset,
+  variant: RoundelPreset
 ): string | undefined => {
-  const preset = ROUNDEL_PRESETS[variant];
-  return "logoPath" in preset ? preset.logoPath : undefined;
-};
+  const preset = ROUNDEL_PRESETS[variant]
+  return "logoPath" in preset ? preset.logoPath : undefined
+}
 
 /** Official TfL brand / IP pages for third-party use. */
 export const TFL_BRAND_LINKS = {
@@ -189,6 +187,5 @@ export const TFL_BRAND_LINKS = {
     "https://content.tfl.gov.uk/tfl-basic-elements-standards-issue-08.pdf",
   hammersmithOne:
     "https://fonts.google.com/specimen/Hammersmith+One?preview.script=Latn",
-  p22UndergroundAdobe:
-    "https://fonts.adobe.com/fonts/p22-underground",
-} as const;
+  p22UndergroundAdobe: "https://fonts.adobe.com/fonts/p22-underground",
+} as const

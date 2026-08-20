@@ -1,11 +1,11 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { LiveRailVehicles } from "@/components/tfl/live-vehicles/live-rail-vehicles";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider";
-import type { TargetRequestsPerMinute } from "@/lib/tfl/vehicle-poll-rate";
-import { cn } from "@/lib/utils";
+import { useState } from "react"
+import { LiveRailVehicles } from "@/components/tfl/live-vehicles/live-rail-vehicles"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
+import type { TargetRequestsPerMinute } from "@/lib/tfl/vehicle-poll-rate"
+import { cn } from "@/lib/utils"
 
 const RAIL_OPTIONS = [
   { id: "victoria", label: "Victoria" },
@@ -13,23 +13,23 @@ const RAIL_OPTIONS = [
   { id: "central", label: "Central" },
   { id: "jubilee", label: "Jubilee" },
   { id: "elizabeth", label: "Elizabeth" },
-] as const;
+] as const
 
 const RATE_OPTIONS: { id: TargetRequestsPerMinute; label: string }[] = [
   { id: "max", label: "Max" },
   { id: 15, label: "15/min" },
   { id: 6, label: "6/min" },
   { id: 3, label: "3/min" },
-];
+]
 
 const toggleId = (ids: string[], id: string): string[] =>
-  ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id];
+  ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id]
 
 export default function LiveRailVehiclesDemo() {
-  const { status } = useUserTflCredentials();
-  const hasKey = status === "ready";
-  const [railLineIds, setRailLineIds] = useState<string[]>(["victoria"]);
-  const [rate, setRate] = useState<TargetRequestsPerMinute>("max");
+  const { status } = useUserTflCredentials()
+  const hasKey = status === "ready"
+  const [railLineIds, setRailLineIds] = useState<string[]>(["victoria"])
+  const [rate, setRate] = useState<TargetRequestsPerMinute>("max")
 
   return (
     <div className="space-y-4">
@@ -55,7 +55,7 @@ export default function LiveRailVehiclesDemo() {
         <div
           className={cn(
             "flex flex-wrap gap-2",
-            !hasKey && "pointer-events-none opacity-50",
+            !hasKey && "pointer-events-none opacity-50"
           )}
         >
           {RATE_OPTIONS.map((option) => (
@@ -69,7 +69,7 @@ export default function LiveRailVehiclesDemo() {
                 "rounded-full border border-border px-2.5 py-1 text-xs",
                 rate === option.id
                   ? "bg-foreground text-background"
-                  : "bg-background text-foreground",
+                  : "bg-background text-foreground"
               )}
             >
               {option.label}
@@ -88,5 +88,5 @@ export default function LiveRailVehiclesDemo() {
         targetRequestsPerMinute={hasKey ? rate : "max"}
       />
     </div>
-  );
+  )
 }

@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata } from "next"
 import {
   componentDocsMetadata,
   renderComponentDocs,
-} from "@/components/docs/render-component-docs";
+} from "@/components/docs/render-component-docs"
 
 export const generateMetadata = (): Promise<Metadata> =>
-  componentDocsMetadata("platform-chip");
+  componentDocsMetadata("platform-chip")
 
 export default function PlatformChipPage() {
   return renderComponentDocs({
@@ -15,5 +15,5 @@ export default function PlatformChipPage() {
       { href: "/docs/bus-number-chip", label: "Bus number chip" },
       { href: "/docs/station-name-labels", label: "Station name labels" },
     ],
-  });
+  })
 }

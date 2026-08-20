@@ -31,7 +31,9 @@ const scale = Math.min(innerWidth / worldWidth, innerHeight / worldHeight)
 const offsetX = MINI_MAP_PAD + (innerWidth - worldWidth * scale) / 2
 const offsetY = MINI_MAP_PAD + (innerHeight - worldHeight * scale) / 2
 
-export const projectGreaterLondon = (point: LngLat): { x: number; y: number } => ({
+export const projectGreaterLondon = (
+  point: LngLat
+): { x: number; y: number } => ({
   x:
     offsetX +
     (point[0] - GREATER_LONDON_ISH.minLng) * METERS_PER_DEG_LNG * scale,

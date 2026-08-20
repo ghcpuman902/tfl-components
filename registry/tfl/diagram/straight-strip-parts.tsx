@@ -1,18 +1,18 @@
-import { cn } from "@/lib/utils";
-import { horizontalDiagramMetrics, ux } from "@/lib/tfl/line-diagram";
-import { formatStationName } from "@/lib/tfl/diagram-station";
-import { StationName } from "@/components/tfl/station-name";
-import { NationalRailPictogram } from "@/components/tfl/national-rail-pictogram";
+import { cn } from "@/lib/utils"
+import { horizontalDiagramMetrics, ux } from "@/lib/tfl/line-diagram"
+import { formatStationName } from "@/lib/tfl/diagram-station"
+import { StationName } from "@/components/tfl/station-name"
+import { NationalRailPictogram } from "@/components/tfl/national-rail-pictogram"
 import {
   monoLineHeightUnits,
   resolveMonoLineStyle,
   scaleMonoLayers,
-} from "@/lib/tfl/bw-line-styles";
+} from "@/lib/tfl/bw-line-styles"
 import {
   routeTrackHeightUnits,
   routeTrackRailCount,
   type RouteTrackStyle,
-} from "@/lib/tfl/route-track";
+} from "@/lib/tfl/route-track"
 import {
   buildSegmentStateMap,
   isStationOutOfUse,
@@ -20,73 +20,69 @@ import {
   type StraightStripStation,
   type StripLabelPlacement,
   type StripSegmentState,
-} from "@/lib/tfl/strip-model";
+} from "@/lib/tfl/strip-model"
 
-type DiagramMetrics = ReturnType<typeof horizontalDiagramMetrics>;
+type DiagramMetrics = ReturnType<typeof horizontalDiagramMetrics>
 
 export type {
   StraightStripStation,
   StripLabelPlacement,
   StripSegmentState,
-} from "@/lib/tfl/strip-model";
+} from "@/lib/tfl/strip-model"
 
 /** @deprecated Prefer `StraightStripStation`. */
-export type HorizontalDiagramStation = StraightStripStation;
+export type HorizontalDiagramStation = StraightStripStation
 /** @deprecated Prefer `StripLabelPlacement`. */
-export type HorizontalLabelPlacement = StripLabelPlacement;
+export type HorizontalLabelPlacement = StripLabelPlacement
 
-export {
-  buildSegmentStateMap,
-  isStationOutOfUse,
-  stationOutOfUseFromSegments,
-};
+export { buildSegmentStateMap, isStationOutOfUse, stationOutOfUseFromSegments }
 
 /**
  * Closed / out-of-use solid — lighter than Jubilee (#838D93).
  * Uses theme `--muted` (≈ Tailwind zinc-100 / oklch 0.97 in light mode).
  */
-export const OUT_OF_USE_LINE_COLOR = "var(--muted)";
+export const OUT_OF_USE_LINE_COLOR = "var(--muted)"
 
 export const resolveLabelSide = (
   index: number,
-  placement: StripLabelPlacement,
+  placement: StripLabelPlacement
 ): "above" | "below" => {
-  if (placement === "above") return "above";
-  if (placement === "below") return "below";
-  return index % 2 === 0 ? "above" : "below";
-};
+  if (placement === "above") return "above"
+  if (placement === "below") return "below"
+  return index % 2 === 0 ? "above" : "below"
+}
 
 type RouteStripProps = {
-  stationCount: number;
-  segmentStates: readonly StripSegmentState[];
-  lineColor: string;
+  stationCount: number
+  segmentStates: readonly StripSegmentState[]
+  lineColor: string
   /** Top of a 1× solid route (centreline − 0.5×). Multi-rail stacks re-centre. */
-  lineTop: string;
+  lineTop: string
   /** Solid-route height (1×). Ignored for parallel / cable-car stacks. */
-  lineWidth: string;
-  colWidthUnits: number;
+  lineWidth: string
+  colWidthUnits: number
   /** Explicit paint style — primitives never infer from TfL ids. */
-  trackStyle?: RouteTrackStyle;
-};
+  trackStyle?: RouteTrackStyle
+}
 
 const SegmentPaint = ({
   color,
   trackStyle,
 }: {
-  color: string;
-  trackStyle: RouteTrackStyle;
+  color: string
+  trackStyle: RouteTrackStyle
 }) => {
   if (trackStyle === "solid") {
-    return <div className="h-full w-full" style={{ backgroundColor: color }} />;
+    return <div className="h-full w-full" style={{ backgroundColor: color }} />
   }
 
-  const rails = routeTrackRailCount(trackStyle);
+  const rails = routeTrackRailCount(trackStyle)
   // stroke === gap === 0.33× — equal flex bands keep §5 proportions.
-  const bands: { key: string; fill?: string }[] = [];
+  const bands: { key: string; fill?: string }[] = []
   for (let i = 0; i < rails; i += 1) {
-    bands.push({ key: `rail-${i}`, fill: color });
+    bands.push({ key: `rail-${i}`, fill: color })
     if (i < rails - 1) {
-      bands.push({ key: `gap-${i}` });
+      bands.push({ key: `gap-${i}` })
     }
   }
 
@@ -100,8 +96,8 @@ const SegmentPaint = ({
         />
       ))}
     </div>
-  );
-};
+  )
+}
 
 /** Solid / parallel / cable-car / out-of-use segments on the route centreline. */
 export const StraightRouteTrack = ({
@@ -113,15 +109,15 @@ export const StraightRouteTrack = ({
   colWidthUnits,
   trackStyle = "solid",
 }: RouteStripProps) => {
-  if (stationCount < 2) return null;
+  if (stationCount < 2) return null
 
-  const heightUnits = routeTrackHeightUnits(trackStyle);
+  const heightUnits = routeTrackHeightUnits(trackStyle)
   // Solid metrics pass top = centre − 0.5×; re-centre taller / shorter stacks.
   const top =
     trackStyle === "solid"
       ? lineTop
-      : `calc(${lineTop} + ${ux(0.5)} - ${ux(heightUnits / 2)})`;
-  const height = trackStyle === "solid" ? lineWidth : ux(heightUnits);
+      : `calc(${lineTop} + ${ux(0.5)} - ${ux(heightUnits / 2)})`
+  const height = trackStyle === "solid" ? lineWidth : ux(heightUnits)
 
   return (
     <div
@@ -130,10 +126,9 @@ export const StraightRouteTrack = ({
       style={{ top, height }}
     >
       {segmentStates.map((state, index) => {
-        const left = `calc(${ux(colWidthUnits)} * ${index + 0.5})`;
-        const width = ux(colWidthUnits);
-        const color =
-          state === "out-of-use" ? OUT_OF_USE_LINE_COLOR : lineColor;
+        const left = `calc(${ux(colWidthUnits)} * ${index + 0.5})`
+        const width = ux(colWidthUnits)
+        const color = state === "out-of-use" ? OUT_OF_USE_LINE_COLOR : lineColor
 
         return (
           <div
@@ -143,44 +138,44 @@ export const StraightRouteTrack = ({
           >
             <SegmentPaint color={color} trackStyle={trackStyle} />
           </div>
-        );
+        )
       })}
     </div>
-  );
-};
+  )
+}
 
 type MonoRun = {
-  start: number;
-  end: number;
-  state: StripSegmentState;
-};
+  start: number
+  end: number
+  state: StripSegmentState
+}
 
 const contiguousSegmentRuns = (
-  states: readonly StripSegmentState[],
+  states: readonly StripSegmentState[]
 ): MonoRun[] => {
-  if (states.length === 0) return [];
-  const runs: MonoRun[] = [];
-  let start = 0;
-  let state = states[0]!;
+  if (states.length === 0) return []
+  const runs: MonoRun[] = []
+  let start = 0
+  let state = states[0]!
   for (let i = 1; i <= states.length; i += 1) {
     if (i === states.length || states[i] !== state) {
-      runs.push({ start, end: i, state });
-      start = i;
-      state = states[i] ?? state;
+      runs.push({ start, end: i, state })
+      start = i
+      state = states[i] ?? state
     }
   }
-  return runs;
-};
+  return runs
+}
 
 type MonoRouteTrackProps = {
-  stationCount: number;
-  segmentStates: readonly StripSegmentState[];
-  lineId: string;
+  stationCount: number
+  segmentStates: readonly StripSegmentState[]
+  lineId: string
   /** Absolute diagram unit — mono scales through `x`, not `--tfl-diagram-scale`. */
-  x: number;
-  lineTop: string;
-  colWidthUnits: number;
-};
+  x: number
+  lineTop: string
+  colWidthUnits: number
+}
 
 /**
  * B&W Tube-map stroke motifs on a straight corridor.
@@ -195,13 +190,13 @@ export const MonoRouteTrack = ({
   lineTop,
   colWidthUnits,
 }: MonoRouteTrackProps) => {
-  if (stationCount < 2) return null;
+  if (stationCount < 2) return null
 
-  const layers = scaleMonoLayers(resolveMonoLineStyle(lineId), x);
-  const heightUnits = monoLineHeightUnits(layers);
-  const height = ux(heightUnits);
-  const nSeg = stationCount - 1;
-  const runs = contiguousSegmentRuns(segmentStates);
+  const layers = scaleMonoLayers(resolveMonoLineStyle(lineId), x)
+  const heightUnits = monoLineHeightUnits(layers)
+  const height = ux(heightUnits)
+  const nSeg = stationCount - 1
+  const runs = contiguousSegmentRuns(segmentStates)
 
   return (
     <div
@@ -216,8 +211,8 @@ export const MonoRouteTrack = ({
     >
       <svg width="100%" height="100%" className="overflow-visible">
         {runs.map((run) => {
-          const x1 = `${(run.start / nSeg) * 100}%`;
-          const x2 = `${(run.end / nSeg) * 100}%`;
+          const x1 = `${(run.start / nSeg) * 100}%`
+          const x2 = `${(run.end / nSeg) * 100}%`
           if (run.state === "out-of-use") {
             return (
               <line
@@ -230,7 +225,7 @@ export const MonoRouteTrack = ({
                 strokeWidth={x}
                 strokeLinecap="butt"
               />
-            );
+            )
           }
           return layers.map((layer, index) => (
             <line
@@ -245,31 +240,31 @@ export const MonoRouteTrack = ({
               strokeDashoffset={layer.dashoffset}
               strokeLinecap={layer.linecap ?? "butt"}
             />
-          ));
+          ))
         })}
       </svg>
     </div>
-  );
-};
+  )
+}
 
 /** @deprecated Prefer `StraightRouteTrack`. */
-export const HorizontalRouteStrip = StraightRouteTrack;
+export const HorizontalRouteStrip = StraightRouteTrack
 
 type StationColumnProps = {
-  station: StraightStripStation;
-  index: number;
-  lineColor: string;
-  showLabel: boolean;
-  connectionBand?: string;
+  station: StraightStripStation
+  index: number
+  lineColor: string
+  showLabel: boolean
+  connectionBand?: string
   /** Fixed column width (CSS length). */
-  colWidth: string;
+  colWidth: string
   /** Closed for this line — tick/ring use the out-of-use colour. */
-  outOfUse?: boolean;
+  outOfUse?: boolean
   /** Where station names sit relative to the route. */
-  labelPlacement?: StripLabelPlacement;
+  labelPlacement?: StripLabelPlacement
   /** Hoisted metrics from the parent strip (avoids per-column rebuild). */
-  metrics?: DiagramMetrics;
-};
+  metrics?: DiagramMetrics
+}
 
 export const StraightStripStationColumn = ({
   station,
@@ -282,27 +277,27 @@ export const StraightStripStationColumn = ({
   labelPlacement = "above",
   metrics,
 }: StationColumnProps) => {
-  const m = metrics ?? horizontalDiagramMetrics(labelPlacement);
-  const isInterchange = Boolean(station.interchange);
+  const m = metrics ?? horizontalDiagramMetrics(labelPlacement)
+  const isInterchange = Boolean(station.interchange)
   const connections = (station.connections ?? []).filter(
-    (c) => c.id !== "national-rail",
-  );
-  const markerColor = outOfUse ? OUT_OF_USE_LINE_COLOR : lineColor;
-  const accessibleName = formatStationName(station.name);
-  const labelSide = resolveLabelSide(index, labelPlacement);
+    (c) => c.id !== "national-rail"
+  )
+  const markerColor = outOfUse ? OUT_OF_USE_LINE_COLOR : lineColor
+  const accessibleName = formatStationName(station.name)
+  const labelSide = resolveLabelSide(index, labelPlacement)
   const reserveAbove =
-    labelPlacement === "above" || labelPlacement === "alternate";
+    labelPlacement === "above" || labelPlacement === "alternate"
   const reserveBelow =
-    labelPlacement === "below" || labelPlacement === "alternate";
-  const showAbove = showLabel && labelSide === "above";
-  const showBelow = showLabel && labelSide === "below";
-  const hasLabelLines = Boolean(station.labelLines?.length);
+    labelPlacement === "below" || labelPlacement === "alternate"
+  const showAbove = showLabel && labelSide === "above"
+  const showBelow = showLabel && labelSide === "below"
+  const hasLabelLines = Boolean(station.labelLines?.length)
 
   const nameBand = (visible: boolean, alignEnd: boolean) => (
     <div
       className={cn(
         "relative flex w-full justify-center px-0.5 text-center",
-        alignEnd ? "items-end" : "items-start",
+        alignEnd ? "items-end" : "items-start"
       )}
       style={{ height: m.nameBand }}
       aria-hidden={visible ? undefined : true}
@@ -337,7 +332,7 @@ export const StraightStripStationColumn = ({
         </div>
       ) : null}
     </div>
-  );
+  )
 
   const marker = (
     <div
@@ -352,7 +347,7 @@ export const StraightStripStationColumn = ({
         <span
           className={cn(
             "box-border block rounded-full border-solid",
-            !outOfUse && "bg-white dark:bg-black border-black dark:border-white",
+            !outOfUse && "border-black bg-white dark:border-white dark:bg-black"
           )}
           style={{
             width: m.ringOuter,
@@ -375,7 +370,7 @@ export const StraightStripStationColumn = ({
         />
       )}
     </div>
-  );
+  )
 
   const flags =
     connections.length > 0 && showLabel ? (
@@ -411,7 +406,7 @@ export const StraightStripStationColumn = ({
           minHeight: connectionBand,
         }}
       />
-    );
+    )
 
   return (
     <li
@@ -426,11 +421,11 @@ export const StraightStripStationColumn = ({
       ) : null}
       {flags}
     </li>
-  );
-};
+  )
+}
 
 /** @deprecated Prefer `StraightStripStationColumn`. */
-export const HorizontalStationColumn = StraightStripStationColumn;
+export const HorizontalStationColumn = StraightStripStationColumn
 
 /**
  * Choose which station indexes show a visible label in fitted mode.
@@ -440,45 +435,45 @@ export const selectFittedLabelIndexes = (
   stations: readonly StraightStripStation[],
   availableWidthPx: number,
   forceLabelIds: readonly string[] = [],
-  colWidthPx?: number,
+  colWidthPx?: number
 ): Set<number> => {
-  const n = stations.length;
-  const show = new Set<number>();
-  if (n === 0) return show;
+  const n = stations.length
+  const show = new Set<number>()
+  if (n === 0) return show
 
-  show.add(0);
-  show.add(n - 1);
+  show.add(0)
+  show.add(n - 1)
 
-  const forced = new Set(forceLabelIds);
+  const forced = new Set(forceLabelIds)
   stations.forEach((station, index) => {
-    if (forced.has(station.id)) show.add(index);
-  });
+    if (forced.has(station.id)) show.add(index)
+  })
 
-  const pitch = colWidthPx && colWidthPx > 0 ? colWidthPx : 56;
-  const budget = Math.max(2, Math.floor(availableWidthPx / pitch));
-  if (show.size >= budget) return show;
+  const pitch = colWidthPx && colWidthPx > 0 ? colWidthPx : 56
+  const budget = Math.max(2, Math.floor(availableWidthPx / pitch))
+  if (show.size >= budget) return show
 
-  const interchangeIndexes: number[] = [];
+  const interchangeIndexes: number[] = []
   for (let index = 1; index < n - 1; index += 1) {
-    if (stations[index]?.interchange) interchangeIndexes.push(index);
+    if (stations[index]?.interchange) interchangeIndexes.push(index)
   }
 
   for (const index of interchangeIndexes) {
-    if (show.size >= budget) break;
-    show.add(index);
+    if (show.size >= budget) break
+    show.add(index)
   }
 
-  if (show.size >= budget) return show;
+  if (show.size >= budget) return show
 
-  const remaining = budget - show.size;
+  const remaining = budget - show.size
   if (remaining > 0 && n > 2) {
-    const step = n / (remaining + 1);
+    const step = n / (remaining + 1)
     for (let i = 1; i <= remaining; i += 1) {
-      const index = Math.min(n - 2, Math.max(1, Math.round(step * i)));
-      show.add(index);
-      if (show.size >= budget) break;
+      const index = Math.min(n - 2, Math.max(1, Math.round(step * i)))
+      show.add(index)
+      if (show.size >= budget) break
     }
   }
 
-  return show;
-};
+  return show
+}

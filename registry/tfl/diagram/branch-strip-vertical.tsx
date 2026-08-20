@@ -1,11 +1,11 @@
-import { StationName } from "@/components/tfl/station-name";
+import { StationName } from "@/components/tfl/station-name"
 import {
   BranchStripTrack,
   prepareBranchStripView,
   type BranchStripSharedProps,
-} from "@/components/tfl/diagram/branch-strip-parts";
-import { verticalLabelOnLeft } from "@/lib/tfl/branch-strip-layout";
-import { cn } from "@/lib/utils";
+} from "@/components/tfl/diagram/branch-strip-parts"
+import { verticalLabelOnLeft } from "@/lib/tfl/branch-strip-layout"
+import { cn } from "@/lib/utils"
 
 /**
  * Vertical branched strip: labels left / right of the corridor, stub-above
@@ -14,10 +14,10 @@ import { cn } from "@/lib/utils";
  * Visual checklist: http://localhost:3999/docs/branch-strip-vertical
  * Automated guards: `pnpm test` → `lib/tfl/schematic-layout.test.ts`
  */
-export type BranchStripVerticalProps = BranchStripSharedProps;
+export type BranchStripVerticalProps = BranchStripSharedProps
 
 export const BranchStripVertical = (props: BranchStripVerticalProps) => {
-  const view = prepareBranchStripView(props, "vertical");
+  const view = prepareBranchStripView(props, "vertical")
   const {
     schematic,
     layout,
@@ -28,20 +28,20 @@ export const BranchStripVertical = (props: BranchStripVerticalProps) => {
     canvasHeight,
     svgOffsetX,
     svgOffsetY,
-  } = view;
+  } = view
   const {
     nameFont,
     labelLineHeight,
     labelClearance,
     verticalLabelWidth,
     labelGap,
-  } = metrics;
+  } = metrics
   const labelStyle = {
     fontSize: nameFont,
     lineHeight: labelLineHeight,
     textShadow:
       "0 0 3px var(--background), 0 0 3px var(--background), 0 0 6px var(--background)",
-  } as const;
+  } as const
 
   return (
     <div
@@ -57,10 +57,10 @@ export const BranchStripVertical = (props: BranchStripVerticalProps) => {
         <BranchStripTrack view={view} />
 
         {layout.points.map((point) => {
-          const nodeX = point.x + svgOffsetX;
-          const nodeY = point.y + svgOffsetY;
-          const labelLines = nodeLabelLines?.[point.id];
-          const placement = placementById.get(point.id);
+          const nodeX = point.x + svgOffsetX
+          const nodeY = point.y + svgOffsetY
+          const labelLines = nodeLabelLines?.[point.id]
+          const placement = placementById.get(point.id)
 
           if (placement?.side === "stub-above") {
             return (
@@ -87,13 +87,12 @@ export const BranchStripVertical = (props: BranchStripVerticalProps) => {
                   style={labelStyle}
                 />
               </div>
-            );
+            )
           }
 
           const labelOnLeft =
             placement?.side === "left" ||
-            (placement?.side !== "right" &&
-              verticalLabelOnLeft(point, layout));
+            (placement?.side !== "right" && verticalLabelOnLeft(point, layout))
 
           return (
             <div
@@ -121,9 +120,9 @@ export const BranchStripVertical = (props: BranchStripVerticalProps) => {
                 style={labelStyle}
               />
             </div>
-          );
+          )
         })}
       </div>
     </div>
-  );
-};
+  )
+}

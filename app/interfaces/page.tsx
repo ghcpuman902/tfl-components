@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { redirect } from "next/navigation"
 
 export default function InterfacesIndexRedirect() {
-  redirect("/docs/components");
+  redirect("/docs/components")
 }

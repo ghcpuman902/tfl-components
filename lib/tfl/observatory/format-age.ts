@@ -18,7 +18,7 @@ const yesterdayKey = (nowMs: number): string => {
 export const formatObservationAge = (
   atMs: number,
   nowMs: number,
-  locale?: string,
+  locale?: string
 ): string => {
   const elapsed = Math.max(0, nowMs - atMs)
   if (elapsed < 45_000) return "just now"
@@ -42,10 +42,7 @@ export const formatObservationAge = (
   }).format(new Date(atMs))
 }
 
-export const formatObservationLocal = (
-  atMs: number,
-  locale?: string,
-): string =>
+export const formatObservationLocal = (atMs: number, locale?: string): string =>
   new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",

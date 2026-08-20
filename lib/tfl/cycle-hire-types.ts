@@ -1,4 +1,4 @@
-import type TflClient from "tfl-ts";
+import type TflClient from "tfl-ts"
 
 /**
  * One normalised dock from `tfl.bikePoint.getById()` / radius / bounds.
@@ -6,4 +6,4 @@ import type TflClient from "tfl-ts";
  */
 export type CycleHireDock = Awaited<
   ReturnType<TflClient["bikePoint"]["getById"]>
->;
+>

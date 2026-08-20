@@ -107,7 +107,7 @@ const StateBadge = ({ state }: { state: DisplayState }) => {
       variant="outline"
       className={cn(
         "overflow-visible px-1 text-muted-foreground",
-        STATE_BADGE_CLASS[state],
+        STATE_BADGE_CLASS[state]
       )}
     >
       <Icon
@@ -196,7 +196,7 @@ const DatasetCard = ({
       </h3>
       <StateBadge state={state} />
     </div>
-    <p className="text-3xl font-semibold tabular-nums tracking-tight text-foreground">
+    <p className="text-3xl font-semibold tracking-tight text-foreground tabular-nums">
       {figure == null ? "—" : formatCount(figure)}
       {delta != null && delta !== 0 ? (
         <span className="ml-2 text-base font-medium text-muted-foreground">
@@ -303,7 +303,10 @@ export const ObservatoryView = ({ data }: { data: ObservatoryPageData }) => {
         ) : null}
 
         {data.attention.length > 0 ? (
-          <section className="space-y-2" aria-labelledby="observatory-attention">
+          <section
+            className="space-y-2"
+            aria-labelledby="observatory-attention"
+          >
             <h2
               id="observatory-attention"
               className="text-lg font-semibold text-foreground"

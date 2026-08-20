@@ -6,7 +6,7 @@ describe("isFerryPortStop", () => {
   it("keeps NaptanFerryPort and 930G ids", () => {
     assert.equal(
       isFerryPortStop({ id: "930GWMR", stopType: "NaptanFerryPort" }),
-      true,
+      true
     )
     assert.equal(isFerryPortStop({ id: "930GWMR" }), true)
   })
@@ -14,7 +14,7 @@ describe("isFerryPortStop", () => {
   it("drops berths", () => {
     assert.equal(
       isFerryPortStop({ id: "9300WMR", stopType: "NaptanFerryBerth" }),
-      false,
+      false
     )
   })
 })
@@ -37,7 +37,7 @@ describe("mapFerryPort", () => {
         name: "Westminster Pier Berth",
         stopType: "NaptanFerryBerth",
       }),
-      null,
+      null
     )
   })
 })

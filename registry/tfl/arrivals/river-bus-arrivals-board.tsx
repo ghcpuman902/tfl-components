@@ -109,10 +109,7 @@ export const RiverBusArrivalsBoard = ({
   const heading = resolveArrivalsHeading(chrome.stopName, rows)
   if (loading && rows.length === 0 && !error) {
     return (
-      <RiverBusArrivalsBoardSkeleton
-        className={className}
-        stopName={heading}
-      />
+      <RiverBusArrivalsBoardSkeleton className={className} stopName={heading} />
     )
   }
 
@@ -125,7 +122,7 @@ export const RiverBusArrivalsBoard = ({
     maxRows,
   })
   const riverDisruptions = (disruptions ?? []).filter((item) =>
-    isRiverBusLineId(item.lineId),
+    isRiverBusLineId(item.lineId)
   )
 
   return (

@@ -1,24 +1,24 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { GlobeCheck, GlobeX, Loader2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { formatFetchedAgo } from "@/lib/format-fetched-ago";
-import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react"
+import { GlobeCheck, GlobeX, Loader2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { formatFetchedAgo } from "@/lib/format-fetched-ago"
+import { cn } from "@/lib/utils"
 
-export type DataSourceKind = "cached" | "fixture" | "live";
+export type DataSourceKind = "cached" | "fixture" | "live"
 
 type DataSourceLabelProps = {
-  source: DataSourceKind;
-  className?: string;
+  source: DataSourceKind
+  className?: string
   /** Epoch ms of the last successful fetch. Live only; formatted on the client. */
-  fetchedAt?: number;
-  loading?: boolean;
+  fetchedAt?: number
+  loading?: boolean
   /** Live only. Hover/click refreshes; no instructional copy. */
-  onRefresh?: () => void;
-};
+  onRefresh?: () => void
+}
 
-const RELATIVE_TICK_MS = 15_000;
+const RELATIVE_TICK_MS = 15_000
 
 /** Compact provenance pill — under the preview, right-aligned. */
 export const DataSourceLabel = ({
@@ -28,24 +28,24 @@ export const DataSourceLabel = ({
   loading = false,
   onRefresh,
 }: DataSourceLabelProps) => {
-  const isLive = source === "live";
-  const Icon = isLive ? GlobeCheck : GlobeX;
-  const canRefresh = Boolean(onRefresh) && isLive;
-  const [now, setNow] = useState<number | null>(null);
+  const isLive = source === "live"
+  const Icon = isLive ? GlobeCheck : GlobeX
+  const canRefresh = Boolean(onRefresh) && isLive
+  const [now, setNow] = useState<number | null>(null)
 
   useEffect(() => {
     if (!isLive || fetchedAt == null) {
-      setNow(null);
-      return;
+      setNow(null)
+      return
     }
 
     const readNow = () => {
-      setNow(Date.now());
-    };
-    readNow();
-    const id = window.setInterval(readNow, RELATIVE_TICK_MS);
-    return () => window.clearInterval(id);
-  }, [isLive, fetchedAt]);
+      setNow(Date.now())
+    }
+    readNow()
+    const id = window.setInterval(readNow, RELATIVE_TICK_MS)
+    return () => window.clearInterval(id)
+  }, [isLive, fetchedAt])
 
   const label =
     isLive && fetchedAt != null && now != null
@@ -54,12 +54,12 @@ export const DataSourceLabel = ({
         ? "Live data"
         : source === "fixture"
           ? "Example data"
-          : "Shared demo data";
+          : "Shared demo data"
 
   const handleClick = () => {
-    if (!canRefresh || loading) return;
-    onRefresh?.();
-  };
+    if (!canRefresh || loading) return
+    onRefresh?.()
+  }
 
   return (
     <div className={cn("flex justify-end", className)}>
@@ -68,7 +68,7 @@ export const DataSourceLabel = ({
         className={cn(
           "px-1 text-muted-foreground",
           canRefresh &&
-            "cursor-pointer hover:bg-muted focus-visible:bg-muted disabled:cursor-progress",
+            "cursor-pointer hover:bg-muted focus-visible:bg-muted disabled:cursor-progress"
         )}
         render={
           canRefresh ? (
@@ -90,9 +90,7 @@ export const DataSourceLabel = ({
           <Loader2
             className={cn(
               "absolute inset-0 size-3 text-muted-foreground transition-opacity duration-200",
-              loading
-                ? "opacity-100 motion-safe:animate-spin"
-                : "opacity-0",
+              loading ? "opacity-100 motion-safe:animate-spin" : "opacity-0"
             )}
           />
           <Icon
@@ -101,12 +99,12 @@ export const DataSourceLabel = ({
               loading ? "opacity-0" : "opacity-100",
               isLive
                 ? "text-emerald-600 dark:text-emerald-400"
-                : "text-muted-foreground",
+                : "text-muted-foreground"
             )}
           />
         </span>
         {label}
       </Badge>
     </div>
-  );
-};
+  )
+}

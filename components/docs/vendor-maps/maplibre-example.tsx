@@ -1,28 +1,28 @@
-"use client";
+"use client"
 
-import { useEffect, useRef, useState } from "react";
-import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
-import type { TransitGeometryBundle } from "@/lib/tfl/geography-types";
+import { useEffect, useRef, useState } from "react"
+import maplibregl from "maplibre-gl"
+import "maplibre-gl/dist/maplibre-gl.css"
+import type { TransitGeometryBundle } from "@/lib/tfl/geography-types"
 import {
   TRANSIT_GEOMETRY_PUBLIC_ASSETS,
   OPENFREEMAP_POSITRON_STYLE_URL,
-} from "@/lib/tfl/geography-credits";
+} from "@/lib/tfl/geography-credits"
 
 /**
  * Docs-only MapLibre vendor example — loads vendored OSM GeoJSON and renders
  * it with MapLibre GL JS. No API key required.
  */
 export const MapLibreExample = () => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const mapRef = useRef<maplibregl.Map | null>(null)
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container || mapRef.current) return;
+    const container = containerRef.current
+    if (!container || mapRef.current) return
 
-    let cancelled = false;
+    let cancelled = false
 
     const map = new maplibregl.Map({
       container,
@@ -31,30 +31,34 @@ export const MapLibreExample = () => {
       zoom: 10.2,
       attributionControl: { compact: true },
       cooperativeGestures: true,
-    });
+    })
 
     map.addControl(
       new maplibregl.NavigationControl({ showCompass: false }),
-      "top-right",
-    );
-    mapRef.current = map;
+      "top-right"
+    )
+    mapRef.current = map
 
     map.on("load", async () => {
       try {
         const bundles = (
           await Promise.all(
             TRANSIT_GEOMETRY_PUBLIC_ASSETS.map(async (asset) => {
-              const res = await fetch(asset.url);
-              if (!res.ok) return null;
-              const bundle = (await res.json()) as TransitGeometryBundle;
-              return { mode: asset.mode, bundle };
-            }),
+              const res = await fetch(asset.url)
+              if (!res.ok) return null
+              const bundle = (await res.json()) as TransitGeometryBundle
+              return { mode: asset.mode, bundle }
+            })
           )
         ).filter(
-          (item): item is { mode: (typeof TRANSIT_GEOMETRY_PUBLIC_ASSETS)[number]["mode"]; bundle: TransitGeometryBundle } =>
-            item != null,
-        );
-        if (cancelled) return;
+          (
+            item
+          ): item is {
+            mode: (typeof TRANSIT_GEOMETRY_PUBLIC_ASSETS)[number]["mode"]
+            bundle: TransitGeometryBundle
+          } => item != null
+        )
+        if (cancelled) return
 
         for (const { mode, bundle } of bundles) {
           map.addSource(`${mode}-lines`, {
@@ -63,14 +67,14 @@ export const MapLibreExample = () => {
               type: "FeatureCollection",
               features: bundle.lines.features ?? [],
             },
-          });
+          })
           map.addSource(`${mode}-stations`, {
             type: "geojson",
             data: {
               type: "FeatureCollection",
               features: bundle.stations.features ?? [],
             },
-          });
+          })
         }
 
         for (const { mode } of bundles) {
@@ -83,7 +87,7 @@ export const MapLibreExample = () => {
               "line-width": 5,
               "line-opacity": 0.85,
             },
-          });
+          })
         }
         for (const { mode } of bundles) {
           map.addLayer({
@@ -94,7 +98,7 @@ export const MapLibreExample = () => {
               "line-color": ["coalesce", ["get", "color"], "#0019A8"],
               "line-width": 3,
             },
-          });
+          })
         }
         for (const { mode } of bundles) {
           map.addLayer({
@@ -107,18 +111,13 @@ export const MapLibreExample = () => {
               "circle-stroke-width": 1.25,
               "circle-stroke-color": "#111827",
             },
-          });
+          })
           map.addLayer({
             id: `${mode}-stations-label`,
             type: "symbol",
             source: `${mode}-stations`,
             layout: {
-              "text-field": [
-                "coalesce",
-                ["get", "label"],
-                ["get", "name"],
-                "",
-              ],
+              "text-field": ["coalesce", ["get", "label"], ["get", "name"], ""],
               "text-font": ["Noto Sans Regular"],
               "text-size": 11,
               "text-offset": [0, 1.15],
@@ -130,20 +129,20 @@ export const MapLibreExample = () => {
               "text-halo-color": "#ffffff",
               "text-halo-width": 1.6,
             },
-          });
+          })
         }
-        setLoaded(true);
+        setLoaded(true)
       } catch {
         /* noop for docs example */
       }
-    });
+    })
 
     return () => {
-      cancelled = true;
-      map.remove();
-      mapRef.current = null;
-    };
-  }, []);
+      cancelled = true
+      map.remove()
+      mapRef.current = null
+    }
+  }, [])
 
   return (
     <div className="space-y-2">
@@ -158,5 +157,5 @@ export const MapLibreExample = () => {
         {loaded && " · Loaded"}
       </p>
     </div>
-  );
-};
+  )
+}

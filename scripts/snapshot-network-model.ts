@@ -64,7 +64,9 @@ const headRemote = async (): Promise<RemoteInfo> => {
 
 const downloadOnce = async (dest: string, expectedBytes: number | null) => {
   await mkdir(path.dirname(dest), { recursive: true })
-  log(`Downloading once to ${path.relative(ROOT, dest)} (keep until snapshot exists)`)
+  log(
+    `Downloading once to ${path.relative(ROOT, dest)} (keep until snapshot exists)`
+  )
   await new Promise<void>((resolve, reject) => {
     const child = spawn(
       "curl",
@@ -82,7 +84,7 @@ const downloadOnce = async (dest: string, expectedBytes: number | null) => {
         dest,
         AUBIN_GTFS_URL,
       ],
-      { stdio: "inherit" },
+      { stdio: "inherit" }
     )
     child.on("error", reject)
     child.on("exit", (code) => {
@@ -91,13 +93,20 @@ const downloadOnce = async (dest: string, expectedBytes: number | null) => {
     })
   })
   if (!(await zipLooksComplete(dest, expectedBytes ?? undefined))) {
-    throw new Error("Download finished but the zip is incomplete or unreadable. Kept the file; retry the same command to resume.")
+    throw new Error(
+      "Download finished but the zip is incomplete or unreadable. Kept the file; retry the same command to resume."
+    )
   }
 }
 
 const resolveZip = async (remote: RemoteInfo): Promise<string> => {
   const candidate = fromPath ? path.resolve(fromPath) : CACHE_ZIP
-  if (await zipLooksComplete(candidate, fromPath ? undefined : remote.contentLength ?? undefined)) {
+  if (
+    await zipLooksComplete(
+      candidate,
+      fromPath ? undefined : (remote.contentLength ?? undefined)
+    )
+  ) {
     log(`Reusing ${path.relative(ROOT, candidate)} — not downloading again`)
     return candidate
   }
@@ -105,29 +114,37 @@ const resolveZip = async (remote: RemoteInfo): Promise<string> => {
     throw new Error(`--from ${fromPath} is missing or not a readable zip`)
   }
   if (remote.contentLength) {
-    log(`Cache missing or incomplete. Remote ${remote.contentLength.toLocaleString()} bytes` +
-      (remote.lastModified ? `, last-modified ${remote.lastModified}` : ""))
+    log(
+      `Cache missing or incomplete. Remote ${remote.contentLength.toLocaleString()} bytes` +
+        (remote.lastModified ? `, last-modified ${remote.lastModified}` : "")
+    )
   }
   await downloadOnce(CACHE_ZIP, remote.contentLength)
   return CACHE_ZIP
 }
 
-const openMember = async (zipPath: string, members: readonly ZipMember[], name: string) => {
+const openMember = async (
+  zipPath: string,
+  members: readonly ZipMember[],
+  name: string
+) => {
   const member = requireZipMember(members, name)
   log(
-    `  stream ${name}  compressed=${member.compressedSize.toLocaleString()}  uncompressed=${member.uncompressedSize.toLocaleString()}`,
+    `  stream ${name}  compressed=${member.compressedSize.toLocaleString()}  uncompressed=${member.uncompressedSize.toLocaleString()}`
   )
   return openZipMember(zipPath, member)
 }
 
 const collectRoutes = async (
   zipPath: string,
-  members: readonly ZipMember[],
+  members: readonly ZipMember[]
 ): Promise<GtfsRoute[]> => {
   const routes: GtfsRoute[] = []
   let kept = 0
   let droppedBus = 0
-  for await (const row of streamCsvRows(await openMember(zipPath, members, "routes.txt"))) {
+  for await (const row of streamCsvRows(
+    await openMember(zipPath, members, "routes.txt")
+  )) {
     const route: GtfsRoute = {
       route_id: row.route_id ?? "",
       agency_id: row.agency_id ?? "",
@@ -151,15 +168,19 @@ const collectRoutes = async (
     kept += 1
     routes.push(route)
   }
-  log(`  kept ${kept} rail routes; dropped ${droppedBus} bus / replacement rows among others`)
+  log(
+    `  kept ${kept} rail routes; dropped ${droppedBus} bus / replacement rows among others`
+  )
   return routes
 }
 
 const collectFeedInfo = async (
   zipPath: string,
-  members: readonly ZipMember[],
+  members: readonly ZipMember[]
 ): Promise<Record<string, string>> => {
-  for await (const row of streamCsvRows(await openMember(zipPath, members, "feed_info.txt"))) {
+  for await (const row of streamCsvRows(
+    await openMember(zipPath, members, "feed_info.txt")
+  )) {
     return row
   }
   return {}
@@ -167,10 +188,12 @@ const collectFeedInfo = async (
 
 const inspectAgencies = async (
   zipPath: string,
-  members: readonly ZipMember[],
+  members: readonly ZipMember[]
 ) => {
   const seen = new Set<string>()
-  for await (const row of streamCsvRows(await openMember(zipPath, members, "agency.txt"))) {
+  for await (const row of streamCsvRows(
+    await openMember(zipPath, members, "agency.txt")
+  )) {
     const id = row.agency_id ?? ""
     if (KEPT_AGENCY_IDS.includes(id as (typeof KEPT_AGENCY_IDS)[number])) {
       seen.add(`${id}  ${row.agency_name ?? ""}`)
@@ -183,13 +206,16 @@ const inspectAgencies = async (
 const collectTrips = async (
   zipPath: string,
   members: readonly ZipMember[],
-  keptRouteIds: ReadonlySet<string>,
+  keptRouteIds: ReadonlySet<string>
 ): Promise<GtfsTrip[]> => {
   const trips: GtfsTrip[] = []
   let scanned = 0
-  for await (const row of streamCsvRows(await openMember(zipPath, members, "trips.txt"))) {
+  for await (const row of streamCsvRows(
+    await openMember(zipPath, members, "trips.txt")
+  )) {
     scanned += 1
-    if (scanned % 500_000 === 0) log(`    … ${scanned.toLocaleString()} trips scanned`)
+    if (scanned % 500_000 === 0)
+      log(`    … ${scanned.toLocaleString()} trips scanned`)
     const routeId = row.route_id ?? ""
     if (!keptRouteIds.has(routeId)) continue
     trips.push({
@@ -200,21 +226,27 @@ const collectTrips = async (
       shape_id: row.shape_id,
     })
   }
-  log(`  kept ${trips.length.toLocaleString()} trips from ${scanned.toLocaleString()} scanned`)
+  log(
+    `  kept ${trips.length.toLocaleString()} trips from ${scanned.toLocaleString()} scanned`
+  )
   return trips
 }
 
 const collectStopTimes = async (
   zipPath: string,
   members: readonly ZipMember[],
-  tripIds: ReadonlySet<string>,
+  tripIds: ReadonlySet<string>
 ): Promise<GtfsStopTime[]> => {
   const stopTimes: GtfsStopTime[] = []
   let scanned = 0
-  for await (const row of streamCsvRows(await openMember(zipPath, members, "stop_times.txt"))) {
+  for await (const row of streamCsvRows(
+    await openMember(zipPath, members, "stop_times.txt")
+  )) {
     scanned += 1
     if (scanned % 2_000_000 === 0) {
-      log(`    … ${scanned.toLocaleString()} stop_times scanned, kept ${stopTimes.length.toLocaleString()}`)
+      log(
+        `    … ${scanned.toLocaleString()} stop_times scanned, kept ${stopTimes.length.toLocaleString()}`
+      )
     }
     const tripId = row.trip_id ?? ""
     if (!tripIds.has(tripId)) continue
@@ -226,19 +258,23 @@ const collectStopTimes = async (
       departure_time: row.departure_time,
     })
   }
-  log(`  kept ${stopTimes.length.toLocaleString()} stop_times from ${scanned.toLocaleString()} scanned`)
+  log(
+    `  kept ${stopTimes.length.toLocaleString()} stop_times from ${scanned.toLocaleString()} scanned`
+  )
   return stopTimes
 }
 
 const collectStops = async (
   zipPath: string,
   members: readonly ZipMember[],
-  wantedIds: ReadonlySet<string>,
+  wantedIds: ReadonlySet<string>
 ): Promise<GtfsStop[]> => {
   const stops: GtfsStop[] = []
   const found = new Set<string>()
   const readPass = async (accept: (row: Record<string, string>) => boolean) => {
-    for await (const row of streamCsvRows(await openMember(zipPath, members, "stops.txt"))) {
+    for await (const row of streamCsvRows(
+      await openMember(zipPath, members, "stops.txt")
+    )) {
       if (!accept(row)) continue
       const stop: GtfsStop = {
         stop_id: row.stop_id ?? "",
@@ -270,10 +306,12 @@ const collectStops = async (
 const collectCalendars = async (
   zipPath: string,
   members: readonly ZipMember[],
-  serviceIds: ReadonlySet<string>,
+  serviceIds: ReadonlySet<string>
 ): Promise<GtfsCalendar[]> => {
   const calendars: GtfsCalendar[] = []
-  for await (const row of streamCsvRows(await openMember(zipPath, members, "calendar.txt"))) {
+  for await (const row of streamCsvRows(
+    await openMember(zipPath, members, "calendar.txt")
+  )) {
     const serviceId = row.service_id ?? ""
     if (!serviceIds.has(serviceId)) continue
     calendars.push({
@@ -296,15 +334,19 @@ const collectCalendars = async (
 const collectShapes = async (
   zipPath: string,
   members: readonly ZipMember[],
-  shapeIds: ReadonlySet<string>,
+  shapeIds: ReadonlySet<string>
 ): Promise<GtfsShapePoint[]> => {
   if (shapeIds.size === 0) return []
   const points: GtfsShapePoint[] = []
   let scanned = 0
-  for await (const row of streamCsvRows(await openMember(zipPath, members, "shapes.txt"))) {
+  for await (const row of streamCsvRows(
+    await openMember(zipPath, members, "shapes.txt")
+  )) {
     scanned += 1
     if (scanned % 2_000_000 === 0) {
-      log(`    … ${scanned.toLocaleString()} shape points scanned, kept ${points.length.toLocaleString()}`)
+      log(
+        `    … ${scanned.toLocaleString()} shape points scanned, kept ${points.length.toLocaleString()}`
+      )
     }
     const shapeId = row.shape_id ?? ""
     if (!shapeIds.has(shapeId)) continue
@@ -315,7 +357,9 @@ const collectShapes = async (
       shape_pt_sequence: row.shape_pt_sequence ?? "",
     })
   }
-  log(`  kept ${points.length.toLocaleString()} shape points from ${scanned.toLocaleString()} scanned`)
+  log(
+    `  kept ${points.length.toLocaleString()} shape points from ${scanned.toLocaleString()} scanned`
+  )
   return points
 }
 
@@ -324,11 +368,13 @@ const inspectZip = async (zipPath: string) => {
   log(`Zip listing (${members.length} members, archive left intact):`)
   for (const member of members) {
     log(
-      `  ${member.name.padEnd(24)} ${String(member.compressedSize).padStart(12)} → ${member.uncompressedSize.toLocaleString()}`,
+      `  ${member.name.padEnd(24)} ${String(member.compressedSize).padStart(12)} → ${member.uncompressedSize.toLocaleString()}`
     )
   }
   const feedInfo = await collectFeedInfo(zipPath, members)
-  log(`feed_info publisher=${feedInfo.feed_publisher_name ?? "?"} version=${feedInfo.feed_version ?? "?"} ${feedInfo.feed_start_date ?? ""}–${feedInfo.feed_end_date ?? ""}`)
+  log(
+    `feed_info publisher=${feedInfo.feed_publisher_name ?? "?"} version=${feedInfo.feed_version ?? "?"} ${feedInfo.feed_start_date ?? ""}–${feedInfo.feed_end_date ?? ""}`
+  )
   await inspectAgencies(zipPath, members)
   return { members, feedInfo }
 }
@@ -337,7 +383,7 @@ const main = async () => {
   log("Inspect remote (HEAD only)")
   const remote = await headRemote()
   log(
-    `  ${AUBIN_GTFS_URL}\n  bytes=${remote.contentLength?.toLocaleString() ?? "unknown"} last-modified=${remote.lastModified ?? "unknown"}`,
+    `  ${AUBIN_GTFS_URL}\n  bytes=${remote.contentLength?.toLocaleString() ?? "unknown"} last-modified=${remote.lastModified ?? "unknown"}`
   )
 
   const zipPath = await resolveZip(remote)
@@ -420,10 +466,12 @@ const main = async () => {
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
 
   const snapshotBytes = Buffer.byteLength(JSON.stringify(snapshot))
-  log(`Wrote ${path.relative(ROOT, snapshotPath)} (${(snapshotBytes / 1024).toFixed(1)} KB)`)
+  log(
+    `Wrote ${path.relative(ROOT, snapshotPath)} (${(snapshotBytes / 1024).toFixed(1)} KB)`
+  )
   log(`Wrote ${path.relative(ROOT, manifestPath)}`)
   log(
-    `lines=${manifest.counts.lines} patterns=${manifest.counts.patterns} paths=${manifest.counts.paths} stations=${manifest.counts.stations}`,
+    `lines=${manifest.counts.lines} patterns=${manifest.counts.patterns} paths=${manifest.counts.paths} stations=${manifest.counts.stations}`
   )
   log(`Cached zip kept at ${path.relative(ROOT, zipPath)}`)
 }

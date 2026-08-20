@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
 import {
   bend90Path,
   continuationArrowPoints,
@@ -7,17 +7,17 @@ import {
   LINE_DIAGRAM,
   scale,
   stationTickRect,
-} from "@/lib/tfl/line-diagram";
+} from "@/lib/tfl/line-diagram"
 
 type ShapeProps = {
   /** Route line thickness in CSS pixels (= unit x). Default 12. */
-  x?: number;
-  className?: string;
+  x?: number
+  className?: string
   /** Line / fill colour for the route. */
-  color?: string;
-};
+  color?: string
+}
 
-const DEFAULT_X = 12;
+const DEFAULT_X = 12
 
 /** Solid route segment with a 0.66x station tick. */
 export const DiagramStationTick = ({
@@ -25,10 +25,10 @@ export const DiagramStationTick = ({
   className,
   color = "#DC241F",
 }: ShapeProps) => {
-  const w = scale(x, 6);
-  const h = scale(x, 3);
-  const cy = h / 2;
-  const tick = stationTickRect(w * 0.45, cy, x);
+  const w = scale(x, 6)
+  const h = scale(x, 3)
+  const cy = h / 2
+  const tick = stationTickRect(w * 0.45, cy, x)
   return (
     <svg
       viewBox={`0 0 ${w} ${h}`}
@@ -45,8 +45,8 @@ export const DiagramStationTick = ({
         fill={color}
       />
     </svg>
-  );
-};
+  )
+}
 
 /** Parallel (non-Underground) double line as used on the Tube map. */
 export const DiagramParallelLines = ({
@@ -54,10 +54,10 @@ export const DiagramParallelLines = ({
   className,
   color = "#00AFAD",
 }: ShapeProps) => {
-  const stroke = scale(x, LINE_DIAGRAM.parallel.stroke);
-  const gap = scale(x, LINE_DIAGRAM.parallel.gap);
-  const total = stroke * 2 + gap;
-  const w = scale(x, 8);
+  const stroke = scale(x, LINE_DIAGRAM.parallel.stroke)
+  const gap = scale(x, LINE_DIAGRAM.parallel.gap)
+  const total = stroke * 2 + gap
+  const w = scale(x, 8)
   return (
     <svg
       viewBox={`0 0 ${w} ${total}`}
@@ -68,8 +68,8 @@ export const DiagramParallelLines = ({
       <rect y={0} width={w} height={stroke} fill={color} />
       <rect y={stroke + gap} width={w} height={stroke} fill={color} />
     </svg>
-  );
-};
+  )
+}
 
 /** 90° bend with innermost radius R3x. */
 export const DiagramBend90 = ({
@@ -77,12 +77,12 @@ export const DiagramBend90 = ({
   className,
   color = "#F589A6",
 }: ShapeProps) => {
-  const pad = scale(x, 1);
-  const r = scale(x, LINE_DIAGRAM.innerCurveRadius + 0.5);
-  const size = r + pad * 2 + x;
-  const startX = pad;
-  const startY = pad + x / 2;
-  const d = bend90Path(startX, startY, x, "down-right");
+  const pad = scale(x, 1)
+  const r = scale(x, LINE_DIAGRAM.innerCurveRadius + 0.5)
+  const size = r + pad * 2 + x
+  const startX = pad
+  const startY = pad + x / 2
+  const d = bend90Path(startX, startY, x, "down-right")
   return (
     <svg
       viewBox={`0 0 ${size} ${size}`}
@@ -99,8 +99,8 @@ export const DiagramBend90 = ({
         strokeLinejoin="round"
       />
     </svg>
-  );
-};
+  )
+}
 
 /** Continuation arrow head (§7). */
 export const DiagramArrowHead = ({
@@ -108,11 +108,11 @@ export const DiagramArrowHead = ({
   className,
   color = "#B26300",
 }: ShapeProps) => {
-  const tipX = scale(x, 5);
-  const cy = scale(x, 2);
-  const w = tipX + scale(x, 0.5);
-  const h = scale(x, 4);
-  const points = continuationArrowPoints(tipX, cy, x, 1);
+  const tipX = scale(x, 5)
+  const cy = scale(x, 2)
+  const w = tipX + scale(x, 0.5)
+  const h = scale(x, 4)
+  const points = continuationArrowPoints(tipX, cy, x, 1)
   return (
     <svg
       viewBox={`0 0 ${w} ${h}`}
@@ -129,8 +129,8 @@ export const DiagramArrowHead = ({
       />
       <polygon points={points} fill={color} />
     </svg>
-  );
-};
+  )
+}
 
 /** Single interchange ring on a route line (§8). */
 export const DiagramInterchangeCircle = ({
@@ -138,11 +138,11 @@ export const DiagramInterchangeCircle = ({
   className,
   color = "#DC241F",
 }: ShapeProps) => {
-  const outer = interchangeOuterRadius(x);
-  const stroke = interchangeStroke(x);
-  const size = outer * 2 + scale(x, 2);
-  const cx = size / 2;
-  const cy = size / 2;
+  const outer = interchangeOuterRadius(x)
+  const stroke = interchangeStroke(x)
+  const size = outer * 2 + scale(x, 2)
+  const cx = size / 2
+  const cy = size / 2
   return (
     <svg
       viewBox={`0 0 ${size} ${size}`}
@@ -159,24 +159,24 @@ export const DiagramInterchangeCircle = ({
         strokeWidth={stroke}
       />
     </svg>
-  );
-};
+  )
+}
 
 /** Dumbbell / bridged double interchange (§8). */
 export const DiagramInterchangeDumbbell = ({
   x = DEFAULT_X,
   className,
 }: ShapeProps) => {
-  const outer = interchangeOuterRadius(x);
-  const stroke = interchangeStroke(x);
-  const neckW = scale(x, LINE_DIAGRAM.interchange.neckWidth);
-  const gap = scale(x, LINE_DIAGRAM.interchange.bridgeWhite);
-  const sizeW = outer * 2 + scale(x, 1);
-  const cy1 = outer + scale(x, 0.25);
+  const outer = interchangeOuterRadius(x)
+  const stroke = interchangeStroke(x)
+  const neckW = scale(x, LINE_DIAGRAM.interchange.neckWidth)
+  const gap = scale(x, LINE_DIAGRAM.interchange.bridgeWhite)
+  const sizeW = outer * 2 + scale(x, 1)
+  const cy1 = outer + scale(x, 0.25)
   // Centre distance = outer + inner = 1.5x + 1x = 2.5x
-  const cy2 = cy1 + scale(x, 2.5);
-  const cx = sizeW / 2;
-  const h = cy2 + outer + scale(x, 0.25);
+  const cy2 = cy1 + scale(x, 2.5)
+  const cx = sizeW / 2
+  const h = cy2 + outer + scale(x, 0.25)
   return (
     <svg
       viewBox={`0 0 ${sizeW} ${h}`}
@@ -213,5 +213,5 @@ export const DiagramInterchangeDumbbell = ({
         className="fill-white dark:fill-black"
       />
     </svg>
-  );
-};
+  )
+}

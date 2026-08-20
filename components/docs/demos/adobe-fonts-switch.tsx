@@ -1,22 +1,22 @@
-"use client";
+"use client"
 
-import type { CSSProperties } from "react";
+import type { CSSProperties } from "react"
 import {
   useFontPreference,
   type FontPreference,
-} from "@/components/font-preference-provider";
-import { cn } from "@/lib/utils";
+} from "@/components/font-preference-provider"
+import { cn } from "@/lib/utils"
 
 type FontProfile = {
-  id: FontPreference;
-  name: string;
-  description: string;
-  specimenClassName: string;
-  fontFamily: string;
-  titleSettings: string;
-  titleWeight: 400 | 600;
-  titleTracking: "0" | "-0.025em";
-};
+  id: FontPreference
+  name: string
+  description: string
+  specimenClassName: string
+  fontFamily: string
+  titleSettings: string
+  titleWeight: 400 | 600
+  titleTracking: "0" | "-0.025em"
+}
 
 const FONT_PROFILES: readonly FontProfile[] = [
   {
@@ -45,16 +45,16 @@ const FONT_PROFILES: readonly FontProfile[] = [
     titleWeight: 600,
     titleTracking: "-0.025em",
   },
-];
+]
 
 const PreviewButton = ({
   active,
   disabled,
   onClick,
 }: {
-  active: boolean;
-  disabled?: boolean;
-  onClick: () => void;
+  active: boolean
+  disabled?: boolean
+  onClick: () => void
 }) => (
   <button
     type="button"
@@ -63,25 +63,29 @@ const PreviewButton = ({
     aria-pressed={active}
     className={cn(
       "shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
       active
         ? "bg-foreground text-background"
         : "text-foreground hover:bg-muted",
-      "disabled:cursor-not-allowed disabled:opacity-50",
+      "disabled:cursor-not-allowed disabled:opacity-50"
     )}
   >
-    {disabled ? "Adobe kit required" : active ? "Previewing this site" : "Preview this site"}
+    {disabled
+      ? "Adobe kit required"
+      : active
+        ? "Previewing this site"
+        : "Preview this site"}
   </button>
-);
+)
 
 export const FontPreferenceSwitch = () => {
-  const { font, setFont, adobeFontsConfigured } = useFontPreference();
+  const { font, setFont, adobeFontsConfigured } = useFontPreference()
 
   return (
     <div className="space-y-14">
       {FONT_PROFILES.map((profile) => {
-        const active = font === profile.id;
-        const unavailable = profile.id === "p22" && !adobeFontsConfigured;
+        const active = font === profile.id
+        const unavailable = profile.id === "p22" && !adobeFontsConfigured
 
         return (
           <figure
@@ -96,7 +100,12 @@ export const FontPreferenceSwitch = () => {
             }
           >
             <figcaption className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className={cn("text-2xl text-foreground", profile.specimenClassName)}>
+              <h3
+                className={cn(
+                  "text-2xl text-foreground",
+                  profile.specimenClassName
+                )}
+              >
                 {profile.name}
               </h3>
               <PreviewButton
@@ -110,7 +119,12 @@ export const FontPreferenceSwitch = () => {
               {profile.description}
             </p>
 
-            <div className={cn("grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem]", profile.specimenClassName)}>
+            <div
+              className={cn(
+                "grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem]",
+                profile.specimenClassName
+              )}
+            >
               <dl className="space-y-5">
                 <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4">
                   <dt className="pt-1 text-xs font-normal tracking-normal text-muted-foreground">
@@ -161,8 +175,8 @@ secondary  text-sm muted            400 / normal`}
               </pre>
             </div>
           </figure>
-        );
+        )
       })}
     </div>
-  );
-};
+  )
+}

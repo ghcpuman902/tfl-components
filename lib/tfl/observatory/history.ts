@@ -57,8 +57,7 @@ export const groupHistoryRuns = (
       )
       const rows: HistoryRunRow[] = CHART_ROWS.map((row) => {
         const state = (rowStateForDay(group, row.id) ?? "current") as
-          | ObservatoryState
-          | "observed"
+          ObservatoryState | "observed"
         const matched = rowEventsForDay(group, row.id)
         const count = counts.get(row.id)
         return {

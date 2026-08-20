@@ -195,7 +195,8 @@ export const fetchLineHopTimes = async (
 
   return {
     fetchedAt: new Date().toISOString().slice(0, 10),
-    source: "tfl-ts line.getTimetable, with journey.plan for hops the timetable omits",
+    source:
+      "tfl-ts line.getTimetable, with journey.plan for hops the timetable omits",
     lines,
   }
 }

@@ -1,14 +1,14 @@
-"use client";
+"use client"
 
-import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { useRequireUserTflKey } from "@/hooks/use-require-user-tfl-key";
+import type { ReactNode } from "react"
+import { Button } from "@/components/ui/button"
+import { useRequireUserTflKey } from "@/hooks/use-require-user-tfl-key"
 
 type UserTflKeyRequiredProps = {
-  children: ReactNode;
+  children: ReactNode
   /** Short purpose line shown in the gate (what needs a key). */
-  purpose?: string;
-};
+  purpose?: string
+}
 
 /**
  * Renders children only when a visitor TfL API key is ready.
@@ -19,7 +19,7 @@ export const UserTflKeyRequired = ({
   children,
   purpose = "This operation needs fresh TfL API access against your own quota.",
 }: UserTflKeyRequiredProps) => {
-  const { ready, hydrated, openDialog } = useRequireUserTflKey();
+  const { ready, hydrated, openDialog } = useRequireUserTflKey()
 
   if (!hydrated) {
     return (
@@ -29,7 +29,7 @@ export const UserTflKeyRequired = ({
       >
         Checking for a TfL API key…
       </div>
-    );
+    )
   }
 
   if (!ready) {
@@ -49,8 +49,8 @@ export const UserTflKeyRequired = ({
           Add TfL API key
         </Button>
       </div>
-    );
+    )
   }
 
-  return <>{children}</>;
-};
+  return <>{children}</>
+}

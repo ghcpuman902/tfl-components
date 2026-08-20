@@ -4,5 +4,5 @@ export default function Loading() {
       className="mx-auto h-24 w-full max-w-3xl animate-pulse rounded-lg bg-muted"
       aria-hidden
     />
-  );
+  )
 }

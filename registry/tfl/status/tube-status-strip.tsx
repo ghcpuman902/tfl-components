@@ -43,11 +43,7 @@ const BOARD_RHYTHM_VARS = {
 const TILE_CLASS =
   "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] overflow-clip"
 
-export const TubeStatusStripSkeleton = ({
-  units = 4,
-}: {
-  units?: number
-}) => (
+export const TubeStatusStripSkeleton = ({ units = 4 }: { units?: number }) => (
   <div
     className="grid w-full saturate-0"
     style={{
@@ -146,9 +142,7 @@ export const TubeStatusStrip = ({
               lineId={id}
               className={cn(
                 "h-5 justify-center px-1.5",
-                frame?.activeLineId &&
-                  id !== frame.activeLineId &&
-                  "opacity-40"
+                frame?.activeLineId && id !== frame.activeLineId && "opacity-40"
               )}
             />
           ))}
@@ -166,8 +160,11 @@ export const TubeStatusStrip = ({
           <p className="truncate text-destructive">{error}</p>
         ) : hasLine ? (
           <>
-            <div data-line={frame?.activeLineId} className="relative min-w-0 shrink-0">
-              <p className="m-0 truncate text-xl leading-7 font-semibold text-[var(--line-color)] tfl-dark-line-text">
+            <div
+              data-line={frame?.activeLineId}
+              className="relative min-w-0 shrink-0"
+            >
+              <p className="tfl-dark-line-text m-0 truncate text-xl leading-7 font-semibold text-[var(--line-color)]">
                 <LineName
                   lineId={frame?.activeLineId}
                   name={frame?.activeLineName}
@@ -192,9 +189,15 @@ export const TubeStatusStrip = ({
         )}
       </div>
       {regions.showOtherSummary ? (
-        <div className={cn("flex items-center justify-end gap-1 px-2", TILE_CLASS)}>
+        <div
+          className={cn("flex items-center justify-end gap-1 px-2", TILE_CLASS)}
+        >
           {otherIds.map((id) => (
-            <LineBadge key={id} lineId={id} className="h-5 justify-center px-1.5" />
+            <LineBadge
+              key={id}
+              lineId={id}
+              className="h-5 justify-center px-1.5"
+            />
           ))}
         </div>
       ) : null}

@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
-import { StationName } from "@/components/tfl/station-name";
+import { StationName } from "@/components/tfl/station-name"
 
 const SAMPLES = [
   "King's Cross St. Pancras",
   "Highbury & Islington",
   "Shepherd's Bush Market",
   "Tottenham Court Road",
-] as const;
+] as const
 
 export default function StationNameDemo() {
   return (
@@ -29,5 +29,5 @@ export default function StationNameDemo() {
         </li>
       ))}
     </ul>
-  );
+  )
 }

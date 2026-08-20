@@ -128,7 +128,8 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     cachedIn: "this-repo",
     refresh: "manual",
     coverage: "Elizabeth line, Overground (timetable shapes)",
-    summary: "Low-resolution line geometry from the timetable, for those two modes only.",
+    summary:
+      "Low-resolution line geometry from the timetable, for those two modes only.",
     note: "Not required to draw the geographic map. OSM unique-track already covers Elizabeth line and Overground. Kept as an inspect overlay.",
     sources: [
       {
@@ -146,7 +147,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     refresh: "n/a",
     coverage: "Underground (89/96 relations), Tram (8/10), DLR (5/12)",
     summary: "Which OSM track a passenger pattern follows.",
-    note: "Aubin trips for these modes have empty shape_id, so this never comes from GTFS. Matched by OSM route-relation stop membership (ordered stop names on the relation), not by snapping station points onto nearby track — proximity snapping mis-assigns stations at shared-track stretches such as Waterloo & City, which this method matches to exactly its own two stops. Remaining gaps are name-normalisation mismatches (e.g. \"Custom House (for ExCel)\" vs OSM's \"Custom House for Excel\") and lines built after the pinned tfl-ts LINE_STATION_SEQUENCES snapshot (Northern line Battersea Power Station extension), not proximity errors. Cable car has no cached OSM route relation yet.",
+    note: 'Aubin trips for these modes have empty shape_id, so this never comes from GTFS. Matched by OSM route-relation stop membership (ordered stop names on the relation), not by snapping station points onto nearby track — proximity snapping mis-assigns stations at shared-track stretches such as Waterloo & City, which this method matches to exactly its own two stops. Remaining gaps are name-normalisation mismatches (e.g. "Custom House (for ExCel)" vs OSM\'s "Custom House for Excel") and lines built after the pinned tfl-ts LINE_STATION_SEQUENCES snapshot (Northern line Battersea Power Station extension), not proximity errors. Cable car has no cached OSM route relation yet.',
     sources: [
       { label: "data/geography/ORIGIN.md" },
       { label: "data/geography/osm-cache" },
@@ -192,7 +193,8 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     origin: "authored",
     cachedIn: "none",
     refresh: "n/a",
-    summary: "Which patterns belong on a carriage map, a platform map, the Tube map, or the geographic map.",
+    summary:
+      "Which patterns belong on a carriage map, a platform map, the Tube map, or the geographic map.",
     note: "No feed decides which pattern belongs on a carriage, platform, Tube map, or geographic map.",
     usedOn: "all-four",
   },

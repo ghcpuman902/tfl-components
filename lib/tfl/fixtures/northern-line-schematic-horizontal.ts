@@ -3,7 +3,7 @@ import {
   type LineSchematic,
   type SchematicEdge,
   type SchematicNode,
-} from "@/lib/tfl/line-schematic";
+} from "@/lib/tfl/line-schematic"
 
 const n = (
   id: string,
@@ -12,7 +12,7 @@ const n = (
   pos: number,
   kind: SchematicNode["kind"] = "stop",
   branchIds?: readonly string[],
-  stationKey?: string,
+  stationKey?: string
 ): SchematicNode => ({
   id,
   name,
@@ -21,18 +21,15 @@ const n = (
   kind,
   branchIds,
   ...(stationKey ? { stationKey } : {}),
-});
+})
 
-const chain = (
-  ids: readonly string[],
-  branchId: string,
-): SchematicEdge[] => {
-  const edges: SchematicEdge[] = [];
+const chain = (ids: readonly string[], branchId: string): SchematicEdge[] => {
+  const edges: SchematicEdge[] = []
   for (let i = 0; i < ids.length - 1; i += 1) {
-    edges.push({ from: ids[i]!, to: ids[i + 1]!, branchId });
+    edges.push({ from: ids[i]!, to: ids[i + 1]!, branchId })
   }
-  return edges;
-};
+  return edges
+}
 
 const BRANCHES = [
   { id: "high-barnet", name: "High Barnet" },
@@ -42,7 +39,7 @@ const BRANCHES = [
   { id: "charing-cross", name: "Charing Cross" },
   { id: "morden", name: "Morden" },
   { id: "battersea", name: "Battersea" },
-] as const;
+] as const
 
 /**
  * Horizontal Northern layout (High Barnet / Edgware → Morden along `pos`).
@@ -105,29 +102,18 @@ export const NORTHERN_LINE_SCHEMATIC_HORIZONTAL: LineSchematic = {
     n("mornington-crescent", "Mornington Crescent", 1, 11, "stop", [
       "charing-cross",
     ]),
-    n(
-      "euston-bank",
-      "Euston",
-      0,
-      12,
-      "interchange",
-      ["bank"],
-      "euston",
-    ),
-    n(
-      "euston-cx",
-      "Euston",
-      1,
-      12,
-      "interchange",
-      ["charing-cross"],
-      "euston",
-    ),
+    n("euston-bank", "Euston", 0, 12, "interchange", ["bank"], "euston"),
+    n("euston-cx", "Euston", 1, 12, "interchange", ["charing-cross"], "euston"),
 
     // —— Bank branch (lane 0) ——
-    n("kings-cross-st-pancras", "King's Cross St. Pancras", 0, 13, "interchange", [
-      "bank",
-    ]),
+    n(
+      "kings-cross-st-pancras",
+      "King's Cross St. Pancras",
+      0,
+      13,
+      "interchange",
+      ["bank"]
+    ),
     n("angel", "Angel", 0, 14, "stop", ["bank"]),
     n("old-street", "Old Street", 0, 15, "interchange", ["bank"]),
     n("moorgate", "Moorgate", 0, 16, "interchange", ["bank"]),
@@ -194,7 +180,7 @@ export const NORTHERN_LINE_SCHEMATIC_HORIZONTAL: LineSchematic = {
         "kentish-town",
         "camden-town",
       ],
-      "high-barnet",
+      "high-barnet"
     ),
     ...chain(["mill-hill-east", "finchley-central"], "mill-hill-east"),
     ...chain(
@@ -210,7 +196,7 @@ export const NORTHERN_LINE_SCHEMATIC_HORIZONTAL: LineSchematic = {
         "chalk-farm",
         "camden-town",
       ],
-      "edgware",
+      "edgware"
     ),
     { from: "camden-town", to: "euston-bank", branchId: "bank" },
     ...chain(
@@ -226,7 +212,7 @@ export const NORTHERN_LINE_SCHEMATIC_HORIZONTAL: LineSchematic = {
         "elephant-castle",
         "kennington",
       ],
-      "bank",
+      "bank"
     ),
     ...chain(
       [
@@ -242,7 +228,7 @@ export const NORTHERN_LINE_SCHEMATIC_HORIZONTAL: LineSchematic = {
         "waterloo",
         "kennington",
       ],
-      "charing-cross",
+      "charing-cross"
     ),
     ...chain(
       [
@@ -259,16 +245,16 @@ export const NORTHERN_LINE_SCHEMATIC_HORIZONTAL: LineSchematic = {
         "south-wimbledon",
         "morden",
       ],
-      "morden",
+      "morden"
     ),
     ...chain(
       ["kennington", "nine-elms", "battersea-power-station"],
-      "battersea",
+      "battersea"
     ),
   ],
-};
+}
 
-assertValidSchematic(NORTHERN_LINE_SCHEMATIC_HORIZONTAL);
+assertValidSchematic(NORTHERN_LINE_SCHEMATIC_HORIZONTAL)
 
 /** @deprecated Use `NORTHERN_LINE_SCHEMATIC_HORIZONTAL`. */
-export const NORTHERN_LINE_SCHEMATIC = NORTHERN_LINE_SCHEMATIC_HORIZONTAL;
+export const NORTHERN_LINE_SCHEMATIC = NORTHERN_LINE_SCHEMATIC_HORIZONTAL

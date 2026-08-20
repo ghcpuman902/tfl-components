@@ -1,27 +1,27 @@
-"use client";
+"use client"
 
-import { useId, useState, type FormEvent } from "react";
-import { AppWindowIcon, HardDriveIcon } from "lucide-react";
-import Link from "next/link";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { useId, useState, type FormEvent } from "react"
+import { AppWindowIcon, HardDriveIcon } from "lucide-react"
+import Link from "next/link"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   TflApiKeyFieldHint,
   TflApiKeyObtainLinks,
   TflApiKeyPortalNote,
-} from "@/components/user-tfl-api-key-copy";
-import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider";
-import type { UserTflPersistMode } from "@/lib/tfl/user-credentials-storage";
+} from "@/components/user-tfl-api-key-copy"
+import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
+import type { UserTflPersistMode } from "@/lib/tfl/user-credentials-storage"
 
 /**
  * Dialog to paste / replace / clear a visitor TfL API key.
@@ -38,53 +38,52 @@ export const UserTflCredentialsDialog = () => {
     clear,
     dialogOpen,
     setDialogOpen,
-  } = useUserTflCredentials();
+  } = useUserTflCredentials()
 
-  const fieldId = useId();
-  const [draftKey, setDraftKey] = useState("");
-  const [draftPersist, setDraftPersist] =
-    useState<UserTflPersistMode>("local");
-  const [replacing, setReplacing] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const fieldId = useId()
+  const [draftKey, setDraftKey] = useState("")
+  const [draftPersist, setDraftPersist] = useState<UserTflPersistMode>("local")
+  const [replacing, setReplacing] = useState(false)
+  const [saving, setSaving] = useState(false)
 
-  const isReady = status === "ready";
-  const showForm = !isReady || replacing;
+  const isReady = status === "ready"
+  const showForm = !isReady || replacing
 
   const resetDraft = () => {
-    setReplacing(false);
-    setDraftKey("");
-    setDraftPersist(persistMode);
-  };
+    setReplacing(false)
+    setDraftKey("")
+    setDraftPersist(persistMode)
+  }
 
   const handleOpenChange = (open: boolean) => {
-    if (saving) return;
+    if (saving) return
     if (open) {
-      setDraftPersist(persistMode);
-      setDraftKey("");
-      setReplacing(false);
+      setDraftPersist(persistMode)
+      setDraftKey("")
+      setReplacing(false)
     } else {
-      resetDraft();
+      resetDraft()
     }
-    setDialogOpen(open);
-  };
+    setDialogOpen(open)
+  }
 
   const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setSaving(true);
-    const result = await save(draftKey, draftPersist);
-    setSaving(false);
-    if (!result.ok) return;
-    toast.success("Live demos will use your key.");
-    resetDraft();
-    setDialogOpen(false);
-  };
+    event.preventDefault()
+    setSaving(true)
+    const result = await save(draftKey, draftPersist)
+    setSaving(false)
+    if (!result.ok) return
+    toast.success("Live demos will use your key.")
+    resetDraft()
+    setDialogOpen(false)
+  }
 
   const handleClear = () => {
-    clear();
-    toast.message("TfL API key cleared.");
-    resetDraft();
-    setDialogOpen(false);
-  };
+    clear()
+    toast.message("TfL API key cleared.")
+    resetDraft()
+    setDialogOpen(false)
+  }
 
   return (
     <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
@@ -101,8 +100,8 @@ export const UserTflCredentialsDialog = () => {
           <DialogDescription className="text-muted-foreground">
             This site runs off a shared API key in the backend, which can hit
             rate limits. You can keep exploring until that happens. If you need
-            live data for specific tube stations, bus stops, or bike docks, paste
-            your own key here and use{" "}
+            live data for specific tube stations, bus stops, or bike docks,
+            paste your own key here and use{" "}
             <Link
               href="/docs/explorer"
               className="text-foreground underline underline-offset-2"
@@ -110,8 +109,7 @@ export const UserTflCredentialsDialog = () => {
             >
               Explorer
             </Link>
-            . <TflApiKeyObtainLinks />.
-            Stored only in this browser.
+            . <TflApiKeyObtainLinks />. Stored only in this browser.
           </DialogDescription>
         </DialogHeader>
 
@@ -135,9 +133,9 @@ export const UserTflCredentialsDialog = () => {
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  setReplacing(true);
-                  setDraftKey("");
-                  setDraftPersist(persistMode);
+                  setReplacing(true)
+                  setDraftKey("")
+                  setDraftPersist(persistMode)
                 }}
               >
                 Replace
@@ -178,7 +176,7 @@ export const UserTflCredentialsDialog = () => {
                 value={draftPersist}
                 onValueChange={(value) => {
                   if (value === "local" || value === "session") {
-                    setDraftPersist(value);
+                    setDraftPersist(value)
                   }
                 }}
                 disabled={saving}
@@ -223,11 +221,11 @@ export const UserTflCredentialsDialog = () => {
                 disabled={saving}
                 onClick={() => {
                   if (replacing) {
-                    setReplacing(false);
-                    setDraftKey("");
-                    return;
+                    setReplacing(false)
+                    setDraftKey("")
+                    return
                   }
-                  handleOpenChange(false);
+                  handleOpenChange(false)
                 }}
               >
                 Cancel
@@ -240,5 +238,5 @@ export const UserTflCredentialsDialog = () => {
         ) : null}
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}

@@ -1,13 +1,10 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { SiteProsePage } from "@/components/site-prose-page";
-import { SITE_INDEPENDENCE } from "@/lib/site";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { SiteProsePage } from "@/components/site-prose-page"
+import { SITE_INDEPENDENCE } from "@/lib/site"
+import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
-  title: "How it was built",
-  description:
-    "Engineering notes on TfL identifiers, caching, unattended displays, and the Open Code split.",
-};
+export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.howItWasBuilt)
 
 export default function HowItWasBuiltPage() {
   return (
@@ -50,12 +47,11 @@ export default function HowItWasBuiltPage() {
           Platforms and shared track
         </h2>
         <p>
-          Circle, Hammersmith &amp; City, and Metropolitan trains share metal
-          in places and then don&apos;t. A board that paints every arrival as
-          the line in the API field will lie at Victoria and at Baker Street in
-          different ways. Shared-platform grouping and shared-track identity
-          are separate rules, both derived from topology, not from display
-          names.
+          Circle, Hammersmith &amp; City, and Metropolitan trains share metal in
+          places and then don&apos;t. A board that paints every arrival as the
+          line in the API field will lie at Victoria and at Baker Street in
+          different ways. Shared-platform grouping and shared-track identity are
+          separate rules, both derived from topology, not from display names.
         </p>
       </section>
 
@@ -64,11 +60,10 @@ export default function HowItWasBuiltPage() {
           Caching and quota
         </h2>
         <p>
-          The Unified API is free and rate-limited. Public examples on this
-          site use a server cache. A personal Board asks for the visitor&apos;s
-          key and keeps it in the browser or in the URL hash. Showing the last
-          good response after a failed refresh is allowed. Calling that live
-          is not.
+          The Unified API is free and rate-limited. Public examples on this site
+          use a server cache. A personal Board asks for the visitor&apos;s key
+          and keeps it in the browser or in the URL hash. Showing the last good
+          response after a failed refresh is allowed. Calling that live is not.
         </p>
       </section>
 
@@ -78,10 +73,10 @@ export default function HowItWasBuiltPage() {
         </h2>
         <p>
           The hosted Board is for an iPad on a kitchen counter as much as it is
-          for a docs demo. Unattended mode advances pages on a timer, keeps
-          rank chips stable, and pauses when the tab is hidden. Home-screen
-          and wake-from-sleep still need checking. That is why the Board page
-          says experimental.
+          for a docs demo. Unattended mode advances pages on a timer, keeps rank
+          chips stable, and pauses when the tab is hidden. Home-screen and
+          wake-from-sleep still need checking. That is why the Board page says
+          experimental.
         </p>
       </section>
 
@@ -91,10 +86,10 @@ export default function HowItWasBuiltPage() {
         </h2>
         <p>
           Station names wrap and abbreviate on a 48px tile. Find, copy, and
-          screen readers still need the full name. That constraint produced
-          the findable-text primitive, not a CSS truncate. Motion on the
-          homepage is optional and has a pause control. There is no WCAG
-          certificate behind that work. Details are on{" "}
+          screen readers still need the full name. That constraint produced the
+          findable-text primitive, not a CSS truncate. Motion on the homepage is
+          optional and has a pause control. There is no WCAG certificate behind
+          that work. Details are on{" "}
           <Link
             href="/accessibility"
             className="text-foreground underline underline-offset-4"
@@ -125,5 +120,5 @@ export default function HowItWasBuiltPage() {
         </p>
       </section>
     </SiteProsePage>
-  );
+  )
 }

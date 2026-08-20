@@ -159,7 +159,7 @@ export const formatArrivalsCountdown = (
     platformName?: string
     expectedArrival?: string
     clockFromSeconds?: number
-  },
+  }
 ): string => {
   if (isUnknownArrivalsPlatform(options?.platformName)) return "Scheduled"
   if (seconds === undefined || seconds < 0) return "-"
@@ -222,8 +222,8 @@ export const ArrivalRowItem = ({
           .sort((a, b) =>
             compareArrivalsLines(
               { lineId: a, lineName: getLineNameTiers(a).full },
-              { lineId: b, lineName: getLineNameTiers(b).full },
-            ),
+              { lineId: b, lineName: getLineNameTiers(b).full }
+            )
           )
       : []
   const lineTiers = lineId
@@ -237,17 +237,17 @@ export const ArrivalRowItem = ({
     sharedChipIds.length >= 2
       ? joinLineNames(sharedChipIds.map((id) => getLineNameTiers(id).full))
       : null
-  const remapNote = remapped && lineTiers
-    ? `TfL currently labels this arrival ${getLineNameTiers(rawLineId, row.arrival.lineName).full} on this platform; it's running the ${lineTiers.full} line loop`
-    : null
+  const remapNote =
+    remapped && lineTiers
+      ? `TfL currently labels this arrival ${getLineNameTiers(rawLineId, row.arrival.lineName).full} on this platform; it's running the ${lineTiers.full} line loop`
+      : null
   const sharedNote =
     !remapNote && sharedChipLabel
       ? `TfL currently lists this arrival on ${sharedChipLabel}`
       : null
-  const routeLabel =
-    isRouteArrivalsMode(mode)
-      ? (row.arrival.lineName ?? row.arrival.lineId ?? "").trim() || null
-      : null
+  const routeLabel = isRouteArrivalsMode(mode)
+    ? (row.arrival.lineName ?? row.arrival.lineId ?? "").trim() || null
+    : null
   // TfL sometimes repeats the line name as the destination ("Circle Line" on
   // the Circle line) or sends a generic instruction ("Check Front of
   // Train") — both are already implied by the line heading/chip. Prefer
@@ -291,35 +291,31 @@ export const ArrivalRowItem = ({
       name={lineChipLabel}
       className={cn(
         "h-5 justify-center px-0",
-        ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
+        ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS
       )}
     />
   ) : null
 
   const identityLead =
-    mode === "bus"
-      ? !hoistRouteChip && routeLabel
-        ? <BusNumberChip label={routeLabel} />
-        : null
-      : mode === "river"
-        ? !hoistRouteChip
-          ? (
-            <RiverRouteChip
-              lineId={row.arrival.lineId}
-              lineName={row.arrival.lineName}
-            />
-          )
-          : null
-      : platformNumber || lineChip
-        ? (
-          <div className="flex min-w-0 items-center gap-x-2">
-            {platformNumber ? (
-              <PlatformChip number={platformNumber} compact />
-            ) : null}
-            {lineChip}
-          </div>
-        )
-        : null
+    mode === "bus" ? (
+      !hoistRouteChip && routeLabel ? (
+        <BusNumberChip label={routeLabel} />
+      ) : null
+    ) : mode === "river" ? (
+      !hoistRouteChip ? (
+        <RiverRouteChip
+          lineId={row.arrival.lineId}
+          lineName={row.arrival.lineName}
+        />
+      ) : null
+    ) : platformNumber || lineChip ? (
+      <div className="flex min-w-0 items-center gap-x-2">
+        {platformNumber ? (
+          <PlatformChip number={platformNumber} compact />
+        ) : null}
+        {lineChip}
+      </div>
+    ) : null
 
   const leading =
     rank || identityLead ? (
@@ -375,10 +371,7 @@ const useArrivalsPageTrack = (pageCount: number) => {
     const safe = Math.max(0, pageCount - 1)
     setActivePage(safe)
     const frame = requestAnimationFrame(() => {
-      scrollArrivalsTrackToSlide(
-        containerRef.current,
-        slideRefs.current[safe]
-      )
+      scrollArrivalsTrackToSlide(containerRef.current, slideRefs.current[safe])
     })
     return () => cancelAnimationFrame(frame)
   }, [activePage, pageCount])
@@ -427,10 +420,7 @@ const useArrivalsPageTrack = (pageCount: number) => {
   const goToPage = useCallback(
     (index: number) => {
       const safe = Math.min(Math.max(0, index), Math.max(0, pageCount - 1))
-      scrollArrivalsTrackToSlide(
-        containerRef.current,
-        slideRefs.current[safe]
-      )
+      scrollArrivalsTrackToSlide(containerRef.current, slideRefs.current[safe])
       setActivePage(safe)
     },
     [pageCount]
@@ -498,7 +488,7 @@ const BoundPager = ({
         aria-label={`Previous ${label} arrivals`}
         disabled={atStart}
         onClick={onPrev}
-        className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-1.5 pl-0 text-muted-foreground before:absolute before:inset-y-[-0.5rem] before:inset-x-[-0.25rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
+        className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-1.5 pl-0 text-muted-foreground before:absolute before:inset-x-[-0.25rem] before:inset-y-[-0.5rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
       >
         <Play
           className="size-3 -scale-x-100 fill-current stroke-none"
@@ -518,7 +508,7 @@ const BoundPager = ({
         aria-label={`Next ${label} arrivals`}
         disabled={atEnd}
         onClick={onNext}
-        className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-0 pl-1.5 text-muted-foreground before:absolute before:inset-y-[-0.5rem] before:inset-x-[-0.25rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
+        className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-0 pl-1.5 text-muted-foreground before:absolute before:inset-x-[-0.25rem] before:inset-y-[-0.5rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
       >
         <Play className="size-3 fill-current stroke-none" aria-hidden />
       </button>
@@ -563,8 +553,8 @@ const BoundPager = ({
         className={cn(
           "absolute inset-y-0 right-0 hidden items-center bg-linear-to-l from-background from-70% via-background to-transparent pl-6 text-muted-foreground opacity-0 transition-opacity duration-150 [@media(hover:hover)]:flex",
           "pointer-events-none",
-          "[@media(hover:hover)]:group-hover/bound:opacity-100 [@media(hover:hover)]:group-hover/bound:pointer-events-auto",
-          "[@media(hover:hover)]:group-has-focus-visible/bound:opacity-100 [@media(hover:hover)]:group-has-focus-visible/bound:pointer-events-auto"
+          "[@media(hover:hover)]:group-hover/bound:pointer-events-auto [@media(hover:hover)]:group-hover/bound:opacity-100",
+          "[@media(hover:hover)]:group-has-focus-visible/bound:pointer-events-auto [@media(hover:hover)]:group-has-focus-visible/bound:opacity-100"
         )}
       >
         {controls}
@@ -573,7 +563,7 @@ const BoundPager = ({
           sections keep them vertically centred; below 18rem they sit just
           above the hairline so they don't cover a long bound label. */}
       <div
-        className="pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 text-muted-foreground opacity-50 [@media(hover:hover)]:hidden @max-[18rem]/arrivals-group:inset-y-auto @max-[18rem]/arrivals-group:bottom-1"
+        className="pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 text-muted-foreground opacity-50 @max-[18rem]/arrivals-group:inset-y-auto @max-[18rem]/arrivals-group:bottom-1 [@media(hover:hover)]:hidden"
         aria-hidden="true"
       >
         {dots}
@@ -602,10 +592,7 @@ const UnattendedDwellBar = ({
 }) => {
   const fill = canAdvance && started
   const bar = (
-    <div
-      className="h-1 w-14 overflow-hidden bg-foreground/15"
-      aria-hidden
-    >
+    <div className="h-1 w-14 overflow-hidden bg-foreground/15" aria-hidden>
       {fill ? (
         <div
           key={`${frameKey}-go`}
@@ -618,9 +605,7 @@ const UnattendedDwellBar = ({
   )
 
   if (ownsTile) {
-    return (
-      <div className="ml-auto flex h-6 shrink-0 items-center">{bar}</div>
-    )
+    return <div className="ml-auto flex h-6 shrink-0 items-center">{bar}</div>
   }
 
   return (
@@ -727,14 +712,10 @@ const PagedArrivalRows = ({
       {Array.from({ length: dashCount }, (_, index) => (
         <QuietDashTile
           key={`dash-${index}`}
-          showRule={
-            !(isLast && index === dashCount - 1 && !showEndMessage)
-          }
+          showRule={!(isLast && index === dashCount - 1 && !showEndMessage)}
         />
       ))}
-      {showEndMessage ? (
-        <ArrivalsEndMessageTile showRule={!isLast} />
-      ) : null}
+      {showEndMessage ? <ArrivalsEndMessageTile showRule={!isLast} /> : null}
     </>
   )
 }
@@ -791,7 +772,7 @@ const ArrivalsPageTrack = ({
     <div
       ref={containerRef}
       onScroll={onScroll}
-      className="flex min-w-0 snap-x snap-mandatory gap-x-6 overflow-x-auto overflow-y-clip overscroll-x-contain scrollbar-none"
+      className="flex min-w-0 snap-x snap-mandatory scrollbar-none gap-x-6 overflow-x-auto overflow-y-clip overscroll-x-contain"
     >
       {pages.map((page, index) => (
         <ul
@@ -868,9 +849,7 @@ const useUnattendedArrivalSession = ({
 
   const snapshotNow =
     shouldHold &&
-    (!holding ||
-      held.configKey !== configKey ||
-      held.generation !== generation)
+    (!holding || held.configKey !== configKey || held.generation !== generation)
 
   if (snapshotNow) {
     setHolding(true)
@@ -879,11 +858,7 @@ const useUnattendedArrivalSession = ({
     setHolding(false)
   }
 
-  const committedRows = shouldHold
-    ? snapshotNow
-      ? rows
-      : held.rows
-    : rows
+  const committedRows = shouldHold ? (snapshotNow ? rows : held.rows) : rows
   const { frames } = useMemo(
     () => buildPinnedFrames(committedRows, pageSize, { pinFirst, lockHeight }),
     [committedRows, lockHeight, pageSize, pinFirst]
@@ -969,13 +944,11 @@ const boundDataAttr = (bound: ArrivalsPreparedBound): string | undefined => {
 }
 
 /** Inner Rail = anticlockwise, Outer Rail = clockwise (LU convention). */
-const RAIL_DESIGNATION_ICON: Record<
-  ArrivalsRailDesignation,
-  typeof RotateCcw
-> = {
-  inner: RotateCcw,
-  outer: RotateCw,
-}
+const RAIL_DESIGNATION_ICON: Record<ArrivalsRailDesignation, typeof RotateCcw> =
+  {
+    inner: RotateCcw,
+    outer: RotateCw,
+  }
 
 /**
  * Bound heading label. When a platform is hoisted, the platform word uses
@@ -1024,7 +997,7 @@ const BoundHeadingLabel = ({ bound }: { bound: ArrivalsPreparedBound }) => {
           "truncate whitespace-nowrap",
           Icon
             ? "hidden @min-[9rem]/bound-heading:inline @min-[12.5rem]/bound-heading:hidden"
-            : "@min-[12.5rem]/bound-heading:hidden",
+            : "@min-[12.5rem]/bound-heading:hidden"
         )}
         aria-hidden
       >
@@ -1080,8 +1053,14 @@ export const ArrivalsBoundGroup = ({
   const chunked = chunkBoundPages(bound.rows, canPage ? pageSize : 0, {
     lockHeight: canPage,
   })
-  const { containerRef, setSlideRef, activePage, goToPage, handlePrev, handleNext } =
-    useArrivalsPageTrack(unattended ? 1 : chunked.pageCount)
+  const {
+    containerRef,
+    setSlideRef,
+    activePage,
+    goToPage,
+    handlePrev,
+    handleNext,
+  } = useArrivalsPageTrack(unattended ? 1 : chunked.pageCount)
   const showPager = canPage && !unattended && chunked.pageCount > 1
   const emptyScope = bound.label ? `${lineName} ${bound.label}` : lineName
   const emptyLabel = `${emptyScope}: ${ARRIVALS_LINE_EMPTY_COPY}`
@@ -1190,8 +1169,8 @@ export const ArrivalsGroupHeader = ({
         : group.lineId
   const isStriped = Boolean(
     group.kind === "rail-line" &&
-      group.modeName &&
-      STRIPED_MODE_NAMES.has(group.modeName)
+    group.modeName &&
+    STRIPED_MODE_NAMES.has(group.modeName)
   )
   const overlayBar = isMerged || isStriped
 
@@ -1206,19 +1185,13 @@ export const ArrivalsGroupHeader = ({
       <LineHeadingTag
         className={cn(
           "m-0 min-w-0 flex-1 pr-2 text-xl leading-7 font-semibold",
-          isMerged
-            ? "text-foreground"
-            : "text-[var(--line-color)]",
+          isMerged ? "text-foreground" : "text-[var(--line-color)]",
           !isMerged && group.kind === "rail-line" && "tfl-dark-line-text",
           !group.hasInformation && "opacity-70",
           !isMerged && "truncate"
         )}
       >
-        {isMerged ? (
-          <LineName lineIds={lineIds} group />
-        ) : (
-          group.lineName
-        )}
+        {isMerged ? <LineName lineIds={lineIds} group /> : group.lineName}
       </LineHeadingTag>
       {pager}
       {isMerged ? (
@@ -1282,8 +1255,14 @@ export const ArrivalsPagedGroup = ({
   const chunked = chunkBoundPages(rows, canPage ? pageSize : 0, {
     lockHeight: canPage ? "when-paged" : false,
   })
-  const { containerRef, setSlideRef, activePage, goToPage, handlePrev, handleNext } =
-    useArrivalsPageTrack(unattended ? 1 : chunked.pageCount)
+  const {
+    containerRef,
+    setSlideRef,
+    activePage,
+    goToPage,
+    handlePrev,
+    handleNext,
+  } = useArrivalsPageTrack(unattended ? 1 : chunked.pageCount)
   const showPager = canPage && !unattended && chunked.pageCount > 1
   const emptyLabel = `${group.lineName}: ${ARRIVALS_LINE_EMPTY_COPY}`
   const session = useUnattendedArrivalSession({
@@ -1393,8 +1372,14 @@ export const ArrivalsPagedList = ({
   const chunked = chunkBoundPages(rows, canPage ? pageSize : 0, {
     lockHeight: canPage ? "when-paged" : false,
   })
-  const { containerRef, setSlideRef, activePage, goToPage, handlePrev, handleNext } =
-    useArrivalsPageTrack(unattended ? 1 : chunked.pageCount)
+  const {
+    containerRef,
+    setSlideRef,
+    activePage,
+    goToPage,
+    handlePrev,
+    handleNext,
+  } = useArrivalsPageTrack(unattended ? 1 : chunked.pageCount)
   const showPager = canPage && !unattended && chunked.pageCount > 1
   const session = useUnattendedArrivalSession({
     rows,

@@ -1,18 +1,18 @@
-"use client";
+"use client"
 
-import { useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { PointInspectorDeferred } from "@/components/explorer/entity-inspector/point-inspector";
-import { BusPointFinder } from "@/components/explorer/bus-point-finder";
-import { ExplorerSplit } from "@/components/explorer/explorer-split";
-import { useOptimisticPoint } from "@/components/explorer/use-optimistic-selection";
-import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise";
+import { useMemo } from "react"
+import { useRouter } from "next/navigation"
+import { PointInspectorDeferred } from "@/components/explorer/entity-inspector/point-inspector"
+import { BusPointFinder } from "@/components/explorer/bus-point-finder"
+import { ExplorerSplit } from "@/components/explorer/explorer-split"
+import { useOptimisticPoint } from "@/components/explorer/use-optimistic-selection"
+import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
 import {
   buildExplorerHref,
   type ExplorerState,
-} from "@/lib/tfl/explorer-url-state";
-import type { ExplorerBusPoint } from "@/lib/tfl/explorer/common";
-import type { ExplorerCachedArrivals } from "@/lib/tfl/explorer/selection";
+} from "@/lib/tfl/explorer-url-state"
+import type { ExplorerBusPoint } from "@/lib/tfl/explorer/common"
+import type { ExplorerCachedArrivals } from "@/lib/tfl/explorer/selection"
 
 const toPoint = (stop: ExplorerBusPoint): ExplorerPoint => ({
   id: stop.id,
@@ -27,25 +27,25 @@ const toPoint = (stop: ExplorerBusPoint): ExplorerPoint => ({
   towards: stop.towards,
   distanceMeters: stop.distance,
   bearingDegrees: stop.bearingDegrees,
-});
+})
 
 type PointsBusFindProps = {
-  state: ExplorerState;
-  stops: readonly ExplorerBusPoint[];
-  cachedArrivalsPromise?: Promise<ExplorerCachedArrivals | null>;
-};
+  state: ExplorerState
+  stops: readonly ExplorerBusPoint[]
+  cachedArrivalsPromise?: Promise<ExplorerCachedArrivals | null>
+}
 
 export const PointsBusFind = ({
   state,
   stops,
   cachedArrivalsPromise,
 }: PointsBusFindProps) => {
-  const router = useRouter();
-  const initialPoints = useMemo(() => stops.map(toPoint), [stops]);
+  const router = useRouter()
+  const initialPoints = useMemo(() => stops.map(toPoint), [stops])
   const { selected, detailsPending, handleSelectPoint } = useOptimisticPoint(
     initialPoints,
-    state,
-  );
+    state
+  )
 
   return (
     <ExplorerSplit
@@ -71,5 +71,5 @@ export const PointsBusFind = ({
         ) : null
       }
     />
-  );
-};
+  )
+}

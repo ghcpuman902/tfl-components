@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef, useState, type CSSProperties } from "react"
+import { cn } from "@/lib/utils"
 import {
   DIAGRAM_BASELINE,
   DIAGRAM_SCALE_VAR,
   DIAGRAM_X_VAR,
   horizontalDiagramMetrics,
-} from "@/lib/tfl/line-diagram";
+} from "@/lib/tfl/line-diagram"
 import {
   MonoRouteTrack,
   StraightRouteTrack,
@@ -16,31 +16,31 @@ import {
   type StraightStripStation,
   type StripLabelPlacement,
   type StripSegmentState,
-} from "@/components/tfl/diagram/straight-strip-parts";
-import type { RouteTrackStyle } from "@/lib/tfl/route-track";
+} from "@/components/tfl/diagram/straight-strip-parts"
+import type { RouteTrackStyle } from "@/lib/tfl/route-track"
 
 type FittedProps = {
-  stations: readonly StraightStripStation[];
-  lineColor: string;
-  lineName?: string;
-  x?: number;
-  className?: string;
+  stations: readonly StraightStripStation[]
+  lineColor: string
+  lineName?: string
+  x?: number
+  className?: string
   /** Prepared adjacent segment states (length = stations.length - 1). */
-  segmentStates: readonly StripSegmentState[];
+  segmentStates: readonly StripSegmentState[]
   /** Prepared per-station out-of-use flags. */
-  stationOutOfUse: readonly boolean[];
-  forceLabelIds?: readonly string[];
+  stationOutOfUse: readonly boolean[]
+  forceLabelIds?: readonly string[]
   /**
    * Shared fit scale for a group of strips (e.g. homepage week-ahead).
    * When set, every line uses the same pitch and type size, left-aligned.
    * When omitted, this strip scales itself to its container.
    */
-  sharedFitScale?: number;
-  labelPlacement?: StripLabelPlacement;
-  trackStyle?: RouteTrackStyle;
-  mono?: boolean;
-  lineId?: string;
-};
+  sharedFitScale?: number
+  labelPlacement?: StripLabelPlacement
+  trackStyle?: RouteTrackStyle
+  mono?: boolean
+  lineId?: string
+}
 
 /**
  * Fitted straight strip — left-aligned fixed pitch, no horizontal scroll.
@@ -61,72 +61,71 @@ export const StraightStripFitted = ({
   mono = false,
   lineId,
 }: FittedProps) => {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(0)
 
   useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return;
+    const el = rootRef.current
+    if (!el) return
 
-    const update = () => setWidth(el.clientWidth);
-    update();
+    const update = () => setWidth(el.clientWidth)
+    update()
 
-    const observer = new ResizeObserver(() => update());
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+    const observer = new ResizeObserver(() => update())
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
-  const markerColor = mono ? "var(--tfl-mono-ink)" : lineColor;
-  const m = horizontalDiagramMetrics(labelPlacement);
-  const colWidthPxApprox =
-    DIAGRAM_BASELINE.horizontal * 0.85 * m.colWidthUnits;
+  const markerColor = mono ? "var(--tfl-mono-ink)" : lineColor
+  const m = horizontalDiagramMetrics(labelPlacement)
+  const colWidthPxApprox = DIAGRAM_BASELINE.horizontal * 0.85 * m.colWidthUnits
 
   const selfScale =
     width > 0 && stations.length > 0
       ? Math.min(1, width / Math.max(colWidthPxApprox * stations.length, 1))
-      : 1;
-  const fitScale = sharedFitScale ?? selfScale;
-  const monoX = (x ?? DIAGRAM_BASELINE.horizontal) * fitScale;
+      : 1
+  const fitScale = sharedFitScale ?? selfScale
+  const monoX = (x ?? DIAGRAM_BASELINE.horizontal) * fitScale
 
   const unitStyle = (
     mono || x != null
-      ? { [DIAGRAM_X_VAR]: `${(x ?? DIAGRAM_BASELINE.horizontal) * fitScale}px` }
+      ? {
+          [DIAGRAM_X_VAR]: `${(x ?? DIAGRAM_BASELINE.horizontal) * fitScale}px`,
+        }
       : {
           [DIAGRAM_X_VAR]: `calc(${DIAGRAM_BASELINE.horizontal}px * var(${DIAGRAM_SCALE_VAR}, 1) * ${fitScale})`,
         }
-  ) as CSSProperties;
+  ) as CSSProperties
 
   const maxConnections = stations.reduce((n, s) => {
-    let count = 0;
+    let count = 0
     for (const c of s.connections ?? []) {
-      if (c.id !== "national-rail") count += 1;
+      if (c.id !== "national-rail") count += 1
     }
-    return Math.max(n, count);
-  }, 0);
+    return Math.max(n, count)
+  }, 0)
   const connectionBand =
-    maxConnections > 0
-      ? `calc(${m.flagHeight} * ${maxConnections})`
-      : undefined;
-  const totalWidth = `calc(${m.colWidth} * ${stations.length})`;
+    maxConnections > 0 ? `calc(${m.flagHeight} * ${maxConnections})` : undefined
+  const totalWidth = `calc(${m.colWidth} * ${stations.length})`
 
-  const forcedIds = forceLabelIds ? new Set(forceLabelIds) : null;
+  const forcedIds = forceLabelIds ? new Set(forceLabelIds) : null
   const labelIndexes =
     width > 0
       ? selectFittedLabelIndexes(
           stations,
           width,
           forceLabelIds,
-          colWidthPxApprox * fitScale,
+          colWidthPxApprox * fitScale
         )
       : (() => {
-          const show = new Set<number>([0, stations.length - 1]);
+          const show = new Set<number>([0, stations.length - 1])
           if (forcedIds) {
             stations.forEach((s, i) => {
-              if (forcedIds.has(s.id)) show.add(i);
-            });
+              if (forcedIds.has(s.id)) show.add(i)
+            })
           }
-          return show;
-        })();
+          return show
+        })()
 
   return (
     <div
@@ -185,5 +184,5 @@ export const StraightStripFitted = ({
         </ol>
       </div>
     </div>
-  );
-};
+  )
+}

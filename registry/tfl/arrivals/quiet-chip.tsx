@@ -11,7 +11,11 @@ export type QuietChipProps = HTMLAttributes<HTMLSpanElement> & {
 }
 
 /** Quiet neutral chip used for status severity labels and arrival ranks. */
-export const QuietChip = ({ children, className, ...props }: QuietChipProps) => (
+export const QuietChip = ({
+  children,
+  className,
+  ...props
+}: QuietChipProps) => (
   <span
     {...props}
     className={cn(
@@ -35,11 +39,15 @@ export const ArrivalRankChip = ({
 }: { rank: number } & Omit<QuietChipProps, "children">) => (
   <QuietChip
     aria-hidden
-    className={cn(ARRIVALS_RANK_CHIP_WIDTH_CLASS, "px-0 tabular-nums", className)}
+    className={cn(
+      ARRIVALS_RANK_CHIP_WIDTH_CLASS,
+      "px-0 tabular-nums",
+      className
+    )}
     {...props}
   >
     {rank}
-    <sup className="ordinal top-0 text-[0.62em] leading-none font-features-['ordn']">
+    <sup className="top-0 font-features-['ordn'] text-[0.62em] leading-none ordinal">
       {arrivalsOrdinalSuffix(rank)}
     </sup>
   </QuietChip>

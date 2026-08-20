@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 /** 1-based index of a setting in the live URL segment list, or null if omitted. */
 export const boardSegmentIndex = (
   segments: readonly BoardHrefSegment[],
-  setting: BoardSettingId | "key",
+  setting: BoardSettingId | "key"
 ): number | null => {
   const index = segments.findIndex((segment) => segment.setting === setting)
   return index === -1 ? null : index + 1
@@ -26,8 +26,8 @@ export const BoardSegmentBadge = ({
   return (
     <span
       className={cn(
-        "inline-flex size-4 shrink-0 select-none items-center justify-center rounded-full border border-foreground/35 text-[0.6rem] leading-none tabular-nums text-foreground after:content-[attr(data-n)]",
-        className,
+        "inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-foreground/35 text-[0.6rem] leading-none text-foreground tabular-nums select-none after:content-[attr(data-n)]",
+        className
       )}
       data-n={String(index)}
       aria-hidden
@@ -52,7 +52,7 @@ export const BoardUrlLegend = ({
   <div
     className={cn(
       "overflow-x-auto rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-foreground",
-      className,
+      className
     )}
     aria-label="Board URL"
   >
@@ -74,10 +74,7 @@ export const BoardUrlLegend = ({
               {segment.text}
             </span>
             {/* Absolute so the badge sits under the segment but outside selection flow */}
-            <span
-              className="pointer-events-none mt-1 select-none"
-              aria-hidden
-            >
+            <span className="pointer-events-none mt-1 select-none" aria-hidden>
               <BoardSegmentBadge index={index + 1} />
             </span>
           </span>

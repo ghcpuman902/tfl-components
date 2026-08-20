@@ -8,11 +8,11 @@
  */
 
 export type StaticLineSpine = {
-  lineId: string;
-  lineName: string;
+  lineId: string
+  lineName: string
   /** Outbound terminal → terminal naptan order */
-  naptanIds: readonly string[];
-};
+  naptanIds: readonly string[]
+}
 
 /** Bakerloo outbound: Harrow & Wealdstone → Elephant & Castle */
 export const BAKERLOO_OUTBOUND_SPINE = [
@@ -41,7 +41,7 @@ export const BAKERLOO_OUTBOUND_SPINE = [
   "940GZZLUWLO", // Waterloo
   "940GZZLULBN", // Lambeth North
   "940GZZLUEAC", // Elephant & Castle
-] as const;
+] as const
 
 export const STATIC_LINE_SPINES: Record<string, StaticLineSpine> = {
   bakerloo: {
@@ -49,7 +49,7 @@ export const STATIC_LINE_SPINES: Record<string, StaticLineSpine> = {
     lineName: "Bakerloo",
     naptanIds: BAKERLOO_OUTBOUND_SPINE,
   },
-};
+}
 
 export const getStaticLineSpine = (lineId: string): StaticLineSpine | null =>
-  STATIC_LINE_SPINES[lineId.toLowerCase()] ?? null;
+  STATIC_LINE_SPINES[lineId.toLowerCase()] ?? null

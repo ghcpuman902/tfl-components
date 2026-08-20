@@ -5,10 +5,10 @@
  * They do not grant a licence to reproduce TfL maps.
  */
 
-import type { CSSProperties } from "react";
+import type { CSSProperties } from "react"
 
 /** Base unit: route line thickness (= station name x-height). */
-export type DiagramUnit = number;
+export type DiagramUnit = number
 
 export const LINE_DIAGRAM_SOURCE = {
   title: "Line diagram standard",
@@ -17,7 +17,7 @@ export const LINE_DIAGRAM_SOURCE = {
   referencePdf: "reference/brand/tfl-line-diagram-standard.pdf",
   assetsRoot: "/brand/line-diagram",
   manifest: "/brand/line-diagram/manifest.json",
-} as const;
+} as const
 
 /**
  * Inherited CSS scale for all strip components on a page.
@@ -32,10 +32,10 @@ export const LINE_DIAGRAM_SOURCE = {
  * </div>
  * ```
  */
-export const DIAGRAM_SCALE_VAR = "--tfl-diagram-scale";
+export const DIAGRAM_SCALE_VAR = "--tfl-diagram-scale"
 
 /** Resolved route-line thickness used inside each diagram root. */
-export const DIAGRAM_X_VAR = "--tfl-diagram-x";
+export const DIAGRAM_X_VAR = "--tfl-diagram-x"
 
 /**
  * Orientation baselines (px at scale 1).
@@ -46,9 +46,9 @@ export const DIAGRAM_X_VAR = "--tfl-diagram-x";
 export const DIAGRAM_BASELINE = {
   horizontal: 10,
   vertical: 4,
-} as const;
+} as const
 
-export type DiagramOrientation = keyof typeof DIAGRAM_BASELINE;
+export type DiagramOrientation = keyof typeof DIAGRAM_BASELINE
 
 /**
  * Suggested page-level responsive scale values (unitless multipliers).
@@ -58,10 +58,10 @@ export const DIAGRAM_SCALE = {
   mobile: 0.7,
   tablet: 0.85,
   desktop: 1,
-} as const;
+} as const
 
 /** Tailwind class string that sets `--tfl-diagram-scale` at shared breakpoints. */
-export const DIAGRAM_SCALE_CLASS = `[${DIAGRAM_SCALE_VAR}:${DIAGRAM_SCALE.mobile}] sm:[${DIAGRAM_SCALE_VAR}:${DIAGRAM_SCALE.tablet}] lg:[${DIAGRAM_SCALE_VAR}:${DIAGRAM_SCALE.desktop}]`;
+export const DIAGRAM_SCALE_CLASS = `[${DIAGRAM_SCALE_VAR}:${DIAGRAM_SCALE.mobile}] sm:[${DIAGRAM_SCALE_VAR}:${DIAGRAM_SCALE.tablet}] lg:[${DIAGRAM_SCALE_VAR}:${DIAGRAM_SCALE.desktop}]`
 
 /**
  * Sets `--tfl-diagram-x` on a diagram root.
@@ -69,18 +69,18 @@ export const DIAGRAM_SCALE_CLASS = `[${DIAGRAM_SCALE_VAR}:${DIAGRAM_SCALE.mobile
  */
 export const diagramUnitStyle = (
   orientation: DiagramOrientation,
-  x?: number,
+  x?: number
 ): CSSProperties =>
   ({
     [DIAGRAM_X_VAR]:
       x != null
         ? `${x}px`
         : `calc(${DIAGRAM_BASELINE[orientation]}px * var(${DIAGRAM_SCALE_VAR}, 1))`,
-  }) as CSSProperties;
+  }) as CSSProperties
 
 /** CSS length = `units` × `--tfl-diagram-x`. */
 export const ux = (units: number): string =>
-  `calc(var(${DIAGRAM_X_VAR}) * ${units})`;
+  `calc(var(${DIAGRAM_X_VAR}) * ${units})`
 
 /** Core proportions (§5–§8). All values are multiples of `x`. */
 export const LINE_DIAGRAM = {
@@ -146,59 +146,59 @@ export const LINE_DIAGRAM = {
     curveRadiusBranch: 4,
     tick: 0.66,
   },
-} as const;
+} as const
 
-export const scale = (x: DiagramUnit, units: number): number => x * units;
+export const scale = (x: DiagramUnit, units: number): number => x * units
 
 /**
  * Hammersmith One / Johnston-like fonts: capital height ≈ 70% of CSS font-size.
  * Used to convert §11 cap-height (3x) into a CSS `font-size`.
  */
-export const DIAGRAM_CAP_HEIGHT_RATIO = 0.7;
+export const DIAGRAM_CAP_HEIGHT_RATIO = 0.7
 
 /** §11 name size as a multiple of `x` (cap height 3x → CSS font-size). */
 export const VERTICAL_NAME_SIZE_UNITS =
-  LINE_DIAGRAM.vertical.nameCapHeight / DIAGRAM_CAP_HEIGHT_RATIO;
+  LINE_DIAGRAM.vertical.nameCapHeight / DIAGRAM_CAP_HEIGHT_RATIO
 
 /** Horizontal station name: x-height ≈ line thickness → CSS font-size ≈ 2x. */
-export const HORIZONTAL_NAME_SIZE_UNITS = 2;
+export const HORIZONTAL_NAME_SIZE_UNITS = 2
 
 /** §11: CSS font-size so station-name capitals match interchange outer Ø (3x). */
 export const verticalStationFontSize = (x: DiagramUnit): number =>
-  scale(x, VERTICAL_NAME_SIZE_UNITS);
+  scale(x, VERTICAL_NAME_SIZE_UNITS)
 
 /** Flag chip font roughly half the station name size. */
 export const verticalFlagFontSize = (x: DiagramUnit): number =>
-  Math.max(10, verticalStationFontSize(x) * 0.45);
+  Math.max(10, verticalStationFontSize(x) * 0.45)
 
 /**
  * §5 / §10: CSS font-size so station-name x-height ≈ route line thickness `x`
  * (Johnston-like x-height ≈ half an em).
  */
 export const horizontalStationFontSize = (x: DiagramUnit): number =>
-  scale(x, HORIZONTAL_NAME_SIZE_UNITS);
+  scale(x, HORIZONTAL_NAME_SIZE_UNITS)
 
 /** Capital height from a CSS font-size (Johnston-like). */
 export const stationCapHeight = (fontSize: number): number =>
-  fontSize * DIAGRAM_CAP_HEIGHT_RATIO;
+  fontSize * DIAGRAM_CAP_HEIGHT_RATIO
 
 /**
  * §9 single-line flag box height = 1 CH
  * (0.25 + 0.5 + 0.25 padding/text parts).
  */
 export const flagBoxHeight = (capHeight: number): number => {
-  const { top, text, bottom } = LINE_DIAGRAM.layout.flagPaddingCh;
-  return capHeight * (top + text + bottom);
-};
+  const { top, text, bottom } = LINE_DIAGRAM.layout.flagPaddingCh
+  return capHeight * (top + text + bottom)
+}
 
 /** §9: font-size so capitals fill the flag text band (0.5 CH). */
 export const flagBoxFontSize = (capHeight: number): number =>
   (capHeight * LINE_DIAGRAM.layout.flagPaddingCh.text) /
-  DIAGRAM_CAP_HEIGHT_RATIO;
+  DIAGRAM_CAP_HEIGHT_RATIO
 
 /** §10: gap from route line underside to content below (names / flags). */
 export const belowLineClearance = (x: DiagramUnit): number =>
-  scale(x, LINE_DIAGRAM.layout.nameBelowLine);
+  scale(x, LINE_DIAGRAM.layout.nameBelowLine)
 
 /**
  * Shared CSS lengths for vertical / journey diagrams (multiples of `--tfl-diagram-x`).
@@ -209,25 +209,25 @@ export const belowLineClearance = (x: DiagramUnit): number =>
  * terminals use a full crossbar.
  */
 export const verticalDiagramMetrics = () => {
-  const tickProtrude = LINE_DIAGRAM.vertical.tick;
+  const tickProtrude = LINE_DIAGRAM.vertical.tick
   /** Full terminal tick (both sides of the route). */
-  const tickBothWidth = 1 + tickProtrude * 2;
+  const tickBothWidth = 1 + tickProtrude * 2
   /** Mid-route tick: covers the line and extends right only. */
-  const tickRightWidth = 1 + tickProtrude;
-  const ringOuter = LINE_DIAGRAM.interchange.outerDiameter;
-  const ringStroke = LINE_DIAGRAM.interchange.stroke;
+  const tickRightWidth = 1 + tickProtrude
+  const ringOuter = LINE_DIAGRAM.interchange.outerDiameter
+  const ringStroke = LINE_DIAGRAM.interchange.stroke
   /** §11: capitals ≈ ring Ø → CSS font-size taller than the ring. */
-  const nameSize = VERTICAL_NAME_SIZE_UNITS;
-  const capHeight = nameSize * DIAGRAM_CAP_HEIGHT_RATIO;
-  const { top, text, bottom } = LINE_DIAGRAM.layout.flagPaddingCh;
-  const flagHeight = capHeight * (top + text + bottom);
-  const flagFont = (capHeight * text) / DIAGRAM_CAP_HEIGHT_RATIO;
-  const flagMinWidth = Math.max(8, capHeight * 4);
-  const markerCol = Math.max(ringOuter, tickBothWidth);
-  const nameGap = 1.5;
+  const nameSize = VERTICAL_NAME_SIZE_UNITS
+  const capHeight = nameSize * DIAGRAM_CAP_HEIGHT_RATIO
+  const { top, text, bottom } = LINE_DIAGRAM.layout.flagPaddingCh
+  const flagHeight = capHeight * (top + text + bottom)
+  const flagFont = (capHeight * text) / DIAGRAM_CAP_HEIGHT_RATIO
+  const flagMinWidth = Math.max(8, capHeight * 4)
+  const markerCol = Math.max(ringOuter, tickBothWidth)
+  const nameGap = 1.5
   /** Extra pitch so names taller than rings still breathe between stops. */
-  const rowGap = Math.max(ringOuter, nameSize) + 2.5;
-  const stopGap = 2;
+  const rowGap = Math.max(ringOuter, nameSize) + 2.5
+  const stopGap = 2
 
   return {
     tickProtrude: ux(tickProtrude),
@@ -249,37 +249,33 @@ export const verticalDiagramMetrics = () => {
     markerColUnits: markerCol,
     lineWidth: ux(1),
     stopGap: ux(stopGap),
-  } as const;
-};
+  } as const
+}
 
 /**
  * Shared CSS lengths for horizontal strip diagrams.
  * `labelPlacement` shifts the route centreline when names sit below / alternate.
  */
 export const horizontalDiagramMetrics = (
-  labelPlacement: "above" | "below" | "alternate" = "above",
+  labelPlacement: "above" | "below" | "alternate" = "above"
 ) => {
-  const tickProtrude = LINE_DIAGRAM.stationTick;
-  const tickHeightUnits = 1 + tickProtrude * 2;
-  const ringOuter = LINE_DIAGRAM.interchange.outerDiameter;
-  const ringStroke = LINE_DIAGRAM.interchange.stroke;
-  const nameSize = HORIZONTAL_NAME_SIZE_UNITS;
-  const capHeight = nameSize * DIAGRAM_CAP_HEIGHT_RATIO;
-  const { top, text, bottom } = LINE_DIAGRAM.layout.flagPaddingCh;
-  const flagHeight = capHeight * (top + text + bottom);
-  const flagFont = Math.max(
-    (capHeight * text) / DIAGRAM_CAP_HEIGHT_RATIO,
-    1,
-  );
-  const flagMinWidth = Math.max(8, capHeight * 4);
-  const nameGap = 0.75;
-  const nameBand = nameSize * 2.35;
-  const markerBand = Math.max(ringOuter, tickHeightUnits);
-  const colWidth = Math.max(ringOuter + 10, flagMinWidth + 4, 12);
-  const aboveBand =
-    labelPlacement === "below" ? 0 : nameBand + nameGap;
-  const lineTop = aboveBand + markerBand / 2 - 0.5;
-  const flagClearance = LINE_DIAGRAM.layout.nameBelowLine;
+  const tickProtrude = LINE_DIAGRAM.stationTick
+  const tickHeightUnits = 1 + tickProtrude * 2
+  const ringOuter = LINE_DIAGRAM.interchange.outerDiameter
+  const ringStroke = LINE_DIAGRAM.interchange.stroke
+  const nameSize = HORIZONTAL_NAME_SIZE_UNITS
+  const capHeight = nameSize * DIAGRAM_CAP_HEIGHT_RATIO
+  const { top, text, bottom } = LINE_DIAGRAM.layout.flagPaddingCh
+  const flagHeight = capHeight * (top + text + bottom)
+  const flagFont = Math.max((capHeight * text) / DIAGRAM_CAP_HEIGHT_RATIO, 1)
+  const flagMinWidth = Math.max(8, capHeight * 4)
+  const nameGap = 0.75
+  const nameBand = nameSize * 2.35
+  const markerBand = Math.max(ringOuter, tickHeightUnits)
+  const colWidth = Math.max(ringOuter + 10, flagMinWidth + 4, 12)
+  const aboveBand = labelPlacement === "below" ? 0 : nameBand + nameGap
+  const lineTop = aboveBand + markerBand / 2 - 0.5
+  const flagClearance = LINE_DIAGRAM.layout.nameBelowLine
 
   return {
     tickWidth: ux(1),
@@ -299,24 +295,24 @@ export const horizontalDiagramMetrics = (
     flagClearance: ux(flagClearance),
     lineWidth: ux(1),
     colWidthUnits: colWidth,
-  } as const;
-};
+  } as const
+}
 
 /** Outer radius of an interchange ring (centre → outer edge). */
 export const interchangeOuterRadius = (x: DiagramUnit): number =>
-  scale(x, LINE_DIAGRAM.interchange.outerDiameter / 2);
+  scale(x, LINE_DIAGRAM.interchange.outerDiameter / 2)
 
 /** Inner (hole) radius of an interchange ring. */
 export const interchangeInnerRadius = (x: DiagramUnit): number =>
-  scale(x, LINE_DIAGRAM.interchange.innerDiameter / 2);
+  scale(x, LINE_DIAGRAM.interchange.innerDiameter / 2)
 
 /** Stroke width of an interchange ring. */
 export const interchangeStroke = (x: DiagramUnit): number =>
-  scale(x, LINE_DIAGRAM.interchange.stroke);
+  scale(x, LINE_DIAGRAM.interchange.stroke)
 
 /** Centreline radius for a 90° bend when the innermost curve is R3x. */
 export const bendCenterlineRadius = (x: DiagramUnit): number =>
-  scale(x, LINE_DIAGRAM.innerCurveRadius + LINE_DIAGRAM.lineThickness / 2);
+  scale(x, LINE_DIAGRAM.innerCurveRadius + LINE_DIAGRAM.lineThickness / 2)
 
 /**
  * SVG path for a station tick centred on (cx, cy), for a horizontal line.
@@ -326,11 +322,11 @@ export const bendCenterlineRadius = (x: DiagramUnit): number =>
 export const stationTickRect = (
   cx: number,
   cy: number,
-  x: DiagramUnit,
+  x: DiagramUnit
 ): { x: number; y: number; width: number; height: number } => {
-  const size = scale(x, LINE_DIAGRAM.stationTick);
-  return { x: cx - size / 2, y: cy - size / 2, width: size, height: size };
-};
+  const size = scale(x, LINE_DIAGRAM.stationTick)
+  return { x: cx - size / 2, y: cy - size / 2, width: size, height: size }
+}
 
 /**
  * Polygon points for a continuation arrow pointing +X, stem centred on y.
@@ -340,14 +336,14 @@ export const continuationArrowPoints = (
   tipX: number,
   cy: number,
   x: DiagramUnit,
-  direction: 1 | -1 = 1,
+  direction: 1 | -1 = 1
 ): string => {
-  const tipExtent = scale(x, 2);
-  const back = tipX - direction * tipExtent;
-  const topOuter = cy - 2 * x;
-  const botOuter = cy + 2 * x;
-  const halfStem = scale(x, LINE_DIAGRAM.arrow.stem) / 2;
-  const innerBack = tipX - direction * (tipExtent - x);
+  const tipExtent = scale(x, 2)
+  const back = tipX - direction * tipExtent
+  const topOuter = cy - 2 * x
+  const botOuter = cy + 2 * x
+  const halfStem = scale(x, LINE_DIAGRAM.arrow.stem) / 2
+  const innerBack = tipX - direction * (tipExtent - x)
   return [
     [tipX, cy],
     [back, topOuter],
@@ -356,37 +352,36 @@ export const continuationArrowPoints = (
     [back, botOuter],
   ]
     .map(([px, py]) => `${px},${py}`)
-    .join(" ");
-};
+    .join(" ")
+}
 
 /** Path `d` for a 90° centreline bend (quarter circle), convex toward +X/+Y. */
 export const bend90Path = (
   startX: number,
   startY: number,
   x: DiagramUnit,
-  turn: "down-right" | "up-right" | "down-left" | "up-left" = "down-right",
+  turn: "down-right" | "up-right" | "down-left" | "up-left" = "down-right"
 ): string => {
-  const r = bendCenterlineRadius(x);
+  const r = bendCenterlineRadius(x)
   const map = {
     "down-right": { dx: r, dy: r },
     "up-right": { dx: r, dy: -r },
     "down-left": { dx: -r, dy: r },
     "up-left": { dx: -r, dy: -r },
-  } as const;
-  const { dx, dy } = map[turn];
-  const endX = startX + dx;
-  const endY = startY + dy;
-  const sweepFlag =
-    turn === "down-right" || turn === "up-left" ? 1 : 0;
-  return `M ${startX} ${startY} A ${r} ${r} 0 0 ${sweepFlag} ${endX} ${endY}`;
-};
+  } as const
+  const { dx, dy } = map[turn]
+  const endX = startX + dx
+  const endY = startY + dy
+  const sweepFlag = turn === "down-right" || turn === "up-left" ? 1 : 0
+  return `M ${startX} ${startY} A ${r} ${r} 0 0 ${sweepFlag} ${endX} ${endY}`
+}
 
 export type LineDiagramAsset = {
-  slug: string;
-  title: string;
-  path: string;
-  kind: "page" | "sheet" | "figure";
-};
+  slug: string
+  title: string
+  path: string
+  kind: "page" | "sheet" | "figure"
+}
 
 /** Cropped reference assets under /public/brand/line-diagram. */
 export const LINE_DIAGRAM_ASSETS = {
@@ -459,4 +454,4 @@ export const LINE_DIAGRAM_ASSETS = {
       path: "/brand/line-diagram/figures/interchange-dumbbell.png",
     },
   ],
-} as const;
+} as const

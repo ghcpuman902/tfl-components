@@ -42,10 +42,10 @@ describe("riverRouteChipCopy", () => {
 
 describe("filterRiverBusLineIds", () => {
   it("drops bus routes mixed onto a pier", () => {
-    assert.deepEqual(
-      filterRiverBusLineIds(["rb6", "22", "n22", "RB1"]),
-      ["rb6", "rb1"],
-    )
+    assert.deepEqual(filterRiverBusLineIds(["rb6", "22", "n22", "RB1"]), [
+      "rb6",
+      "rb1",
+    ])
   })
 
   it("canonicalises spaced Woolwich Ferry ids", () => {
@@ -64,7 +64,7 @@ describe("filterRiverBusArrivals", () => {
         { lineId: "rb6" },
         { lineId: "n22" },
       ]),
-      [{ lineId: "rb6" }],
+      [{ lineId: "rb6" }]
     )
   })
 })

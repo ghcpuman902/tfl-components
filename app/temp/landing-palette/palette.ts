@@ -10,13 +10,7 @@ import {
 export type LandingScheme = "light" | "dark"
 export type TokenRole = "room" | "sofa" | "wood" | "trim" | "fixed"
 export type TokenGroup =
-  | "room"
-  | "trim"
-  | "scandi"
-  | "wood"
-  | "carpet"
-  | "painting"
-  | "fixed"
+  "room" | "trim" | "scandi" | "wood" | "carpet" | "painting" | "fixed"
 
 export type LandingToken = {
   id: string
@@ -156,7 +150,7 @@ const classTokens = (
   prefix: "carpet" | "paint",
   role: TokenRole,
   group: TokenGroup,
-  note: string,
+  note: string
 ): LandingToken[] =>
   classes.map((cls) => ({
     id: `${prefix}-${cls}`,
@@ -409,26 +403,26 @@ export const TOKENS: readonly LandingToken[] = [
     "carpet",
     "room",
     "carpet",
-    "Carpet field — lifts",
+    "Carpet field — lifts"
   ),
   ...classTokens(
     CARPET_PATTERN_CLASSES,
     "carpet",
     "fixed",
     "carpet",
-    "Carpet pattern — stays dark",
+    "Carpet pattern — stays dark"
   ),
   ...classTokens(
     PAINTING_CLASSES,
     "paint",
     "fixed",
     "painting",
-    "Painting ink — unmerged",
+    "Painting ink — unmerged"
   ),
 ]
 
 export const TOKEN_BY_ID = Object.fromEntries(
-  TOKENS.map((token) => [token.id, token]),
+  TOKENS.map((token) => [token.id, token])
 ) as Record<string, LandingToken>
 
 const SEMANTIC_CLASS: Readonly<Record<number, string>> = {
@@ -502,7 +496,8 @@ export const OPACITY_CLASSES: Readonly<Record<number, number>> = { 1: 0.5 }
 
 export const cssVar = (id: string) => `--landing-${id}`
 
-export const tokenDark = (token: LandingToken): Oklch => hexToOklch(token.darkHex)
+export const tokenDark = (token: LandingToken): Oklch =>
+  hexToOklch(token.darkHex)
 
 export const tokenLight = (token: LandingToken): Oklch => {
   const dark = tokenDark(token)
@@ -531,7 +526,7 @@ export const LANDING_PAPER: Record<LandingScheme, string> = {
  */
 export const heroArtworkStyleSheet = (
   scheme: LandingScheme,
-  scope = "",
+  scope = ""
 ): string => {
   const prefix = scope === "" ? "" : `${scope} `
   const colourOf = (tokenId: string) => tokenCss(TOKEN_BY_ID[tokenId], scheme)
@@ -542,7 +537,7 @@ export const heroArtworkStyleSheet = (
     const colour = colourOf(tokenId)
     if (STROKE_CLASSES.has(cls)) {
       rules.push(
-        `${selector} { fill: none; stroke: ${colour}; stroke-miterlimit: 10; }`,
+        `${selector} { fill: none; stroke: ${colour}; stroke-miterlimit: 10; }`
       )
       continue
     }
@@ -551,10 +546,10 @@ export const heroArtworkStyleSheet = (
     rules.push(`${selector} { fill: ${colour};${extra} }`)
   }
   rules.push(
-    `${prefix}.landing-artwork #Wall { fill: ${colourOf("wall-mirror")}; }`,
+    `${prefix}.landing-artwork #Wall { fill: ${colourOf("wall-mirror")}; }`
   )
   rules.push(
-    `${prefix}.landing-artwork #Table .landing-cls-60 { fill: ${colourOf("wood-knob")}; }`,
+    `${prefix}.landing-artwork #Table .landing-cls-60 { fill: ${colourOf("wood-knob")}; }`
   )
   return rules.join("\n")
 }
@@ -570,16 +565,14 @@ export const heroArtworkThemeStyleSheet = (): string =>
     `.dark .landing-hero-wall-fill { background: ${tokenCss(TOKEN_BY_ID["wall-front"], "dark")}; }`,
     `.landing-hero-floor-fill { background: ${tokenCss(TOKEN_BY_ID["floor"], "light")}; }`,
     `.dark .landing-hero-floor-fill { background: ${tokenCss(TOKEN_BY_ID["floor"], "dark")}; }`,
-    `.landing-hero-copy { color: #3f2a1c; }`,
-    `.dark .landing-hero-copy { color: ${LANDING_PAPER.light}; }`,
+    `.landing-hero-copy { color: #fff; }`,
+    `.landing-hero-caption { color: #fff; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.55); }`,
   ].join("\n")
 
 export const getLandingPalette = (
-  scheme: LandingScheme,
+  scheme: LandingScheme
 ): Record<string, string> =>
-  Object.fromEntries(
-    TOKENS.map((token) => [token.id, tokenCss(token, scheme)]),
-  )
+  Object.fromEntries(TOKENS.map((token) => [token.id, tokenCss(token, scheme)]))
 
 export const classesForToken = (id: string): number[] =>
   Object.entries(CLASS_TO_TOKEN)
@@ -600,7 +593,7 @@ export const originalHexesForToken = (id: string): string[] => {
 
 const schemeVars = (scheme: LandingScheme): string => {
   const lines = TOKENS.map(
-    (token) => `    ${cssVar(token.id)}: ${tokenCss(token, scheme)};`,
+    (token) => `    ${cssVar(token.id)}: ${tokenCss(token, scheme)};`
   )
   return `[data-landing-scheme="${scheme}"] {\n${lines.join("\n")}\n  }`
 }
@@ -616,7 +609,7 @@ const classRules = (scheme: "original" | LandingScheme): string => {
           ? ORIGINAL_CLASS_HEX[cls]
           : `var(${cssVar(tokenId)})`
       rules.push(
-        `${selector} { fill: none; stroke: ${colour}; stroke-miterlimit: 10; }`,
+        `${selector} { fill: none; stroke: ${colour}; stroke-miterlimit: 10; }`
       )
       continue
     }
@@ -630,11 +623,11 @@ const classRules = (scheme: "original" | LandingScheme): string => {
   }
   if (scheme !== "original") {
     rules.push(
-      `[data-landing-scheme="${scheme}"] #Wall { fill: var(${cssVar("wall-mirror")}); }`,
+      `[data-landing-scheme="${scheme}"] #Wall { fill: var(${cssVar("wall-mirror")}); }`
     )
     for (const override of SELECTOR_TOKEN_OVERRIDES) {
       rules.push(
-        `[data-landing-scheme="${scheme}"] ${override.selector} { fill: var(${cssVar(override.tokenId)}); }`,
+        `[data-landing-scheme="${scheme}"] ${override.selector} { fill: var(${cssVar(override.tokenId)}); }`
       )
     }
   }
@@ -644,7 +637,8 @@ const classRules = (scheme: "original" | LandingScheme): string => {
 const CLASS_COUNT = 98
 for (let i = 1; i <= CLASS_COUNT; i++) {
   if (!(i in CLASS_TO_TOKEN)) throw new Error(`unmapped cls-${i}`)
-  if (!(i in ORIGINAL_CLASS_HEX)) throw new Error(`missing original hex for cls-${i}`)
+  if (!(i in ORIGINAL_CLASS_HEX))
+    throw new Error(`missing original hex for cls-${i}`)
   const tokenId = CLASS_TO_TOKEN[i]
   if (!tokenId || !(tokenId in TOKEN_BY_ID)) {
     throw new Error(`cls-${i} maps to missing token ${tokenId}`)

@@ -2,5 +2,5 @@
 export const DocsReadableWidth = ({
   children,
 }: {
-  children: React.ReactNode;
-}) => <div className="mx-auto w-full max-w-5xl">{children}</div>;
+  children: React.ReactNode
+}) => <div className="mx-auto w-full max-w-5xl">{children}</div>

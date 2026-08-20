@@ -358,8 +358,8 @@ const PointInspectorLive = ({
     ? prepareBusStopDisruptions(
         disruptions,
         (displayArrivals ?? []).filter((row) =>
-          isRiverBusLineId(row.lineId ?? ""),
-        ),
+          isRiverBusLineId(row.lineId ?? "")
+        )
       ).filter((item) => isRiverBusLineId(item.lineId))
     : []
 

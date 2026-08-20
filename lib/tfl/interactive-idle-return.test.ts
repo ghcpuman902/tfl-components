@@ -12,13 +12,22 @@ import {
 describe("shouldReturnToFirstPage", () => {
   it("does not return before the threshold", () => {
     const state = createIdleReturnState(0)
-    assert.equal(shouldReturnToFirstPage(state, INTERACTIVE_IDLE_RETURN_MS - 1), false)
+    assert.equal(
+      shouldReturnToFirstPage(state, INTERACTIVE_IDLE_RETURN_MS - 1),
+      false
+    )
   })
 
   it("returns at and after the threshold", () => {
     const state = createIdleReturnState(0)
-    assert.equal(shouldReturnToFirstPage(state, INTERACTIVE_IDLE_RETURN_MS), true)
-    assert.equal(shouldReturnToFirstPage(state, INTERACTIVE_IDLE_RETURN_MS + 1), true)
+    assert.equal(
+      shouldReturnToFirstPage(state, INTERACTIVE_IDLE_RETURN_MS),
+      true
+    )
+    assert.equal(
+      shouldReturnToFirstPage(state, INTERACTIVE_IDLE_RETURN_MS + 1),
+      true
+    )
   })
 
   it("resets the clock when activity is registered", () => {
@@ -32,7 +41,10 @@ describe("shouldReturnToFirstPage", () => {
 
   it("never returns while suspended", () => {
     const state = suspendIdleReturn(createIdleReturnState(0))
-    assert.equal(shouldReturnToFirstPage(state, INTERACTIVE_IDLE_RETURN_MS * 4), false)
+    assert.equal(
+      shouldReturnToFirstPage(state, INTERACTIVE_IDLE_RETURN_MS * 4),
+      false
+    )
   })
 
   it("restarts the clock when resumed", () => {

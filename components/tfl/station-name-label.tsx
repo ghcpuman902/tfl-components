@@ -10,4 +10,4 @@ export {
   type StationNameLabelProps,
   type StationNameLayout,
   type StationNameProps,
-} from "@/components/tfl/station-name";
+} from "@/components/tfl/station-name"

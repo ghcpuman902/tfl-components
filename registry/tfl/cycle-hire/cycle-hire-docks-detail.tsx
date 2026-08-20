@@ -1,10 +1,10 @@
-import { type ReactNode } from "react";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
-import { Skeleton } from "@/components/ui/skeleton";
-import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types";
-import { getDockCounts } from "@/components/tfl/cycle-hire/cycle-hire-dock-marker";
+import { type ReactNode } from "react"
+import Link from "next/link"
+import { cn } from "@/lib/utils"
+import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
+import { Skeleton } from "@/components/ui/skeleton"
+import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types"
+import { getDockCounts } from "@/components/tfl/cycle-hire/cycle-hire-dock-marker"
 import {
   cycleHireBikeFillClass,
   cycleHireBikeTextClass,
@@ -12,52 +12,52 @@ import {
   cycleHireBrokenTextClass,
   cycleHireEbikeFillClass,
   cycleHireEbikeTextClass,
-} from "@/components/tfl/cycle-hire/cycle-hire-colours";
+} from "@/components/tfl/cycle-hire/cycle-hire-colours"
 
 export const DEFAULT_CYCLE_HIRE_DOCK_IDS = [
   "BikePoints_237",
   "BikePoints_490",
   "BikePoints_46",
-] as const;
+] as const
 
 /** One arrivals tile. Heights stay rem literals so the row does not inherit board vars. */
 const DOCK_ROW_HEIGHT_CLASS =
-  "box-border h-[3rem] min-h-[3rem] max-h-[3rem] overflow-clip";
+  "box-border h-[3rem] min-h-[3rem] max-h-[3rem] overflow-clip"
 const DOCK_ROW_TRACK_CLASS =
-  "grid grid-rows-[0.875rem_1.125rem_0.75rem] gap-0.5";
+  "grid grid-rows-[0.875rem_1.125rem_0.75rem] gap-0.5"
 
-type SlotKind = "standard" | "eBike" | "empty" | "broken";
+type SlotKind = "standard" | "eBike" | "empty" | "broken"
 
 /** One cell per dock slot so `gap-*` reads between every slot, not only kind changes. */
 const buildOccupancySlots = (
   counts: ReturnType<typeof getDockCounts>,
-  showBroken: boolean,
+  showBroken: boolean
 ): SlotKind[] => {
-  const { standardBikes, eBikes, emptyDocks, brokenDocks } = counts;
-  const slots: SlotKind[] = [];
-  for (let i = 0; i < standardBikes; i += 1) slots.push("standard");
-  for (let i = 0; i < eBikes; i += 1) slots.push("eBike");
-  for (let i = 0; i < emptyDocks; i += 1) slots.push("empty");
+  const { standardBikes, eBikes, emptyDocks, brokenDocks } = counts
+  const slots: SlotKind[] = []
+  for (let i = 0; i < standardBikes; i += 1) slots.push("standard")
+  for (let i = 0; i < eBikes; i += 1) slots.push("eBike")
+  for (let i = 0; i < emptyDocks; i += 1) slots.push("empty")
   if (showBroken) {
-    for (let i = 0; i < brokenDocks; i += 1) slots.push("broken");
+    for (let i = 0; i < brokenDocks; i += 1) slots.push("broken")
   }
-  return slots;
-};
+  return slots
+}
 
 const slotFillClass = (kind: SlotKind) => {
-  if (kind === "standard") return cycleHireBikeFillClass;
-  if (kind === "eBike") return cycleHireEbikeFillClass;
-  if (kind === "broken") return cycleHireBrokenFillClass;
-  if (kind === "empty") return "bg-muted-foreground/25";
-  return undefined;
-};
+  if (kind === "standard") return cycleHireBikeFillClass
+  if (kind === "eBike") return cycleHireEbikeFillClass
+  if (kind === "broken") return cycleHireBrokenFillClass
+  if (kind === "empty") return "bg-muted-foreground/25"
+  return undefined
+}
 
 export const CycleHireDocksBoardHeader = () => (
   <div className="flex flex-wrap items-center justify-between gap-2">
     <div className="flex items-center gap-3">
       <TfLRoundel variant="cycles" className="size-10 lg:size-12" />
       <div>
-        <h1 className="scroll-m-20 text-balance text-4xl font-extrabold lg:text-5xl">
+        <h1 className="scroll-m-20 text-4xl font-extrabold text-balance lg:text-5xl">
           Cycle hire docks
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -67,11 +67,11 @@ export const CycleHireDocksBoardHeader = () => (
       </div>
     </div>
   </div>
-);
+)
 
 type SkeletonProps = {
-  dockCount?: number;
-};
+  dockCount?: number
+}
 
 export const CycleHireDocksBoardSkeleton = ({
   dockCount = DEFAULT_CYCLE_HIRE_DOCK_IDS.length,
@@ -82,32 +82,28 @@ export const CycleHireDocksBoardSkeleton = ({
     aria-label="Loading cycle hire docks"
   >
     {Array.from({ length: dockCount }).map((_, i) => (
-      <div
-        key={i}
-        className={cn(DOCK_ROW_HEIGHT_CLASS, DOCK_ROW_TRACK_CLASS)}
-      >
+      <div key={i} className={cn(DOCK_ROW_HEIGHT_CLASS, DOCK_ROW_TRACK_CLASS)}>
         <Skeleton className="h-full w-48 max-w-full" />
         <Skeleton className="h-full w-full" />
         <Skeleton className="h-full w-40" />
       </div>
     ))}
   </div>
-);
+)
 
 type DockRowProps = {
-  dock: CycleHireDock;
-  className?: string;
-  showBroken?: boolean;
-};
+  dock: CycleHireDock
+  className?: string
+  showBroken?: boolean
+}
 
 export const CycleHireDockRow = ({
   dock,
   className,
   showBroken = false,
 }: DockRowProps) => {
-  const counts = getDockCounts(dock);
-  const { eBikes, standardBikes, brokenDocks, emptyDocks, totalDocks } =
-    counts;
+  const counts = getDockCounts(dock)
+  const { eBikes, standardBikes, brokenDocks, emptyDocks, totalDocks } = counts
 
   if (totalDocks === 0) {
     return (
@@ -115,7 +111,7 @@ export const CycleHireDockRow = ({
         className={cn(
           DOCK_ROW_HEIGHT_CLASS,
           "flex flex-col justify-center gap-0.5",
-          className,
+          className
         )}
       >
         <h3 className="truncate text-sm leading-none font-semibold text-foreground">
@@ -125,23 +121,21 @@ export const CycleHireDockRow = ({
           No docks reported
         </p>
       </div>
-    );
+    )
   }
 
-  const slots = buildOccupancySlots(counts, showBroken);
-  const showBrokenCount = showBroken && brokenDocks > 0;
+  const slots = buildOccupancySlots(counts, showBroken)
+  const showBrokenCount = showBroken && brokenDocks > 0
 
   const ariaParts = [
     `${standardBikes} bikes`,
     `${eBikes} e-bikes`,
     `${emptyDocks} spaces`,
     showBrokenCount ? `${brokenDocks} broken` : null,
-  ].filter(Boolean);
+  ].filter(Boolean)
 
   return (
-    <div
-      className={cn(DOCK_ROW_HEIGHT_CLASS, DOCK_ROW_TRACK_CLASS, className)}
-    >
+    <div className={cn(DOCK_ROW_HEIGHT_CLASS, DOCK_ROW_TRACK_CLASS, className)}>
       <div className="flex min-w-0 items-center justify-between gap-x-3">
         <h3 className="min-w-0 truncate text-sm leading-none font-semibold text-foreground">
           {dock.name}
@@ -189,7 +183,7 @@ export const CycleHireDockRow = ({
             </span>
           ) : null}
           {standardBikes === 0 && eBikes === 0 && !showBrokenCount ? (
-            <span className="text-muted-foreground normal-case tracking-normal">
+            <span className="tracking-normal text-muted-foreground normal-case">
               No bikes
             </span>
           ) : null}
@@ -199,18 +193,18 @@ export const CycleHireDockRow = ({
         </span>
       </div>
     </div>
-  );
-};
+  )
+}
 
 type DetailProps = {
   /** Normalised bike points. Omit when rendered under `CycleHireDocks` / Provider. */
-  data?: readonly CycleHireDock[];
-  children?: ReactNode;
-  hideHeader?: boolean;
-  statusLabel?: string;
-  showBroken?: boolean;
-  className?: string;
-};
+  data?: readonly CycleHireDock[]
+  children?: ReactNode
+  hideHeader?: boolean
+  statusLabel?: string
+  showBroken?: boolean
+  className?: string
+}
 
 /**
  * Detail surface — occupancy bars + TfL-style counts.
@@ -225,7 +219,7 @@ export const CycleHireDocksDetail = ({
   className,
   children,
 }: DetailProps) => {
-  const docks = data ?? [];
+  const docks = data ?? []
 
   return (
     <div className={cn("flex w-full flex-col gap-6", className)}>
@@ -264,8 +258,8 @@ export const CycleHireDocksDetail = ({
 
       {children}
     </div>
-  );
-};
+  )
+}
 
 /** @deprecated Prefer `CycleHireDocksDetail`. */
-export const CycleHireDocksBoard = CycleHireDocksDetail;
+export const CycleHireDocksBoard = CycleHireDocksDetail

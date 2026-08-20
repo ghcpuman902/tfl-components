@@ -1,35 +1,35 @@
-import { Bike } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types";
+import { Bike } from "lucide-react"
+import { cn } from "@/lib/utils"
+import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types"
 import {
   CYCLE_HIRE_BIKE,
   CYCLE_HIRE_EBIKE,
-} from "@/components/tfl/cycle-hire/cycle-hire-colours";
+} from "@/components/tfl/cycle-hire/cycle-hire-colours"
 
-export type { CycleHireDock } from "@/lib/tfl/cycle-hire-types";
+export type { CycleHireDock } from "@/lib/tfl/cycle-hire-types"
 
 export type DockCounts = {
-  eBikes: number;
-  standardBikes: number;
-  brokenDocks: number;
-  emptyDocks: number;
-  totalDocks: number;
-  availableBikes: number;
-};
+  eBikes: number
+  standardBikes: number
+  brokenDocks: number
+  emptyDocks: number
+  totalDocks: number
+  availableBikes: number
+}
 
 export const getDockCounts = (dock: CycleHireDock): DockCounts => {
-  const totalDocks = Math.max(0, dock.docks);
-  const eBikes = Math.max(0, dock.eBikes ?? 0);
+  const totalDocks = Math.max(0, dock.docks)
+  const eBikes = Math.max(0, dock.eBikes ?? 0)
   const standardBikes = Math.max(
     0,
-    dock.standardBikes ?? Math.max(0, dock.bikes - eBikes),
-  );
-  const brokenDocks = Math.max(0, dock.brokenDocks);
+    dock.standardBikes ?? Math.max(0, dock.bikes - eBikes)
+  )
+  const brokenDocks = Math.max(0, dock.brokenDocks)
   const emptyDocks = Math.max(
     0,
     dock.spaces ??
-      Math.max(0, totalDocks - eBikes - standardBikes - brokenDocks),
-  );
+      Math.max(0, totalDocks - eBikes - standardBikes - brokenDocks)
+  )
   return {
     eBikes,
     standardBikes,
@@ -37,14 +37,14 @@ export const getDockCounts = (dock: CycleHireDock): DockCounts => {
     emptyDocks,
     totalDocks,
     availableBikes: eBikes + standardBikes,
-  };
-};
+  }
+}
 
 type MarkerProps = {
-  dock: CycleHireDock;
-  className?: string;
-  size?: number;
-};
+  dock: CycleHireDock
+  className?: string
+  size?: number
+}
 
 /**
  * Map-style dock marker — ring gauge for bike / e-bike / space, Lucide bike in the centre.
@@ -55,20 +55,24 @@ export const CycleHireDockMarker = ({
   className,
   size = 56,
 }: MarkerProps) => {
-  const { standardBikes, eBikes, emptyDocks } = getDockCounts(dock);
-  const total = standardBikes + eBikes + emptyDocks;
+  const { standardBikes, eBikes, emptyDocks } = getDockCounts(dock)
+  const total = standardBikes + eBikes + emptyDocks
 
-  const strokeWidth = Math.max(5, Math.round(size * 0.12));
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const centre = size / 2;
+  const strokeWidth = Math.max(5, Math.round(size * 0.12))
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const centre = size / 2
 
   const arcs =
     total === 0
       ? []
       : (
           [
-            { kind: "standard" as const, count: standardBikes, colour: CYCLE_HIRE_BIKE },
+            {
+              kind: "standard" as const,
+              count: standardBikes,
+              colour: CYCLE_HIRE_BIKE,
+            },
             { kind: "eBike" as const, count: eBikes, colour: CYCLE_HIRE_EBIKE },
             {
               kind: "empty" as const,
@@ -76,9 +80,9 @@ export const CycleHireDockMarker = ({
               colour: "var(--muted-foreground)",
             },
           ] as const
-        ).filter((arc) => arc.count > 0);
+        ).filter((arc) => arc.count > 0)
 
-  let offset = 0;
+  let offset = 0
 
   return (
     <div
@@ -110,9 +114,9 @@ export const CycleHireDockMarker = ({
           />
         ) : (
           arcs.map((arc) => {
-            const length = (arc.count / total) * circumference;
-            const dashOffset = -offset;
-            offset += length;
+            const length = (arc.count / total) * circumference
+            const dashOffset = -offset
+            offset += length
             return (
               <circle
                 key={arc.kind}
@@ -128,7 +132,7 @@ export const CycleHireDockMarker = ({
                 transform={`rotate(-90 ${centre} ${centre})`}
                 opacity={arc.kind === "empty" ? 0.35 : 1}
               />
-            );
+            )
           })
         )}
         <circle
@@ -144,5 +148,5 @@ export const CycleHireDockMarker = ({
         aria-hidden
       />
     </div>
-  );
-};
+  )
+}

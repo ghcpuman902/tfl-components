@@ -104,7 +104,7 @@ const TokenRow = ({ token }: { token: LandingToken }) => {
       .filter(([, tokenId]) => tokenId === token.id)
       .map(([id]) => `#${id}`),
     ...SELECTOR_TOKEN_OVERRIDES.filter((row) => row.tokenId === token.id).map(
-      (row) => row.selector,
+      (row) => row.selector
     ),
   ].join(", ")
   const originals = originalHexesForToken(token.id)
@@ -115,7 +115,10 @@ const TokenRow = ({ token }: { token: LandingToken }) => {
         <p className="text-xs text-muted-foreground">{token.label}</p>
       </td>
       <td className="py-2 pr-3">
-        <Swatch colour={tokenCss(token, "dark")} label={tokenCss(token, "dark")} />
+        <Swatch
+          colour={tokenCss(token, "dark")}
+          label={tokenCss(token, "dark")}
+        />
       </td>
       <td className="py-2 pr-3">
         {staysInLight(token.role) ? (
@@ -176,7 +179,7 @@ const CompactSwatches = ({ tokens }: { tokens: readonly LandingToken[] }) => (
 
 export const LandingPaletteCompareView = ({ svg }: { svg: string }) => {
   const uniqueOriginal = new Set(
-    Object.values(ORIGINAL_CLASS_HEX).map((h) => h.toLowerCase()),
+    Object.values(ORIGINAL_CLASS_HEX).map((h) => h.toLowerCase())
   ).size
   const mappedClasses = Object.keys(CLASS_TO_TOKEN).length
 

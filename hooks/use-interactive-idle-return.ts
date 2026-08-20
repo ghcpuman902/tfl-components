@@ -63,9 +63,7 @@ export const useInteractiveIdleReturn = ({
     if (!enabled) return
 
     const tick = () => {
-      if (
-        shouldReturnToFirstPage(stateRef.current, Date.now(), idleMs)
-      ) {
+      if (shouldReturnToFirstPage(stateRef.current, Date.now(), idleMs)) {
         stateRef.current = registerIdleActivity(Date.now())
         onReturnRef.current()
       }
@@ -92,42 +90,39 @@ export const useInteractiveIdleReturn = ({
     stateRef.current = registerIdleActivity(Date.now())
   }, [enabled])
 
-  const handlePointerEnter = useCallback<PointerEventHandler<HTMLElement>>(
-    () => {
-      hoveringRef.current = true
-      syncSuspended(Date.now())
-    },
-    [syncSuspended]
-  )
-  const handlePointerLeave = useCallback<PointerEventHandler<HTMLElement>>(
-    () => {
-      hoveringRef.current = false
-      syncSuspended(Date.now())
-    },
-    [syncSuspended]
-  )
-  const handlePointerDown = useCallback<PointerEventHandler<HTMLElement>>(
-    () => {
-      handleActivity()
-    },
-    [handleActivity]
-  )
+  const handlePointerEnter = useCallback<
+    PointerEventHandler<HTMLElement>
+  >(() => {
+    hoveringRef.current = true
+    syncSuspended(Date.now())
+  }, [syncSuspended])
+  const handlePointerLeave = useCallback<
+    PointerEventHandler<HTMLElement>
+  >(() => {
+    hoveringRef.current = false
+    syncSuspended(Date.now())
+  }, [syncSuspended])
+  const handlePointerDown = useCallback<
+    PointerEventHandler<HTMLElement>
+  >(() => {
+    handleActivity()
+  }, [handleActivity])
   const handleFocus = useCallback<FocusEventHandler<HTMLElement>>(() => {
     focusedRef.current = true
     syncSuspended(Date.now())
   }, [syncSuspended])
-  const handleBlur = useCallback<FocusEventHandler<HTMLElement>>((event) => {
-    const next = event.relatedTarget
-    if (next instanceof Node && event.currentTarget.contains(next)) return
-    focusedRef.current = false
-    syncSuspended(Date.now())
-  }, [syncSuspended])
-  const handleKeyDown = useCallback<KeyboardEventHandler<HTMLElement>>(
-    () => {
-      handleActivity()
+  const handleBlur = useCallback<FocusEventHandler<HTMLElement>>(
+    (event) => {
+      const next = event.relatedTarget
+      if (next instanceof Node && event.currentTarget.contains(next)) return
+      focusedRef.current = false
+      syncSuspended(Date.now())
     },
-    [handleActivity]
+    [syncSuspended]
   )
+  const handleKeyDown = useCallback<KeyboardEventHandler<HTMLElement>>(() => {
+    handleActivity()
+  }, [handleActivity])
   const handleScroll = useCallback<UIEventHandler<HTMLElement>>(() => {
     handleActivity()
   }, [handleActivity])

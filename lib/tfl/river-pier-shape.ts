@@ -44,7 +44,7 @@ export const mapFerryPort = (stop: {
   if (!id || !isFerryPortStop(stop)) return null
   const name = (stop.commonName ?? stop.name ?? id).trim() || id
   const rawLineIds = (stop.lines ?? []).map((line) =>
-    typeof line === "string" ? line : (line.id ?? line.name ?? ""),
+    typeof line === "string" ? line : (line.id ?? line.name ?? "")
   )
   return {
     id,

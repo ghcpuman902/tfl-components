@@ -8,7 +8,7 @@ import {
   type KeyboardEvent,
 } from "react"
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
-import { HeroCopyPanel } from "./hero-copy-panel"
+import { HeroCopyPanel, HeroZoomCaption } from "./hero-copy-panel"
 import { IpadBoardFrame } from "./ipad-board-frame"
 import {
   BOARD_IFRAME_HEIGHT,
@@ -48,6 +48,7 @@ export const LandingScene = () => {
   const cameraRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
   const copyRef = useRef<HTMLElement>(null)
+  const captionRef = useRef<HTMLElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const l0Ref = useRef<SVGGElement>(null)
   const l1Ref = useRef<SVGGElement>(null)
@@ -87,6 +88,7 @@ export const LandingScene = () => {
       l0Ref,
       l1Ref,
       copyRef,
+      captionRef,
       reducedMotion,
       onZoomCompleteChange: handleZoomCompleteChange,
     })
@@ -294,6 +296,7 @@ export const LandingScene = () => {
           </div>
 
           <HeroCopyPanel copyRef={copyRef} />
+          <HeroZoomCaption captionRef={captionRef} />
 
           {overlayOpacity > 0 ? (
             // eslint-disable-next-line @next/next/no-img-element

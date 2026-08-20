@@ -1,7 +1,7 @@
-import type { DiagramSegment, DiagramStation } from "@/lib/tfl/diagram-station";
-import { UNDERGROUND_LINE_COLOURS } from "@/lib/tfl/brand-colours";
+import type { DiagramSegment, DiagramStation } from "@/lib/tfl/diagram-station"
+import { UNDERGROUND_LINE_COLOURS } from "@/lib/tfl/brand-colours"
 
-const U = UNDERGROUND_LINE_COLOURS;
+const U = UNDERGROUND_LINE_COLOURS
 
 /**
  * Victoria line southbound spine for offline / always-on demos.
@@ -105,24 +105,24 @@ export const VICTORIA_STRIP: DiagramStation[] = [
     connections: [{ id: "northern", name: "Northern", color: U.northern.hex }],
   },
   { id: "brixton", name: "Brixton", interchange: true },
-];
+]
 
 /** Sample: no service between Seven Sisters and Green Park — endpoints stay open. */
 export const VICTORIA_PART_CLOSURE_SEGMENTS: DiagramSegment[] = (() => {
-  const from = "seven-sisters";
-  const to = "green-park";
-  const fromIndex = VICTORIA_STRIP.findIndex((s) => s.id === from);
-  const toIndex = VICTORIA_STRIP.findIndex((s) => s.id === to);
-  if (fromIndex < 0 || toIndex < 0 || fromIndex >= toIndex) return [];
-  const segments: DiagramSegment[] = [];
+  const from = "seven-sisters"
+  const to = "green-park"
+  const fromIndex = VICTORIA_STRIP.findIndex((s) => s.id === from)
+  const toIndex = VICTORIA_STRIP.findIndex((s) => s.id === to)
+  if (fromIndex < 0 || toIndex < 0 || fromIndex >= toIndex) return []
+  const segments: DiagramSegment[] = []
   for (let i = fromIndex; i < toIndex; i += 1) {
     segments.push({
       fromStationId: VICTORIA_STRIP[i]!.id,
       toStationId: VICTORIA_STRIP[i + 1]!.id,
       state: "out-of-use",
-    });
+    })
   }
-  return segments;
-})();
+  return segments
+})()
 
-export const VICTORIA_LINE_COLOR = U.victoria.hex;
+export const VICTORIA_LINE_COLOR = U.victoria.hex

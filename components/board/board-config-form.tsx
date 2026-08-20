@@ -1,12 +1,6 @@
 "use client"
 
-import Link from "next/link"
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type ChangeEvent,
-} from "react"
+import { useMemo, useState, type ChangeEvent } from "react"
 import { BoardPlaceSearch } from "@/components/board/board-place-search"
 import { BoardSlotEditor } from "@/components/board/board-slot-editor"
 import { BoardStationSearch } from "@/components/board/board-station-search"
@@ -58,25 +52,20 @@ type BoardConfigFormProps = {
 }
 
 /** Keep digits and commas only — `a.rows` shape. */
-const normalizeRowsDraft = (raw: string): string =>
-  raw.replace(/[^0-9,]/g, "")
+const normalizeRowsDraft = (raw: string): string => raw.replace(/[^0-9,]/g, "")
 
 /** Keep line-id characters and commas — `a.lines` shape. */
 const normalizeLinesDraft = (raw: string): string =>
   raw.toLowerCase().replace(/[^a-z0-9,-]/g, "")
 
-const rowsDraftFromConfig = (
-  rows: BoardConfig["arrivals"]["rows"],
-): string => {
+const rowsDraftFromConfig = (rows: BoardConfig["arrivals"]["rows"]): string => {
   if (rows === undefined) return ""
   if (typeof rows === "number") return String(rows)
-  return rows
-    .map((item) => (item === undefined ? "" : String(item)))
-    .join(",")
+  return rows.map((item) => (item === undefined ? "" : String(item))).join(",")
 }
 
 const linesDraftFromConfig = (
-  lineOrder: BoardConfig["arrivals"]["lineOrder"],
+  lineOrder: BoardConfig["arrivals"]["lineOrder"]
 ): string => serializeArrivalsLines(lineOrder) ?? ""
 
 const FieldLabel = ({
@@ -111,36 +100,33 @@ export const BoardConfigForm = ({
   segments = [],
   onChange,
 }: BoardConfigFormProps) => {
+  const [draftStop, setDraftStop] = useState(config.stop)
   const [rowsDraft, setRowsDraft] = useState(() =>
-    rowsDraftFromConfig(config.arrivals.rows),
+    rowsDraftFromConfig(config.arrivals.rows)
   )
   const [linesDraft, setLinesDraft] = useState(() =>
-    linesDraftFromConfig(config.arrivals.lineOrder),
+    linesDraftFromConfig(config.arrivals.lineOrder)
   )
 
   // Stop change clears positional arrivals settings — reset drafts to match.
-  useEffect(() => {
+  if (config.stop !== draftStop) {
+    setDraftStop(config.stop)
     setRowsDraft(rowsDraftFromConfig(config.arrivals.rows))
     setLinesDraft(linesDraftFromConfig(config.arrivals.lineOrder))
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only reset on stop change
-  }, [config.stop])
+  }
 
   const sections = useMemo(
     () => resolveEffectiveSections(config, servingLines, [], lineGroups),
-    [config, servingLines, lineGroups],
+    [config, servingLines, lineGroups]
   )
   const rowsPreview = useMemo(
     () => formatArrivalsRowsPreview(config, servingLines, lineGroups),
-    [config, servingLines, lineGroups],
+    [config, servingLines, lineGroups]
   )
   const rowsPlaceholder = formatArrivalsRowsPlaceholder(sections)
   const linesPlaceholder = sections.length
     ? sections.map((section) => section.lineId).join(",")
     : "central,victoria,bakerloo"
-
-  const handleStopChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onChange({ stop: event.target.value })
-  }
 
   const handleStopNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange({ stopName: event.target.value })
@@ -184,40 +170,18 @@ export const BoardConfigForm = ({
     >
       {formSettings.includes("stop") ? (
         <div className="space-y-2">
-          <FieldLabel htmlFor="board-station" setting="stop" segments={segments}>
-            Station
+          <FieldLabel
+            htmlFor="board-station"
+            setting="stop"
+            segments={segments}
+          >
+            {BOARD_SETTINGS.stop.ui?.label ?? "Station name or Stop ID"}
           </FieldLabel>
           <BoardStationSearch
             stations={stations}
             stopId={config.stop}
             onStopChange={(stop) => onChange({ stop })}
           />
-          <details className="text-sm">
-            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-              Stop ID
-            </summary>
-            <div className="mt-2 space-y-2">
-              <Input
-                id="board-stop"
-                name="stop"
-                value={config.stop ?? ""}
-                onChange={handleStopChange}
-                autoComplete="off"
-                spellCheck={false}
-                aria-describedby="board-stop-hint"
-              />
-              <p id="board-stop-hint" className="text-muted-foreground">
-                Advanced. Station NaPTAN ID, if you already have one from{" "}
-                <Link
-                  href="/docs/explorer"
-                  className="text-foreground underline underline-offset-4"
-                >
-                  Explorer
-                </Link>
-                .
-              </p>
-            </div>
-          </details>
         </div>
       ) : null}
 
@@ -228,7 +192,7 @@ export const BoardConfigForm = ({
             setting="stopName"
             segments={segments}
           >
-            {BOARD_SETTINGS.stopName.ui?.label ?? "Stop name (optional)"}
+            {BOARD_SETTINGS.stopName.ui?.label ?? "Stop name override"}
           </FieldLabel>
           <Input
             id="board-stop-name"
@@ -244,7 +208,7 @@ export const BoardConfigForm = ({
             className="text-sm text-muted-foreground"
           >
             {BOARD_SETTINGS.stopName.ui?.help ??
-              "Override the heading. Leave blank to use the station name from the Stop ID."}
+              "Changes the displayed heading. It does not select the data source."}
           </p>
         </div>
       ) : null}
@@ -353,7 +317,11 @@ export const BoardConfigForm = ({
 
       {formSettings.includes("busStop") ? (
         <div className="space-y-2">
-          <FieldLabel htmlFor="board-bus-search" setting="busStop" segments={segments}>
+          <FieldLabel
+            htmlFor="board-bus-search"
+            setting="busStop"
+            segments={segments}
+          >
             {BOARD_SETTINGS.busStop.ui?.label ?? "Bus stop"}
           </FieldLabel>
           <BoardPlaceSearch
@@ -416,7 +384,11 @@ export const BoardConfigForm = ({
 
       {formSettings.includes("busRows") ? (
         <div className="space-y-2">
-          <FieldLabel htmlFor="board-bus-rows" setting="busRows" segments={segments}>
+          <FieldLabel
+            htmlFor="board-bus-rows"
+            setting="busRows"
+            segments={segments}
+          >
             {BOARD_SETTINGS.busRows.ui?.label ?? "Bus rows"}
           </FieldLabel>
           <Input

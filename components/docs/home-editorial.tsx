@@ -1,17 +1,17 @@
-import { Suspense, type CSSProperties } from "react";
-import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board";
-import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board";
-import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
-import { StationNameTitle } from "@/components/tfl/station-name";
-import { LineStrip } from "@/components/tfl/diagram/line-strip";
-import { WeekAheadLineSkeleton } from "@/components/tfl/week-ahead/week-ahead-skeleton";
-import { HomeCycleHireMap } from "@/components/docs/home-cycle-hire-map";
-import { CYCLE_HIRE_MAP_HOME_FRAME_CLASSNAME } from "@/components/tfl/cycle-hire/cycle-hire-map-camera";
-import { DIAGRAM_SCALE_CLASS } from "@/lib/tfl/line-diagram";
+import { Suspense, type CSSProperties } from "react"
+import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
+import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
+import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
+import { StationNameTitle } from "@/components/tfl/station-name"
+import { LineStrip } from "@/components/tfl/diagram/line-strip"
+import { WeekAheadLineSkeleton } from "@/components/tfl/week-ahead/week-ahead-skeleton"
+import { HomeCycleHireMap } from "@/components/docs/home-cycle-hire-map"
+import { CYCLE_HIRE_MAP_HOME_FRAME_CLASSNAME } from "@/components/tfl/cycle-hire/cycle-hire-map-camera"
+import { DIAGRAM_SCALE_CLASS } from "@/lib/tfl/line-diagram"
 import {
   getCachedHomeCycleHireDocks,
   HOME_CYCLE_HIRE,
-} from "@/lib/tfl/cycle-hire-data";
+} from "@/lib/tfl/cycle-hire-data"
 import {
   getCachedHomeBusArrivals,
   getCachedHomeRailArrivals,
@@ -19,24 +19,24 @@ import {
   HOME_BUS_STOP,
   readCacheAgeLabel,
   readHomeArrivalsBoardState,
-} from "@/lib/tfl/home-arrivals-data";
-import { getCachedHomeVictoriaStrip } from "@/lib/tfl/home-victoria-data";
-import { cn } from "@/lib/utils";
+} from "@/lib/tfl/home-arrivals-data"
+import { getCachedHomeVictoriaStrip } from "@/lib/tfl/home-victoria-data"
+import { cn } from "@/lib/utils"
 
 const ARRIVALS_RHYTHM = {
   "--arrivals-unit": "0.5rem",
   "--arrivals-row": "calc(var(--arrivals-unit) * 6)",
-} as CSSProperties;
+} as CSSProperties
 
 const ARRIVALS_TILE_CLASS =
-  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip";
+  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip"
 
 type DemoFrameProps = {
-  caption: readonly string[];
-  className?: string;
-  style?: CSSProperties;
-  children: React.ReactNode;
-};
+  caption: readonly string[]
+  className?: string
+  style?: CSSProperties
+  children: React.ReactNode
+}
 
 const DemoFrame = ({ caption, className, style, children }: DemoFrameProps) => (
   <article className={cn("min-w-0", className)} style={style}>
@@ -45,7 +45,7 @@ const DemoFrame = ({ caption, className, style, children }: DemoFrameProps) => (
     <footer
       className={cn(
         "flex items-center text-xs leading-none text-muted-foreground",
-        ARRIVALS_TILE_CLASS,
+        ARRIVALS_TILE_CLASS
       )}
     >
       <p className="min-w-0 truncate">
@@ -60,7 +60,7 @@ const DemoFrame = ({ caption, className, style, children }: DemoFrameProps) => (
       </p>
     </footer>
   </article>
-);
+)
 
 const BoardSkeleton = ({ dense = false }: { dense?: boolean }) => (
   <div
@@ -75,14 +75,14 @@ const BoardSkeleton = ({ dense = false }: { dense?: boolean }) => (
       ))}
     </div>
   </div>
-);
+)
 
 async function HomeDeparturesPanel() {
-  const payload = await getCachedHomeRailArrivals();
+  const payload = await getCachedHomeRailArrivals()
   const [ageLabel, boardState] = await Promise.all([
     readCacheAgeLabel(payload.fetchedAt),
     readHomeArrivalsBoardState(payload, "rail"),
-  ]);
+  ])
 
   // Marketing dashboard, not the docs demo: quietly drop a line's stable
   // "No information" placeholder here rather than showing it as a first
@@ -90,11 +90,11 @@ async function HomeDeparturesPanel() {
   // bound so it never disappears) stays the library behaviour — see
   // `RailArrivalsLine.bounds` in lib/tfl/arrivals-prepare.ts.
   const activeLineIds = new Set(
-    payload.arrivals.map((arrival) => arrival.lineId).filter(Boolean),
-  );
+    payload.arrivals.map((arrival) => arrival.lineId).filter(Boolean)
+  )
   const homeRailLines = HOME_RAIL_LINES.filter((line) =>
-    activeLineIds.has(line.lineId),
-  );
+    activeLineIds.has(line.lineId)
+  )
 
   return (
     <DemoFrame caption={["Cached TfL data", ageLabel]} style={ARRIVALS_RHYTHM}>
@@ -110,24 +110,24 @@ async function HomeDeparturesPanel() {
         pageSize={2}
       />
     </DemoFrame>
-  );
+  )
 }
 
 async function HomeBusAndCycleHirePanel() {
   const [bus, cycle] = await Promise.all([
     getCachedHomeBusArrivals(),
     getCachedHomeCycleHireDocks(),
-  ]);
+  ])
   const [ageLabel, busState] = await Promise.all([
     readCacheAgeLabel(Math.max(bus.fetchedAt, cycle.fetchedAt)),
     readHomeArrivalsBoardState(bus, "bus"),
-  ]);
+  ])
 
   const cycleCaption = cycle.error
     ? (["Cached TfL data", ageLabel, "Unavailable"] as const)
     : cycle.docks.length === 0
       ? (["Cached TfL data", ageLabel, "No docks nearby"] as const)
-      : (["Cached TfL data", ageLabel] as const);
+      : (["Cached TfL data", ageLabel] as const)
 
   return (
     <DemoFrame caption={cycleCaption} style={ARRIVALS_RHYTHM}>
@@ -147,7 +147,7 @@ async function HomeBusAndCycleHirePanel() {
       <h2
         className={cn(
           "tfl-title mt-[var(--arrivals-row)] flex h-full min-w-0 items-center gap-x-2 text-3xl leading-none text-foreground",
-          ARRIVALS_TILE_CLASS,
+          ARRIVALS_TILE_CLASS
         )}
         aria-label={HOME_CYCLE_HIRE.label}
       >
@@ -162,7 +162,7 @@ async function HomeBusAndCycleHirePanel() {
         <p
           className={cn(
             "flex items-center text-sm text-muted-foreground",
-            ARRIVALS_TILE_CLASS,
+            ARRIVALS_TILE_CLASS
           )}
           role="status"
         >
@@ -172,7 +172,7 @@ async function HomeBusAndCycleHirePanel() {
         <p
           className={cn(
             "flex items-center text-sm text-muted-foreground",
-            ARRIVALS_TILE_CLASS,
+            ARRIVALS_TILE_CLASS
           )}
           role="status"
         >
@@ -186,7 +186,7 @@ async function HomeBusAndCycleHirePanel() {
         />
       )}
     </DemoFrame>
-  );
+  )
 }
 
 const BusAndCycleHireSkeleton = () => (
@@ -195,28 +195,28 @@ const BusAndCycleHireSkeleton = () => (
     <div
       className={cn(
         "mt-[var(--arrivals-row)] animate-pulse bg-muted",
-        ARRIVALS_TILE_CLASS,
+        ARRIVALS_TILE_CLASS
       )}
     />
     <div
       className={cn(
         "w-full animate-pulse bg-muted/70",
-        CYCLE_HIRE_MAP_HOME_FRAME_CLASSNAME,
+        CYCLE_HIRE_MAP_HOME_FRAME_CLASSNAME
       )}
     />
   </div>
-);
+)
 
 async function HomeVictoriaPanel() {
-  const payload = await getCachedHomeVictoriaStrip();
-  const ageLabel = await readCacheAgeLabel(payload.fetchedAt);
-  const statusLabel = payload.service.labels[0];
+  const payload = await getCachedHomeVictoriaStrip()
+  const ageLabel = await readCacheAgeLabel(payload.fetchedAt)
+  const statusLabel = payload.service.labels[0]
   const notices = [
     statusLabel,
     payload.service.note,
     payload.spine.routeError ? "Route sequence unavailable" : null,
     payload.statusError ? "Live status is unavailable right now." : null,
-  ].filter((value): value is string => Boolean(value));
+  ].filter((value): value is string => Boolean(value))
 
   return (
     <DemoFrame
@@ -255,15 +255,15 @@ async function HomeVictoriaPanel() {
         </p>
       )}
     </DemoFrame>
-  );
+  )
 }
 
 type HomeEditorialProps = {
-  intro?: React.ReactNode;
-};
+  intro?: React.ReactNode
+}
 
 export const HomeEditorial = ({ intro }: HomeEditorialProps) => (
-  <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-x-8 gap-y-10 px-4 pb-16 md:grid-cols-12 md:px-8 md:gap-y-12">
+  <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-x-8 gap-y-10 px-4 pb-16 md:grid-cols-12 md:gap-y-12 md:px-8">
     {intro ? <div className="min-w-0 md:col-span-12">{intro}</div> : null}
 
     <div className="col-span-full grid grid-cols-1 items-start gap-x-8 gap-y-8 md:grid-cols-12 md:gap-y-10">
@@ -286,4 +286,4 @@ export const HomeEditorial = ({ intro }: HomeEditorialProps) => (
       </div>
     </div>
   </div>
-);
+)

@@ -1,19 +1,19 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   buildExplorerHref,
   type ExplorerDirection,
   type ExplorerState,
-} from "@/lib/tfl/explorer-url-state";
-import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise";
-import type { ExplorerLineSummary } from "@/lib/tfl/explorer/common";
+} from "@/lib/tfl/explorer-url-state"
+import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
+import type { ExplorerLineSummary } from "@/lib/tfl/explorer/common"
 import {
   explorerIdsEqual,
   firstOrMatching,
   pointMatchesId,
-} from "@/lib/tfl/explorer/selection";
+} from "@/lib/tfl/explorer/selection"
 
 /**
  * Instant line identity from the cached directory; URL/RSC catch up behind.
@@ -21,45 +21,45 @@ import {
  */
 export const useOptimisticLine = (
   lines: readonly ExplorerLineSummary[],
-  state: ExplorerState,
+  state: ExplorerState
 ) => {
-  const router = useRouter();
-  const [optimisticId, setOptimisticId] = useState<string | null>(null);
+  const router = useRouter()
+  const [optimisticId, setOptimisticId] = useState<string | null>(null)
   const [optimisticDir, setOptimisticDir] = useState<ExplorerDirection | null>(
-    null,
-  );
+    null
+  )
 
-  const urlId = state.id ?? lines[0]?.id;
+  const urlId = state.id ?? lines[0]?.id
   if (
     optimisticId !== null &&
     urlId != null &&
     explorerIdsEqual(optimisticId, urlId)
   ) {
-    setOptimisticId(null);
+    setOptimisticId(null)
   }
   if (optimisticDir !== null && optimisticDir === state.dir) {
-    setOptimisticDir(null);
+    setOptimisticDir(null)
   }
 
-  const selectedId = optimisticId ?? urlId;
-  const direction = optimisticDir ?? state.dir;
-  const selectedLine = firstOrMatching(lines, selectedId) ?? null;
+  const selectedId = optimisticId ?? urlId
+  const direction = optimisticDir ?? state.dir
+  const selectedLine = firstOrMatching(lines, selectedId) ?? null
   const detailsPending =
     selectedLine != null &&
     ((urlId != null && !explorerIdsEqual(selectedLine.id, urlId)) ||
-      direction !== state.dir);
+      direction !== state.dir)
 
   const handleSelectLine = (lineId: string) => {
-    setOptimisticId(lineId);
+    setOptimisticId(lineId)
     router.push(
       buildExplorerHref({ id: lineId, dir: direction, q: undefined }, state),
-      { scroll: false },
-    );
-  };
+      { scroll: false }
+    )
+  }
 
   const handleDirectionChange = (nextDir: ExplorerDirection) => {
-    setOptimisticDir(nextDir);
-  };
+    setOptimisticDir(nextDir)
+  }
 
   return {
     selectedLine,
@@ -67,8 +67,8 @@ export const useOptimisticLine = (
     detailsPending,
     handleSelectLine,
     handleDirectionChange,
-  };
-};
+  }
+}
 
 /**
  * Instant point identity from the seed list or a search hit; URL catches up.
@@ -80,39 +80,38 @@ export const useOptimisticPoint = (
   state: ExplorerState,
   resolveFromList: (
     items: readonly ExplorerPoint[],
-    id?: string,
-  ) => ExplorerPoint | undefined = firstOrMatching,
+    id?: string
+  ) => ExplorerPoint | undefined = firstOrMatching
 ) => {
-  const router = useRouter();
+  const router = useRouter()
   const [selected, setSelected] = useState<ExplorerPoint | null>(
-    () => resolveFromList(points, state.id) ?? null,
-  );
-  const [seenUrlId, setSeenUrlId] = useState(state.id);
+    () => resolveFromList(points, state.id) ?? null
+  )
+  const [seenUrlId, setSeenUrlId] = useState(state.id)
 
   if (state.id !== seenUrlId) {
-    setSeenUrlId(state.id);
-    const match = state.id ? resolveFromList(points, state.id) : undefined;
+    setSeenUrlId(state.id)
+    const match = state.id ? resolveFromList(points, state.id) : undefined
     if (
       match &&
       state.id &&
       pointMatchesId(match, state.id) &&
       selected?.id !== match.id
     ) {
-      setSelected(match);
+      setSelected(match)
     }
   }
 
-  const urlId = state.id ?? points[0]?.id;
+  const urlId = state.id ?? points[0]?.id
   const detailsPending =
-    selected != null && urlId != null && !pointMatchesId(selected, urlId);
+    selected != null && urlId != null && !pointMatchesId(selected, urlId)
 
   const handleSelectPoint = (point: ExplorerPoint) => {
-    setSelected(point);
-    router.push(
-      buildExplorerHref({ id: point.id, view: state.view }, state),
-      { scroll: false },
-    );
-  };
+    setSelected(point)
+    router.push(buildExplorerHref({ id: point.id, view: state.view }, state), {
+      scroll: false,
+    })
+  }
 
-  return { selected, detailsPending, handleSelectPoint };
-};
+  return { selected, detailsPending, handleSelectPoint }
+}

@@ -2,18 +2,18 @@ import {
   resolveDiagramLineColor,
   resolveRouteTrackStyle,
   type RouteTrackStyle,
-} from "@/lib/tfl/route-track";
+} from "@/lib/tfl/route-track"
 import {
   bwLineStyles,
   type BwLineStyleKey,
   type StrokeLayer,
-} from "@/lib/tfl/bw-line-styles";
+} from "@/lib/tfl/bw-line-styles"
 
 type Row = {
-  name: string;
-  lineId: string;
-  bw: BwLineStyleKey;
-};
+  name: string
+  lineId: string
+  bw: BwLineStyleKey
+}
 
 /** Key order through National Rail, then Overground. */
 const GROUPS: { label: string; rows: Row[] }[] = [
@@ -59,37 +59,31 @@ const GROUPS: { label: string; rows: Row[] }[] = [
       { name: "Windrush", lineId: "windrush", bw: "windrush" },
     ],
   },
-];
+]
 
-const STRAIGHT = "M 8 12 H 220";
+const STRAIGHT = "M 8 12 H 220"
 
 const colourLayers = (
   color: string,
-  trackStyle: RouteTrackStyle,
+  trackStyle: RouteTrackStyle
 ): StrokeLayer[] => {
   if (trackStyle === "cable-car") {
     return [
       { width: 8, stroke: color },
       { width: 4.8, stroke: "#fff" },
       { width: 1.6, stroke: color },
-    ];
+    ]
   }
   if (trackStyle === "parallel") {
     return [
       { width: 8, stroke: color },
       { width: 2.6, stroke: "#fff" },
-    ];
+    ]
   }
-  return [{ width: 8, stroke: color }];
-};
+  return [{ width: 8, stroke: color }]
+}
 
-const RouteLayers = ({
-  d,
-  layers,
-}: {
-  d: string;
-  layers: StrokeLayer[];
-}) => (
+const RouteLayers = ({ d, layers }: { d: string; layers: StrokeLayer[] }) => (
   <g fill="none">
     {layers.map((layer, i) => (
       <path
@@ -104,13 +98,13 @@ const RouteLayers = ({
       />
     ))}
   </g>
-);
+)
 
 const Strip = ({ d, layers }: { d: string; layers: StrokeLayer[] }) => (
   <svg viewBox="0 0 228 24" className="h-6 w-full max-w-56" aria-hidden>
     <RouteLayers d={d} layers={layers} />
   </svg>
-);
+)
 
 /**
  * Colour route paint vs B&W Tube-map stroke patterns (large-print key).
@@ -137,8 +131,8 @@ export const BwLineStylesCompare = () => (
           {group.label}
         </div>
         {group.rows.map((row) => {
-          const color = resolveDiagramLineColor(row.lineId);
-          const trackStyle = resolveRouteTrackStyle(row.lineId);
+          const color = resolveDiagramLineColor(row.lineId)
+          const trackStyle = resolveRouteTrackStyle(row.lineId)
           return (
             <div key={row.bw} className="contents">
               <div className="min-w-0 leading-tight">
@@ -154,9 +148,9 @@ export const BwLineStylesCompare = () => (
                 <Strip d={STRAIGHT} layers={bwLineStyles[row.bw]} />
               </div>
             </div>
-          );
+          )
         })}
       </div>
     ))}
   </div>
-);
+)

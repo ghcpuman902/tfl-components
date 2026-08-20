@@ -24,12 +24,12 @@ type BoardSlotEditorProps = {
 
 const addKind = (
   stack: readonly BoardPanelKind[],
-  kind: BoardPanelKind,
+  kind: BoardPanelKind
 ): BoardPanelKind[] => (stack.includes(kind) ? [...stack] : [...stack, kind])
 
 const removeKind = (
   stack: readonly BoardPanelKind[],
-  kind: BoardPanelKind,
+  kind: BoardPanelKind
 ): BoardPanelKind[] => stack.filter((item) => item !== kind)
 
 export const BoardSlotEditor = ({ slots, onChange }: BoardSlotEditorProps) => {
@@ -39,7 +39,7 @@ export const BoardSlotEditor = ({ slots, onChange }: BoardSlotEditorProps) => {
 
   const commit = (
     p1: readonly BoardPanelKind[],
-    p2: readonly BoardPanelKind[],
+    p2: readonly BoardPanelKind[]
   ) => {
     onChange({ p1: [...p1], p2: [...p2] })
   }
@@ -47,7 +47,7 @@ export const BoardSlotEditor = ({ slots, onChange }: BoardSlotEditorProps) => {
   const renderStack = (
     label: string,
     which: "p1" | "p2",
-    stack: readonly BoardPanelKind[],
+    stack: readonly BoardPanelKind[]
   ) => (
     <div className="space-y-2">
       <p className="text-sm font-medium text-foreground">{label}</p>
@@ -65,7 +65,7 @@ export const BoardSlotEditor = ({ slots, onChange }: BoardSlotEditorProps) => {
               onClick={() =>
                 commit(
                   which === "p1" ? removeKind(stack, kind) : resolved.p1,
-                  which === "p2" ? removeKind(stack, kind) : resolved.p2,
+                  which === "p2" ? removeKind(stack, kind) : resolved.p2
                 )
               }
             >
@@ -87,7 +87,7 @@ export const BoardSlotEditor = ({ slots, onChange }: BoardSlotEditorProps) => {
               onClick={() =>
                 commit(
                   which === "p1" ? addKind(stack, kind) : resolved.p1,
-                  which === "p2" ? addKind(stack, kind) : resolved.p2,
+                  which === "p2" ? addKind(stack, kind) : resolved.p2
                 )
               }
             >

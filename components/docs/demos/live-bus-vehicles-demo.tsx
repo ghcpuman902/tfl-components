@@ -1,35 +1,35 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { LiveBusVehicles } from "@/components/tfl/live-vehicles/live-bus-vehicles";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider";
-import type { BusPositionSource } from "@/lib/tfl/bods-siri-vm";
-import type { TargetRequestsPerMinute } from "@/lib/tfl/vehicle-poll-rate";
-import { cn } from "@/lib/utils";
+import { useState } from "react"
+import { LiveBusVehicles } from "@/components/tfl/live-vehicles/live-bus-vehicles"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
+import type { BusPositionSource } from "@/lib/tfl/bods-siri-vm"
+import type { TargetRequestsPerMinute } from "@/lib/tfl/vehicle-poll-rate"
+import { cn } from "@/lib/utils"
 
 const BUS_OPTIONS = [
   { id: "24", label: "24" },
   { id: "29", label: "29" },
   { id: "73", label: "73" },
-] as const;
+] as const
 
 const RATE_OPTIONS: { id: TargetRequestsPerMinute; label: string }[] = [
   { id: "max", label: "Max" },
   { id: 15, label: "15/min" },
   { id: 6, label: "6/min" },
   { id: 3, label: "3/min" },
-];
+]
 
 const toggleId = (ids: string[], id: string): string[] =>
-  ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id];
+  ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id]
 
 export default function LiveBusVehiclesDemo() {
-  const { status } = useUserTflCredentials();
-  const hasKey = status === "ready";
-  const [busRouteIds, setBusRouteIds] = useState<string[]>(["24"]);
-  const [rate, setRate] = useState<TargetRequestsPerMinute>("max");
-  const [busSource, setBusSource] = useState<BusPositionSource>("auto");
+  const { status } = useUserTflCredentials()
+  const hasKey = status === "ready"
+  const [busRouteIds, setBusRouteIds] = useState<string[]>(["24"])
+  const [rate, setRate] = useState<TargetRequestsPerMinute>("max")
+  const [busSource, setBusSource] = useState<BusPositionSource>("auto")
 
   return (
     <div className="space-y-4">
@@ -55,7 +55,7 @@ export default function LiveBusVehiclesDemo() {
         <div
           className={cn(
             "flex flex-wrap gap-2",
-            !hasKey && "pointer-events-none opacity-50",
+            !hasKey && "pointer-events-none opacity-50"
           )}
         >
           {RATE_OPTIONS.map((option) => (
@@ -69,7 +69,7 @@ export default function LiveBusVehiclesDemo() {
                 "rounded-full border border-border px-2.5 py-1 text-xs",
                 rate === option.id
                   ? "bg-foreground text-background"
-                  : "bg-background text-foreground",
+                  : "bg-background text-foreground"
               )}
             >
               {option.label}
@@ -102,7 +102,7 @@ export default function LiveBusVehiclesDemo() {
                 "rounded-full border border-border px-2.5 py-1 text-xs",
                 busSource === id
                   ? "bg-foreground text-background"
-                  : "bg-background text-foreground",
+                  : "bg-background text-foreground"
               )}
             >
               {label}
@@ -120,5 +120,5 @@ export default function LiveBusVehiclesDemo() {
         busPositionSource={busSource}
       />
     </div>
-  );
+  )
 }

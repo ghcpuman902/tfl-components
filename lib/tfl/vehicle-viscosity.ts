@@ -33,7 +33,7 @@ const clamp01 = (n: number) => Math.min(1, Math.max(0, n))
 /** 0 in open track, 1 at / past the stop. */
 export const stationProximity = (
   remainingKm: number,
-  approachKm: number,
+  approachKm: number
 ): number => {
   if (approachKm <= 0) return remainingKm <= 0 ? 1 : 0
   if (remainingKm <= 0) return 1
@@ -58,7 +58,7 @@ export const viscosityFactor = ({
     Math.min(1.6, Math.max(0, turnRadians) / Math.PI) * spec.curvatureWeight
   const proximity = stationProximity(
     remainingKm ?? Number.POSITIVE_INFINITY,
-    spec.stationApproachKm,
+    spec.stationApproachKm
   )
   const station = proximity * proximity * spec.stationWeight
   return 1 + Math.min(2.4, curve + station)
@@ -89,7 +89,7 @@ export const viscousDrainKm = ({
 export const stillDwelling = (
   arrivedAtMs: number | undefined,
   nowMs: number,
-  params?: VehicleViscosityParams,
+  params?: VehicleViscosityParams
 ): boolean => {
   const dwellMs = (params ?? DEFAULT_VEHICLE_VISCOSITY).dwellSec * 1000
   if (dwellMs <= 0 || arrivedAtMs == null) return false

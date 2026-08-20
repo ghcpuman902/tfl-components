@@ -1,41 +1,37 @@
-"use client";
+"use client"
 
-import {
-  useState,
-  type ClipboardEvent,
-  type CSSProperties,
-} from "react";
-import { DocsResizeFrame } from "@/components/docs/docs-resize-frame";
-import { PlatformChip } from "@/components/tfl/arrivals/platform-chip";
-import { StationName } from "@/components/tfl/station-name";
-import { TFL_BLUE } from "@/lib/tfl/brand";
-import { STATION_ABBREVIATION_TABLE } from "@/lib/tfl/station-abbreviations";
-import { cn } from "@/lib/utils";
+import { useState, type ClipboardEvent, type CSSProperties } from "react"
+import { DocsResizeFrame } from "@/components/docs/docs-resize-frame"
+import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
+import { StationName } from "@/components/tfl/station-name"
+import { TFL_BLUE } from "@/lib/tfl/brand"
+import { STATION_ABBREVIATION_TABLE } from "@/lib/tfl/station-abbreviations"
+import { cn } from "@/lib/utils"
 
-const WIDTH_DEMO_NAME = "London Liverpool Street";
-const COPY_NAME = "London Liverpool Street";
-const LABEL_FONT_SIZE = 16;
+const WIDTH_DEMO_NAME = "London Liverpool Street"
+const COPY_NAME = "London Liverpool Street"
+const LABEL_FONT_SIZE = 16
 
-const WIDTH_STEPS = [320, 220, 160, 120, 88] as const;
+const WIDTH_STEPS = [320, 220, 160, 120, 88] as const
 
 const ABBREVIATION_SAMPLES = [
   { name: "London Liverpool Street", due: "2 min" },
   { name: "Tottenham Court Road", due: "4 min" },
   { name: "Highbury & Islington", due: "Due" },
   { name: "Clapham Junction", due: "7 min" },
-] as const;
+] as const
 
 /** Same rhythm as arrivals boards — one row = 6 × 0.5rem, fits two leading-5 lines. */
 const ARRIVALS_RHYTHM = {
   "--arrivals-unit": "0.5rem",
   "--arrivals-row": "calc(var(--arrivals-unit) * 6)",
-} as CSSProperties;
+} as CSSProperties
 
 const ARRIVALS_TILE =
-  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip";
+  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip"
 
 const ARRIVALS_ROW_RULE =
-  "relative after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60";
+  "relative after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60"
 
 export const StationWidthDemo = () => (
   <ul className="flex flex-col gap-6">
@@ -57,13 +53,13 @@ export const StationWidthDemo = () => (
             className="font-medium text-white"
           />
         </div>
-        <span className="text-xs tabular-nums text-muted-foreground">
+        <span className="text-xs text-muted-foreground tabular-nums">
           {width}px
         </span>
       </li>
     ))}
   </ul>
-);
+)
 
 export const AbbreviationDemo = () => (
   <div className="space-y-5">
@@ -83,7 +79,7 @@ export const AbbreviationDemo = () => (
             <td className="py-1.5 pr-6 font-medium text-foreground">
               {row.short}
             </td>
-            <td className="py-1.5 pr-6 tabular-nums text-foreground">
+            <td className="py-1.5 pr-6 text-foreground tabular-nums">
               {row.count}
             </td>
             <td className="py-1.5 text-muted-foreground">
@@ -96,7 +92,7 @@ export const AbbreviationDemo = () => (
 
     <ArrivalsResizeDemo />
   </div>
-);
+)
 
 export const ArrivalsResizeDemo = () => (
   <DocsResizeFrame
@@ -113,7 +109,7 @@ export const ArrivalsResizeDemo = () => (
           className={cn(
             "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 px-2 text-sm",
             ARRIVALS_TILE,
-            index < ABBREVIATION_SAMPLES.length - 1 && ARRIVALS_ROW_RULE,
+            index < ABBREVIATION_SAMPLES.length - 1 && ARRIVALS_ROW_RULE
           )}
         >
           <PlatformChip number="4" />
@@ -127,24 +123,24 @@ export const ArrivalsResizeDemo = () => (
               className="font-medium text-foreground"
             />
           </div>
-          <span className="shrink-0 font-semibold tabular-nums text-foreground">
+          <span className="shrink-0 font-semibold text-foreground tabular-nums">
             {row.due}
           </span>
         </li>
       ))}
     </ul>
   </DocsResizeFrame>
-);
+)
 
-const COPY_FIND_WIDTH = 88;
+const COPY_FIND_WIDTH = 88
 
 export const CopyFindDemo = () => {
-  const [lastCopy, setLastCopy] = useState<string | null>(null);
+  const [lastCopy, setLastCopy] = useState<string | null>(null)
 
   const handleCopy = (event: ClipboardEvent<HTMLDivElement>) => {
-    const text = event.clipboardData.getData("text/plain") || COPY_NAME;
-    setLastCopy(text);
-  };
+    const text = event.clipboardData.getData("text/plain") || COPY_NAME
+    setLastCopy(text)
+  }
 
   return (
     <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
@@ -165,12 +161,12 @@ export const CopyFindDemo = () => {
             className="font-medium text-white"
           />
         </div>
-        <span className="text-xs tabular-nums text-muted-foreground">
+        <span className="text-xs text-muted-foreground tabular-nums">
           {COPY_FIND_WIDTH}px
         </span>
       </div>
 
-      <dl className="min-w-0 max-w-prose flex-1 space-y-4">
+      <dl className="max-w-prose min-w-0 flex-1 space-y-4">
         <div className="space-y-1">
           <dt className="text-sm font-medium text-foreground">Copy</dt>
           <dd className="text-sm text-muted-foreground">
@@ -190,7 +186,9 @@ export const CopyFindDemo = () => {
           <dt className="text-sm font-medium text-foreground">Find</dt>
           <dd className="text-sm text-muted-foreground">
             Cmd/Ctrl+F &quot;London Liverpool Street&quot;. Wrapped labels use{" "}
-            <code className="text-xs text-foreground">hidden=&quot;until-found&quot;</code>{" "}
+            <code className="text-xs text-foreground">
+              hidden=&quot;until-found&quot;
+            </code>{" "}
             so find reveals the full name under the paint.
           </dd>
         </div>
@@ -204,5 +202,5 @@ export const CopyFindDemo = () => {
         </div>
       </dl>
     </div>
-  );
-};
+  )
+}

@@ -18,7 +18,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { formatCountDelta } from "@/lib/tfl/observatory/census"
-import { groupHistoryRuns, type HistoryRun } from "@/lib/tfl/observatory/history"
+import {
+  groupHistoryRuns,
+  type HistoryRun,
+} from "@/lib/tfl/observatory/history"
 import { observatoryStateLabel } from "@/lib/tfl/observatory/format"
 import type {
   ObservatoryHistoryEvent,
@@ -64,7 +67,7 @@ const StateIcon = ({ state }: { state: DisplayState }) => {
     <span
       className={cn(
         "inline-flex size-5 items-center justify-center rounded-full",
-        STATE_BADGE_CLASS[state],
+        STATE_BADGE_CLASS[state]
       )}
     >
       <Icon className={cn("size-3", STATE_ICON_CLASS[state])} aria-hidden />
@@ -77,7 +80,7 @@ const AllNormalPill = () => (
     variant="outline"
     className={cn(
       "overflow-visible px-1 text-muted-foreground",
-      STATE_BADGE_CLASS.observed,
+      STATE_BADGE_CLASS.observed
     )}
   >
     <CircleCheck
@@ -91,7 +94,8 @@ const AllNormalPill = () => (
 
 const RunStatus = ({ run }: { run: HistoryRun }) => {
   const allNormal = run.abnormal.length === 0
-  const showOthers = run.abnormal.length > 0 && run.abnormal.length < run.rows.length
+  const showOthers =
+    run.abnormal.length > 0 && run.abnormal.length < run.rows.length
   const label = allNormal
     ? "All normal"
     : run.abnormal
@@ -107,10 +111,7 @@ const RunStatus = ({ run }: { run: HistoryRun }) => {
           ) : (
             <>
               {run.abnormal.map((row) => (
-                <StateIcon
-                  key={row.id}
-                  state={row.state as DisplayState}
-                />
+                <StateIcon key={row.id} state={row.state as DisplayState} />
               ))}
               {showOthers ? (
                 <span className="text-muted-foreground">other normal</span>
@@ -159,7 +160,9 @@ const RunDetails = ({ run }: { run: HistoryRun }) => (
               {row.baselineCount != null
                 ? ` · ${formatCount(row.baselineCount)} previous`
                 : ""}
-              {delta != null && delta !== 0 ? ` · ${formatCountDelta(delta)}` : ""}
+              {delta != null && delta !== 0
+                ? ` · ${formatCountDelta(delta)}`
+                : ""}
             </p>
           ) : null}
           {row.summary && isAbnormal(row.state) ? (
@@ -192,7 +195,7 @@ const HistoryRunRow = ({ run }: { run: HistoryRun }) => {
         onClick={handleToggle}
         className="grid w-full gap-x-4 gap-y-1 text-left sm:grid-cols-[9.5rem_minmax(0,1fr)_auto] sm:items-baseline"
       >
-        <p className="tabular-nums text-foreground">
+        <p className="text-foreground tabular-nums">
           <ObservationTime iso={run.at} fallback={run.at} />
         </p>
         <p className="min-w-0 text-foreground">{run.summary}</p>

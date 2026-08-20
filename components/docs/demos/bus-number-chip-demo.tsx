@@ -1,6 +1,6 @@
-import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip";
+import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
 
-const ROUTES = ["73", "24", "N253", "EL1", "9"] as const;
+const ROUTES = ["73", "24", "N253", "EL1", "9"] as const
 
 /** Presentational — no API keys required. */
 export default function BusNumberChipDemo() {
@@ -10,5 +10,5 @@ export default function BusNumberChipDemo() {
         <BusNumberChip key={route} label={route} />
       ))}
     </div>
-  );
+  )
 }

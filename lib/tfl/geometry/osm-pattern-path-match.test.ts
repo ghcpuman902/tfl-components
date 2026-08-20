@@ -45,7 +45,7 @@ describe("osm-pattern-path-match", () => {
   it("matches Waterloo & City relations to exactly two stations, never a shared-track neighbour", () => {
     const matches = matchOsmRelationsForMode("tube", waterlooAndCityFile)
     const onWaterlooAndCity = matches.filter(
-      (match) => match.lineId === "waterloo-city",
+      (match) => match.lineId === "waterloo-city"
     )
     assert.equal(onWaterlooAndCity.length, 2)
     for (const match of onWaterlooAndCity) {
@@ -56,7 +56,7 @@ describe("osm-pattern-path-match", () => {
     // No other Tube line has a two-stop Waterloo<->Bank pattern to match against,
     // so relation membership never attributes this route to a different line.
     const onOtherLines = matches.filter(
-      (match) => match.lineId !== "waterloo-city",
+      (match) => match.lineId !== "waterloo-city"
     )
     assert.equal(onOtherLines.length, 0)
   })

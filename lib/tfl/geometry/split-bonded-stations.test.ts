@@ -31,12 +31,9 @@ const neighbors = (topology: ContractedTopology, nodeId: string) =>
   topology.edges
     .filter(
       (edge) =>
-        edge.kind !== "bond" &&
-        (edge.from === nodeId || edge.to === nodeId)
+        edge.kind !== "bond" && (edge.from === nodeId || edge.to === nodeId)
     )
-    .map((edge) =>
-      nameOf(topology, edge.from === nodeId ? edge.to : edge.from)
-    )
+    .map((edge) => nameOf(topology, edge.from === nodeId ? edge.to : edge.from))
     .sort()
 
 const splitNorthern = () => {

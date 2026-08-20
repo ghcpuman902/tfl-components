@@ -1,73 +1,69 @@
-import type { NearbyBusStop } from "@/lib/tfl/bus-stop-shape";
-import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types";
-import type { ExplorerDirection } from "@/lib/tfl/explorer-url-state";
-import type { StatusLine } from "@/lib/tfl/status-types";
+import type { NearbyBusStop } from "@/lib/tfl/bus-stop-shape"
+import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types"
+import type { ExplorerDirection } from "@/lib/tfl/explorer-url-state"
+import type { StatusLine } from "@/lib/tfl/status-types"
 
 export type ExplorerRailModeId =
-  | "tube"
-  | "elizabeth-line"
-  | "dlr"
-  | "overground"
-  | "tram";
+  "tube" | "elizabeth-line" | "dlr" | "overground" | "tram"
 
 /** Tube & rail station enriched with bundled geography. */
 export type ExplorerTubeRailPoint = {
-  id: string;
-  aliasIds: string[];
-  name: string;
-  displayName: string;
-  modes: ExplorerRailModeId[];
-  lines: string[];
-  zone?: string;
-  lat?: number;
-  lon?: number;
-  hubId?: string;
+  id: string
+  aliasIds: string[]
+  name: string
+  displayName: string
+  modes: ExplorerRailModeId[]
+  lines: string[]
+  zone?: string
+  lat?: number
+  lon?: number
+  hubId?: string
   hubMembers?: {
-    id: string;
-    name: string;
-    lineIds: string[];
-  }[];
-  arrivalsStopIds?: string[];
-};
+    id: string
+    name: string
+    lineIds: string[]
+  }[]
+  arrivalsStopIds?: string[]
+}
 
-export type ExplorerBusPoint = NearbyBusStop;
+export type ExplorerBusPoint = NearbyBusStop
 
 /** River-bus pier (`NaptanFerryPort`). `lines` is river-bus ids only. */
 export type ExplorerRiverPoint = {
-  id: string;
-  name: string;
-  lat?: number;
-  lon?: number;
-  lines: string[];
-};
+  id: string
+  name: string
+  lat?: number
+  lon?: number
+  lines: string[]
+}
 
 export type ExplorerCyclePoint = CycleHireDock & {
-  distance?: number;
-};
+  distance?: number
+}
 
 export type ExplorerLineSummary = {
-  id: string;
-  name: string;
-  modeName?: string;
-};
+  id: string
+  name: string
+  modeName?: string
+}
 
 export type ExplorerRouteStop = {
-  id?: string;
-  name?: string;
-};
+  id?: string
+  name?: string
+}
 
 export type ExplorerLineRoute = {
   line?: {
-    id?: string;
-    name?: string;
-    modeName?: string;
-  };
-  stops: ExplorerRouteStop[];
-};
+    id?: string
+    name?: string
+    modeName?: string
+  }
+  stops: ExplorerRouteStop[]
+}
 
 export type ExplorerLineDetailsPayload = {
-  lineId: string;
-  direction: ExplorerDirection;
-  route: ExplorerLineRoute;
-  status: StatusLine | null;
-};
+  lineId: string
+  direction: ExplorerDirection
+  route: ExplorerLineRoute
+  status: StatusLine | null
+}

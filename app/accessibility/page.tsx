@@ -1,14 +1,11 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { SiteProsePage } from "@/components/site-prose-page";
-import { FEEDBACK_TO } from "@/lib/feedback/constants";
-import { SITE_INDEPENDENCE } from "@/lib/site";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { SiteProsePage } from "@/components/site-prose-page"
+import { FEEDBACK_TO } from "@/lib/feedback/constants"
+import { SITE_INDEPENDENCE } from "@/lib/site"
+import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
-  title: "Accessibility",
-  description:
-    "Keyboard access, contrast, reduced motion, and how to report a problem.",
-};
+export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.accessibility)
 
 export default function AccessibilityPage() {
   return (
@@ -48,10 +45,7 @@ export default function AccessibilityPage() {
       </section>
 
       <section className="space-y-2">
-        <h2
-          id="limitations"
-          className="text-lg font-semibold text-foreground"
-        >
+        <h2 id="limitations" className="text-lg font-semibold text-foreground">
           Known limitations
         </h2>
         <ul className="list-disc space-y-1 pl-5">
@@ -60,8 +54,8 @@ export default function AccessibilityPage() {
             display.
           </li>
           <li>
-            Map surfaces depend on MapLibre. Some map controls are harder to
-            use from the keyboard than the rest of the site.
+            Map surfaces depend on MapLibre. Some map controls are harder to use
+            from the keyboard than the rest of the site.
           </li>
           <li>
             Live arrivals update in place. That can be noisy for screen reader
@@ -86,8 +80,7 @@ export default function AccessibilityPage() {
           you use one.
         </p>
         <p>
-          The aim is to widen coverage over time, not to freeze the current
-          bar.
+          The aim is to widen coverage over time, not to freeze the current bar.
         </p>
         <p>
           Related component notes live on{" "}
@@ -101,5 +94,5 @@ export default function AccessibilityPage() {
         </p>
       </section>
     </SiteProsePage>
-  );
+  )
 }

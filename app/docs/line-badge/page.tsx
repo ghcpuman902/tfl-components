@@ -1,5 +1,5 @@
-import { permanentRedirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation"
 
 export default function LineBadgeRedirect() {
-  permanentRedirect("/docs/line-chip");
+  permanentRedirect("/docs/line-chip")
 }

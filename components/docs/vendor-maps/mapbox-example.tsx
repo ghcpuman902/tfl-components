@@ -1,12 +1,12 @@
-"use client";
+"use client"
 
-import { useEffect, useRef, useState } from "react";
-import type { Map as MapboxMap } from "mapbox-gl";
-import type { TransitGeometryBundle } from "@/lib/tfl/geography-types";
-import { TRANSIT_GEOMETRY_PUBLIC_ASSETS } from "@/lib/tfl/geography-credits";
+import { useEffect, useRef, useState } from "react"
+import type { Map as MapboxMap } from "mapbox-gl"
+import type { TransitGeometryBundle } from "@/lib/tfl/geography-types"
+import { TRANSIT_GEOMETRY_PUBLIC_ASSETS } from "@/lib/tfl/geography-credits"
 
-const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-const accessToken = mapboxToken ? mapboxToken.trim() : undefined;
+const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+const accessToken = mapboxToken ? mapboxToken.trim() : undefined
 
 const MapboxPlaceholder = () => (
   <div
@@ -21,7 +21,7 @@ const MapboxPlaceholder = () => (
       preview it here.
     </p>
   </div>
-);
+)
 
 /**
  * Docs-only Mapbox vendor example. Live map loads only when
@@ -30,75 +30,75 @@ const MapboxPlaceholder = () => (
  * without a token.
  */
 export const MapboxExample = () => {
-  if (!accessToken) return <MapboxPlaceholder />;
-  return <MapboxLiveMap accessToken={accessToken} />;
-};
+  if (!accessToken) return <MapboxPlaceholder />
+  return <MapboxLiveMap accessToken={accessToken} />
+}
 
 const MapboxLiveMap = ({ accessToken }: { accessToken: string }) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<MapboxMap | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const mapRef = useRef<MapboxMap | null>(null)
+  const [loaded, setLoaded] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container || mapRef.current) return;
+    const container = containerRef.current
+    if (!container || mapRef.current) return
 
-    let cancelled = false;
-    let map: MapboxMap | null = null;
+    let cancelled = false
+    let map: MapboxMap | null = null
 
     const handleInit = async () => {
-      const mapboxgl = (await import("mapbox-gl")).default;
-      await import("mapbox-gl/dist/mapbox-gl.css");
-      if (cancelled || !containerRef.current) return;
+      const mapboxgl = (await import("mapbox-gl")).default
+      await import("mapbox-gl/dist/mapbox-gl.css")
+      if (cancelled || !containerRef.current) return
 
       if (!mapboxgl) {
-        setErrorMessage("mapbox-gl failed to load");
-        return;
+        setErrorMessage("mapbox-gl failed to load")
+        return
       }
 
-      mapboxgl.accessToken = accessToken;
+      mapboxgl.accessToken = accessToken
       map = new mapboxgl.Map({
         container: containerRef.current,
         style: "mapbox://styles/mapbox/light-v11",
         center: [-0.12, 51.51],
         zoom: 10.2,
         attributionControl: true,
-      });
-      mapRef.current = map;
+      })
+      mapRef.current = map
       map.addControl(
         new mapboxgl.NavigationControl({ showCompass: false }),
-        "top-right",
-      );
+        "top-right"
+      )
 
       map.on("error", (event) => {
         const message =
           event.error instanceof Error
             ? event.error.message
-            : "Mapbox failed to load";
-        setErrorMessage(message);
-      });
+            : "Mapbox failed to load"
+        setErrorMessage(message)
+      })
 
       map.on("load", async () => {
         try {
           const bundles = (
             await Promise.all(
               TRANSIT_GEOMETRY_PUBLIC_ASSETS.map(async (asset) => {
-                const res = await fetch(asset.url);
-                if (!res.ok) return null;
-                const bundle = (await res.json()) as TransitGeometryBundle;
-                return { mode: asset.mode, bundle };
-              }),
+                const res = await fetch(asset.url)
+                if (!res.ok) return null
+                const bundle = (await res.json()) as TransitGeometryBundle
+                return { mode: asset.mode, bundle }
+              })
             )
           ).filter(
             (
-              item,
+              item
             ): item is {
-              mode: (typeof TRANSIT_GEOMETRY_PUBLIC_ASSETS)[number]["mode"];
-              bundle: TransitGeometryBundle;
-            } => item != null,
-          );
-          if (cancelled || !map) return;
+              mode: (typeof TRANSIT_GEOMETRY_PUBLIC_ASSETS)[number]["mode"]
+              bundle: TransitGeometryBundle
+            } => item != null
+          )
+          if (cancelled || !map) return
 
           for (const { mode, bundle } of bundles) {
             map.addSource(`${mode}-lines`, {
@@ -107,14 +107,14 @@ const MapboxLiveMap = ({ accessToken }: { accessToken: string }) => {
                 type: "FeatureCollection",
                 features: bundle.lines.features ?? [],
               },
-            });
+            })
             map.addSource(`${mode}-stations`, {
               type: "geojson",
               data: {
                 type: "FeatureCollection",
                 features: bundle.stations.features ?? [],
               },
-            });
+            })
           }
           for (const { mode } of bundles) {
             map.addLayer({
@@ -126,7 +126,7 @@ const MapboxLiveMap = ({ accessToken }: { accessToken: string }) => {
                 "line-width": 5,
                 "line-opacity": 0.85,
               },
-            });
+            })
           }
           for (const { mode } of bundles) {
             map.addLayer({
@@ -137,7 +137,7 @@ const MapboxLiveMap = ({ accessToken }: { accessToken: string }) => {
                 "line-color": ["coalesce", ["get", "color"], "#0019A8"],
                 "line-width": 3,
               },
-            });
+            })
           }
           for (const { mode } of bundles) {
             map.addLayer({
@@ -150,25 +150,25 @@ const MapboxLiveMap = ({ accessToken }: { accessToken: string }) => {
                 "circle-stroke-width": 1.25,
                 "circle-stroke-color": "#111827",
               },
-            });
+            })
           }
-          setLoaded(true);
+          setLoaded(true)
         } catch {
           if (!cancelled) {
-            setErrorMessage("Geometry load failed");
+            setErrorMessage("Geometry load failed")
           }
         }
-      });
-    };
+      })
+    }
 
-    void handleInit();
+    void handleInit()
 
     return () => {
-      cancelled = true;
-      map?.remove();
-      mapRef.current = null;
-    };
-  }, [accessToken]);
+      cancelled = true
+      map?.remove()
+      mapRef.current = null
+    }
+  }, [accessToken])
 
   return (
     <div className="space-y-2">
@@ -184,5 +184,5 @@ const MapboxLiveMap = ({ accessToken }: { accessToken: string }) => {
           : `Mapbox GL JS · light-v11 · NEXT_PUBLIC_MAPBOX_TOKEN${loaded ? " · Loaded" : ""}`}
       </p>
     </div>
-  );
-};
+  )
+}

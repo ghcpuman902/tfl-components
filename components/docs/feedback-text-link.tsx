@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "react"
 
 type FeedbackTextLinkProps = {
-  children: ReactNode;
-};
+  children: ReactNode
+}
 
 /** Server-safe. CodeCopyDelegator opens the dialog on `[data-open-feedback]`. */
 export const FeedbackTextLink = ({ children }: FeedbackTextLinkProps) => (
@@ -13,4 +13,4 @@ export const FeedbackTextLink = ({ children }: FeedbackTextLinkProps) => (
   >
     {children}
   </button>
-);
+)

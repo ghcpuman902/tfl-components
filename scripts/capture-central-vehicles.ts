@@ -64,7 +64,7 @@ const capture = async (): Promise<CentralVehicleTrace> => {
     }
     frames.push({ fetchedAt: Date.now(), rows: [...byVehicle.values()] })
     process.stderr.write(
-      `\rcaptured ${frames.length} frames / ${byVehicle.size} vehicles`,
+      `\rcaptured ${frames.length} frames / ${byVehicle.size} vehicles`
     )
     const wait = INTERVAL_MS - (Date.now() - tickStart)
     if (wait > 0 && Date.now() - started < DURATION_MS) await sleep(wait)
@@ -81,12 +81,10 @@ const capture = async (): Promise<CentralVehicleTrace> => {
 
 const outPath = path.join(
   process.cwd(),
-  "lib/tfl/fixtures/central-vehicle-trace.json",
+  "lib/tfl/fixtures/central-vehicle-trace.json"
 )
 
 const trace = await capture()
 await mkdir(path.dirname(outPath), { recursive: true })
 await writeFile(outPath, `${JSON.stringify(trace)}\n`)
-process.stderr.write(
-  `wrote ${trace.frames.length} frames to ${outPath}\n`,
-)
+process.stderr.write(`wrote ${trace.frames.length} frames to ${outPath}\n`)

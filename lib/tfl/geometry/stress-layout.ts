@@ -575,7 +575,9 @@ const uncrossBondSides = (state: StressState): number => {
       branchA,
       branchB
     )
-    if (shouldFlip(before, afterMirror, beforeAgreement, afterMirrorAgreement)) {
+    if (
+      shouldFlip(before, afterMirror, beforeAgreement, afterMirrorAgreement)
+    ) {
       move += 1
       continue
     }
@@ -740,7 +742,8 @@ const branchGeoAgreement = (
   let score = 0
   for (const node of branch) {
     score +=
-      (state.x[node]! - state.x[hub]!) * (state.geoX[node]! - state.geoX[hub]!) +
+      (state.x[node]! - state.x[hub]!) *
+        (state.geoX[node]! - state.geoX[hub]!) +
       (state.y[node]! - state.y[hub]!) * (state.geoY[node]! - state.geoY[hub]!)
   }
   return score

@@ -1,5 +1,5 @@
-import { TFL_MODAL_COLOURS } from "@/lib/tfl/brand-colours";
-import type { BusRouteGeometry } from "@/lib/tfl/bus-geography-types";
+import { TFL_MODAL_COLOURS } from "@/lib/tfl/brand-colours"
+import type { BusRouteGeometry } from "@/lib/tfl/bus-geography-types"
 
 /**
  * Hand-built Westminster loop for diverted / disabled paint.
@@ -90,4 +90,4 @@ export const BUS_ROUTE_DIVERSION_DEMO: BusRouteGeometry = {
       },
     },
   ],
-};
+}

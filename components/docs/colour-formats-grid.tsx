@@ -1,41 +1,37 @@
-"use client";
+"use client"
 
-import {
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
-import { LineColorBar } from "@/components/tfl/brand/line-badge";
-import type { BrandColourSpec } from "@/lib/tfl/brand-colours";
-import { brandColourTableRow } from "@/lib/tfl/colour-formats";
-import { GO_NIGHT_PAPER } from "@/lib/tfl/dark-line-colours";
-import { cn } from "@/lib/utils";
+import { useState, type CSSProperties, type ReactNode } from "react"
+import { LineColorBar } from "@/components/tfl/brand/line-badge"
+import type { BrandColourSpec } from "@/lib/tfl/brand-colours"
+import { brandColourTableRow } from "@/lib/tfl/colour-formats"
+import { GO_NIGHT_PAPER } from "@/lib/tfl/dark-line-colours"
+import { cn } from "@/lib/utils"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"
 
 export type ColourFormatsGridLine = {
-  id: string;
-  name: string;
-  modeName: string;
-  spec: BrandColourSpec;
-};
+  id: string
+  name: string
+  modeName: string
+  spec: BrandColourSpec
+}
 
-type ScreenFormat = "hex" | "oklch";
+type ScreenFormat = "hex" | "oklch"
 
 type ColourFormatsGridProps = {
-  lines: ColourFormatsGridLine[];
-  className?: string;
+  lines: ColourFormatsGridLine[]
+  className?: string
   /** Optional section heading rendered left of the format select. */
-  title?: string;
-  titleId?: string;
-};
+  title?: string
+  titleId?: string
+}
 
-type CopyTone = "light" | "dark" | "print";
+type CopyTone = "light" | "dark" | "print"
 
 const CopyButton = ({
   label,
@@ -45,24 +41,24 @@ const CopyButton = ({
   style,
   children,
 }: {
-  label: string;
-  value: string;
-  tone?: CopyTone;
-  className?: string;
-  style?: CSSProperties;
-  children: ReactNode;
+  label: string
+  value: string
+  tone?: CopyTone
+  className?: string
+  style?: CSSProperties
+  children: ReactNode
 }) => {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false)
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1400);
+      await navigator.clipboard.writeText(value)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1400)
     } catch {
       /* ignore */
     }
-  };
+  }
 
   return (
     <button
@@ -72,9 +68,9 @@ const CopyButton = ({
       aria-label={copied ? `Copied ${label}` : `Copy ${label}: ${value}`}
       className={cn(
         "group/copy relative w-full min-w-0 cursor-pointer overflow-hidden text-left",
-        "focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         tone === "print" && "rounded-md transition-colors hover:bg-muted",
-        className,
+        className
       )}
       style={style}
     >
@@ -85,7 +81,7 @@ const CopyButton = ({
           className={cn(
             "pointer-events-none absolute inset-0 transition-colors",
             tone === "light" && "group-hover/copy:bg-black/6",
-            tone === "dark" && "group-hover/copy:bg-white/12",
+            tone === "dark" && "group-hover/copy:bg-white/12"
           )}
         />
       ) : null}
@@ -97,7 +93,7 @@ const CopyButton = ({
             tone === "light" && "bg-white/95 text-black",
             tone === "dark" && "text-white",
             tone === "print" &&
-              "rounded-md border border-border bg-popover text-popover-foreground",
+              "rounded-md border border-border bg-popover text-popover-foreground"
           )}
           style={
             tone === "dark" ? { backgroundColor: GO_NIGHT_PAPER } : undefined
@@ -107,25 +103,25 @@ const CopyButton = ({
         </span>
       ) : null}
     </button>
-  );
-};
+  )
+}
 
 const ColourCard = ({
   line,
   format,
 }: {
-  line: ColourFormatsGridLine;
-  format: ScreenFormat;
+  line: ColourFormatsGridLine
+  format: ScreenFormat
 }) => {
-  const row = brandColourTableRow(line.spec, { lineId: line.id });
+  const row = brandColourTableRow(line.spec, { lineId: line.id })
   const light =
     format === "hex"
       ? row.screen.find((c) => c.key === "hex-light")!
-      : row.screen.find((c) => c.key === "oklch-light")!;
+      : row.screen.find((c) => c.key === "oklch-light")!
   const dark =
     format === "hex"
       ? row.screen.find((c) => c.key === "hex-dark")!
-      : row.screen.find((c) => c.key === "oklch-dark")!;
+      : row.screen.find((c) => c.key === "oklch-dark")!
 
   return (
     <article className="flex min-w-0 flex-col gap-2 border-b border-border pb-3">
@@ -150,7 +146,7 @@ const ColourCard = ({
         className="px-2 py-1.5"
       >
         <span className="flex flex-col gap-0.5">
-          <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
             Print
           </span>
           <span className="flex flex-col gap-0.5 font-mono text-[11px] leading-snug text-foreground">
@@ -170,13 +166,10 @@ const ColourCard = ({
           tone="light"
           className="flex flex-1 flex-col items-center justify-between bg-white py-1.5"
         >
-          <span className="text-[9px] font-medium uppercase tracking-wide text-black/55">
+          <span className="text-[9px] font-medium tracking-wide text-black/55 uppercase">
             Light
           </span>
-          <span
-            aria-hidden
-            className="relative flex h-2.5 w-full items-center"
-          >
+          <span aria-hidden className="relative flex h-2.5 w-full items-center">
             <span
               className="block h-0.75 w-full"
               style={{ backgroundColor: light.cssColor }}
@@ -197,13 +190,10 @@ const ColourCard = ({
           className="flex flex-1 flex-col items-center justify-between py-1.5"
           style={{ backgroundColor: GO_NIGHT_PAPER }}
         >
-          <span className="text-[9px] font-medium uppercase tracking-wide text-white/55">
+          <span className="text-[9px] font-medium tracking-wide text-white/55 uppercase">
             Dark
           </span>
-          <span
-            aria-hidden
-            className="relative flex h-2.5 w-full items-center"
-          >
+          <span aria-hidden className="relative flex h-2.5 w-full items-center">
             <span
               className="block h-0.75 w-full"
               style={{ backgroundColor: dark.cssColor }}
@@ -219,8 +209,8 @@ const ColourCard = ({
         </CopyButton>
       </div>
     </article>
-  );
-};
+  )
+}
 
 /**
  * Colour gallery: one format select (HEX | OKLCH), grid of tap-to-copy cards.
@@ -232,7 +222,7 @@ export const ColourFormatsGrid = ({
   title,
   titleId,
 }: ColourFormatsGridProps) => {
-  const [format, setFormat] = useState<ScreenFormat>("hex");
+  const [format, setFormat] = useState<ScreenFormat>("hex")
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -247,7 +237,7 @@ export const ColourFormatsGrid = ({
         <Select
           value={format}
           onValueChange={(value) => {
-            if (value === "hex" || value === "oklch") setFormat(value);
+            if (value === "hex" || value === "oklch") setFormat(value)
           }}
         >
           <SelectTrigger
@@ -270,5 +260,5 @@ export const ColourFormatsGrid = ({
         ))}
       </div>
     </div>
-  );
-};
+  )
+}

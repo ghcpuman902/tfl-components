@@ -1,6 +1,6 @@
-import { LineBadgeGroup } from "@/components/tfl/brand/line-badge";
-import { cn } from "@/lib/utils";
-import type { ReactNode } from "react";
+import { LineBadgeGroup } from "@/components/tfl/brand/line-badge"
+import { cn } from "@/lib/utils"
+import type { ReactNode } from "react"
 
 const EXAMPLES = {
   goldhawk: ["circle", "hammersmith-city"] as const,
@@ -9,24 +9,22 @@ const EXAMPLES = {
   aldgatEast: ["district", "hammersmith-city"] as const,
   southKen: ["circle", "district"] as const,
   farringdon: ["circle", "hammersmith-city", "metropolitan"] as const,
-};
+}
 
 const FixedChipFrame = ({
   label,
   widthClass,
   children,
 }: {
-  label: string;
-  widthClass?: string;
-  children: ReactNode;
+  label: string
+  widthClass?: string
+  children: ReactNode
 }) => (
   <div className="space-y-1.5">
     <p className="text-xs text-muted-foreground">{label}</p>
-    <div className={cn("max-w-full", widthClass ?? "w-full")}>
-      {children}
-    </div>
+    <div className={cn("max-w-full", widthClass ?? "w-full")}>{children}</div>
   </div>
-);
+)
 
 /** Fixed-width shared-track layout + station examples for the MDX body. */
 export const LineBadgeSharedTrackLayoutExamples = () => (
@@ -56,10 +54,7 @@ export const LineBadgeSharedTrackLayoutExamples = () => (
       <FixedChipFrame label="South Kensington" widthClass="w-40">
         <LineBadgeGroup lineIds={EXAMPLES.southKen} />
       </FixedChipFrame>
-      <FixedChipFrame
-        label="Farringdon · under"
-        widthClass="w-full max-w-md"
-      >
+      <FixedChipFrame label="Farringdon · under" widthClass="w-full max-w-md">
         <LineBadgeGroup lineIds={EXAMPLES.farringdon} stripes="under" />
       </FixedChipFrame>
       <FixedChipFrame label="Goldhawk Road · right" widthClass="w-48">
@@ -91,4 +86,4 @@ export const LineBadgeSharedTrackLayoutExamples = () => (
       </FixedChipFrame>
     </div>
   </div>
-);
+)

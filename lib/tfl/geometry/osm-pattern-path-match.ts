@@ -45,7 +45,7 @@ export type OsmRelationPattern = {
 
 /** One `ExternalStopPattern` per OSM route relation, in relation member order. */
 export const externalPatternsFromOsmRelations = (
-  file: OsmRouteStopsFile,
+  file: OsmRouteStopsFile
 ): OsmRelationPattern[] =>
   (file.relations ?? []).flatMap((relation) => {
     const stopNames = relation.stops
@@ -75,7 +75,7 @@ export type OsmPatternPathMatch = CrossSourcePatternMatch & {
  */
 export const matchOsmRelationsForMode = (
   mode: OsmMode,
-  file: OsmRouteStopsFile,
+  file: OsmRouteStopsFile
 ): OsmPatternPathMatch[] => {
   const modeName = LINE_MODE_NAME[mode]
   const lineIds = getExplorerTubeRailLines()
@@ -84,7 +84,7 @@ export const matchOsmRelationsForMode = (
 
   const relationPatterns = externalPatternsFromOsmRelations(file)
   const relationById = new Map(
-    relationPatterns.map((entry) => [entry.pattern.id, entry]),
+    relationPatterns.map((entry) => [entry.pattern.id, entry])
   )
 
   return lineIds.flatMap((lineId) => {
@@ -92,7 +92,7 @@ export const matchOsmRelationsForMode = (
     if (!dataset) return []
     return matchExternalStopPatterns(
       dataset,
-      relationPatterns.map((entry) => entry.pattern),
+      relationPatterns.map((entry) => entry.pattern)
     ).map((match) => {
       const relation = relationById.get(match.externalPatternId)
       return {

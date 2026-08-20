@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata } from "next"
 import {
   componentDocsMetadata,
   renderComponentDocs,
-} from "@/components/docs/render-component-docs";
+} from "@/components/docs/render-component-docs"
 
 export const generateMetadata = (): Promise<Metadata> =>
-  componentDocsMetadata("tube-rail-status");
+  componentDocsMetadata("tube-rail-status")
 
 export default function TubeRailStatusPage() {
   return renderComponentDocs({
@@ -13,8 +13,8 @@ export default function TubeRailStatusPage() {
     relatedLinks: [
       { href: "/docs/colors", label: "Colours" },
       { href: "/docs/tfl-roundel", label: "Roundel" },
-      { href: "/blocks/week-ahead", label: "Week ahead Block" },
+      { href: "/labs/week-ahead", label: "Week ahead Lab" },
       { href: "/explore/lines", label: "Browse lines" },
     ],
-  });
+  })
 }

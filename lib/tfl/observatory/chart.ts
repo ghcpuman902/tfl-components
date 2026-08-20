@@ -28,7 +28,10 @@ export const observationChartGrid = (
     today,
     weeks: Array.from({ length: weekCount }, (_, weekIndex) => {
       const weekStart = start + weekIndex * 7 * DAY_MS
-      return Array.from({ length: 7 }, (_, dayIndex) => weekStart + dayIndex * DAY_MS)
+      return Array.from(
+        { length: 7 },
+        (_, dayIndex) => weekStart + dayIndex * DAY_MS
+      )
     }),
   }
 }
@@ -63,9 +66,7 @@ const STATE_RANK: Record<string, number> = {
   observed: 0,
 }
 
-export const worstHistoryState = (
-  states: readonly string[]
-): string | null => {
+export const worstHistoryState = (states: readonly string[]): string | null => {
   let worst: string | null = null
   let rank = -1
   for (const state of states) {

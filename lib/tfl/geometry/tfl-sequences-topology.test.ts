@@ -11,7 +11,13 @@ import {
 import type { LngLat, TrackStation } from "./transit-track-graph"
 
 const stationsFromBundle = (bundle: {
-  stations: { features?: { id?: string | number; geometry?: { type?: string; coordinates?: number[] }; properties: { featureId?: string; name?: string; label?: string } }[] }
+  stations: {
+    features?: {
+      id?: string | number
+      geometry?: { type?: string; coordinates?: number[] }
+      properties: { featureId?: string; name?: string; label?: string }
+    }[]
+  }
 }): TrackStation[] =>
   (bundle.stations.features ?? []).flatMap((feature) => {
     if (feature.geometry?.type !== "Point") return []
@@ -34,12 +40,9 @@ const neighbors = (topology: ContractedTopology, nodeId: string) =>
   topology.edges
     .filter(
       (edge) =>
-        edge.kind !== "bond" &&
-        (edge.from === nodeId || edge.to === nodeId)
+        edge.kind !== "bond" && (edge.from === nodeId || edge.to === nodeId)
     )
-    .map((edge) =>
-      nameOf(topology, edge.from === nodeId ? edge.to : edge.from)
-    )
+    .map((edge) => nameOf(topology, edge.from === nodeId ? edge.to : edge.from))
     .sort()
 
 const halvesNamed = (topology: ContractedTopology, name: string) =>
@@ -50,7 +53,9 @@ const hopSet = (topology: ContractedTopology) =>
     topology.edges
       .filter((edge) => edge.kind !== "bond")
       .map((edge) =>
-        [nameOf(topology, edge.from), nameOf(topology, edge.to)].sort().join("|")
+        [nameOf(topology, edge.from), nameOf(topology, edge.to)]
+          .sort()
+          .join("|")
       )
   )
 
@@ -91,7 +96,9 @@ describe("tflSequencesPassengerTopology", () => {
       compiled.topology.edges
         .filter((edge) => edge.kind !== "bond")
         .map((edge) => {
-          const from = compiled.topology.nodes.find((node) => node.id === edge.from)
+          const from = compiled.topology.nodes.find(
+            (node) => node.id === edge.from
+          )
           const to = compiled.topology.nodes.find((node) => node.id === edge.to)
           return [from?.stationId ?? "", to?.stationId ?? ""].sort().join("|")
         })
@@ -187,8 +194,14 @@ describe("tflSequencesPassengerTopology", () => {
     const poplar = halvesNamed(compiled.topology, "Poplar")
     assert.equal(poplar.length, 2)
     assert.ok(poplar.every((node) => node.splitFrom))
-    const neighborSets = poplar.map((node) => neighbors(compiled.topology, node.id))
-    assert.ok(neighborSets.some((set) => set.includes("Blackwall") && set.includes("Westferry")))
+    const neighborSets = poplar.map((node) =>
+      neighbors(compiled.topology, node.id)
+    )
+    assert.ok(
+      neighborSets.some(
+        (set) => set.includes("Blackwall") && set.includes("Westferry")
+      )
+    )
     assert.ok(
       neighborSets.some(
         (set) => set.includes("All Saints") && set.includes("West India Quay")

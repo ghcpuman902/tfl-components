@@ -4,14 +4,14 @@
  */
 
 /** Clear space around a roundel = 0.25 × bar width (x). */
-export const ROUNDEL_EXCLUSION_RATIO = 0.25;
+export const ROUNDEL_EXCLUSION_RATIO = 0.25
 
 /**
  * Minimum display width when the bar contains a mode name.
  * Brand guide: 12mm. At 96dpi ≈ 45px; at CSS 96 CSS-px/inch ≈ 45px.
  */
-export const ROUNDEL_MIN_WIDTH_MM = 12;
-export const ROUNDEL_MIN_WIDTH_PX = Math.ceil((12 / 25.4) * 96);
+export const ROUNDEL_MIN_WIDTH_MM = 12
+export const ROUNDEL_MIN_WIDTH_PX = Math.ceil((12 / 25.4) * 96)
 
 export const ROUNDEL_DO_NOT = [
   "Do not re-draw, distort, or modify the roundel",
@@ -20,20 +20,20 @@ export const ROUNDEL_DO_NOT = [
   "Do not display below 12mm width when the bar contains a mode name",
   "Do not crop, rotate, flip, or recolour licensed artwork outside brand rules",
   "Do not amend bar text on licensed artwork unless TfL has authorised it",
-] as const;
+] as const
 
 export type RoundelExclusion = {
   /** Bar width in the same unit as input (CSS px recommended). */
-  barWidth: number;
+  barWidth: number
   /** Clear space on each side = 0.25 × barWidth. */
-  exclusion: number;
+  exclusion: number
   /** Total box including exclusion on both sides. */
-  outerSize: number;
+  outerSize: number
   /** Inline style padding for a wrapping element. */
-  paddingStyle: { padding: string };
+  paddingStyle: { padding: string }
   /** Tailwind-friendly arbitrary padding class, e.g. `p-[12px]`. */
-  paddingClass: string;
-};
+  paddingClass: string
+}
 
 /**
  * Compute the exclusion zone for a roundel whose bar width is `barWidth`
@@ -41,21 +41,21 @@ export type RoundelExclusion = {
  * other graphics sit closer than 0.25×.
  */
 export const getRoundelExclusion = (barWidth: number): RoundelExclusion => {
-  const width = Math.max(0, barWidth);
-  const exclusion = width * ROUNDEL_EXCLUSION_RATIO;
-  const rounded = Math.round(exclusion * 100) / 100;
+  const width = Math.max(0, barWidth)
+  const exclusion = width * ROUNDEL_EXCLUSION_RATIO
+  const rounded = Math.round(exclusion * 100) / 100
   return {
     barWidth: width,
     exclusion: rounded,
     outerSize: width + rounded * 2,
     paddingStyle: { padding: `${rounded}px` },
     paddingClass: `p-[${rounded}px]`,
-  };
-};
+  }
+}
 
 /** True when a named roundel is at least the 12mm minimum (approx CSS px). */
 export const isRoundelAboveMinSize = (widthPx: number): boolean =>
-  widthPx >= ROUNDEL_MIN_WIDTH_PX;
+  widthPx >= ROUNDEL_MIN_WIDTH_PX
 
 /**
  * Johnston is licensed by TfL. Prefer your own typeface, or a lookalike:
@@ -64,8 +64,7 @@ export const isRoundelAboveMinSize = (widthPx: number): boolean =>
  */
 export const ROUNDEL_FONT_POLICY = {
   preferred: "Use your own brand typeface for product UI.",
-  johnston:
-    "Do not download or redistribute Johnston without a TfL licence.",
+  johnston: "Do not download or redistribute Johnston without a TfL licence.",
   alternatives: [
     {
       name: "Hammersmith One",
@@ -78,11 +77,11 @@ export const ROUNDEL_FONT_POLICY = {
       note: "Closer commercial match; requires an Adobe Fonts subscription.",
     },
   ],
-} as const;
+} as const
 
 /**
  * CSS font stack for roundel bar text in this library.
  * Maps to `--font-sans` (Hammersmith One in this app).
  */
 export const ROUNDEL_FONT_FAMILY =
-  "var(--font-sans), 'Hammersmith One', system-ui, sans-serif";
+  "var(--font-sans), 'Hammersmith One', system-ui, sans-serif"

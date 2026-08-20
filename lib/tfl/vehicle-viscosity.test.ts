@@ -70,8 +70,23 @@ describe("viscousDrainKm", () => {
 
 describe("stillDwelling", () => {
   it("holds for dwellSec after arrival", () => {
-    assert.equal(stillDwelling(1_000, 1_000 + 5_000, { ...DEFAULT_VEHICLE_VISCOSITY, dwellSec: 18 }), true)
-    assert.equal(stillDwelling(1_000, 1_000 + 20_000, { ...DEFAULT_VEHICLE_VISCOSITY, dwellSec: 18 }), false)
-    assert.equal(stillDwelling(undefined, 1_000, DEFAULT_VEHICLE_VISCOSITY), false)
+    assert.equal(
+      stillDwelling(1_000, 1_000 + 5_000, {
+        ...DEFAULT_VEHICLE_VISCOSITY,
+        dwellSec: 18,
+      }),
+      true
+    )
+    assert.equal(
+      stillDwelling(1_000, 1_000 + 20_000, {
+        ...DEFAULT_VEHICLE_VISCOSITY,
+        dwellSec: 18,
+      }),
+      false
+    )
+    assert.equal(
+      stillDwelling(undefined, 1_000, DEFAULT_VEHICLE_VISCOSITY),
+      false
+    )
   })
 })

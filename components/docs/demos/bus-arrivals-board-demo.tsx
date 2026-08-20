@@ -1,27 +1,29 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { DataSourceLabel } from "@/components/docs/data-source-label";
-import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board";
-import { useArrivalsBoardUiState } from "@/lib/tfl/use-arrivals-board-ui-state";
-import type { BusArrivalsGroupBy } from "@/lib/tfl/arrivals-prepare";
-import { HOME_BUS_STOP } from "@/lib/tfl/home-arrivals-stops";
-import { useDualPathArrivals } from "@/hooks/use-dual-path-arrivals";
+import Link from "next/link"
+import { DataSourceLabel } from "@/components/docs/data-source-label"
+import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
+import { useArrivalsBoardUiState } from "@/lib/tfl/use-arrivals-board-ui-state"
+import type { BusArrivalsGroupBy } from "@/lib/tfl/arrivals-prepare"
+import { HOME_BUS_STOP } from "@/lib/tfl/home-arrivals-stops"
+import { useDualPathArrivals } from "@/hooks/use-dual-path-arrivals"
 
-const POLL_MS = 20_000;
+const POLL_MS = 20_000
 
 const BusArrivalsLiveBoard = ({
   groupBy = "none",
   showIntro = false,
 }: {
-  groupBy?: BusArrivalsGroupBy;
-  showIntro?: boolean;
+  groupBy?: BusArrivalsGroupBy
+  showIntro?: boolean
 }) => {
-  const { data, loading, fetchError, fetchedAt, refresh } = useDualPathArrivals({
-    stopPointId: HOME_BUS_STOP.id,
-    pollMs: POLL_MS,
-  });
-  const boardState = useArrivalsBoardUiState(data.length, fetchError, "bus");
+  const { data, loading, fetchError, fetchedAt, refresh } = useDualPathArrivals(
+    {
+      stopPointId: HOME_BUS_STOP.id,
+      pollMs: POLL_MS,
+    }
+  )
+  const boardState = useArrivalsBoardUiState(data.length, fetchError, "bus")
 
   return (
     <div className="space-y-4">
@@ -63,18 +65,18 @@ const BusArrivalsLiveBoard = ({
         onRefresh={refresh}
       />
     </div>
-  );
-};
+  )
+}
 
 /**
  * Docs preview — one fixed bus stop via BusArrivalsBoard (flat, time-ordered).
  * Stop discovery (near you / search) lives under Explorer.
  */
 export default function BusArrivalsBoardDemo() {
-  return <BusArrivalsLiveBoard showIntro />;
+  return <BusArrivalsLiveBoard showIntro />
 }
 
 /** Live `groupBy="route"` board for the Variations section. */
 export const BusArrivalsBoardGroupedDemo = () => (
   <BusArrivalsLiveBoard groupBy="route" />
-);
+)

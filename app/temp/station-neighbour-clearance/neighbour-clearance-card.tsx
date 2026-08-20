@@ -1,6 +1,6 @@
-import { StationName } from "@/components/tfl/station-name";
-import { cn } from "@/lib/utils";
-import type { NeighbourClearanceResult } from "@/lib/tfl/station-neighbour-clearance";
+import { StationName } from "@/components/tfl/station-name"
+import { cn } from "@/lib/utils"
+import type { NeighbourClearanceResult } from "@/lib/tfl/station-neighbour-clearance"
 
 /**
  * Visual close-up of one adjacent-station pair at real diagram pitch/font.
@@ -11,13 +11,13 @@ export const NeighbourClearanceCard = ({
   result,
   label,
 }: {
-  result: NeighbourClearanceResult;
-  label?: string;
+  result: NeighbourClearanceResult
+  label?: string
 }) => {
-  const { a, b, pitchPx, fontSizePx, minClearanceEm, gapEm, clears } = result;
-  const clearancePx = minClearanceEm * fontSizePx;
-  const lineHeight = 1.15;
-  const boxHeight = fontSizePx * lineHeight * 2 + 16;
+  const { a, b, pitchPx, fontSizePx, minClearanceEm, gapEm, clears } = result
+  const clearancePx = minClearanceEm * fontSizePx
+  const lineHeight = 1.15
+  const boxHeight = fontSizePx * lineHeight * 2 + 16
 
   return (
     <div className="space-y-2 rounded-lg border border-border bg-card p-4">
@@ -30,7 +30,7 @@ export const NeighbourClearanceCard = ({
             "rounded px-1.5 py-0.5 text-xs font-medium tabular-nums",
             clears
               ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-              : "bg-destructive/15 text-destructive",
+              : "bg-destructive/15 text-destructive"
           )}
         >
           {gapEm.toFixed(2)}em gap · target {minClearanceEm}em
@@ -40,14 +40,18 @@ export const NeighbourClearanceCard = ({
       <div className="overflow-x-auto">
         <div
           className="relative mx-auto"
-          style={{ width: pitchPx * 2, height: boxHeight, minWidth: pitchPx * 2 }}
+          style={{
+            width: pitchPx * 2,
+            height: boxHeight,
+            minWidth: pitchPx * 2,
+          }}
         >
           {/* Required clearance zone, centred on the shared pitch boundary. */}
           <div
             aria-hidden
             className={cn(
               "absolute top-0 border-x border-dashed",
-              clears ? "border-emerald-500/40" : "border-destructive/50",
+              clears ? "border-emerald-500/40" : "border-destructive/50"
             )}
             style={{
               left: pitchPx - clearancePx / 2,
@@ -121,15 +125,21 @@ export const NeighbourClearanceCard = ({
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground sm:grid-cols-4">
         <div>
           <dt className="inline">pitch </dt>
-          <dd className="inline font-mono tabular-nums">{pitchPx.toFixed(0)}px</dd>
+          <dd className="inline font-mono tabular-nums">
+            {pitchPx.toFixed(0)}px
+          </dd>
         </div>
         <div>
           <dt className="inline">a width </dt>
-          <dd className="inline font-mono tabular-nums">{a.widthPx.toFixed(0)}px</dd>
+          <dd className="inline font-mono tabular-nums">
+            {a.widthPx.toFixed(0)}px
+          </dd>
         </div>
         <div>
           <dt className="inline">b width </dt>
-          <dd className="inline font-mono tabular-nums">{b.widthPx.toFixed(0)}px</dd>
+          <dd className="inline font-mono tabular-nums">
+            {b.widthPx.toFixed(0)}px
+          </dd>
         </div>
         <div>
           <dt className="inline">abbreviated </dt>
@@ -143,5 +153,5 @@ export const NeighbourClearanceCard = ({
         </div>
       </dl>
     </div>
-  );
-};
+  )
+}

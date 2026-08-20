@@ -59,8 +59,14 @@ describe("history runs", () => {
         summary: "500 vs 798 (-298). Outside the 10% band.",
       }),
     ])
-    assert.equal(runs[0]?.abnormal.map((row) => row.state).join(","), "incomplete,changed")
+    assert.equal(
+      runs[0]?.abnormal.map((row) => row.state).join(","),
+      "incomplete,changed"
+    )
     assert.equal(runs[0]?.abnormal.length, 2)
-    assert.equal(runs[0]?.rows.filter((row) => row.state === "current").length, 4)
+    assert.equal(
+      runs[0]?.rows.filter((row) => row.state === "current").length,
+      4
+    )
   })
 })

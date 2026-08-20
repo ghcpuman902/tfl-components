@@ -110,8 +110,7 @@ const toPageCensus = (
 ): ObservatoryPageCensus[] =>
   CENSUS_IDS.map((id) => {
     const record = store?.census?.[id]
-    const baselineCount =
-      record?.baselineCount ?? VERIFIED_CENSUS_COUNTS[id]
+    const baselineCount = record?.baselineCount ?? VERIFIED_CENSUS_COUNTS[id]
     if (!record) {
       return {
         id,
@@ -216,10 +215,7 @@ export const toObservatoryPageData = (
       .map(toPageSubject)
       .sort(compareSubjects)
     const attentionCount = rows.filter((row) => row.state !== "current").length
-    const itemTotal = rows.reduce(
-      (sum, row) => sum + (row.itemCount ?? 0),
-      0
-    )
+    const itemTotal = rows.reduce((sum, row) => sum + (row.itemCount ?? 0), 0)
     return {
       id: dataset.id,
       title: dataset.title,

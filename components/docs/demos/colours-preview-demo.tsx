@@ -1,5 +1,5 @@
-import { ColourTokenPins } from "@/components/docs/demos/colour-token-pins";
-import { LineChipWall } from "@/components/docs/demos/line-chip-wall";
+import { ColourTokenPins } from "@/components/docs/demos/colour-token-pins"
+import { LineChipWall } from "@/components/docs/demos/line-chip-wall"
 
 /** First-fold Colours preview — all tokens as chips. */
 export default function ColoursPreviewDemo() {
@@ -8,5 +8,5 @@ export default function ColoursPreviewDemo() {
       <ColourTokenPins />
       <LineChipWall />
     </div>
-  );
+  )
 }

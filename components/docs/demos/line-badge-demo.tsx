@@ -1,22 +1,22 @@
-import { ColourTokenPins } from "@/components/docs/demos/colour-token-pins";
-import { DocsResizeFrame } from "@/components/docs/docs-resize-frame";
-import { LineChipWall } from "@/components/docs/demos/line-chip-wall";
+import { ColourTokenPins } from "@/components/docs/demos/colour-token-pins"
+import { DocsResizeFrame } from "@/components/docs/docs-resize-frame"
+import { LineChipWall } from "@/components/docs/demos/line-chip-wall"
 import {
   LineBadge,
   LineBadgeGroup,
   LineColorBar,
-} from "@/components/tfl/brand/line-badge";
+} from "@/components/tfl/brand/line-badge"
 import {
   getLineColourBarMode,
   LINE_COLOUR_TOKENS,
-} from "@/lib/tfl/line-colour-map";
+} from "@/lib/tfl/line-colour-map"
 
 const DEMO_LINES = LINE_COLOUR_TOKENS.map((token) => ({
   id: token.id,
   name: token.name,
   modeName: getLineColourBarMode(token.id),
   diagram: token.id === "cable-car",
-}));
+}))
 
 /** Real stations where distinct brand colours share platforms / track. */
 const SHARED_TRACK_EXAMPLES = [
@@ -35,7 +35,7 @@ const SHARED_TRACK_EXAMPLES = [
     note: "Circle · District",
     lineIds: ["circle", "district"] as const,
   },
-] as const;
+] as const
 
 /** Line chip preview — filled chips, shared-track group, colour bars. */
 export default function LineBadgeDemo() {
@@ -140,5 +140,5 @@ export default function LineBadgeDemo() {
         </div>
       </section>
     </div>
-  );
+  )
 }

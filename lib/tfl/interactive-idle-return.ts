@@ -23,9 +23,7 @@ export const registerIdleActivity = (nowMs: number): IdleReturnState => ({
   suspended: false,
 })
 
-export const suspendIdleReturn = (
-  state: IdleReturnState
-): IdleReturnState => ({
+export const suspendIdleReturn = (state: IdleReturnState): IdleReturnState => ({
   ...state,
   suspended: true,
 })

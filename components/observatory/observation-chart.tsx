@@ -72,11 +72,14 @@ const ChartCell = ({
           aria-label={label}
           className={cn(
             "relative size-2.5 overflow-hidden rounded-xs hover:ring-1 hover:ring-foreground focus-visible:ring-2 focus-visible:ring-foreground",
-            CELL_FILL[mark],
+            CELL_FILL[mark]
           )}
         >
           {mark === "missing" ? (
-            <span aria-hidden className="absolute inset-0 text-muted-foreground/70">
+            <span
+              aria-hidden
+              className="absolute inset-0 text-muted-foreground/70"
+            >
               <span className="absolute inset-0 bg-current [clip-path:polygon(0_0,22%_0,100%_78%,100%_100%,78%_100%,0_22%)]" />
               <span className="absolute inset-0 bg-current [clip-path:polygon(78%_0,100%_0,100%_22%,22%_100%,0_100%,0_78%)]" />
             </span>
@@ -100,7 +103,12 @@ const ChartCell = ({
           </ul>
         )}
         {rows
-          .filter((row) => row.summary && row.label !== "Unchanged" && row.label !== "All normal")
+          .filter(
+            (row) =>
+              row.summary &&
+              row.label !== "Unchanged" &&
+              row.label !== "All normal"
+          )
           .map((row) => (
             <p key={`${row.title}-summary`}>{row.summary}</p>
           ))}

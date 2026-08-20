@@ -1,60 +1,54 @@
-import type { CSSProperties } from "react";
-import { getLineAriaLabel } from "tfl-ts";
-import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text";
-import { LineName } from "@/components/tfl/brand/line-name";
-import { TFL_BLUE } from "@/lib/tfl/brand-colours";
-import {
-  getLineNameTiers,
-  joinLineNames,
-} from "@/lib/tfl/line-names";
+import type { CSSProperties } from "react"
+import { getLineAriaLabel } from "tfl-ts"
+import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text"
+import { LineName } from "@/components/tfl/brand/line-name"
+import { TFL_BLUE } from "@/lib/tfl/brand-colours"
+import { getLineNameTiers, joinLineNames } from "@/lib/tfl/line-names"
 import {
   resolveRouteTrackStyle,
   routeTrackRailCount,
   type RouteTrackStyle,
-} from "@/lib/tfl/route-track";
-import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@/lib/tfl/route-track"
+import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
 
 type LineStatusLike = {
-  statusSeverity?: number;
-  statusSeverityDescription?: string;
-};
+  statusSeverity?: number
+  statusSeverityDescription?: string
+}
 
 type LineBadgeProps = {
-  lineId: string;
-  name?: string;
-  lineStatuses?: LineStatusLike[];
-  className?: string;
+  lineId: string
+  name?: string
+  lineStatuses?: LineStatusLike[]
+  className?: string
   /** Show a filled colour chip (default) or text-only with brand colour. */
-  variant?: "chip" | "text";
+  variant?: "chip" | "text"
   /**
    * Explicit brand colour when `lineId` is not in the token set.
    * Sets `--line-raw` inline.
    */
-  color?: string;
+  color?: string
   /**
    * Use diagram paint when it differs from mode identity
    * (Cable Car map red instead of purple).
    */
-  diagram?: boolean;
+  diagram?: boolean
   /**
    * `clip` (default) — paint the full name, let the parent clip.
    * `shrink` — step full → middle → short via `LineName` (chips may wrap).
    */
-  fit?: "clip" | "shrink";
-};
+  fit?: "clip" | "shrink"
+}
 
 /** Optional `--line-raw` override for lines outside the token palette. */
 const lineRawStyle = (color?: string): CSSProperties | undefined =>
-  color ? ({ "--line-raw": color } as CSSProperties) : undefined;
+  color ? ({ "--line-raw": color } as CSSProperties) : undefined
 
 /** Skeleton for a line badge chip — use in `loading.tsx` or Suspense. */
 export const LineBadgeSkeleton = ({ className }: { className?: string }) => (
-  <Skeleton
-    className={cn("inline-flex h-5 w-16", className)}
-    aria-hidden
-  />
-);
+  <Skeleton className={cn("inline-flex h-5 w-16", className)} aria-hidden />
+)
 
 /** Skeleton grid matching the line badge demo page. */
 export const LineBadgeBoardSkeleton = () => (
@@ -74,7 +68,7 @@ export const LineBadgeBoardSkeleton = () => (
       ))}
     </div>
   </div>
-);
+)
 
 /**
  * Official TfL line colour badge.
@@ -91,18 +85,18 @@ export const LineBadge = ({
   diagram,
   fit = "clip",
 }: LineBadgeProps) => {
-  const label = name ?? getLineNameTiers(lineId).full;
+  const label = name ?? getLineNameTiers(lineId).full
   const ariaLabel =
     lineStatuses && lineStatuses.length > 0
       ? getLineAriaLabel(label, lineStatuses)
-      : `${label} line`;
-  const style = lineRawStyle(color);
+      : `${label} line`
+  const style = lineRawStyle(color)
   const namePaint =
     fit === "shrink" ? (
       <LineName lineId={lineId} name={name ?? label} wrap />
     ) : (
       label
-    );
+    )
 
   if (variant === "text") {
     return (
@@ -112,14 +106,14 @@ export const LineBadge = ({
         className={cn(
           "font-semibold text-[var(--line-color)]",
           fit === "shrink" && "inline-block w-full min-w-0",
-          className,
+          className
         )}
         style={style}
         aria-label={ariaLabel}
       >
         {namePaint}
       </span>
-    );
+    )
   }
 
   return (
@@ -128,8 +122,8 @@ export const LineBadge = ({
       data-tfl-diagram={diagram ? "" : undefined}
       className={cn(
         "inline-flex h-5 items-center bg-[var(--line-color)] px-2 text-xs font-bold text-[var(--line-ink)] tabular-nums",
-        fit === "shrink" && "w-full min-w-0 max-w-full",
-        className,
+        fit === "shrink" && "w-full max-w-full min-w-0",
+        className
       )}
       style={{ border: "var(--line-border, none)", ...style }}
       aria-label={ariaLabel}
@@ -146,59 +140,59 @@ export const LineBadge = ({
         <span className={CHIP_CAP_TEXT_BOX_CLASS}>{label}</span>
       )}
     </span>
-  );
-};
+  )
+}
 
-export type LineBadgeGroupAlign = "left" | "right" | "center";
+export type LineBadgeGroupAlign = "left" | "right" | "center"
 /** `auto` = shrink-wrap label (side fill). `under` = full-width floating label. */
-export type LineBadgeGroupStripes = "auto" | "under";
+export type LineBadgeGroupStripes = "auto" | "under"
 /**
  * `label` (default) — TfL blue plate over the colour stack.
  * `codes` — same-height stripe stack; 3-letter abbrs take turns (CSS).
  * Fixed `5ch` so it aligns with `BusNumberChip` and single-line code chips.
  */
-export type LineBadgeGroupVariant = "label" | "codes";
+export type LineBadgeGroupVariant = "label" | "codes"
 
 export type LineBadgeGroupProps = {
   /** Line ids to paint as one shared-track label. Prefer ≤3. */
-  lineIds: readonly string[];
+  lineIds: readonly string[]
   /** Optional per-id name overrides aligned with `lineIds`. */
-  names?: readonly string[];
-  className?: string;
+  names?: readonly string[]
+  className?: string
   /**
    * `label` (default) — blue plate + shared name.
    * `codes` — stripe stack at chip height; one 3-letter abbr at a time
    * in a fixed `5ch` box.
    */
-  variant?: LineBadgeGroupVariant;
+  variant?: LineBadgeGroupVariant
   /**
    * Text alignment. Also inferred from `className` (`text-left` /
    * `text-right` / `text-center`) when omitted. Default `left`.
    */
-  align?: LineBadgeGroupAlign;
+  align?: LineBadgeGroupAlign
   /**
    * `auto` (default) — shrink-wrap the TfL blue label so stripes fill the side.
    * `under` — full-width text on the stripe field, no blue plate.
    * Ignored when `variant` is `codes`.
    */
-  stripes?: LineBadgeGroupStripes;
-};
+  stripes?: LineBadgeGroupStripes
+}
 
 const parseAlignFromClassName = (
-  className: string | undefined,
+  className: string | undefined
 ): LineBadgeGroupAlign | undefined => {
-  if (!className) return undefined;
+  if (!className) return undefined
   if (/(?:^|\s)(?:text-center|justify-center)(?:\s|$)/.test(className)) {
-    return "center";
+    return "center"
   }
   if (/(?:^|\s)(?:text-right|justify-end)(?:\s|$)/.test(className)) {
-    return "right";
+    return "right"
   }
   if (/(?:^|\s)(?:text-left|justify-start)(?:\s|$)/.test(className)) {
-    return "left";
+    return "left"
   }
-  return undefined;
-};
+  return undefined
+}
 
 /**
  * Shared-track chip — pure CSS.
@@ -218,27 +212,26 @@ export const LineBadgeGroup = ({
   align: alignProp,
   stripes = "auto",
 }: LineBadgeGroupProps) => {
-  const fullNames = lineIds.map((id, index) =>
-    getLineNameTiers(id, names?.[index]).full,
-  );
-  const ariaLabel = joinLineNames(fullNames);
-  const ids = lineIds.length > 0 ? lineIds : ["underground"];
-  const align =
-    alignProp ?? parseAlignFromClassName(className) ?? "left";
-  const forceUnder = stripes === "under";
-  const noPlate = stripes === "under";
+  const fullNames = lineIds.map(
+    (id, index) => getLineNameTiers(id, names?.[index]).full
+  )
+  const ariaLabel = joinLineNames(fullNames)
+  const ids = lineIds.length > 0 ? lineIds : ["underground"]
+  const align = alignProp ?? parseAlignFromClassName(className) ?? "left"
+  const forceUnder = stripes === "under"
+  const noPlate = stripes === "under"
 
   if (variant === "codes") {
-    const shorts = ids.map((id, index) =>
-      getLineNameTiers(id, names?.[index]).short,
-    );
-    const codeCount = Math.min(Math.max(shorts.length, 1), 3);
+    const shorts = ids.map(
+      (id, index) => getLineNameTiers(id, names?.[index]).short
+    )
+    const codeCount = Math.min(Math.max(shorts.length, 1), 3)
 
     return (
       <span
         className={cn(
           "tfl-line-codes relative inline-flex h-5 w-[5ch] shrink-0 items-center justify-center overflow-hidden text-xs font-bold tabular-nums",
-          className,
+          className
         )}
         style={{ "--codes-count": codeCount } as CSSProperties}
         data-codes={codeCount}
@@ -264,7 +257,7 @@ export const LineBadgeGroup = ({
               data-code={code}
               className={cn(
                 "col-start-1 row-start-1 text-center",
-                CHIP_CAP_TEXT_BOX_CLASS,
+                CHIP_CAP_TEXT_BOX_CLASS
               )}
               style={{ "--code-index": index } as CSSProperties}
             >
@@ -273,15 +266,15 @@ export const LineBadgeGroup = ({
           ))}
         </span>
       </span>
-    );
+    )
   }
 
   return (
     <span
       className={cn(
         // Chip size for the stripe-tip calc (`100cqi` below).
-        "@container/chip relative inline-flex w-full min-w-0 max-w-full items-center overflow-hidden text-xs font-bold tabular-nums",
-        className,
+        "@container/chip relative inline-flex w-full max-w-full min-w-0 items-center overflow-hidden text-xs font-bold tabular-nums",
+        className
       )}
       aria-label={ariaLabel}
       role="img"
@@ -301,7 +294,7 @@ export const LineBadgeGroup = ({
         className={cn(
           "@container/line-name relative z-10 flex w-full min-w-0",
           align === "right" && "justify-end",
-          align === "center" && "justify-center",
+          align === "center" && "justify-center"
         )}
       >
         <span
@@ -316,7 +309,7 @@ export const LineBadgeGroup = ({
             align === "left" && "text-left",
             !noPlate &&
               // Too tight for a plate — drop blue fill instead of wrapping.
-              "@max-[10rem]/line-name:bg-transparent @max-[10rem]/line-name:px-1",
+              "@max-[10rem]/line-name:bg-transparent @max-[10rem]/line-name:px-1"
           )}
           style={
             noPlate
@@ -333,20 +326,20 @@ export const LineBadgeGroup = ({
         </span>
       </span>
     </span>
-  );
-};
+  )
+}
 
 const resolveColorBarTrackStyle = (
   lineId?: string,
-  modeName?: string,
+  modeName?: string
 ): RouteTrackStyle => {
-  if (modeName === "cable-car") return "cable-car";
+  if (modeName === "cable-car") return "cable-car"
   if (modeName === "overground" || modeName === "elizabeth-line") {
-    return "parallel";
+    return "parallel"
   }
-  if (lineId) return resolveRouteTrackStyle(lineId);
-  return "solid";
-};
+  if (lineId) return resolveRouteTrackStyle(lineId)
+  return "solid"
+}
 
 /** Horizontal brand colour bar; Overground / Elizabeth / Cable Car get rail stacks. */
 export const LineColorBar = ({
@@ -356,27 +349,25 @@ export const LineColorBar = ({
   color,
   diagram,
 }: {
-  lineId?: string;
-  modeName?: string;
-  heightClass?: string;
+  lineId?: string
+  modeName?: string
+  heightClass?: string
   /** Explicit brand colour when `lineId` is not in the token set. */
-  color?: string;
+  color?: string
   /**
    * Use diagram paint when it differs from mode identity
    * (Cable Car map red instead of purple).
    */
-  diagram?: boolean;
+  diagram?: boolean
 }) => {
-  const rails = routeTrackRailCount(
-    resolveColorBarTrackStyle(lineId, modeName),
-  );
-  const style = lineRawStyle(color);
-  const dataLine = lineId || undefined;
-  const bands: { key: string; fill: boolean }[] = [];
+  const rails = routeTrackRailCount(resolveColorBarTrackStyle(lineId, modeName))
+  const style = lineRawStyle(color)
+  const dataLine = lineId || undefined
+  const bands: { key: string; fill: boolean }[] = []
   for (let i = 0; i < rails; i += 1) {
-    bands.push({ key: `rail-${i}`, fill: true });
+    bands.push({ key: `rail-${i}`, fill: true })
     if (i < rails - 1) {
-      bands.push({ key: `gap-${i}`, fill: false });
+      bands.push({ key: `gap-${i}`, fill: false })
     }
   }
 
@@ -386,7 +377,7 @@ export const LineColorBar = ({
       data-tfl-diagram={diagram ? "" : undefined}
       className={cn(
         rails === 1 ? "relative w-full" : "flex w-full flex-col",
-        heightClass,
+        heightClass
       )}
       style={style}
       aria-hidden
@@ -399,11 +390,11 @@ export const LineColorBar = ({
             key={band.key}
             className={cn(
               "min-h-0 w-full flex-1",
-              band.fill && "bg-[var(--line-color)]",
+              band.fill && "bg-[var(--line-color)]"
             )}
           />
         ))
       )}
     </div>
-  );
-};
+  )
+}

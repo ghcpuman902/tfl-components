@@ -1,12 +1,12 @@
-import Link from "next/link";
-import type { DocsEntry } from "@/lib/docs-catalog";
-import { cn } from "@/lib/utils";
+import Link from "next/link"
+import type { DocsEntry } from "@/lib/docs-catalog"
+import { cn } from "@/lib/utils"
 
 type DocsPageActionsProps = {
-  prev: DocsEntry | null;
-  next: DocsEntry | null;
-  className?: string;
-};
+  prev: DocsEntry | null
+  next: DocsEntry | null
+  className?: string
+}
 
 const ChevronLeftIcon = ({ className }: { className?: string }) => (
   <svg
@@ -22,7 +22,7 @@ const ChevronLeftIcon = ({ className }: { className?: string }) => (
   >
     <path d="m15 18-6-6 6-6" />
   </svg>
-);
+)
 
 const ChevronRightIcon = ({ className }: { className?: string }) => (
   <svg
@@ -38,7 +38,7 @@ const ChevronRightIcon = ({ className }: { className?: string }) => (
   >
     <path d="m9 18 6-6-6-6" />
   </svg>
-);
+)
 
 const CopyIcon = ({ className }: { className?: string }) => (
   <svg
@@ -55,7 +55,7 @@ const CopyIcon = ({ className }: { className?: string }) => (
     <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
     <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
   </svg>
-);
+)
 
 const CheckIcon = ({ className }: { className?: string }) => (
   <svg
@@ -71,10 +71,10 @@ const CheckIcon = ({ className }: { className?: string }) => (
   >
     <path d="M20 6 9 17l-5-5" />
   </svg>
-);
+)
 
 const actionButtonClass =
-  "inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40";
+  "inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40"
 
 /**
  * Server-rendered page actions. Copy uses `[data-copy-page]` + CodeCopyDelegator.
@@ -139,4 +139,4 @@ export const DocsPageActions = ({
       </span>
     )}
   </div>
-);
+)

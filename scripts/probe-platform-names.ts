@@ -22,7 +22,9 @@ type ArrivalPrediction = {
 
 type TflClientInstance = {
   stopPoint: {
-    getArrivals: (opts: { stopPointIds: string[] }) => Promise<ArrivalPrediction[]>
+    getArrivals: (opts: {
+      stopPointIds: string[]
+    }) => Promise<ArrivalPrediction[]>
   }
 }
 
@@ -38,7 +40,12 @@ const LINE_STATION_SEQUENCES = tflTs.LINE_STATION_SEQUENCES as Record<
 
 const client = new TflClient({ appKey: process.env.TFL_APP_KEY })
 
-const SUBSURFACE_LINES = ["circle", "district", "hammersmith-city", "metropolitan"]
+const SUBSURFACE_LINES = [
+  "circle",
+  "district",
+  "hammersmith-city",
+  "metropolitan",
+]
 
 const COMPASS_RE = /^(northbound|southbound|eastbound|westbound)\b/i
 const PLAIN_PLATFORM_RE = /^platform\s+\d+$/i
@@ -48,7 +55,8 @@ const classify = (platformName: string | undefined): string => {
   if (!platformName) return "(blank)"
   if (/\bunknown\b/i.test(platformName)) return "unknown"
   if (COMPASS_RE.test(platformName)) return "compass+platform"
-  if (/rail/i.test(platformName)) return "rail-designation (Inner/Outer Rail style)"
+  if (/rail/i.test(platformName))
+    return "rail-designation (Inner/Outer Rail style)"
   if (PLAIN_PLATFORM_RE.test(platformName)) return "plain 'Platform N'"
   if (PLAIN_PLATFORM_LETTER_RE.test(platformName)) return "bare letter"
   return "OTHER"
@@ -63,7 +71,9 @@ for (const line of SUBSURFACE_LINES) {
   }
 }
 
-console.log(`Querying ${stationIds.size} unique stations across ${SUBSURFACE_LINES.join(", ")}...`)
+console.log(
+  `Querying ${stationIds.size} unique stations across ${SUBSURFACE_LINES.join(", ")}...`
+)
 
 type Finding = {
   stationId: string
@@ -114,7 +124,9 @@ for (const [category, count] of categoryCounts) {
 
 console.log("\n=== Rail-designation / OTHER examples ===")
 for (const f of otherOrRailExamples) {
-  console.log(`  [${f.category}] ${f.stationName} (${f.stationId}) | line=${f.lineId} | platformName="${f.platformName}"`)
+  console.log(
+    `  [${f.category}] ${f.stationName} (${f.stationId}) | line=${f.lineId} | platformName="${f.platformName}"`
+  )
 }
 
 const outDir = join(process.cwd(), "scratch", "arrivals-probe")
@@ -124,4 +136,6 @@ writeFileSync(
   join(outDir, `${stamp}__platform-name-survey.json`),
   JSON.stringify({ stamp, findings }, null, 2)
 )
-console.log(`\nFull findings written to scratch/arrivals-probe/${stamp}__platform-name-survey.json`)
+console.log(
+  `\nFull findings written to scratch/arrivals-probe/${stamp}__platform-name-survey.json`
+)

@@ -11,21 +11,21 @@ describe("isRedundantArrivalsDestination", () => {
     assert.equal(isRedundantArrivalsDestination("Circle", "Circle Line"), true)
     assert.equal(
       isRedundantArrivalsDestination("Circle Line", "Circle Line"),
-      true,
+      true
     )
   })
 
   it("is case-insensitive and trims whitespace", () => {
     assert.equal(
       isRedundantArrivalsDestination("  circle line  ", "Circle"),
-      true,
+      true
     )
   })
 
   it("is false for a real destination", () => {
     assert.equal(
       isRedundantArrivalsDestination("Edgware Road", "Circle"),
-      false,
+      false
     )
   })
 
@@ -42,7 +42,7 @@ describe("resolveArrivalsDestinationText", () => {
         destination: "Edgware Road",
         lineName: "Circle",
       }),
-      "Edgware Road",
+      "Edgware Road"
     )
   })
 
@@ -53,7 +53,7 @@ describe("resolveArrivalsDestinationText", () => {
         lineName: "Circle",
         currentLocation: "At South Kensington Platform 1",
       }),
-      "Circle Line · At South Kensington Platform 1",
+      "Circle Line · At South Kensington Platform 1"
     )
   })
 
@@ -63,7 +63,7 @@ describe("resolveArrivalsDestinationText", () => {
         destination: "Circle Line",
         lineName: "Circle",
       }),
-      "Circle Line",
+      "Circle Line"
     )
   })
 
@@ -75,7 +75,7 @@ describe("resolveArrivalsDestinationText", () => {
         destination: "Check Front of Train",
         lineName: "District",
       }),
-      "Check Front of Train",
+      "Check Front of Train"
     )
   })
 
@@ -86,7 +86,7 @@ describe("resolveArrivalsDestinationText", () => {
         lineName: "District",
         currentLocation: "At Southfields Platform 1",
       }),
-      "Check Front of Train · At Southfields Platform 1",
+      "Check Front of Train · At Southfields Platform 1"
     )
   })
 
@@ -97,14 +97,14 @@ describe("resolveArrivalsDestinationText", () => {
         lineName: "District",
         currentLocation: "null",
       }),
-      "Check Front of Train",
+      "Check Front of Train"
     )
   })
 
   it("tolerates a missing lineName", () => {
     assert.equal(
       resolveArrivalsDestinationText({ destination: "Edgware Road" }),
-      "Edgware Road",
+      "Edgware Road"
     )
   })
 })

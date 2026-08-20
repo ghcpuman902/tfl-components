@@ -1,17 +1,17 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { SectionHub } from "@/components/docs/section-hub";
-import { getDocsEntry } from "@/lib/docs-catalog";
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
+import { SectionHub } from "@/components/docs/section-hub"
+import { getDocsEntry } from "@/lib/docs-catalog"
 
 export const metadata: Metadata = {
   title: "Tools",
   description:
     "Developer playgrounds — inspect, test, tune, or debug. Not embeddable product UI.",
-};
+}
 
 export default function ToolsIndexPage() {
-  const entry = getDocsEntry("tools-index");
-  if (!entry) notFound();
+  const entry = getDocsEntry("tools-index")
+  if (!entry) notFound()
 
   return (
     <SectionHub
@@ -27,5 +27,5 @@ export default function ToolsIndexPage() {
         { href: "/docs/station-name-labels", label: "Station name labels" },
       ]}
     />
-  );
+  )
 }

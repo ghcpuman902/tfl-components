@@ -31,9 +31,9 @@ export const RiverRouteChip = ({
   return (
     <span
       className={cn(
-        "inline-flex h-5 shrink-0 items-center justify-center text-center text-xs font-bold tabular-nums text-white",
+        "inline-flex h-5 shrink-0 items-center justify-center text-center text-xs font-bold text-white tabular-nums",
         ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
-        className,
+        className
       )}
       style={{ backgroundColor: TFL_MODAL_COLOURS.river.hex, ...style }}
       aria-label={ariaLabel}

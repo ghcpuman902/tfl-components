@@ -1,5 +1,8 @@
 import { splitTextFrames } from "@/lib/tfl/unattended-sequence"
-import type { StatusBoardLine, StatusBoardSections } from "@/lib/tfl/status-board"
+import type {
+  StatusBoardLine,
+  StatusBoardSections,
+} from "@/lib/tfl/status-board"
 import type { LineAnnouncement } from "@/lib/tfl/status-reason"
 
 export type StatusDisplayPhase = "disruptions" | "good-service"
@@ -227,7 +230,10 @@ const framesForLine = (
 
   const pages = packAnnouncementPages(items, {
     linesPerPage: bodyTiles * LINES_PER_TILE,
-    charsPerLine: Math.max(1, Math.round(options.charsPerTile / LINES_PER_TILE)),
+    charsPerLine: Math.max(
+      1,
+      Math.round(options.charsPerTile / LINES_PER_TILE)
+    ),
   })
   const source = pages.length > 0 ? pages : [[]]
 
@@ -269,10 +275,7 @@ const goodServiceBodyFrames = (
       otherGoodServiceCopy: options.otherGoodServiceCopy,
       pageIndex: 0,
       pageCount: 1,
-      tiles:
-        options.bodyTiles > 0
-          ? [{ kind: "chips", lineIds }]
-          : [],
+      tiles: options.bodyTiles > 0 ? [{ kind: "chips", lineIds }] : [],
     },
   ]
 }

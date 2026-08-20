@@ -25,7 +25,7 @@ export const srgbToOklch = (srgb: Srgb): Oklch => {
   const lab = linearSrgbToOklab(
     srgbChannelToLinear(srgb.r),
     srgbChannelToLinear(srgb.g),
-    srgbChannelToLinear(srgb.b),
+    srgbChannelToLinear(srgb.b)
   )
   const C = Math.hypot(lab.a, lab.b)
   let H = (Math.atan2(lab.b, lab.a) * 180) / Math.PI

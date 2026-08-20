@@ -1,12 +1,13 @@
 # Landing hero (temp)
 
-Temp test for a 2.5D room landing: horizontal parallax, a GSAP scroll-scrubbed camera zoom into the iPad, a live `/board/view` iframe, and a fake mirror with looping photos.
+Temp test for a 2.5D room landing: horizontal parallax, an elastic scroll-to-zoom into the iPad, a live `/board/view` iframe, and a fake mirror with looping photos.
 
 Route: `/temp/landing-hero` — not linked in nav, `noindex`.
 
 ## What to try
 
-- Desktop: move the pointer for parallax; scroll to zoom toward the iPad; click the iPad to jump to the zoomed state.
+- Desktop: move the pointer for parallax. The camera tracks the wheel 1:1 over a short slice of the hero; a small pull eases-out to the iPad, then the page keeps scrolling with the camera already locked. Scroll back up through that same slice to ease-out to the wide room. Click the iPad to ease-out to the zoomed position.
+- Two copy states: a centred headline + CTAs on the wide room, then a one-line caption under the zoomed iPad.
 - Mobile: “Enable tilt” for device orientation (permission required); otherwise parallax follows scroll. The **canvas** (artwork) is sized to cover the viewport and slides so the iPad stays in the padded safe area — the camera stays put at rest and only zooms on scroll. Tall screens crop the sides, wide screens crop the sofa.
 - `D` opens a debug panel: reference-SVG overlay + camera scrub slider.
 - `prefers-reduced-motion`: no parallax, no blur, copy fades without moving, photo loops freeze.

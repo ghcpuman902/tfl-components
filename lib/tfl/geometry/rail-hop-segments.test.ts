@@ -11,7 +11,10 @@ import {
   hopSegmentsToPolylines,
 } from "@/lib/tfl/geometry/rail-hop-segments"
 import { contractTrackTopology } from "@/lib/tfl/geometry/contract-track-topology"
-import type { LngLat, TrackStation } from "@/lib/tfl/geometry/transit-track-graph"
+import type {
+  LngLat,
+  TrackStation,
+} from "@/lib/tfl/geometry/transit-track-graph"
 import { pickHopPolyline } from "@/lib/tfl/vehicle-progress"
 import { hopGraphFromOrderedStops } from "@/lib/tfl/vehicle-hop-graph"
 
@@ -20,17 +23,17 @@ const bundle = tube as TransitGeometryBundle
 const hopBetween = (
   segments: readonly { fromStationId: string; toStationId: string }[],
   left: string,
-  right: string,
+  right: string
 ) =>
   segments.find(
     (segment) =>
       (segment.fromStationId === left && segment.toStationId === right) ||
-      (segment.fromStationId === right && segment.toStationId === left),
+      (segment.fromStationId === right && segment.toStationId === left)
   )
 
 const feature = (
   id: string,
-  coords: LngLat[],
+  coords: LngLat[]
 ): Feature<LineString, LineSegmentProperties> => ({
   type: "Feature",
   id,
@@ -60,10 +63,7 @@ describe("hopSegmentsFromBundle", () => {
     const toKentish = hopBetween(segments, "940GZZLUCTN", "940GZZLUKSH")
     assert.ok(toEuston)
     assert.ok(toKentish)
-    assert.notDeepEqual(
-      toEuston.line.coordinates,
-      toKentish.line.coordinates,
-    )
+    assert.notDeepEqual(toEuston.line.coordinates, toKentish.line.coordinates)
   })
 
   it("walks a junction between two stations and concatenates coordinates", () => {

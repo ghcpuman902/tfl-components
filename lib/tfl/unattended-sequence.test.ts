@@ -213,11 +213,11 @@ describe("splitTextFrames", () => {
       60
     )
     assert.equal(frames.length, 2)
-    assert.equal(frames[0], "Severe delays between Oxford Circus and Warren Street.")
     assert.equal(
-      frames[1],
-      "Valid tickets are accepted on local buses."
+      frames[0],
+      "Severe delays between Oxford Circus and Warren Street."
     )
+    assert.equal(frames[1], "Valid tickets are accepted on local buses.")
   })
 
   it("wraps a single overlong sentence on words", () => {
@@ -227,7 +227,10 @@ describe("splitTextFrames", () => {
     )
     assert.ok(frames.length >= 2)
     assert.ok(frames.every((frame) => frame.length <= 40))
-    assert.equal(frames.join(" "), "Severe delays between Oxford Circus and Warren Street because of a signal failure")
+    assert.equal(
+      frames.join(" "),
+      "Severe delays between Oxford Circus and Warren Street because of a signal failure"
+    )
   })
 
   it("returns no frames for empty copy", () => {

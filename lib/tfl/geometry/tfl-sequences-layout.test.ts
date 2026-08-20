@@ -4,10 +4,7 @@ import dlr from "@/data/geography/unique-track/dlr/full.json"
 import tube from "@/data/geography/unique-track/tube/full.json"
 import type { ContractedTopology } from "./contract-track-topology"
 import { STRESS_BOND_GAP, STRESS_MIN_SEP } from "./stress-layout"
-import {
-  countTrackCrossings,
-  layoutTflSequences,
-} from "./tfl-sequences-layout"
+import { countTrackCrossings, layoutTflSequences } from "./tfl-sequences-layout"
 import { tflSequencesPassengerTopology } from "./tfl-sequences-topology"
 import type { LngLat, TrackStation } from "./transit-track-graph"
 
@@ -94,9 +91,15 @@ describe("layoutTflSequences", () => {
       first.nodes.map((node) => [node.x, node.y]),
       second.nodes.map((node) => [node.x, node.y])
     )
-    assert.ok(first.nodes.every((node) => Number.isFinite(node.x) && Number.isFinite(node.y)))
-    const mx = first.nodes.reduce((sum, node) => sum + node.x, 0) / first.nodes.length
-    const my = first.nodes.reduce((sum, node) => sum + node.y, 0) / first.nodes.length
+    assert.ok(
+      first.nodes.every(
+        (node) => Number.isFinite(node.x) && Number.isFinite(node.y)
+      )
+    )
+    const mx =
+      first.nodes.reduce((sum, node) => sum + node.x, 0) / first.nodes.length
+    const my =
+      first.nodes.reduce((sum, node) => sum + node.y, 0) / first.nodes.length
     assert.ok(Math.abs(mx) < 1e-6)
     assert.ok(Math.abs(my) < 1e-6)
   })
@@ -135,11 +138,11 @@ describe("layoutTflSequences", () => {
         { from: "b", to: "c" },
       ]
     )
-    const laid = layoutTflSequences(
-      topology,
-      [],
-      { lineId: "test", hops: { "A|B": 1, "B|C": 3 }, timedHopCount: 2 }
-    )
+    const laid = layoutTflSequences(topology, [], {
+      lineId: "test",
+      hops: { "A|B": 1, "B|C": 3 },
+      timedHopCount: 2,
+    })
     const nodes = byId(laid.nodes)
     const short = Math.hypot(
       nodes.get("b")!.x - nodes.get("a")!.x,
@@ -149,7 +152,10 @@ describe("layoutTflSequences", () => {
       nodes.get("c")!.x - nodes.get("b")!.x,
       nodes.get("c")!.y - nodes.get("b")!.y
     )
-    assert.ok(long > short * 1.6, `long ${long.toFixed(1)} vs short ${short.toFixed(1)}`)
+    assert.ok(
+      long > short * 1.6,
+      `long ${long.toFixed(1)} vs short ${short.toFixed(1)}`
+    )
   })
 
   it("straightens a permitted continuation and leaves an unsupported turn sharp", () => {
@@ -212,10 +218,7 @@ describe("layoutTflSequences", () => {
       nodes.get("a")!.x - nodes.get("b")!.x,
       nodes.get("a")!.y - nodes.get("b")!.y
     )
-    assert.ok(
-      Math.abs(gap - STRESS_BOND_GAP) < 3,
-      `bond gap ${gap.toFixed(1)}`
-    )
+    assert.ok(Math.abs(gap - STRESS_BOND_GAP) < 3, `bond gap ${gap.toFixed(1)}`)
     const far = Math.hypot(
       nodes.get("west")!.x - nodes.get("a")!.x,
       nodes.get("west")!.y - nodes.get("a")!.y

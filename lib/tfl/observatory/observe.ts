@@ -307,9 +307,7 @@ const readCensusCount = async (
   }
 }
 
-const datasetKind = (
-  id: DatasetId
-): ObservatorySubjectKind => {
+const datasetKind = (id: DatasetId): ObservatorySubjectKind => {
   if (id === "lines") return "line-catalogue"
   if (id === "stops") return "stop-points"
   return "route-sequence"
@@ -627,12 +625,7 @@ export const runObservatoryPass = async ({
             attentionSubjects === 1 ? "dataset needs" : "datasets need"
           } attention.`
 
-    const census = await observeCensus(
-      fetcher,
-      at,
-      "scheduled",
-      loaded.census
-    )
+    const census = await observeCensus(fetcher, at, "scheduled", loaded.census)
     events.push(...census.events)
 
     const todayItemCounts = itemCountsFromSubjects(subjects)

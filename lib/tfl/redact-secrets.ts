@@ -4,12 +4,12 @@
  */
 export const redactSecrets = (
   value: string,
-  secrets: readonly string[],
+  secrets: readonly string[]
 ): string => {
-  let next = value;
+  let next = value
   for (const secret of secrets) {
-    if (!secret) continue;
-    next = next.split(secret).join("•••");
+    if (!secret) continue
+    next = next.split(secret).join("•••")
   }
-  return next;
-};
+  return next
+}

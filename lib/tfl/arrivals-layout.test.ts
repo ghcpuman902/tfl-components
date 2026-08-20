@@ -156,11 +156,9 @@ describe("arrivals board layout API", () => {
             },
           } as RealtimePrediction,
         ],
-        lineGroups: [
-          { lines: ["circle", "hammersmith-city", "metropolitan"] },
-        ],
+        lineGroups: [{ lines: ["circle", "hammersmith-city", "metropolitan"] }],
         stopName: "Liverpool Street",
-      }),
+      })
     )
     assert.ok(html.includes("w-[5ch]"), html)
     assert.ok(html.includes("tfl-line-codes"), html)
@@ -245,9 +243,8 @@ describe("arrivals board layout API", () => {
     )
 
     assert.ok(html.includes("1/2") || html.includes("Page 1 of 2"), html)
-    const pager = html.match(
-      /<div class="[^"]*hidden items-center p-0[^"]*"/
-    )?.[0] ?? ""
+    const pager =
+      html.match(/<div class="[^"]*hidden items-center p-0[^"]*"/)?.[0] ?? ""
     assert.ok(pager.includes("[@media(hover:hover)]:flex"), pager)
     assert.equal(pager.includes("opacity-0"), false, pager)
   })
@@ -275,8 +272,8 @@ describe("arrivals board layout API", () => {
     assert.equal(rowsTags.length, 2)
     assert.ok(rowsTags.every((tag) => tag.includes("rows-custom")))
     // Route identity lives on the group header, not on each row.
-    assert.equal(html.includes("aria-label=\"Route 9,"), false)
-    assert.equal(html.includes("aria-label=\"Route 18,"), false)
+    assert.equal(html.includes('aria-label="Route 9,'), false)
+    assert.equal(html.includes('aria-label="Route 18,'), false)
   })
 
   it("groups river by route without repeating the route chip on rows", () => {
@@ -302,7 +299,7 @@ describe("arrivals board layout API", () => {
         ],
         stopName: "Canary Wharf Pier",
         groupBy: "route",
-      }),
+      })
     )
 
     assert.equal(slotCount(html, "arrivals-group"), 2)
@@ -321,7 +318,7 @@ describe("arrivals board layout API", () => {
           ...row,
           stationName: "Oxford Circus",
         })),
-      }),
+      })
     )
     assert.ok(html.includes("Oxford Circus"))
   })
@@ -334,7 +331,7 @@ describe("arrivals board layout API", () => {
           stationName: "Oxford Circus",
         })),
         stopName: "Custom heading",
-      }),
+      })
     )
     assert.ok(html.includes("Custom heading"))
     assert.equal(html.includes("Oxford Circus"), false)
@@ -365,7 +362,7 @@ describe("arrivals board layout API", () => {
           { lineId: "rb1", description: "Pier Closed until 17:00" },
         ],
         stopName: "Canary Wharf Pier",
-      }),
+      })
     )
     assert.ok(html.includes("RB1 disruption: Pier Closed until 17:00"))
     assert.equal(html.includes("Route rb1 disruption"), false)
@@ -412,7 +409,7 @@ describe("arrivals board layout API", () => {
         stopName: "Canary Wharf Pier",
         behaviour: "unattended",
         pageSize: 3,
-      }),
+      })
     )
     assert.ok(html.includes("1st arrival"))
     assert.ok(html.includes("2nd arrival"))
@@ -443,7 +440,7 @@ describe("arrivals board layout API", () => {
           }),
         ],
         stopName: "Putney Pier",
-      }),
+      })
     )
     assert.ok(html.includes("Putney Pier"))
     assert.ok(html.includes(">RB6<"))
@@ -456,7 +453,7 @@ describe("arrivals board layout API", () => {
       createElement(RiverBusArrivalsBoard, {
         data: [],
         stopName: "Rotherhithe",
-      }),
+      })
     )
     assert.ok(html.includes("No live departure times available."))
     assert.equal(html.includes("No river buses due"), false)
@@ -495,7 +492,7 @@ describe("arrivals board layout API", () => {
         ],
         stopName: "Canary Wharf Pier",
         pageSize: 3,
-      }),
+      })
     )
     assert.ok(html.includes("29 min"))
     assert.ok(html.includes("20:02"))
@@ -509,7 +506,7 @@ describe("resolveArrivalsHeading", () => {
     assert.equal(resolveArrivalsHeading("Home", []), "Home")
     assert.equal(
       resolveArrivalsHeading(undefined, [{ stationName: "Oxford Circus" }]),
-      "Oxford Circus",
+      "Oxford Circus"
     )
     assert.equal(resolveArrivalsHeading("  ", []), undefined)
     assert.equal(resolveArrivalsHeading(undefined, []), undefined)

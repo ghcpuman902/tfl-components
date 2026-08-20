@@ -1,12 +1,9 @@
-import type { Metadata } from "next";
-import { SiteProsePage } from "@/components/site-prose-page";
-import { VISITOR_COOKIE } from "@/lib/site-stats";
+import type { Metadata } from "next"
+import { SiteProsePage } from "@/components/site-prose-page"
+import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
+import { VISITOR_COOKIE } from "@/lib/site-stats"
 
-export const metadata: Metadata = {
-  title: "Privacy",
-  description:
-    "What this site stores in the browser, including TfL keys and a visitor cookie.",
-};
+export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.privacy)
 
 export default function PrivacyPage() {
   return (
@@ -20,15 +17,21 @@ export default function PrivacyPage() {
         </h2>
         <p>
           If you paste a key for live demos, it stays in this browser under{" "}
-          <code className="text-xs">tfl-user-api-key.v1</code>.
-          You can keep it for later visits or limit it to the current tab. Clear
-          it from the same dialog that saved it.
+          <code className="text-xs">tfl-user-api-key.v1</code>. You can keep it
+          for later visits or limit it to the current tab. Clear it from the
+          same dialog that saved it.
         </p>
         <p>
-          A Board URL can carry the key in the hash fragment after{" "}
-          <code className="text-xs">#</code>. The hash is not sent to this
-          site&apos;s server. Anyone who opens that URL can use the key, so
-          treat a shared Board link as secret if it includes one.
+          Boards offer two key modes. <strong>Save key on this browser</strong>{" "}
+          stores the key in this browser and omits it from generated Board URLs
+          and QR codes. Another device will need its own key entry.
+        </p>
+        <p>
+          If that option is off, the Board URL includes the key in the hash
+          fragment after <code className="text-xs">#</code>. This is a portable
+          setup option for another tablet or unattended display. The hash is not
+          sent to this site&apos;s server, logs, analytics, or referrers. Anyone
+          with the complete link can use the key and its quota.
         </p>
         <p>
           Keys are not sent to logs, analytics, or unrelated services from this
@@ -60,5 +63,5 @@ export default function PrivacyPage() {
         </p>
       </section>
     </SiteProsePage>
-  );
+  )
 }

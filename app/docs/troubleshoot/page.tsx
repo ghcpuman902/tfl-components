@@ -1,17 +1,17 @@
-import type { Metadata } from "next";
-import { DocsPageHeader } from "@/components/docs/docs-page-header";
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { getDocsEntry } from "@/lib/docs-catalog";
+import type { Metadata } from "next"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
+import { getDocsEntry } from "@/lib/docs-catalog"
 
 export const metadata: Metadata = {
   title: "Troubleshoot",
   description:
     "Set up Next.js or Vite, fix an empty board, and why this can differ from TfL Go.",
-};
+}
 
 export default async function DocsTroubleshootPage() {
-  const entry = getDocsEntry("troubleshoot")!;
-  const { default: MDXPage } = await import("@/content/troubleshoot.mdx");
+  const entry = getDocsEntry("troubleshoot")!
+  const { default: MDXPage } = await import("@/content/troubleshoot.mdx")
 
   return (
     <DocsReadableWidth>
@@ -22,5 +22,5 @@ export default async function DocsTroubleshootPage() {
         </div>
       </article>
     </DocsReadableWidth>
-  );
+  )
 }

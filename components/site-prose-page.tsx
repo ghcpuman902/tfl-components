@@ -1,11 +1,11 @@
-import type { ReactNode } from "react";
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
+import type { ReactNode } from "react"
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 
 type SiteProsePageProps = {
-  title: string;
-  description: string;
-  children: ReactNode;
-};
+  title: string
+  description: string
+  children: ReactNode
+}
 
 export const SiteProsePage = ({
   title,
@@ -25,4 +25,4 @@ export const SiteProsePage = ({
       </div>
     </article>
   </DocsReadableWidth>
-);
+)

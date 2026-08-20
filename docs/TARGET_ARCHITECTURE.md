@@ -1,31 +1,37 @@
 # Target information architecture
 
-**Status: FROZEN (Stage 1) + human amendments J1 / J6 / J8 / J9 / J18 / J19 / J20.** Derived from [product-architecture.md](./product-architecture.md). Do not reshape to match current file placement without a new decision.
+**Status: FROZEN (Stage 1) + human amendments J1 / J6 / J8 / J9 / J18 / J19 / J20 / J22 / J23.** Derived from [product-architecture.md](./product-architecture.md). Do not reshape to match current file placement without a new decision.
 
 Transport domains (Tube & rail, Bus, River, Cycle, Roads / traffic, Cable car, …) are **filters / metadata / markers**, not top-level nav trees.
 
-See [ia-migration/DECISIONS.md](./ia-migration/DECISIONS.md) **J6** (nav chrome, 2026-08-10), **J8** (publish chrome, 2026-08-14), and **J9** (hosted Board, 2026-08-14).
+See [ia-migration/DECISIONS.md](./ia-migration/DECISIONS.md) **J6** (nav chrome, 2026-08-10), **J8** (publish chrome, 2026-08-14), **J9** (hosted Board, 2026-08-14), **J22** (Labs / Get started, 2026-08-20), and **J23** (More is mobile overflow, 2026-08-20).
 
 ---
 
 ## Site chrome (persistent header)
 
-Same header on homepage, docs, Blocks, Explorer, and Board:
+Same header on homepage, docs, Labs, Explorer, and Board:
 
 ```text
-[Logo → /]  Docs  Components  Blocks  Explorer  Board     [Search]  [GitHub]
+Desktop: [Logo + tfl-components → /]  Docs  Components  Explorer  Labs  Board     [Search][Star on GitHub][Theme]
+Mobile:  [Logo + tfl-components → /]  Docs  Board  More     [Theme]
+         More (full-width sheet): [Search]  Components  Explorer  Labs  GitHub
 ```
 
-| Link | Lands on |
-|------|----------|
-| Logo | `/` (full-width homepage — no docs sidebar) |
-| Docs | `/docs` (Introduction) |
-| Components | `/docs/components` (catalogue) |
-| Blocks | `/blocks` |
-| Explorer | `/docs/explorer` |
-| Board | `/board` (builder). `/board/view` is chromeless — no header or footer. |
+Search, GitHub, and theme sit in one right-aligned cluster. If the row is tight, the search hint and then the search field shrink; the primary nav never scrolls or wraps. Desktop keeps **Docs** first and **Board** last. On mobile those two stay in the bar and the middle items (Components, Explorer, Labs) plus GitHub collapse into **More**, a full-width sheet that also holds search. Docs pages keep a sidebar trigger under the header.
 
-**Homepage** stays full-width proof (no sidebar). **Docs** routes use this header plus a compact docs sidebar. **Blocks** and **Board** (builder) use the same header **without** the docs taxonomy sidebar. **Tools** and **Drafts** are footer links in development only — hidden in production.
+| Link       | Lands on                                                                 |
+| ---------- | ------------------------------------------------------------------------ |
+| Logo       | `/` (full-width homepage — no docs sidebar)                              |
+| Docs       | `/docs` (Get started)                                                    |
+| Components | `/docs/components` (catalogue). Top-level on desktop; in More on mobile. |
+| Explorer   | `/docs/explorer`. Top-level on desktop; in More on mobile.               |
+| Labs       | `/labs`. Top-level on desktop; in More on mobile. Experimental.          |
+| Board      | `/board` (builder), last on desktop. `/board/view` is chromeless.        |
+| GitHub     | “Star on GitHub” next to search on desktop. In More on mobile.            |
+| More       | Follows Docs and Board on mobile. Holds the collapsed middle items plus GitHub. |
+
+**Homepage** stays full-width proof (no sidebar). **Docs** routes use this header plus a compact docs sidebar. **Labs** and **Board** (builder) use the same header **without** the docs taxonomy sidebar. **Tools** and **Drafts** are footer links in development only — hidden in production.
 
 ---
 
@@ -37,7 +43,7 @@ Two primary sections. Composition layers stay real; they are **not** nested side
 
 Orient before picking a surface:
 
-- Introduction (`/docs`) — separate from the homepage
+- Get started (`/docs`) — separate from the homepage
 - Components directory (`/docs/components`)
 - Explorer (single entry; WIP — owns its own sub-nav when opened)
 - Typography
@@ -60,7 +66,7 @@ Examples of preferred entries: Tube & rail arrivals, Tube & rail status, Bus arr
 
 Super lower-level or guidance leftovers that do not fit Get started or the preferred Components list (e.g. icons). Prefer pure CSS/HTML primitives here as the library grows.
 
-**Blocks, Tools, Drafts, Board** are not permanent docs-sidebar groups. Blocks and Board: top nav. Tools and Drafts: footer / contributor path, development only (J8). `/board/view` is chromeless (J9).
+**Labs, Tools, Drafts, Board** are not permanent docs-sidebar groups. Board: top nav. Labs: More menu (J22). Tools and Drafts: footer / contributor path, development only (J8). `/board/view` is chromeless (J9).
 
 ---
 
@@ -86,17 +92,17 @@ foundations (colour, type, roundel rules)
 finished UI
 ```
 
-| Layer | Role |
-|-------|------|
-| **Network model** | Line / Station / ServicePattern records the four maps draw (J18, J20) |
-| **Data-aware** | Accept normalised data as props; strongest GET DATA → RENDER path |
-| **Rendering primitives** | Explicit values; useful without `tfl-ts` where practical |
-| **Foundations** | Shared brand/visual language and licensing |
-| **Maps** | Geographic (coordinates) vs schematic/network (topology) — distinct pages |
-| **Blocks** | Mini-app compositions outside the atomic registry |
-| **Tools** | Inspect / test / tune / debug only |
-| **Explorer** | DX for the information model — not a registry item by default |
-| **Drafts** | Incubation with a promotion path |
+| Layer                    | Role                                                                      |
+| ------------------------ | ------------------------------------------------------------------------- |
+| **Network model**        | Line / Station / ServicePattern records the four maps draw (J18, J20)     |
+| **Data-aware**           | Accept normalised data as props; strongest GET DATA → RENDER path         |
+| **Rendering primitives** | Explicit values; useful without `tfl-ts` where practical                  |
+| **Foundations**          | Shared brand/visual language and licensing                                |
+| **Maps**                 | Geographic (coordinates) vs schematic/network (topology) — distinct pages |
+| **Labs**                 | Experimental compositions outside the atomic registry                     |
+| **Tools**                | Inspect / test / tune / debug only                                        |
+| **Explorer**             | DX for the information model — not a registry item by default             |
+| **Drafts**               | Incubation with a promotion path                                          |
 
 Catalogue and page anatomy use layer metadata. Sidebar discovery is **flat + sort + markers**.
 
@@ -108,9 +114,9 @@ Single docs-sidebar entry. Browse lines, route stations, stations, relationships
 
 ---
 
-## Blocks (J1)
+## Labs (J1, amended J22)
 
-Like shadcn **Blocks**: composed mini-apps outside the reusable component catalog. Top-nav / own shell; not a docs-sidebar taxonomy section.
+Experimental displays and composed examples built from the component library. These may change or break before version 1.0. Own shell; not a docs-sidebar taxonomy section. Top-level on desktop; in More on mobile. `/labs` is canonical; `/blocks` redirects.
 
 ---
 

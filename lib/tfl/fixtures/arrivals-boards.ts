@@ -190,7 +190,7 @@ const river = (
   lineId: string,
   lineName: string,
   destinationName: string,
-  timeToStation: number,
+  timeToStation: number
 ): RealtimePrediction =>
   prediction({
     id,
@@ -257,7 +257,7 @@ export const LIVERPOOL_STREET_LINE_GROUPS = [
 const lstCentralWest = (
   id: string,
   towards: string,
-  timeToStation: number,
+  timeToStation: number
 ): RealtimePrediction =>
   prediction({
     id,
@@ -272,7 +272,7 @@ const lstCentralWest = (
 const lstCentralEast = (
   id: string,
   towards: string,
-  timeToStation: number,
+  timeToStation: number
 ): RealtimePrediction =>
   prediction({
     id,
@@ -290,7 +290,7 @@ const lstSubsurface = (
   lineName: string,
   platformName: string,
   towards: string,
-  timeToStation: number,
+  timeToStation: number
 ): RealtimePrediction =>
   prediction({
     id,
@@ -318,7 +318,7 @@ export const LIVERPOOL_STREET_ARRIVALS: readonly RealtimePrediction[] = [
     "Hammersmith & City",
     "Westbound - Platform 2",
     "Hammersmith",
-    40,
+    40
   ),
   {
     ...lstSubsurface(
@@ -327,7 +327,7 @@ export const LIVERPOOL_STREET_ARRIVALS: readonly RealtimePrediction[] = [
       "Hammersmith & City",
       "Westbound - Platform 2",
       "Check Front of Train",
-      130,
+      130
     ),
     sharedTrackIdentity: {
       confidence: "ambiguous",
@@ -341,7 +341,7 @@ export const LIVERPOOL_STREET_ARRIVALS: readonly RealtimePrediction[] = [
     "Circle",
     "Westbound - Platform 2",
     "Hammersmith",
-    220,
+    220
   ),
   lstSubsurface(
     "lst-met-e-1",
@@ -349,7 +349,7 @@ export const LIVERPOOL_STREET_ARRIVALS: readonly RealtimePrediction[] = [
     "Metropolitan",
     "Eastbound - Platform 1",
     "Aldgate",
-    70,
+    70
   ),
   lstSubsurface(
     "lst-cir-e-1",
@@ -357,7 +357,7 @@ export const LIVERPOOL_STREET_ARRIVALS: readonly RealtimePrediction[] = [
     "Circle",
     "Eastbound - Platform 1",
     "Edgware Road (Circle)",
-    160,
+    160
   ),
   lstSubsurface(
     "lst-hc-e-1",
@@ -365,6 +365,6 @@ export const LIVERPOOL_STREET_ARRIVALS: readonly RealtimePrediction[] = [
     "Hammersmith & City",
     "Eastbound - Platform 1",
     "Barking",
-    250,
+    250
   ),
 ]

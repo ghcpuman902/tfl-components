@@ -182,7 +182,10 @@ export const canonicalLineId = (route: GtfsRoute): string => {
   return slugify(shortName || route.route_id)
 }
 
-export const callStationId = (stop: GtfsStop | undefined, stopId: string): string => {
+export const callStationId = (
+  stop: GtfsStop | undefined,
+  stopId: string
+): string => {
   const parent = stop?.parent_station?.trim()
   return parent || stopId
 }
@@ -191,9 +194,7 @@ export const parseGtfsTime = (value: string | undefined): number | null => {
   if (!value) return null
   const match = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(value.trim())
   if (!match) return null
-  return (
-    Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3] ?? 0)
-  )
+  return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3] ?? 0)
 }
 
 export const formatGtfsDate = (value: string | undefined): string => {
@@ -240,7 +241,7 @@ export const parseCsvLine = (line: string): string[] => {
 
 export const rowFromCsv = (
   header: readonly string[],
-  values: readonly string[],
+  values: readonly string[]
 ): Record<string, string> => {
   const row: Record<string, string> = {}
   for (let index = 0; index < header.length; index += 1) {
@@ -250,7 +251,7 @@ export const rowFromCsv = (
 }
 
 export async function* streamCsvRows(
-  input: import("node:stream").Readable,
+  input: import("node:stream").Readable
 ): AsyncGenerator<Record<string, string>> {
   const { createInterface } = await import("node:readline")
   const lines = createInterface({ input, crlfDelay: Infinity })
@@ -274,7 +275,11 @@ const METERS_PER_DEG_LAT = 111_320
 const metersPerDegLon = (lat: number): number =>
   METERS_PER_DEG_LAT * Math.cos((lat * Math.PI) / 180)
 
-const perpDistanceMetres = (point: LngLat, start: LngLat, end: LngLat): number => {
+const perpDistanceMetres = (
+  point: LngLat,
+  start: LngLat,
+  end: LngLat
+): number => {
   const mLon = metersPerDegLon(start[1])
   const px = (point[0] - start[0]) * mLon
   const py = (point[1] - start[1]) * METERS_PER_DEG_LAT
@@ -288,7 +293,7 @@ const perpDistanceMetres = (point: LngLat, start: LngLat, end: LngLat): number =
 
 export const simplifyLine = (
   coordinates: readonly LngLat[],
-  epsilonM: number = SHAPE_SIMPLIFY_M,
+  epsilonM: number = SHAPE_SIMPLIFY_M
 ): LngLat[] => {
   if (coordinates.length <= 2) return [...coordinates]
   const first = coordinates[0]!
@@ -310,7 +315,7 @@ export const simplifyLine = (
 
 export const assembleShape = (points: readonly GtfsShapePoint[]): LngLat[] => {
   const ordered = [...points].sort(
-    (a, b) => Number(a.shape_pt_sequence) - Number(b.shape_pt_sequence),
+    (a, b) => Number(a.shape_pt_sequence) - Number(b.shape_pt_sequence)
   )
   const coords: LngLat[] = []
   for (const point of ordered) {
@@ -344,7 +349,9 @@ const flagOn = (value: string | undefined): boolean => value === "1"
 const daysFromCalendar = (calendar: GtfsCalendar): Weekday[] =>
   WEEKDAYS.filter((day) => flagOn(calendar[day]))
 
-const dayClassesFor = (days: readonly Weekday[]): Array<"weekday" | "saturday" | "sunday"> => {
+const dayClassesFor = (
+  days: readonly Weekday[]
+): Array<"weekday" | "saturday" | "sunday"> => {
   const classes: Array<"weekday" | "saturday" | "sunday"> = []
   if (days.some((day) => WEEKDAY_SET.has(day))) classes.push("weekday")
   if (days.includes("saturday")) classes.push("saturday")
@@ -362,7 +369,7 @@ const feedHex = (value: string | undefined): string | undefined => {
 
 const colorsForLine = (
   lineId: string,
-  route: GtfsRoute,
+  route: GtfsRoute
 ): { color: string; textColor: string } => {
   const token = getLineColourToken(lineId)
   if (token) {
@@ -379,7 +386,9 @@ const colorsForLine = (
   }
 }
 
-const windowForSeconds = (seconds: number): (typeof FREQUENCY_WINDOWS)[number] | null => {
+const windowForSeconds = (
+  seconds: number
+): (typeof FREQUENCY_WINDOWS)[number] | null => {
   for (const window of FREQUENCY_WINDOWS) {
     if (seconds >= window.start && seconds < window.end) return window
   }
@@ -395,7 +404,9 @@ const median = (values: readonly number[]): number | undefined => {
     : sorted[mid]
 }
 
-const headwayFromDepartures = (seconds: readonly number[]): number | undefined => {
+const headwayFromDepartures = (
+  seconds: readonly number[]
+): number | undefined => {
   if (seconds.length < 2) return undefined
   const sorted = [...seconds].sort((a, b) => a - b)
   const gaps: number[] = []
@@ -432,11 +443,11 @@ const accumulatePatterns = (
   trips: readonly GtfsTrip[],
   stopTimes: readonly GtfsStopTime[],
   stops: readonly GtfsStop[],
-  calendars: readonly GtfsCalendar[],
+  calendars: readonly GtfsCalendar[]
 ): Map<string, PatternAcc> => {
   const routeById = new Map(keptRoutes.map((route) => [route.route_id, route]))
   const calendarById = new Map(
-    calendars.map((calendar) => [calendar.service_id, calendar]),
+    calendars.map((calendar) => [calendar.service_id, calendar])
   )
   const stopById = new Map(stops.map((stop) => [stop.stop_id, stop]))
   const tripsByRoute = new Map<string, GtfsTrip[]>()
@@ -461,10 +472,10 @@ const accumulatePatterns = (
       const rawTimes = timesByTrip.get(trip.trip_id)
       if (!rawTimes || rawTimes.length === 0) continue
       const ordered = [...rawTimes].sort(
-        (a, b) => Number(a.stop_sequence) - Number(b.stop_sequence),
+        (a, b) => Number(a.stop_sequence) - Number(b.stop_sequence)
       )
       const stationIds = ordered.map((stopTime) =>
-        callStationId(stopById.get(stopTime.stop_id), stopTime.stop_id),
+        callStationId(stopById.get(stopTime.stop_id), stopTime.stop_id)
       )
       const direction = directionLabel(trip.direction_id)
       const key = `${lineId}\0${direction}\0${stationIds.join(">")}`
@@ -505,7 +516,9 @@ const accumulatePatterns = (
   return patterns
 }
 
-const winningShapeId = (counts: ReadonlyMap<string, number>): string | undefined => {
+const winningShapeId = (
+  counts: ReadonlyMap<string, number>
+): string | undefined => {
   let bestShapeId: string | undefined
   let bestCount = 0
   for (const [shapeId, count] of counts) {
@@ -519,14 +532,17 @@ const winningShapeId = (counts: ReadonlyMap<string, number>): string | undefined
 
 /** Shape ids actually stored (one most-common shape per Elizabeth / Overground pattern). */
 export const winningShapeIds = (
-  input: Pick<BuildNetworkSnapshotInput, "routes" | "trips" | "stopTimes" | "stops" | "calendars">,
+  input: Pick<
+    BuildNetworkSnapshotInput,
+    "routes" | "trips" | "stopTimes" | "stops" | "calendars"
+  >
 ): Set<string> => {
   const patterns = accumulatePatterns(
     input.routes.filter(isKeptRoute),
     input.trips,
     input.stopTimes,
     input.stops,
-    input.calendars,
+    input.calendars
   )
   const ids = new Set<string>()
   for (const acc of patterns.values()) {
@@ -537,12 +553,12 @@ export const winningShapeIds = (
 }
 
 export const buildNetworkSnapshot = (
-  input: BuildNetworkSnapshotInput,
+  input: BuildNetworkSnapshotInput
 ): NetworkModelSnapshot => {
   const epsilonM = input.simplifyEpsilonM ?? SHAPE_SIMPLIFY_M
   const keptRoutes = input.routes.filter(isKeptRoute)
   const calendarById = new Map(
-    input.calendars.map((calendar) => [calendar.service_id, calendar]),
+    input.calendars.map((calendar) => [calendar.service_id, calendar])
   )
   const stopById = new Map(input.stops.map((stop) => [stop.stop_id, stop]))
 
@@ -554,7 +570,8 @@ export const buildNetworkSnapshot = (
     lineById.set(id, {
       id,
       shortName: route.route_short_name?.trim() || id,
-      longName: route.route_long_name?.trim() || route.route_short_name?.trim() || id,
+      longName:
+        route.route_long_name?.trim() || route.route_short_name?.trim() || id,
       mode: MODE_BY_AGENCY[route.agency_id] ?? "Rail",
       color: names.color,
       textColor: names.textColor,
@@ -580,7 +597,7 @@ export const buildNetworkSnapshot = (
     input.trips,
     input.stopTimes,
     input.stops,
-    input.calendars,
+    input.calendars
   )
 
   const servicePatterns: ServicePattern[] = []
@@ -638,7 +655,9 @@ export const buildNetworkSnapshot = (
       })
     }
 
-    for (const [dayClass, times] of [...acc.dayClassFirstStops.entries()].sort()) {
+    for (const [dayClass, times] of [
+      ...acc.dayClassFirstStops.entries(),
+    ].sort()) {
       const byWindow = new Map<string, number[]>()
       for (const seconds of times) {
         const window = windowForSeconds(seconds)
@@ -741,7 +760,11 @@ export const buildNetworkSnapshot = (
 
   const hubs: StationHub[] = [...hubMembers.entries()]
     .filter(([, members]) => members.size > 1)
-    .filter(([hubId]) => usedStationIds.has(hubId) || stations.some((station) => station.hubId === hubId))
+    .filter(
+      ([hubId]) =>
+        usedStationIds.has(hubId) ||
+        stations.some((station) => station.hubId === hubId)
+    )
     .map(([id, members]) => ({
       id,
       memberStationIds: [...members].sort(),

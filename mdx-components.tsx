@@ -1,9 +1,9 @@
-import type { MDXComponents } from "mdx/types";
-import { MdxSyntaxPre } from "@/components/docs/syntax-highlighted-code";
-import { compactMdxChildren } from "@/lib/mdx-children";
-import { getHeadingText, slugifyHeading } from "@/lib/heading-slug";
+import type { MDXComponents } from "mdx/types"
+import { MdxSyntaxPre } from "@/components/docs/syntax-highlighted-code"
+import { compactMdxChildren } from "@/lib/mdx-children"
+import { getHeadingText, slugifyHeading } from "@/lib/heading-slug"
 
-const headingLinkClass = "no-underline hover:underline";
+const headingLinkClass = "no-underline hover:underline"
 
 /**
  * MDX maps must stay RSC-only (no `"use client"` leaves). Client components
@@ -14,20 +14,17 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
     ...components,
     h1: ({ children }) => {
-      const id = slugifyHeading(getHeadingText(children)) || "heading";
+      const id = slugifyHeading(getHeadingText(children)) || "heading"
       return (
-        <h1
-          id={id}
-          className="tfl-title text-3xl"
-        >
+        <h1 id={id} className="tfl-title text-3xl">
           <a href={`#${id}`} className={headingLinkClass}>
             {children}
           </a>
         </h1>
-      );
+      )
     },
     h2: ({ children }) => {
-      const id = slugifyHeading(getHeadingText(children)) || "heading";
+      const id = slugifyHeading(getHeadingText(children)) || "heading"
       return (
         <h2
           id={id}
@@ -37,10 +34,10 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
             {children}
           </a>
         </h2>
-      );
+      )
     },
     h3: ({ children }) => {
-      const id = slugifyHeading(getHeadingText(children)) || "heading";
+      const id = slugifyHeading(getHeadingText(children)) || "heading"
       return (
         <h3
           id={id}
@@ -50,17 +47,17 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
             {children}
           </a>
         </h3>
-      );
+      )
     },
     h4: ({ children }) => {
-      const id = slugifyHeading(getHeadingText(children)) || "heading";
+      const id = slugifyHeading(getHeadingText(children)) || "heading"
       return (
         <h4 id={id} className="text-base font-medium text-foreground">
           <a href={`#${id}`} className={headingLinkClass}>
             {children}
           </a>
         </h4>
-      );
+      )
     },
 
     table: ({ children }) => (
@@ -94,9 +91,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       </td>
     ),
 
-    p: ({ children }) => (
-      <p className="max-w-prose leading-7">{children}</p>
-    ),
+    p: ({ children }) => <p className="max-w-prose leading-7">{children}</p>,
     a: ({ href, children }) => (
       <a
         href={href}
@@ -106,7 +101,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       </a>
     ),
     blockquote: ({ children }) => (
-      <blockquote className="mt-6 border-l-2 pl-6 italic text-muted-foreground">
+      <blockquote className="mt-6 border-l-2 pl-6 text-muted-foreground italic">
         {children}
       </blockquote>
     ),
@@ -123,15 +118,15 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     ),
     code: ({ children, className }) => {
       const isBlock =
-        typeof className === "string" && className.includes("language-");
+        typeof className === "string" && className.includes("language-")
       if (isBlock) {
-        return <code className={className}>{children}</code>;
+        return <code className={className}>{children}</code>
       }
       return (
         <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm">
           {children}
         </code>
-      );
+      )
     },
-  };
+  }
 }

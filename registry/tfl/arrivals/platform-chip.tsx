@@ -1,16 +1,16 @@
-import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text";
-import { cn } from "@/lib/utils";
+import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text"
+import { cn } from "@/lib/utils"
 
 export type PlatformChipProps = {
   /** Platform number / letter as shown after “Platform” (e.g. `"1"`, `"A"`). */
-  number: string;
-  className?: string;
+  number: string
+  className?: string
   /**
    * Always paint `P{n}`. Use on a row when the subgroup heading is not the
    * platform (platforms vary inside the bound). Default is the width ladder.
    */
-  compact?: boolean;
-};
+  compact?: boolean
+}
 
 /**
  * Rail platform chip. Visual form steps with board width via `@container/arrivals`;
@@ -35,8 +35,8 @@ export const PlatformChip = ({
 }: PlatformChipProps) => (
   <span
     className={cn(
-      "inline-flex h-5 shrink-0 items-center justify-center bg-muted-foreground px-1.5 text-xs font-semibold tabular-nums text-background",
-      className,
+      "inline-flex h-5 shrink-0 items-center justify-center bg-muted-foreground px-1.5 text-xs font-semibold text-background tabular-nums",
+      className
     )}
     aria-label={`Platform ${number}`}
   >
@@ -47,7 +47,10 @@ export const PlatformChip = ({
     ) : (
       <>
         <span
-          className={cn("@min-[11rem]/arrivals:hidden", CHIP_CAP_TEXT_BOX_CLASS)}
+          className={cn(
+            "@min-[11rem]/arrivals:hidden",
+            CHIP_CAP_TEXT_BOX_CLASS
+          )}
           aria-hidden
         >
           {number}
@@ -55,7 +58,7 @@ export const PlatformChip = ({
         <span
           className={cn(
             "hidden @min-[11rem]/arrivals:inline @min-[12.5rem]/arrivals:hidden",
-            CHIP_CAP_TEXT_BOX_CLASS,
+            CHIP_CAP_TEXT_BOX_CLASS
           )}
           aria-hidden
         >
@@ -64,7 +67,7 @@ export const PlatformChip = ({
         <span
           className={cn(
             "hidden @min-[12.5rem]/arrivals:inline @min-[14rem]/arrivals:hidden",
-            CHIP_CAP_TEXT_BOX_CLASS,
+            CHIP_CAP_TEXT_BOX_CLASS
           )}
           aria-hidden
         >
@@ -73,7 +76,7 @@ export const PlatformChip = ({
         <span
           className={cn(
             "hidden @min-[14rem]/arrivals:inline",
-            CHIP_CAP_TEXT_BOX_CLASS,
+            CHIP_CAP_TEXT_BOX_CLASS
           )}
           aria-hidden
         >
@@ -82,4 +85,4 @@ export const PlatformChip = ({
       </>
     )}
   </span>
-);
+)

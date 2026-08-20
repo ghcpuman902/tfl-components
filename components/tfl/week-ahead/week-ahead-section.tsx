@@ -1,28 +1,28 @@
-import { Suspense } from "react";
-import { connection } from "next/server";
-import { WeekAheadLineSkeleton } from "@/components/tfl/week-ahead/week-ahead-skeleton";
+import { Suspense } from "react"
+import { connection } from "next/server"
+import { WeekAheadLineSkeleton } from "@/components/tfl/week-ahead/week-ahead-skeleton"
 import {
   WeekAheadLineRow,
   WeekAheadShell,
   WeekAheadStatusHydrator,
-} from "@/components/tfl/week-ahead/week-ahead-view";
+} from "@/components/tfl/week-ahead/week-ahead-view"
 import {
   getCachedLineRoute,
   getCachedWeekAheadStatuses,
-} from "@/lib/tfl/week-ahead-data";
-import { buildWeekAheadDays } from "@/lib/tfl/london-dates";
+} from "@/lib/tfl/week-ahead-data"
+import { buildWeekAheadDays } from "@/lib/tfl/london-dates"
 import {
   WEEK_AHEAD_LINE_IDS,
   type WeekAheadLineId,
-} from "@/lib/tfl/week-ahead-status";
+} from "@/lib/tfl/week-ahead-status"
 
 /**
  * Request-time “today”, then paint the shell immediately.
  * Each line streams under its own Suspense; status is a separate cache.
  */
 async function WeekAheadBody() {
-  await connection();
-  const range = buildWeekAheadDays(new Date());
+  await connection()
+  const range = buildWeekAheadDays(new Date())
 
   return (
     <WeekAheadShell days={range.days}>
@@ -44,24 +44,24 @@ async function WeekAheadBody() {
         />
       </Suspense>
     </WeekAheadShell>
-  );
+  )
 }
 
 async function WeekAheadLineSlot({ lineId }: { lineId: WeekAheadLineId }) {
-  const route = await getCachedLineRoute(lineId);
-  return <WeekAheadLineRow route={route} />;
+  const route = await getCachedLineRoute(lineId)
+  return <WeekAheadLineRow route={route} />
 }
 
 async function WeekAheadStatusSlot({
   startDate,
   endDate,
 }: {
-  startDate: string;
-  endDate: string;
+  startDate: string
+  endDate: string
 }) {
-  const status = await getCachedWeekAheadStatuses(startDate, endDate);
-  return <WeekAheadStatusHydrator status={status} />;
+  const status = await getCachedWeekAheadStatuses(startDate, endDate)
+  return <WeekAheadStatusHydrator status={status} />
 }
 
 /** Homepage introduction — shell + routes first; live status overlays later. */
-export const WeekAheadSection = () => <WeekAheadBody />;
+export const WeekAheadSection = () => <WeekAheadBody />

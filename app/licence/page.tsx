@@ -1,22 +1,13 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { SiteProsePage } from "@/components/site-prose-page";
-import { GITHUB_REPO } from "@/lib/feedback/constants";
-import { SITE_INDEPENDENCE } from "@/lib/site";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { SiteProsePage } from "@/components/site-prose-page"
+import { GITHUB_REPO } from "@/lib/feedback/constants"
+import { SITE_INDEPENDENCE } from "@/lib/site"
+import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
-  title: "Licence",
-  description:
-    "MIT for installable React components. TfL marks and datasets stay under their own terms.",
-};
+export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.licence)
 
-const External = ({
-  href,
-  children,
-}: {
-  href: string;
-  children: string;
-}) => (
+const External = ({ href, children }: { href: string; children: string }) => (
   <a
     href={href}
     className="text-foreground underline underline-offset-4"
@@ -25,7 +16,7 @@ const External = ({
   >
     {children}
   </a>
-);
+)
 
 export default function LicencePage() {
   return (
@@ -40,8 +31,7 @@ export default function LicencePage() {
           Reusable component source
         </h2>
         <p>
-          Files under{" "}
-          <code className="text-xs">registry/tfl/</code> and the{" "}
+          Files under <code className="text-xs">registry/tfl/</code> and the{" "}
           <code className="text-xs">lib/tfl</code> helpers those registry items
           declare are MIT. Keep the copyright notice with copied files. The
           licence text is{" "}
@@ -63,8 +53,8 @@ export default function LicencePage() {
         <p>
           The Next.js docs site, Board builder chrome, feedback UI, and other
           app code around the registry are not licensed as MIT by this notice.
-          Read them on GitHub. Do not treat a component install as a licence
-          for the whole website.
+          Read them on GitHub. Do not treat a component install as a licence for
+          the whole website.
         </p>
       </section>
 
@@ -100,5 +90,5 @@ export default function LicencePage() {
         </p>
       </section>
     </SiteProsePage>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   createContext,
@@ -7,66 +7,66 @@ import {
   useEffect,
   useState,
   type ReactNode,
-} from "react";
+} from "react"
 
-export type FontPreference = "default" | "p22";
+export type FontPreference = "default" | "p22"
 
-const STORAGE_KEY = "tfl-font-pref";
+const STORAGE_KEY = "tfl-font-pref"
 
 type FontPreferenceContextValue = {
-  font: FontPreference;
-  setFont: (font: FontPreference) => void;
-  adobeFontsConfigured: boolean;
-};
+  font: FontPreference
+  setFont: (font: FontPreference) => void
+  adobeFontsConfigured: boolean
+}
 
 const FontPreferenceContext = createContext<FontPreferenceContextValue | null>(
-  null,
-);
+  null
+)
 
 const typekitHref = (): string | null => {
-  const kitId = process.env.NEXT_PUBLIC_ADOBE_FONTS_KIT_ID;
-  return kitId ? `https://use.typekit.net/${kitId}.css` : null;
-};
+  const kitId = process.env.NEXT_PUBLIC_ADOBE_FONTS_KIT_ID
+  return kitId ? `https://use.typekit.net/${kitId}.css` : null
+}
 
 /** Ensure P22 kit CSS is present without blocking the default Hammersmith path. */
 const ensureTypekitStylesheet = () => {
-  const href = typekitHref();
-  if (!href || typeof document === "undefined") return;
+  const href = typekitHref()
+  if (!href || typeof document === "undefined") return
 
   const existing = document.querySelector<HTMLLinkElement>(
-    `link[data-tfl-typekit="true"]`,
-  );
-  if (existing) return;
+    `link[data-tfl-typekit="true"]`
+  )
+  if (existing) return
 
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = href;
-  link.dataset.tflTypekit = "true";
-  link.media = "print";
+  const link = document.createElement("link")
+  link.rel = "stylesheet"
+  link.href = href
+  link.dataset.tflTypekit = "true"
+  link.media = "print"
   link.onload = () => {
-    link.media = "all";
-  };
-  document.head.appendChild(link);
-};
+    link.media = "all"
+  }
+  document.head.appendChild(link)
+}
 
 const applyFontAttributes = (
   font: FontPreference,
-  adobeFontsConfigured: boolean,
+  adobeFontsConfigured: boolean
 ) => {
-  document.documentElement.removeAttribute("data-tfl-type-profile");
+  document.documentElement.removeAttribute("data-tfl-type-profile")
 
   if (font === "p22" && adobeFontsConfigured) {
-    ensureTypekitStylesheet();
-    document.documentElement.setAttribute("data-font", "p22");
+    ensureTypekitStylesheet()
+    document.documentElement.setAttribute("data-font", "p22")
     document.documentElement.setAttribute(
       "data-tfl-type-profile",
-      "johnston-compatible",
-    );
-    return;
+      "johnston-compatible"
+    )
+    return
   }
 
-  document.documentElement.removeAttribute("data-font");
-};
+  document.documentElement.removeAttribute("data-font")
+}
 
 /**
  * Site-wide body font switch (default Hammersmith One vs Adobe Fonts P22
@@ -76,26 +76,26 @@ export const FontPreferenceProvider = ({
   children,
   adobeFontsConfigured,
 }: {
-  children: ReactNode;
-  adobeFontsConfigured: boolean;
+  children: ReactNode
+  adobeFontsConfigured: boolean
 }) => {
-  const [font, setFontState] = useState<FontPreference>("default");
+  const [font, setFontState] = useState<FontPreference>("default")
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    const stored = window.localStorage.getItem(STORAGE_KEY)
     const initialFont =
-      stored === "p22" && adobeFontsConfigured ? "p22" : "default";
-    startTransition(() => setFontState(initialFont));
-    applyFontAttributes(initialFont, adobeFontsConfigured);
-  }, [adobeFontsConfigured]);
+      stored === "p22" && adobeFontsConfigured ? "p22" : "default"
+    startTransition(() => setFontState(initialFont))
+    applyFontAttributes(initialFont, adobeFontsConfigured)
+  }, [adobeFontsConfigured])
 
   const setFont = (next: FontPreference) => {
     const selectedFont =
-      next === "p22" && !adobeFontsConfigured ? "default" : next;
-    setFontState(selectedFont);
-    applyFontAttributes(selectedFont, adobeFontsConfigured);
-    window.localStorage.setItem(STORAGE_KEY, selectedFont);
-  };
+      next === "p22" && !adobeFontsConfigured ? "default" : next
+    setFontState(selectedFont)
+    applyFontAttributes(selectedFont, adobeFontsConfigured)
+    window.localStorage.setItem(STORAGE_KEY, selectedFont)
+  }
 
   return (
     <FontPreferenceContext.Provider
@@ -107,15 +107,15 @@ export const FontPreferenceProvider = ({
     >
       {children}
     </FontPreferenceContext.Provider>
-  );
-};
+  )
+}
 
 export const useFontPreference = (): FontPreferenceContextValue => {
-  const context = useContext(FontPreferenceContext);
+  const context = useContext(FontPreferenceContext)
   if (!context) {
     throw new Error(
-      "useFontPreference must be used within FontPreferenceProvider",
-    );
+      "useFontPreference must be used within FontPreferenceProvider"
+    )
   }
-  return context;
-};
+  return context
+}

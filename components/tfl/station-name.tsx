@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   Fragment,
@@ -8,83 +8,83 @@ import {
   useState,
   type CSSProperties,
   type ReactNode,
-} from "react";
-import { cn } from "@/lib/utils";
-import { FindableText } from "@/components/tfl/findable-text";
+} from "react"
+import { cn } from "@/lib/utils"
+import { FindableText } from "@/components/tfl/findable-text"
 import {
   approximateStationMeasure,
   createCanvasStationMeasure,
   formatStationLabel,
   resolveSansFontFamily,
   type StationLabelFormatResult,
-} from "@/lib/tfl/station-typography";
-import { formatStationName } from "@/lib/tfl/diagram-station";
+} from "@/lib/tfl/station-typography"
+import { formatStationName } from "@/lib/tfl/diagram-station"
 import {
   findCompletionForToken,
   stationCopyName,
   stationFindAliases,
   stationFindCoveredPhrases,
-} from "@/lib/tfl/station-label-find";
+} from "@/lib/tfl/station-label-find"
 
-export type StationNameLayout = "fixed" | "auto";
+export type StationNameLayout = "fixed" | "auto"
 
 export type StationNameProps = {
-  name: string;
-  className?: string;
-  style?: CSSProperties;
+  name: string
+  className?: string
+  style?: CSSProperties
   /**
    * Explicit visual lines (editorial / crowding recipes).
    * When set, skips auto word-break selection.
    */
-  lines?: readonly string[];
+  lines?: readonly string[]
   /**
    * `fixed` (default): use `lines` or a single canonical line — no measure/scale.
    * `auto`: measure the box and pick 1–2 lines / abbr / scale via formatStationLabel.
    */
-  layout?: StationNameLayout;
+  layout?: StationNameLayout
   /**
    * When set with `layout="auto"`, labels measure against this width instead
    * of the container. Useful for fixed diagram columns.
    */
-  maxWidth?: number;
-  fontSize?: number;
-  maxLines?: 1 | 2;
-  allowAbbreviation?: boolean;
-  allowScaleDown?: boolean;
-  minScale?: number;
+  maxWidth?: number
+  fontSize?: number
+  maxLines?: 1 | 2
+  allowAbbreviation?: boolean
+  allowScaleDown?: boolean
+  minScale?: number
   /**
    * @deprecated Prefer `lines`. Kept for call-site compatibility.
    */
-  forcedLines?: readonly string[];
+  forcedLines?: readonly string[]
   /**
    * Canonical single-line name for aria + copy. Defaults to `formatStationName`.
    */
-  accessibleName?: string;
+  accessibleName?: string
   /**
    * @deprecated No longer required — find/copy/aria always use the canonical name.
    */
-  abbreviatedVisual?: boolean;
+  abbreviatedVisual?: boolean
   /** Align text within the label block. */
-  align?: "left" | "center" | "right";
+  align?: "left" | "center" | "right"
   /** Expose format diagnostics to a parent (typography lab). */
-  onFormat?: (result: StationLabelFormatResult) => void;
-};
+  onFormat?: (result: StationLabelFormatResult) => void
+}
 
 /** @deprecated Use `StationNameProps`. */
-export type StationNameLabelProps = StationNameProps;
+export type StationNameLabelProps = StationNameProps
 
 type SizeState = {
-  width: number;
-  fontSize: number;
-  fontFamily: string;
-  measured: boolean;
-};
+  width: number
+  fontSize: number
+  fontFamily: string
+  measured: boolean
+}
 
-const WIDTH_EPSILON = 0.5;
-const FONT_EPSILON = 0.05;
-const FALLBACK_FONT = "Hammersmith One, system-ui, sans-serif";
+const WIDTH_EPSILON = 0.5
+const FONT_EPSILON = 0.05
+const FALLBACK_FONT = "Hammersmith One, system-ui, sans-serif"
 /** Unitless so wrapped lines stay clustered when `scale` shrinks font-size. */
-const MULTILINE_LINE_HEIGHT = 1.15;
+const MULTILINE_LINE_HEIGHT = 1.15
 
 /**
  * Invisible inline completion (e.g. St + "reet" → Street) for engines that
@@ -94,28 +94,28 @@ const FindExpand = ({ text }: { text: string }) => (
   <span className="text-[0px] leading-none" aria-hidden="true">
     {text}
   </span>
-);
+)
 
 const renderFindableLine = (line: string): ReactNode[] =>
   line.split(/(\s+|&)/).map((part, index) => {
-    if (!part) return null;
-    const completion = findCompletionForToken(part);
+    if (!part) return null
+    const completion = findCompletionForToken(part)
     if (!completion) {
-      return <Fragment key={`${part}-${index}`}>{part}</Fragment>;
+      return <Fragment key={`${part}-${index}`}>{part}</Fragment>
     }
     return (
       <Fragment key={`${part}-${index}`}>
         {part}
         <FindExpand text={completion} />
       </Fragment>
-    );
-  });
+    )
+  })
 
 const fixedResult = (
   name: string,
-  lines?: readonly string[],
+  lines?: readonly string[]
 ): StationLabelFormatResult => {
-  const displayName = formatStationName(name);
+  const displayName = formatStationName(name)
   if (lines && lines.length > 0) {
     return {
       lines: [...lines],
@@ -123,7 +123,7 @@ const fixedResult = (
       abbreviated: lines.join(" ") !== displayName,
       fits: true,
       displayName,
-    };
+    }
   }
   return {
     lines: [displayName],
@@ -131,8 +131,8 @@ const fixedResult = (
     abbreviated: false,
     fits: true,
     displayName,
-  };
-};
+  }
+}
 
 /**
  * Station name UI contract: canonical copy / aria, find-in-page variants,
@@ -159,41 +159,40 @@ export const StationName = ({
   align = "left",
   onFormat,
 }: StationNameProps) => {
-  const ref = useRef<HTMLSpanElement>(null);
-  const visualLines = linesProp ?? forcedLines;
-  const useAuto = layout === "auto";
+  const ref = useRef<HTMLSpanElement>(null)
+  const visualLines = linesProp ?? forcedLines
+  const useAuto = layout === "auto"
   const hasFixedMetrics =
-    useAuto && maxWidthProp != null && maxWidthProp > 0 && fontSizeProp != null;
-  const copyName = stationCopyName(name, accessibleNameProp);
+    useAuto && maxWidthProp != null && maxWidthProp > 0 && fontSizeProp != null
+  const copyName = stationCopyName(name, accessibleNameProp)
 
   const [size, setSize] = useState<SizeState>(() => ({
     width: maxWidthProp ?? 0,
     fontSize: fontSizeProp ?? 16,
     fontFamily: FALLBACK_FONT,
     measured: false,
-  }));
+  }))
 
   useEffect(() => {
-    if (!useAuto) return;
-    const el = ref.current;
-    if (!el) return;
+    if (!useAuto) return
+    const el = ref.current
+    if (!el) return
 
-    let cancelled = false;
-    const container = el.parentElement;
+    let cancelled = false
+    const container = el.parentElement
 
     const readMetrics = () => {
-      if (cancelled) return;
+      if (cancelled) return
 
       const width =
         maxWidthProp ??
         (container && container.clientWidth > 0
           ? container.clientWidth
-          : el.clientWidth);
+          : el.clientWidth)
 
       const measuredFont =
-        fontSizeProp ??
-        (Number.parseFloat(getComputedStyle(el).fontSize) || 16);
-      const fontFamily = resolveSansFontFamily(el);
+        fontSizeProp ?? (Number.parseFloat(getComputedStyle(el).fontSize) || 16)
+      const fontFamily = resolveSansFontFamily(el)
 
       setSize((prev) => {
         if (
@@ -202,42 +201,42 @@ export const StationName = ({
           Math.abs(prev.fontSize - measuredFont) < FONT_EPSILON &&
           prev.fontFamily === fontFamily
         ) {
-          return prev;
+          return prev
         }
         return {
           width,
           fontSize: measuredFont,
           fontFamily,
           measured: true,
-        };
-      });
-    };
+        }
+      })
+    }
 
     const waitFonts = async () => {
       try {
-        if (document.fonts?.ready) await document.fonts.ready;
+        if (document.fonts?.ready) await document.fonts.ready
       } catch {
         // Ignore font loading errors; approximate measure still works.
       }
-      readMetrics();
-    };
+      readMetrics()
+    }
 
-    void waitFonts();
+    void waitFonts()
 
-    const observer = new ResizeObserver(() => readMetrics());
-    if (container) observer.observe(container);
-    else observer.observe(el);
+    const observer = new ResizeObserver(() => readMetrics())
+    if (container) observer.observe(container)
+    else observer.observe(el)
 
     return () => {
-      cancelled = true;
-      observer.disconnect();
-    };
-  }, [fontSizeProp, maxWidthProp, name, useAuto]);
+      cancelled = true
+      observer.disconnect()
+    }
+  }, [fontSizeProp, maxWidthProp, name, useAuto])
 
   const measure = useMemo(() => {
-    if (!useAuto || !size.measured) return approximateStationMeasure;
-    return createCanvasStationMeasure(size.fontFamily);
-  }, [size.fontFamily, size.measured, useAuto]);
+    if (!useAuto || !size.measured) return approximateStationMeasure
+    return createCanvasStationMeasure(size.fontFamily)
+  }, [size.fontFamily, size.measured, useAuto])
 
   const formatOptions = useMemo(
     () => ({
@@ -257,20 +256,20 @@ export const StationName = ({
       minScale,
       size.fontSize,
       size.width,
-    ],
-  );
+    ]
+  )
 
   const result = useMemo(() => {
-    if (!useAuto) return fixedResult(name, visualLines);
+    if (!useAuto) return fixedResult(name, visualLines)
 
     // Unmeasured (or a ~0px slot) stays at full size. Pretending the box is
     // 1px wide forced minScale on every first paint, then a shrink-wrapped
     // parent ratcheted that small size even when the heading had room.
     // Tiles clip overflow; scale down only after a real slot width exists.
     if (!hasFixedMetrics && (!size.measured || size.width <= 4)) {
-      return fixedResult(name, visualLines);
+      return fixedResult(name, visualLines)
     }
-    return formatStationLabel(name, measure, formatOptions);
+    return formatStationLabel(name, measure, formatOptions)
   }, [
     formatOptions,
     hasFixedMetrics,
@@ -280,37 +279,37 @@ export const StationName = ({
     size.width,
     useAuto,
     visualLines,
-  ]);
+  ])
 
   useEffect(() => {
     if (!useAuto) {
-      onFormat?.(result);
-      return;
+      onFormat?.(result)
+      return
     }
-    if (!size.measured || size.width <= 0) return;
-    onFormat?.(result);
-  }, [onFormat, result, size.measured, size.width, useAuto]);
+    if (!size.measured || size.width <= 0) return
+    onFormat?.(result)
+  }, [onFormat, result, size.measured, size.width, useAuto])
 
   const coveredPhrases = useMemo(
     () => stationFindCoveredPhrases(result.lines),
-    [result.lines],
-  );
+    [result.lines]
+  )
   const findAliases = useMemo(
     () => stationFindAliases(copyName, result.lines),
-    [copyName, result.lines],
-  );
+    [copyName, result.lines]
+  )
 
   const textAlign =
-    align === "center" ? "center" : align === "right" ? "right" : "left";
-  const multiline = result.lines.length > 1;
+    align === "center" ? "center" : align === "right" ? "right" : "left"
+  const multiline = result.lines.length > 1
 
   const paintDiffersFromCopy =
     multiline ||
     result.abbreviated ||
-    result.lines.join(" ").replace(/\s+/g, " ").trim() !== copyName;
+    result.lines.join(" ").replace(/\s+/g, " ").trim() !== copyName
   const extraFindAliases = findAliases.filter(
-    (alias) => alias.toLowerCase() !== copyName.toLowerCase(),
-  );
+    (alias) => alias.toLowerCase() !== copyName.toLowerCase()
+  )
 
   return (
     <FindableText
@@ -326,7 +325,7 @@ export const StationName = ({
         align === "center" && "items-center",
         align === "right" && "items-end",
         align === "left" && "items-start",
-        className,
+        className
       )}
       style={{
         ...style,
@@ -365,8 +364,8 @@ export const StationName = ({
         ))}
       </span>
     </FindableText>
-  );
-};
+  )
+}
 
 /**
  * Flex slot for board identity titles (stop name, cycle area, status group).
@@ -374,7 +373,7 @@ export const StationName = ({
  * width (`flex-1 min-w-0`), not shrink-wrapped to the glyphs.
  */
 export const STATION_NAME_TITLE_SLOT_CLASS =
-  "flex h-full min-w-0 flex-1 items-center";
+  "flex h-full min-w-0 flex-1 items-center"
 
 /**
  * Trim the line box to cap-height → alphabetic baseline (not full
@@ -385,7 +384,7 @@ export const STATION_NAME_TITLE_SLOT_CLASS =
  * (`CHIP_CAP_TEXT_BOX_CLASS`), applied here at title scale.
  */
 const STATION_NAME_TITLE_CLASS =
-  "justify-center leading-none [text-box:trim-both_cap_alphabetic]";
+  "justify-center leading-none [text-box:trim-both_cap_alphabetic]"
 
 /** One-line auto-fit name for board identity rows. Visual only — set `aria-label` on the heading. */
 export const StationNameTitle = ({
@@ -393,16 +392,16 @@ export const StationNameTitle = ({
   className,
   end,
 }: {
-  name: string;
-  className?: string;
+  name: string
+  className?: string
   /** Sits after the name (e.g. disruption chips). The slot stays `flex-1` so auto-fit still measures leftover width. */
-  end?: ReactNode;
+  end?: ReactNode
 }) => (
   <span
     className={cn(
       STATION_NAME_TITLE_SLOT_CLASS,
       end != null && "gap-x-1.5",
-      className,
+      className
     )}
   >
     <span aria-hidden="true" className="contents">
@@ -414,13 +413,13 @@ export const StationNameTitle = ({
         allowScaleDown
         className={cn(
           STATION_NAME_TITLE_CLASS,
-          end != null && "w-auto flex-none",
+          end != null && "w-auto flex-none"
         )}
       />
     </span>
     {end}
   </span>
-);
+)
 
 /** @deprecated Prefer `StationName`. */
-export const StationNameLabel = StationName;
+export const StationNameLabel = StationName

@@ -40,8 +40,7 @@ export const ObservationTime = ({
     return <span>{fallback}</span>
   }
 
-  const label =
-    now == null ? null : formatObservationAge(atMs, now)
+  const label = now == null ? null : formatObservationAge(atMs, now)
 
   return (
     <time

@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { redirect } from "next/navigation"
 
 export default function BranchStripRedirect() {
-  redirect("/docs/branch-strip-horizontal");
+  redirect("/docs/branch-strip-horizontal")
 }

@@ -36,10 +36,7 @@ const normaliseDisruptionLineId = (raw: string): string => {
  * real whitespace. Collapse both into single spaces.
  */
 const cleanDescription = (raw: string | undefined): string =>
-  (raw ?? "")
-    .replace(/\\+n/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
+  (raw ?? "").replace(/\\+n/g, " ").replace(/\s+/g, " ").trim()
 
 /**
  * Normalise stop-point disruptions into per-route warnings a bus board can

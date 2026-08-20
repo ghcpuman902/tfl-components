@@ -1,18 +1,18 @@
-import Link from "next/link";
-import type { DocsEntry } from "@/lib/docs-catalog";
-import { getEntriesByGroup } from "@/lib/docs-catalog";
-import { DocsPageHeader } from "@/components/docs/docs-page-header";
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
+import Link from "next/link"
+import type { DocsEntry } from "@/lib/docs-catalog"
+import { getEntriesByGroup } from "@/lib/docs-catalog"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 
 type SectionHubProps = {
-  entry: DocsEntry;
-  purpose: string;
+  entry: DocsEntry
+  purpose: string
   /** Unfinished second-level ideas — shown as Coming soon. */
-  comingSoon?: readonly string[];
-  relatedHrefs?: readonly { href: string; label: string }[];
+  comingSoon?: readonly string[]
+  relatedHrefs?: readonly { href: string; label: string }[]
   /** Optional notice above the header (e.g. Explorer WIP). */
-  banner?: React.ReactNode;
-};
+  banner?: React.ReactNode
+}
 
 export const SectionHub = ({
   entry,
@@ -22,8 +22,8 @@ export const SectionHub = ({
   banner,
 }: SectionHubProps) => {
   const siblings = getEntriesByGroup(entry.group).filter(
-    (item) => item.slug !== entry.slug,
-  );
+    (item) => item.slug !== entry.slug
+  )
 
   return (
     <DocsReadableWidth>
@@ -97,5 +97,5 @@ export const SectionHub = ({
         ) : null}
       </article>
     </DocsReadableWidth>
-  );
-};
+  )
+}

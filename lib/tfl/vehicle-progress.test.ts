@@ -124,7 +124,10 @@ describe("positionApproachingStop", () => {
 
 describe("vehicleSpeedMetersPerSec", () => {
   it("makes Elizabeth faster than Tube stock", () => {
-    assert.ok(vehicleSpeedMetersPerSec("elizabeth") > vehicleSpeedMetersPerSec("victoria"))
+    assert.ok(
+      vehicleSpeedMetersPerSec("elizabeth") >
+        vehicleSpeedMetersPerSec("victoria")
+    )
   })
 
   it("treats numbered routes as buses", () => {
@@ -134,7 +137,9 @@ describe("vehicleSpeedMetersPerSec", () => {
 
 describe("vehicleLengthMeters", () => {
   it("makes Elizabeth longer than Tube stock", () => {
-    assert.ok(vehicleLengthMeters("elizabeth") > vehicleLengthMeters("victoria"))
+    assert.ok(
+      vehicleLengthMeters("elizabeth") > vehicleLengthMeters("victoria")
+    )
   })
 
   it("treats numbered routes as buses", () => {
@@ -184,7 +189,7 @@ describe("remainingKmForHop", () => {
         hopKm: 1.2,
         hopMinutes: 2,
       }),
-      0.6,
+      0.6
     )
   })
 
@@ -211,7 +216,7 @@ describe("pickHopPolyline", () => {
         { lineId: "victoria", line: LONG_EAST_LINE },
       ],
       "A",
-      "B",
+      "B"
     )
     assert.ok(hop)
     assert.equal(hop.fromStationId, "A")

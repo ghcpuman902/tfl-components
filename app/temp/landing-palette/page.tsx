@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 const svg = readFileSync(
   join(process.cwd(), "public/images/landing/landing-palette.svg"),
-  "utf8",
+  "utf8"
 )
 
 export default function LandingPaletteTempPage() {

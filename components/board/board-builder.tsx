@@ -1,10 +1,6 @@
 "use client"
 
-import {
-  useMemo,
-  useState,
-  useSyncExternalStore,
-} from "react"
+import { useMemo, useState, useSyncExternalStore } from "react"
 import { ChevronDownIcon } from "lucide-react"
 import { BoardConfigForm } from "@/components/board/board-config-form"
 import { BoardUrlLegend } from "@/components/board/board-url-legend"
@@ -37,10 +33,7 @@ import {
   type BoardStationSearchItem,
 } from "@/lib/tfl/board-station-names"
 import { getBoardNearbyPlaces } from "@/lib/tfl/board-nearby-action"
-import {
-  boardSlotsInclude,
-  resolveBoardSlots,
-} from "@/lib/tfl/board-panels"
+import { boardSlotsInclude, resolveBoardSlots } from "@/lib/tfl/board-panels"
 import {
   applyBoardRecipe,
   BOARD_PRESETS,
@@ -50,9 +43,18 @@ import {
   type BoardPresetId,
 } from "@/lib/tfl/board-presets"
 import type { BoardSettingId } from "@/lib/tfl/board-settings"
+import { BoardQrDialog } from "@/components/board/board-qr-dialog"
+import { Switch } from "@/components/ui/switch"
+import {
+  BOARD_KEY_MODE_LABEL,
+  boardConfigForShare,
+  boardKeyModeFromPersist,
+  buildShareableBoardHref,
+  buildShareableBoardUrl,
+  type BoardKeyMode,
+} from "@/lib/tfl/board-share"
 import {
   BOARD_VIEW_PATH,
-  buildBoardHref,
   describeBoardHrefSegments,
   DEFAULT_BOARD_CONFIG,
   type BoardConfig,
@@ -137,10 +139,8 @@ const PresetDiagram = ({ preset }: { preset: BoardPresetId }) => {
   )
 }
 
-const PRESET_FEEDBACK_MOTION =
-  "duration-300 ease-[cubic-bezier(0.05,0,0,1)]"
-const PRESET_COLOR_MOTION =
-  "duration-200 ease-[cubic-bezier(0.05,0,0,1)]"
+const PRESET_FEEDBACK_MOTION = "duration-300 ease-[cubic-bezier(0.05,0,0,1)]"
+const PRESET_COLOR_MOTION = "duration-200 ease-[cubic-bezier(0.05,0,0,1)]"
 
 const PresetCardFeedback = () => (
   <>
@@ -149,7 +149,7 @@ const PresetCardFeedback = () => (
       className={cn(
         "pointer-events-none absolute inset-0 z-0 rounded-2xl bg-foreground/13 opacity-0 transition-opacity",
         PRESET_FEEDBACK_MOTION,
-        "group-hover/preset:opacity-100 group-focus-within/preset:opacity-100"
+        "group-focus-within/preset:opacity-100 group-hover/preset:opacity-100"
       )}
     />
     <span
@@ -173,16 +173,14 @@ const PresetCard = ({
   onSelect: () => void
 }) => (
   <li
-    className="group/preset relative isolate z-0 shrink-0 snap-start px-1.5 py-3 first:pl-3 last:pr-3 hover:z-10 focus-within:z-10"
+    className="group/preset relative isolate z-0 shrink-0 snap-start px-1.5 py-3 first:pl-3 last:pr-3 focus-within:z-10 hover:z-10"
     aria-current={active ? "true" : undefined}
   >
     <PresetCardFeedback />
     <Card
       className={cn(
         "relative z-10 h-full w-[82vw] max-w-84 gap-3 py-3 sm:w-80",
-        active
-          ? "ring-2 ring-primary"
-          : "bg-muted/30 text-muted-foreground"
+        active ? "ring-2 ring-primary" : "bg-muted/30 text-muted-foreground"
       )}
     >
       <button
@@ -202,14 +200,18 @@ const PresetCard = ({
           className={cn(
             "transition-colors",
             PRESET_COLOR_MOTION,
-            "group-hover/preset:text-foreground group-focus-within/preset:text-foreground"
+            "group-focus-within/preset:text-foreground group-hover/preset:text-foreground"
           )}
         >
           {preset.description}
         </CardDescription>
         <CardAction>
           <Badge variant={preset.available ? "default" : "secondary"}>
-            {preset.available ? (active ? "Current" : "Available") : "Not yet available"}
+            {preset.available
+              ? active
+                ? "Current"
+                : "Available"
+              : "Not yet available"}
           </Badge>
         </CardAction>
       </CardHeader>
@@ -242,14 +244,21 @@ export const BoardBuilder = ({
     error,
     getAppKey,
     openDialog,
+    save,
   } = useUserTflCredentials()
   const { scrollRef, showEndFade } = useHorizontalScrollEnd<HTMLUListElement>()
 
-  const [presetId, setPresetId] = useState<BoardPresetId>(DEFAULT_BOARD_PRESET_ID)
+  const [presetId, setPresetId] = useState<BoardPresetId>(
+    DEFAULT_BOARD_PRESET_ID
+  )
   const [config, setConfig] = useState<BoardConfig>(initialBoardConfig)
   const [configOpen, setConfigOpen] = useState(false)
   const [locateBusy, setLocateBusy] = useState(false)
   const [locateError, setLocateError] = useState<string | null>(null)
+  const [keyModeOverride, setKeyModeOverride] = useState<BoardKeyMode | null>(
+    null,
+  )
+  const [qrOpen, setQrOpen] = useState(false)
   const origin = useSyncExternalStore(
     subscribeToOrigin,
     getBrowserOrigin,
@@ -302,20 +311,40 @@ export const BoardBuilder = ({
       stopName: resolveBoardStopNameOverride(config.stopName, autoStopName),
       key: appKey.trim() || undefined,
     }),
-    [config, appKey, autoStopName],
+    [config, appKey, autoStopName]
   )
 
-  const href = useMemo(() => buildBoardHref(forUrl), [forUrl])
+  const inferredKeyMode = boardKeyModeFromPersist(
+    hydrated ? persistMode : undefined,
+    hasKey,
+  )
+  const keyMode = keyModeOverride ?? inferredKeyMode
+
+  const shareConfig = useMemo(
+    () => boardConfigForShare(forUrl, keyMode),
+    [forUrl, keyMode]
+  )
+
+  const href = useMemo(
+    () => buildShareableBoardHref(forUrl, keyMode),
+    [forUrl, keyMode]
+  )
 
   const segments = useMemo(
-    () => describeBoardHrefSegments(forUrl),
-    [forUrl],
+    () => describeBoardHrefSegments(shareConfig),
+    [shareConfig]
   )
 
-  const absoluteUrl = origin ? `${origin}${href}` : href
-  const legendPath = origin
-    ? `${origin}${BOARD_VIEW_PATH}`
-    : BOARD_VIEW_PATH
+  const absoluteUrl = buildShareableBoardUrl(origin, forUrl, keyMode)
+  const legendPath = origin ? `${origin}${BOARD_VIEW_PATH}` : BOARD_VIEW_PATH
+
+  const handleKeyModeChange = (checked: boolean) => {
+    const nextMode: BoardKeyMode = checked ? "browser" : "portable"
+    setKeyModeOverride(nextMode)
+    if (nextMode === "browser" && appKey.trim()) {
+      void save(appKey, "local")
+    }
+  }
 
   const handleConfigChange = (next: Partial<BoardConfig>) => {
     setConfig((current) => {
@@ -397,7 +426,7 @@ export const BoardBuilder = ({
         try {
           const result = await getBoardNearbyPlaces(
             position.coords.latitude,
-            position.coords.longitude,
+            position.coords.longitude
           )
           if (!result.ok) {
             setLocateError(result.error)
@@ -422,7 +451,7 @@ export const BoardBuilder = ({
           setConfigOpen(true)
         } catch (err) {
           setLocateError(
-            err instanceof Error ? err.message : "Could not find nearby stops.",
+            err instanceof Error ? err.message : "Could not find nearby stops."
           )
         } finally {
           setLocateBusy(false)
@@ -431,10 +460,10 @@ export const BoardBuilder = ({
       (error) => {
         setLocateBusy(false)
         setLocateError(
-          error.message || "Location permission is needed to find nearby stops.",
+          error.message || "Location permission is needed to find nearby stops."
         )
       },
-      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 30_000 },
+      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 30_000 }
     )
   }
 
@@ -483,8 +512,8 @@ export const BoardBuilder = ({
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Pins the nearest rail, bus, and cycle docks into the URL. Does
-              not run on the live display.
+              Pins the nearest rail, bus, and cycle docks into the URL. Does not
+              run on the live display.
             </p>
           )}
         </div>
@@ -526,29 +555,50 @@ export const BoardBuilder = ({
         </CollapsibleContent>
       </Collapsible>
 
-      <div className="flex flex-col gap-3 rounded-xl border border-border p-4 sm:flex-row sm:items-stretch">
-        <BoardUrlLegend
-          path={legendPath}
-          segments={segments}
-          className="min-w-0 flex-1"
-        />
-        <div className="flex shrink-0 flex-col gap-2 sm:w-36">
-          <Button
-            type="button"
-            variant="outline"
-            data-copy-text={absoluteUrl}
-            aria-label="Copy board URL"
-          >
-            Copy URL
-          </Button>
-          <Button
-            nativeButton={false}
-            render={<a href={href} target="_blank" rel="noreferrer" />}
-          >
-            Open full display
-          </Button>
+      <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+          <BoardUrlLegend
+            path={legendPath}
+            segments={segments}
+            className="min-w-0 flex-1"
+          />
+          <div className="flex shrink-0 flex-col gap-2 sm:w-40">
+            <Button
+              type="button"
+              variant="outline"
+              data-copy-text={absoluteUrl}
+              aria-label="Copy board URL"
+            >
+              Copy URL
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setQrOpen(true)}
+            >
+              Show QR code
+            </Button>
+            <Button
+              nativeButton={false}
+              render={<a href={href} target="_blank" rel="noreferrer" />}
+            >
+              Open full display
+            </Button>
+          </div>
         </div>
+        <p className="text-sm text-muted-foreground">
+          {BOARD_KEY_MODE_LABEL[keyMode]}
+          {keyMode === "browser"
+            ? ". Another device will need its own key."
+            : ". Anyone with the complete link can use the key and its quota."}
+        </p>
       </div>
+      <BoardQrDialog
+        open={qrOpen}
+        onOpenChange={setQrOpen}
+        url={absoluteUrl}
+        mode={keyMode}
+      />
 
       <section className="space-y-3" aria-labelledby="board-preview-heading">
         <h2 id="board-preview-heading" className="text-lg font-semibold">
@@ -589,10 +639,26 @@ export const BoardBuilder = ({
             TfL API key
           </h2>
           <p id="board-key-copy" className="text-sm text-muted-foreground">
-            Board loads live TfL data in this browser, and your key is not sent
-            to our server.
+            Board loads live TfL data in this browser. The key is not sent to
+            this site&apos;s server, logs, or referrers.
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Switch
+            id="board-save-key"
+            checked={keyMode === "browser"}
+            onCheckedChange={handleKeyModeChange}
+            aria-describedby="board-save-key-hint"
+          />
+          <label htmlFor="board-save-key" className="text-sm text-foreground">
+            Save key on this browser
+          </label>
+        </div>
+        <p id="board-save-key-hint" className="text-sm text-muted-foreground">
+          {keyMode === "browser"
+            ? "The generated URL and QR code omit the key. Open the Board in this browser to use the stored key."
+            : "The generated URL and QR code include the key in the hash so you can set up another device without typing it there."}
+        </p>
         <div className="flex flex-wrap items-center gap-3">
           {!hydrated ? (
             <span className="text-sm text-muted-foreground">

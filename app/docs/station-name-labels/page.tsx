@@ -1,25 +1,25 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
 import {
   AbbreviationDemo,
   CopyFindDemo,
   StationWidthDemo,
-} from "@/components/docs/demos/station-labels-explainer";
-import { DocsPageHeader } from "@/components/docs/docs-page-header";
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { RelationshipBadges } from "@/components/docs/relationship-badges";
-import { getDocsEntry, getUsedBySlugs } from "@/lib/docs-catalog";
+} from "@/components/docs/demos/station-labels-explainer"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
+import { RelationshipBadges } from "@/components/docs/relationship-badges"
+import { getDocsEntry, getUsedBySlugs } from "@/lib/docs-catalog"
 
 export const metadata: Metadata = {
   title: "Station name labels",
   description:
     "How station names shrink with width while copy, find, and screen readers keep the full name.",
-};
+}
 
 export default function StationLabelsFoundationPage() {
-  const entry = getDocsEntry("station-labels");
-  if (!entry) notFound();
+  const entry = getDocsEntry("station-labels")
+  if (!entry) notFound()
 
   return (
     <DocsReadableWidth>
@@ -74,5 +74,5 @@ export default function StationLabelsFoundationPage() {
         </section>
       </article>
     </DocsReadableWidth>
-  );
+  )
 }

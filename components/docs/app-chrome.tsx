@@ -5,9 +5,12 @@ import { usePathname } from "next/navigation"
 import { DocsSidebar } from "@/components/docs/docs-sidebar"
 import { DocsTableOfContents } from "@/components/docs/docs-table-of-contents"
 import { SiteHeader } from "@/components/site-header"
-import { DocsSearch } from "@/components/docs/docs-search"
 import { VisitBeacon } from "@/components/visit-beacon"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
 
 type AppChromeProps = {
   children: React.ReactNode
@@ -43,13 +46,8 @@ const AppChromeShell = ({
     const isLandingHero = pathname === "/temp/landing-hero"
     const isFullBleed = isHome || isLandingHero
     return (
-      <div className="flex min-h-svh flex-col">
+      <div className="flex min-h-svh flex-col overflow-x-clip">
         <SiteHeader pathname={pathname || "/"} />
-        {isLandingHero ? null : (
-          <div className="border-b border-border px-4 py-2 md:hidden">
-            <DocsSearch variant="header" />
-          </div>
-        )}
         <main
           className={
             isFullBleed
@@ -65,13 +63,13 @@ const AppChromeShell = ({
   }
 
   return (
-    <SidebarProvider open className="flex-col">
-      <SiteHeader pathname={pathname} showSidebarTrigger />
+    <SidebarProvider open className="flex-col overflow-x-clip">
+      <SiteHeader pathname={pathname} />
       <div className="flex min-h-0 w-full flex-1">
         <DocsSidebar />
         <SidebarInset>
-          <div className="border-b border-border px-4 py-2 md:hidden">
-            <DocsSearch variant="mobile" />
+          <div className="flex items-center gap-2 border-b border-border px-4 py-2 md:hidden">
+            <SidebarTrigger aria-label="Toggle sidebar" />
           </div>
           <div className="mx-auto flex w-full max-w-full min-w-0 flex-1 gap-8 px-4 py-6 xl:pr-6">
             <div className="min-w-0 flex-1">{children}</div>

@@ -1,13 +1,13 @@
-import { ROUNDEL_LOGO_PATHS } from "@/lib/tfl/roundel-presets";
-import { cn } from "@/lib/utils";
+import { ROUNDEL_LOGO_PATHS } from "@/lib/tfl/roundel-presets"
+import { cn } from "@/lib/utils"
 
 export type NationalRailPictogramProps = {
-  className?: string;
+  className?: string
   /** CSS length for height (width follows aspect). */
-  height?: string | number;
+  height?: string | number
   /** Decorative by default — parent should expose “National Rail” in aria. */
-  decorative?: boolean;
-};
+  decorative?: boolean
+}
 
 /**
  * National Rail double-arrow pictogram for line diagrams (§9.4).
@@ -27,4 +27,4 @@ export const NationalRailPictogram = ({
     style={{ height, width: "auto" }}
     draggable={false}
   />
-);
+)

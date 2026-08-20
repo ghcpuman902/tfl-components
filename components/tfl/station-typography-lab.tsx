@@ -1,26 +1,26 @@
-"use client";
+"use client"
 
-import { useMemo, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { StationName } from "@/components/tfl/station-name";
-import { TFL_BLUE } from "@/lib/tfl/brand-colours";
-import type { CatalogStation } from "@/lib/tfl/station-catalog";
-import type { StationLabelFormatResult } from "@/lib/tfl/station-typography";
-import { cn } from "@/lib/utils";
+import { useMemo, useState } from "react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
+import { Switch } from "@/components/ui/switch"
+import { StationName } from "@/components/tfl/station-name"
+import { TFL_BLUE } from "@/lib/tfl/brand-colours"
+import type { CatalogStation } from "@/lib/tfl/station-catalog"
+import type { StationLabelFormatResult } from "@/lib/tfl/station-typography"
+import { cn } from "@/lib/utils"
 
 export type StationTypographyLabProps = {
-  stations: CatalogStation[];
-};
+  stations: CatalogStation[]
+}
 
-type CardDiagnostics = Record<string, StationLabelFormatResult>;
+type CardDiagnostics = Record<string, StationLabelFormatResult>
 
 const letterOf = (name: string): string => {
-  const ch = name.trim().charAt(0).toUpperCase();
-  return /[A-Z]/.test(ch) ? ch : "#";
-};
+  const ch = name.trim().charAt(0).toUpperCase()
+  return /[A-Z]/.test(ch) ? ch : "#"
+}
 
 /** Normalize for search: straight/curly apostrophes, case. */
 const normalizeSearch = (value: string): string =>
@@ -28,46 +28,48 @@ const normalizeSearch = (value: string): string =>
     .toLowerCase()
     .replace(/[\u2018\u2019\u02BC\u0060]/g, "'")
     .normalize("NFD")
-    .replace(/\p{M}/gu, "");
+    .replace(/\p{M}/gu, "")
 
 /**
  * Interactive A–Z typography lab: measure Hammersmith One, balance two-line
  * station names, and inspect abbreviation / scale fallbacks.
  */
-export const StationTypographyLab = ({ stations }: StationTypographyLabProps) => {
-  const [query, setQuery] = useState("");
-  const [boxWidth, setBoxWidth] = useState(168);
-  const [fontSize, setFontSize] = useState(16);
-  const [maxLines, setMaxLines] = useState<1 | 2>(2);
-  const [allowAbbreviation, setAllowAbbreviation] = useState(false);
-  const [allowScaleDown, setAllowScaleDown] = useState(true);
-  const [diagnostics, setDiagnostics] = useState<CardDiagnostics>({});
+export const StationTypographyLab = ({
+  stations,
+}: StationTypographyLabProps) => {
+  const [query, setQuery] = useState("")
+  const [boxWidth, setBoxWidth] = useState(168)
+  const [fontSize, setFontSize] = useState(16)
+  const [maxLines, setMaxLines] = useState<1 | 2>(2)
+  const [allowAbbreviation, setAllowAbbreviation] = useState(false)
+  const [allowScaleDown, setAllowScaleDown] = useState(true)
+  const [diagnostics, setDiagnostics] = useState<CardDiagnostics>({})
 
   const filtered = useMemo(() => {
-    const q = normalizeSearch(query.trim());
-    if (!q) return stations;
+    const q = normalizeSearch(query.trim())
+    if (!q) return stations
     return stations.filter((s) => {
       const haystack = normalizeSearch(
-        `${s.displayName} ${s.name} ${s.lines.join(" ")} ${s.modes.join(" ")}`,
-      );
-      return haystack.includes(q);
-    });
-  }, [query, stations]);
+        `${s.displayName} ${s.name} ${s.lines.join(" ")} ${s.modes.join(" ")}`
+      )
+      return haystack.includes(q)
+    })
+  }, [query, stations])
 
   const grouped = useMemo(() => {
-    const map = new Map<string, CatalogStation[]>();
+    const map = new Map<string, CatalogStation[]>()
     for (const station of filtered) {
-      const letter = letterOf(station.displayName);
-      const list = map.get(letter) ?? [];
-      list.push(station);
-      map.set(letter, list);
+      const letter = letterOf(station.displayName)
+      const list = map.get(letter) ?? []
+      list.push(station)
+      map.set(letter, list)
     }
-    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [filtered]);
+    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b))
+  }, [filtered])
 
   const handleFormat = (id: string, result: StationLabelFormatResult) => {
     setDiagnostics((prev) => {
-      const prevResult = prev[id];
+      const prevResult = prev[id]
       if (
         prevResult &&
         prevResult.lines.join("|") === result.lines.join("|") &&
@@ -75,11 +77,11 @@ export const StationTypographyLab = ({ stations }: StationTypographyLabProps) =>
         prevResult.abbreviated === result.abbreviated &&
         prevResult.fits === result.fits
       ) {
-        return prev;
+        return prev
       }
-      return { ...prev, [id]: result };
-    });
-  };
+      return { ...prev, [id]: result }
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -105,7 +107,7 @@ export const StationTypographyLab = ({ stations }: StationTypographyLabProps) =>
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="box-width">Box width</Label>
-              <span className="text-xs tabular-nums text-muted-foreground">
+              <span className="text-xs text-muted-foreground tabular-nums">
                 {boxWidth}px
               </span>
             </div>
@@ -116,8 +118,8 @@ export const StationTypographyLab = ({ stations }: StationTypographyLabProps) =>
               step={4}
               value={[boxWidth]}
               onValueChange={(value) => {
-                const next = Array.isArray(value) ? value[0] : value;
-                if (typeof next === "number") setBoxWidth(next);
+                const next = Array.isArray(value) ? value[0] : value
+                if (typeof next === "number") setBoxWidth(next)
               }}
               aria-label="Destination box width"
             />
@@ -126,7 +128,7 @@ export const StationTypographyLab = ({ stations }: StationTypographyLabProps) =>
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="font-size">Font size</Label>
-              <span className="text-xs tabular-nums text-muted-foreground">
+              <span className="text-xs text-muted-foreground tabular-nums">
                 {fontSize}px
               </span>
             </div>
@@ -137,8 +139,8 @@ export const StationTypographyLab = ({ stations }: StationTypographyLabProps) =>
               step={1}
               value={[fontSize]}
               onValueChange={(value) => {
-                const next = Array.isArray(value) ? value[0] : value;
-                if (typeof next === "number") setFontSize(next);
+                const next = Array.isArray(value) ? value[0] : value
+                if (typeof next === "number") setFontSize(next)
               }}
               aria-label="Station name font size"
             />
@@ -194,7 +196,7 @@ export const StationTypographyLab = ({ stations }: StationTypographyLabProps) =>
               role="list"
             >
               {letterStations.map((station) => {
-                const diag = diagnostics[station.id];
+                const diag = diagnostics[station.id]
                 return (
                   <li
                     key={station.id}
@@ -221,9 +223,7 @@ export const StationTypographyLab = ({ stations }: StationTypographyLabProps) =>
                         align="center"
                         className="font-medium text-white"
                         style={{ color: "#fff" }}
-                        onFormat={(result) =>
-                          handleFormat(station.id, result)
-                        }
+                        onFormat={(result) => handleFormat(station.id, result)}
                       />
                     </div>
                     <p className="mt-2 truncate text-xs text-muted-foreground">
@@ -237,7 +237,7 @@ export const StationTypographyLab = ({ stations }: StationTypographyLabProps) =>
                       <p
                         className={cn(
                           "mt-1 text-[11px] leading-snug text-muted-foreground",
-                          !diag.fits && "text-destructive",
+                          !diag.fits && "text-destructive"
                         )}
                       >
                         {diag.lines.length} line
@@ -253,12 +253,12 @@ export const StationTypographyLab = ({ stations }: StationTypographyLabProps) =>
                       </p>
                     ) : null}
                   </li>
-                );
+                )
               })}
             </ul>
           </section>
         ))
       )}
     </div>
-  );
-};
+  )
+}

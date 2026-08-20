@@ -1,31 +1,28 @@
-import Link from "next/link";
-import { Suspense } from "react";
-import { JourneyDiagram } from "@/components/tfl/diagram/journey-diagram";
-import { LineRouteDiagram } from "@/components/tfl/diagram/line-route-diagram";
-import { LineStrip } from "@/components/tfl/diagram/line-strip";
-import { sliceJourney } from "@/lib/tfl/diagram-mappers";
-import type { DiagramStation } from "@/lib/tfl/diagram-station";
-import {
-  DIAGRAM_BASELINE,
-  DIAGRAM_SCALE_CLASS,
-} from "@/lib/tfl/line-diagram";
+import Link from "next/link"
+import { Suspense } from "react"
+import { JourneyDiagram } from "@/components/tfl/diagram/journey-diagram"
+import { LineRouteDiagram } from "@/components/tfl/diagram/line-route-diagram"
+import { LineStrip } from "@/components/tfl/diagram/line-strip"
+import { sliceJourney } from "@/lib/tfl/diagram-mappers"
+import type { DiagramStation } from "@/lib/tfl/diagram-station"
+import { DIAGRAM_BASELINE, DIAGRAM_SCALE_CLASS } from "@/lib/tfl/line-diagram"
 import {
   VICTORIA_LINE_COLOR,
   VICTORIA_PART_CLOSURE_SEGMENTS,
   VICTORIA_STRIP,
-} from "@/lib/tfl/fixtures/victoria-line-strip";
-import { getCachedLineSpine } from "@/lib/tfl/line-spine-data";
+} from "@/lib/tfl/fixtures/victoria-line-strip"
+import { getCachedLineSpine } from "@/lib/tfl/line-spine-data"
 import {
   SIMPLE_LINE_STRIP_IDS,
   type SimpleLineStripId,
-} from "@/lib/tfl/route-track";
-import { cn } from "@/lib/utils";
+} from "@/lib/tfl/route-track"
+import { cn } from "@/lib/utils"
 import {
   LabelPlacementDemo,
   LiveLineStripPicker,
   PartClosureDemo,
   type LiveStripRoute,
-} from "@/components/docs/demos/line-strip-demo-controls";
+} from "@/components/docs/demos/line-strip-demo-controls"
 
 /** Plain Victoria spine for journey-slice demos (no connection flags). */
 const VICTORIA_SAMPLE: DiagramStation[] = VICTORIA_STRIP.map(
@@ -34,37 +31,33 @@ const VICTORIA_SAMPLE: DiagramStation[] = VICTORIA_STRIP.map(
     name,
     interchange,
     nationalRail,
-  }),
-);
+  })
+)
 
 const SIMPLE_ORDER = new Map(
-  SIMPLE_LINE_STRIP_IDS.map((id, index) => [id, index]),
-);
+  SIMPLE_LINE_STRIP_IDS.map((id, index) => [id, index])
+)
 
 async function LiveStripSection() {
   const spines = await Promise.all(
-    SIMPLE_LINE_STRIP_IDS.map((id) => getCachedLineSpine(id)),
-  );
+    SIMPLE_LINE_STRIP_IDS.map((id) => getCachedLineSpine(id))
+  )
 
   const simpleRoutes: LiveStripRoute[] = spines
-    .map(
-      (spine): LiveStripRoute => ({
-        lineId: spine.lineId,
-        lineName: spine.lineName,
-        lineColor: spine.lineColor,
-        stations: spine.stations,
-        routeError: spine.routeError,
-      }),
-    )
+    .map((spine): LiveStripRoute => ({
+      lineId: spine.lineId,
+      lineName: spine.lineName,
+      lineColor: spine.lineColor,
+      stations: spine.stations,
+      routeError: spine.routeError,
+    }))
     .sort(
       (a, b) =>
         (SIMPLE_ORDER.get(a.lineId as SimpleLineStripId) ?? 99) -
-        (SIMPLE_ORDER.get(b.lineId as SimpleLineStripId) ?? 99),
-    );
+        (SIMPLE_ORDER.get(b.lineId as SimpleLineStripId) ?? 99)
+    )
 
-  return (
-    <LiveLineStripPicker routes={simpleRoutes} defaultLineId="victoria" />
-  );
+  return <LiveLineStripPicker routes={simpleRoutes} defaultLineId="victoria" />
 }
 
 const LiveSkeleton = () => (
@@ -79,10 +72,10 @@ const LiveSkeleton = () => (
       lineName="Victoria line"
     />
   </div>
-);
+)
 
 export default function LineStripDemo() {
-  const journey = sliceJourney(VICTORIA_SAMPLE, "finsbury", "victoria")!;
+  const journey = sliceJourney(VICTORIA_SAMPLE, "finsbury", "victoria")!
 
   return (
     <div className={cn("space-y-10", DIAGRAM_SCALE_CLASS)}>
@@ -113,9 +106,8 @@ export default function LineStripDemo() {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           B&amp;W Tube-map stroke motifs on the graph. Pass{" "}
           <code className="rounded bg-muted px-1 text-xs">mono</code>. Motifs
-          scale through{" "}
-          <code className="rounded bg-muted px-1 text-xs">x</code>, not the
-          inherited diagram scale.
+          scale through <code className="rounded bg-muted px-1 text-xs">x</code>
+          , not the inherited diagram scale.
         </p>
         <LineStrip
           lineId="victoria"
@@ -134,7 +126,9 @@ export default function LineStripDemo() {
           terminal if applicable) grey out. Pass{" "}
           <code className="rounded bg-muted px-1 text-xs">segments</code> and
           optionally{" "}
-          <code className="rounded bg-muted px-1 text-xs">stationOutOfUseIds</code>
+          <code className="rounded bg-muted px-1 text-xs">
+            stationOutOfUseIds
+          </code>
           .
         </p>
         <PartClosureDemo
@@ -192,8 +186,8 @@ import { LineStrip } from "@/components/tfl/diagram/line-strip";
       <section className="rounded-lg border border-border bg-card p-4 sm:p-6">
         <h2 className="text-lg font-semibold">Journey A→B (sample)</h2>
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
-          Victoria line · Finsbury Park → Victoria. Collapse/expand the stops
-          in between.
+          Victoria line · Finsbury Park → Victoria. Collapse/expand the stops in
+          between.
         </p>
         <div className="max-w-md">
           <JourneyDiagram
@@ -249,5 +243,5 @@ import { LineStrip } from "@/components/tfl/diagram/line-strip";
         </p>
       </section>
     </div>
-  );
+  )
 }

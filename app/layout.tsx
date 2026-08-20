@@ -1,20 +1,20 @@
-import { ThemeProvider } from "@/components/theme-provider";
-import { FontPreferenceProvider } from "@/components/font-preference-provider";
-import { FeedbackDialog } from "@/components/docs/feedback-dialog";
-import { UserTflCredentialsDialog } from "@/components/user-tfl-credentials-dialog";
-import { UserTflCredentialsProvider } from "@/components/user-tfl-credentials-provider";
-import { CodeCopyDelegator } from "@/components/docs/code-copy-delegator";
-import { AppChrome } from "@/components/docs/app-chrome";
-import { SiteFooter } from "@/components/site-footer";
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Geist_Mono, Hammersmith_One } from "next/font/google";
-import Script from "next/script";
-import type { Metadata, Viewport } from "next";
-import { SITE_DESCRIPTION, SITE_URL } from "@/lib/site";
-import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/components/theme-provider"
+import { FontPreferenceProvider } from "@/components/font-preference-provider"
+import { FeedbackDialog } from "@/components/docs/feedback-dialog"
+import { UserTflCredentialsDialog } from "@/components/user-tfl-credentials-dialog"
+import { UserTflCredentialsProvider } from "@/components/user-tfl-credentials-provider"
+import { CodeCopyDelegator } from "@/components/docs/code-copy-delegator"
+import { AppChrome } from "@/components/docs/app-chrome"
+import { SiteFooter } from "@/components/site-footer"
+import { Toaster } from "@/components/ui/sonner"
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { Geist_Mono, Hammersmith_One } from "next/font/google"
+import Script from "next/script"
+import type { Metadata, Viewport } from "next"
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site"
+import { cn } from "@/lib/utils"
 
-import "./globals.css";
+import "./globals.css"
 
 // next/font must own `--font-sans` on the <html> class — Tailwind's
 // `@theme inline { --font-sans: var(--font-sans) }` only works when a real
@@ -24,26 +24,26 @@ const hammersmith = Hammersmith_One({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-sans",
-});
+})
 
 /**
  * Adobe Fonts (Typekit) kit id for P22 Underground — a closer commercial
  * match to TfL's Johnston than the open Hammersmith One default. Requires
  * your own Adobe Fonts subscription; never hardcoded, see .env.example.
  */
-const adobeFontsKitId = process.env.NEXT_PUBLIC_ADOBE_FONTS_KIT_ID;
+const adobeFontsKitId = process.env.NEXT_PUBLIC_ADOBE_FONTS_KIT_ID
 
 /** Apply stored font preference before paint to avoid a Hammersmith → P22 flash.
  * Typekit is injected only when P22 is selected — never render-blocking for the
  * default Hammersmith path (Lighthouse / first-fold). */
 const fontPreferenceScript = adobeFontsKitId
   ? `(function(){try{if(localStorage.getItem("tfl-font-pref")!=="p22")return;document.documentElement.setAttribute("data-font","p22");document.documentElement.setAttribute("data-tfl-type-profile","johnston-compatible");var l=document.createElement("link");l.rel="stylesheet";l.href=${JSON.stringify(`https://use.typekit.net/${adobeFontsKitId}.css`)};l.media="print";l.onload=function(){this.media="all"};document.head.appendChild(l);}catch(e){}})();`
-  : null;
+  : null
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
-});
+})
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -52,13 +52,13 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
   ],
-};
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL(
     URL.canParse(process.env.NEXT_PUBLIC_APP_URL ?? "")
       ? process.env.NEXT_PUBLIC_APP_URL!
-      : SITE_URL,
+      : SITE_URL
   ),
   title: {
     default: "tfl-components",
@@ -69,22 +69,22 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_GB",
-    siteName: "tfl-components",
-    title: "tfl-components",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
     description: SITE_DESCRIPTION,
     url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",
-    title: "tfl-components",
+    title: SITE_NAME,
     description: SITE_DESCRIPTION,
   },
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html
@@ -92,10 +92,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn(
         /* Page-level scroll + Baseline scrollbar-gutter:stable (needs overflow ≠ visible). */
-        "overflow-y-auto scrollbar-gutter-stable antialiased",
+        "scrollbar-gutter-stable overflow-y-auto antialiased",
         fontMono.variable,
         "font-sans",
-        hammersmith.variable,
+        hammersmith.variable
       )}
     >
       <head>
@@ -125,5 +125,5 @@ export default function RootLayout({
         </ThemeProvider>
       </body>
     </html>
-  );
+  )
 }

@@ -14,14 +14,16 @@ export const ThemeToggle = ({ className }: { className?: string }) => {
   const mounted = useSyncExternalStore(
     subscribe,
     getClientSnapshot,
-    getServerSnapshot,
+    getServerSnapshot
   )
 
+  // No stored choice → next-themes keeps `system` (OS preference).
+  // The first click writes light/dark and that choice sticks.
   const isDark = mounted && resolvedTheme === "dark"
   const label = isDark ? "Switch to light theme" : "Switch to dark theme"
 
   const handleClick = () => {
-    setTheme(isDark ? "light" : "dark")
+    setTheme(resolvedTheme === "dark" ? "light" : "dark")
   }
 
   return (
@@ -33,7 +35,9 @@ export const ThemeToggle = ({ className }: { className?: string }) => {
       onClick={handleClick}
       aria-label={mounted ? label : "Toggle theme"}
       aria-pressed={mounted ? isDark : undefined}
-      title={mounted ? `${isDark ? "Dark" : "Light"} theme. Shortcut d.` : "Theme"}
+      title={
+        mounted ? `${isDark ? "Dark" : "Light"} theme. Shortcut d.` : "Theme"
+      }
     >
       {isDark ? <SunIcon aria-hidden /> : <MoonIcon aria-hidden />}
     </Button>

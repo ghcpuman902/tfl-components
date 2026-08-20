@@ -43,10 +43,7 @@ export const createUnattendedSequence = (options: {
   }
 }
 
-const nearestIndex = (
-  previousIndex: number,
-  itemCount: number
-): number => {
+const nearestIndex = (previousIndex: number, itemCount: number): number => {
   if (itemCount <= 0) return 0
   if (previousIndex < itemCount) return previousIndex
   return itemCount - 1
@@ -170,10 +167,7 @@ const SENTENCE_SPLIT = /(?<=[.!?])\s+/
  * Split long copy at sentence boundaries. If one sentence still exceeds
  * `maxChars`, fall back to word wraps. Empty input yields no frames.
  */
-export const splitTextFrames = (
-  text: string,
-  maxChars: number
-): string[] => {
+export const splitTextFrames = (text: string, maxChars: number): string[] => {
   const trimmed = text.trim()
   if (!trimmed) return []
   if (maxChars <= 0 || trimmed.length <= maxChars) return [trimmed]

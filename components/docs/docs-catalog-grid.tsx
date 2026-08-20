@@ -1,19 +1,16 @@
-import Link from "next/link";
-import {
-  getCatalogueEntries,
-  layerBadgeLabel,
-} from "@/lib/docs-catalog";
-import { Badge } from "@/components/ui/badge";
+import Link from "next/link"
+import { getCatalogueEntries, layerBadgeLabel } from "@/lib/docs-catalog"
+import { Badge } from "@/components/ui/badge"
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/components/ui/card"
 
 /** Simple catalogue cards — prefer `/docs/components` for the primary list. */
 export const DocsCatalogGrid = () => {
-  const entries = getCatalogueEntries();
+  const entries = getCatalogueEntries()
 
   return (
     <ul className="grid gap-3 sm:grid-cols-2">
@@ -21,7 +18,7 @@ export const DocsCatalogGrid = () => {
         <li key={entry.slug}>
           <Link
             href={entry.href}
-            className="block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="block h-full rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             <Card className="h-full transition-colors hover:bg-muted/40">
               <CardHeader className="gap-2">
@@ -46,5 +43,5 @@ export const DocsCatalogGrid = () => {
         </li>
       ))}
     </ul>
-  );
-};
+  )
+}

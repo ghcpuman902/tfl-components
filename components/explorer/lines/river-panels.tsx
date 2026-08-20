@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   useId,
@@ -7,65 +7,64 @@ import {
   useRef,
   useState,
   type FormEvent,
-} from "react";
-import { Filter } from "lucide-react";
-import { LineInspector } from "@/components/explorer/entity-inspector/line-inspector";
+} from "react"
+import { Filter } from "lucide-react"
+import { LineInspector } from "@/components/explorer/entity-inspector/line-inspector"
 import {
   ExplorerSplit,
   explorerPaneClassName,
   explorerResultsPaneClassName,
   explorerSplitFillClassName,
-} from "@/components/explorer/explorer-split";
-import { useOptimisticLine } from "@/components/explorer/use-optimistic-selection";
-import { RiverRouteChip } from "@/components/tfl/arrivals/river-route-chip";
+} from "@/components/explorer/explorer-split"
+import { useOptimisticLine } from "@/components/explorer/use-optimistic-selection"
+import { RiverRouteChip } from "@/components/tfl/arrivals/river-route-chip"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-} from "@/components/ui/input-group";
-import type { ExplorerState } from "@/lib/tfl/explorer-url-state";
+} from "@/components/ui/input-group"
+import type { ExplorerState } from "@/lib/tfl/explorer-url-state"
 import type {
   ExplorerLineDetailsPayload,
   ExplorerLineSummary,
-} from "@/lib/tfl/explorer/common";
-import { cn } from "@/lib/utils";
+} from "@/lib/tfl/explorer/common"
+import { cn } from "@/lib/utils"
 
 type LinesRiverPanelProps = {
-  state: ExplorerState;
-  lines: readonly ExplorerLineSummary[];
-  detailsPromise?: Promise<ExplorerLineDetailsPayload> | null;
-};
+  state: ExplorerState
+  lines: readonly ExplorerLineSummary[]
+  detailsPromise?: Promise<ExplorerLineDetailsPayload> | null
+}
 
 /** Scroll only the results pane — never the page — when the selected chip is off-screen. */
 const scrollSelectedChipIntoPane = (
   container: HTMLElement,
-  chip: HTMLElement,
+  chip: HTMLElement
 ) => {
-  if (container.clientHeight === 0) return;
+  if (container.clientHeight === 0) return
 
-  const chipRect = chip.getBoundingClientRect();
-  const paneRect = container.getBoundingClientRect();
+  const chipRect = chip.getBoundingClientRect()
+  const paneRect = container.getBoundingClientRect()
   const fullyVisible =
-    chipRect.top >= paneRect.top && chipRect.bottom <= paneRect.bottom;
-  if (fullyVisible) return;
+    chipRect.top >= paneRect.top && chipRect.bottom <= paneRect.bottom
+  if (fullyVisible) return
 
-  const offset = chipRect.top - paneRect.top + container.scrollTop;
-  const top = offset - (container.clientHeight - chip.offsetHeight) / 2;
-  container.scrollTo({ top: Math.max(0, top) });
-};
+  const offset = chipRect.top - paneRect.top + container.scrollTop
+  const top = offset - (container.clientHeight - chip.offsetHeight) / 2
+  container.scrollTo({ top: Math.max(0, top) })
+}
 
 const filterRiverLines = (
   lines: readonly ExplorerLineSummary[],
-  query: string,
+  query: string
 ): readonly ExplorerLineSummary[] => {
-  const q = query.trim().toLowerCase();
-  if (!q) return lines;
+  const q = query.trim().toLowerCase()
+  if (!q) return lines
   return lines.filter(
     (line) =>
-      line.id.toLowerCase().includes(q) ||
-      line.name.toLowerCase().includes(q),
-  );
-};
+      line.id.toLowerCase().includes(q) || line.name.toLowerCase().includes(q)
+  )
+}
 
 /** Cached river-bus line directory — filter locally over wrapping route chips. */
 export const LinesRiverPanel = ({
@@ -73,41 +72,41 @@ export const LinesRiverPanel = ({
   lines,
   detailsPromise,
 }: LinesRiverPanelProps) => {
-  const listId = useId();
-  const listPaneRef = useRef<HTMLDivElement>(null);
-  const selectedChipRef = useRef<HTMLButtonElement>(null);
-  const [query, setQuery] = useState(state.q ?? "");
+  const listId = useId()
+  const listPaneRef = useRef<HTMLDivElement>(null)
+  const selectedChipRef = useRef<HTMLButtonElement>(null)
+  const [query, setQuery] = useState(state.q ?? "")
   const {
     selectedLine,
     direction,
     detailsPending,
     handleSelectLine,
     handleDirectionChange,
-  } = useOptimisticLine(lines, state);
+  } = useOptimisticLine(lines, state)
   const visibleLines = useMemo(
     () => filterRiverLines(lines, query),
-    [lines, query],
-  );
+    [lines, query]
+  )
 
   useLayoutEffect(() => {
-    const pane = listPaneRef.current;
-    const chip = selectedChipRef.current;
-    if (!pane || !chip) return;
+    const pane = listPaneRef.current
+    const chip = selectedChipRef.current
+    if (!pane || !chip) return
 
-    scrollSelectedChipIntoPane(pane, chip);
-    if (pane.clientHeight > 0) return;
+    scrollSelectedChipIntoPane(pane, chip)
+    if (pane.clientHeight > 0) return
 
     const frame = requestAnimationFrame(() => {
-      scrollSelectedChipIntoPane(pane, chip);
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [selectedLine?.id]);
+      scrollSelectedChipIntoPane(pane, chip)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [selectedLine?.id])
 
   const handleFilterSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    const first = visibleLines[0];
-    if (first) handleSelectLine(first.id);
-  };
+    event.preventDefault()
+    const first = visibleLines[0]
+    if (first) handleSelectLine(first.id)
+  }
 
   return (
     <ExplorerSplit
@@ -115,7 +114,7 @@ export const LinesRiverPanel = ({
         <div
           className={cn(
             "flex min-h-0 min-w-0 flex-col gap-3",
-            explorerSplitFillClassName,
+            explorerSplitFillClassName
           )}
         >
           <form onSubmit={handleFilterSubmit}>
@@ -140,7 +139,7 @@ export const LinesRiverPanel = ({
               className={cn(
                 explorerPaneClassName,
                 explorerResultsPaneClassName,
-                "flex items-center p-4",
+                "flex items-center p-4"
               )}
             >
               <p className="text-sm text-muted-foreground">
@@ -153,7 +152,7 @@ export const LinesRiverPanel = ({
               className={cn(
                 explorerPaneClassName,
                 explorerResultsPaneClassName,
-                "overflow-y-auto overscroll-y-auto p-3 scrollbar-thin",
+                "scrollbar-thin overflow-y-auto overscroll-y-auto p-3"
               )}
             >
               <ul
@@ -162,7 +161,7 @@ export const LinesRiverPanel = ({
                 aria-label="River bus routes"
               >
                 {visibleLines.map((line) => {
-                  const selected = line.id === selectedLine?.id;
+                  const selected = line.id === selectedLine?.id
                   return (
                     <li key={line.id}>
                       <button
@@ -172,18 +171,15 @@ export const LinesRiverPanel = ({
                         aria-label={line.name}
                         onClick={() => handleSelectLine(line.id)}
                         className={cn(
-                          "rounded-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                          "rounded-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                           selected &&
-                            "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                            "ring-2 ring-primary ring-offset-2 ring-offset-background"
                         )}
                       >
-                        <RiverRouteChip
-                          lineId={line.id}
-                          lineName={line.name}
-                        />
+                        <RiverRouteChip lineId={line.id} lineName={line.name} />
                       </button>
                     </li>
-                  );
+                  )
                 })}
               </ul>
             </div>
@@ -203,5 +199,5 @@ export const LinesRiverPanel = ({
         ) : null
       }
     />
-  );
-};
+  )
+}

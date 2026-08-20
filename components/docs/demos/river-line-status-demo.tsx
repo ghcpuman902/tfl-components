@@ -10,9 +10,7 @@ import { RIVER_BUS_LINE_IDS } from "@/lib/tfl/river-bus"
 const RiverLineStatusLive = async () => {
   const { data, fetchedAt } = await getCachedLineStatuses(RIVER_BUS_LINE_IDS)
 
-  return (
-    <TubeStatusBoard data={data} now={fetchedAt} compact hideHeader />
-  )
+  return <TubeStatusBoard data={data} now={fetchedAt} compact hideHeader />
 }
 
 /** Line-wide river status — same board as Tube, filtered to river-bus ids. */

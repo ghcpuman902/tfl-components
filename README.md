@@ -51,7 +51,7 @@ Changelog: [CHANGELOG.md](./CHANGELOG.md).
 
 Live site: https://tfl.manglekuo.com
 
-The Next.js app in this repo is the developer environment (docs, demos, Blocks). It is **not** what the shadcn CLI copies. Prefer [`registry/tfl/`](./registry/tfl/) when browsing for installable code.
+The Next.js app in this repo is the developer environment (docs, demos, Labs). It is **not** what the shadcn CLI copies. Prefer [`registry/tfl/`](./registry/tfl/) when browsing for installable code.
 
 ### Local setup
 
@@ -62,7 +62,7 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Press `d` or the theme control for dark mode. Browse via the header (Docs · Components · Blocks · Explorer · Board).
+Press `d` or the theme control for dark mode. Browse via the header (Docs · Components · Explorer · Labs · Board).
 
 Frozen Stage 1 IA: [docs/TARGET_ARCHITECTURE.md](./docs/TARGET_ARCHITECTURE.md).
 

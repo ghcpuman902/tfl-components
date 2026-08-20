@@ -1,5 +1,5 @@
-import type { MetadataRoute } from "next";
-import { SITE_URL } from "@/lib/site";
+import type { MetadataRoute } from "next"
+import { SITE_URL } from "@/lib/site"
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -9,5 +9,5 @@ export default function robots(): MetadataRoute.Robots {
       disallow: ["/api/", "/temp/", "/drafts", "/tools", "/board/view"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
-  };
+  }
 }

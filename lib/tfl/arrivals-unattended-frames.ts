@@ -15,7 +15,7 @@ export type ArrivalsUnattendedFrame = ArrivalsPageFill & {
  * Chunk `items` into windows of `windowSize`. Only the final window shifts
  * back to fill a short remainder — earlier windows never overlap.
  */
-export const chunkWithFinalBackfill = <T,>(
+export const chunkWithFinalBackfill = <T>(
   items: readonly T[],
   windowSize: number
 ): T[][] => {
@@ -131,7 +131,8 @@ export const buildPinnedFrames = (
   })
 
   return {
-    frames: frames.length > 0 ? frames : [fillFrame([pinned], rows, pageSize, true)],
+    frames:
+      frames.length > 0 ? frames : [fillFrame([pinned], rows, pageSize, true)],
     pageCount: Math.max(1, frames.length),
   }
 }

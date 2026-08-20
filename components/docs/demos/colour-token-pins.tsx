@@ -37,4 +37,4 @@ export const ColourTokenPins = () => (
     <span className="bg-tfl-mode-underground text-tfl-mode-underground" />
     <span className="bg-tfl-mode-cycles text-tfl-mode-cycles" />
   </div>
-);
+)

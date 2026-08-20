@@ -1,76 +1,73 @@
-import { OUT_OF_USE_LINE_COLOR } from "@/components/tfl/diagram/straight-strip-parts";
-import {
-  resolveMonoLineStyle,
-  scaleMonoLayers,
-} from "@/lib/tfl/bw-line-styles";
+import { OUT_OF_USE_LINE_COLOR } from "@/components/tfl/diagram/straight-strip-parts"
+import { resolveMonoLineStyle, scaleMonoLayers } from "@/lib/tfl/bw-line-styles"
 import {
   branchStripMetrics,
   placeBranchStripLabels,
   type BranchStripLabelPlacement,
   type BranchStripMetrics,
-} from "@/lib/tfl/branch-strip-layout";
-import type { LineSchematic } from "@/lib/tfl/line-schematic";
+} from "@/lib/tfl/branch-strip-layout"
+import type { LineSchematic } from "@/lib/tfl/line-schematic"
 import {
   layoutLineSchematic,
   type SchematicLayout,
   type SchematicLayoutPoint,
   type SchematicOrientation,
-} from "@/lib/tfl/schematic-layout";
+} from "@/lib/tfl/schematic-layout"
 import {
   branchSegmentKey,
   type BranchStripLabelMap,
   type StripSegmentState,
-} from "@/lib/tfl/strip-model";
+} from "@/lib/tfl/strip-model"
 
 /**
  * Shared BranchStrip contract. Horizontal and vertical atoms take this shape
  * and pass their orientation into `prepareBranchStripView`.
  */
 export type BranchStripSharedProps = {
-  schematic: LineSchematic;
-  lineColor: string;
+  schematic: LineSchematic
+  lineColor: string
   /**
    * Absolute diagram unit (= route line thickness).
    * Defaults to `DIAGRAM_BASELINE` for the orientation.
    */
-  x?: number;
-  className?: string;
+  x?: number
+  className?: string
   /**
    * Editorial visual lines keyed by schematic node id.
    * Prepared by `LineStrip` / `prepareBranchStrip` — never looked up here.
    */
-  nodeLabelLines?: BranchStripLabelMap;
+  nodeLabelLines?: BranchStripLabelMap
   /**
    * Optional segment overrides keyed `"fromId→toId"`.
    */
-  segmentStates?: Readonly<Record<string, StripSegmentState>>;
+  segmentStates?: Readonly<Record<string, StripSegmentState>>
   /**
    * Paint B&W Tube-map stroke motifs instead of a single colour stroke.
    */
-  mono?: boolean;
-};
+  mono?: boolean
+}
 
 export type BranchStripView = {
-  schematic: LineSchematic;
-  lineColor: string;
-  mono: boolean;
-  markerColor: string;
-  metrics: BranchStripMetrics;
-  layout: SchematicLayout;
-  placements: BranchStripLabelPlacement[];
-  placementById: Map<string, BranchStripLabelPlacement>;
-  canvasWidth: number;
-  canvasHeight: number;
-  svgOffsetX: number;
-  svgOffsetY: number;
-  nodeLabelLines?: BranchStripLabelMap;
-  segmentStates?: Readonly<Record<string, StripSegmentState>>;
-  monoLayers: ReturnType<typeof scaleMonoLayers> | null;
-};
+  schematic: LineSchematic
+  lineColor: string
+  mono: boolean
+  markerColor: string
+  metrics: BranchStripMetrics
+  layout: SchematicLayout
+  placements: BranchStripLabelPlacement[]
+  placementById: Map<string, BranchStripLabelPlacement>
+  canvasWidth: number
+  canvasHeight: number
+  svgOffsetX: number
+  svgOffsetY: number
+  nodeLabelLines?: BranchStripLabelMap
+  segmentStates?: Readonly<Record<string, StripSegmentState>>
+  monoLayers: ReturnType<typeof scaleMonoLayers> | null
+}
 
 export const prepareBranchStripView = (
   props: BranchStripSharedProps,
-  orientation: SchematicOrientation,
+  orientation: SchematicOrientation
 ): BranchStripView => {
   const {
     schematic,
@@ -79,18 +76,18 @@ export const prepareBranchStripView = (
     nodeLabelLines,
     segmentStates,
     mono = false,
-  } = props;
-  const metrics = branchStripMetrics(orientation, xProp);
+  } = props
+  const metrics = branchStripMetrics(orientation, xProp)
   const monoLayers = mono
     ? scaleMonoLayers(resolveMonoLineStyle(schematic.lineId), metrics.x)
-    : null;
+    : null
   const layout = layoutLineSchematic(schematic, {
     orientation,
     x: metrics.x,
     mainPitch: metrics.mainPitch,
     lanePitch: metrics.lanePitch,
     padding: metrics.padding,
-  });
+  })
   const placements = placeBranchStripLabels(layout, {
     orientation,
     nameFont: metrics.nameFont,
@@ -99,7 +96,7 @@ export const prepareBranchStripView = (
     labelClearance: metrics.labelClearance,
     labelGap: metrics.labelGap,
     labelLineHeight: metrics.labelLineHeight,
-  });
+  })
 
   return {
     schematic,
@@ -109,20 +106,23 @@ export const prepareBranchStripView = (
     metrics,
     layout,
     placements,
-    placementById: new Map(placements.map((placement) => [placement.id, placement])),
+    placementById: new Map(
+      placements.map((placement) => [placement.id, placement])
+    ),
     canvasWidth:
       layout.width +
       metrics.labelSideLeft +
       metrics.labelSideRight +
       metrics.endPad * 2,
-    canvasHeight: layout.height + metrics.labelBandTop + metrics.labelBandBottom,
+    canvasHeight:
+      layout.height + metrics.labelBandTop + metrics.labelBandBottom,
     svgOffsetX: metrics.labelSideLeft + metrics.endPad,
     svgOffsetY: metrics.labelBandTop,
     nodeLabelLines,
     segmentStates,
     monoLayers,
-  };
-};
+  }
+}
 
 export const BranchStripTrack = ({ view }: { view: BranchStripView }) => {
   const {
@@ -137,8 +137,8 @@ export const BranchStripTrack = ({ view }: { view: BranchStripView }) => {
     canvasHeight,
     svgOffsetX,
     svgOffsetY,
-  } = view;
-  const { strokeWidth, tickProtrude, ringOuter, ringStroke } = metrics;
+  } = view
+  const { strokeWidth, tickProtrude, ringOuter, ringStroke } = metrics
 
   return (
     <svg
@@ -151,9 +151,9 @@ export const BranchStripTrack = ({ view }: { view: BranchStripView }) => {
         {layout.edges.map((edge) => {
           const override =
             segmentStates?.[branchSegmentKey(edge.from, edge.to)] ??
-            segmentStates?.[branchSegmentKey(edge.to, edge.from)];
-          const state = override ?? edge.state;
-          const edgeKey = `${edge.branchId ?? "edge"}:${edge.from}→${edge.to}`;
+            segmentStates?.[branchSegmentKey(edge.to, edge.from)]
+          const state = override ?? edge.state
+          const edgeKey = `${edge.branchId ?? "edge"}:${edge.from}→${edge.to}`
           if (state === "out-of-use") {
             return (
               <path
@@ -165,7 +165,7 @@ export const BranchStripTrack = ({ view }: { view: BranchStripView }) => {
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-            );
+            )
           }
           if (monoLayers) {
             return monoLayers.map((layer, index) => (
@@ -180,7 +180,7 @@ export const BranchStripTrack = ({ view }: { view: BranchStripView }) => {
                 strokeLinecap={layer.linecap ?? "round"}
                 strokeLinejoin="round"
               />
-            ));
+            ))
           }
           return (
             <path
@@ -192,7 +192,7 @@ export const BranchStripTrack = ({ view }: { view: BranchStripView }) => {
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-          );
+          )
         })}
 
         {layout.points.map((point) => (
@@ -211,20 +211,20 @@ export const BranchStripTrack = ({ view }: { view: BranchStripView }) => {
         ))}
       </g>
     </svg>
-  );
-};
+  )
+}
 
 type BranchStripMarkerProps = {
-  point: SchematicLayoutPoint;
-  lineColor: string;
-  strokeWidth: number;
-  tickProtrude: number;
-  ringOuter: number;
-  ringStroke: number;
-  routeAlongMain: boolean;
-  trackAngle?: number;
-  mono?: boolean;
-};
+  point: SchematicLayoutPoint
+  lineColor: string
+  strokeWidth: number
+  tickProtrude: number
+  ringOuter: number
+  ringStroke: number
+  routeAlongMain: boolean
+  trackAngle?: number
+  mono?: boolean
+}
 
 /**
  * Markers match StraightStrip / DiagramStationMarker:
@@ -258,18 +258,18 @@ export const BranchStripMarker = ({
         stroke={mono ? "var(--tfl-mono-ink)" : undefined}
         strokeWidth={ringStroke}
       />
-    );
+    )
   }
 
-  const isDiagonal = Math.abs(Math.round(trackAngle) % 90) !== 0;
+  const isDiagonal = Math.abs(Math.round(trackAngle) % 90) !== 0
   const rotate = isDiagonal
     ? `rotate(${trackAngle} ${point.x} ${point.y})`
-    : undefined;
+    : undefined
 
-  const halfLen = strokeWidth / 2 + tickProtrude;
+  const halfLen = strokeWidth / 2 + tickProtrude
 
   if (point.kind === "terminus") {
-    const half = strokeWidth / 2 + tickProtrude * 3.5;
+    const half = strokeWidth / 2 + tickProtrude * 3.5
     if (routeAlongMain || isDiagonal) {
       return (
         <rect
@@ -280,7 +280,7 @@ export const BranchStripMarker = ({
           fill={lineColor}
           transform={rotate}
         />
-      );
+      )
     }
     return (
       <rect
@@ -290,7 +290,7 @@ export const BranchStripMarker = ({
         height={strokeWidth}
         fill={lineColor}
       />
-    );
+    )
   }
 
   if (routeAlongMain || isDiagonal) {
@@ -303,7 +303,7 @@ export const BranchStripMarker = ({
         fill={lineColor}
         transform={rotate}
       />
-    );
+    )
   }
 
   return (
@@ -314,5 +314,5 @@ export const BranchStripMarker = ({
       height={strokeWidth}
       fill={lineColor}
     />
-  );
-};
+  )
+}

@@ -1,36 +1,36 @@
-import { cacheLife, cacheTag } from "next/cache";
-import { getTflClient } from "@/lib/tfl/client";
-import { TRAFALGAR_SQUARE } from "@/lib/tfl/geo";
-import { mapStopsFromGeoResponse } from "@/lib/tfl/bus-stop-shape";
-import type { ExplorerBusPoint } from "@/lib/tfl/explorer/common";
+import { cacheLife, cacheTag } from "next/cache"
+import { getTflClient } from "@/lib/tfl/client"
+import { TRAFALGAR_SQUARE } from "@/lib/tfl/geo"
+import { mapStopsFromGeoResponse } from "@/lib/tfl/bus-stop-shape"
+import type { ExplorerBusPoint } from "@/lib/tfl/explorer/common"
 
-const FEATURED_RADIUS_METERS = 400;
+const FEATURED_RADIUS_METERS = 400
 /** Featured seed size — not the full London bus network. */
-const FEATURED_LIMIT = 12;
+const FEATURED_LIMIT = 12
 
 /**
  * Cached Trafalgar Square bus-stop seed for Points / Bus.
  * Arbitrary search and nearby lookup require a visitor key.
  */
 export async function getExplorerFeaturedBusStops(): Promise<{
-  stops: ExplorerBusPoint[];
-  label: string;
-  lat: number;
-  lon: number;
-  radiusMeters: number;
+  stops: ExplorerBusPoint[]
+  label: string
+  lat: number
+  lon: number
+  radiusMeters: number
 }> {
-  "use cache";
-  cacheLife({ revalidate: 300 });
-  cacheTag("tfl-explorer-featured-bus-stops");
+  "use cache"
+  cacheLife({ revalidate: 300 })
+  cacheTag("tfl-explorer-featured-bus-stops")
 
-  const client = getTflClient();
+  const client = getTflClient()
   const response = await client.stopPoint.getByGeoPoint({
     lat: TRAFALGAR_SQUARE.lat,
     lon: TRAFALGAR_SQUARE.lon,
     radius: FEATURED_RADIUS_METERS,
     modes: ["bus"],
     returnLines: true,
-  });
+  })
 
   return {
     stops: mapStopsFromGeoResponse(response.stopPoints ?? [], FEATURED_LIMIT),
@@ -38,5 +38,5 @@ export async function getExplorerFeaturedBusStops(): Promise<{
     lat: TRAFALGAR_SQUARE.lat,
     lon: TRAFALGAR_SQUARE.lon,
     radiusMeters: FEATURED_RADIUS_METERS,
-  };
+  }
 }

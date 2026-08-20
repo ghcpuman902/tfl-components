@@ -39,7 +39,7 @@ describe("stopsFromRiverOrderedRoutes", () => {
         mode: "bus",
         orderedLineRoutes: [{ naptanIds: ["490000091G"] }],
       }),
-      null,
+      null
     )
   })
 })

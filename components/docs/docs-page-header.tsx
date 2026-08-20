@@ -1,32 +1,32 @@
-import type { ReactNode } from "react";
-import Link from "next/link";
-import type { DocsEntry } from "@/lib/docs-catalog";
+import type { ReactNode } from "react"
+import Link from "next/link"
+import type { DocsEntry } from "@/lib/docs-catalog"
 import {
   DOCS_GROUPS,
   entryBadgeLabel,
   getAdjacentEntries,
-} from "@/lib/docs-catalog";
-import { Badge } from "@/components/ui/badge";
-import { DocsPageActions } from "@/components/docs/docs-page-actions";
-import { newMarkerParentClassName } from "@/components/new-marker";
-import { cn } from "@/lib/utils";
+} from "@/lib/docs-catalog"
+import { Badge } from "@/components/ui/badge"
+import { DocsPageActions } from "@/components/docs/docs-page-actions"
+import { newMarkerParentClassName } from "@/components/new-marker"
+import { cn } from "@/lib/utils"
 
 type DocsPageHeaderProps = {
-  entry: DocsEntry;
+  entry: DocsEntry
   /** Compact “new” mark at the top-right of the title. */
-  isNew?: boolean;
+  isNew?: boolean
   /** Extra line under the one-sentence intro (WIP notes, calls to action). */
-  notice?: ReactNode;
+  notice?: ReactNode
   /**
    * @deprecated Snippets belong in the Preview block, not the hero.
    * Kept optional so call sites compile during migration; ignored.
    */
-  getDataSnippet?: React.ReactNode;
+  getDataSnippet?: React.ReactNode
   /**
    * @deprecated Install belongs below Preview; ignored.
    */
-  preferPreview?: boolean;
-};
+  preferPreview?: boolean
+}
 
 /**
  * Shared docs hero: breadcrumb + actions, title + one-line intro, single layer badge.
@@ -37,9 +37,9 @@ export const DocsPageHeader = ({
   isNew = false,
   notice,
 }: DocsPageHeaderProps) => {
-  const group = DOCS_GROUPS.find((item) => item.id === entry.group);
-  const badge = entryBadgeLabel(entry);
-  const { prev, next } = getAdjacentEntries(entry.slug);
+  const group = DOCS_GROUPS.find((item) => item.id === entry.group)
+  const badge = entryBadgeLabel(entry)
+  const { prev, next } = getAdjacentEntries(entry.slug)
 
   return (
     <header className="mb-8 space-y-4">
@@ -48,7 +48,14 @@ export const DocsPageHeader = ({
           <Link href="/" className="underline-offset-4 hover:underline">
             Home
           </Link>
-          {group ? (
+          {entry.slug === "components-index" ? (
+            <>
+              <span aria-hidden> / </span>
+              <Link href="/docs" className="underline-offset-4 hover:underline">
+                Get started
+              </Link>
+            </>
+          ) : group ? (
             <>
               <span aria-hidden> / </span>
               <span>{group.title}</span>
@@ -63,7 +70,8 @@ export const DocsPageHeader = ({
           <h1
             className={cn(
               "tfl-title text-3xl text-foreground",
-              isNew && newMarkerParentClassName("inline-block pr-7 after:-top-1"),
+              isNew &&
+                newMarkerParentClassName("inline-block pr-7 after:-top-1")
             )}
           >
             {entry.title}
@@ -80,5 +88,5 @@ export const DocsPageHeader = ({
         ) : null}
       </div>
     </header>
-  );
-};
+  )
+}

@@ -1,20 +1,20 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { CheckIcon, CopyIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { InstallCommand } from "@/components/docs/install-command";
-import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
+import { useState } from "react"
+import { CheckIcon, CopyIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { InstallCommand } from "@/components/docs/install-command"
+import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { cn } from "@/lib/utils"
 
-const IMPORT_SNIPPET = `@import "./tfl-colours.css";`;
+const IMPORT_SNIPPET = `@import "./tfl-colours.css";`
 
 type ColoursInstallTabsProps = {
-  registryUrl: string;
-  cssText: string;
-  className?: string;
-};
+  registryUrl: string
+  cssText: string
+  className?: string
+}
 
 /**
  * Dual install for Foundations Colours: shadcn theme CLI or paste CSS layers.
@@ -24,17 +24,17 @@ export const ColoursInstallTabs = ({
   cssText,
   className,
 }: ColoursInstallTabsProps) => {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false)
 
   const handleCopyCss = async () => {
     try {
-      await navigator.clipboard.writeText(cssText);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText(cssText)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
     } catch {
       /* ignore */
     }
-  };
+  }
 
   return (
     <div className={cn("space-y-3", className)}>
@@ -46,9 +46,9 @@ export const ColoursInstallTabs = ({
 
         <TabsContent value="shadcn" className="mt-3 space-y-2">
           <p className="max-w-prose text-sm text-muted-foreground">
-            Merges OKLCH palette,{" "}
-            <code className="text-xs">data-line</code> bindings, and{" "}
-            <code className="text-xs">@theme</code> aliases into your CSS.
+            Merges OKLCH palette, <code className="text-xs">data-line</code>{" "}
+            bindings, and <code className="text-xs">@theme</code> aliases into
+            your CSS.
           </p>
           <InstallCommand registryUrl={registryUrl} />
         </TabsContent>
@@ -57,8 +57,8 @@ export const ColoursInstallTabs = ({
           <p className="max-w-prose text-sm text-muted-foreground">
             Save as <code className="text-xs">app/tfl-colours.css</code> and
             import from <code className="text-xs">globals.css</code>, or paste
-            the layers directly into <code className="text-xs">globals.css</code>
-            .
+            the layers directly into{" "}
+            <code className="text-xs">globals.css</code>.
           </p>
           <SyntaxHighlightedCode
             code={IMPORT_SNIPPET}
@@ -93,5 +93,5 @@ export const ColoursInstallTabs = ({
         </TabsContent>
       </Tabs>
     </div>
-  );
-};
+  )
+}

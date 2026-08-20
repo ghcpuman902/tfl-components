@@ -1,23 +1,23 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { CheckIcon, ChevronDownIcon, CopyIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react"
+import { CheckIcon, ChevronDownIcon, CopyIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
+} from "@/components/ui/collapsible"
+import { cn } from "@/lib/utils"
 
 type CodeCollapsibleProps = {
-  title: string;
-  description?: string;
-  code: string;
-  language?: string;
-  defaultOpen?: boolean;
-  className?: string;
-};
+  title: string
+  description?: string
+  code: string
+  language?: string
+  defaultOpen?: boolean
+  className?: string
+}
 
 export const CodeCollapsible = ({
   title,
@@ -27,18 +27,18 @@ export const CodeCollapsible = ({
   defaultOpen = false,
   className,
 }: CodeCollapsibleProps) => {
-  const [open, setOpen] = useState(defaultOpen);
-  const [copied, setCopied] = useState(false);
+  const [open, setOpen] = useState(defaultOpen)
+  const [copied, setCopied] = useState(false)
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText(code)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
     } catch {
       // Clipboard can fail in insecure contexts; ignore.
     }
-  };
+  }
 
   return (
     <Collapsible
@@ -50,7 +50,9 @@ export const CodeCollapsible = ({
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-medium text-foreground">{title}</h3>
           {description ? (
-            <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {description}
+            </p>
           ) : null}
         </div>
         <div className="flex items-center gap-1">
@@ -69,17 +71,12 @@ export const CodeCollapsible = ({
             {copied ? "Copied" : "Copy"}
           </Button>
           <CollapsibleTrigger
-            render={
-              <Button type="button" variant="ghost" size="sm" />
-            }
+            render={<Button type="button" variant="ghost" size="sm" />}
           >
             {open ? "Hide code" : "View code"}
             <ChevronDownIcon
               data-icon="inline-end"
-              className={cn(
-                "transition-transform",
-                open && "rotate-180",
-              )}
+              className={cn("transition-transform", open && "rotate-180")}
             />
           </CollapsibleTrigger>
         </div>
@@ -90,5 +87,5 @@ export const CodeCollapsible = ({
         </pre>
       </CollapsibleContent>
     </Collapsible>
-  );
-};
+  )
+}

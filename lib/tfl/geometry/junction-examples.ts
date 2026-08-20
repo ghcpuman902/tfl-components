@@ -9,7 +9,7 @@
  * neither should these fixtures invent precision the source data doesn't
  * have yet).
  */
-import { symmetricMovements, type Junction } from "./junction-grammar";
+import { symmetricMovements, type Junction } from "./junction-grammar"
 
 export const JUNCTION_EXAMPLES: Junction[] = [
   {
@@ -21,7 +21,8 @@ export const JUNCTION_EXAMPLES: Junction[] = [
       { id: "east", label: "Ilford", bearingDeg: 90 },
     ],
     movements: symmetricMovements([["west", "east"]]),
-    notes: "A plain through station: one line in, the same line out. The control case every junction type below is judged against.",
+    notes:
+      "A plain through station: one line in, the same line out. The control case every junction type below is judged against.",
     londonExamples: ["Manor Park (Elizabeth line)"],
   },
   {
@@ -39,7 +40,9 @@ export const JUNCTION_EXAMPLES: Junction[] = [
     ]),
     notes:
       "Confirmed against every OSM Elizabeth line route relation: Heathrow trains and Reading/Maidenhead trains both call towards Paddington, but no service runs Heathrow ↔ Reading without changing.",
-    londonExamples: ["Heathrow spur leaving the Great Western main line near Hayes & Harlington"],
+    londonExamples: [
+      "Heathrow spur leaving the Great Western main line near Hayes & Harlington",
+    ],
   },
   {
     id: "through-fork-whitechapel",
@@ -48,7 +51,11 @@ export const JUNCTION_EXAMPLES: Junction[] = [
     legs: [
       { id: "west", label: "Liverpool St / Paddington", bearingDeg: 270 },
       { id: "stratford", label: "Stratford / Shenfield", bearingDeg: 45 },
-      { id: "canary-wharf", label: "Canary Wharf / Abbey Wood", bearingDeg: 135 },
+      {
+        id: "canary-wharf",
+        label: "Canary Wharf / Abbey Wood",
+        bearingDeg: 135,
+      },
     ],
     movements: symmetricMovements([
       ["west", "stratford"],
@@ -56,7 +63,9 @@ export const JUNCTION_EXAMPLES: Junction[] = [
     ]),
     notes:
       "Both onward branches are equally 'primary' — unlike the Heathrow spur, neither Stratford nor Canary Wharf reads as the secondary branch. No relation runs Stratford ↔ Canary Wharf directly.",
-    londonExamples: ["Elizabeth line fork east of Whitechapel toward Stratford vs Canary Wharf/Abbey Wood"],
+    londonExamples: [
+      "Elizabeth line fork east of Whitechapel toward Stratford vs Canary Wharf/Abbey Wood",
+    ],
   },
   {
     id: "merge-heathrow-convergence",
@@ -73,7 +82,9 @@ export const JUNCTION_EXAMPLES: Junction[] = [
     ]),
     notes:
       "The same physical junction as the y-junction example, described from the converging direction: two service paths join one outgoing leg rather than one splitting into two.",
-    londonExamples: ["Heathrow spur leaving the Great Western main line, viewed towards Paddington"],
+    londonExamples: [
+      "Heathrow spur leaving the Great Western main line, viewed towards Paddington",
+    ],
   },
   {
     id: "crossing-dlr-geml",
@@ -88,7 +99,9 @@ export const JUNCTION_EXAMPLES: Junction[] = [
     movements: [],
     notes:
       "Different networks, different gauges, no shared track — the DLR viaduct simply passes over the main line near Stratford. Zero permitted movements is the point: geometry crosses, connectivity doesn't exist.",
-    londonExamples: ["DLR viaduct crossing the Great Eastern main line near Stratford"],
+    londonExamples: [
+      "DLR viaduct crossing the Great Eastern main line near Stratford",
+    ],
   },
   {
     id: "flat-junction-earls-court",
@@ -98,7 +111,11 @@ export const JUNCTION_EXAMPLES: Junction[] = [
       { id: "district-east", label: "District line east", bearingDeg: 90 },
       { id: "kensington", label: "Kensington (Olympia)", bearingDeg: 0 },
       { id: "wimbledon", label: "Wimbledon branch", bearingDeg: 200 },
-      { id: "richmond-ealing", label: "Richmond / Ealing Broadway branches", bearingDeg: 270 },
+      {
+        id: "richmond-ealing",
+        label: "Richmond / Ealing Broadway branches",
+        bearingDeg: 270,
+      },
     ],
     movements: symmetricMovements([
       ["district-east", "wimbledon"],
@@ -114,10 +131,26 @@ export const JUNCTION_EXAMPLES: Junction[] = [
     type: "diamond",
     label: "Edgware Road area",
     legs: [
-      { id: "circle-north", label: "Circle/H&C towards Baker St", bearingDeg: 45 },
-      { id: "circle-south", label: "Circle/District towards Paddington", bearingDeg: 225 },
-      { id: "bakerloo-north", label: "Bakerloo towards Marylebone", bearingDeg: 315 },
-      { id: "bakerloo-south", label: "Bakerloo towards Paddington", bearingDeg: 135 },
+      {
+        id: "circle-north",
+        label: "Circle/H&C towards Baker St",
+        bearingDeg: 45,
+      },
+      {
+        id: "circle-south",
+        label: "Circle/District towards Paddington",
+        bearingDeg: 225,
+      },
+      {
+        id: "bakerloo-north",
+        label: "Bakerloo towards Marylebone",
+        bearingDeg: 315,
+      },
+      {
+        id: "bakerloo-south",
+        label: "Bakerloo towards Paddington",
+        bearingDeg: 135,
+      },
     ],
     movements: symmetricMovements([
       ["circle-north", "circle-south"],
@@ -126,7 +159,9 @@ export const JUNCTION_EXAMPLES: Junction[] = [
     ]),
     notes:
       "Four approaches with both through and turning moves possible — the diamond shape alone doesn't say which; each turning move has to be listed explicitly. Simplified for the demo.",
-    londonExamples: ["Edgware Road (Circle/Hammersmith & City/Bakerloo layout)"],
+    londonExamples: [
+      "Edgware Road (Circle/Hammersmith & City/Bakerloo layout)",
+    ],
   },
   {
     id: "wye-depot-triangle",
@@ -144,17 +179,27 @@ export const JUNCTION_EXAMPLES: Junction[] = [
     ]),
     notes:
       "A true wye: every pairwise move is possible, including the A↔B reversal that most passenger Y-junctions never use in service. Common at depot throats, engineering movements only.",
-    londonExamples: ["Reversing triangles at depot throats (e.g. Neasden, Ruislip) — engineering moves, not scheduled service"],
+    londonExamples: [
+      "Reversing triangles at depot throats (e.g. Neasden, Ruislip) — engineering moves, not scheduled service",
+    ],
   },
   {
     id: "loop-kennington",
     type: "loop",
     label: "Kennington loop",
     legs: [
-      { id: "charing-cross-in", label: "from Charing Cross branch", bearingDeg: 0 },
+      {
+        id: "charing-cross-in",
+        label: "from Charing Cross branch",
+        bearingDeg: 0,
+      },
       { id: "bank-in", label: "from Bank branch", bearingDeg: 45 },
       { id: "morden", label: "towards Morden", bearingDeg: 180 },
-      { id: "charing-cross-out", label: "to Charing Cross branch", bearingDeg: 315 },
+      {
+        id: "charing-cross-out",
+        label: "to Charing Cross branch",
+        bearingDeg: 315,
+      },
     ],
     movements: symmetricMovements([
       ["charing-cross-in", "morden"],
@@ -173,7 +218,12 @@ export const JUNCTION_EXAMPLES: Junction[] = [
     legs: [
       { id: "t123", label: "Heathrow T2&3 / central London", bearingDeg: 90 },
       { id: "t4-loop", label: "Heathrow T4 loop", bearingDeg: 200 },
-      { id: "t5", label: "Heathrow Terminal 5", bearingDeg: 270, terminal: true },
+      {
+        id: "t5",
+        label: "Heathrow Terminal 5",
+        bearingDeg: 270,
+        terminal: true,
+      },
     ],
     movements: symmetricMovements([
       ["t123", "t4-loop"],
@@ -202,7 +252,9 @@ export const JUNCTION_EXAMPLES: Junction[] = [
     ]),
     notes:
       "Generalises the wye/fork family past three legs. Several Overground routes converge here; exact signalled moves are simplified for the demo.",
-    londonExamples: ["Willesden Junction (North London Line / West London Line / Watford DC line)"],
+    londonExamples: [
+      "Willesden Junction (North London Line / West London Line / Watford DC line)",
+    ],
   },
   {
     id: "grade-separated-camden-town",
@@ -226,7 +278,9 @@ export const JUNCTION_EXAMPLES: Junction[] = [
       "The Bank branch dives under the Charing Cross branch so that move can happen without crossing opposing traffic at grade. Same movement algebra as a flat junction — the flag is on how it's built, not a new shape.",
     londonExamples: ["Camden Town flying junction (Northern line)"],
   },
-];
+]
 
-export const junctionExampleFor = (type: Junction["type"]): Junction | undefined =>
-  JUNCTION_EXAMPLES.find((junction) => junction.type === type);
+export const junctionExampleFor = (
+  type: Junction["type"]
+): Junction | undefined =>
+  JUNCTION_EXAMPLES.find((junction) => junction.type === type)

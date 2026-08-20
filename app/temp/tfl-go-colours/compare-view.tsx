@@ -5,22 +5,21 @@ import {
   wcagContrast,
   type ContrastRow,
   type TransformFit,
-} from "./analysis";
+} from "./analysis"
 import {
   GO_COLOUR_ROWS,
   GO_DAY_PAPER,
   GO_NIGHT_PAPER,
   type GoColourRow,
-} from "./samples";
+} from "./samples"
 
 /** Tube-map stroke height — same across brand / day / night segments. */
-const LINE_H = "h-3";
+const LINE_H = "h-3"
 
 const fmtRatio = (n: number | null | undefined, digits = 2) =>
-  n == null ? "—" : n.toFixed(digits);
+  n == null ? "—" : n.toFixed(digits)
 
-const fmtLc = (n: number | null | undefined) =>
-  n == null ? "—" : n.toFixed(1);
+const fmtLc = (n: number | null | undefined) => (n == null ? "—" : n.toFixed(1))
 
 /**
  * WCAG ratio → heatmap colour (red = weak, green = strong).
@@ -28,47 +27,47 @@ const fmtLc = (n: number | null | undefined) =>
  */
 const contrastHeatColor = (
   ratio: number | null,
-  onNight: boolean,
+  onNight: boolean
 ): string | undefined => {
-  if (ratio == null) return onNight ? "oklch(70% 0 0)" : undefined;
-  const t = Math.min(1, Math.max(0, (ratio - 1.5) / (7 - 1.5)));
-  const H = 25 + t * 120; // red → green
-  const L = onNight ? 78 : 42;
-  const C = 0.12 + t * 0.04;
-  return `oklch(${L}% ${C.toFixed(3)} ${H.toFixed(1)})`;
-};
+  if (ratio == null) return onNight ? "oklch(70% 0 0)" : undefined
+  const t = Math.min(1, Math.max(0, (ratio - 1.5) / (7 - 1.5)))
+  const H = 25 + t * 120 // red → green
+  const L = onNight ? 78 : 42
+  const C = 0.12 + t * 0.04
+  return `oklch(${L}% ${C.toFixed(3)} ${H.toFixed(1)})`
+}
 
 const LineStripRow = ({
   row,
   contrast,
   fit,
 }: {
-  row: GoColourRow;
-  contrast: ContrastRow | undefined;
-  fit: TransformFit;
+  row: GoColourRow
+  contrast: ContrastRow | undefined
+  fit: TransformFit
 }) => {
   const brandContrast =
     contrast?.brandOnDayWcag ??
-    (row.brand ? wcagContrast(row.brand, GO_DAY_PAPER) : null);
+    (row.brand ? wcagContrast(row.brand, GO_DAY_PAPER) : null)
   const dayContrast =
     contrast?.goDayOnDayWcag ??
-    (row.goDay ? wcagContrast(row.goDay, GO_DAY_PAPER) : null);
+    (row.goDay ? wcagContrast(row.goDay, GO_DAY_PAPER) : null)
   const nightContrast =
     contrast?.nightOnNightWcag ??
-    (row.goNight ? wcagContrast(row.goNight, GO_NIGHT_PAPER) : null);
+    (row.goNight ? wcagContrast(row.goNight, GO_NIGHT_PAPER) : null)
 
   const brandDeltaNight = row.brandPlaceholder
     ? null
-    : applyBrandNightMethod(row.brand, fit);
+    : applyBrandNightMethod(row.brand, fit)
   const methodContrast = brandDeltaNight
     ? wcagContrast(brandDeltaNight, GO_NIGHT_PAPER)
-    : null;
+    : null
 
   const segments: {
-    key: string;
-    hex: string | null;
-    contrast: number | null;
-    nightCell?: boolean;
+    key: string
+    hex: string | null
+    contrast: number | null
+    nightCell?: boolean
   }[] = [
     { key: "brand", hex: row.brand, contrast: brandContrast },
     { key: "day", hex: row.goDay, contrast: dayContrast },
@@ -84,7 +83,7 @@ const LineStripRow = ({
       contrast: methodContrast,
       nightCell: true,
     },
-  ];
+  ]
 
   return (
     <div className="grid grid-cols-[minmax(7rem,9rem)_1fr] gap-x-3 text-sm">
@@ -107,9 +106,7 @@ const LineStripRow = ({
             key={seg.key}
             className="min-w-0 px-1 py-1"
             style={
-              seg.nightCell
-                ? { backgroundColor: GO_NIGHT_PAPER }
-                : undefined
+              seg.nightCell ? { backgroundColor: GO_NIGHT_PAPER } : undefined
             }
           >
             <p
@@ -148,27 +145,25 @@ const LineStripRow = ({
         ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
 export const GoColourCompareView = () => {
-  const analysis = analyseGoColours(GO_COLOUR_ROWS);
-  const { fit, summary, contrastRows, transformRows } = analysis;
+  const analysis = analyseGoColours(GO_COLOUR_ROWS)
+  const { fit, summary, contrastRows, transformRows } = analysis
 
   return (
     <div className="mx-auto max-w-5xl space-y-12">
       <header className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          Temp · colour research
-        </p>
+        <p className="text-sm text-muted-foreground">Temp · colour research</p>
         <h1 className="text-2xl font-normal tracking-tight">
           TfL brand vs Go day / night
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Brand Issue-4 tokens beside Go map cores, plus brand with the fitted
           night OKLCH method applied. Night columns sit on charcoal{" "}
-          <span className="font-mono text-foreground">{GO_NIGHT_PAPER}</span>
-          {" "}(not pitch black). Day→night is the capture-resistant signal.
+          <span className="font-mono text-foreground">{GO_NIGHT_PAPER}</span>{" "}
+          (not pitch black). Day→night is the capture-resistant signal.
         </p>
       </header>
 
@@ -177,8 +172,8 @@ export const GoColourCompareView = () => {
           Capture resistance
         </h2>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Screenshots + AirDrop shift absolute hex. We do not treat Go samples as
-          ground truth. Instead: (1) median day→night OKLCH Δ cancels shared
+          Screenshots + AirDrop shift absolute hex. We do not treat Go samples
+          as ground truth. Instead: (1) median day→night OKLCH Δ cancels shared
           capture wash; (2) contrast verdicts compare brand vs Go-night on the
           same fixed charcoal; (3) brand→day residual estimates capture bias.
         </p>
@@ -240,9 +235,7 @@ export const GoColourCompareView = () => {
               capture bias ΔL (brand→day)
             </dt>
             <dd className="font-mono">
-              {fit.captureBiasDL == null
-                ? "—"
-                : fmtDelta(fit.captureBiasDL)}
+              {fit.captureBiasDL == null ? "—" : fmtDelta(fit.captureBiasDL)}
             </dd>
           </div>
           <div>
@@ -250,9 +243,7 @@ export const GoColourCompareView = () => {
               capture bias ΔC (brand→day)
             </dt>
             <dd className="font-mono">
-              {fit.captureBiasDC == null
-                ? "—"
-                : fmtDelta(fit.captureBiasDC)}
+              {fit.captureBiasDC == null ? "—" : fmtDelta(fit.captureBiasDC)}
             </dd>
           </div>
         </dl>
@@ -281,9 +272,7 @@ export const GoColourCompareView = () => {
                       {r.dayToNight ? fmtDelta(r.dayToNight.dC) : "—"}
                     </td>
                     <td className="py-2 pr-3 font-mono">
-                      {r.dayToNight
-                        ? fmtDelta(r.dayToNight.dHSigned, 1)
-                        : "—"}
+                      {r.dayToNight ? fmtDelta(r.dayToNight.dHSigned, 1) : "—"}
                     </td>
                     <td className="py-2 font-mono">
                       {r.brandToDay ? fmtDelta(r.brandToDay.dL) : "—"}
@@ -300,9 +289,9 @@ export const GoColourCompareView = () => {
           Contrast on night paper
         </h2>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Brand colour on charcoal vs Go night sample on the same charcoal.
-          WCAG 2.1 ratio and APCA Lc (|Lc|≥30 soft floor for map strokes).
-          “Seeking” = APCA |Lc| gain ≥3 and brand was under 60 — likely a dark-mode
+          Brand colour on charcoal vs Go night sample on the same charcoal. WCAG
+          2.1 ratio and APCA Lc (|Lc|≥30 soft floor for map strokes). “Seeking”
+          = APCA |Lc| gain ≥3 and brand was under 60 — likely a dark-mode
           contrast tweak rather than capture noise alone.
         </p>
         <p className="text-sm text-muted-foreground">
@@ -311,10 +300,7 @@ export const GoColourCompareView = () => {
             ? `: ${summary.contrastSeekingIds.join(", ")}`
             : "."}
           {summary.contrastQuieterIds.length > 0 ? (
-            <>
-              {" "}
-              Quieter on charcoal: {summary.contrastQuieterIds.join(", ")}.
-            </>
+            <> Quieter on charcoal: {summary.contrastQuieterIds.join(", ")}.</>
           ) : null}
           {summary.avgApcaGain != null ? (
             <>
@@ -390,25 +376,26 @@ export const GoColourCompareView = () => {
         </h2>
         <ul className="max-w-2xl list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted-foreground">
           <li>
-            Night paper is charcoal <span className="font-mono text-foreground">{GO_NIGHT_PAPER}</span>, not
-            black — brand Northern fill fails; Go adds a near-white outline.
+            Night paper is charcoal{" "}
+            <span className="font-mono text-foreground">{GO_NIGHT_PAPER}</span>,
+            not black — brand Northern fill fails; Go adds a near-white outline.
           </li>
           <li>
-            Capture-resistant night pattern: raise OKLCH L (~3%), hold hue, chroma
-            mostly stable — not a wholesale rehue.
+            Capture-resistant night pattern: raise OKLCH L (~3%), hold hue,
+            chroma mostly stable — not a wholesale rehue.
           </li>
           <li>
-            Contrast-seeking lifts (Victoria, District, Circle, Waterloo &amp; City,
-            Piccadilly via WCAG) support “brighter for dark paper.” Some lines
-            (Jubilee, Overground, Bakerloo) read quieter — hierarchy or capture,
-            not a single global boost.
+            Contrast-seeking lifts (Victoria, District, Circle, Waterloo &amp;
+            City, Piccadilly via WCAG) support “brighter for dark paper.” Some
+            lines (Jubilee, Overground, Bakerloo) read quieter — hierarchy or
+            capture, not a single global boost.
           </li>
           <li>
-            Do not replace Issue-4 brand tokens with screenshot hex; use day→night
-            OKLCH deltas if shipping a Go-like dark map theme.
+            Do not replace Issue-4 brand tokens with screenshot hex; use
+            day→night OKLCH deltas if shipping a Go-like dark map theme.
           </li>
         </ul>
       </section>
     </div>
-  );
-};
+  )
+}

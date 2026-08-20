@@ -106,7 +106,11 @@ export const RailArrivalsBoardSkeleton = ({
   className?: string
   stopName?: string
 } = {}) => (
-  <ArrivalsBoardSkeleton mode="rail" className={className} stopName={stopName} />
+  <ArrivalsBoardSkeleton
+    mode="rail"
+    className={className}
+    stopName={stopName}
+  />
 )
 
 /**
@@ -146,10 +150,7 @@ export const RailArrivalsBoard = ({
   const heading = resolveArrivalsHeading(chrome.stopName, rows)
   if (loading && rows.length === 0 && !error) {
     return (
-      <RailArrivalsBoardSkeleton
-        className={className}
-        stopName={heading}
-      />
+      <RailArrivalsBoardSkeleton className={className} stopName={heading} />
     )
   }
 

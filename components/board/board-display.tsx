@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
+import { useEffect, useMemo, useSyncExternalStore } from "react"
 import { normalizeLineId } from "tfl-ts"
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
@@ -46,6 +46,7 @@ import {
   resolveBoardStopNameOverride,
   type BoardStationNamesIndex,
 } from "@/lib/tfl/board-station-names"
+import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
 import {
   normalizeBoardHash,
   parseBoardConfig,
@@ -81,16 +82,23 @@ const subscribeToBoardHash = (onStoreChange: () => void) => {
 
 const getBoardHash = () => window.location.hash
 const getServerBoardHash = () => ""
+const subscribeNoop = () => () => undefined
+const getClientReady = () => true
+const getServerReady = () => false
 
 const useBoardConfigFromHash = (
-  stationNames: BoardStationNamesIndex,
+  stationNames: BoardStationNamesIndex
 ): { config: BoardConfig; ready: boolean } => {
   const hash = useSyncExternalStore(
     subscribeToBoardHash,
     getBoardHash,
-    getServerBoardHash,
+    getServerBoardHash
   )
-  const [ready, setReady] = useState(false)
+  const ready = useSyncExternalStore(
+    subscribeNoop,
+    getClientReady,
+    getServerReady
+  )
 
   const config = useMemo((): BoardConfig => {
     const parsed = parseBoardConfig(hash)
@@ -109,15 +117,11 @@ const useBoardConfigFromHash = (
     replaceHashIfNeeded(normalizeBoardHash(liveHash, { stopName }))
   }, [hash, stationNames])
 
-  useEffect(() => {
-    if (hash === window.location.hash) setReady(true)
-  }, [hash])
-
   return { config, ready }
 }
 
 const DEGRADED_HINT =
-  "Using shared demo data. Add your TfL key to the URL for live updates."
+  "Using shared demo data. Add a TfL key on this browser, or in the Board URL hash, for live updates."
 
 const NO_STOP_HINT =
   "Add a stop id to the URL to show live arrivals for one station."
@@ -143,7 +147,9 @@ export const BoardDisplay = ({
   arrivalsStopIds,
 }: BoardDisplayProps) => {
   const { config, ready } = useBoardConfigFromHash(stationNames)
-  const appKey = config.key ?? null
+  const { hydrated, getAppKey } = useUserTflCredentials()
+  const storedKey = hydrated ? getAppKey() : null
+  const appKey = config.key ?? storedKey
   const stopId = config.stop ?? ""
   // URL `stopName` is an override only. Otherwise the catalog paints the
   // heading immediately; the board infers from arrivals when that misses.
@@ -154,7 +160,7 @@ export const BoardDisplay = ({
 
   const slots = useMemo(
     () => resolveBoardSlots(config.slots.p1, config.slots.p2),
-    [config.slots.p1, config.slots.p2],
+    [config.slots.p1, config.slots.p2]
   )
   const showRail = boardSlotsInclude(slots, "rail")
   const showBus = boardSlotsInclude(slots, "bus")
@@ -258,7 +264,9 @@ export const BoardDisplay = ({
   ])
 
   const statusHint =
-    ready && !appKey && (status.source === "site" || cyclePoints.source === "site")
+    ready &&
+    !appKey &&
+    (status.source === "site" || cyclePoints.source === "site")
       ? DEGRADED_HINT
       : null
   const arrivalsError = !ready
@@ -285,15 +293,20 @@ export const BoardDisplay = ({
   const railData = useMemo(() => {
     if (!config.arrivals.lineOrder?.length) return arrivals.data
     const keep = new Set(
-      (arrivalsProps.lines ?? []).map((line) => normalizeLineId(line.lineId)),
+      (arrivalsProps.lines ?? []).map((line) => normalizeLineId(line.lineId))
     )
     for (const id of arrivalsProps.lineOrder ?? []) {
       keep.add(normalizeLineId(id))
     }
     return arrivals.data.filter((row) =>
-      keep.has(normalizeLineId(row.lineId ?? "")),
+      keep.has(normalizeLineId(row.lineId ?? ""))
     )
-  }, [arrivals.data, arrivalsProps.lineOrder, arrivalsProps.lines, config.arrivals.lineOrder])
+  }, [
+    arrivals.data,
+    arrivalsProps.lineOrder,
+    arrivalsProps.lines,
+    config.arrivals.lineOrder,
+  ])
 
   const busData = useMemo(() => {
     const routes = config.bus.routes
@@ -311,7 +324,7 @@ export const BoardDisplay = ({
     if (!lines?.length) return status.data
     const keep = new Set(lines.map((id) => normalizeLineId(id)))
     return status.data.filter((line) =>
-      keep.has(normalizeLineId(line.id ?? "")),
+      keep.has(normalizeLineId(line.id ?? ""))
     )
   }, [status.data, config.status.lines])
 
@@ -381,9 +394,7 @@ export const BoardDisplay = ({
         !ready ||
         (cyclePoints.loading && cyclePoints.data.length === 0 && !cycleError)
       ) {
-        return (
-          <CycleHireDocksDisplaySkeleton tiles={config.cycle.tiles ?? 2} />
-        )
+        return <CycleHireDocksDisplaySkeleton tiles={config.cycle.tiles ?? 2} />
       }
       return (
         <CycleHireDocksDisplay
@@ -446,7 +457,7 @@ export const BoardDisplay = ({
   const renderStack = (
     kinds: readonly BoardPanelKind[],
     label: string,
-    wide: boolean,
+    wide: boolean
   ) => {
     if (kinds.length === 0) return null
     return (

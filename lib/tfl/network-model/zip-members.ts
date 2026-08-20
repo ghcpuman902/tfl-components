@@ -19,19 +19,21 @@ export type ZipMember = {
 const readExact = async (
   handle: Awaited<ReturnType<typeof open>>,
   position: number,
-  length: number,
+  length: number
 ): Promise<Buffer> => {
   const buffer = Buffer.alloc(length)
   const { bytesRead } = await handle.read(buffer, 0, length, position)
   if (bytesRead !== length) {
-    throw new Error(`Expected ${length} bytes at ${position}, read ${bytesRead}`)
+    throw new Error(
+      `Expected ${length} bytes at ${position}, read ${bytesRead}`
+    )
   }
   return buffer
 }
 
 const readZip64Extra = (
   extra: Buffer,
-  sizes: { uncompressed: number; compressed: number; localOffset: number },
+  sizes: { uncompressed: number; compressed: number; localOffset: number }
 ): { uncompressed: number; compressed: number; localOffset: number } => {
   let offset = 0
   let { uncompressed, compressed, localOffset } = sizes
@@ -64,13 +66,17 @@ export const listZipMembers = async (zipPath: string): Promise<ZipMember[]> => {
     const tailSize = Math.min(size, 256 * 1024)
     const tail = await readExact(file, size - tailSize, tailSize)
     const eocdAt = tail.lastIndexOf(EOCD_SIG)
-    if (eocdAt < 0) throw new Error(`No zip end-of-central-directory in ${zipPath}`)
+    if (eocdAt < 0)
+      throw new Error(`No zip end-of-central-directory in ${zipPath}`)
     const eocd = tail.subarray(eocdAt)
     const cdSize = eocd.readUInt32LE(12)
     const cdOffset = eocd.readUInt32LE(16)
     const cd =
       cdOffset >= size - tailSize
-        ? tail.subarray(cdOffset - (size - tailSize), cdOffset - (size - tailSize) + cdSize)
+        ? tail.subarray(
+            cdOffset - (size - tailSize),
+            cdOffset - (size - tailSize) + cdSize
+          )
         : await readExact(file, cdOffset, cdSize)
 
     const members: ZipMember[] = []
@@ -86,10 +92,12 @@ export const listZipMembers = async (zipPath: string): Promise<ZipMember[]> => {
       const extraLength = cd.readUInt16LE(cursor + 30)
       const commentLength = cd.readUInt16LE(cursor + 32)
       let localOffset = cd.readUInt32LE(cursor + 42)
-      const name = cd.subarray(cursor + 46, cursor + 46 + nameLength).toString("utf8")
+      const name = cd
+        .subarray(cursor + 46, cursor + 46 + nameLength)
+        .toString("utf8")
       const extra = cd.subarray(
         cursor + 46 + nameLength,
-        cursor + 46 + nameLength + extraLength,
+        cursor + 46 + nameLength + extraLength
       )
       const zip64 = readZip64Extra(extra, {
         uncompressed,
@@ -116,7 +124,7 @@ export const listZipMembers = async (zipPath: string): Promise<ZipMember[]> => {
 
 export const openZipMember = async (
   zipPath: string,
-  member: ZipMember,
+  member: ZipMember
 ): Promise<Readable> => {
   const file = await open(zipPath, "r")
   try {
@@ -135,7 +143,9 @@ export const openZipMember = async (
     if (member.method === 0) return compressed
     if (member.method !== 8) {
       compressed.destroy()
-      throw new Error(`Unsupported zip method ${member.method} for ${member.name}`)
+      throw new Error(
+        `Unsupported zip method ${member.method} for ${member.name}`
+      )
     }
     const inflate = createInflateRaw()
     compressed.on("error", (error) => inflate.destroy(error))
@@ -147,7 +157,7 @@ export const openZipMember = async (
 
 export const requireZipMember = (
   members: readonly ZipMember[],
-  name: string,
+  name: string
 ): ZipMember => {
   const member = members.find((entry) => entry.name === name)
   if (!member) throw new Error(`Zip has no ${name}`)
@@ -156,7 +166,7 @@ export const requireZipMember = (
 
 export const zipLooksComplete = async (
   zipPath: string,
-  expectedBytes?: number,
+  expectedBytes?: number
 ): Promise<boolean> => {
   try {
     const size = (await stat(zipPath)).size

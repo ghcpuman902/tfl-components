@@ -35,7 +35,7 @@ export const stopsFromRiverOrderedRoutes = (sequence: {
   const longest = routes.reduce((best, route) =>
     (route.naptanIds?.length ?? 0) > (best.naptanIds?.length ?? 0)
       ? route
-      : best,
+      : best
   )
   const ids = longest.naptanIds ?? []
   if (ids.length === 0) return null

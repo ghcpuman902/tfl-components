@@ -1,19 +1,19 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { DocsPageHeader } from "@/components/docs/docs-page-header";
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { getDocsEntry } from "@/lib/docs-catalog";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
+import { getDocsEntry } from "@/lib/docs-catalog"
 
 export const metadata: Metadata = {
   title: "Licensing & brand use",
   description:
     "What installing a component does and does not grant for TfL brand assets.",
-};
+}
 
 export default function FoundationsLicensingPage() {
-  const entry = getDocsEntry("licensing");
-  if (!entry) notFound();
+  const entry = getDocsEntry("licensing")
+  if (!entry) notFound()
 
   return (
     <DocsReadableWidth>
@@ -49,7 +49,9 @@ export default function FoundationsLicensingPage() {
               </dd>
             </div>
             <div>
-              <dt className="font-medium text-foreground">Protected TfL marks</dt>
+              <dt className="font-medium text-foreground">
+                Protected TfL marks
+              </dt>
               <dd className="text-muted-foreground">
                 Roundel and related trademarks — env-gated; see{" "}
                 <Link
@@ -93,7 +95,9 @@ export default function FoundationsLicensingPage() {
           <h2 className="text-lg font-semibold">Do / don’t</h2>
           <ul className="list-inside list-disc text-sm text-muted-foreground">
             <li>Do attribute geographic basemap data where required.</li>
-            <li>Do keep credentials and brand toggles in the application layer.</li>
+            <li>
+              Do keep credentials and brand toggles in the application layer.
+            </li>
             <li>
               Don’t redistribute Johnston or Roundel artwork without permission.
             </li>
@@ -101,5 +105,5 @@ export default function FoundationsLicensingPage() {
         </section>
       </article>
     </DocsReadableWidth>
-  );
+  )
 }

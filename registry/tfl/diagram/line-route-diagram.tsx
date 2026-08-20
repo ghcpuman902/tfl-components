@@ -1,31 +1,31 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
 import {
   diagramUnitStyle,
   verticalDiagramMetrics,
-} from "@/lib/tfl/line-diagram";
-import { type DiagramStation } from "@/lib/tfl/diagram-station";
+} from "@/lib/tfl/line-diagram"
+import { type DiagramStation } from "@/lib/tfl/diagram-station"
 import {
   DiagramConnectionFlags,
   DiagramStationMarker,
   resolveMapMarkerKind,
   VerticalRouteLine,
-} from "@/components/tfl/diagram/diagram-markers";
-import { StationName } from "@/components/tfl/station-name";
-import { NationalRailPictogram } from "@/components/tfl/national-rail-pictogram";
+} from "@/components/tfl/diagram/diagram-markers"
+import { StationName } from "@/components/tfl/station-name"
+import { NationalRailPictogram } from "@/components/tfl/national-rail-pictogram"
 
 export type LineRouteDiagramProps = {
-  stations: DiagramStation[];
+  stations: DiagramStation[]
   /** Hex route colour (use getLineColor / getLineInlineStyles in callers). */
-  lineColor: string;
-  lineName?: string;
-  directionLabel?: string;
+  lineColor: string
+  lineName?: string
+  directionLabel?: string
   /**
    * Absolute route line thickness in px.
    * When omitted, uses `DIAGRAM_BASELINE.vertical` × `--tfl-diagram-scale`.
    */
-  x?: number;
-  className?: string;
-};
+  x?: number
+  className?: string
+}
 
 /**
  * Vertical full-line map: continuous route with right-side ticks, terminal
@@ -42,11 +42,11 @@ export const LineRouteDiagram = ({
   if (stations.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">No stations to display.</p>
-    );
+    )
   }
 
-  const m = verticalDiagramMetrics();
-  const lastIndex = stations.length - 1;
+  const m = verticalDiagramMetrics()
+  const lastIndex = stations.length - 1
 
   return (
     <div
@@ -85,8 +85,8 @@ export const LineRouteDiagram = ({
           const kind = resolveMapMarkerKind({
             interchange: station.interchange,
             isEndpoint: index === 0 || index === lastIndex,
-          });
-          const connections = station.connections;
+          })
+          const connections = station.connections
 
           return (
             <li
@@ -105,7 +105,7 @@ export const LineRouteDiagram = ({
               />
 
               <div className="flex min-w-0 flex-1 items-center gap-2">
-                <div className="relative inline-flex min-w-0 max-w-full items-center">
+                <div className="relative inline-flex max-w-full min-w-0 items-center">
                   <StationName
                     name={station.name}
                     layout="auto"
@@ -127,15 +127,15 @@ export const LineRouteDiagram = ({
                   <DiagramConnectionFlags
                     stationId={station.id}
                     connections={connections.filter(
-                      (c) => c.id !== "national-rail",
+                      (c) => c.id !== "national-rail"
                     )}
                   />
                 ) : null}
               </div>
             </li>
-          );
+          )
         })}
       </ol>
     </div>
-  );
-};
+  )
+}

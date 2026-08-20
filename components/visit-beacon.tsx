@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { useEffect } from "react";
+import { useEffect } from "react"
 
 /** Fire-and-forget unique daily visitor beacon. */
 export const VisitBeacon = () => {
@@ -11,14 +11,14 @@ export const VisitBeacon = () => {
           method: "POST",
           keepalive: true,
           credentials: "same-origin",
-        });
+        })
       } catch {
         // Soft-fail — stats must never break the page.
       }
-    };
+    }
 
-    handleBeacon();
-  }, []);
+    handleBeacon()
+  }, [])
 
-  return null;
-};
+  return null
+}

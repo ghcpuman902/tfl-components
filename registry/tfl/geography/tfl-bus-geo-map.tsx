@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   useCallback,
@@ -7,76 +7,76 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
-} from "react";
-import type { FeatureCollection, LineString } from "geojson";
-import maplibregl, { type ExpressionSpecification } from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
+} from "react"
+import type { FeatureCollection, LineString } from "geojson"
+import maplibregl, { type ExpressionSpecification } from "maplibre-gl"
+import "maplibre-gl/dist/maplibre-gl.css"
 import type {
   BusRouteGeometry,
   BusRouteSegment,
   BusRouteSegmentStatus,
-} from "@/lib/tfl/bus-geography-types";
-import { mapLineColorForBasemap } from "@/lib/tfl/dark-line-colours";
-import {
-  openFreeMapStyleUrl,
-} from "@/lib/tfl/geography-credits";
-import { useVehicleSegmentSource } from "@/components/tfl/geography/sync-vehicle-source";
-import { provideMissingStyleImages } from "@/components/tfl/maps/provide-missing-style-images";
+} from "@/lib/tfl/bus-geography-types"
+import { mapLineColorForBasemap } from "@/lib/tfl/dark-line-colours"
+import { openFreeMapStyleUrl } from "@/lib/tfl/geography-credits"
+import { useVehicleSegmentSource } from "@/components/tfl/geography/sync-vehicle-source"
+import { provideMissingStyleImages } from "@/components/tfl/maps/provide-missing-style-images"
 import {
   vehiclesToSegmentGeoJSON,
   type VehiclePosition,
-} from "@/lib/tfl/map-vehicles";
-import type { RoutePolyline } from "@/lib/tfl/vehicle-progress";
-import { cn } from "@/lib/utils";
+} from "@/lib/tfl/map-vehicles"
+import type { RoutePolyline } from "@/lib/tfl/vehicle-progress"
+import { cn } from "@/lib/utils"
 
-const LONDON_CENTER: [number, number] = [-0.128, 51.507];
-const LONDON_ZOOM = 13;
-const DISABLED_COLOR = "#6B7280";
+const LONDON_CENTER: [number, number] = [-0.128, 51.507]
+const LONDON_ZOOM = 13
+const DISABLED_COLOR = "#6B7280"
 
 type TflBusGeoMapProps = {
   /** One route. Caller owns current / diverted / disabled interpretation. */
-  data: BusRouteGeometry;
+  data: BusRouteGeometry
   /** Optional extra geometry (e.g. a second direction). */
-  alternate?: BusRouteGeometry;
-  vehicles?: readonly VehiclePosition[];
+  alternate?: BusRouteGeometry
+  vehicles?: readonly VehiclePosition[]
   /** Keep vehicles walking along the track between arrival snapshots. */
-  coast?: boolean;
-  showStops?: boolean;
-  showNavigation?: boolean;
-  center?: [number, number];
-  zoom?: number;
-  className?: string;
-};
+  coast?: boolean
+  showStops?: boolean
+  showNavigation?: boolean
+  center?: [number, number]
+  zoom?: number
+  className?: string
+}
 
 const subscribeDocumentDark = (onStoreChange: () => void) => {
-  const observer = new MutationObserver(onStoreChange);
+  const observer = new MutationObserver(onStoreChange)
   observer.observe(document.documentElement, {
     attributes: true,
     attributeFilter: ["class"],
-  });
-  return () => observer.disconnect();
-};
+  })
+  return () => observer.disconnect()
+}
 
 const getDocumentDark = () =>
-  document.documentElement.classList.contains("dark");
+  document.documentElement.classList.contains("dark")
 
 const STATUS_ORDER: readonly BusRouteSegmentStatus[] = [
   "disabled",
   "diverted",
   "current",
-];
+]
 
 const collectSegments = (
-  routes: readonly (BusRouteGeometry | undefined)[],
-): BusRouteSegment[] =>
-  routes.flatMap((route) => route?.segments ?? []);
+  routes: readonly (BusRouteGeometry | undefined)[]
+): BusRouteSegment[] => routes.flatMap((route) => route?.segments ?? [])
 
 const segmentsToCollection = (
   segments: readonly BusRouteSegment[],
   status: BusRouteSegmentStatus,
   color: string,
-  dark: boolean,
-): FeatureCollection<LineString, { status: BusRouteSegmentStatus; color: string }> => ({
+  dark: boolean
+): FeatureCollection<
+  LineString,
+  { status: BusRouteSegmentStatus; color: string }
+> => ({
   type: "FeatureCollection",
   features: segments
     .filter((segment) => segment.status === status)
@@ -92,12 +92,12 @@ const segmentsToCollection = (
       },
       geometry: segment.line,
     })),
-});
+})
 
 const LINE_LAYOUT = {
   "line-join": "round" as const,
   "line-cap": "round" as const,
-};
+}
 
 const LINE_WIDTH: ExpressionSpecification = [
   "interpolate",
@@ -107,7 +107,7 @@ const LINE_WIDTH: ExpressionSpecification = [
   3,
   15,
   5,
-];
+]
 
 const STOP_RADIUS: ExpressionSpecification = [
   "interpolate",
@@ -117,7 +117,7 @@ const STOP_RADIUS: ExpressionSpecification = [
   3,
   16,
   5,
-];
+]
 
 const VEHICLE_LINE_WIDTH: ExpressionSpecification = [
   "interpolate",
@@ -129,48 +129,48 @@ const VEHICLE_LINE_WIDTH: ExpressionSpecification = [
   11,
   17,
   14,
-];
+]
 
 const boundsFromGeometry = (
-  routes: readonly (BusRouteGeometry | undefined)[],
+  routes: readonly (BusRouteGeometry | undefined)[]
 ): maplibregl.LngLatBounds | null => {
-  const bounds = new maplibregl.LngLatBounds();
-  let hasPoint = false;
+  const bounds = new maplibregl.LngLatBounds()
+  let hasPoint = false
   for (const route of routes) {
-    if (!route) continue;
+    if (!route) continue
     for (const stop of route.stops) {
-      bounds.extend([stop.lon, stop.lat]);
-      hasPoint = true;
+      bounds.extend([stop.lon, stop.lat])
+      hasPoint = true
     }
     for (const segment of route.segments) {
       for (const coord of segment.line.coordinates) {
-        const lon = coord[0];
-        const lat = coord[1];
-        if (lon == null || lat == null) continue;
-        bounds.extend([lon, lat]);
-        hasPoint = true;
+        const lon = coord[0]
+        const lat = coord[1]
+        if (lon == null || lat == null) continue
+        bounds.extend([lon, lat])
+        hasPoint = true
       }
     }
   }
-  return hasPoint ? bounds : null;
-};
+  return hasPoint ? bounds : null
+}
 
 const addRouteLayers = (
   map: maplibregl.Map,
   routes: readonly (BusRouteGeometry | undefined)[],
   showStops: boolean,
-  dark: boolean,
+  dark: boolean
 ) => {
-  const color = routes.find((route) => route)?.color ?? "#DC241F";
-  const segments = collectSegments(routes);
+  const color = routes.find((route) => route)?.color ?? "#DC241F"
+  const segments = collectSegments(routes)
 
   for (const status of STATUS_ORDER) {
-    const sourceId = `bus-route-${status}`;
-    if (map.getSource(sourceId)) continue;
+    const sourceId = `bus-route-${status}`
+    if (map.getSource(sourceId)) continue
     map.addSource(sourceId, {
       type: "geojson",
       data: segmentsToCollection(segments, status, color, dark),
-    });
+    })
     map.addLayer({
       id: sourceId,
       type: "line",
@@ -182,7 +182,7 @@ const addRouteLayers = (
         "line-opacity": status === "disabled" ? 0.45 : 0.95,
         "line-dasharray": status === "diverted" ? [1.4, 1.4] : [1, 0],
       },
-    });
+    })
   }
 
   if (showStops) {
@@ -200,10 +200,10 @@ const addRouteLayers = (
                 type: "Point" as const,
                 coordinates: [stop.lon, stop.lat],
               },
-            })) ?? [],
+            })) ?? []
         ),
       },
-    });
+    })
     map.addLayer({
       id: "bus-stops",
       type: "circle",
@@ -215,7 +215,7 @@ const addRouteLayers = (
         "circle-stroke-width": 1.4,
         "circle-stroke-color": mapLineColorForBasemap(color, dark),
       },
-    });
+    })
     map.addLayer({
       id: "bus-stops-label",
       type: "symbol",
@@ -235,13 +235,13 @@ const addRouteLayers = (
         "text-halo-color": dark ? "#111827" : "#ffffff",
         "text-halo-width": 1.4,
       },
-    });
+    })
   }
 
   map.addSource("bus-vehicles", {
     type: "geojson",
     data: vehiclesToSegmentGeoJSON([], []),
-  });
+  })
   map.addLayer({
     id: "bus-vehicles",
     type: "line",
@@ -255,40 +255,40 @@ const addRouteLayers = (
       "line-width": VEHICLE_LINE_WIDTH,
       "line-opacity": 0.96,
     },
-  });
-};
+  })
+}
 
 const polylinesFromRoutes = (
-  routes: readonly (BusRouteGeometry | undefined)[],
+  routes: readonly (BusRouteGeometry | undefined)[]
 ): RoutePolyline[] => {
-  const out: RoutePolyline[] = [];
+  const out: RoutePolyline[] = []
   for (const route of routes) {
-    if (!route) continue;
+    if (!route) continue
     for (const segment of route.segments) {
-      out.push({ lineId: route.routeId, line: segment.line });
+      out.push({ lineId: route.routeId, line: segment.line })
     }
   }
-  return out;
-};
+  return out
+}
 
 const asGeoJsonSource = (
-  source: maplibregl.Source | undefined,
+  source: maplibregl.Source | undefined
 ): maplibregl.GeoJSONSource | null =>
-  source?.type === "geojson" ? (source as maplibregl.GeoJSONSource) : null;
+  source?.type === "geojson" ? (source as maplibregl.GeoJSONSource) : null
 
 const syncRouteSources = (
   map: maplibregl.Map,
   routes: readonly (BusRouteGeometry | undefined)[],
-  dark: boolean,
+  dark: boolean
 ) => {
-  const color = routes.find((route) => route)?.color ?? "#DC241F";
-  const segments = collectSegments(routes);
+  const color = routes.find((route) => route)?.color ?? "#DC241F"
+  const segments = collectSegments(routes)
   for (const status of STATUS_ORDER) {
     asGeoJsonSource(map.getSource("bus-route-" + status))?.setData(
-      segmentsToCollection(segments, status, color, dark),
-    );
+      segmentsToCollection(segments, status, color, dark)
+    )
   }
-};
+}
 
 /**
  * One bus route on OpenFreeMap / MapLibre. Segment status is props-only —
@@ -305,21 +305,21 @@ export const TflBusGeoMap = ({
   zoom = LONDON_ZOOM,
   className,
 }: TflBusGeoMapProps) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const skipStyleSwapRef = useRef(true);
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const mapRef = useRef<maplibregl.Map | null>(null)
+  const skipStyleSwapRef = useRef(true)
   const dark = useSyncExternalStore(
     subscribeDocumentDark,
     getDocumentDark,
-    () => false,
-  );
-  const [status, setStatus] = useState<"loading" | "ready">("loading");
+    () => false
+  )
+  const [status, setStatus] = useState<"loading" | "ready">("loading")
 
-  const routes = useMemo(() => [data, alternate], [data, alternate]);
+  const routes = useMemo(() => [data, alternate], [data, alternate])
   const getPolylines = useCallback(
     (): RoutePolyline[] => polylinesFromRoutes(routes),
-    [routes],
-  );
+    [routes]
+  )
   const { flush: flushVehicles } = useVehicleSegmentSource({
     mapRef,
     sourceId: "bus-vehicles",
@@ -327,11 +327,11 @@ export const TflBusGeoMap = ({
     getPolylines,
     coast,
     ready: status === "ready",
-  });
+  })
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container || mapRef.current) return;
+    const container = containerRef.current
+    if (!container || mapRef.current) return
 
     const map = new maplibregl.Map({
       container,
@@ -340,57 +340,57 @@ export const TflBusGeoMap = ({
       zoom,
       attributionControl: { compact: true },
       cooperativeGestures: true,
-    });
-    provideMissingStyleImages(map);
+    })
+    provideMissingStyleImages(map)
 
     if (showNavigation) {
       map.addControl(
         new maplibregl.NavigationControl({ showCompass: false }),
-        "top-right",
-      );
+        "top-right"
+      )
     }
-    mapRef.current = map;
+    mapRef.current = map
 
     map.on("load", () => {
-      addRouteLayers(map, routes, showStops, dark);
-      const bounds = boundsFromGeometry(routes);
+      addRouteLayers(map, routes, showStops, dark)
+      const bounds = boundsFromGeometry(routes)
       if (bounds) {
-        map.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: 0 });
+        map.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: 0 })
       }
-      setStatus("ready");
-    });
+      setStatus("ready")
+    })
 
     return () => {
-      map.remove();
-      mapRef.current = null;
-    };
+      map.remove()
+      mapRef.current = null
+    }
     // Create once. Overlay and style swaps live in the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showNavigation]);
+  }, [showNavigation])
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
-    syncRouteSources(map, routes, dark);
-  }, [routes, dark]);
+    const map = mapRef.current
+    if (!map || !map.isStyleLoaded()) return
+    syncRouteSources(map, routes, dark)
+  }, [routes, dark])
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
+    const map = mapRef.current
+    if (!map) return
     if (skipStyleSwapRef.current) {
-      skipStyleSwapRef.current = false;
-      return;
+      skipStyleSwapRef.current = false
+      return
     }
     const apply = () => {
-      addRouteLayers(map, routes, showStops, dark);
-      flushVehicles();
-    };
-    map.setStyle(openFreeMapStyleUrl(dark));
-    map.once("style.load", apply);
+      addRouteLayers(map, routes, showStops, dark)
+      flushVehicles()
+    }
+    map.setStyle(openFreeMapStyleUrl(dark))
+    map.once("style.load", apply)
     return () => {
-      map.off("style.load", apply);
-    };
-  }, [dark, showStops, flushVehicles]);
+      map.off("style.load", apply)
+    }
+  }, [dark, showStops, flushVehicles])
 
   return (
     <div
@@ -400,5 +400,5 @@ export const TflBusGeoMap = ({
       aria-label={`Bus route ${data.routeId} geographic map`}
       aria-busy={status === "loading"}
     />
-  );
-};
+  )
+}

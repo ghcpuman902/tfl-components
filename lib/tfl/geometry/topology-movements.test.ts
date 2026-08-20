@@ -3,10 +3,7 @@ import { describe, it } from "node:test"
 import type { Feature, LineString } from "geojson"
 import type { LineSegmentProperties } from "@/lib/tfl/geography-types"
 import type { ContractedTopology } from "./contract-track-topology"
-import {
-  movementPairs,
-  osmMovementsForTopology,
-} from "./topology-movements"
+import { movementPairs, osmMovementsForTopology } from "./topology-movements"
 
 const topology: ContractedTopology = {
   nodes: [

@@ -1,47 +1,46 @@
-"use client";
+"use client"
 
-import { useEffect, useRef, useState } from "react";
-import type { TransitGeometryBundle } from "@/lib/tfl/geography-types";
-import { TRANSIT_GEOMETRY_PUBLIC_ASSETS } from "@/lib/tfl/geography-credits";
+import { useEffect, useRef, useState } from "react"
+import type { TransitGeometryBundle } from "@/lib/tfl/geography-types"
+import { TRANSIT_GEOMETRY_PUBLIC_ASSETS } from "@/lib/tfl/geography-credits"
 
-const googleMapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
-const apiKey = googleMapsKey ? googleMapsKey.trim() : undefined;
+const googleMapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
+const apiKey = googleMapsKey ? googleMapsKey.trim() : undefined
 
 type GoogleMapsLibraries = {
-  Map: google.maps.MapsLibrary["Map"];
-  SymbolPath: google.maps.CoreLibrary["SymbolPath"];
-};
+  Map: google.maps.MapsLibrary["Map"]
+  SymbolPath: google.maps.CoreLibrary["SymbolPath"]
+}
 
-let googleMapsOptionsSet = false;
-let googleMapsLibrariesPromise: Promise<GoogleMapsLibraries> | null = null;
+let googleMapsOptionsSet = false
+let googleMapsLibrariesPromise: Promise<GoogleMapsLibraries> | null = null
 
 /** `setOptions` may run once per page load; Strict Mode remounts would warn. */
 const loadGoogleMapsLibraries = (key: string) => {
-  if (googleMapsLibrariesPromise) return googleMapsLibrariesPromise;
+  if (googleMapsLibrariesPromise) return googleMapsLibrariesPromise
 
   const promise = (async () => {
-    const { setOptions, importLibrary } = await import(
-      "@googlemaps/js-api-loader"
-    );
+    const { setOptions, importLibrary } =
+      await import("@googlemaps/js-api-loader")
     if (!googleMapsOptionsSet) {
-      setOptions({ key, v: "weekly" });
-      googleMapsOptionsSet = true;
+      setOptions({ key, v: "weekly" })
+      googleMapsOptionsSet = true
     }
     const [{ Map }, { SymbolPath }] = await Promise.all([
       importLibrary("maps"),
       importLibrary("core"),
-    ]);
-    return { Map, SymbolPath };
-  })();
+    ])
+    return { Map, SymbolPath }
+  })()
 
-  googleMapsLibrariesPromise = promise;
+  googleMapsLibrariesPromise = promise
   void promise.catch(() => {
     if (googleMapsLibrariesPromise === promise) {
-      googleMapsLibrariesPromise = null;
+      googleMapsLibrariesPromise = null
     }
-  });
-  return promise;
-};
+  })
+  return promise
+}
 
 const GoogleMapsPlaceholder = () => (
   <div
@@ -56,7 +55,7 @@ const GoogleMapsPlaceholder = () => (
       preview it here.
     </p>
   </div>
-);
+)
 
 /**
  * Docs-only Google Maps vendor example. Live map loads only when
@@ -65,33 +64,33 @@ const GoogleMapsPlaceholder = () => (
  * without a key.
  */
 export const GoogleMapsExample = () => {
-  if (!apiKey) return <GoogleMapsPlaceholder />;
-  return <GoogleMapsLiveMap apiKey={apiKey} />;
-};
+  if (!apiKey) return <GoogleMapsPlaceholder />
+  return <GoogleMapsLiveMap apiKey={apiKey} />
+}
 
 const GoogleMapsLiveMap = ({ apiKey }: { apiKey: string }) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<any>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const mapRef = useRef<any>(null)
+  const [loaded, setLoaded] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container || mapRef.current) return;
+    const container = containerRef.current
+    if (!container || mapRef.current) return
 
-    let cancelled = false;
+    let cancelled = false
 
-    const previousAuthFailure = window.gm_authFailure;
+    const previousAuthFailure = window.gm_authFailure
     window.gm_authFailure = () => {
       setErrorMessage(
-        "Google Maps API key rejected — enable Maps JavaScript API and allow http://localhost:3000/*",
-      );
-    };
+        "Google Maps API key rejected — enable Maps JavaScript API and allow http://localhost:3000/*"
+      )
+    }
 
     const handleInit = async () => {
       try {
-        const { Map, SymbolPath } = await loadGoogleMapsLibraries(apiKey);
-        if (cancelled || !containerRef.current) return;
+        const { Map, SymbolPath } = await loadGoogleMapsLibraries(apiKey)
+        if (cancelled || !containerRef.current) return
 
         const map = new Map(containerRef.current, {
           center: { lat: 51.51, lng: -0.12 },
@@ -99,22 +98,22 @@ const GoogleMapsLiveMap = ({ apiKey }: { apiKey: string }) => {
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
-        });
-        mapRef.current = map;
+        })
+        mapRef.current = map
 
         const bundles = await Promise.all(
           TRANSIT_GEOMETRY_PUBLIC_ASSETS.map(async (asset) => {
-            const res = await fetch(asset.url);
-            if (!res.ok) return null;
-            return (await res.json()) as TransitGeometryBundle;
-          }),
-        );
-        if (cancelled) return;
+            const res = await fetch(asset.url)
+            if (!res.ok) return null
+            return (await res.json()) as TransitGeometryBundle
+          })
+        )
+        if (cancelled) return
 
         for (const bundle of bundles) {
-          if (!bundle) continue;
-          map.data.addGeoJson(bundle.lines);
-          map.data.addGeoJson(bundle.stations);
+          if (!bundle) continue
+          map.data.addGeoJson(bundle.lines)
+          map.data.addGeoJson(bundle.stations)
         }
 
         map.data.setStyle((feature: any) => {
@@ -128,35 +127,35 @@ const GoogleMapsLiveMap = ({ apiKey }: { apiKey: string }) => {
                 strokeColor: "#111827",
                 strokeWeight: 1.25,
               },
-            };
+            }
           }
-          const color = feature.getProperty("color");
+          const color = feature.getProperty("color")
           return {
             strokeColor: typeof color === "string" ? color : "#0019A8",
             strokeWeight: 3,
             strokeOpacity: 0.9,
             fillOpacity: 0,
-          };
-        });
+          }
+        })
 
-        setLoaded(true);
+        setLoaded(true)
       } catch (error) {
-        if (cancelled) return;
+        if (cancelled) return
         setErrorMessage(
-          error instanceof Error ? error.message : "Google Maps failed to load",
-        );
+          error instanceof Error ? error.message : "Google Maps failed to load"
+        )
       }
-    };
+    }
 
-    void handleInit();
+    void handleInit()
 
     return () => {
-      cancelled = true;
-      window.gm_authFailure = previousAuthFailure;
-      mapRef.current = null;
-      container.replaceChildren();
-    };
-  }, [apiKey]);
+      cancelled = true
+      window.gm_authFailure = previousAuthFailure
+      mapRef.current = null
+      container.replaceChildren()
+    }
+  }, [apiKey])
 
   return (
     <div className="space-y-2">
@@ -172,11 +171,11 @@ const GoogleMapsLiveMap = ({ apiKey }: { apiKey: string }) => {
           : `Google Maps JavaScript API`}
       </p>
     </div>
-  );
-};
+  )
+}
 
 declare global {
   interface Window {
-    gm_authFailure?: () => void;
+    gm_authFailure?: () => void
   }
 }

@@ -105,11 +105,7 @@ export type MapProductPolicy = {
 }
 
 export type NetworkModelClassification =
-  | "sufficient"
-  | "fetch"
-  | "process"
-  | "external"
-  | "author"
+  "sufficient" | "fetch" | "process" | "external" | "author"
 
 export type SourceOrigin = "api-native" | "processed" | "authored"
 

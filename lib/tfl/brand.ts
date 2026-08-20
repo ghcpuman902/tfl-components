@@ -14,7 +14,7 @@ export {
   type ModalColourKey,
   type UndergroundLineColourKey,
   type OvergroundLineColourKey,
-} from "@/lib/tfl/brand-colours";
+} from "@/lib/tfl/brand-colours"
 
 export {
   brandColourFormats,
@@ -30,7 +30,7 @@ export {
   type ColourFormatRow,
   type ColourTableRow,
   type Srgb,
-} from "@/lib/tfl/colour-formats";
+} from "@/lib/tfl/colour-formats"
 
 export {
   LINE_COLOUR_TOKENS,
@@ -40,7 +40,7 @@ export {
   getLineColourToken,
   type LineColourKind,
   type LineColourToken,
-} from "@/lib/tfl/line-colour-map";
+} from "@/lib/tfl/line-colour-map"
 
 export {
   ROUNDEL_LOGO_PATHS,
@@ -50,7 +50,7 @@ export {
   getRoundelLogoPath,
   type RoundelPreset,
   type RoundelStyle,
-} from "@/lib/tfl/roundel-presets";
+} from "@/lib/tfl/roundel-presets"
 
 export {
   ROUNDEL_DO_NOT,
@@ -62,7 +62,7 @@ export {
   getRoundelExclusion,
   isRoundelAboveMinSize,
   type RoundelExclusion,
-} from "@/lib/tfl/brand-rules";
+} from "@/lib/tfl/brand-rules"
 
 export {
   LINE_DIAGRAM,
@@ -85,14 +85,14 @@ export {
   stationTickRect,
   ux,
   verticalDiagramMetrics,
-} from "@/lib/tfl/line-diagram";
+} from "@/lib/tfl/line-diagram"
 
 export {
   formatStationName,
   isLikelyInterchange,
   type DiagramConnection,
   type DiagramStation,
-} from "@/lib/tfl/diagram-station";
+} from "@/lib/tfl/diagram-station"
 
 export {
   getHorizontalForcedLineBreak,
@@ -101,7 +101,7 @@ export {
   stationLabelKey,
   STATION_LABEL_RECIPES,
   type HorizontalStationLabelOverride,
-} from "@/lib/tfl/horizontal-station-labels";
+} from "@/lib/tfl/horizontal-station-labels"
 
 export {
   applyStripLabelRecipes,
@@ -117,7 +117,7 @@ export {
   type StraightStripStation,
   type StripLabelPlacement,
   type StripSegmentState,
-} from "@/lib/tfl/strip-model";
+} from "@/lib/tfl/strip-model"
 
 export {
   emptyStationIndex,
@@ -127,14 +127,14 @@ export {
   type StationIndex,
   type StationLabelRecipe,
   type StationRecord,
-} from "@/lib/tfl/station-index";
+} from "@/lib/tfl/station-index"
 
 export {
   STATION_ABBREVIATIONS,
   STATION_ABBREVIATION_ENTRIES,
   STATION_ABBR_FIND_COMPLETIONS,
   applyStationAbbreviations,
-} from "@/lib/tfl/station-abbreviations";
+} from "@/lib/tfl/station-abbreviations"
 
 export {
   STATION_LABEL_MIN_SCALE,
@@ -146,7 +146,7 @@ export {
   type StationLabelFormatOptions,
   type StationLabelFormatResult,
   type StationTextMeasure,
-} from "@/lib/tfl/station-typography";
+} from "@/lib/tfl/station-typography"
 
 export {
   buildLineTopologyFromOrderedRoutes,
@@ -157,7 +157,7 @@ export {
   type LineEdge,
   type LineNode,
   type LineTopology,
-} from "@/lib/tfl/line-topology";
+} from "@/lib/tfl/line-topology"
 
 export {
   assertValidSchematic,
@@ -171,7 +171,7 @@ export {
   type SchematicNode,
   type SchematicNodeKind,
   type SchematicOrientationHint,
-} from "@/lib/tfl/line-schematic";
+} from "@/lib/tfl/line-schematic"
 
 export {
   layoutLineSchematic,
@@ -184,19 +184,19 @@ export {
   type SchematicLayoutOptions,
   type SchematicLayoutPoint,
   type SchematicOrientation,
-} from "@/lib/tfl/schematic-layout";
+} from "@/lib/tfl/schematic-layout"
 
 export {
   NORTHERN_LINE_SCHEMATIC,
   NORTHERN_LINE_SCHEMATIC_HORIZONTAL,
   NORTHERN_LINE_SCHEMATIC_VERTICAL,
-} from "@/lib/tfl/fixtures/northern-line-schematic";
+} from "@/lib/tfl/fixtures/northern-line-schematic"
 
 export {
   getLineSpine,
   sliceLineSpineStations,
   type LineSpine,
-} from "@/lib/tfl/line-spine";
+} from "@/lib/tfl/line-spine"
 
 export {
   CABLE_CAR_DIAGRAM_COLOR,
@@ -208,9 +208,6 @@ export {
   routeTrackRailCount,
   type RouteTrackStyle,
   type SimpleLineStripId,
-} from "@/lib/tfl/route-track";
+} from "@/lib/tfl/route-track"
 
-export {
-  sliceJourney,
-  toDiagramStation,
-} from "@/lib/tfl/diagram-mappers";
+export { sliceJourney, toDiagramStation } from "@/lib/tfl/diagram-mappers"

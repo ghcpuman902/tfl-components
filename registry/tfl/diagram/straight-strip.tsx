@@ -1,9 +1,9 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
 import {
   DIAGRAM_BASELINE,
   diagramUnitStyle,
   horizontalDiagramMetrics,
-} from "@/lib/tfl/line-diagram";
+} from "@/lib/tfl/line-diagram"
 import {
   MonoRouteTrack,
   StraightRouteTrack,
@@ -11,12 +11,15 @@ import {
   type StraightStripStation,
   type StripLabelPlacement,
   type StripSegmentState,
-} from "@/components/tfl/diagram/straight-strip-parts";
-import { StraightStripFitted } from "@/components/tfl/diagram/straight-strip-fitted";
-import type { RouteTrackStyle } from "@/lib/tfl/route-track";
+} from "@/components/tfl/diagram/straight-strip-parts"
+import { StraightStripFitted } from "@/components/tfl/diagram/straight-strip-fitted"
+import type { RouteTrackStyle } from "@/lib/tfl/route-track"
 
-export type { StraightStripStation, StripLabelPlacement, StripSegmentState };
-export type { DiagramSegment, DiagramSegmentState } from "@/lib/tfl/diagram-station";
+export type { StraightStripStation, StripLabelPlacement, StripSegmentState }
+export type {
+  DiagramSegment,
+  DiagramSegmentState,
+} from "@/lib/tfl/diagram-station"
 
 export {
   buildSegmentStateMap,
@@ -29,60 +32,60 @@ export {
   HorizontalStationColumn,
   OUT_OF_USE_LINE_COLOR,
   resolveLabelSide,
-} from "@/components/tfl/diagram/straight-strip-parts";
+} from "@/components/tfl/diagram/straight-strip-parts"
 
 /** @deprecated Prefer `StraightStripStation`. */
-export type { HorizontalDiagramStation } from "@/components/tfl/diagram/straight-strip-parts";
+export type { HorizontalDiagramStation } from "@/components/tfl/diagram/straight-strip-parts"
 /** @deprecated Prefer `StripLabelPlacement`. */
-export type { HorizontalLabelPlacement } from "@/components/tfl/diagram/straight-strip-parts";
+export type { HorizontalLabelPlacement } from "@/components/tfl/diagram/straight-strip-parts"
 
 export type StraightStripProps = {
-  stations: readonly StraightStripStation[];
+  stations: readonly StraightStripStation[]
   /** Hex route colour. */
-  lineColor: string;
-  lineName?: string;
+  lineColor: string
+  lineName?: string
   /**
    * Absolute route line thickness in px (= unit x).
    * When omitted, uses `DIAGRAM_BASELINE.horizontal` × inherited
    * `--tfl-diagram-scale`.
    */
-  x?: number;
-  className?: string;
+  x?: number
+  className?: string
   /** Prepared adjacent segment states (length = stations.length - 1). */
-  segmentStates?: readonly StripSegmentState[];
+  segmentStates?: readonly StripSegmentState[]
   /** Prepared per-station out-of-use flags. */
-  stationOutOfUse?: readonly boolean[];
+  stationOutOfUse?: readonly boolean[]
   /**
    * Fit the full route into the container width with no horizontal scroll.
    * Left-aligned fixed pitch; scales the strip uniformly. Opt-in.
    */
-  fit?: boolean;
+  fit?: boolean
   /** Station IDs that must keep a visible label when `fit` is on. */
-  forceLabelIds?: readonly string[];
+  forceLabelIds?: readonly string[]
   /**
    * Shared fit scale for a group of fitted strips so pitch and type match
    * across lines (homepage week-ahead). Ignored unless `fit` is true.
    */
-  sharedFitScale?: number;
+  sharedFitScale?: number
   /**
    * Station name position relative to the route.
    * `alternate` reserves both bands so markers stay aligned.
    */
-  labelPlacement?: StripLabelPlacement;
+  labelPlacement?: StripLabelPlacement
   /**
    * Route paint: solid (default), Overground/Elizabeth parallel, or cable-car
    * triple. Pass explicitly — this atom does not look up TfL ids.
    */
-  trackStyle?: RouteTrackStyle;
+  trackStyle?: RouteTrackStyle
   /**
    * Paint B&W Tube-map stroke motifs instead of colour rails.
    * Scales through `x` (defaults to the horizontal baseline), not
    * `--tfl-diagram-scale`. Requires `lineId`.
    */
-  mono?: boolean;
+  mono?: boolean
   /** TfL line id — used when `mono` is set. */
-  lineId?: string;
-};
+  lineId?: string
+}
 
 /**
  * Atomic straight strip: render prepared stations / segment states only.
@@ -108,14 +111,16 @@ export const StraightStrip = ({
   if (stations.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">No stations to display.</p>
-    );
+    )
   }
 
   const segmentStates =
     segmentStatesProp ??
-    Array.from({ length: Math.max(0, stations.length - 1) }, () => "normal" as const);
-  const stationOutOfUse =
-    stationOutOfUseProp ?? stations.map(() => false);
+    Array.from(
+      { length: Math.max(0, stations.length - 1) },
+      () => "normal" as const
+    )
+  const stationOutOfUse = stationOutOfUseProp ?? stations.map(() => false)
 
   if (fit) {
     return (
@@ -134,24 +139,22 @@ export const StraightStrip = ({
         mono={mono}
         lineId={lineId}
       />
-    );
+    )
   }
 
-  const monoX = x ?? DIAGRAM_BASELINE.horizontal;
-  const markerColor = mono ? "var(--tfl-mono-ink)" : lineColor;
-  const m = horizontalDiagramMetrics(labelPlacement);
+  const monoX = x ?? DIAGRAM_BASELINE.horizontal
+  const markerColor = mono ? "var(--tfl-mono-ink)" : lineColor
+  const m = horizontalDiagramMetrics(labelPlacement)
   const maxConnections = stations.reduce((n, s) => {
-    let count = 0;
+    let count = 0
     for (const c of s.connections ?? []) {
-      if (c.id !== "national-rail") count += 1;
+      if (c.id !== "national-rail") count += 1
     }
-    return Math.max(n, count);
-  }, 0);
+    return Math.max(n, count)
+  }, 0)
   const connectionBand =
-    maxConnections > 0
-      ? `calc(${m.flagHeight} * ${maxConnections})`
-      : undefined;
-  const totalWidth = `calc(${m.colWidth} * ${stations.length})`;
+    maxConnections > 0 ? `calc(${m.flagHeight} * ${maxConnections})` : undefined
+  const totalWidth = `calc(${m.colWidth} * ${stations.length})`
 
   return (
     <div
@@ -209,5 +212,5 @@ export const StraightStrip = ({
         </ol>
       </div>
     </div>
-  );
-};
+  )
+}

@@ -9,14 +9,14 @@
  * forms — adjust here when official abbreviations are confirmed.
  */
 
-export type LineNameWidthBucket = "short" | "medium" | "long";
+export type LineNameWidthBucket = "short" | "medium" | "long"
 
 export type LineNameTiers = {
-  full: string;
-  middle: string;
-  short: string;
-  bucket: LineNameWidthBucket;
-};
+  full: string
+  middle: string
+  short: string
+  bucket: LineNameWidthBucket
+}
 
 export const LINE_NAME_TIERS: Record<string, LineNameTiers> = {
   bakerloo: {
@@ -164,18 +164,18 @@ export const LINE_NAME_TIERS: Record<string, LineNameTiers> = {
     short: "WF",
     bucket: "long",
   },
-};
+}
 
 const DATA_LINE_ALIASES: Record<string, string> = {
   "elizabeth-line": "elizabeth",
   "hammersmith-and-city": "hammersmith-city",
   "waterloo-and-city": "waterloo-city",
-};
+}
 
 const resolveLineId = (lineId: string): string => {
-  const key = lineId.trim().toLowerCase();
-  return DATA_LINE_ALIASES[key] ?? key;
-};
+  const key = lineId.trim().toLowerCase()
+  return DATA_LINE_ALIASES[key] ?? key
+}
 
 const OVERGROUND_LINE_IDS = new Set([
   "liberty",
@@ -184,23 +184,23 @@ const OVERGROUND_LINE_IDS = new Set([
   "suffragette",
   "weaver",
   "windrush",
-]);
+])
 
 /** Mode name for rail arrivals chrome (brand bars, empty groups). */
 export const railLineModeName = (lineId: string): string => {
-  if (lineId === "elizabeth") return "elizabeth-line";
-  if (OVERGROUND_LINE_IDS.has(lineId)) return "overground";
-  if (lineId === "dlr") return "dlr";
-  if (lineId === "tram") return "tram";
-  return "tube";
-};
+  if (lineId === "elizabeth") return "elizabeth-line"
+  if (OVERGROUND_LINE_IDS.has(lineId)) return "overground"
+  if (lineId === "dlr") return "dlr"
+  if (lineId === "tram") return "tram"
+  return "tube"
+}
 
 const deriveShortCode = (name: string): string => {
-  const letters = name.replace(/[^A-Za-z]/g, "").toUpperCase();
-  if (letters.length >= 3) return letters.slice(0, 3);
-  if (letters.length > 0) return letters.padEnd(3, letters[letters.length - 1]!);
-  return "???";
-};
+  const letters = name.replace(/[^A-Za-z]/g, "").toUpperCase()
+  if (letters.length >= 3) return letters.slice(0, 3)
+  if (letters.length > 0) return letters.padEnd(3, letters[letters.length - 1]!)
+  return "???"
+}
 
 /**
  * Resolve display tiers for a line id. Unknown ids fall back to `fallbackName`
@@ -208,30 +208,30 @@ const deriveShortCode = (name: string): string => {
  */
 export const getLineNameTiers = (
   lineId: string,
-  fallbackName?: string,
+  fallbackName?: string
 ): LineNameTiers => {
-  const id = resolveLineId(lineId);
-  const known = LINE_NAME_TIERS[id];
-  if (known) return known;
+  const id = resolveLineId(lineId)
+  const known = LINE_NAME_TIERS[id]
+  if (known) return known
 
   const full =
-    (fallbackName?.trim() || lineId).replace(/\s+line$/i, "").trim() || lineId;
-  const short = deriveShortCode(full);
+    (fallbackName?.trim() || lineId).replace(/\s+line$/i, "").trim() || lineId
+  const short = deriveShortCode(full)
   return {
     full: fallbackName?.trim() || full,
     middle: full,
     short,
     bucket: "medium",
-  };
-};
+  }
+}
 
 /**
  * TfL list grammar: "A" | "A and B" | "A, B and C".
  */
 export const joinLineNames = (names: readonly string[]): string => {
-  const parts = names.map((n) => n.trim()).filter(Boolean);
-  if (parts.length === 0) return "";
-  if (parts.length === 1) return parts[0]!;
-  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
-  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
-};
+  const parts = names.map((n) => n.trim()).filter(Boolean)
+  if (parts.length === 0) return ""
+  if (parts.length === 1) return parts[0]!
+  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`
+  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`
+}

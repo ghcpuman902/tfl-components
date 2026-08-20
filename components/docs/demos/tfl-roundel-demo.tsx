@@ -1,19 +1,19 @@
-import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
+import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
 import {
   ROUNDEL_PRESETS,
   getRoundelLogoPath,
   type RoundelPreset,
-} from "@/lib/tfl/roundel-presets";
+} from "@/lib/tfl/roundel-presets"
 
-const PRESET_KEYS = Object.keys(ROUNDEL_PRESETS) as RoundelPreset[];
-const ARTWORK_KEYS = PRESET_KEYS.filter((key) => getRoundelLogoPath(key));
+const PRESET_KEYS = Object.keys(ROUNDEL_PRESETS) as RoundelPreset[]
+const ARTWORK_KEYS = PRESET_KEYS.filter((key) => getRoundelLogoPath(key))
 
 const RoundelGrid = ({
   keys,
   artwork = false,
 }: {
-  keys: RoundelPreset[];
-  artwork?: boolean;
+  keys: RoundelPreset[]
+  artwork?: boolean
 }) => (
   // Fixed tracks + auto-fill: wrap denser on wide screens, no stretched cells.
   <ul className="grid grid-cols-[repeat(auto-fill,6.5rem)] justify-start">
@@ -33,13 +33,13 @@ const RoundelGrid = ({
       </li>
     ))}
   </ul>
-);
+)
 
 /** Presentational — placeholder unless NEXT_PUBLIC_ALLOW_TFL_ROUNDEL=true. */
 export default function TflRoundelDemo() {
   const allowed =
     process.env.NEXT_PUBLIC_ALLOW_TFL_ROUNDEL === "true" ||
-    process.env.VITE_ALLOW_TFL_ROUNDEL === "true";
+    process.env.VITE_ALLOW_TFL_ROUNDEL === "true"
 
   return (
     <div className="space-y-8">
@@ -68,5 +68,5 @@ export default function TflRoundelDemo() {
         </section>
       ) : null}
     </div>
-  );
+  )
 }

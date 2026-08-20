@@ -5,15 +5,15 @@
 
 export type StationAbbreviationEntry = {
   /** Full word as it appears in canonical names (e.g. "Street"). */
-  full: string;
+  full: string
   /** Diagram short form (e.g. "St"). */
-  short: string;
+  short: string
   /**
    * Invisible suffix appended after `short` so find-in-page matches `full`
    * (e.g. "reet" → "Street").
    */
-  findCompletion: string;
-};
+  findCompletion: string
+}
 
 /**
  * Conservative abbreviations used on diagrams.
@@ -40,26 +40,26 @@ export const STATION_ABBREVIATION_ENTRIES: readonly StationAbbreviationEntry[] =
      * `FindableText` copy still makes the full phrase findable.
      */
     { full: "Check Front of Train", short: "Check Front", findCompletion: "" },
-  ] as const;
+  ] as const
 
 /** `and` → `&` (not a find-completion pair — handled via aliases). */
 export const STATION_AND_ABBREVIATION: StationAbbreviationEntry = {
   full: "and",
   short: "&",
   findCompletion: "",
-};
+}
 
 export type StationAbbreviationTableRow = {
-  full: string;
-  short: string;
+  full: string
+  short: string
   /**
    * Unique display names containing this token across Tube, Elizabeth line,
    * DLR, Overground, and Tram (deduped across lines and modes).
    */
-  count: number;
+  count: number
   /** Up to three examples; names already used earlier in the table are skipped. */
-  examples: readonly string[];
-};
+  examples: readonly string[]
+}
 
 /**
  * Hardwired station counts for the station-labels abbreviations table.
@@ -109,11 +109,7 @@ export const STATION_ABBREVIATION_TABLE: readonly StationAbbreviationTableRow[] 
       full: "Junction",
       short: "Jct",
       count: 7,
-      examples: [
-        "Beckenham Junction",
-        "Clapham Junction",
-        "Dalston Junction",
-      ],
+      examples: ["Beckenham Junction", "Clapham Junction", "Dalston Junction"],
     },
     {
       full: "Bridge",
@@ -137,16 +133,15 @@ export const STATION_ABBREVIATION_TABLE: readonly StationAbbreviationTableRow[] 
         "Elephant & Castle",
       ],
     },
-  ] as const;
+  ] as const
 
 /** RegExp pairs for applying abbreviations to a full name. */
 export const STATION_ABBREVIATIONS: ReadonlyArray<readonly [RegExp, string]> = [
   ...STATION_ABBREVIATION_ENTRIES.map(
-    (entry) =>
-      [new RegExp(`\\b${entry.full}\\b`, "gi"), entry.short] as const,
+    (entry) => [new RegExp(`\\b${entry.full}\\b`, "gi"), entry.short] as const
   ),
   [/\band\b/gi, "&"] as const,
-];
+]
 
 /** Short token → find completion (St → reet). */
 export const STATION_ABBR_FIND_COMPLETIONS: Readonly<Record<string, string>> =
@@ -154,13 +149,13 @@ export const STATION_ABBR_FIND_COMPLETIONS: Readonly<Record<string, string>> =
     STATION_ABBREVIATION_ENTRIES.map((entry) => [
       entry.short,
       entry.findCompletion,
-    ]),
-  );
+    ])
+  )
 
 export const applyStationAbbreviations = (name: string): string => {
-  let next = name;
+  let next = name
   for (const [pattern, replacement] of STATION_ABBREVIATIONS) {
-    next = next.replace(pattern, replacement);
+    next = next.replace(pattern, replacement)
   }
-  return next.replace(/\s+/g, " ").trim();
-};
+  return next.replace(/\s+/g, " ").trim()
+}

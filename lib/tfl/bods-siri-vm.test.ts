@@ -35,7 +35,7 @@ const SAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
 </Siri>`
 
 const activity = (
-  overrides: Partial<BodsVehicleActivity> = {},
+  overrides: Partial<BodsVehicleActivity> = {}
 ): BodsVehicleActivity => ({
   vehicleRef: "LTZ1234",
   lineRef: "296",
@@ -86,7 +86,10 @@ describe("buildBodsDatafeedUrl", () => {
     })
     assert.equal(url.searchParams.get("api_key"), "test-key")
     assert.equal(url.searchParams.get("operatorRef"), "TFLO")
-    assert.equal(url.searchParams.get("boundingBox"), "-0.200000,51.400000,-0.100000,51.600000")
+    assert.equal(
+      url.searchParams.get("boundingBox"),
+      "-0.200000,51.400000,-0.100000,51.600000"
+    )
   })
 })
 
@@ -129,7 +132,7 @@ describe("bodsActivitiesToVehicles", () => {
         }),
       ],
       ["24"],
-      asOf,
+      asOf
     )
     assert.equal(vehicles.length, 1)
     assert.equal(vehicles[0]?.vehicleId, "LTZ1234")

@@ -1,51 +1,51 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState } from "react"
+import { ChevronDown, ChevronUp } from "lucide-react"
+import { cn } from "@/lib/utils"
 import {
   diagramUnitStyle,
   verticalDiagramMetrics,
-} from "@/lib/tfl/line-diagram";
-import { type DiagramStation } from "@/lib/tfl/diagram-station";
-import { Button } from "@/components/ui/button";
+} from "@/lib/tfl/line-diagram"
+import { type DiagramStation } from "@/lib/tfl/diagram-station"
+import { Button } from "@/components/ui/button"
 import {
   DiagramConnectionFlags,
   DiagramStationMarker,
   resolveJourneyMarkerKind,
   VerticalRouteLine,
-} from "@/components/tfl/diagram/diagram-markers";
-import { StationName } from "@/components/tfl/station-name";
-import { NationalRailPictogram } from "@/components/tfl/national-rail-pictogram";
+} from "@/components/tfl/diagram/diagram-markers"
+import { StationName } from "@/components/tfl/station-name"
+import { NationalRailPictogram } from "@/components/tfl/national-rail-pictogram"
 
 export type JourneyDiagramProps = {
-  from: DiagramStation;
-  to: DiagramStation;
+  from: DiagramStation
+  to: DiagramStation
   /** Stops between from and to (exclusive). */
-  intermediates?: DiagramStation[];
-  lineColor: string;
-  lineName?: string;
-  defaultExpanded?: boolean;
+  intermediates?: DiagramStation[]
+  lineColor: string
+  lineName?: string
+  defaultExpanded?: boolean
   /**
    * Absolute route line thickness in px.
    * When omitted, uses `DIAGRAM_BASELINE.vertical` × `--tfl-diagram-scale`.
    */
-  x?: number;
-  className?: string;
-};
+  x?: number
+  className?: string
+}
 
 const StationRow = ({
   station,
   lineColor,
 }: {
-  station: DiagramStation;
-  lineColor: string;
+  station: DiagramStation
+  lineColor: string
 }) => {
-  const m = verticalDiagramMetrics();
-  const kind = resolveJourneyMarkerKind();
+  const m = verticalDiagramMetrics()
+  const kind = resolveJourneyMarkerKind()
   const connections = (station.connections ?? []).filter(
-    (c) => c.id !== "national-rail",
-  );
+    (c) => c.id !== "national-rail"
+  )
 
   return (
     <div
@@ -62,7 +62,7 @@ const StationRow = ({
         slotHeight={m.markerSlot}
       />
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        <div className="relative inline-flex min-w-0 max-w-full items-center">
+        <div className="relative inline-flex max-w-full min-w-0 items-center">
           <StationName
             name={station.name}
             layout="auto"
@@ -86,8 +86,8 @@ const StationRow = ({
         ) : null}
       </div>
     </div>
-  );
-};
+  )
+}
 
 /**
  * A→B journey on one line: endpoints always visible; intermediate stops
@@ -103,11 +103,11 @@ export const JourneyDiagram = ({
   x,
   className,
 }: JourneyDiagramProps) => {
-  const [expanded, setExpanded] = useState(defaultExpanded);
-  const m = verticalDiagramMetrics();
-  const stopCount = intermediates.length;
+  const [expanded, setExpanded] = useState(defaultExpanded)
+  const m = verticalDiagramMetrics()
+  const stopCount = intermediates.length
 
-  const handleToggle = () => setExpanded((v) => !v);
+  const handleToggle = () => setExpanded((v) => !v)
 
   return (
     <div
@@ -200,5 +200,5 @@ export const JourneyDiagram = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

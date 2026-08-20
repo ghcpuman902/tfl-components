@@ -1,7 +1,7 @@
 /** Default rail line for the live-vehicle docs demos. */
-export const TRACKED_RAIL_LINE_ID = "victoria";
+export const TRACKED_RAIL_LINE_ID = "victoria"
 
 /** Demo bus route — serves Trafalgar Square. */
-export const TRACKED_BUS_ROUTE_ID = "24";
+export const TRACKED_BUS_ROUTE_ID = "24"
 
-export const TRACKED_BUS_DIRECTION = "outbound" as const;
+export const TRACKED_BUS_DIRECTION = "outbound" as const

@@ -10,45 +10,45 @@
  */
 
 export type StrokeLayer = {
-  width: number;
-  stroke: string;
-  dash?: string;
+  width: number
+  stroke: string
+  dash?: string
   /** SVG stroke-dashoffset — used to phase-align layered dashes (e.g. pluses). */
-  dashoffset?: number;
-  linecap?: "butt" | "round" | "square";
-};
+  dashoffset?: number
+  linecap?: "butt" | "round" | "square"
+}
 
-export const DARK = "var(--tfl-mono-ink)";
-export const GREY = "var(--tfl-mono-grey)";
-export const LIGHT = "var(--tfl-mono-light)";
-export const WHITE = "var(--tfl-mono-paper)";
+export const DARK = "var(--tfl-mono-ink)"
+export const GREY = "var(--tfl-mono-grey)"
+export const LIGHT = "var(--tfl-mono-light)"
+export const WHITE = "var(--tfl-mono-paper)"
 
 /** Underground solid-route thickness. */
-export const UG = 8;
+export const UG = 8
 /** Thin Underground rail borders → white channel = UG − 2×border. */
-export const UG_BORDER = 1.5;
-export const UG_CHANNEL = UG - 2 * UG_BORDER; // 5
+export const UG_BORDER = 1.5
+export const UG_CHANNEL = UG - 2 * UG_BORDER // 5
 
 /** Non-Underground / Overground: top & bottom borders are ⅓ each. */
-export const NON_UG = 8;
-export const THIRD = NON_UG / 3; // ≈ 2.667
+export const NON_UG = 8
+export const THIRD = NON_UG / 3 // ≈ 2.667
 
 /** Cable car is taller; five equal bands. */
-export const CABLE = 10;
-export const FIFTH = CABLE / 5; // 2
+export const CABLE = 10
+export const FIFTH = CABLE / 5 // 2
 
 /** Underground: thin outer rails + white channel. */
 export const rail = (colour = DARK): StrokeLayer[] => [
   { width: UG, stroke: colour },
   { width: UG_CHANNEL, stroke: WHITE },
-];
+]
 
 /** Underground rails + motif inside the white channel. */
 export const railWith = (
   colour: string,
   width: number,
   dash: string,
-  linecap: StrokeLayer["linecap"] = "butt",
+  linecap: StrokeLayer["linecap"] = "butt"
 ): StrokeLayer[] => [
   ...rail(colour),
   {
@@ -57,7 +57,7 @@ export const railWith = (
     dash,
     linecap,
   },
-];
+]
 
 /**
  * Non-Underground / Overground: borders = ⅓ height each, white middle third.
@@ -66,13 +66,13 @@ export const railWith = (
 export const thirdRails = (colour: string): StrokeLayer[] => [
   { width: NON_UG, stroke: colour },
   { width: THIRD, stroke: WHITE },
-];
+]
 
 export const thirdWith = (
   colour: string,
   centreWidth: number,
   dash?: string,
-  linecap: StrokeLayer["linecap"] = "butt",
+  linecap: StrokeLayer["linecap"] = "butt"
 ): StrokeLayer[] => [
   ...thirdRails(colour),
   {
@@ -81,7 +81,7 @@ export const thirdWith = (
     dash,
     linecap,
   },
-];
+]
 
 /**
  * Plus marks in the Underground channel.
@@ -94,7 +94,7 @@ export const thirdWith = (
 const plusInChannel = (
   colour: string,
   arm = UG_CHANNEL,
-  strokeW = UG_BORDER,
+  strokeW = UG_BORDER
 ): StrokeLayer[] => [
   { width: arm, stroke: colour, dash: `${strokeW} ${arm}` },
   {
@@ -103,14 +103,14 @@ const plusInChannel = (
     dash: `${arm} ${strokeW}`,
     dashoffset: (arm - strokeW) / 2,
   },
-];
+]
 
 /** Hollow rings: round dark blobs + smaller white blobs on the same dash phase. */
 const hollowRings = (
   colour: string,
   outer = 3.4,
   hole = 2,
-  gap = 5.5,
+  gap = 5.5
 ): StrokeLayer[] => [
   {
     width: outer,
@@ -124,7 +124,7 @@ const hollowRings = (
     dash: `0.01 ${gap}`,
     linecap: "round",
   },
-];
+]
 
 /**
  * Overground: light/dark × dash density (all share ⅓ borders + squished centre).
@@ -133,9 +133,9 @@ const hollowRings = (
  *   dense → Weaver / Windrush     (very fine centre dashes)
  */
 export type OvergroundBWStyle = {
-  tone: "light" | "dark";
-  motif: "dash" | "short" | "dense";
-};
+  tone: "light" | "dark"
+  motif: "dash" | "short" | "dense"
+}
 
 export const OVERGROUND_BW: Record<string, OvergroundBWStyle> = {
   liberty: { tone: "light", motif: "dash" },
@@ -144,31 +144,31 @@ export const OVERGROUND_BW: Record<string, OvergroundBWStyle> = {
   suffragette: { tone: "dark", motif: "short" },
   weaver: { tone: "light", motif: "dense" },
   windrush: { tone: "dark", motif: "dense" },
-};
+}
 
 /** Squished centre inside the middle third (~55% of a third). */
-const OG_CENTRE = THIRD * 0.55; // ≈ 1.47
+const OG_CENTRE = THIRD * 0.55 // ≈ 1.47
 
 export const overgroundLayers = ({
   tone,
   motif,
 }: OvergroundBWStyle): StrokeLayer[] => {
-  const colour = tone === "light" ? LIGHT : DARK;
-  if (motif === "dash") return thirdWith(colour, OG_CENTRE, "7 7");
+  const colour = tone === "light" ? LIGHT : DARK
+  if (motif === "dash") return thirdWith(colour, OG_CENTRE, "7 7")
   // Gap longer than dash.
-  if (motif === "short") return thirdWith(colour, OG_CENTRE, "2 3.5");
+  if (motif === "short") return thirdWith(colour, OG_CENTRE, "2 3.5")
   // Super-dense square ticks (along-path on-length = stroke width).
-  return thirdWith(colour, OG_CENTRE, `${OG_CENTRE} ${OG_CENTRE}`);
-};
+  return thirdWith(colour, OG_CENTRE, `${OG_CENTRE} ${OG_CENTRE}`)
+}
 
 /**
  * Thameslink / National Rail: equal on/off blocks in the middle third.
  * Block width ≈ 2.12 × full line height → 17/8 (= 2.125).
  */
-const TL_BLOCK = (NON_UG * 17) / 8; // 17
+const TL_BLOCK = (NON_UG * 17) / 8 // 17
 
 const thirdDashedCentre = (colour: string): StrokeLayer[] =>
-  thirdWith(colour, THIRD, `${TL_BLOCK} ${TL_BLOCK}`);
+  thirdWith(colour, THIRD, `${TL_BLOCK} ${TL_BLOCK}`)
 
 export const bwLineStyles: Record<string, StrokeLayer[]> = {
   // Solid bars in the thin UG channel.
@@ -259,9 +259,9 @@ export const bwLineStyles: Record<string, StrokeLayer[]> = {
   suffragette: overgroundLayers(OVERGROUND_BW.suffragette),
   weaver: overgroundLayers(OVERGROUND_BW.weaver),
   windrush: overgroundLayers(OVERGROUND_BW.windrush),
-};
+}
 
-export type BwLineStyleKey = keyof typeof bwLineStyles;
+export type BwLineStyleKey = keyof typeof bwLineStyles
 
 const MONO_STYLE_BY_ID: Record<string, BwLineStyleKey> = {
   bakerloo: "bakerloo",
@@ -291,37 +291,37 @@ const MONO_STYLE_BY_ID: Record<string, BwLineStyleKey> = {
   suffragette: "suffragette",
   weaver: "weaver",
   windrush: "windrush",
-};
+}
 
 /** B&W stroke layers for a TfL line / mode id. Unknown ids fall back to solid ink. */
 export const resolveMonoLineStyle = (lineId: string): StrokeLayer[] => {
-  const key = MONO_STYLE_BY_ID[lineId.toLowerCase()];
-  return key ? bwLineStyles[key] : bwLineStyles.northern;
-};
+  const key = MONO_STYLE_BY_ID[lineId.toLowerCase()]
+  return key ? bwLineStyles[key] : bwLineStyles.northern
+}
 
 /** Stack height in diagram `x` units (UG 8 = 1×). */
 export const monoLineHeightUnits = (layers: readonly StrokeLayer[]): number => {
-  const outer = layers.reduce((max, layer) => Math.max(max, layer.width), 0);
-  return outer / UG;
-};
+  const outer = layers.reduce((max, layer) => Math.max(max, layer.width), 0)
+  return outer / UG
+}
 
 const scaleDash = (dash: string, factor: number): string =>
   dash
     .split(/\s+/)
     .map((part) => String(Number(part) * factor))
-    .join(" ");
+    .join(" ")
 
 /** Scale motif widths, dashes, and offsets so UG 8 maps to diagram unit `x`. */
 export const scaleMonoLayers = (
   layers: readonly StrokeLayer[],
-  x: number,
+  x: number
 ): StrokeLayer[] => {
-  const factor = x / UG;
+  const factor = x / UG
   return layers.map((layer) => ({
     ...layer,
     width: layer.width * factor,
     dash: layer.dash ? scaleDash(layer.dash, factor) : undefined,
     dashoffset:
       layer.dashoffset != null ? layer.dashoffset * factor : undefined,
-  }));
-};
+  }))
+}

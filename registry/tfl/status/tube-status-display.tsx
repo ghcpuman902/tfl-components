@@ -161,7 +161,7 @@ const StatusDisplayFrameView = ({
           className={cn(
             "m-0 min-w-0 flex-1 truncate",
             showHeadingChips && "pr-2",
-            namedHeading && "text-[var(--line-color)] tfl-dark-line-text"
+            namedHeading && "tfl-dark-line-text text-[var(--line-color)]"
           )}
         >
           {frame.heading}
@@ -307,7 +307,12 @@ export const TubeStatusDisplay = ({
         }}
         role="alert"
       >
-        <p className={cn("flex items-center text-base text-destructive", TILE_CLASS)}>
+        <p
+          className={cn(
+            "flex items-center text-base text-destructive",
+            TILE_CLASS
+          )}
+        >
           {error}
         </p>
         {Array.from({ length: tiles - 1 }, (_, index) => (
@@ -327,7 +332,9 @@ export const TubeStatusDisplay = ({
         }}
         role="status"
       >
-        <p className={cn("flex items-center text-muted-foreground", TILE_CLASS)}>
+        <p
+          className={cn("flex items-center text-muted-foreground", TILE_CLASS)}
+        >
           No status
         </p>
         {Array.from({ length: tiles - 1 }, (_, index) => (

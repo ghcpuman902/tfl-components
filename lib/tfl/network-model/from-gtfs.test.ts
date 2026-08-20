@@ -243,12 +243,19 @@ describe("from-gtfs helpers", () => {
 
   it("simplifies a straight high-vertex line to the endpoints", () => {
     const coords = denseShape().map(
-      (point) => [Number(point.shape_pt_lon), Number(point.shape_pt_lat)] as [number, number],
+      (point) =>
+        [Number(point.shape_pt_lon), Number(point.shape_pt_lat)] as [
+          number,
+          number,
+        ]
     )
     const simplified = simplifyLine(coords, SHAPE_SIMPLIFY_M)
     assert.equal(simplified.length, 2)
     assert.deepEqual(simplified[0], coords[0])
-    assert.deepEqual(simplified[simplified.length - 1], coords[coords.length - 1])
+    assert.deepEqual(
+      simplified[simplified.length - 1],
+      coords[coords.length - 1]
+    )
   })
 })
 
@@ -256,7 +263,11 @@ describe("buildNetworkSnapshot", () => {
   const snapshot = buildNetworkSnapshot({
     routes: [bakerloo, elizabeth, londonBus, elizabethBus],
     trips: [...weekdayTrips, saturdayTrip, elizabethTrip],
-    stopTimes: [...weekdayStopTimes, ...saturdayStopTimes, ...elizabethStopTimes],
+    stopTimes: [
+      ...weekdayStopTimes,
+      ...saturdayStopTimes,
+      ...elizabethStopTimes,
+    ],
     stops,
     calendars: [weekday, saturday],
     shapes: denseShape(),
@@ -265,7 +276,7 @@ describe("buildNetworkSnapshot", () => {
   it("emits TfL rail lines only, with brand colours", () => {
     assert.deepEqual(
       snapshot.lines.map((line) => line.id),
-      ["bakerloo", "elizabeth"],
+      ["bakerloo", "elizabeth"]
     )
     const bakerlooLine = snapshot.lines.find((line) => line.id === "bakerloo")
     assert.ok(bakerlooLine)
@@ -276,11 +287,15 @@ describe("buildNetworkSnapshot", () => {
 
   it("collapses dated trips onto unique station sequences", () => {
     const bakerlooPatterns = snapshot.patterns.filter(
-      (pattern) => pattern.lineId === "bakerloo",
+      (pattern) => pattern.lineId === "bakerloo"
     )
     assert.equal(bakerlooPatterns.length, 2)
-    const weekdayPattern = bakerlooPatterns.find((pattern) => pattern.callIds.length === 3)
-    const weekendPattern = bakerlooPatterns.find((pattern) => pattern.callIds.length === 2)
+    const weekdayPattern = bakerlooPatterns.find(
+      (pattern) => pattern.callIds.length === 3
+    )
+    const weekendPattern = bakerlooPatterns.find(
+      (pattern) => pattern.callIds.length === 2
+    )
     assert.ok(weekdayPattern)
     assert.ok(weekendPattern)
     assert.deepEqual(weekdayPattern.callIds, [
@@ -294,11 +309,11 @@ describe("buildNetworkSnapshot", () => {
 
   it("rolls calendars and weekday peak headway, and skips unused stops", () => {
     const weekdayPattern = snapshot.patterns.find(
-      (pattern) => pattern.lineId === "bakerloo" && pattern.callIds.length === 3,
+      (pattern) => pattern.lineId === "bakerloo" && pattern.callIds.length === 3
     )
     assert.ok(weekdayPattern)
     const calendar = snapshot.calendars.find(
-      (row) => row.patternId === weekdayPattern.id,
+      (row) => row.patternId === weekdayPattern.id
     )
     assert.ok(calendar)
     assert.deepEqual(calendar.daysOfWeek, [
@@ -312,13 +327,13 @@ describe("buildNetworkSnapshot", () => {
     const peak = snapshot.frequencies.find(
       (row) =>
         row.patternId === weekdayPattern.id &&
-        row.timeWindow === "weekday 07:00–09:30",
+        row.timeWindow === "weekday 07:00–09:30"
     )
     assert.ok(peak)
     assert.equal(peak.headwaySeconds, 5 * 60)
     assert.equal(
       snapshot.stations.some((station) => station.id === "unused-bus"),
-      false,
+      false
     )
     assert.ok(snapshot.stations.some((station) => station.id === "HUBHMX"))
   })
@@ -329,14 +344,14 @@ describe("buildNetworkSnapshot", () => {
     assert.equal(snapshot.pathMatches.length, 1)
     assert.equal(snapshot.pathMatches[0]?.confidence, "exact")
     const weekdayPattern = snapshot.patterns.find(
-      (pattern) => pattern.lineId === "bakerloo" && pattern.callIds.length === 3,
+      (pattern) => pattern.lineId === "bakerloo" && pattern.callIds.length === 3
     )
     assert.ok(weekdayPattern)
     const movement = snapshot.movements.find(
       (row) =>
         row.fromStationId === "940GZZLUEAC" &&
         row.viaStationId === "940GZZLUPAC" &&
-        row.toStationId === "HUBHMX",
+        row.toStationId === "HUBHMX"
     )
     assert.ok(movement)
     assert.deepEqual(movement.patternIds, [weekdayPattern.id])

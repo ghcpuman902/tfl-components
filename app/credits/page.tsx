@@ -1,26 +1,17 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { SiteProsePage } from "@/components/site-prose-page";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { SiteProsePage } from "@/components/site-prose-page"
 import {
   OPENFREEMAP_BASEMAP_CREDIT,
   OSM_TRANSIT_GEOMETRY_CREDIT,
   TFL_STATION_ENRICHMENT_CREDIT,
-} from "@/lib/tfl/geography-credits";
-import { SITE_INDEPENDENCE } from "@/lib/site";
+} from "@/lib/tfl/geography-credits"
+import { SITE_INDEPENDENCE } from "@/lib/site"
+import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
-  title: "Data and credits",
-  description:
-    "TfL, OpenStreetMap, OpenFreeMap, and OpenMapTiles sources used by this project.",
-};
+export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.credits)
 
-const External = ({
-  href,
-  children,
-}: {
-  href: string;
-  children: string;
-}) => (
+const External = ({ href, children }: { href: string; children: string }) => (
   <a
     href={href}
     className="text-foreground underline underline-offset-4"
@@ -29,7 +20,7 @@ const External = ({
   >
     {children}
   </a>
-);
+)
 
 export default function CreditsPage() {
   return (
@@ -47,13 +38,13 @@ export default function CreditsPage() {
           Arrivals, status, Explorer identifiers, and Board displays use the
           Unified API through tfl-ts, plus station-data GTFS for hubs and
           platforms.{" "}
-          <External href="https://tfl.gov.uk/">Transport for London</External>
-          {" "}publishes that data under{" "}
+          <External href="https://tfl.gov.uk/">Transport for London</External>{" "}
+          publishes that data under{" "}
           <External href="https://tfl.gov.uk/info-for/open-data-users/">
             TfL Open Data
           </External>
-          . Required wording: Powered by TfL Open Data. Contains OS data ©
-          Crown copyright and database rights.
+          . Required wording: Powered by TfL Open Data. Contains OS data © Crown
+          copyright and database rights.
         </p>
         <p>
           Public examples on this site may use the project key with a short
@@ -101,8 +92,7 @@ export default function CreditsPage() {
         <p>
           Geographic, cycle-hire, and Explorer maps sit on vector Positron and
           dark styles from{" "}
-          <External href="https://openfreemap.org/">OpenFreeMap</External>
-          {" "}and{" "}
+          <External href="https://openfreemap.org/">OpenFreeMap</External> and{" "}
           <External href="https://openmaptiles.org/license/">
             OpenMapTiles
           </External>
@@ -124,5 +114,5 @@ export default function CreditsPage() {
         .
       </p>
     </SiteProsePage>
-  );
+  )
 }

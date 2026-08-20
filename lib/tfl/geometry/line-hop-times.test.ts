@@ -34,8 +34,7 @@ describe("line hop times", () => {
 
   it("looks up hops after station-id aliases and s: prefixes", () => {
     const hops = { [undirectedHopKey("940GZZLUPAC", "910GEALING")]: 7 }
-    const canonical = (id: string) =>
-      id === "910GPADTON" ? "940GZZLUPAC" : id
+    const canonical = (id: string) => (id === "910GPADTON" ? "940GZZLUPAC" : id)
     assert.equal(
       minutesForHop(hops, "s:910GPADTON", "s:910GEALING", canonical),
       7

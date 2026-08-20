@@ -1,5 +1,5 @@
-import { permanentRedirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation"
 
 export default function LineNameLabelsRedirect() {
-  permanentRedirect("/docs/line-title");
+  permanentRedirect("/docs/line-title")
 }

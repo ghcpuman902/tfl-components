@@ -1,18 +1,18 @@
-"use client";
+"use client"
 
-import { useCallback, useState, type ReactNode } from "react";
-import { CheckIcon, XIcon } from "lucide-react";
-import { DocsResizeFrame } from "@/components/docs/docs-resize-frame";
-import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text";
-import { PlatformChip } from "@/components/tfl/arrivals/platform-chip";
-import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip";
-import { StationName } from "@/components/tfl/station-name";
+import { useCallback, useState, type ReactNode } from "react"
+import { CheckIcon, XIcon } from "lucide-react"
+import { DocsResizeFrame } from "@/components/docs/docs-resize-frame"
+import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text"
+import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
+import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
+import { StationName } from "@/components/tfl/station-name"
 import {
   STATION_LABEL_MIN_SCALE,
   type StationLabelFormatResult,
-} from "@/lib/tfl/station-typography";
-import { TFL_BLUE } from "@/lib/tfl/brand";
-import { cn } from "@/lib/utils";
+} from "@/lib/tfl/station-typography"
+import { TFL_BLUE } from "@/lib/tfl/brand"
+import { cn } from "@/lib/utils"
 
 /** Shared do/don't row — green tick or red cross, verdict text alongside a live example. */
 const Verdict = ({
@@ -20,9 +20,9 @@ const Verdict = ({
   label,
   children,
 }: {
-  good: boolean;
-  label: string;
-  children: ReactNode;
+  good: boolean
+  label: string
+  children: ReactNode
 }) => (
   <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-4">
     <span
@@ -30,7 +30,7 @@ const Verdict = ({
         "mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full",
         good
           ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-          : "bg-red-500/15 text-red-600 dark:text-red-400",
+          : "bg-red-500/15 text-red-600 dark:text-red-400"
       )}
       aria-hidden
     >
@@ -47,7 +47,7 @@ const Verdict = ({
       {children}
     </div>
   </div>
-);
+)
 
 /**
  * Tracking (letter-spacing) reads differently on caps vs sentence case.
@@ -63,8 +63,8 @@ export const TrackingRuleDemo = () => (
       </p>
       <p className="text-xs text-muted-foreground">
         <code className="text-[11px]">uppercase tracking-tighter</code> — caps
-        have no ascenders or descenders, so tighter spacing still separates
-        each letter.
+        have no ascenders or descenders, so tighter spacing still separates each
+        letter.
       </p>
     </Verdict>
     <Verdict good={false} label="tighten tracking on lowercase text">
@@ -79,10 +79,10 @@ export const TrackingRuleDemo = () => (
       </p>
     </Verdict>
   </div>
-);
+)
 
 const platformChipClassName =
-  "inline-flex h-6 shrink-0 items-center justify-center bg-muted-foreground px-2 text-xs font-semibold text-background";
+  "inline-flex h-6 shrink-0 items-center justify-center bg-muted-foreground px-2 text-xs font-semibold text-background"
 
 /**
  * Chips centre optically using a cap-height text-box trim, not x-height.
@@ -104,11 +104,9 @@ export const ChipTextDemo = () => (
       </div>
       <p className="text-xs text-muted-foreground">
         Text sits in a{" "}
-        <code className="text-[11px]">
-          [text-box:trim-both_cap_alphabetic]
-        </code>{" "}
-        box, so it centres on cap-height without extra padding — whatever
-        casing the label was written in.
+        <code className="text-[11px]">[text-box:trim-both_cap_alphabetic]</code>{" "}
+        box, so it centres on cap-height without extra padding — whatever casing
+        the label was written in.
       </p>
     </Verdict>
     <Verdict good={false} label="force uppercase on chip text">
@@ -140,58 +138,58 @@ export const ChipTextDemo = () => (
       </p>
     </Verdict>
   </div>
-);
+)
 
-const MIN_SIZE_LABEL_FONT = 16;
-const MIN_SIZE_NAME = "Caledonian Road & Barnsbury";
-const MIN_SIZE_DEFAULT_WIDTH = 220;
+const MIN_SIZE_LABEL_FONT = 16
+const MIN_SIZE_NAME = "Caledonian Road & Barnsbury"
+const MIN_SIZE_DEFAULT_WIDTH = 220
 
 type FormatReadout = {
-  scale: number;
-  abbreviated: boolean;
-  fits: boolean;
-  label: string;
-};
+  scale: number
+  abbreviated: boolean
+  fits: boolean
+  label: string
+}
 
 const readoutMessage = (
   readout: FormatReadout | null,
-  allowsAbbreviation: boolean,
+  allowsAbbreviation: boolean
 ): { good: boolean; text: string } => {
-  if (!readout) return { good: true, text: "Measuring…" };
-  const px = Math.round(MIN_SIZE_LABEL_FONT * readout.scale);
+  if (!readout) return { good: true, text: "Measuring…" }
+  const px = Math.round(MIN_SIZE_LABEL_FONT * readout.scale)
 
   if (readout.abbreviated) {
     return {
       good: true,
       text: `Abbreviated to "${readout.label}" at ${px}px, back to a comfortable size.`,
-    };
+    }
   }
   if (!allowsAbbreviation && readout.scale <= STATION_LABEL_MIN_SCALE) {
     return {
       good: false,
       text: `Scaled to ${px}px (${Math.round(readout.scale * 100)}% of ${MIN_SIZE_LABEL_FONT}px). This is at or past the floor. Stop shrinking and abbreviate.`,
-    };
+    }
   }
   if (readout.scale < 1) {
     return {
       good: true,
       text: `Full name scaled to ${px}px. Drag narrower to see where it reaches the 12px floor.`,
-    };
+    }
   }
-  return { good: true, text: `Full name at ${px}px. Plenty of room.` };
-};
+  return { good: true, text: `Full name at ${px}px. Plenty of room.` }
+}
 
 const MinSizeRow = ({
   title,
   allowAbbreviation,
   minScale,
 }: {
-  title: string;
-  allowAbbreviation: boolean;
-  minScale: number;
+  title: string
+  allowAbbreviation: boolean
+  minScale: number
 }) => {
-  const [readout, setReadout] = useState<FormatReadout | null>(null);
-  const verdict = readoutMessage(readout, allowAbbreviation);
+  const [readout, setReadout] = useState<FormatReadout | null>(null)
+  const verdict = readoutMessage(readout, allowAbbreviation)
 
   // Stable identity — StationName re-invokes onFormat inside a useEffect
   // keyed on this callback; an inline arrow would recreate it every render
@@ -202,8 +200,8 @@ const MinSizeRow = ({
       abbreviated: result.abbreviated,
       fits: result.fits,
       label: result.lines.join(" "),
-    });
-  }, []);
+    })
+  }, [])
 
   return (
     <div className="space-y-1.5">
@@ -227,19 +225,25 @@ const MinSizeRow = ({
       <p
         className={cn(
           "flex items-start gap-1.5 text-xs",
-          verdict.good ? "text-muted-foreground" : "text-destructive",
+          verdict.good ? "text-muted-foreground" : "text-destructive"
         )}
       >
         {verdict.good ? (
-          <CheckIcon className="mt-0.5 size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" strokeWidth={3} />
+          <CheckIcon
+            className="mt-0.5 size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+            strokeWidth={3}
+          />
         ) : (
-          <XIcon className="mt-0.5 size-3.5 shrink-0 text-destructive" strokeWidth={3} />
+          <XIcon
+            className="mt-0.5 size-3.5 shrink-0 text-destructive"
+            strokeWidth={3}
+          />
         )}
         <span>{verdict.text}</span>
       </p>
     </div>
-  );
-};
+  )
+}
 
 /**
  * Drag the handle narrower and watch the same station name take two
@@ -267,4 +271,4 @@ export const MinimumSizeDemo = () => (
       />
     </div>
   </DocsResizeFrame>
-);
+)

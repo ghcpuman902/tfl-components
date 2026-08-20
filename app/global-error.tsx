@@ -1,11 +1,11 @@
-"use client";
+"use client"
 
-import { useEffect } from "react";
+import { useEffect } from "react"
 
 type GlobalErrorProps = {
-  error: Error & { digest?: string };
-  reset: () => void;
-};
+  error: Error & { digest?: string }
+  reset: () => void
+}
 
 /**
  * Root-level fallback when the root layout itself fails.
@@ -13,8 +13,8 @@ type GlobalErrorProps = {
  */
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
   useEffect(() => {
-    console.error(error);
-  }, [error]);
+    console.error(error)
+  }, [error])
 
   return (
     <html lang="en">
@@ -65,5 +65,5 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
         </main>
       </body>
     </html>
-  );
+  )
 }

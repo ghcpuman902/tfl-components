@@ -119,19 +119,13 @@ describe("observatory persistence and confirmation", () => {
     })
 
     assert.equal(result.store.census?.["bus-points"]?.state, "current")
-    assert.match(
-      result.store.census?.["bus-points"]?.summary ?? "",
-      /\+1/
-    )
+    assert.match(result.store.census?.["bus-points"]?.summary ?? "", /\+1/)
     const page = toObservatoryPageData(result.store)
     assert.equal(
       page.attention.some((item) => item.id === "census:bus-points"),
       false
     )
-    assert.equal(
-      page.census.find((row) => row.id === "bus-points")?.delta,
-      1
-    )
+    assert.equal(page.census.find((row) => row.id === "bus-points")?.delta, 1)
   })
 
   it("compares the next census count to yesterday, not the seed", async () => {
@@ -153,10 +147,7 @@ describe("observatory persistence and confirmation", () => {
     assert.equal(second.store.census?.["bus-points"]?.baselineCount, 32_560)
     assert.equal(second.store.census?.["bus-points"]?.observedCount, 32_561)
     const page = toObservatoryPageData(second.store)
-    assert.equal(
-      page.census.find((row) => row.id === "bus-points")?.delta,
-      1
-    )
+    assert.equal(page.census.find((row) => row.id === "bus-points")?.delta, 1)
   })
 
   it("flags a census count outside the 10% band", async () => {

@@ -274,7 +274,8 @@ const edgeTangentFrom = (
 ): { x: number; y: number } => {
   const coordinates = edge.coordinates
   if (coordinates && coordinates.length >= 2) {
-    const oriented = edge.to === originId ? [...coordinates].reverse() : coordinates
+    const oriented =
+      edge.to === originId ? [...coordinates].reverse() : coordinates
     const start = oriented[0]!
     for (let index = 1; index < oriented.length; index += 1) {
       const point = oriented[index]!
@@ -292,11 +293,10 @@ const edgeTangentFrom = (
   }
 }
 
-const offsetCoordinates = (
-  point: LngLat,
-  dxM: number,
-  dyM: number
-): LngLat => [point[0] + dxM / METERS_PER_DEG_LNG, point[1] + dyM / METERS_PER_DEG_LAT]
+const offsetCoordinates = (point: LngLat, dxM: number, dyM: number): LngLat => [
+  point[0] + dxM / METERS_PER_DEG_LNG,
+  point[1] + dyM / METERS_PER_DEG_LAT,
+]
 
 /**
  * Splits a "diamond"/flying-junction weld — one geometric point where two
@@ -316,7 +316,10 @@ export const splitFlyingJunctions = (
   const nodeById = new Map(topology.nodes.map((node) => [node.id, node]))
   const incidentByNode = new Map<string, ContractedEdge[]>()
   for (const edge of topology.edges) {
-    incidentByNode.set(edge.from, [...(incidentByNode.get(edge.from) ?? []), edge])
+    incidentByNode.set(edge.from, [
+      ...(incidentByNode.get(edge.from) ?? []),
+      edge,
+    ])
     incidentByNode.set(edge.to, [...(incidentByNode.get(edge.to) ?? []), edge])
   }
 
@@ -344,7 +347,10 @@ export const splitFlyingJunctions = (
     const [groupA, groupB] = groups as [ContractedEdge[], ContractedEdge[]]
     const tangentA = edgeTangentFrom(groupA[0]!, node.id, node, nodeById)
     const tangentLength = Math.hypot(tangentA.x, tangentA.y) || 1
-    const perp = { x: -tangentA.y / tangentLength, y: tangentA.x / tangentLength }
+    const perp = {
+      x: -tangentA.y / tangentLength,
+      y: tangentA.x / tangentLength,
+    }
 
     const idA = `${node.id}~a`
     const idB = `${node.id}~b`

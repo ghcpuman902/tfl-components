@@ -1,9 +1,6 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import {
-  labelScreenScale,
-  stationGraphScales,
-} from "./station-graph-scale"
+import { labelScreenScale, stationGraphScales } from "./station-graph-scale"
 
 const screenFont = (
   labelScale: number,
@@ -26,10 +23,16 @@ describe("station graph label scale", () => {
     const northernScale = stationGraphScales(zoom, northern, viewport)
     const expected = 11 * labelScreenScale(zoom)
     assert.ok(
-      Math.abs(screenFont(elizabethScale.labelScale, zoom, elizabeth, viewport) - expected) < 1e-9
+      Math.abs(
+        screenFont(elizabethScale.labelScale, zoom, elizabeth, viewport) -
+          expected
+      ) < 1e-9
     )
     assert.ok(
-      Math.abs(screenFont(northernScale.labelScale, zoom, northern, viewport) - expected) < 1e-9
+      Math.abs(
+        screenFont(northernScale.labelScale, zoom, northern, viewport) -
+          expected
+      ) < 1e-9
     )
   })
 })

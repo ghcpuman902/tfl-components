@@ -21,144 +21,154 @@
  *   TFL_APP_KEY (Primary key) in server env only
  */
 
-import TflClient from 'tfl-ts';
+import TflClient from "tfl-ts"
 
 export type BusArrivalRow = {
-  lineName?: string;
-  destinationName?: string;
-  towards?: string;
-  direction?: string;
-  timeToStation?: number;
-  expectedArrival?: string;
-  vehicleId?: string;
-};
+  lineName?: string
+  destinationName?: string
+  towards?: string
+  direction?: string
+  timeToStation?: number
+  expectedArrival?: string
+  vehicleId?: string
+}
 
 export type NearbyBusStop = {
-  id: string;
-  name: string;
-  stopLetter?: string;
-  towards?: string;
-  distance?: number;
-  lines?: string[];
-};
+  id: string
+  name: string
+  stopLetter?: string
+  towards?: string
+  distance?: number
+  lines?: string[]
+}
 
-const NEARBY_RADIUS_METERS = 400;
-const isBoardableBusStopId = (id: string) => /^490\d/i.test(id);
+const NEARBY_RADIUS_METERS = 400
+const isBoardableBusStopId = (id: string) => /^490\d/i.test(id)
 
-type AdditionalProperty = { key?: string; value?: string };
+type AdditionalProperty = { key?: string; value?: string }
 
 const readTowards = (properties?: AdditionalProperty[]): string | undefined => {
-  const value = properties?.find((prop) => prop.key?.toLowerCase() === 'towards')?.value;
-  return value?.trim() || undefined;
-};
+  const value = properties?.find(
+    (prop) => prop.key?.toLowerCase() === "towards"
+  )?.value
+  return value?.trim() || undefined
+}
 
-const readStopLetter = (stopLetter?: string, indicator?: string): string | undefined => {
-  const fromLetter = stopLetter?.trim();
-  if (fromLetter) return fromLetter.slice(0, 2).toUpperCase();
-  const fromIndicator = indicator?.replace(/^stop\s+/i, '').trim();
-  if (fromIndicator && fromIndicator.length <= 2) return fromIndicator.toUpperCase();
-  return undefined;
-};
+const readStopLetter = (
+  stopLetter?: string,
+  indicator?: string
+): string | undefined => {
+  const fromLetter = stopLetter?.trim()
+  if (fromLetter) return fromLetter.slice(0, 2).toUpperCase()
+  const fromIndicator = indicator?.replace(/^stop\s+/i, "").trim()
+  if (fromIndicator && fromIndicator.length <= 2)
+    return fromIndicator.toUpperCase()
+  return undefined
+}
 
 /** Map a StopPoint into the fields a stop picker usually needs. */
 export const mapBusStop = (stop: {
-  id?: string;
-  commonName?: string;
-  name?: string;
-  indicator?: string;
-  stopLetter?: string;
-  distance?: number;
-  lines?: Array<{ name?: string }>;
-  additionalProperties?: AdditionalProperty[];
+  id?: string
+  commonName?: string
+  name?: string
+  indicator?: string
+  stopLetter?: string
+  distance?: number
+  lines?: Array<{ name?: string }>
+  additionalProperties?: AdditionalProperty[]
 }): NearbyBusStop | null => {
-  if (!stop.id) return null;
+  if (!stop.id) return null
   return {
     id: stop.id,
-    name: (stop.commonName ?? stop.name)?.trim() || 'Unknown stop',
+    name: (stop.commonName ?? stop.name)?.trim() || "Unknown stop",
     stopLetter: readStopLetter(stop.stopLetter, stop.indicator),
     towards: readTowards(stop.additionalProperties),
     distance: stop.distance,
-    lines: stop.lines?.map((line) => line.name).filter(Boolean) as string[] | undefined,
-  };
-};
+    lines: stop.lines?.map((line) => line.name).filter(Boolean) as
+      string[] | undefined,
+  }
+}
 
 /** Stops within ~400m of a GPS point (truncate lat/lon to ~3 decimals to reduce jitter). */
 export const getNearbyBusStops = async (
   lat: number,
   lon: number,
-  limit = 8,
+  limit = 8
 ): Promise<NearbyBusStop[]> => {
-  const client = new TflClient();
+  const client = new TflClient()
   const response = await client.stopPoint.getByGeoPoint({
     lat,
     lon,
     radius: NEARBY_RADIUS_METERS,
-    modes: ['bus'],
+    modes: ["bus"],
     returnLines: true,
-  });
+  })
 
   return (response.stopPoints ?? [])
     .filter(
       (stop) =>
-        stop.id &&
-        stop.modes?.includes('bus') &&
-        isBoardableBusStopId(stop.id),
+        stop.id && stop.modes?.includes("bus") && isBoardableBusStopId(stop.id)
     )
     .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
     .slice(0, limit)
     .map(mapBusStop)
-    .filter((stop): stop is NearbyBusStop => stop !== null);
-};
+    .filter((stop): stop is NearbyBusStop => stop !== null)
+}
 
 /** Name / street / NaPTAN search; keep boardable 490… IDs when possible. */
-export const searchBusStops = async (query: string, maxResults = 6): Promise<NearbyBusStop[]> => {
-  const client = new TflClient();
+export const searchBusStops = async (
+  query: string,
+  maxResults = 6
+): Promise<NearbyBusStop[]> => {
+  const client = new TflClient()
   const result = await client.stopPoint.search({
     query,
-    modes: ['bus'],
+    modes: ["bus"],
     maxResults,
-  });
+  })
 
   const matches = (result.matches ?? [])
     .filter((match) => match.id && isBoardableBusStopId(match.id))
     .slice(0, maxResults)
     .map((match) => mapBusStop({ id: match.id, commonName: match.name }))
-    .filter((stop): stop is NearbyBusStop => stop !== null);
+    .filter((stop): stop is NearbyBusStop => stop !== null)
 
-  if (matches.length === 0) return matches;
+  if (matches.length === 0) return matches
 
   // Enrich letter / towards from full stop details when search hits are thin
   try {
-    const details = await client.stopPoint.get(matches.map((s) => s.id));
-    const detailList = Array.isArray(details) ? details : [details];
+    const details = await client.stopPoint.get(matches.map((s) => s.id))
+    const detailList = Array.isArray(details) ? details : [details]
     const byId = new Map(
       detailList
         .map(mapBusStop)
         .filter((s): s is NearbyBusStop => s !== null)
-        .map((s) => [s.id, s] as const),
-    );
+        .map((s) => [s.id, s] as const)
+    )
     return matches.map((stop) => {
-      const detail = byId.get(stop.id);
-      if (!detail) return stop;
+      const detail = byId.get(stop.id)
+      if (!detail) return stop
       return {
         ...stop,
         stopLetter: stop.stopLetter ?? detail.stopLetter,
         towards: stop.towards ?? detail.towards,
         lines: stop.lines?.length ? stop.lines : detail.lines,
         name: stop.name || detail.name,
-      };
-    });
+      }
+    })
   } catch {
-    return matches;
+    return matches
   }
-};
+}
 
-export const getBusArrivals = async (stopPointId: string): Promise<BusArrivalRow[]> => {
-  const client = new TflClient();
+export const getBusArrivals = async (
+  stopPointId: string
+): Promise<BusArrivalRow[]> => {
+  const client = new TflClient()
   const arrivals = await client.stopPoint.getArrivals({
     stopPointIds: [stopPointId],
-    sortBy: 'timeToStation',
-  });
+    sortBy: "timeToStation",
+  })
 
   return arrivals.map((arrival) => ({
     lineName: arrival.lineName,
@@ -168,20 +178,23 @@ export const getBusArrivals = async (stopPointId: string): Promise<BusArrivalRow
     timeToStation: arrival.timeToStation,
     expectedArrival: arrival.expectedArrival,
     vehicleId: arrival.vehicleId,
-  }));
-};
+  }))
+}
 
 export const formatTimeToStation = (seconds?: number): string => {
-  if (seconds == null || seconds < 60) return 'Due';
-  return `${Math.round(seconds / 60)} min`;
-};
+  if (seconds == null || seconds < 60) return "Due"
+  return `${Math.round(seconds / 60)} min`
+}
 
 export const formatArrivalClock = (iso?: string): string | null => {
-  if (!iso) return null;
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-};
+  if (!iso) return null
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
 
 /**
  * Illustrative JSX for ONE arrivals row. Paste into your component library.

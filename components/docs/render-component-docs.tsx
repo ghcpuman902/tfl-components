@@ -19,7 +19,11 @@ import { RailArrivalsBoardSkeleton } from "@/components/tfl/arrivals/rail-arriva
 import { BusArrivalsBoardSkeleton } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { RiverBusArrivalsBoardSkeleton } from "@/components/tfl/arrivals/river-bus-arrivals-board"
 import { CycleHireDocksBoardSkeleton } from "@/components/tfl/cycle-hire/cycle-hire-docks"
-import { HOME_BUS_STOP, HOME_RAIL_STOP, HOME_RIVER_STOP } from "@/lib/tfl/home-arrivals-stops"
+import {
+  HOME_BUS_STOP,
+  HOME_RAIL_STOP,
+  HOME_RIVER_STOP,
+} from "@/lib/tfl/home-arrivals-stops"
 
 type RelatedLink = { href: string; label: string }
 

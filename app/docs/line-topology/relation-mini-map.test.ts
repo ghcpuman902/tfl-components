@@ -40,7 +40,7 @@ describe("relation-mini-map", () => {
     assert.ok(point.x > 0 && point.x < MINI_MAP_WIDTH)
     assert.ok(point.y > 0 && point.y < MINI_MAP_HEIGHT)
     assert.ok(
-      GREATER_LONDON_ISH.minLng < -0.128 && GREATER_LONDON_ISH.maxLng > -0.128,
+      GREATER_LONDON_ISH.minLng < -0.128 && GREATER_LONDON_ISH.maxLng > -0.128
     )
   })
 })

@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   useEffect,
@@ -7,36 +7,36 @@ import {
   useCallback,
   useMemo,
   useSyncExternalStore,
-} from "react";
+} from "react"
 import maplibregl, {
   type ExpressionSpecification,
   type GeoJSONSource,
-} from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
-import { cn } from "@/lib/utils";
-import { mapLineColorForBasemap } from "@/lib/tfl/dark-line-colours";
+} from "maplibre-gl"
+import "maplibre-gl/dist/maplibre-gl.css"
+import { cn } from "@/lib/utils"
+import { mapLineColorForBasemap } from "@/lib/tfl/dark-line-colours"
 import type {
   TrackModel,
   TransitGeometryBundle,
   TransitMode,
-} from "@/lib/tfl/geography-types";
+} from "@/lib/tfl/geography-types"
 import {
   TRANSIT_GEOMETRY_PUBLIC_ASSETS,
   openFreeMapStyleUrl,
   OSM_TRANSIT_GEOMETRY_CREDIT,
   transitGeometryAssetUrl,
   type TransitGeometryMode,
-} from "@/lib/tfl/geography-credits";
-import { useVehicleSegmentSource } from "@/components/tfl/geography/sync-vehicle-source";
-import { provideMissingStyleImages } from "@/components/tfl/maps/provide-missing-style-images";
+} from "@/lib/tfl/geography-credits"
+import { useVehicleSegmentSource } from "@/components/tfl/geography/sync-vehicle-source"
+import { provideMissingStyleImages } from "@/components/tfl/maps/provide-missing-style-images"
 import {
   vehiclesToSegmentGeoJSON,
   type VehiclePosition,
-} from "@/lib/tfl/map-vehicles";
-import type { RoutePolyline } from "@/lib/tfl/vehicle-progress";
+} from "@/lib/tfl/map-vehicles"
+import type { RoutePolyline } from "@/lib/tfl/vehicle-progress"
 
-const LONDON_CENTER: [number, number] = [-0.12, 51.51];
-const LONDON_ZOOM = 10.2;
+const LONDON_CENTER: [number, number] = [-0.12, 51.51]
+const LONDON_ZOOM = 10.2
 
 /** Bottom → top paint order so DLR / tram / Overground stay visible over Tube casing. */
 const DEFAULT_MODES: readonly TransitMode[] = [
@@ -45,96 +45,96 @@ const DEFAULT_MODES: readonly TransitMode[] = [
   "elizabeth",
   "dlr",
   "tram",
-];
+]
 
 type TflGeographicMapProps = {
   /**
    * Pre-loaded geometry bundles keyed by mode. When omitted the component
    * fetches vendored GeoJSON from `/data/geography/`.
    */
-  data?: Partial<Record<TransitMode, TransitGeometryBundle>>;
+  data?: Partial<Record<TransitMode, TransitGeometryBundle>>
   /** Which transit modes to render. Defaults to all five. */
-  modes?: readonly TransitMode[];
+  modes?: readonly TransitMode[]
   /** When set, only these line ids are painted. */
-  lineIds?: readonly string[];
+  lineIds?: readonly string[]
   /**
    * Unique-track layer to fetch when `data` is omitted.
    * `"centreline"` merges directional twins; `"dual"` keeps both tracks.
    */
-  trackModel?: TrackModel;
+  trackModel?: TrackModel
   /** Live vehicles. Positions are derived by the caller; this map paints track segments. */
-  vehicles?: readonly VehiclePosition[];
+  vehicles?: readonly VehiclePosition[]
   /**
    * Hop-indexed unique-track polylines used to paint and coast vehicles.
    * When omitted, the map falls back to whole-line unique-track features.
    */
-  vehiclePolylines?: readonly RoutePolyline[];
+  vehiclePolylines?: readonly RoutePolyline[]
   /** Keep vehicles walking along the track between arrival snapshots. */
-  coast?: boolean;
+  coast?: boolean
   /** Show station circles and names. Default true. */
-  showStations?: boolean;
+  showStations?: boolean
   /** Show line tracks. Default true. */
-  showLines?: boolean;
+  showLines?: boolean
   /** Show zoom/pan controls. Default true. */
-  showNavigation?: boolean;
+  showNavigation?: boolean
   /** Initial center [lng, lat]. Default London. */
-  center?: [number, number];
+  center?: [number, number]
   /** Initial zoom level. Default 10.2. */
-  zoom?: number;
-  className?: string;
-};
+  zoom?: number
+  className?: string
+}
 
 const subscribeDocumentDark = (onStoreChange: () => void) => {
-  const observer = new MutationObserver(onStoreChange);
+  const observer = new MutationObserver(onStoreChange)
   observer.observe(document.documentElement, {
     attributes: true,
     attributeFilter: ["class"],
-  });
-  return () => observer.disconnect();
-};
+  })
+  return () => observer.disconnect()
+}
 
 const getDocumentDark = () =>
-  document.documentElement.classList.contains("dark");
+  document.documentElement.classList.contains("dark")
 
 const useDocumentDark = () =>
-  useSyncExternalStore(subscribeDocumentDark, getDocumentDark, () => false);
+  useSyncExternalStore(subscribeDocumentDark, getDocumentDark, () => false)
 
-const STATION_FILL = { light: "#ffffff", dark: "#111827" } as const;
-const STATION_STROKE = { light: "#111827", dark: "#ffffff" } as const;
-const LINE_CASING = { light: "#ffffff", dark: "#111827" } as const;
+const STATION_FILL = { light: "#ffffff", dark: "#111827" } as const
+const STATION_STROKE = { light: "#111827", dark: "#ffffff" } as const
+const LINE_CASING = { light: "#ffffff", dark: "#111827" } as const
 
 const asFeatureCollection = (
-  collection: TransitGeometryBundle["lines"] | TransitGeometryBundle["stations"],
+  collection: TransitGeometryBundle["lines"] | TransitGeometryBundle["stations"]
 ) => ({
   type: "FeatureCollection" as const,
   features: collection.features ?? [],
-});
+})
 
 const remapLineCollection = (
   collection: TransitGeometryBundle["lines"],
-  dark: boolean,
+  dark: boolean
 ) => ({
   type: "FeatureCollection" as const,
   features: (collection.features ?? []).map((feature) => {
-    const props = feature.properties;
-    if (!props?.color) return feature;
-    const next = mapLineColorForBasemap(props.color, dark);
+    const props = feature.properties
+    if (!props?.color) return feature
+    const next = mapLineColorForBasemap(props.color, dark)
     return {
       ...feature,
       properties: { ...props, color: next },
-    };
+    }
   }),
-});
+})
 
 const LINE_LAYOUT = {
   "line-join": "round" as const,
   "line-cap": "round" as const,
-};
+}
 
 const VEHICLE_LAYOUT = {
   "line-join": "bevel" as const,
   "line-cap": "butt" as const,
-};
+}
 
 const LINE_WIDTH: ExpressionSpecification = [
   "interpolate",
@@ -146,7 +146,7 @@ const LINE_WIDTH: ExpressionSpecification = [
   3.8,
   16,
   5,
-];
+]
 
 const LINE_INNER_WIDTH: ExpressionSpecification = [
   "interpolate",
@@ -158,7 +158,7 @@ const LINE_INNER_WIDTH: ExpressionSpecification = [
   2.6,
   16,
   3.4,
-];
+]
 
 const STATION_RADIUS: ExpressionSpecification = [
   "interpolate",
@@ -170,7 +170,7 @@ const STATION_RADIUS: ExpressionSpecification = [
   4,
   16,
   5,
-];
+]
 
 const VEHICLE_LINE_WIDTH: ExpressionSpecification = [
   "interpolate",
@@ -182,7 +182,7 @@ const VEHICLE_LINE_WIDTH: ExpressionSpecification = [
   ["*", 9, ["coalesce", ["get", "widthScale"], 1]],
   16,
   ["*", 12, ["coalesce", ["get", "widthScale"], 1]],
-];
+]
 
 const VEHICLE_LINE_OFFSET: ExpressionSpecification = [
   "interpolate",
@@ -194,7 +194,7 @@ const VEHICLE_LINE_OFFSET: ExpressionSpecification = [
   -3.5,
   16,
   -5,
-];
+]
 
 const STATION_LABEL_SIZE: ExpressionSpecification = [
   "interpolate",
@@ -208,7 +208,7 @@ const STATION_LABEL_SIZE: ExpressionSpecification = [
   11,
   16,
   12,
-];
+]
 
 /**
  * OpenFreeMap Positron paints OSM railways and neighbourhood names that fight
@@ -222,15 +222,15 @@ const OSM_LAYERS_TO_HIDE = [
   "railway",
   "railway_dashline",
   "label_other",
-] as const;
+] as const
 
 const prepareBasemapForTransit = (map: maplibregl.Map) => {
   for (const id of OSM_LAYERS_TO_HIDE) {
     if (map.getLayer(id)) {
-      map.setLayoutProperty(id, "visibility", "none");
+      map.setLayoutProperty(id, "visibility", "none")
     }
   }
-};
+}
 
 /**
  * Add sources first, then casings, then coloured cores, then stations + names.
@@ -239,72 +239,72 @@ const prepareBasemapForTransit = (map: maplibregl.Map) => {
  */
 const filterBundleLines = (
   bundle: TransitGeometryBundle,
-  lineIds: readonly string[] | undefined,
+  lineIds: readonly string[] | undefined
 ): TransitGeometryBundle["lines"] => {
-  if (!lineIds?.length) return bundle.lines;
-  const allow = new Set(lineIds);
+  if (!lineIds?.length) return bundle.lines
+  const allow = new Set(lineIds)
   return {
     type: "FeatureCollection",
     features: (bundle.lines.features ?? []).filter((feature) =>
-      allow.has(feature.properties?.lineId ?? ""),
+      allow.has(feature.properties?.lineId ?? "")
     ),
-  };
-};
+  }
+}
 
 const filterBundleStations = (
   bundle: TransitGeometryBundle,
-  lineIds: readonly string[] | undefined,
+  lineIds: readonly string[] | undefined
 ): TransitGeometryBundle["stations"] => {
-  if (!lineIds?.length) return bundle.stations;
-  const allow = new Set(lineIds);
+  if (!lineIds?.length) return bundle.stations
+  const allow = new Set(lineIds)
   return {
     type: "FeatureCollection",
     features: (bundle.stations.features ?? []).filter((feature) =>
-      (feature.properties?.lineIds ?? []).some((id) => allow.has(id)),
+      (feature.properties?.lineIds ?? []).some((id) => allow.has(id))
     ),
-  };
-};
+  }
+}
 
 const polylinesFromBundles = (
   bundles: { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[],
-  lineIds?: readonly string[],
+  lineIds?: readonly string[]
 ): RoutePolyline[] => {
-  const allow = lineIds?.length ? new Set(lineIds) : null;
-  const out: RoutePolyline[] = [];
+  const allow = lineIds?.length ? new Set(lineIds) : null
+  const out: RoutePolyline[] = []
   for (const { bundle } of bundles) {
     for (const feature of bundle.lines.features ?? []) {
-      const lineId = feature.properties?.lineId ?? "";
-      if (allow && !allow.has(lineId)) continue;
+      const lineId = feature.properties?.lineId ?? ""
+      if (allow && !allow.has(lineId)) continue
       if (feature.geometry?.type === "LineString") {
-        out.push({ lineId, line: feature.geometry });
+        out.push({ lineId, line: feature.geometry })
       }
     }
   }
-  return out;
-};
+  return out
+}
 
 const fitLineBounds = (
   map: maplibregl.Map,
   bundles: { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[],
-  lineIds: readonly string[] | undefined,
+  lineIds: readonly string[] | undefined
 ) => {
-  if (!lineIds?.length) return;
-  const bounds = new maplibregl.LngLatBounds();
-  let any = false;
+  if (!lineIds?.length) return
+  const bounds = new maplibregl.LngLatBounds()
+  let any = false
   for (const { bundle } of bundles) {
     for (const feature of filterBundleLines(bundle, lineIds).features ?? []) {
-      if (feature.geometry?.type !== "LineString") continue;
+      if (feature.geometry?.type !== "LineString") continue
       for (const coord of feature.geometry.coordinates) {
-        const lon = coord[0];
-        const lat = coord[1];
-        if (lon == null || lat == null) continue;
-        bounds.extend([lon, lat]);
-        any = true;
+        const lon = coord[0]
+        const lat = coord[1]
+        if (lon == null || lat == null) continue
+        bounds.extend([lon, lat])
+        any = true
       }
     }
   }
-  if (any) map.fitBounds(bounds, { padding: 48, duration: 0 });
-};
+  if (any) map.fitBounds(bounds, { padding: 48, duration: 0 })
+}
 
 const addTransitLayers = (
   map: maplibregl.Map,
@@ -312,22 +312,22 @@ const addTransitLayers = (
   showLines: boolean,
   showStations: boolean,
   dark: boolean,
-  lineIds?: readonly string[],
+  lineIds?: readonly string[]
 ) => {
-  const tone = dark ? "dark" : "light";
+  const tone = dark ? "dark" : "light"
 
   for (const { mode, bundle } of bundles) {
     if (showLines) {
       map.addSource(`${mode}-lines`, {
         type: "geojson",
         data: remapLineCollection(filterBundleLines(bundle, lineIds), dark),
-      });
+      })
     }
     if (showStations) {
       map.addSource(`${mode}-stations`, {
         type: "geojson",
         data: asFeatureCollection(filterBundleStations(bundle, lineIds)),
-      });
+      })
     }
   }
 
@@ -343,7 +343,7 @@ const addTransitLayers = (
           "line-width": LINE_WIDTH,
           "line-opacity": 0.92,
         },
-      });
+      })
     }
     for (const { mode } of bundles) {
       map.addLayer({
@@ -360,7 +360,7 @@ const addTransitLayers = (
           ],
           "line-width": LINE_INNER_WIDTH,
         },
-      });
+      })
     }
   }
 
@@ -378,7 +378,7 @@ const addTransitLayers = (
           "circle-stroke-color": STATION_STROKE[tone],
           "circle-opacity": 0.98,
         },
-      });
+      })
     }
     for (const { mode } of bundles) {
       map.addLayer({
@@ -402,7 +402,7 @@ const addTransitLayers = (
           "text-halo-color": STATION_FILL[tone],
           "text-halo-width": 1.6,
         },
-      });
+      })
     }
   }
 
@@ -410,7 +410,7 @@ const addTransitLayers = (
     map.addSource("rail-vehicles", {
       type: "geojson",
       data: vehiclesToSegmentGeoJSON([], []),
-    });
+    })
     map.addLayer({
       id: "rail-vehicles",
       type: "line",
@@ -422,9 +422,9 @@ const addTransitLayers = (
         "line-offset": VEHICLE_LINE_OFFSET,
         "line-opacity": 0.96,
       },
-    });
+    })
   }
-};
+}
 
 /**
  * Free geographic map — MapLibre GL JS over OpenFreeMap Positron / Dark.
@@ -456,83 +456,81 @@ export const TflGeographicMap = ({
   zoom = LONDON_ZOOM,
   className,
 }: TflGeographicMapProps) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const mapRef = useRef<maplibregl.Map | null>(null)
   const bundlesRef = useRef<
     { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[] | null
-  >(null);
-  const skipStyleSwapRef = useRef(true);
-  const fittedRef = useRef(false);
-  const trackModelRef = useRef(trackModel);
-  const lineIdsKey = lineIds?.join(",") ?? "";
-  const modesKey = (modes ?? DEFAULT_MODES).join(",");
-  const dark = useDocumentDark();
-  const [status, setStatus] = useState<"loading" | "ready" | "error">(
-    "loading",
-  );
+  >(null)
+  const skipStyleSwapRef = useRef(true)
+  const fittedRef = useRef(false)
+  const trackModelRef = useRef(trackModel)
+  const lineIdsKey = lineIds?.join(",") ?? ""
+  const modesKey = (modes ?? DEFAULT_MODES).join(",")
+  const dark = useDocumentDark()
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
 
   const activeModes = useMemo(
     () => modes ?? DEFAULT_MODES,
     // Parent arrays are often inline (`modes={["tube"]}`); compare by id list.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [modesKey],
-  );
+    [modesKey]
+  )
 
   const loadGeometry = useCallback(async (): Promise<
     { mode: TransitGeometryMode; bundle: TransitGeometryBundle }[]
   > => {
     if (data) {
       const ordered = DEFAULT_MODES.filter(
-        (mode) => activeModes.includes(mode) && data[mode],
-      );
+        (mode) => activeModes.includes(mode) && data[mode]
+      )
       return ordered.map((mode) => ({
         mode,
         bundle: data[mode] as TransitGeometryBundle,
-      }));
+      }))
     }
 
     const assetByMode = new Map(
-      TRANSIT_GEOMETRY_PUBLIC_ASSETS.map((asset) => [asset.mode, asset]),
-    );
+      TRANSIT_GEOMETRY_PUBLIC_ASSETS.map((asset) => [asset.mode, asset])
+    )
     const orderedModes = DEFAULT_MODES.filter((mode) =>
-      activeModes.includes(mode),
-    );
+      activeModes.includes(mode)
+    )
 
     const results = await Promise.all(
       orderedModes.map(async (mode) => {
-        const asset = assetByMode.get(mode);
+        const asset = assetByMode.get(mode)
         if (!asset) {
-          throw new Error(`No geography asset for mode ${mode}`);
+          throw new Error(`No geography asset for mode ${mode}`)
         }
-        const url = transitGeometryAssetUrl(mode, trackModel);
-        const res = await fetch(url);
+        const url = transitGeometryAssetUrl(mode, trackModel)
+        const res = await fetch(url)
         if (!res.ok) {
-          throw new Error(`Failed to load ${asset.label} (${res.status})`);
+          throw new Error(`Failed to load ${asset.label} (${res.status})`)
         }
         return {
           mode,
           bundle: (await res.json()) as TransitGeometryBundle,
-        };
-      }),
-    );
-    return results;
-  }, [data, activeModes, trackModel]);
+        }
+      })
+    )
+    return results
+  }, [data, activeModes, trackModel])
 
-  const loadGeometryRef = useRef(loadGeometry);
-  loadGeometryRef.current = loadGeometry;
-  const vehiclePolylinesRef = useRef(vehiclePolylines);
-  vehiclePolylinesRef.current = vehiclePolylines;
+  const loadGeometryRef = useRef(loadGeometry)
+  loadGeometryRef.current = loadGeometry
+  const vehiclePolylinesRef = useRef(vehiclePolylines)
+  vehiclePolylinesRef.current = vehiclePolylines
 
   const getPolylines = useCallback(
     (): RoutePolyline[] => {
-      const hops = vehiclePolylinesRef.current;
-      if (hops && hops.length > 0) return [...hops];
-      return polylinesFromBundles(bundlesRef.current ?? [], lineIds);
+      const hops = vehiclePolylinesRef.current
+      if (hops && hops.length > 0) return [...hops]
+      return polylinesFromBundles(bundlesRef.current ?? [], lineIds)
     },
     // lineIds identity is represented by lineIdsKey.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lineIdsKey],
-  );
+    [lineIdsKey]
+  )
 
   const { flush: flushVehicles } = useVehicleSegmentSource({
     mapRef,
@@ -541,13 +539,13 @@ export const TflGeographicMap = ({
     getPolylines,
     coast,
     ready: status === "ready",
-  });
+  })
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container || mapRef.current) return;
+    const container = containerRef.current
+    if (!container || mapRef.current) return
 
-    let cancelled = false;
+    let cancelled = false
 
     const map = new maplibregl.Map({
       container,
@@ -556,106 +554,97 @@ export const TflGeographicMap = ({
       zoom,
       attributionControl: { compact: true },
       cooperativeGestures: true,
-    });
-    provideMissingStyleImages(map);
+    })
+    provideMissingStyleImages(map)
 
     if (showNavigation) {
       map.addControl(
         new maplibregl.NavigationControl({ showCompass: false }),
-        "top-right",
-      );
+        "top-right"
+      )
     }
-    mapRef.current = map;
+    mapRef.current = map
 
     map.on("load", async () => {
       try {
-        prepareBasemapForTransit(map);
-        const bundles = bundlesRef.current ?? (await loadGeometryRef.current());
-        if (cancelled) return;
-        bundlesRef.current = bundles;
+        prepareBasemapForTransit(map)
+        const bundles = bundlesRef.current ?? (await loadGeometryRef.current())
+        if (cancelled) return
+        bundlesRef.current = bundles
 
-        addTransitLayers(map, bundles, showLines, showStations, dark, lineIds);
+        addTransitLayers(map, bundles, showLines, showStations, dark, lineIds)
         if (!fittedRef.current) {
-          fitLineBounds(map, bundles, lineIds);
-          fittedRef.current = true;
+          fitLineBounds(map, bundles, lineIds)
+          fittedRef.current = true
         }
-        setStatus("ready");
+        setStatus("ready")
       } catch {
-        if (!cancelled) setStatus("error");
+        if (!cancelled) setStatus("error")
       }
-    });
+    })
 
     return () => {
-      cancelled = true;
-      map.remove();
-      mapRef.current = null;
-    };
+      cancelled = true
+      map.remove()
+      mapRef.current = null
+    }
     // Create once. Overlay and style swaps live in the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showNavigation]);
+  }, [showNavigation])
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
+    const map = mapRef.current
+    if (!map) return
     if (skipStyleSwapRef.current) {
-      skipStyleSwapRef.current = false;
-      return;
+      skipStyleSwapRef.current = false
+      return
     }
 
     const applyOverlays = () => {
-      const bundles = bundlesRef.current;
-      if (!bundles) return;
-      prepareBasemapForTransit(map);
-      addTransitLayers(map, bundles, showLines, showStations, dark, lineIds);
-      flushVehicles();
-    };
+      const bundles = bundlesRef.current
+      if (!bundles) return
+      prepareBasemapForTransit(map)
+      addTransitLayers(map, bundles, showLines, showStations, dark, lineIds)
+      flushVehicles()
+    }
 
-    map.setStyle(openFreeMapStyleUrl(dark));
-    map.once("style.load", applyOverlays);
+    map.setStyle(openFreeMapStyleUrl(dark))
+    map.once("style.load", applyOverlays)
     return () => {
-      map.off("style.load", applyOverlays);
-    };
-  }, [dark, showLines, showStations, lineIdsKey, flushVehicles]);
+      map.off("style.load", applyOverlays)
+    }
+  }, [dark, showLines, showStations, lineIdsKey, flushVehicles])
 
   useEffect(() => {
-    if (data) return;
-    const map = mapRef.current;
-    if (!map || status !== "ready") return;
-    if (trackModelRef.current === trackModel) return;
-    trackModelRef.current = trackModel;
+    if (data) return
+    const map = mapRef.current
+    if (!map || status !== "ready") return
+    if (trackModelRef.current === trackModel) return
+    trackModelRef.current = trackModel
 
-    let cancelled = false;
+    let cancelled = false
     const applyTrackModel = async () => {
       try {
-        const bundles = await loadGeometry();
-        if (cancelled || !mapRef.current) return;
-        bundlesRef.current = bundles;
+        const bundles = await loadGeometry()
+        if (cancelled || !mapRef.current) return
+        bundlesRef.current = bundles
         for (const { mode, bundle } of bundles) {
           const source = map.getSource(`${mode}-lines`) as
-            | GeoJSONSource
-            | undefined;
+            GeoJSONSource | undefined
           source?.setData(
-            remapLineCollection(filterBundleLines(bundle, lineIds), dark),
-          );
+            remapLineCollection(filterBundleLines(bundle, lineIds), dark)
+          )
         }
-        flushVehicles();
+        flushVehicles()
       } catch {
-        if (!cancelled) setStatus("error");
+        if (!cancelled) setStatus("error")
       }
-    };
-    void applyTrackModel();
+    }
+    void applyTrackModel()
     return () => {
-      cancelled = true;
-    };
-  }, [
-    trackModel,
-    status,
-    data,
-    loadGeometry,
-    dark,
-    lineIds,
-    flushVehicles,
-  ]);
+      cancelled = true
+    }
+  }, [trackModel, status, data, loadGeometry, dark, lineIds, flushVehicles])
 
   return (
     <div
@@ -674,5 +663,5 @@ export const TflGeographicMap = ({
         </div>
       )}
     </div>
-  );
-};
+  )
+}

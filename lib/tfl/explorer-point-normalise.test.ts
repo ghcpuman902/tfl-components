@@ -1,24 +1,24 @@
-import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import assert from "node:assert/strict"
+import { describe, it } from "node:test"
 import {
   isSmsCodeQuery,
   normaliseBikePoint,
   normaliseRailPoint,
   normaliseStopPoint,
-} from "./explorer-point-normalise";
+} from "./explorer-point-normalise"
 
 describe("isSmsCodeQuery", () => {
   it("accepts five digits", () => {
-    assert.equal(isSmsCodeQuery("53240"), true);
-    assert.equal(isSmsCodeQuery(" 53240 "), true);
-  });
+    assert.equal(isSmsCodeQuery("53240"), true)
+    assert.equal(isSmsCodeQuery(" 53240 "), true)
+  })
 
   it("rejects non-SMS queries", () => {
-    assert.equal(isSmsCodeQuery("Trafalgar"), false);
-    assert.equal(isSmsCodeQuery("4900"), false);
-    assert.equal(isSmsCodeQuery("532401"), false);
-  });
-});
+    assert.equal(isSmsCodeQuery("Trafalgar"), false)
+    assert.equal(isSmsCodeQuery("4900"), false)
+    assert.equal(isSmsCodeQuery("532401"), false)
+  })
+})
 
 describe("normaliseStopPoint", () => {
   it("maps a bus stop", () => {
@@ -36,7 +36,7 @@ describe("normaliseStopPoint", () => {
         { key: "SmsCode", value: "53240" },
         { key: "CompassPoint", value: "W" },
       ],
-    });
+    })
     assert.deepEqual(point, {
       id: "490000091G",
       name: "Trafalgar Square",
@@ -50,8 +50,8 @@ describe("normaliseStopPoint", () => {
       towards: "Marble Arch",
       distanceMeters: 40,
       bearingDegrees: 270,
-    });
-  });
+    })
+  })
 
   it("reads towards from a search hit and drops arrow letters", () => {
     const point = normaliseStopPoint({
@@ -60,16 +60,16 @@ describe("normaliseStopPoint", () => {
       stopLetter: "->W",
       towards: "Wapping",
       modes: ["bus"],
-    });
-    assert.equal(point?.towards, "Wapping");
-    assert.equal(point?.stopLetter, undefined);
-    assert.equal(point?.bearingDegrees, 270);
-  });
+    })
+    assert.equal(point?.towards, "Wapping")
+    assert.equal(point?.stopLetter, undefined)
+    assert.equal(point?.bearingDegrees, 270)
+  })
 
   it("returns null without id", () => {
-    assert.equal(normaliseStopPoint({ commonName: "Nowhere" }), null);
-  });
-});
+    assert.equal(normaliseStopPoint({ commonName: "Nowhere" }), null)
+  })
+})
 
 describe("normaliseBikePoint", () => {
   it("maps a dock", () => {
@@ -82,12 +82,12 @@ describe("normaliseBikePoint", () => {
       eBikes: 1,
       spaces: 10,
       distance: 120,
-    });
-    assert.equal(point?.kind, "bikePoint");
-    assert.equal(point?.bikes, 5);
-    assert.equal(point?.distanceMeters, 120);
-  });
-});
+    })
+    assert.equal(point?.kind, "bikePoint")
+    assert.equal(point?.bikes, 5)
+    assert.equal(point?.distanceMeters, 120)
+  })
+})
 
 describe("normaliseRailPoint", () => {
   it("maps a catalog station", () => {
@@ -101,9 +101,9 @@ describe("normaliseRailPoint", () => {
       lat: 51.496,
       lon: -0.144,
       aliasIds: ["940GZZLUVIC"],
-    });
-    assert.equal(point.name, "Victoria");
-    assert.equal(point.zone, "1");
-    assert.deepEqual(point.lineIds, ["victoria", "circle"]);
-  });
-});
+    })
+    assert.equal(point.name, "Victoria")
+    assert.equal(point.zone, "1")
+    assert.deepEqual(point.lineIds, ["victoria", "circle"])
+  })
+})

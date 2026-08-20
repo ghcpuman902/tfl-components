@@ -150,12 +150,16 @@ const cyclicKey = (
   for (let index = 0; index < ranked.length; index += 1) {
     const current = ranked[index]!.angle
     const next = ranked[(index + 1) % ranked.length]!.angle
-    const gap = index === ranked.length - 1 ? next + Math.PI * 2 - current : next - current
+    const gap =
+      index === ranked.length - 1
+        ? next + Math.PI * 2 - current
+        : next - current
     gaps.push(gap)
   }
   if (gaps.every((gap) => gap < ANGLE_EPS)) return null
   const start = ranked.reduce(
-    (best, item, index) => (item.neighbor < ranked[best]!.neighbor ? index : best),
+    (best, item, index) =>
+      item.neighbor < ranked[best]!.neighbor ? index : best,
     0
   )
   const ordered = [
@@ -172,7 +176,8 @@ const cyclicOrders = (
   hubs.map((item) => cyclicKey(state, item.hub, item.neighbors) ?? "")
 
 const sameCyclicOrders = (left: readonly string[], right: readonly string[]) =>
-  left.length === right.length && left.every((value, index) => value === right[index])
+  left.length === right.length &&
+  left.every((value, index) => value === right[index])
 
 const projectEdgeLengths = (
   state: LayoutState,
@@ -193,8 +198,10 @@ const projectEdgeLengths = (
     const fromY = midY - uy * half
     const toX = midX + ux * half
     const toY = midY + uy * half
-    state.x[edge.from] = state.x[edge.from]! + (fromX - state.x[edge.from]!) * blend
-    state.y[edge.from] = state.y[edge.from]! + (fromY - state.y[edge.from]!) * blend
+    state.x[edge.from] =
+      state.x[edge.from]! + (fromX - state.x[edge.from]!) * blend
+    state.y[edge.from] =
+      state.y[edge.from]! + (fromY - state.y[edge.from]!) * blend
     state.x[edge.to] = state.x[edge.to]! + (toX - state.x[edge.to]!) * blend
     state.y[edge.to] = state.y[edge.to]! + (toY - state.y[edge.to]!) * blend
   }
@@ -202,7 +209,12 @@ const projectEdgeLengths = (
 
 const straightenMovements = (
   state: LayoutState,
-  movements: readonly { from: number; via: number; to: number; strength: number }[]
+  movements: readonly {
+    from: number
+    via: number
+    to: number
+    strength: number
+  }[]
 ) => {
   for (const movement of movements) {
     const midX = (state.x[movement.from]! + state.x[movement.to]!) / 2
@@ -238,11 +250,7 @@ const applyBonds = (
   }
 }
 
-const pullToGeo = (
-  state: LayoutState,
-  geo: LayoutState,
-  blend: number
-) => {
+const pullToGeo = (state: LayoutState, geo: LayoutState, blend: number) => {
   for (let index = 0; index < state.x.length; index += 1) {
     state.x[index]! += (geo.x[index]! - state.x[index]!) * blend
     state.y[index]! += (geo.y[index]! - state.y[index]!) * blend
@@ -276,10 +284,7 @@ const separateOverlaps = (
 const pairKey = (a: number, b: number): string =>
   a < b ? `${a}|${b}` : `${b}|${a}`
 
-const movementStrength = (
-  viaDegree: number,
-  patternCount: number
-): number => {
+const movementStrength = (viaDegree: number, patternCount: number): number => {
   const hubPenalty = viaDegree >= 4 ? 0.35 : viaDegree >= 3 ? 0.7 : 1
   const support = Math.min(1, 0.45 + patternCount * 0.12)
   return STRAIGHTEN_BLEND * hubPenalty * support
@@ -352,8 +357,7 @@ export const layoutTflSequences = (
 
   const typicalGeo = median(geoLengths) || 1
   scaleAboutOrigin(geo, hop / typicalGeo)
-  const typicalMinutes =
-    median(layoutEdges.map((edge) => edge.length)) || 1
+  const typicalMinutes = median(layoutEdges.map((edge) => edge.length)) || 1
   const minuteScale = hop / typicalMinutes
   for (const edge of layoutEdges) edge.length *= minuteScale
 

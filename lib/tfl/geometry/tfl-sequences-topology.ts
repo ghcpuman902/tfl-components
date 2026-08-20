@@ -14,7 +14,10 @@ import type {
   ContractedTopology,
 } from "@/lib/tfl/geometry/contract-track-topology"
 import type { DirectedTopologyMovement } from "@/lib/tfl/geometry/topology-movements"
-import type { LngLat, TrackStation } from "@/lib/tfl/geometry/transit-track-graph"
+import type {
+  LngLat,
+  TrackStation,
+} from "@/lib/tfl/geometry/transit-track-graph"
 
 export type TflSequencesPattern = {
   id: string
@@ -88,9 +91,7 @@ const displayRouteName = (name: string): string =>
     .replace(/\s+/g, " ")
     .trim()
 
-export const regularRoutePatterns = (
-  lineId: string
-): TflSequencesPattern[] => {
+export const regularRoutePatterns = (lineId: string): TflSequencesPattern[] => {
   const sequence = getStaticLineSequence(lineId)
   if (!sequence) return []
   const canonical = aliasCanonical()

@@ -1,10 +1,10 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
 
 type BrowserWindowProps = {
-  url?: string;
-  children: React.ReactNode;
-  className?: string;
-};
+  url?: string
+  children: React.ReactNode
+  className?: string
+}
 
 /** Minimal docs chrome: traffic-light bar and a URL. */
 export const BrowserWindow = ({
@@ -15,7 +15,7 @@ export const BrowserWindow = ({
   <div
     className={cn(
       "overflow-hidden rounded-xl border border-border bg-background shadow-sm",
-      className,
+      className
     )}
   >
     <div className="flex items-center gap-3 border-b border-border px-3 py-2">
@@ -31,4 +31,4 @@ export const BrowserWindow = ({
     </div>
     <div className="p-4 md:p-6">{children}</div>
   </div>
-);
+)

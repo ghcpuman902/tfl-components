@@ -1,18 +1,18 @@
-import type { CSSProperties } from "react";
-import { cn } from "@/lib/utils";
-import { ux, verticalDiagramMetrics } from "@/lib/tfl/line-diagram";
+import type { CSSProperties } from "react"
+import { cn } from "@/lib/utils"
+import { ux, verticalDiagramMetrics } from "@/lib/tfl/line-diagram"
 
-export type DiagramMarkerKind = "tick-right" | "tick-both" | "ring";
+export type DiagramMarkerKind = "tick-right" | "tick-both" | "ring"
 
 export type DiagramStationMarkerProps = {
-  kind: DiagramMarkerKind;
-  lineColor: string;
+  kind: DiagramMarkerKind
+  lineColor: string
   /** Marker column width (CSS length). Defaults to vertical metrics. */
-  columnWidth?: string;
+  columnWidth?: string
   /** Row / column height for the marker slot (CSS length). */
-  slotHeight?: string;
-  className?: string;
-};
+  slotHeight?: string
+  className?: string
+}
 
 /**
  * Shared stop marker for vertical / journey diagrams.
@@ -27,21 +27,21 @@ export const DiagramStationMarker = ({
   slotHeight,
   className,
 }: DiagramStationMarkerProps) => {
-  const m = verticalDiagramMetrics();
-  const width = columnWidth ?? m.markerCol;
-  const height = slotHeight ?? m.markerSlot;
+  const m = verticalDiagramMetrics()
+  const width = columnWidth ?? m.markerCol
+  const height = slotHeight ?? m.markerSlot
 
   return (
     <div
       className={cn(
         "relative z-10 flex shrink-0 items-center justify-center",
-        className,
+        className
       )}
       style={{ width, height }}
     >
       {kind === "ring" ? (
         <span
-          className="box-border block rounded-full border-solid bg-white dark:bg-black border-black dark:border-white"
+          className="box-border block rounded-full border-solid border-black bg-white dark:border-white dark:bg-black"
           style={{
             width: m.ringOuter,
             height: m.ringOuter,
@@ -77,26 +77,26 @@ export const DiagramStationMarker = ({
         />
       ) : null}
     </div>
-  );
-};
+  )
+}
 
 export type DiagramConnectionFlagsProps = {
-  stationId: string;
+  stationId: string
   connections: {
-    id: string;
-    name: string;
-    color?: string;
-    darkText?: boolean;
-  }[];
-};
+    id: string
+    name: string
+    color?: string
+    darkText?: boolean
+  }[]
+}
 
 /** §9-style stacked flag chips beside a vertical station name. */
 export const DiagramConnectionFlags = ({
   stationId,
   connections,
 }: DiagramConnectionFlagsProps) => {
-  const m = verticalDiagramMetrics();
-  if (connections.length === 0) return null;
+  const m = verticalDiagramMetrics()
+  if (connections.length === 0) return null
 
   return (
     <div
@@ -119,8 +119,8 @@ export const DiagramConnectionFlags = ({
         </span>
       ))}
     </div>
-  );
-};
+  )
+}
 
 /**
  * Continuous vertical route line centred on the marker column.
@@ -133,16 +133,16 @@ export const VerticalRouteLine = ({
   rowGap,
   className,
 }: {
-  lineColor: string;
-  markerCol: string;
-  rowGap: string;
-  className?: string;
+  lineColor: string
+  markerCol: string
+  rowGap: string
+  className?: string
 }) => (
   <div
     aria-hidden
     className={cn(
       "pointer-events-none absolute left-[calc(var(--marker)/2)] -translate-x-1/2",
-      className,
+      className
     )}
     style={
       {
@@ -154,7 +154,7 @@ export const VerticalRouteLine = ({
       } as CSSProperties
     }
   />
-);
+)
 
 /**
  * Full-line / map markers: interchange → ring; terminal → both-side tick;
@@ -164,13 +164,13 @@ export const resolveMapMarkerKind = ({
   interchange,
   isEndpoint,
 }: {
-  interchange?: boolean;
-  isEndpoint?: boolean;
+  interchange?: boolean
+  isEndpoint?: boolean
 }): DiagramMarkerKind => {
-  if (interchange) return "ring";
-  if (isEndpoint) return "tick-both";
-  return "tick-right";
-};
+  if (interchange) return "ring"
+  if (isEndpoint) return "tick-both"
+  return "tick-right"
+}
 
 /** Journey A→B markers are always circles. */
-export const resolveJourneyMarkerKind = (): DiagramMarkerKind => "ring";
+export const resolveJourneyMarkerKind = (): DiagramMarkerKind => "ring"

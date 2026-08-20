@@ -193,8 +193,7 @@ export const prepareLineAnnouncements = (
   const currentOnly = options.currentOnly ?? true
   const dedupe = options.dedupe ?? true
   const rawReason = options.rawReason ?? false
-  const statusNow =
-    options.now !== undefined ? { now: options.now } : undefined
+  const statusNow = options.now !== undefined ? { now: options.now } : undefined
 
   const resolved = selectAnnouncementStatuses(statuses, {
     currentOnly,
@@ -247,8 +246,7 @@ export const prepareLineAnnouncements = (
     const preferIncoming =
       item.key.length > existing.key.length ||
       (item.key.length === existing.key.length &&
-        getWorstCurrentStatus([itemLike, existingLike], statusNow) ===
-          itemLike)
+        getWorstCurrentStatus([itemLike, existingLike], statusNow) === itemLike)
 
     const winner = preferIncoming ? item : existing
     const loser = preferIncoming ? existing : item

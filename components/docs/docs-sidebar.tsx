@@ -1,26 +1,21 @@
-"use client";
+"use client"
 
-import {
-  useEffect,
-  useRef,
-  type ReactNode,
-  type Ref,
-} from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Search } from "lucide-react";
+import { useEffect, useRef, type ReactNode, type Ref } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Search } from "lucide-react"
 import {
   GET_STARTED_BOTTOM_FROM,
   getSidebarEntries,
   type DocsEntry,
   type DocsModeMarker,
-} from "@/lib/docs-catalog";
-import { APP_VERSION_LABEL } from "@/lib/version";
-import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel";
-import { UNDERGROUND_LINE_COLOURS } from "@/lib/tfl/brand-colours";
-import type { RoundelPreset } from "@/lib/tfl/roundel-presets";
-import { FeedbackTrigger } from "@/components/docs/feedback-dialog";
-import { UserTflCredentialsTrigger } from "@/components/user-tfl-credentials-trigger";
+} from "@/lib/docs-catalog"
+import { APP_VERSION_LABEL } from "@/lib/version"
+import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
+import { UNDERGROUND_LINE_COLOURS } from "@/lib/tfl/brand-colours"
+import type { RoundelPreset } from "@/lib/tfl/roundel-presets"
+import { FeedbackTrigger } from "@/components/docs/feedback-dialog"
+import { UserTflCredentialsTrigger } from "@/components/user-tfl-credentials-trigger"
 import {
   Sidebar,
   SidebarContent,
@@ -31,7 +26,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
+} from "@/components/ui/sidebar"
 
 const MODE_ROUNDEL_VARIANT: Record<DocsModeMarker, RoundelPreset> = {
   "tube-rail": "underground",
@@ -40,42 +35,42 @@ const MODE_ROUNDEL_VARIANT: Record<DocsModeMarker, RoundelPreset> = {
   cycle: "cycles",
   cable: "cableCar",
   map: "tfl",
-};
+}
 
 /** Classic Underground lines for the Colours 5×2 dot matrix (excludes Waterloo & City). */
 const COLOURS_DOT_HEXES = Object.values(UNDERGROUND_LINE_COLOURS)
   .slice(0, 10)
-  .map((spec) => spec.hex);
+  .map((spec) => spec.hex)
 
 const isActive = (pathname: string, entry: DocsEntry) => {
-  if (entry.href === "/docs") return pathname === "/docs";
-  return pathname === entry.href || pathname.startsWith(`${entry.href}/`);
-};
+  if (entry.href === "/docs") return pathname === "/docs"
+  return pathname === entry.href || pathname.startsWith(`${entry.href}/`)
+}
 
-const REVEAL_PADDING = 24;
+const REVEAL_PADDING = 24
 
 /**
  * Scroll only the sidebar pane. `scrollIntoView` also moves `html`, which
  * jumps the reading position on docs pages.
  */
 const revealInScrollContainer = (container: HTMLElement, item: HTMLElement) => {
-  const containerRect = container.getBoundingClientRect();
-  const itemRect = item.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect()
+  const itemRect = item.getBoundingClientRect()
   const visible =
     itemRect.top >= containerRect.top + REVEAL_PADDING &&
-    itemRect.bottom <= containerRect.bottom - REVEAL_PADDING;
-  if (visible) return;
+    itemRect.bottom <= containerRect.bottom - REVEAL_PADDING
+  if (visible) return
 
-  const itemCenter = itemRect.top + itemRect.height / 2;
-  const containerCenter = containerRect.top + containerRect.height / 2;
+  const itemCenter = itemRect.top + itemRect.height / 2
+  const containerCenter = containerRect.top + containerRect.height / 2
   const reducedMotion = window.matchMedia(
-    "(prefers-reduced-motion: reduce)",
-  ).matches;
+    "(prefers-reduced-motion: reduce)"
+  ).matches
   container.scrollTo({
     top: container.scrollTop + (itemCenter - containerCenter),
     behavior: reducedMotion ? "auto" : "smooth",
-  });
-};
+  })
+}
 
 /** Weak marks after Get started labels — sized to match sidebar text, not left-side mode markers. */
 const GetStartedAdornment = ({ slug }: { slug: string }) => {
@@ -88,17 +83,17 @@ const GetStartedAdornment = ({ slug }: { slug: string }) => {
         strokeLinejoin="round"
         absoluteStrokeWidth={false}
       />
-    );
+    )
   }
 
   if (slug === "typography") {
     return (
-      <span className="flex items-center text-[1em] font-medium leading-none tracking-normal text-sidebar-foreground">
+      <span className="flex items-center text-[1em] leading-none font-medium tracking-normal text-sidebar-foreground">
         <span className="opacity-50">A</span>
         <span className="opacity-50">b</span>
         <span className="opacity-50">c</span>
       </span>
-    );
+    )
   }
 
   if (slug === "colours") {
@@ -116,7 +111,7 @@ const GetStartedAdornment = ({ slug }: { slug: string }) => {
           </span>
         ))}
       </span>
-    );
+    )
   }
 
   if (slug === "tfl-roundel") {
@@ -128,18 +123,18 @@ const GetStartedAdornment = ({ slug }: { slug: string }) => {
           aria-hidden
         />
       </span>
-    );
+    )
   }
 
-  return null;
-};
+  return null
+}
 
 const EntryLabel = ({
   entry,
   adornment,
 }: {
-  entry: DocsEntry;
-  adornment: ReactNode;
+  entry: DocsEntry
+  adornment: ReactNode
 }) => (
   <span className="flex min-w-0 flex-1 items-center gap-1.5">
     <span className="truncate">
@@ -157,14 +152,14 @@ const EntryLabel = ({
       </span>
     ) : null}
   </span>
-);
+)
 
 const GET_STARTED_ADORNMENT_SLUGS = new Set([
   "explore-index",
   "typography",
   "colours",
   "tfl-roundel",
-]);
+])
 
 const EntryList = ({
   entries,
@@ -172,18 +167,17 @@ const EntryList = ({
   activeItemRef,
   withGetStartedAdornments = false,
 }: {
-  entries: DocsEntry[];
-  pathname: string;
-  activeItemRef: Ref<HTMLLIElement>;
+  entries: DocsEntry[]
+  pathname: string
+  activeItemRef: Ref<HTMLLIElement>
   /** Text-sized marks after Explorer / Typography / Colours / Roundel labels. */
-  withGetStartedAdornments?: boolean;
+  withGetStartedAdornments?: boolean
 }) => (
   <SidebarMenu>
     {entries.map((entry) => {
       const showAdornment =
-        withGetStartedAdornments &&
-        GET_STARTED_ADORNMENT_SLUGS.has(entry.slug);
-      const active = isActive(pathname, entry);
+        withGetStartedAdornments && GET_STARTED_ADORNMENT_SLUGS.has(entry.slug)
+      const active = isActive(pathname, entry)
 
       return (
         <SidebarMenuItem
@@ -206,40 +200,38 @@ const EntryList = ({
             <EntryLabel
               entry={entry}
               adornment={
-                showAdornment ? (
-                  <GetStartedAdornment slug={entry.slug} />
-                ) : null
+                showAdornment ? <GetStartedAdornment slug={entry.slug} /> : null
               }
             />
           </SidebarMenuButton>
         </SidebarMenuItem>
-      );
+      )
     })}
   </SidebarMenu>
-);
+)
 
 export const DocsSidebar = () => {
-  const pathname = usePathname();
-  const contentRef = useRef<HTMLDivElement>(null);
-  const activeItemRef = useRef<HTMLLIElement>(null);
-  const getStarted = getSidebarEntries("get-started");
+  const pathname = usePathname()
+  const contentRef = useRef<HTMLDivElement>(null)
+  const activeItemRef = useRef<HTMLLIElement>(null)
+  const getStarted = getSidebarEntries("get-started")
   const getStartedTop = getStarted.filter(
-    (entry) => entry.sidebarOrder < GET_STARTED_BOTTOM_FROM,
-  );
+    (entry) => entry.sidebarOrder < GET_STARTED_BOTTOM_FROM
+  )
   const getStartedBottom = getStarted.filter(
-    (entry) => entry.sidebarOrder >= GET_STARTED_BOTTOM_FROM,
-  );
-  const components = getSidebarEntries("components");
-  const primitivesFoundations = getSidebarEntries("primitives-foundations");
+    (entry) => entry.sidebarOrder >= GET_STARTED_BOTTOM_FROM
+  )
+  const components = getSidebarEntries("components")
+  const primitivesFoundations = getSidebarEntries("primitives-foundations")
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      const container = contentRef.current;
-      const item = activeItemRef.current;
-      if (container && item) revealInScrollContainer(container, item);
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [pathname]);
+      const container = contentRef.current
+      const item = activeItemRef.current
+      if (container && item) revealInScrollContainer(container, item)
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [pathname])
 
   return (
     <Sidebar
@@ -296,7 +288,7 @@ export const DocsSidebar = () => {
           </SidebarGroup>
         ) : null}
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border gap-1 px-2 py-2">
+      <SidebarFooter className="gap-1 border-t border-sidebar-border px-2 py-2">
         <UserTflCredentialsTrigger />
         <div className="flex items-center gap-1">
           <div className="min-w-0 flex-1">
@@ -304,7 +296,7 @@ export const DocsSidebar = () => {
           </div>
           <a
             href={`https://github.com/ghcpuman902/tfl-components/releases/tag/${APP_VERSION_LABEL}`}
-            className="inline-flex h-8 shrink-0 items-center rounded-md px-2 text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            className="inline-flex h-8 shrink-0 items-center rounded-md px-2 text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
             target="_blank"
             rel="noreferrer"
           >
@@ -313,5 +305,5 @@ export const DocsSidebar = () => {
         </div>
       </SidebarFooter>
     </Sidebar>
-  );
-};
+  )
+}

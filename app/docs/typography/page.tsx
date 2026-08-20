@@ -1,20 +1,20 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { FontPreferenceSwitch } from "@/components/docs/demos/adobe-fonts-switch";
-import { MinimumSizeDemo } from "@/components/docs/demos/typography-explainer";
-import { DocsPageHeader } from "@/components/docs/docs-page-header";
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { RelationshipBadges } from "@/components/docs/relationship-badges";
-import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code";
-import { getDocsEntry, getUsedBySlugs } from "@/lib/docs-catalog";
-import { TFL_BRAND_LINKS } from "@/lib/tfl/brand";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { FontPreferenceSwitch } from "@/components/docs/demos/adobe-fonts-switch"
+import { MinimumSizeDemo } from "@/components/docs/demos/typography-explainer"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
+import { RelationshipBadges } from "@/components/docs/relationship-badges"
+import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code"
+import { getDocsEntry, getUsedBySlugs } from "@/lib/docs-catalog"
+import { TFL_BRAND_LINKS } from "@/lib/tfl/brand"
 
 export const metadata: Metadata = {
   title: "Typography",
   description:
     "TfL uses licensed Johnston; compare Hammersmith One and P22 Underground for web interfaces.",
-};
+}
 
 const HAMMERSMITH_NEXT_SNIPPET = `import { Hammersmith_One } from "next/font/google";
 
@@ -23,33 +23,33 @@ const hammersmith = Hammersmith_One({
   weight: "400",
 });
 
-<html lang="en" className={hammersmith.className}>`;
+<html lang="en" className={hammersmith.className}>`
 
 const HAMMERSMITH_METRICS_SNIPPET = `.app {
   font-family: "Hammersmith One", sans-serif;
   --tfl-title-weight: 400;
   --tfl-title-tracking: 0;
-}`;
+}`
 
 const ADOBE_FONTS_SNIPPET = `<head>
   <link
     rel="stylesheet"
     href="https://use.typekit.net/YOUR_KIT_ID.css"
   />
-</head>`;
+</head>`
 
 const P22_METRICS_SNIPPET = `.app {
   font-family: "p22-underground", sans-serif;
   --tfl-title-weight: 600;
   --tfl-title-tracking: -0.025em;
-}`;
+}`
 
 const ExternalTextLink = ({
   href,
   children,
 }: {
-  href: string;
-  children: React.ReactNode;
+  href: string
+  children: React.ReactNode
 }) => (
   <a
     href={href}
@@ -59,11 +59,11 @@ const ExternalTextLink = ({
   >
     {children}
   </a>
-);
+)
 
 export default function FoundationsTypographyPage() {
-  const entry = getDocsEntry("typography");
-  if (!entry) notFound();
+  const entry = getDocsEntry("typography")
+  if (!entry) notFound()
 
   return (
     <DocsReadableWidth>
@@ -255,5 +255,5 @@ export default function FoundationsTypographyPage() {
         </section>
       </article>
     </DocsReadableWidth>
-  );
+  )
 }

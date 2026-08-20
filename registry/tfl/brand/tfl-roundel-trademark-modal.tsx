@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react"
 import {
   Dialog,
   DialogClose,
@@ -9,24 +9,24 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { TFL_BRAND_LINKS } from "@/lib/tfl/roundel-presets";
+} from "@/components/ui/tooltip"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { TFL_BRAND_LINKS } from "@/lib/tfl/roundel-presets"
 
 const ROUNDEL_FRAME_CLASS =
-  "inline-flex size-10 shrink-0 items-center justify-center leading-none [&>svg]:block [&>svg]:size-full [&>img]:block [&>img]:size-full";
+  "inline-flex size-10 shrink-0 items-center justify-center leading-none [&>svg]:block [&>svg]:size-full [&>img]:block [&>img]:size-full"
 
 type RoundelTrademarkModalProps = {
-  className?: string;
-  children: ReactNode;
-};
+  className?: string
+  children: ReactNode
+}
 
 /**
  * Dev-only trademark notice for the placeholder roundel.
@@ -36,7 +36,7 @@ export const RoundelTrademarkModal = ({
   className,
   children,
 }: RoundelTrademarkModalProps) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false)
 
   return (
     <>
@@ -55,15 +55,15 @@ export const RoundelTrademarkModal = ({
               tabIndex={0}
               aria-label="TfL roundel placeholder — trademark notice"
               onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                setOpen(true);
+                event.preventDefault()
+                event.stopPropagation()
+                setOpen(true)
               }}
               onKeyDown={(event) => {
-                if (event.key !== "Enter" && event.key !== " ") return;
-                event.preventDefault();
-                event.stopPropagation();
-                setOpen(true);
+                if (event.key !== "Enter" && event.key !== " ") return
+                event.preventDefault()
+                event.stopPropagation()
+                setOpen(true)
               }}
             >
               {children}
@@ -95,8 +95,8 @@ export const RoundelTrademarkModal = ({
               trademark responsibility for showing the real mark.
             </p>
             <p>
-              For licensing, logo requests, and design rules, use TfL&apos;s
-              own brand guidance — not this package.
+              For licensing, logo requests, and design rules, use TfL&apos;s own
+              brand guidance — not this package.
             </p>
           </div>
 
@@ -116,5 +116,5 @@ export const RoundelTrademarkModal = ({
         </DialogContent>
       </Dialog>
     </>
-  );
-};
+  )
+}

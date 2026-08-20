@@ -222,13 +222,20 @@ describe("stress majorization layout", () => {
         state.x[5]!,
         state.y[5]!
       )
-    assert.ok(crossing(), "precondition: Mornington Crescent crosses the Bank trunk")
+    assert.ok(
+      crossing(),
+      "precondition: Mornington Crescent crosses the Bank trunk"
+    )
     // The bank/CX bond and the Camden hub have to resolve this together —
     // untangling Camden's legs alone can leave CX on the wrong side of its
     // own bonded half, and the bond swap alone can leave Camden's legs
     // crossed. finishStressLayout runs both, repeatedly, same as production.
     finishStressLayout(state)
-    assert.equal(crossing(), false, "crossing resolved once bond and hub cooperate")
+    assert.equal(
+      crossing(),
+      false,
+      "crossing resolved once bond and hub cooperate"
+    )
   })
 
   it("carries a whole branch across the hub, not just its first station", () => {
@@ -327,7 +334,10 @@ describe("stress majorization layout", () => {
     // swap only moves them by the bond gap and leaves the corridors put.
     state.x = [0, -1, 1, -12, 12]
     state.y = [16, 0, 0, -16, -16]
-    assert.ok(state.x[3]! < state.x[4]!, "precondition: Bank is drawn west of CX")
+    assert.ok(
+      state.x[3]! < state.x[4]!,
+      "precondition: Bank is drawn west of CX"
+    )
     settleStressLayout(state, { steps: 80 })
     assert.ok(
       state.x[3]! > state.x[4]!,
@@ -440,8 +450,17 @@ describe("stress majorization layout", () => {
     }
     const state = createStressState(graph)
     settleStressLayout(state, { steps: 80 })
-    const short = Math.hypot(state.x[1]! - state.x[0]!, state.y[1]! - state.y[0]!)
-    const long = Math.hypot(state.x[2]! - state.x[1]!, state.y[2]! - state.y[1]!)
-    assert.ok(long > short * 2, `long ${long.toFixed(1)} vs short ${short.toFixed(1)}`)
+    const short = Math.hypot(
+      state.x[1]! - state.x[0]!,
+      state.y[1]! - state.y[0]!
+    )
+    const long = Math.hypot(
+      state.x[2]! - state.x[1]!,
+      state.y[2]! - state.y[1]!
+    )
+    assert.ok(
+      long > short * 2,
+      `long ${long.toFixed(1)} vs short ${short.toFixed(1)}`
+    )
   })
 })

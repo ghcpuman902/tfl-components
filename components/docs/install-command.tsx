@@ -1,10 +1,10 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { CheckIcon, CopyIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
+import { useState } from "react"
+import { CheckIcon, CopyIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { cn } from "@/lib/utils"
 
 const PACKAGE_MANAGERS = [
   {
@@ -27,28 +27,28 @@ const PACKAGE_MANAGERS = [
     label: "bun",
     command: (url: string) => `bunx --bun shadcn@latest add ${url}`,
   },
-] as const;
+] as const
 
 type InstallCommandProps = {
-  registryUrl: string;
-  className?: string;
-};
+  registryUrl: string
+  className?: string
+}
 
 export const InstallCommand = ({
   registryUrl,
   className,
 }: InstallCommandProps) => {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const handleCopy = async (id: string, command: string) => {
     try {
-      await navigator.clipboard.writeText(command);
-      setCopiedId(id);
-      window.setTimeout(() => setCopiedId(null), 2000);
+      await navigator.clipboard.writeText(command)
+      setCopiedId(id)
+      window.setTimeout(() => setCopiedId(null), 2000)
     } catch {
       // Clipboard can fail in insecure contexts; ignore.
     }
-  };
+  }
 
   return (
     <div className={cn("rounded-lg border border-border", className)}>
@@ -63,8 +63,8 @@ export const InstallCommand = ({
           </TabsList>
         </div>
         {PACKAGE_MANAGERS.map((pm) => {
-          const command = pm.command(registryUrl);
-          const copied = copiedId === pm.id;
+          const command = pm.command(registryUrl)
+          const copied = copiedId === pm.id
 
           return (
             <TabsContent key={pm.id} value={pm.id} className="relative">
@@ -82,9 +82,9 @@ export const InstallCommand = ({
                 {copied ? <CheckIcon /> : <CopyIcon />}
               </Button>
             </TabsContent>
-          );
+          )
         })}
       </Tabs>
     </div>
-  );
-};
+  )
+}

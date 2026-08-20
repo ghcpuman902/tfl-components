@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton"
 
 /** Full-page skeletons for `loading.tsx` (header + content). */
 export const ExplorePageSkeleton = () => (
@@ -9,7 +9,7 @@ export const ExplorePageSkeleton = () => (
     </div>
     <ExploreBodySkeleton />
   </div>
-);
+)
 
 /** Body-only skeleton for in-page Suspense (title already rendered). */
 export const ExploreBodySkeleton = () => (
@@ -18,7 +18,7 @@ export const ExploreBodySkeleton = () => (
       <Skeleton key={i} className="h-40 w-full" />
     ))}
   </div>
-);
+)
 
 export const RoutePageSkeleton = () => (
   <div className="w-full space-y-6" aria-busy aria-label="Loading route">
@@ -29,7 +29,7 @@ export const RoutePageSkeleton = () => (
     </div>
     <RouteBodySkeleton />
   </div>
-);
+)
 
 export const RouteBodySkeleton = () => (
   <div className="space-y-1" aria-busy aria-label="Loading route stops">
@@ -37,7 +37,7 @@ export const RouteBodySkeleton = () => (
       <Skeleton key={i} className="h-10 w-full" />
     ))}
   </div>
-);
+)
 
 export const TypographyBodySkeleton = () => (
   <div className="space-y-6" aria-busy aria-label="Loading station typography">
@@ -48,4 +48,4 @@ export const TypographyBodySkeleton = () => (
       ))}
     </div>
   </div>
-);
+)

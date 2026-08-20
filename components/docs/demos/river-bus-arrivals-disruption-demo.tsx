@@ -9,7 +9,7 @@ import {
 export const RiverBusArrivalsDisruptionDemo = () => {
   const disruptions = prepareBusStopDisruptions(
     [CANARY_WHARF_PIER_DISRUPTION],
-    CANARY_WHARF_ARRIVALS,
+    CANARY_WHARF_ARRIVALS
   )
 
   return (

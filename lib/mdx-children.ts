@@ -1,4 +1,4 @@
-import { Children, type ReactNode } from "react";
+import { Children, type ReactNode } from "react"
 
 /**
  * MDX/GFM often inserts `"\\n"` text nodes between table/list tags.
@@ -6,5 +6,5 @@ import { Children, type ReactNode } from "react";
  */
 export const compactMdxChildren = (children: ReactNode): ReactNode[] =>
   Children.toArray(children).filter(
-    (child) => typeof child !== "string" || child.trim() !== "",
-  );
+    (child) => typeof child !== "string" || child.trim() !== ""
+  )

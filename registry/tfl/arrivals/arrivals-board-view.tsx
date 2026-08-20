@@ -111,12 +111,15 @@ const TITLE_CLASS =
 
 const LIST_RESET_CLASS = "m-0 ml-0 list-none space-y-0 p-0 [&>li]:mt-0"
 
-export { getBusStopLetterFromPlatform, resolveBusStopLetter } from "@/lib/tfl/bus-stop-letter"
+export {
+  getBusStopLetterFromPlatform,
+  resolveBusStopLetter,
+} from "@/lib/tfl/bus-stop-letter"
 
 /** Explicit `stopName` wins; otherwise the first non-empty `stationName` on `data`. */
 export const resolveArrivalsHeading = (
   stopName: string | undefined,
-  data?: readonly Pick<RealtimePrediction, "stationName">[],
+  data?: readonly Pick<RealtimePrediction, "stationName">[]
 ): string | undefined => {
   const override = stopName?.trim()
   if (override) return override
@@ -149,7 +152,10 @@ export const ArrivalsBoardSkeleton = ({
     aria-label="Loading arrivals"
   >
     <div
-      className={cn("flex min-w-0 items-center gap-x-3 text-3xl", ARRIVALS_TILE_CLASS)}
+      className={cn(
+        "flex min-w-0 items-center gap-x-3 text-3xl",
+        ARRIVALS_TILE_CLASS
+      )}
     >
       {stopName ? (
         <>
@@ -305,7 +311,7 @@ export const resolveGroupPageSize = (
   lineId: string,
   pageSize: number | undefined,
   pageSizeByLine: Readonly<Record<string, number>> | undefined,
-  lineIds?: readonly string[],
+  lineIds?: readonly string[]
 ): number | undefined => {
   if (!pageSizeByLine) return pageSize
   const ids = lineIds?.length ? lineIds : [lineId]
@@ -399,8 +405,7 @@ export const ArrivalsBoardView = ({
     prepared.rows.length === 0 &&
     prepared.groups.length === 0
   const showStopDisruptions = mode === "bus" || mode === "river"
-  const hasStopDisruptionChips =
-    showStopDisruptions && disruptions.length > 0
+  const hasStopDisruptionChips = showStopDisruptions && disruptions.length > 0
 
   return (
     <div
@@ -412,142 +417,102 @@ export const ArrivalsBoardView = ({
         disruptions={showStopDisruptions ? disruptions : []}
         variant={mode === "river" ? "river" : "bus"}
       >
-      <div
-        className={cn(
-          "flex min-w-0 items-center gap-x-3 text-3xl",
-          ARRIVALS_TILE_CLASS,
-          hasStopDisruptionChips && "overflow-visible",
-        )}
-      >
-        <TfLRoundel
-          variant={arrivalsRoundelVariant(mode)}
-          className="size-[var(--arrivals-row)] shrink-0"
-          aria-hidden
-        />
-        {stopName ? (
-          <TitleTag
+        <div
+          className={cn(
+            "flex min-w-0 items-center gap-x-3 text-3xl",
+            ARRIVALS_TILE_CLASS,
+            hasStopDisruptionChips && "overflow-visible"
+          )}
+        >
+          <TfLRoundel
+            variant={arrivalsRoundelVariant(mode)}
+            className="size-[var(--arrivals-row)] shrink-0"
+            aria-hidden
+          />
+          {stopName ? (
+            <TitleTag
+              className={cn(
+                "flex h-full min-w-0 flex-1 items-center",
+                TITLE_CLASS
+              )}
+              aria-label={stopName}
+            >
+              <StationNameTitle
+                name={stopName}
+                end={
+                  hasStopDisruptionChips ? (
+                    <BusStopDisruptionChips />
+                  ) : undefined
+                }
+              />
+            </TitleTag>
+          ) : loading ? (
+            <Skeleton className="h-8 w-56 max-w-full" />
+          ) : (
+            <TitleTag className={cn("min-w-0 flex-1", TITLE_CLASS)}>
+              <span className="sr-only">Arrivals</span>
+            </TitleTag>
+          )}
+          {resolvedStopLetter ? (
+            <StopLetterBadge letter={resolvedStopLetter} />
+          ) : null}
+          {statusLabel ? (
+            <p className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+              {statusLabel}
+            </p>
+          ) : null}
+        </div>
+        <BusStopDisruptionCover />
+
+        {error ? (
+          <p
             className={cn(
-              "flex h-full min-w-0 flex-1 items-center",
-              TITLE_CLASS
+              "flex items-center truncate text-base text-destructive",
+              ARRIVALS_TILE_CLASS
             )}
-            aria-label={stopName}
+            role="alert"
           >
-            <StationNameTitle
-              name={stopName}
-              end={
-                hasStopDisruptionChips ? <BusStopDisruptionChips /> : undefined
-              }
-            />
-          </TitleTag>
-        ) : loading ? (
-          <Skeleton className="h-8 w-56 max-w-full" />
-        ) : (
-          <TitleTag className={cn("min-w-0 flex-1", TITLE_CLASS)}>
-            <span className="sr-only">Arrivals</span>
-          </TitleTag>
-        )}
-        {resolvedStopLetter ? (
-          <StopLetterBadge letter={resolvedStopLetter} />
-        ) : null}
-        {statusLabel ? (
-          <p className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-            {statusLabel}
+            {error}
           </p>
         ) : null}
-      </div>
-      <BusStopDisruptionCover />
 
-      {error ? (
-        <p
-          className={cn(
-            "flex items-center truncate text-base text-destructive",
-            ARRIVALS_TILE_CLASS
-          )}
-          role="alert"
-        >
-          {error}
-        </p>
-      ) : null}
+        {showEmpty ? (
+          <p
+            className={cn(
+              "flex items-center text-base text-muted-foreground",
+              ARRIVALS_TILE_CLASS
+            )}
+            role="status"
+          >
+            {emptyCopy}
+          </p>
+        ) : null}
 
-      {showEmpty ? (
-        <p
-          className={cn(
-            "flex items-center text-base text-muted-foreground",
-            ARRIVALS_TILE_CLASS
-          )}
-          role="status"
-        >
-          {emptyCopy}
-        </p>
-      ) : null}
-
-      {prepared.layout === "flat" ? (
-        <ArrivalsPagedList
-          rows={prepared.rows}
-          mode={mode}
-          pageSize={pageSize}
-          classNames={classNames}
-          behaviour={behaviour}
-          pinFirst={pinFirst}
-          idleReturnMs={idleReturnMs}
-          dwellMs={dwellMs}
-          startDelayMs={startDelayMs}
-        />
-      ) : isRouteArrivalsMode(mode) ? (
-        <div
-          data-slot="arrivals-groups"
-          className={cn("grid grid-cols-1", classNames?.groups)}
-        >
-          {prepared.groups.map((group, index) => (
-            <ArrivalsPagedGroup
-              key={group.key}
-              group={group}
-              mode={mode}
-              headingLevel={headingLevel}
-              pageSize={pageSize}
-              isLastGroup={index === prepared.groups.length - 1}
-              classNames={classNames}
-              behaviour={behaviour}
-              pinFirst={pinFirst}
-              idleReturnMs={idleReturnMs}
-              dwellMs={dwellMs}
-              startDelayMs={startDelayMs}
-            />
-          ))}
-        </div>
-      ) : (
-        <div
-          data-slot="arrivals-groups"
-          className={cn("grid grid-cols-1", classNames?.groups)}
-        >
-          {prepared.groups.map((group) => (
-            <section
-              key={group.key}
-              data-slot="arrivals-group"
-              data-line={
-                group.lineIds.length > 1
-                  ? undefined
-                  : group.lineId || undefined
-              }
-              className={cn(
-                "@container/arrivals-group min-w-0",
-                classNames?.group
-              )}
-            >
-              <ArrivalsGroupHeader
+        {prepared.layout === "flat" ? (
+          <ArrivalsPagedList
+            rows={prepared.rows}
+            mode={mode}
+            pageSize={pageSize}
+            classNames={classNames}
+            behaviour={behaviour}
+            pinFirst={pinFirst}
+            idleReturnMs={idleReturnMs}
+            dwellMs={dwellMs}
+            startDelayMs={startDelayMs}
+          />
+        ) : isRouteArrivalsMode(mode) ? (
+          <div
+            data-slot="arrivals-groups"
+            className={cn("grid grid-cols-1", classNames?.groups)}
+          >
+            {prepared.groups.map((group, index) => (
+              <ArrivalsPagedGroup
+                key={group.key}
                 group={group}
                 mode={mode}
                 headingLevel={headingLevel}
-              />
-              <GroupBody
-                group={group}
-                mode={mode}
-                pageSize={resolveGroupPageSize(
-                  group.lineId,
-                  pageSize,
-                  pageSizeByLine,
-                  group.lineIds
-                )}
+                pageSize={pageSize}
+                isLastGroup={index === prepared.groups.length - 1}
                 classNames={classNames}
                 behaviour={behaviour}
                 pinFirst={pinFirst}
@@ -555,10 +520,52 @@ export const ArrivalsBoardView = ({
                 dwellMs={dwellMs}
                 startDelayMs={startDelayMs}
               />
-            </section>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : (
+          <div
+            data-slot="arrivals-groups"
+            className={cn("grid grid-cols-1", classNames?.groups)}
+          >
+            {prepared.groups.map((group) => (
+              <section
+                key={group.key}
+                data-slot="arrivals-group"
+                data-line={
+                  group.lineIds.length > 1
+                    ? undefined
+                    : group.lineId || undefined
+                }
+                className={cn(
+                  "@container/arrivals-group min-w-0",
+                  classNames?.group
+                )}
+              >
+                <ArrivalsGroupHeader
+                  group={group}
+                  mode={mode}
+                  headingLevel={headingLevel}
+                />
+                <GroupBody
+                  group={group}
+                  mode={mode}
+                  pageSize={resolveGroupPageSize(
+                    group.lineId,
+                    pageSize,
+                    pageSizeByLine,
+                    group.lineIds
+                  )}
+                  classNames={classNames}
+                  behaviour={behaviour}
+                  pinFirst={pinFirst}
+                  idleReturnMs={idleReturnMs}
+                  dwellMs={dwellMs}
+                  startDelayMs={startDelayMs}
+                />
+              </section>
+            ))}
+          </div>
+        )}
       </BusStopDisruptionBoundary>
     </div>
   )

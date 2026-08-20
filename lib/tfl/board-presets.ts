@@ -3,23 +3,23 @@
  * authors slot stacks. The URL does not name the recipe (J13).
  */
 
-import type { BoardSettingId } from "@/lib/tfl/board-settings";
-import type { BoardPanelKind } from "@/lib/tfl/board-panels";
-import type { BoardConfig } from "@/lib/tfl/board-url-state";
+import type { BoardSettingId } from "@/lib/tfl/board-settings"
+import type { BoardPanelKind } from "@/lib/tfl/board-panels"
+import type { BoardConfig } from "@/lib/tfl/board-url-state"
 
-export type BoardPresetId = "station" | "near" | "arrivals" | "status";
+export type BoardPresetId = "station" | "near" | "arrivals" | "status"
 
 export type BoardPresetDef = {
-  id: BoardPresetId;
-  title: string;
-  description: string;
-  available: boolean;
-  formSettings: readonly BoardSettingId[];
+  id: BoardPresetId
+  title: string
+  description: string
+  available: boolean
+  formSettings: readonly BoardSettingId[]
   slots: {
-    p1: readonly BoardPanelKind[];
-    p2: readonly BoardPanelKind[];
-  };
-};
+    p1: readonly BoardPanelKind[]
+    p2: readonly BoardPanelKind[]
+  }
+}
 
 const STATION_FORM: readonly BoardSettingId[] = [
   "stop",
@@ -32,7 +32,7 @@ const STATION_FORM: readonly BoardSettingId[] = [
   "statusTiles",
   "statusLines",
   "statusOverview",
-];
+]
 
 export const BOARD_PRESETS: readonly BoardPresetDef[] = [
   {
@@ -96,20 +96,20 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
     ],
     slots: { p1: ["status"], p2: [] },
   },
-];
+]
 
-export const DEFAULT_BOARD_PRESET_ID: BoardPresetId = "station";
+export const DEFAULT_BOARD_PRESET_ID: BoardPresetId = "station"
 
 export const getBoardPreset = (id: BoardPresetId): BoardPresetDef =>
-  BOARD_PRESETS.find((preset) => preset.id === id) ?? BOARD_PRESETS[0]!;
+  BOARD_PRESETS.find((preset) => preset.id === id) ?? BOARD_PRESETS[0]!
 
 export const applyBoardRecipe = (
   current: BoardConfig,
-  preset: BoardPresetDef,
+  preset: BoardPresetDef
 ): BoardConfig => ({
   ...current,
   slots: {
     p1: [...preset.slots.p1],
     p2: [...preset.slots.p2],
   },
-});
+})

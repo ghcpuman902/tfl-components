@@ -1,20 +1,20 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { DocsPageHeader } from "@/components/docs/docs-page-header";
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { NationalRailPictogram } from "@/components/tfl/national-rail-pictogram";
-import { getDocsEntry } from "@/lib/docs-catalog";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
+import { NationalRailPictogram } from "@/components/tfl/national-rail-pictogram"
+import { getDocsEntry } from "@/lib/docs-catalog"
 
 export const metadata: Metadata = {
   title: "Icons & pictograms",
   description:
     "Mode pictograms and diagram markers — what ships safely vs protected marks.",
-};
+}
 
 export default function FoundationsIconsPage() {
-  const entry = getDocsEntry("icons");
-  if (!entry) notFound();
+  const entry = getDocsEntry("icons")
+  if (!entry) notFound()
 
   return (
     <DocsReadableWidth>
@@ -74,5 +74,5 @@ export default function FoundationsIconsPage() {
         </p>
       </article>
     </DocsReadableWidth>
-  );
+  )
 }

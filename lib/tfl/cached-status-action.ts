@@ -10,7 +10,7 @@ import {
  * Keep fetching out of the reusable TubeStatusBoard.
  */
 export async function getCachedLineStatusesAction(
-  lineIds?: readonly string[],
+  lineIds?: readonly string[]
 ): Promise<CachedLineStatusesPayload> {
   return getCachedLineStatuses(lineIds)
 }

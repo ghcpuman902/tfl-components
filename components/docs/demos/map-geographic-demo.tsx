@@ -1,21 +1,25 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { TflGeographicMap } from "@/components/tfl/geography/tfl-geographic-map";
-import type { TrackModel } from "@/lib/tfl/geography-types";
-import { cn } from "@/lib/utils";
+import { useState } from "react"
+import { TflGeographicMap } from "@/components/tfl/geography/tfl-geographic-map"
+import type { TrackModel } from "@/lib/tfl/geography-types"
+import { cn } from "@/lib/utils"
 
 const TRACK_MODELS: { id: TrackModel; label: string }[] = [
   { id: "centreline", label: "Merged centreline" },
   { id: "dual", label: "Both tracks" },
-];
+]
 
 export default function MapGeographicDemo() {
-  const [trackModel, setTrackModel] = useState<TrackModel>("centreline");
+  const [trackModel, setTrackModel] = useState<TrackModel>("centreline")
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Track model">
+      <div
+        className="flex flex-wrap gap-2"
+        role="group"
+        aria-label="Track model"
+      >
         {TRACK_MODELS.map((option) => (
           <button
             key={option.id}
@@ -26,7 +30,7 @@ export default function MapGeographicDemo() {
               "rounded-full border border-border px-2.5 py-1 text-xs",
               trackModel === option.id
                 ? "bg-foreground text-background"
-                : "bg-background text-foreground",
+                : "bg-background text-foreground"
             )}
           >
             {option.label}
@@ -41,5 +45,5 @@ export default function MapGeographicDemo() {
         corridors with each direction kept as its own polyline.
       </p>
     </div>
-  );
+  )
 }

@@ -1,14 +1,14 @@
-import { type ReactNode, type SVGProps } from "react";
-import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
-import { TFL_BLUE, UNDERGROUND_RING_RED } from "@/lib/tfl/brand-colours";
-import { ROUNDEL_FONT_FAMILY } from "@/lib/tfl/brand-rules";
+import { type ReactNode, type SVGProps } from "react"
+import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
+import { TFL_BLUE, UNDERGROUND_RING_RED } from "@/lib/tfl/brand-colours"
+import { ROUNDEL_FONT_FAMILY } from "@/lib/tfl/brand-rules"
 import {
   ROUNDEL_PRESETS,
   getRoundelLogoPath,
   type RoundelPreset,
-} from "@/lib/tfl/roundel-presets";
-import { RoundelTrademarkModal } from "@/components/tfl/brand/tfl-roundel-trademark-modal";
+} from "@/lib/tfl/roundel-presets"
+import { RoundelTrademarkModal } from "@/components/tfl/brand/tfl-roundel-trademark-modal"
 
 /** Skeleton matching the roundel footprint — use in `loading.tsx` or Suspense. */
 export const TfLRoundelSkeleton = ({ className }: { className?: string }) => (
@@ -16,7 +16,7 @@ export const TfLRoundelSkeleton = ({ className }: { className?: string }) => (
     className={cn("size-10 shrink-0 rounded-full", className)}
     aria-hidden
   />
-);
+)
 
 /** Skeleton for the roundel demo page. */
 export const TfLRoundelBoardSkeleton = () => (
@@ -32,7 +32,7 @@ export const TfLRoundelBoardSkeleton = () => (
         {["size-4", "size-5", "size-6", "size-8", "size-10", "size-12"].map(
           (size) => (
             <TfLRoundelSkeleton key={size} className={size} />
-          ),
+          )
         )}
       </div>
     </div>
@@ -42,7 +42,7 @@ export const TfLRoundelBoardSkeleton = () => (
       ))}
     </div>
   </div>
-);
+)
 
 export {
   ROUNDEL_LOGO_PATHS,
@@ -50,14 +50,14 @@ export {
   ROUNDEL_PRESETS,
   TFL_BRAND_LINKS,
   type RoundelPreset,
-} from "@/lib/tfl/roundel-presets";
+} from "@/lib/tfl/roundel-presets"
 
 export {
   TFL_BLUE,
   TFL_MODAL_COLOURS,
   UNDERGROUND_LINE_COLOURS,
   UNDERGROUND_RING_RED,
-} from "@/lib/tfl/brand-colours";
+} from "@/lib/tfl/brand-colours"
 
 export {
   getRoundelExclusion,
@@ -68,21 +68,21 @@ export {
   ROUNDEL_FONT_POLICY,
   ROUNDEL_MIN_WIDTH_MM,
   ROUNDEL_MIN_WIDTH_PX,
-} from "@/lib/tfl/brand-rules";
+} from "@/lib/tfl/brand-rules"
 
 /** Wikimedia geometry: bar extends past the circle (≈615×500). */
-const VIEW_W = 615.3;
-const VIEW_H = 500;
-const CX = 308.123;
-const CY = 249.985;
-const OUTER_R = 250;
-const INNER_R = 161.3;
-const BAR_Y = 199.5;
-const BAR_H = 101.1;
+const VIEW_W = 615.3
+const VIEW_H = 500
+const CX = 308.123
+const CY = 249.985
+const OUTER_R = 250
+const INNER_R = 161.3
+const BAR_Y = 199.5
+const BAR_H = 101.1
 
-const DEFAULT_RING = UNDERGROUND_RING_RED;
-const DEFAULT_BAR = TFL_BLUE;
-const DEFAULT_TEXT = "#FFFFFF";
+const DEFAULT_RING = UNDERGROUND_RING_RED
+const DEFAULT_BAR = TFL_BLUE
+const DEFAULT_TEXT = "#FFFFFF"
 
 export type TfLRoundelProps = Omit<
   SVGProps<SVGSVGElement>,
@@ -92,73 +92,72 @@ export type TfLRoundelProps = Omit<
    * Named mode preset (colours + default bar text).
    * Overridable with `text` / `ringColor` / `barColor`.
    */
-  variant?: RoundelPreset;
+  variant?: RoundelPreset
   /** Bar label. Pass `""` to hide text. Defaults to the variant label or UNDERGROUND. */
-  text?: string;
+  text?: string
   /** Ring (circle) colour. */
-  ringColor?: string;
+  ringColor?: string
   /** Horizontal bar colour. */
-  barColor?: string;
+  barColor?: string
   /**
    * Stroke around the bar. Per TfL Basic Elements this is **Cycles only**
    * (white fill + green border). Other modes omit it.
    */
-  barBorderColor?: string;
+  barBorderColor?: string
   /** Bar text colour. */
-  textColor?: string;
+  textColor?: string
   /**
    * Monochrome shorthand — sets both ring and bar when the specific
    * colour props are omitted.
    */
-  lineColor?: string;
+  lineColor?: string
   /**
    * When true with a `variant`, render the exact Wikimedia SVG artwork
    * from `/transit-logos` instead of the customisable mark.
    */
-  artwork?: boolean;
-  className?: string;
-};
+  artwork?: boolean
+  className?: string
+}
 
 const isRoundelAllowed = (): boolean => {
-  if (typeof process === "undefined") return false;
+  if (typeof process === "undefined") return false
   // Only public/prefixed vars — plain ALLOW_TFL_ROUNDEL is server-only in
   // Next.js and causes a span (SSR) vs button (client) hydration mismatch.
   return (
     process.env.NEXT_PUBLIC_ALLOW_TFL_ROUNDEL === "true" ||
     process.env.VITE_ALLOW_TFL_ROUNDEL === "true"
-  );
-};
+  )
+}
 
-const isDevelopment = (): boolean =>
-  process.env.NODE_ENV === "development";
+const isDevelopment = (): boolean => process.env.NODE_ENV === "development"
 
 /**
  * Target visual capital height as a fraction of bar height.
  * Wikimedia Underground letter paths are ≈52 units in a 101.1 bar.
  */
-const BAR_TEXT_CAP_RATIO = 0.52;
+const BAR_TEXT_CAP_RATIO = 0.52
 
 /**
  * Hammersmith One measured cap-height ≈ 66% of CSS/SVG font-size
  * (`actualBoundingBoxAscent` / em). Do not treat font-size as letter height.
  */
-const ROUNDEL_CAP_HEIGHT_RATIO = 0.66;
+const ROUNDEL_CAP_HEIGHT_RATIO = 0.66
 
 /** Bar text size from cap-height — same for every mode label (e.g. ELIZABETH LINE = UNDERGROUND). */
 const fontSizeForBar = (barHeight = BAR_H): number =>
-  (barHeight * BAR_TEXT_CAP_RATIO) / ROUNDEL_CAP_HEIGHT_RATIO;
+  (barHeight * BAR_TEXT_CAP_RATIO) / ROUNDEL_CAP_HEIGHT_RATIO
 
 /**
  * Johnston-like tracking. Longer labels go slightly negative so end glyphs
  * clear rounded placeholder bars (and stay dense on the sharp official bar).
  */
 const letterSpacingForText = (value: string): number => {
-  const len = value.trim().length;
-  if (len <= 3) return 0.5;
-  if (len <= 6) return 0;
-  if (len <= 10) return -0.5;
-  return -1;
-};
+  const len = value.trim().length
+  if (len <= 3) return 0.5
+  if (len <= 6) return 0
+  if (len <= 10) return -0.5
+  return -1
+}
 
 /**
  * Natural width estimate; when over `maxWidth`, SVG `textLength` compresses
@@ -167,13 +166,13 @@ const letterSpacingForText = (value: string): number => {
 const barTextLength = (
   value: string,
   fontSize: number,
-  maxWidth: number,
+  maxWidth: number
 ): number | undefined => {
-  const len = Math.max(value.trim().length, 1);
-  const ls = letterSpacingForText(value);
-  const natural = len * fontSize * 0.62 + ls * Math.max(len - 1, 0);
-  return natural > maxWidth ? maxWidth : undefined;
-};
+  const len = Math.max(value.trim().length, 1)
+  const ls = letterSpacingForText(value)
+  const natural = len * fontSize * 0.62 + ls * Math.max(len - 1, 0)
+  return natural > maxWidth ? maxWidth : undefined
+}
 
 /**
  * Alphabetic baseline so uppercase caps are optically centered on the bar.
@@ -181,7 +180,7 @@ const barTextLength = (
  * which leaves a larger gap under all-caps than above.
  */
 const barTextBaselineY = (fontSize: number): number =>
-  CY + (fontSize * ROUNDEL_CAP_HEIGHT_RATIO) / 2;
+  CY + (fontSize * ROUNDEL_CAP_HEIGHT_RATIO) / 2
 
 /**
  * SVG strokes are centered on the path. Inset geometry so the full stroke
@@ -195,14 +194,14 @@ const insetStrokedRect = ({
   stroke,
   rx = 0,
 }: {
-  x?: number;
-  y: number;
-  width: number;
-  height: number;
-  stroke: number;
-  rx?: number;
+  x?: number
+  y: number
+  width: number
+  height: number
+  stroke: number
+  rx?: number
 }) => {
-  const inset = stroke / 2;
+  const inset = stroke / 2
   return {
     x: x + inset,
     y: y + inset,
@@ -211,8 +210,8 @@ const insetStrokedRect = ({
     rx: Math.max(0, rx - inset),
     ry: Math.max(0, rx - inset),
     strokeWidth: stroke,
-  };
-};
+  }
+}
 
 const resolveRoundelColors = ({
   variant,
@@ -232,7 +231,7 @@ const resolveRoundelColors = ({
   | "textColor"
   | "text"
 >) => {
-  const preset = variant ? ROUNDEL_PRESETS[variant] : undefined;
+  const preset = variant ? ROUNDEL_PRESETS[variant] : undefined
   return {
     ring: ringColor ?? lineColor ?? preset?.ringColor ?? DEFAULT_RING,
     bar: barColor ?? lineColor ?? preset?.barColor ?? DEFAULT_BAR,
@@ -248,20 +247,20 @@ const resolveRoundelColors = ({
         : (preset?.text ?? ROUNDEL_PRESETS.underground.text),
     ariaLabel: preset?.label ?? "Transport for London",
     style: preset?.style ?? "standard",
-  };
-};
+  }
+}
 
 /** Shared outer box — keeps placeholder and official mark the same size. */
 export const ROUNDEL_FRAME_CLASS =
-  "inline-flex size-10 shrink-0 items-center justify-center leading-none [&>svg]:block [&>svg]:size-full [&>img]:block [&>img]:size-full";
+  "inline-flex size-10 shrink-0 items-center justify-center leading-none [&>svg]:block [&>svg]:size-full [&>img]:block [&>img]:size-full"
 
 const RoundelFrame = ({
   className,
   children,
 }: {
-  className?: string;
-  children: ReactNode;
-}) => <span className={cn(ROUNDEL_FRAME_CLASS, className)}>{children}</span>;
+  className?: string
+  children: ReactNode
+}) => <span className={cn(ROUNDEL_FRAME_CLASS, className)}>{children}</span>
 
 const RoundelBarText = ({
   value,
@@ -270,14 +269,14 @@ const RoundelBarText = ({
   maxWidth = VIEW_W * 0.9,
   opacity,
 }: {
-  value: string;
-  fill: string;
-  fontSize: number;
+  value: string
+  fill: string
+  fontSize: number
   /** Compress with textLength when the label would overrun this width. */
-  maxWidth?: number;
-  opacity?: number;
+  maxWidth?: number
+  opacity?: number
 }) => {
-  const textLength = barTextLength(value, fontSize, maxWidth);
+  const textLength = barTextLength(value, fontSize, maxWidth)
   return (
     <text
       x={CX}
@@ -296,8 +295,8 @@ const RoundelBarText = ({
     >
       {value.toUpperCase()}
     </text>
-  );
-};
+  )
+}
 
 /**
  * Customisable roundel using Wikimedia proportions (even-odd ring + full bar).
@@ -323,14 +322,14 @@ const OfficialRoundelSvg = ({
     barBorderColor,
     textColor,
     text,
-  });
-  const trimmed = colors.label.trim();
-  const fontSize = fontSizeForBar();
-  const ringStroke = OUTER_R - INNER_R;
-  const ringRadius = (OUTER_R + INNER_R) / 2;
-  const outlineStroke = ringStroke * 0.35;
+  })
+  const trimmed = colors.label.trim()
+  const fontSize = fontSizeForBar()
+  const ringStroke = OUTER_R - INNER_R
+  const ringRadius = (OUTER_R + INNER_R) / 2
+  const outlineStroke = ringStroke * 0.35
   /** Cycles (and any explicit barBorderColor): stroke width for the bar edge. */
-  const barBorderStroke = outlineStroke * 0.75;
+  const barBorderStroke = outlineStroke * 0.75
 
   return (
     <RoundelFrame className={className}>
@@ -416,23 +415,21 @@ const OfficialRoundelSvg = ({
         ) : null}
       </svg>
     </RoundelFrame>
-  );
-};
+  )
+}
 
 /** Exact Wikimedia artwork from `/public/transit-logos`. */
 const RoundelArtwork = ({
   variant,
   className,
 }: {
-  variant: RoundelPreset;
-  className?: string;
+  variant: RoundelPreset
+  className?: string
 }) => {
-  const preset = ROUNDEL_PRESETS[variant];
-  const logoPath = getRoundelLogoPath(variant);
+  const preset = ROUNDEL_PRESETS[variant]
+  const logoPath = getRoundelLogoPath(variant)
   if (!logoPath) {
-    return (
-      <OfficialRoundelSvg variant={variant} className={className} />
-    );
+    return <OfficialRoundelSvg variant={variant} className={className} />
   }
 
   return (
@@ -445,8 +442,8 @@ const RoundelArtwork = ({
         className="size-full object-contain"
       />
     </RoundelFrame>
-  );
-};
+  )
+}
 
 /**
  * Placeholder: same footprint, but a filled disc + rounded bar so it is
@@ -466,37 +463,33 @@ export const PlaceholderRoundelSvg = ({
   framed = true,
   ...props
 }: TfLRoundelProps & { framed?: boolean }) => {
-  const preset = variant ? ROUNDEL_PRESETS[variant] : undefined;
-  const hasColour = Boolean(ringColor ?? barColor ?? lineColor ?? preset);
-  const disc = ringColor ?? lineColor ?? preset?.ringColor;
-  const bar = barColor ?? lineColor ?? preset?.barColor;
+  const preset = variant ? ROUNDEL_PRESETS[variant] : undefined
+  const hasColour = Boolean(ringColor ?? barColor ?? lineColor ?? preset)
+  const disc = ringColor ?? lineColor ?? preset?.ringColor
+  const bar = barColor ?? lineColor ?? preset?.barColor
   const barBorder =
     barBorderColor ??
-    (preset && "barBorderColor" in preset
-      ? preset.barBorderColor
-      : undefined);
+    (preset && "barBorderColor" in preset ? preset.barBorderColor : undefined)
   const ink =
-    textColor ??
-    preset?.textColor ??
-    (hasColour ? DEFAULT_TEXT : undefined);
-  const label = text !== undefined ? text : (preset?.text ?? "");
-  const trimmed = label.trim();
-  const style = preset?.style ?? "standard";
-  const isOutline = style === "outline";
-  const isCycles = style === "cycles";
-  const isStrokeMode = isOutline || isCycles;
+    textColor ?? preset?.textColor ?? (hasColour ? DEFAULT_TEXT : undefined)
+  const label = text !== undefined ? text : (preset?.text ?? "")
+  const trimmed = label.trim()
+  const style = preset?.style ?? "standard"
+  const isOutline = style === "outline"
+  const isCycles = style === "cycles"
+  const isStrokeMode = isOutline || isCycles
   // Same footprint as the licensed bar (full width × BAR_H); only the ends are rounded.
-  const barRx = BAR_H / 2;
-  const ringStroke = (OUTER_R - INNER_R) * 0.35;
-  const barStroke = Math.max(4, BAR_H * 0.08);
-  const fontSize = fontSizeForBar();
-  const barTextMaxWidth = VIEW_W - BAR_H;
-  const barFill = isStrokeMode ? "#FFFFFF" : (bar ?? "currentColor");
+  const barRx = BAR_H / 2
+  const ringStroke = (OUTER_R - INNER_R) * 0.35
+  const barStroke = Math.max(4, BAR_H * 0.08)
+  const fontSize = fontSizeForBar()
+  const barTextMaxWidth = VIEW_W - BAR_H
+  const barFill = isStrokeMode ? "#FFFFFF" : (bar ?? "currentColor")
   const barStrokeColor = isCycles
     ? (barBorder ?? disc ?? "currentColor")
     : isOutline
       ? (bar ?? disc ?? "currentColor")
-      : barBorder;
+      : barBorder
   // Stroke is centered on the path — inset so sides aren't clipped by the viewBox.
   const barRect =
     barStrokeColor != null
@@ -515,7 +508,7 @@ export const PlaceholderRoundelSvg = ({
           rx: barRx,
           ry: barRx,
           strokeWidth: 0,
-        };
+        }
 
   const svg = (
     <svg
@@ -529,7 +522,7 @@ export const PlaceholderRoundelSvg = ({
       className={cn(
         framed ? "size-full" : "size-10 shrink-0",
         !hasColour && "text-muted-foreground",
-        !framed && className,
+        !framed && className
       )}
       {...props}
     >
@@ -577,12 +570,12 @@ export const PlaceholderRoundelSvg = ({
         />
       ) : null}
     </svg>
-  );
+  )
 
-  if (!framed) return svg;
+  if (!framed) return svg
 
-  return <RoundelFrame className={className}>{svg}</RoundelFrame>;
-};
+  return <RoundelFrame className={className}>{svg}</RoundelFrame>
+}
 
 /**
  * Env-gated TfL roundel.
@@ -626,14 +619,14 @@ export const TfLRoundel = ({
     lineColor,
     className,
     ...props,
-  };
+  }
 
   if (isRoundelAllowed()) {
     if (artwork && variant) {
-      return <RoundelArtwork variant={variant} className={className} />;
+      return <RoundelArtwork variant={variant} className={className} />
     }
 
-    return <OfficialRoundelSvg {...shared} />;
+    return <OfficialRoundelSvg {...shared} />
   }
 
   if (isDevelopment()) {
@@ -645,8 +638,8 @@ export const TfLRoundel = ({
           className="size-full"
         />
       </RoundelTrademarkModal>
-    );
+    )
   }
 
-  return <PlaceholderRoundelSvg {...shared} />;
-};
+  return <PlaceholderRoundelSvg {...shared} />
+}

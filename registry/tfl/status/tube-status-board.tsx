@@ -285,10 +285,7 @@ export const TubeStatusBoardSkeleton = ({
     aria-label="Loading line status"
   >
     <div>
-      <StatusSectionHeading
-        compact={compact}
-        title="Checking the lines..."
-      />
+      <StatusSectionHeading compact={compact} title="Checking the lines..." />
       <div className={goodServiceGridClass(compact)}>
         {lineIds.map((lineId) => {
           const label = getLineNameTiers(lineId).full
@@ -361,10 +358,7 @@ export const TubeStatusBoard = ({
               : undefined
           }
         >
-          <StatusSectionHeading
-            compact={compact}
-            title="Service Disruptions"
-          />
+          <StatusSectionHeading compact={compact} title="Service Disruptions" />
           <div className={disruptionGridClass(compact)}>
             {disruptions.map(({ line, announcements, kind }) => {
               return (

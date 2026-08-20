@@ -4,7 +4,7 @@ export const syncOverlayToSvg = (
   svgEl: SVGGraphicsElement | null,
   host: HTMLElement,
   nativeWidth: number,
-  nativeHeight: number,
+  nativeHeight: number
 ) => {
   if (!overlay || !svgEl || nativeWidth <= 0) return
   const hostRect = host.getBoundingClientRect()

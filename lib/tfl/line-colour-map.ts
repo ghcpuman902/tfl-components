@@ -19,27 +19,27 @@ import {
   TFL_MODAL_COLOURS,
   UNDERGROUND_LINE_COLOURS,
   type BrandColourSpec,
-} from "@/lib/tfl/brand-colours";
-import { RIVER_BUS_LINE_IDS } from "@/lib/tfl/river-bus";
-import { resolveRouteTrackStyle } from "@/lib/tfl/route-track";
+} from "@/lib/tfl/brand-colours"
+import { RIVER_BUS_LINE_IDS } from "@/lib/tfl/river-bus"
+import { resolveRouteTrackStyle } from "@/lib/tfl/route-track"
 
-export type LineColourKind = "line" | "mode";
+export type LineColourKind = "line" | "mode"
 
 export type LineColourToken = {
   /** Primary `data-line` id (e.g. `northern`, `elizabeth`). */
-  id: string;
+  id: string
   /** Extra API / docs aliases that bind to the same token. */
-  aliases: readonly string[];
-  name: string;
-  kind: LineColourKind;
+  aliases: readonly string[]
+  name: string
+  kind: LineColourKind
   /** CSS custom property without `--` (e.g. `tfl-line-northern`). */
-  cssVar: string;
+  cssVar: string
   /** Complete Tailwind class strings — use as-is, never build with template literals. */
-  bgClass: string;
-  textClass: string;
-  hex: string;
-  spec: BrandColourSpec;
-};
+  bgClass: string
+  textClass: string
+  hex: string
+  spec: BrandColourSpec
+}
 
 /** Extra aliases so API / docs ids resolve without per-call maps. */
 const DATA_LINE_ALIASES: Record<string, readonly string[]> = {
@@ -47,21 +47,21 @@ const DATA_LINE_ALIASES: Record<string, readonly string[]> = {
   trams: ["tram"],
   "cable-car": ["london-cable-car"],
   river: [...RIVER_BUS_LINE_IDS, "river-bus"],
-};
+}
 
 const toDataLineId = (key: string): string =>
   key
     .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
     .replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2")
-    .toLowerCase();
+    .toLowerCase()
 
 const buildToken = (
   kind: LineColourKind,
   key: string,
-  spec: BrandColourSpec,
+  spec: BrandColourSpec
 ): LineColourToken => {
-  const id = toDataLineId(key);
-  const cssVar = `tfl-${kind}-${id}`;
+  const id = toDataLineId(key)
+  const cssVar = `tfl-${kind}-${id}`
   return {
     id,
     aliases: DATA_LINE_ALIASES[id] ?? [],
@@ -72,50 +72,50 @@ const buildToken = (
     textClass: `text-tfl-${kind}-${id}`,
     hex: spec.hex,
     spec,
-  };
-};
+  }
+}
 
 /** Canonical list — one entry per published token (not per alias). */
 export const LINE_COLOUR_TOKENS: readonly LineColourToken[] = [
   ...Object.entries(UNDERGROUND_LINE_COLOURS).map(([key, spec]) =>
-    buildToken("line", key, spec),
+    buildToken("line", key, spec)
   ),
   ...Object.entries(OVERGROUND_LINE_COLOURS).map(([key, spec]) =>
-    buildToken("line", key, spec),
+    buildToken("line", key, spec)
   ),
   ...Object.entries(TFL_MODAL_COLOURS).map(([key, spec]) =>
-    buildToken("mode", key, spec),
+    buildToken("mode", key, spec)
   ),
-];
+]
 
 const BY_ID: Map<string, LineColourToken> = (() => {
-  const map = new Map<string, LineColourToken>();
+  const map = new Map<string, LineColourToken>()
   for (const token of LINE_COLOUR_TOKENS) {
-    map.set(token.id, token);
+    map.set(token.id, token)
     for (const alias of token.aliases) {
-      map.set(alias, token);
+      map.set(alias, token)
     }
   }
-  return map;
-})();
+  return map
+})()
 
 /** Resolve a TfL line / mode id (or alias) to its colour token. */
 export const getLineColourToken = (
-  lineId: string,
-): LineColourToken | undefined => BY_ID.get(lineId.toLowerCase());
+  lineId: string
+): LineColourToken | undefined => BY_ID.get(lineId.toLowerCase())
 
 /**
  * Predefined `bg-tfl-*` class for a line id, or `undefined` if unknown.
  * Safe to pass into `className` — never interpolate the id into a template.
  */
 export const getLineColourBgClass = (lineId: string): string | undefined =>
-  getLineColourToken(lineId)?.bgClass;
+  getLineColourToken(lineId)?.bgClass
 
 /**
  * Predefined `text-tfl-*` class for a line id, or `undefined` if unknown.
  */
 export const getLineColourTextClass = (lineId: string): string | undefined =>
-  getLineColourToken(lineId)?.textClass;
+  getLineColourToken(lineId)?.textClass
 
 /**
  * Mode name for `LineColorBar` rail stacks (Overground / Elizabeth / Cable Car).
@@ -123,15 +123,13 @@ export const getLineColourTextClass = (lineId: string): string | undefined =>
  *
  * @deprecated Prefer `resolveRouteTrackStyle` from `@/lib/tfl/route-track`.
  */
-export const getLineColourBarMode = (
-  lineId: string,
-): string | undefined => {
-  const style = resolveRouteTrackStyle(lineId);
-  if (style === "solid") return undefined;
-  if (style === "cable-car") return "cable-car";
-  const token = getLineColourToken(lineId);
+export const getLineColourBarMode = (lineId: string): string | undefined => {
+  const style = resolveRouteTrackStyle(lineId)
+  if (style === "solid") return undefined
+  if (style === "cable-car") return "cable-car"
+  const token = getLineColourToken(lineId)
   if (token?.id === "elizabeth" || token?.aliases.includes("elizabeth-line")) {
-    return "elizabeth-line";
+    return "elizabeth-line"
   }
-  return "overground";
-};
+  return "overground"
+}

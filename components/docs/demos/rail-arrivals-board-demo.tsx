@@ -1,15 +1,12 @@
-"use client";
+"use client"
 
-import { DataSourceLabel } from "@/components/docs/data-source-label";
-import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board";
-import {
-  HOME_RAIL_LINES,
-  HOME_RAIL_STOP,
-} from "@/lib/tfl/home-arrivals-stops";
-import { useArrivalsBoardUiState } from "@/lib/tfl/use-arrivals-board-ui-state";
-import { useDualPathArrivals } from "@/hooks/use-dual-path-arrivals";
+import { DataSourceLabel } from "@/components/docs/data-source-label"
+import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
+import { HOME_RAIL_LINES, HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
+import { useArrivalsBoardUiState } from "@/lib/tfl/use-arrivals-board-ui-state"
+import { useDualPathArrivals } from "@/hooks/use-dual-path-arrivals"
 
-const POLL_MS = 20_000;
+const POLL_MS = 20_000
 
 /**
  * Rail arrivals demo — Oxford Circus via RailArrivalsBoard + tfl-ts predictions.
@@ -17,11 +14,13 @@ const POLL_MS = 20_000;
  * Identity (stop name) paints immediately; predictions stream in after poll.
  */
 export default function RailArrivalsBoardDemo() {
-  const { data, loading, fetchError, fetchedAt, refresh } = useDualPathArrivals({
-    stopPointId: HOME_RAIL_STOP.id,
-    pollMs: POLL_MS,
-  });
-  const boardState = useArrivalsBoardUiState(data.length, fetchError, "rail");
+  const { data, loading, fetchError, fetchedAt, refresh } = useDualPathArrivals(
+    {
+      stopPointId: HOME_RAIL_STOP.id,
+      pollMs: POLL_MS,
+    }
+  )
+  const boardState = useArrivalsBoardUiState(data.length, fetchError, "rail")
 
   return (
     <div className="space-y-4">
@@ -46,5 +45,5 @@ export default function RailArrivalsBoardDemo() {
         onRefresh={refresh}
       />
     </div>
-  );
+  )
 }

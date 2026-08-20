@@ -36,10 +36,7 @@ import {
   type StressState,
 } from "@/lib/tfl/geometry/stress-layout"
 import type { TopologyMovementPair } from "@/lib/tfl/geometry/topology-movements"
-import {
-  stationGraphScales,
-  useSvgViewport,
-} from "./station-graph-scale"
+import { stationGraphScales, useSvgViewport } from "./station-graph-scale"
 
 type JunctionCasesViewProps = {
   variants: BundlesByMode
@@ -774,8 +771,8 @@ const JunctionWindowPanels = ({ window }: { window: JunctionWindow }) => {
         </h3>
         <p className="max-w-3xl text-xs text-muted-foreground">
           A permitted move is a from–via–to triple from OSM track and TfL
-          station order. Two-leg corridors still straighten. Branch marks
-          appear only where three or more legs meet.
+          station order. Two-leg corridors still straighten. Branch marks appear
+          only where three or more legs meet.
         </p>
         {branchMovements.length === 0 ? (
           <p className="text-sm text-muted-foreground">

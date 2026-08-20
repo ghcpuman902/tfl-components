@@ -8,26 +8,26 @@
 import {
   TFL_MODAL_COLOURS,
   UNDERGROUND_LINE_COLOURS,
-} from "@/lib/tfl/brand-colours";
+} from "@/lib/tfl/brand-colours"
 
-export const GO_DAY_PAPER = "#FFFFFF";
+export const GO_DAY_PAPER = "#FFFFFF"
 /** Dominant night map paper from Go screenshot (not pitch black). */
-export const GO_NIGHT_PAPER = "#2C2C32";
+export const GO_NIGHT_PAPER = "#2C2C32"
 
 export type GoColourRow = {
-  id: string;
-  label: string;
-  brand: string;
+  id: string
+  label: string
+  brand: string
   /** Go day core sample (or null if not observed). */
-  goDay: string | null;
+  goDay: string | null
   /** Go night core sample (or null). */
-  goNight: string | null;
-  notes?: string;
+  goNight: string | null
+  notes?: string
   /** Brand hex is a stand-in — skip brand→Go contrast claims. */
-  brandPlaceholder?: boolean;
-};
+  brandPlaceholder?: boolean
+}
 
-const brand = (hex: string) => hex.toUpperCase();
+const brand = (hex: string) => hex.toUpperCase()
 
 export const GO_COLOUR_ROWS: GoColourRow[] = [
   {
@@ -153,6 +153,7 @@ export const GO_COLOUR_ROWS: GoColourRow[] = [
     goDay: "#D8A0AE",
     goNight: "#946070",
     brandPlaceholder: true,
-    notes: "No Issue-4 NR pink in brand-colours; brand placeholder is neutral grey.",
+    notes:
+      "No Issue-4 NR pink in brand-colours; brand placeholder is neutral grey.",
   },
-];
+]

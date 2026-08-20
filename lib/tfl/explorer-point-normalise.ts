@@ -6,89 +6,89 @@
 import {
   readStopLetter as readPaintedStopLetter,
   usableTflText,
-} from "@/lib/tfl/bus-stop-letter";
-import { readBearingDegrees } from "@/lib/tfl/bus-stop-shape";
+} from "@/lib/tfl/bus-stop-letter"
+import { readBearingDegrees } from "@/lib/tfl/bus-stop-shape"
 
-export type ExplorerPointKind = "stopPoint" | "bikePoint";
+export type ExplorerPointKind = "stopPoint" | "bikePoint"
 
 export type ExplorerHubMember = {
-  id: string;
-  name: string;
-  lineIds: string[];
-};
+  id: string
+  name: string
+  lineIds: string[]
+}
 
 export type ExplorerPoint = {
-  id: string;
-  name: string;
-  kind: ExplorerPointKind;
-  lat?: number;
-  lon?: number;
-  modes?: string[];
-  lineIds?: string[];
-  zone?: string;
-  stopLetter?: string;
-  smsCode?: string;
-  towards?: string;
-  distanceMeters?: number;
+  id: string
+  name: string
+  kind: ExplorerPointKind
+  lat?: number
+  lon?: number
+  modes?: string[]
+  lineIds?: string[]
+  zone?: string
+  stopLetter?: string
+  smsCode?: string
+  towards?: string
+  distanceMeters?: number
   /** Degrees clockwise from north — bus stop compass / `->W` indicator. */
-  bearingDegrees?: number;
-  bikes?: number;
-  eBikes?: number;
-  spaces?: number;
-  aliasIds?: string[];
+  bearingDegrees?: number
+  bikes?: number
+  eBikes?: number
+  spaces?: number
+  aliasIds?: string[]
   /** Interchange id when this row is a multi-StopPoint hub. */
-  hubId?: string;
+  hubId?: string
   /** Sibling StopPoints that carry TfL arrivals. Omitted for a single StopPoint. */
-  hubMembers?: ExplorerHubMember[];
+  hubMembers?: ExplorerHubMember[]
   /** Ids to poll for arrivals. Omitted when it is just `[id]`. */
-  arrivalsStopIds?: string[];
-};
+  arrivalsStopIds?: string[]
+}
 
 /** Five-digit SMS code for London bus stops. */
 export const isSmsCodeQuery = (query: string): boolean =>
-  /^\d{5}$/.test(query.trim());
+  /^\d{5}$/.test(query.trim())
 
 type StopLike = {
-  id?: string;
-  commonName?: string;
-  name?: string;
-  stationName?: string;
-  lat?: number;
-  lon?: number;
-  modes?: string[];
-  lines?: Array<{ id?: string; name?: string }>;
-  stopLetter?: string;
-  indicator?: string;
-  platformName?: string;
-  towards?: string;
-  distance?: number;
-  additionalProperties?: Array<{ key?: string; value?: string }>;
-};
+  id?: string
+  commonName?: string
+  name?: string
+  stationName?: string
+  lat?: number
+  lon?: number
+  modes?: string[]
+  lines?: Array<{ id?: string; name?: string }>
+  stopLetter?: string
+  indicator?: string
+  platformName?: string
+  towards?: string
+  distance?: number
+  additionalProperties?: Array<{ key?: string; value?: string }>
+}
 
 const readProp = (
   properties: StopLike["additionalProperties"],
-  key: string,
+  key: string
 ): string | undefined => {
   const value = properties?.find(
-    (prop) => prop.key?.toLowerCase() === key.toLowerCase(),
-  )?.value;
-  return value?.trim() || undefined;
-};
+    (prop) => prop.key?.toLowerCase() === key.toLowerCase()
+  )?.value
+  return value?.trim() || undefined
+}
 
 const readStopLetter = (stop: StopLike): string | undefined =>
-  readPaintedStopLetter(stop.stopLetter, stop.indicator ?? stop.platformName);
+  readPaintedStopLetter(stop.stopLetter, stop.indicator ?? stop.platformName)
 
 /** Normalise a StopPoint / search match into ExplorerPoint. */
 export const normaliseStopPoint = (stop: StopLike): ExplorerPoint | null => {
-  const id = stop.id?.trim();
-  if (!id) return null;
+  const id = stop.id?.trim()
+  if (!id) return null
 
   const name =
-    (stop.commonName ?? stop.name ?? stop.stationName)?.trim() || "Unknown stop";
+    (stop.commonName ?? stop.name ?? stop.stationName)?.trim() || "Unknown stop"
 
   const lineIds = stop.lines
     ?.map((line) => line.id ?? line.name)
-    .filter((value): value is string => Boolean(value));
+    .filter((value): value is string => Boolean(value))
 
   return {
     id,
@@ -103,31 +103,32 @@ export const normaliseStopPoint = (stop: StopLike): ExplorerPoint | null => {
     towards:
       usableTflText(stop.towards) ||
       usableTflText(readProp(stop.additionalProperties, "Towards")),
-    distanceMeters: typeof stop.distance === "number" ? stop.distance : undefined,
+    distanceMeters:
+      typeof stop.distance === "number" ? stop.distance : undefined,
     bearingDegrees: readBearingDegrees(
       stop.additionalProperties,
       stop.indicator,
-      stop.stopLetter,
+      stop.stopLetter
     ),
-  };
-};
+  }
+}
 
 type BikeLike = {
-  id?: string;
-  name?: string;
-  commonName?: string;
-  lat?: number;
-  lon?: number;
-  distance?: number;
-  bikes?: number;
-  eBikes?: number;
-  spaces?: number;
-};
+  id?: string
+  name?: string
+  commonName?: string
+  lat?: number
+  lon?: number
+  distance?: number
+  bikes?: number
+  eBikes?: number
+  spaces?: number
+}
 
 /** Normalise a BikePoint / search result into ExplorerPoint. */
 export const normaliseBikePoint = (dock: BikeLike): ExplorerPoint | null => {
-  const id = dock.id?.trim();
-  if (!id) return null;
+  const id = dock.id?.trim()
+  if (!id) return null
 
   return {
     id,
@@ -140,27 +141,27 @@ export const normaliseBikePoint = (dock: BikeLike): ExplorerPoint | null => {
     bikes: typeof dock.bikes === "number" ? dock.bikes : undefined,
     eBikes: typeof dock.eBikes === "number" ? dock.eBikes : undefined,
     spaces: typeof dock.spaces === "number" ? dock.spaces : undefined,
-  };
-};
+  }
+}
 
 type RailCatalogLike = {
-  id: string;
-  name: string;
-  displayName?: string;
-  modes?: string[];
-  lines?: string[];
-  aliasIds?: string[];
-  zone?: string;
-  lat?: number;
-  lon?: number;
-  hubId?: string;
-  hubMembers?: ExplorerHubMember[];
-  arrivalsStopIds?: string[];
-};
+  id: string
+  name: string
+  displayName?: string
+  modes?: string[]
+  lines?: string[]
+  aliasIds?: string[]
+  zone?: string
+  lat?: number
+  lon?: number
+  hubId?: string
+  hubMembers?: ExplorerHubMember[]
+  arrivalsStopIds?: string[]
+}
 
 /** Normalise a Tube & rail catalog station into ExplorerPoint. */
 export const normaliseRailPoint = (
-  station: RailCatalogLike,
+  station: RailCatalogLike
 ): ExplorerPoint => ({
   id: station.id,
   name: station.displayName ?? station.name,
@@ -174,7 +175,7 @@ export const normaliseRailPoint = (
   hubId: station.hubId,
   hubMembers: station.hubMembers,
   arrivalsStopIds: station.arrivalsStopIds,
-});
+})
 
 /**
  * Collapse live Search / Locate hits onto catalog hub rows when we already
@@ -182,21 +183,20 @@ export const normaliseRailPoint = (
  */
 export const collapseExplorerPointsToHubs = (
   points: readonly ExplorerPoint[],
-  catalog: readonly ExplorerPoint[] = [],
+  catalog: readonly ExplorerPoint[] = []
 ): ExplorerPoint[] => {
-  const seen = new Set<string>();
-  const out: ExplorerPoint[] = [];
+  const seen = new Set<string>()
+  const out: ExplorerPoint[] = []
 
   for (const point of points) {
     const catalogHit = catalog.find(
-      (row) =>
-        row.id === point.id || row.aliasIds?.includes(point.id) === true,
-    );
-    const key = catalogHit?.hubId ?? catalogHit?.id ?? point.id;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(catalogHit ?? point);
+      (row) => row.id === point.id || row.aliasIds?.includes(point.id) === true
+    )
+    const key = catalogHit?.hubId ?? catalogHit?.id ?? point.id
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(catalogHit ?? point)
   }
 
-  return out;
-};
+  return out
+}

@@ -6,8 +6,7 @@ import { prepareBusStopDisruptions } from "@/lib/tfl/prepare-bus-stop-disruption
 
 export const metadata: Metadata = {
   title: "Draft: Bus disruption band",
-  description:
-    "Keep arrival rows fixed and show disruption as a compact band.",
+  description: "Keep arrival rows fixed and show disruption as a compact band.",
 }
 
 const SAMPLE_DISRUPTIONS = prepareBusStopDisruptions(
@@ -29,8 +28,8 @@ export default function BusDisruptionBandDraftPage() {
             Bus disruption band
           </h1>
           <p className="mt-2 max-w-prose text-muted-foreground">
-            Warning chips stay in the header. Arrival rows keep their height
-            — do not grow them to fit disruption copy.
+            Warning chips stay in the header. Arrival rows keep their height —
+            do not grow them to fit disruption copy.
           </p>
         </header>
         <BusArrivalsBoard

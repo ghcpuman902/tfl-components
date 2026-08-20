@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata } from "next"
 import {
   componentDocsMetadata,
   renderComponentDocs,
-} from "@/components/docs/render-component-docs";
+} from "@/components/docs/render-component-docs"
 
 export const generateMetadata = (): Promise<Metadata> =>
-  componentDocsMetadata("line-title");
+  componentDocsMetadata("line-title")
 
 export default function LineTitlePage() {
   return renderComponentDocs({
@@ -16,5 +16,5 @@ export default function LineTitlePage() {
       { href: "/docs/platform-chip", label: "Platform chip" },
       { href: "/docs/station-name-labels", label: "Station name labels" },
     ],
-  });
+  })
 }

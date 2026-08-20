@@ -1,12 +1,12 @@
-"use client";
+"use client"
 
-import { useId } from "react";
-import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip";
-import { UNDERGROUND_LINE_COLOURS } from "@/lib/tfl/brand-colours";
-import { applyBrandNightMethod } from "@/lib/tfl/dark-line-colours";
-import { LINE_DIAGRAM } from "@/lib/tfl/line-diagram";
+import { useId } from "react"
+import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
+import { UNDERGROUND_LINE_COLOURS } from "@/lib/tfl/brand-colours"
+import { applyBrandNightMethod } from "@/lib/tfl/dark-line-colours"
+import { LINE_DIAGRAM } from "@/lib/tfl/line-diagram"
 
-const U = UNDERGROUND_LINE_COLOURS;
+const U = UNDERGROUND_LINE_COLOURS
 
 const LINE_COLOR = {
   bakerloo: U.bakerloo.hex,
@@ -14,7 +14,7 @@ const LINE_COLOR = {
   victoria: U.victoria.hex,
   district: U.district.hex,
   circle: U.circle.hex,
-};
+}
 
 /** Core Underground dark-map fills — one each, no repeats. */
 const POINT_DOT_COLORS = [
@@ -25,17 +25,17 @@ const POINT_DOT_COLORS = [
   applyBrandNightMethod(U.piccadilly.hex),
   applyBrandNightMethod(U.hammersmithCity.hex),
   applyBrandNightMethod(U.metropolitan.hex),
-] as const;
+] as const
 
 /** Uniform satellite station-dot radius */
-const SATELLITE_R = 10;
-const K45 = Math.SQRT1_2;
-const SHADOW_D = 180;
+const SATELLITE_R = 10
+const K45 = Math.SQRT1_2
+const SHADOW_D = 180
 
 const shadowPath = (cx: number, cy: number, r: number) => {
-  const k = r * K45;
-  return `M ${cx - k} ${cy + k} L ${cx - k + SHADOW_D} ${cy + k + SHADOW_D} L ${cx + k + SHADOW_D} ${cy - k + SHADOW_D} L ${cx + k} ${cy - k} Z`;
-};
+  const k = r * K45
+  return `M ${cx - k} ${cy + k} L ${cx - k + SHADOW_D} ${cy + k + SHADOW_D} L ${cx + k + SHADOW_D} ${cy - k + SHADOW_D} L ${cx + k} ${cy - k} Z`
+}
 
 /** Perpendicular tick on a 45° line (slope = −1) centred at (cx, cy). */
 const perpTick = (cx: number, cy: number, half: number) => ({
@@ -43,22 +43,22 @@ const perpTick = (cx: number, cy: number, half: number) => ({
   y1: cy + half,
   x2: cx + half,
   y2: cy - half,
-});
+})
 
 /**
  * Issue 4 §5: tick thickness = line (1x); each side protrudes 0.66x.
  * Total length = 1x + 0.66x × 2 = 2.32x → half from centre = 1.16x.
  */
 const tickHalfLength = (lineX: number) =>
-  lineX / 2 + LINE_DIAGRAM.stationTick * lineX;
+  lineX / 2 + LINE_DIAGRAM.stationTick * lineX
 
 const leftTerminal = (offset: number, pad = 28) => {
-  const xAtTop = pad - offset;
+  const xAtTop = pad - offset
   if (xAtTop >= pad && xAtTop <= 372) {
-    return { x: xAtTop, y: pad };
+    return { x: xAtTop, y: pad }
   }
-  return { x: pad, y: pad + offset };
-};
+  return { x: pad, y: pad + offset }
+}
 
 const SATELLITES = [
   { cx: 140, cy: 40 },
@@ -68,7 +68,7 @@ const SATELLITES = [
   { cx: 70, cy: 150 },
   { cx: 130, cy: 165 },
   { cx: 320, cy: 160 },
-] as const;
+] as const
 
 const GrainFilter = ({ id }: { id: string }) => (
   <filter id={id} x="0%" y="0%" width="100%" height="100%">
@@ -84,19 +84,19 @@ const GrainFilter = ({ id }: { id: string }) => (
     />
     <feBlend mode="overlay" in="SourceGraphic" in2="noise" />
   </filter>
-);
+)
 
 export const PointsSvgArt = () => {
-  const rawId = useId();
-  const id = rawId.replace(/:/g, "");
-  const bgGradId = `points-bg-${id}`;
-  const grainFilterId = `points-grain-${id}`;
+  const rawId = useId()
+  const id = rawId.replace(/:/g, "")
+  const bgGradId = `points-bg-${id}`
+  const grainFilterId = `points-grain-${id}`
 
   return (
     <svg
       viewBox="0 0 400 225"
       preserveAspectRatio="xMidYMid slice"
-      className="size-full w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+      className="size-full h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
       aria-hidden="true"
     >
       <defs>
@@ -117,7 +117,12 @@ export const PointsSvgArt = () => {
         style={{ mixBlendMode: "overlay" }}
       />
 
-      <g stroke="#CBD5E1" strokeWidth="1.2" strokeDasharray="4 4" opacity="0.35">
+      <g
+        stroke="#CBD5E1"
+        strokeWidth="1.2"
+        strokeDasharray="4 4"
+        opacity="0.35"
+      >
         {SATELLITES.map((d) => (
           <line
             key={`link-${d.cx}-${d.cy}`}
@@ -160,75 +165,69 @@ export const PointsSvgArt = () => {
         strokeWidth="10"
       />
     </svg>
-  );
-};
+  )
+}
 
 type Route45 = {
-  id: string;
-  offset: number;
-  color: string;
-  strokeWidth: number;
+  id: string
+  offset: number
+  color: string
+  strokeWidth: number
   /** Hub in the middle of the card — line runs from here to bottom-right. */
-  fromHub?: { x: number; y: number };
-  stops: number[];
-};
+  fromHub?: { x: number; y: number }
+  stops: number[]
+}
 
-const SATELLITE_STROKE = 7;
+const SATELLITE_STROKE = 7
 
 const RouteStroke = ({
   route,
   left,
 }: {
-  route: Route45;
-  left: { x: number; y: number };
+  route: Route45
+  left: { x: number; y: number }
 }) => {
-  const far = { x: 520, y: 520 + route.offset };
-  const start = route.fromHub ?? left;
-  const end = far;
-  const x = route.strokeWidth;
-  const half = tickHalfLength(x);
-  const startTick = perpTick(start.x, start.y, half);
+  const far = { x: 520, y: 520 + route.offset }
+  const start = route.fromHub ?? left
+  const end = far
+  const x = route.strokeWidth
+  const half = tickHalfLength(x)
+  const startTick = perpTick(start.x, start.y, half)
 
   return (
     <g stroke={route.color} strokeLinecap="butt">
-      <line
-        x1={start.x}
-        y1={start.y}
-        x2={end.x}
-        y2={end.y}
-        strokeWidth={x}
-      />
+      <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} strokeWidth={x} />
       <line {...startTick} strokeWidth={x} />
       {route.stops.map((t) => {
-        const cx = start.x + (end.x - start.x) * t;
-        const cy = start.y + (end.y - start.y) * t;
-        if (cx < 8 || cx > 392 || cy < 8 || cy > 217) return null;
+        const cx = start.x + (end.x - start.x) * t
+        const cy = start.y + (end.y - start.y) * t
+        if (cx < 8 || cx > 392 || cy < 8 || cy > 217) return null
         return (
           <line
             key={t}
             {...perpTick(cx, cy, half)}
             strokeWidth={LINE_DIAGRAM.stationTick * x}
           />
-        );
+        )
       })}
     </g>
-  );
-};
+  )
+}
 
 const BUS_CHIPS = [
   { label: "12", x: 26, y: 34 },
   { label: "73", x: 64, y: 43 },
   { label: "N9", x: 84, y: 38 },
   { label: "38", x: 18, y: 81 },
-] as const;
+] as const
 
 export const LinesKindArt = () => {
-  const rawId = useId();
-  const id = rawId.replace(/:/g, "");
-  const bgGradId = `lines-bg-${id}`;
-  const grainFilterId = `lines-grain-${id}`;
+  const rawId = useId()
+  const id = rawId.replace(/:/g, "")
+  const bgGradId = `lines-bg-${id}`
+  const grainFilterId = `lines-grain-${id}`
 
-  const hub = { x: 200, y: 112 };
+  const hub = { x: 200, y: 112 }
 
   const routes: Route45[] = [
     {
@@ -267,7 +266,7 @@ export const LinesKindArt = () => {
       strokeWidth: SATELLITE_STROKE,
       stops: [0.16, 0.38],
     },
-  ];
+  ]
 
   return (
     <div className="relative size-full overflow-hidden transition-transform duration-500 group-hover:scale-105">
@@ -314,5 +313,5 @@ export const LinesKindArt = () => {
         </div>
       ))}
     </div>
-  );
-};
+  )
+}

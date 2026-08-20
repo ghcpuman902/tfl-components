@@ -1,24 +1,24 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import type { CSSProperties } from "react";
-import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ColoursInstallTabs } from "@/components/docs/colours-install-tabs";
-import ColoursDemo from "@/components/docs/demos/colours-demo";
-import { BwLineStylesCompare } from "@/components/docs/demos/bw-line-styles-compare";
-import { DocsPageHeader } from "@/components/docs/docs-page-header";
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { RelationshipBadges } from "@/components/docs/relationship-badges";
-import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code";
-import { getDocsEntry, getUsedBySlugs } from "@/lib/docs-catalog";
-import { REGISTRY_BASE } from "@/lib/site";
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+import type { CSSProperties } from "react"
+import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { ColoursInstallTabs } from "@/components/docs/colours-install-tabs"
+import ColoursDemo from "@/components/docs/demos/colours-demo"
+import { BwLineStylesCompare } from "@/components/docs/demos/bw-line-styles-compare"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
+import { RelationshipBadges } from "@/components/docs/relationship-badges"
+import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code"
+import { getDocsEntry, getUsedBySlugs } from "@/lib/docs-catalog"
+import { REGISTRY_BASE } from "@/lib/site"
 
 export const metadata: Metadata = {
   title: "Colours",
   description:
     "Official TfL line and mode colours. Arrivals boards and status already apply them.",
-};
+}
 
 const DATA_LINE_SNIPPET = `// data-line resolves --line-color / --line-ink for you
 <span
@@ -35,7 +35,7 @@ const DATA_LINE_SNIPPET = `// data-line resolves --line-color / --line-ink for y
   style={{ "--line-color": "#6D2077", "--line-ink": "#fff" }}
 >
   Northern
-</span>`;
+</span>`
 
 const MAP_LOOKUP_SNIPPET = `import {
   getLineColourBgClass,
@@ -57,33 +57,33 @@ const bg = getLineColourBgClass(line.id) // "bg-tfl-line-northern"
 // className={\`bg-tfl-line-\${line.id}\`}
 
 // ✅ Or bind dynamically without a utility class
-<span data-line={line.id} className="bg-[var(--line-color)]" />`;
+<span data-line={line.id} className="bg-[var(--line-color)]" />`
 
 const LINE_PRIMITIVE_SNIPPET = `import { LineName } from "@/components/tfl/brand/line-name"
 import { LineBadge } from "@/components/tfl/brand/line-badge"
 
 <LineName lineId="victoria" />
-<LineBadge lineId="central" />`;
+<LineBadge lineId="central" />`
 
 const CHIP_CLASS =
-  "inline-flex items-center bg-[var(--line-color)] px-2 py-0.5 text-xs font-bold text-[var(--line-ink)] tabular-nums";
+  "inline-flex items-center bg-[var(--line-color)] px-2 py-0.5 text-xs font-bold text-[var(--line-ink)] tabular-nums"
 
 const TFL_COLOURS_CSS = readFileSync(
   join(process.cwd(), "app/tfl-colours.css"),
-  "utf8",
-);
+  "utf8"
+)
 
 /** `:root` + `.dark` + `@theme` — the layers install adds to globals. */
 const TFL_COLOUR_TOKEN_LAYERS = (() => {
-  const start = TFL_COLOURS_CSS.indexOf(":root");
-  const pin = TFL_COLOURS_CSS.indexOf("/* Pin utilities");
-  if (start < 0) return TFL_COLOURS_CSS;
-  return TFL_COLOURS_CSS.slice(start, pin < 0 ? undefined : pin).trim();
-})();
+  const start = TFL_COLOURS_CSS.indexOf(":root")
+  const pin = TFL_COLOURS_CSS.indexOf("/* Pin utilities")
+  if (start < 0) return TFL_COLOURS_CSS
+  return TFL_COLOURS_CSS.slice(start, pin < 0 ? undefined : pin).trim()
+})()
 
 export default function FoundationsColoursPage() {
-  const entry = getDocsEntry("colours");
-  if (!entry) notFound();
+  const entry = getDocsEntry("colours")
+  if (!entry) notFound()
 
   return (
     <DocsReadableWidth>
@@ -276,18 +276,20 @@ export default function FoundationsColoursPage() {
               Northern uses a light fill and black ink
             </li>
             <li>
-              <code className="text-xs">data-tfl-northern=&quot;halo&quot;</code>{" "}
+              <code className="text-xs">
+                data-tfl-northern=&quot;halo&quot;
+              </code>{" "}
               — opt-in brand-black Northern with halo helpers when paint sits on
               an uncontrolled background
             </li>
             <li>
               <code className="text-xs">prefers-contrast</code> /{" "}
-              <code className="text-xs">forced-colors</code> — role tokens adapt;
-              forced colours use a real border
+              <code className="text-xs">forced-colors</code> — role tokens
+              adapt; forced colours use a real border
             </li>
             <li>
-              <code className="text-xs">data-tfl-colour=&quot;mono&quot;</code> —
-              greys <code className="text-xs">--line-color</code> /{" "}
+              <code className="text-xs">data-tfl-colour=&quot;mono&quot;</code>{" "}
+              — greys <code className="text-xs">--line-color</code> /{" "}
               <code className="text-xs">--line-ink</code> for chrome. Stroke
               motifs live on strips — see{" "}
               <a
@@ -315,9 +317,8 @@ export default function FoundationsColoursPage() {
             >
               large-print B&amp;W map
             </a>{" "}
-            key). Palette tokens{" "}
-            <code className="text-xs">--tfl-mono-ink</code> /{" "}
-            <code className="text-xs">paper</code> /{" "}
+            key). Palette tokens <code className="text-xs">--tfl-mono-ink</code>{" "}
+            / <code className="text-xs">paper</code> /{" "}
             <code className="text-xs">grey</code> /{" "}
             <code className="text-xs">light</code> invert in{" "}
             <code className="text-xs">.dark</code>. Only{" "}
@@ -341,12 +342,11 @@ export default function FoundationsColoursPage() {
             >
               vertical
             </a>{" "}
-            paint the motifs, via a{" "}
-            <code className="text-xs">mono</code> prop.
+            paint the motifs, via a <code className="text-xs">mono</code> prop.
           </p>
           <BwLineStylesCompare />
         </section>
       </article>
     </DocsReadableWidth>
-  );
+  )
 }

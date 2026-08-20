@@ -1,39 +1,39 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { Suspense } from "react";
-import Link from "next/link";
-import { DocsPageHeader } from "@/components/docs/docs-page-header";
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { InstallCommand } from "@/components/docs/install-command";
-import { CompactInstallButton } from "@/components/docs/compact-install-button";
-import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code";
-import { DataSourceLabel } from "@/components/docs/data-source-label";
-import { RelationshipBadges } from "@/components/docs/relationship-badges";
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
+import { Suspense } from "react"
+import Link from "next/link"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
+import { InstallCommand } from "@/components/docs/install-command"
+import { CompactInstallButton } from "@/components/docs/compact-install-button"
+import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code"
+import { DataSourceLabel } from "@/components/docs/data-source-label"
+import { RelationshipBadges } from "@/components/docs/relationship-badges"
 import {
   getDocsEntry,
   getUsedBySlugs,
   type DocsEntry,
-} from "@/lib/docs-catalog";
+} from "@/lib/docs-catalog"
 import {
   MAPLIBRE_EXAMPLE,
   LEAFLET_EXAMPLE,
   MAPBOX_EXAMPLE,
   GOOGLE_MAPS_EXAMPLE,
-} from "@/components/docs/vendor-maps/vendor-code-examples";
+} from "@/components/docs/vendor-maps/vendor-code-examples"
 import {
   MapGeographicDemo,
   MapLibreExample,
   LeafletExample,
   MapboxExample,
   GoogleMapsExample,
-} from "@/components/docs/map-geographic-lazy";
-import uniqueTrackManifest from "@/data/geography/unique-track/manifest.json";
+} from "@/components/docs/map-geographic-lazy"
+import uniqueTrackManifest from "@/data/geography/unique-track/manifest.json"
 
 export const metadata: Metadata = {
   title: "Map – Tube & Rail (Geo)",
   description:
     "Track geometry as GeoJSON for Tube, Elizabeth, Overground, DLR, and Tram. Use the packaged MapLibre map, or draw the same files in your own SDK.",
-};
+}
 
 const USAGE_SNIPPET = `import { TflGeographicMap } from "@/components/tfl/geography/tfl-geographic-map"
 
@@ -42,7 +42,7 @@ const USAGE_SNIPPET = `import { TflGeographicMap } from "@/components/tfl/geogra
 </div>
 
 <TflGeographicMap modes={["tube", "elizabeth"]} showStations={false} />
-<TflGeographicMap trackModel="dual" />`;
+<TflGeographicMap trackModel="dual" />`
 
 const BUNDLE_SNIPPET = `type TransitGeometryBundle = {
   lines: FeatureCollection<LineString, {
@@ -60,14 +60,14 @@ const BUNDLE_SNIPPET = `type TransitGeometryBundle = {
     lineIds: string[]   // ["bakerloo", "circle", ...]
     zone?: string       // "1"
   }>
-}`;
+}`
 
 const ExternalTextLink = ({
   href,
   children,
 }: {
-  href: string;
-  children: React.ReactNode;
+  href: string
+  children: React.ReactNode
 }) => (
   <a
     href={href}
@@ -77,11 +77,11 @@ const ExternalTextLink = ({
   >
     {children}
   </a>
-);
+)
 
 export default function MapsGeographicPage() {
-  const entry = getDocsEntry("maps-geographic");
-  if (!entry) notFound();
+  const entry = getDocsEntry("maps-geographic")
+  if (!entry) notFound()
 
   return (
     <DocsReadableWidth>
@@ -134,8 +134,8 @@ export default function MapsGeographicPage() {
             <p className="max-w-prose text-sm text-muted-foreground">
               This copies the component, types, and credit helpers. The GeoJSON
               still has to live somewhere your app can fetch. Copy{" "}
-              <code className="text-xs">public/data/geography/*.json</code>{" "}
-              into the project, or host those files on a CDN.
+              <code className="text-xs">public/data/geography/*.json</code> into
+              the project, or host those files on a CDN.
             </p>
           </section>
         ) : null}
@@ -151,10 +151,12 @@ export default function MapsGeographicPage() {
           </p>
           <p className="max-w-prose text-muted-foreground">
             The map draws unique track: directional twins merged into one
-            centreline, real branches kept, junctions welded to a shared
-            vertex. Toggle Both tracks in the preview for each direction as
-            its own polyline.{" "}
-            <code className="text-xs">/data/geography/{"{mode}"}-graph.json</code>{" "}
+            centreline, real branches kept, junctions welded to a shared vertex.
+            Toggle Both tracks in the preview for each direction as its own
+            polyline.{" "}
+            <code className="text-xs">
+              /data/geography/{"{mode}"}-graph.json
+            </code>{" "}
             is the same network as nodes and edges. Full OSM variants stay in
             the repo for analysis — do not put them on the map.
           </p>
@@ -163,11 +165,11 @@ export default function MapsGeographicPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left">
-                  <th className="pb-2 pr-4 font-medium">File</th>
-                  <th className="pb-2 pr-4 font-medium">Centreline</th>
-                  <th className="pb-2 pr-4 font-medium">Both tracks</th>
-                  <th className="pb-2 pr-4 font-medium">OSM variants</th>
-                  <th className="pb-2 pr-4 font-medium">Stations</th>
+                  <th className="pr-4 pb-2 font-medium">File</th>
+                  <th className="pr-4 pb-2 font-medium">Centreline</th>
+                  <th className="pr-4 pb-2 font-medium">Both tracks</th>
+                  <th className="pr-4 pb-2 font-medium">OSM variants</th>
+                  <th className="pr-4 pb-2 font-medium">Stations</th>
                 </tr>
               </thead>
               <tbody className="text-muted-foreground">
@@ -219,8 +221,7 @@ export default function MapsGeographicPage() {
             >
               Map – Bus (Geo)
             </Link>
-            . Pass derived dots as{" "}
-            <code className="text-xs">vehicles</code> —{" "}
+            . Pass derived dots as <code className="text-xs">vehicles</code> —{" "}
             <Link
               href="/docs/live-vehicle-tracking"
               className="text-foreground underline-offset-4 hover:underline"
@@ -345,9 +346,9 @@ export default function MapsGeographicPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left">
-                  <th className="pb-2 pr-4 font-medium">Prop</th>
-                  <th className="pb-2 pr-4 font-medium">Type</th>
-                  <th className="pb-2 pr-4 font-medium">Default</th>
+                  <th className="pr-4 pb-2 font-medium">Prop</th>
+                  <th className="pr-4 pb-2 font-medium">Type</th>
+                  <th className="pr-4 pb-2 font-medium">Default</th>
                 </tr>
               </thead>
               <tbody className="text-muted-foreground">
@@ -487,5 +488,5 @@ export default function MapsGeographicPage() {
         </section>
       </article>
     </DocsReadableWidth>
-  );
+  )
 }

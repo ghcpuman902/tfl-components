@@ -1,9 +1,4 @@
-import {
-  CloudDownload,
-  Combine,
-  PenLine,
-  type LucideIcon,
-} from "lucide-react"
+import { CloudDownload, Combine, PenLine, type LucideIcon } from "lucide-react"
 import {
   MAP_PRODUCT_USE_LABEL,
   NETWORK_MODEL_CLASSIFICATION_LABEL,
@@ -15,8 +10,7 @@ import { NETWORK_MODEL_STATUS } from "@/lib/tfl/network-model/status"
 import { cn } from "@/lib/utils"
 
 const CLASSIFICATION_CLASS: Record<NetworkModelClassification, string> = {
-  sufficient:
-    "bg-emerald-500/10 text-emerald-800 dark:text-emerald-300",
+  sufficient: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-300",
   fetch: "bg-sky-500/10 text-sky-800 dark:text-sky-300",
   process: "bg-amber-500/10 text-amber-900 dark:text-amber-300",
   external: "bg-rose-500/10 text-rose-800 dark:text-rose-300",
@@ -45,7 +39,7 @@ const ClassificationChip = ({
   <span
     className={cn(
       "inline-flex rounded-none px-1.5 py-0.5 text-xs font-medium",
-      CLASSIFICATION_CLASS[classification],
+      CLASSIFICATION_CLASS[classification]
     )}
   >
     {NETWORK_MODEL_CLASSIFICATION_LABEL[classification]}
@@ -85,7 +79,8 @@ export const NetworkModelStatusTable = () => (
   <div className="my-6 w-full overflow-x-auto">
     <table className="w-full caption-bottom text-sm">
       <caption className="sr-only">
-        Network-model records the four maps draw, with readiness, origin, and use
+        Network-model records the four maps draw, with readiness, origin, and
+        use
       </caption>
       <thead className="[&_tr]:border-b">
         <tr className="m-0 border-t border-b p-0">
@@ -129,7 +124,7 @@ export const NetworkModelStatusTable = () => (
             <td className="border px-4 py-2 text-left align-top whitespace-nowrap">
               {row.usedOn ? MAP_PRODUCT_USE_LABEL[row.usedOn] : null}
             </td>
-            <td className="border px-4 py-2 text-left align-top min-w-56">
+            <td className="min-w-56 border px-4 py-2 text-left align-top">
               {row.summary}
             </td>
           </tr>

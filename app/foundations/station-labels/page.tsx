@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { redirect } from "next/navigation"
 
 export default function FoundationsStationLabelsRedirect() {
-  redirect("/docs/station-name-labels");
+  redirect("/docs/station-name-labels")
 }

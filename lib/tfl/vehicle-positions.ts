@@ -1,13 +1,13 @@
-import type { LineString } from "geojson";
-import type { RealtimePrediction } from "tfl-ts";
-import type { VehiclePosition } from "@/lib/tfl/map-vehicles";
+import type { LineString } from "geojson"
+import type { RealtimePrediction } from "tfl-ts"
+import type { VehiclePosition } from "@/lib/tfl/map-vehicles"
 import {
   advanceHopPosition,
   ingestVehicleHops,
-} from "@/lib/tfl/vehicle-hop-engine";
-import type { StationCoord } from "@/lib/tfl/vehicle-progress";
+} from "@/lib/tfl/vehicle-hop-engine"
+import type { StationCoord } from "@/lib/tfl/vehicle-progress"
 
-export type { VehiclePosition, StationCoord };
+export type { VehiclePosition, StationCoord }
 
 /**
  * One-shot placement (no hop memory). Prefer {@link ingestVehicleHops}
@@ -19,10 +19,10 @@ export const locateVehicles = ({
   polylines,
   asOf,
 }: {
-  predictions: readonly RealtimePrediction[];
-  stationsById: ReadonlyMap<string, StationCoord>;
-  polylines: readonly LineString[];
-  asOf?: number;
+  predictions: readonly RealtimePrediction[]
+  stationsById: ReadonlyMap<string, StationCoord>
+  polylines: readonly LineString[]
+  asOf?: number
 }): VehiclePosition[] =>
   ingestVehicleHops({
     tracks: new Map(),
@@ -30,11 +30,11 @@ export const locateVehicles = ({
     stationsById,
     polylines,
     asOf: asOf ?? 0,
-  });
+  })
 
 /** Re-place a vehicle using remaining km / countdown as it elapses since `asOf`. */
 export const advanceVehiclePosition = (
   vehicle: VehiclePosition,
   nowMs: number,
-  polylines: readonly LineString[],
-): VehiclePosition => advanceHopPosition(vehicle, nowMs, polylines);
+  polylines: readonly LineString[]
+): VehiclePosition => advanceHopPosition(vehicle, nowMs, polylines)

@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   createContext,
@@ -7,54 +7,52 @@ import {
   useMemo,
   useState,
   type ReactNode,
-} from "react";
-import { LineStrip } from "@/components/tfl/diagram/line-strip";
-import type { LondonDay } from "@/lib/tfl/london-dates";
+} from "react"
+import { LineStrip } from "@/components/tfl/diagram/line-strip"
+import type { LondonDay } from "@/lib/tfl/london-dates"
 import type {
   WeekAheadLineRoute,
   WeekAheadStatusPayload,
-} from "@/lib/tfl/week-ahead-data";
-import { buildDayLineServiceState } from "@/lib/tfl/week-ahead-status";
-import { cn } from "@/lib/utils";
+} from "@/lib/tfl/week-ahead-data"
+import { buildDayLineServiceState } from "@/lib/tfl/week-ahead-status"
+import { cn } from "@/lib/utils"
 
 /** Absolute diagram unit so station names land near page `text-base` (~16px). */
-const HOMEPAGE_DIAGRAM_X = 8;
+const HOMEPAGE_DIAGRAM_X = 8
 
 type WeekAheadContextValue = {
-  days: LondonDay[];
-  selectedDay: LondonDay;
-  selectDay: (dateKey: string) => void;
-  status: WeekAheadStatusPayload | null;
-  setStatus: (status: WeekAheadStatusPayload) => void;
-};
+  days: LondonDay[]
+  selectedDay: LondonDay
+  selectDay: (dateKey: string) => void
+  status: WeekAheadStatusPayload | null
+  setStatus: (status: WeekAheadStatusPayload) => void
+}
 
-const WeekAheadContext = createContext<WeekAheadContextValue | null>(null);
+const WeekAheadContext = createContext<WeekAheadContextValue | null>(null)
 
 const useWeekAhead = (): WeekAheadContextValue => {
-  const value = useContext(WeekAheadContext);
+  const value = useContext(WeekAheadContext)
   if (!value) {
-    throw new Error("WeekAhead components must be used within WeekAheadShell");
+    throw new Error("WeekAhead components must be used within WeekAheadShell")
   }
-  return value;
-};
+  return value
+}
 
 type ShellProps = {
-  days: LondonDay[];
-  children: ReactNode;
-};
+  days: LondonDay[]
+  children: ReactNode
+}
 
 /**
  * Client shell: day controls + shared status bridge.
  * Route rows and status stream in as RSC children under Suspense.
  */
 export const WeekAheadShell = ({ days, children }: ShellProps) => {
-  const [selectedKey, setSelectedKey] = useState(
-    () => days[0]?.dateKey ?? "",
-  );
-  const [status, setStatus] = useState<WeekAheadStatusPayload | null>(null);
+  const [selectedKey, setSelectedKey] = useState(() => days[0]?.dateKey ?? "")
+  const [status, setStatus] = useState<WeekAheadStatusPayload | null>(null)
 
   const selectedDay =
-    days.find((day) => day.dateKey === selectedKey) ?? days[0]!;
+    days.find((day) => day.dateKey === selectedKey) ?? days[0]!
 
   const value = useMemo<WeekAheadContextValue>(
     () => ({
@@ -64,13 +62,13 @@ export const WeekAheadShell = ({ days, children }: ShellProps) => {
       status,
       setStatus,
     }),
-    [days, selectedDay, status],
-  );
+    [days, selectedDay, status]
+  )
 
   return (
     <WeekAheadContext.Provider value={value}>
       <section
-        className="w-full min-w-0 max-w-full space-y-8"
+        className="w-full max-w-full min-w-0 space-y-8"
         aria-labelledby="week-ahead-heading"
       >
         <div className="space-y-3">
@@ -98,27 +96,27 @@ export const WeekAheadShell = ({ days, children }: ShellProps) => {
         {children}
       </section>
     </WeekAheadContext.Provider>
-  );
-};
+  )
+}
 
 /** Streamed from the server under Suspense — publishes status into the shell. */
 export const WeekAheadStatusHydrator = ({
   status,
 }: {
-  status: WeekAheadStatusPayload;
+  status: WeekAheadStatusPayload
 }) => {
-  const { setStatus } = useWeekAhead();
+  const { setStatus } = useWeekAhead()
 
   useEffect(() => {
-    setStatus(status);
-  }, [setStatus, status]);
+    setStatus(status)
+  }, [setStatus, status])
 
-  return null;
-};
+  return null
+}
 
 /** One line row: stations always; status overlay when the hydrator has run. */
 export const WeekAheadLineRow = ({ route }: { route: WeekAheadLineRoute }) => {
-  const { selectedDay, status } = useWeekAhead();
+  const { selectedDay, status } = useWeekAhead()
 
   const service =
     status && !status.statusError
@@ -126,7 +124,7 @@ export const WeekAheadLineRow = ({ route }: { route: WeekAheadLineRoute }) => {
           route.spineIds,
           status.statusesByLineId[route.lineId] ?? [],
           selectedDay.startMs,
-          selectedDay.endMs,
+          selectedDay.endMs
         )
       : {
           kind: "good" as const,
@@ -134,9 +132,9 @@ export const WeekAheadLineRow = ({ route }: { route: WeekAheadLineRoute }) => {
           segments: [],
           forceLabelIds: [] as string[],
           stationOutOfUseIds: [] as string[],
-        };
+        }
 
-  const statusLabel = service.labels[0];
+  const statusLabel = service.labels[0]
 
   return (
     <article
@@ -157,7 +155,9 @@ export const WeekAheadLineRow = ({ route }: { route: WeekAheadLineRoute }) => {
           <p className="text-sm text-muted-foreground">{service.note}</p>
         ) : null}
         {route.routeError ? (
-          <p className="text-sm text-muted-foreground">Route sequence unavailable</p>
+          <p className="text-sm text-muted-foreground">
+            Route sequence unavailable
+          </p>
         ) : null}
       </div>
 
@@ -179,11 +179,11 @@ export const WeekAheadLineRow = ({ route }: { route: WeekAheadLineRoute }) => {
         </p>
       )}
     </article>
-  );
-};
+  )
+}
 
 const DayControls = () => {
-  const { days, selectedDay, selectDay } = useWeekAhead();
+  const { days, selectedDay, selectDay } = useWeekAhead()
 
   return (
     <div
@@ -192,7 +192,7 @@ const DayControls = () => {
       className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8"
     >
       {days.map((day, index) => {
-        const selected = day.dateKey === selectedDay.dateKey;
+        const selected = day.dateKey === selectedDay.dateKey
         return (
           <button
             key={day.dateKey}
@@ -209,23 +209,23 @@ const DayControls = () => {
               "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
               selected
                 ? "bg-foreground text-background"
-                : "bg-muted/60 text-foreground hover:bg-muted",
+                : "bg-muted/60 text-foreground hover:bg-muted"
             )}
           >
-            <span className="block font-semibold leading-tight">
+            <span className="block leading-tight font-semibold">
               {index <= 1 ? day.label : day.weekdayLong}
             </span>
             <span
               className={cn(
                 "mt-0.5 block text-xs",
-                selected ? "text-background/80" : "text-muted-foreground",
+                selected ? "text-background/80" : "text-muted-foreground"
               )}
             >
               {day.dayMonth}
             </span>
           </button>
-        );
+        )
       })}
     </div>
-  );
-};
+  )
+}

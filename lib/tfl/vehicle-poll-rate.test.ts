@@ -13,14 +13,14 @@ describe("computeBatchedPollIntervalMs", () => {
   it("turns 6 requests/min into a 10s interval", () => {
     assert.equal(
       computeBatchedPollIntervalMs({ targetRequestsPerMinute: 6 }),
-      10_000,
+      10_000
     )
   })
 
   it("does not go faster than the floor even at a huge target", () => {
     assert.equal(
       computeBatchedPollIntervalMs({ targetRequestsPerMinute: 500 }),
-      MAX_USER_POLL_MS,
+      MAX_USER_POLL_MS
     )
   })
 })

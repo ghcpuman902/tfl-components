@@ -1,25 +1,21 @@
-import { Suspense, type ReactNode } from "react";
-import Link from "next/link";
-import { GITHUB_REPO } from "@/lib/feedback/constants";
-import { getSiteStats } from "@/lib/site-stats";
-import {
-  SITE_AUTHOR,
-  SITE_INDEPENDENCE,
-} from "@/lib/site";
-import { APP_VERSION_LABEL } from "@/lib/version";
+import { Suspense, type ReactNode } from "react"
+import Link from "next/link"
+import { GITHUB_REPO } from "@/lib/feedback/constants"
+import { getSiteStats } from "@/lib/site-stats"
+import { SITE_AUTHOR, SITE_INDEPENDENCE } from "@/lib/site"
+import { APP_VERSION_LABEL } from "@/lib/version"
 
-const formatCount = (n: number) =>
-  new Intl.NumberFormat("en-GB").format(n);
+const formatCount = (n: number) => new Intl.NumberFormat("en-GB").format(n)
 
 const StatsFallback = () => (
   <p className="text-xs text-muted-foreground" aria-hidden>
     — visitors · — installs · — stars
   </p>
-);
+)
 
 const SiteFooterStats = async () => {
-  const { visitors, installs, stars } = await getSiteStats();
-  const showStars = stars !== null && stars > 0;
+  const { visitors, installs, stars } = await getSiteStats()
+  const showStars = stars !== null && stars > 0
 
   return (
     <p className="text-xs text-muted-foreground">
@@ -40,38 +36,32 @@ const SiteFooterStats = async () => {
         </>
       ) : null}
     </p>
-  );
-};
+  )
+}
 
 const FooterLink = ({
   href,
   children,
   external = false,
 }: {
-  href: string;
-  children: ReactNode;
-  external?: boolean;
+  href: string
+  children: ReactNode
+  external?: boolean
 }) => {
-  const className =
-    "underline-offset-4 hover:text-foreground hover:underline";
+  const className = "underline-offset-4 hover:text-foreground hover:underline"
   if (external) {
     return (
-      <a
-        href={href}
-        className={className}
-        target="_blank"
-        rel="noreferrer"
-      >
+      <a href={href} className={className} target="_blank" rel="noreferrer">
         {children}
       </a>
-    );
+    )
   }
   return (
     <Link href={href} className={className}>
       {children}
     </Link>
-  );
-};
+  )
+}
 
 export const SiteFooter = () => {
   return (
@@ -100,6 +90,8 @@ export const SiteFooter = () => {
               <span aria-hidden>·</span>
             </>
           ) : null}
+          <FooterLink href="/labs">Labs</FooterLink>
+          <span aria-hidden>·</span>
           <FooterLink href={GITHUB_REPO} external>
             Source
           </FooterLink>
@@ -128,5 +120,5 @@ export const SiteFooter = () => {
         </Suspense>
       </div>
     </footer>
-  );
-};
+  )
+}

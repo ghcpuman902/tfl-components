@@ -26,7 +26,10 @@ import {
   type VehicleHopTrack,
 } from "@/lib/tfl/vehicle-hop-engine"
 import type { VehiclePosition } from "@/lib/tfl/map-vehicles"
-import { railPolylinesForLine, railStationsById } from "@/lib/tfl/rail-vehicle-geometry"
+import {
+  railPolylinesForLine,
+  railStationsById,
+} from "@/lib/tfl/rail-vehicle-geometry"
 import type { VehicleViscosityParams } from "@/lib/tfl/vehicle-viscosity"
 
 const METRES_PER_DEG_LAT = 111_320
@@ -38,7 +41,7 @@ export const POLL_15_PER_MIN_MS = 4_000
 
 const distanceMetres = (
   left: { lat: number; lon: number },
-  right: { lat: number; lon: number },
+  right: { lat: number; lon: number }
 ): number => {
   const dx = (left.lon - right.lon) * METRES_PER_DEG_LNG
   const dy = (left.lat - right.lat) * METRES_PER_DEG_LAT
@@ -52,7 +55,7 @@ const asPredictions = (
     naptanId: string
     timeToStation: number
     destinationName: string
-  }[],
+  }[]
 ): RealtimePrediction[] =>
   rows.map(
     (row) =>
@@ -62,7 +65,7 @@ const asPredictions = (
         naptanId: row.naptanId,
         timeToStation: row.timeToStation,
         destinationName: row.destinationName,
-      }) as RealtimePrediction,
+      }) as RealtimePrediction
   )
 
 export type ViscosityScore = {
@@ -75,7 +78,7 @@ export type ViscosityScore = {
 const isPollFrame = (
   frameAt: number,
   startAt: number,
-  pollMs: number,
+  pollMs: number
 ): boolean => {
   const elapsed = frameAt - startAt
   const slot = Math.round(elapsed / pollMs) * pollMs
@@ -85,7 +88,7 @@ const isPollFrame = (
 export const scoreViscosityOnTrace = (
   trace: CentralVehicleTrace,
   params: VehicleViscosityParams,
-  pollMs = POLL_15_PER_MIN_MS,
+  pollMs = POLL_15_PER_MIN_MS
 ): ViscosityScore => {
   const stationsById = railStationsById()
   const polylines = railPolylinesForLine(trace.lineId)
@@ -113,7 +116,7 @@ export const scoreViscosityOnTrace = (
       truth.map((vehicle) => [
         vehicleTrackKey(vehicle.lineId, vehicle.vehicleId),
         vehicle,
-      ]),
+      ])
     )
 
     if (isPollFrame(frame.fetchedAt, startAt, pollMs)) {
@@ -134,10 +137,10 @@ export const scoreViscosityOnTrace = (
           vehicle,
           frame.fetchedAt,
           polylines,
-          params,
+          params
         )
         return [vehicleTrackKey(advanced.lineId, advanced.vehicleId), advanced]
-      }),
+      })
     )
 
     for (const [key, expected] of truthByKey) {
@@ -170,19 +173,19 @@ export const VISCOSITY_GRID: VehicleViscosityParams[] = [
           stationApproachKm,
           stationWeight,
           dwellSec,
-        })),
-      ),
-    ),
+        }))
+      )
+    )
   ),
 ]
 
 export const rankViscosityParams = (
   trace: CentralVehicleTrace,
   grid: readonly VehicleViscosityParams[] = VISCOSITY_GRID,
-  pollMs = POLL_15_PER_MIN_MS,
+  pollMs = POLL_15_PER_MIN_MS
 ): ViscosityScore[] => {
   const ranked = grid.map((params) =>
-    scoreViscosityOnTrace(trace, params, pollMs),
+    scoreViscosityOnTrace(trace, params, pollMs)
   )
   ranked.sort((left, right) => {
     const leftScore = left.meanErrorM + 0.35 * left.stationOvershootM

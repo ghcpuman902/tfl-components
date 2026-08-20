@@ -118,7 +118,7 @@ Migrated demos show a small pill: **Shared demo data** (site key / Server Action
 ### Discoverability
 
 - First-visit: no modal interrupt. Rely on sidebar footer + a one-line callout on interactive demos.
-- J8 / J9 primary nav stays Docs · Components · Blocks · Explorer · Board; the docs-sidebar key control is chrome, not a nav item. Board keys travel in the URL hash, not that store.
+- J22 / J23 primary nav stays Docs · Components · Explorer · Labs · Board on desktop (`Docs · Board · More` on mobile); the docs-sidebar key control is chrome, not a nav item. Board keys can travel in the URL hash or be saved on this browser.
 
 ### Hidden tabs
 

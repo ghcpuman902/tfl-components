@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata } from "next"
 import {
   componentDocsMetadata,
   renderComponentDocs,
-} from "@/components/docs/render-component-docs";
-import { WipNotice } from "@/components/docs/wip-notice";
+} from "@/components/docs/render-component-docs"
+import { WipNotice } from "@/components/docs/wip-notice"
 
 export const generateMetadata = (): Promise<Metadata> =>
-  componentDocsMetadata("branch-strip-horizontal");
+  componentDocsMetadata("branch-strip-horizontal")
 
 export default function BranchStripHorizontalDocsPage() {
   return renderComponentDocs({
@@ -21,5 +21,5 @@ export default function BranchStripHorizontalDocsPage() {
         Work in progress. More refinement is coming.
       </WipNotice>
     ),
-  });
+  })
 }

@@ -1,28 +1,27 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { Suspense } from "react";
-import Link from "next/link";
-import { DocsPageHeader } from "@/components/docs/docs-page-header";
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code";
-import { RelationshipBadges } from "@/components/docs/relationship-badges";
-import { LiveRailVehiclesDemo } from "@/components/docs/live-vehicle-tracking-lazy";
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
+import { Suspense } from "react"
+import Link from "next/link"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
+import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code"
+import { RelationshipBadges } from "@/components/docs/relationship-badges"
+import { LiveRailVehiclesDemo } from "@/components/docs/live-vehicle-tracking-lazy"
 import {
   getDocsEntry,
   getUsedBySlugs,
   type DocsEntry,
-} from "@/lib/docs-catalog";
+} from "@/lib/docs-catalog"
 
 export const metadata: Metadata = {
   title: "Live Tube & Rail vehicles",
-  description:
-    "Place trains on the geographic map from arrival countdowns.",
-};
+  description: "Place trains on the geographic map from arrival countdowns.",
+}
 
 const USAGE_SNIPPET = `<LiveRailVehicles
   railLineIds={["victoria", "northern"]}
   targetRequestsPerMinute="max"
-/>`;
+/>`
 
 const DATA_SNIPPET = `const arrivals = await client.line.getArrivals({
   lineIds: ["victoria", "northern"],
@@ -34,11 +33,11 @@ const point = positionBehindStop({
   fromStopId,
   toStopId,
   polylines, // unique-track hop between those stops
-})`;
+})`
 
 export default function LiveRailVehiclesPage() {
-  const entry = getDocsEntry("live-vehicle-tracking");
-  if (!entry) notFound();
+  const entry = getDocsEntry("live-vehicle-tracking")
+  if (!entry) notFound()
 
   return (
     <DocsReadableWidth>
@@ -86,8 +85,8 @@ export default function LiveRailVehiclesPage() {
             <code className="text-xs">line.getArrivals</code> only gives a{" "}
             <code className="text-xs">timeToStation</code> countdown. One call
             covers every tracked line. The tracker locks each train to the
-            unique-track hop between the previous and next stop, then walks
-            it forward as the countdown runs.
+            unique-track hop between the previous and next stop, then walks it
+            forward as the countdown runs.
           </p>
           <SyntaxHighlightedCode
             code={DATA_SNIPPET}
@@ -101,8 +100,8 @@ export default function LiveRailVehiclesPage() {
             Render
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Pass the line ids you want. A simple corridor uses hop-lock;
-            a junctioned line uses branch-aware placement. Paint goes through{" "}
+            Pass the line ids you want. A simple corridor uses hop-lock; a
+            junctioned line uses branch-aware placement. Paint goes through{" "}
             <Link
               href="/docs/map-geographic"
               className="text-foreground underline-offset-4 hover:underline"
@@ -121,5 +120,5 @@ export default function LiveRailVehiclesPage() {
         </section>
       </article>
     </DocsReadableWidth>
-  );
+  )
 }

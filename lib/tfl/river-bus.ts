@@ -9,7 +9,7 @@ export const RIVER_BUS_LINE_IDS = Object.values(LINE_STATION_SEQUENCES)
 export type RiverBusLineId = (typeof RIVER_BUS_LINE_IDS)[number]
 
 export const RIVER_BUS_LINE_ID_SET: ReadonlySet<string> = new Set(
-  RIVER_BUS_LINE_IDS,
+  RIVER_BUS_LINE_IDS
 )
 
 export const FERRY_PORT_STOP_TYPE = "NaptanFerryPort"
@@ -25,19 +25,19 @@ export const isRiverBusLineId = (lineId: string): boolean =>
   RIVER_BUS_LINE_ID_SET.has(canonicalRiverLineId(lineId))
 
 export const filterRiverBusLineIds = (
-  lineIds: readonly string[] | undefined,
+  lineIds: readonly string[] | undefined
 ): string[] =>
   [...new Set((lineIds ?? []).map(canonicalRiverLineId))].filter((id) =>
-    RIVER_BUS_LINE_ID_SET.has(id),
+    RIVER_BUS_LINE_ID_SET.has(id)
   )
 
 /** Keep only live river-bus predictions. Putney StopPoints also list bus routes. */
 export const filterRiverBusArrivals = <T extends { lineId?: string }>(
-  rows: readonly T[] | undefined,
+  rows: readonly T[] | undefined
 ): T[] => (rows ?? []).filter((row) => isRiverBusLineId(row.lineId ?? ""))
 
 export const pointHasRiverBusLine = (
-  lineIds: readonly string[] | undefined,
+  lineIds: readonly string[] | undefined
 ): boolean => (lineIds ?? []).some((id) => isRiverBusLineId(id))
 
 /**
@@ -46,7 +46,7 @@ export const pointHasRiverBusLine = (
  */
 export const riverRouteChipCopy = (
   lineId?: string,
-  lineName?: string,
+  lineName?: string
 ): { label: string; ariaLabel: string } => {
   const id = (lineId ?? "").trim().toLowerCase()
   const name = lineName?.trim()

@@ -20,8 +20,7 @@ const METERS_PER_DEG_LNG =
   METERS_PER_DEG_LAT * Math.cos((REF_LAT * Math.PI) / 180)
 const SPLIT_OFFSET_M = 6
 
-const pairKey = (a: string, b: string): string =>
-  [a, b].sort().join("|")
+const pairKey = (a: string, b: string): string => [a, b].sort().join("|")
 
 const neighborsOf = (
   nodeId: string,
@@ -49,7 +48,10 @@ const throughPairsAt = (
   return [...pairs]
 }
 
-const perfectMatchings = (neighbors: readonly string[], through: readonly string[]) => {
+const perfectMatchings = (
+  neighbors: readonly string[],
+  through: readonly string[]
+) => {
   const matchings: [string, string][] = []
   for (let i = 0; i < through.length; i += 1) {
     const first = through[i]!.split("|")
@@ -64,11 +66,7 @@ const perfectMatchings = (neighbors: readonly string[], through: readonly string
   return matchings
 }
 
-const offsetCoordinates = (
-  point: LngLat,
-  dxM: number,
-  dyM: number
-): LngLat => [
+const offsetCoordinates = (point: LngLat, dxM: number, dyM: number): LngLat => [
   point[0] + dxM / METERS_PER_DEG_LNG,
   point[1] + dyM / METERS_PER_DEG_LAT,
 ]
@@ -107,8 +105,10 @@ const exclusiveOffset = (
   if (length > 1) return { x: dx / length, y: dy / length }
   const fallback = nodeById.get(exclusiveA[0] ?? exclusiveB[0] ?? "")
   if (!fallback) return { x: 1, y: 0 }
-  const fx = (fallback.coordinates[0] - origin.coordinates[0]) * METERS_PER_DEG_LNG
-  const fy = (fallback.coordinates[1] - origin.coordinates[1]) * METERS_PER_DEG_LAT
+  const fx =
+    (fallback.coordinates[0] - origin.coordinates[0]) * METERS_PER_DEG_LNG
+  const fy =
+    (fallback.coordinates[1] - origin.coordinates[1]) * METERS_PER_DEG_LAT
   const fl = Math.hypot(fx, fy) || 1
   return { x: -fy / fl, y: fx / fl }
 }

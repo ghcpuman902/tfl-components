@@ -1,25 +1,25 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { DocsPageHeader } from "@/components/docs/docs-page-header";
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { getDocsEntry, type DocsEntry } from "@/lib/docs-catalog";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
+import { getDocsEntry, type DocsEntry } from "@/lib/docs-catalog"
 
 type ComingSoonPageProps = {
-  slug: string;
-};
+  slug: string
+}
 
 export const comingSoonMetadata = (slug: string): Metadata => {
-  const entry = getDocsEntry(slug);
+  const entry = getDocsEntry(slug)
   return {
     title: entry?.title ?? "Coming soon",
     description: entry?.description,
-  };
-};
+  }
+}
 
 export const ComingSoonDocsPage = ({ slug }: ComingSoonPageProps) => {
-  const entry = getDocsEntry(slug);
-  if (!entry) notFound();
+  const entry = getDocsEntry(slug)
+  if (!entry) notFound()
 
   return (
     <DocsReadableWidth>
@@ -37,5 +37,5 @@ export const ComingSoonDocsPage = ({ slug }: ComingSoonPageProps) => {
         </p>
       </article>
     </DocsReadableWidth>
-  );
-};
+  )
+}

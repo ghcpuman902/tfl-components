@@ -1,20 +1,19 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowRightIcon } from "lucide-react";
-import { HomeEditorial } from "@/components/docs/home-editorial";
-import { HomeHeroPhotos } from "@/components/docs/home-hero-photos";
-import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { ArrowRightIcon } from "lucide-react"
+import { HomeEditorial } from "@/components/docs/home-editorial"
+import { HomeHeroPhotos } from "@/components/docs/home-hero-photos"
+import { SITE_NAME } from "@/lib/site"
+import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
-  title: {
-    absolute: SITE_NAME,
-  },
-  description: SITE_DESCRIPTION,
-};
+export const metadata: Metadata = pageMetadata({
+  ...ROUTE_PAGE_META.home,
+  absoluteTitle: true,
+})
 
 export default function HomePage() {
   return (
-    <div className="@container/main w-full min-w-0 max-w-full overflow-x-clip">
+    <div className="@container/main w-full max-w-full min-w-0 overflow-x-clip">
       <HomeEditorial
         intro={
           <div className="grid grid-cols-1 gap-8 pt-0 pb-16 md:grid-cols-12 md:items-stretch md:gap-10 md:py-20">
@@ -68,5 +67,5 @@ export default function HomePage() {
         }
       />
     </div>
-  );
+  )
 }

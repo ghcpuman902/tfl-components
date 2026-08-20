@@ -1,17 +1,17 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { SectionHub } from "@/components/docs/section-hub";
-import { getDocsEntry } from "@/lib/docs-catalog";
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
+import { SectionHub } from "@/components/docs/section-hub"
+import { getDocsEntry } from "@/lib/docs-catalog"
 
 export const metadata: Metadata = {
   title: "Drafts",
   description:
     "Incubation for experimental work until promotion criteria are met.",
-};
+}
 
 export default function DraftsIndexPage() {
-  const entry = getDocsEntry("drafts-index");
-  if (!entry) notFound();
+  const entry = getDocsEntry("drafts-index")
+  if (!entry) notFound()
 
   return (
     <SectionHub
@@ -32,8 +32,8 @@ export default function DraftsIndexPage() {
         },
         { href: "/tools", label: "Tools — promoted playgrounds" },
         { href: "/docs/components", label: "Components — promoted boards" },
-        { href: "/blocks", label: "Blocks — composed patterns" },
+        { href: "/labs", label: "Labs — experimental compositions" },
       ]}
     />
-  );
+  )
 }

@@ -17,11 +17,11 @@ import {
   type ContractedTopology,
 } from "@/lib/tfl/geometry/contract-track-topology"
 import { minutesForHop } from "@/lib/tfl/geometry/line-hop-times"
-import type { LngLat, TrackStation } from "@/lib/tfl/geometry/transit-track-graph"
-import {
-  hopGraphForRailLine,
-  type HopGraph,
-} from "@/lib/tfl/vehicle-hop-graph"
+import type {
+  LngLat,
+  TrackStation,
+} from "@/lib/tfl/geometry/transit-track-graph"
+import { hopGraphForRailLine, type HopGraph } from "@/lib/tfl/vehicle-hop-graph"
 import type { RoutePolyline } from "@/lib/tfl/vehicle-progress"
 
 export type HopSegment = {
@@ -54,7 +54,7 @@ const lineLengthKm = (coordinates: readonly LngLat[]): number => {
 
 export const stationsFromBundleForLine = (
   bundle: TransitGeometryBundle,
-  lineId: string,
+  lineId: string
 ): TrackStation[] =>
   (bundle.stations.features ?? []).flatMap((feature) => {
     if (feature.geometry?.type !== "Point") return []
@@ -73,16 +73,16 @@ export const stationsFromBundleForLine = (
 
 export const featuresForLine = (
   bundle: TransitGeometryBundle,
-  lineId: string,
+  lineId: string
 ): Feature<LineString, LineSegmentProperties>[] =>
   (bundle.lines.features ?? []).filter(
     (feature): feature is Feature<LineString, LineSegmentProperties> =>
       feature.geometry?.type === "LineString" &&
-      feature.properties?.lineId === lineId,
+      feature.properties?.lineId === lineId
   )
 
 const adjacency = (
-  topology: ContractedTopology,
+  topology: ContractedTopology
 ): Map<string, { to: string; edge: ContractedEdge }[]> => {
   const map = new Map<string, { to: string; edge: ContractedEdge }[]>()
   const add = (from: string, to: string, edge: ContractedEdge) => {
@@ -100,10 +100,11 @@ const adjacency = (
 
 const edgeLengthM = (
   edge: ContractedEdge,
-  nodeById: ReadonlyMap<string, ContractedNode>,
+  nodeById: ReadonlyMap<string, ContractedNode>
 ): number => {
   const coordinates = edge.coordinates
-  if (coordinates && coordinates.length >= 2) return lineLengthKm(coordinates) * 1000
+  if (coordinates && coordinates.length >= 2)
+    return lineLengthKm(coordinates) * 1000
   const from = nodeById.get(edge.from)
   const to = nodeById.get(edge.to)
   if (!from || !to) return Number.POSITIVE_INFINITY
@@ -113,18 +114,18 @@ const edgeLengthM = (
 const nodesForStation = (
   topology: ContractedTopology,
   stationId: string,
-  canonical: (id: string) => string,
+  canonical: (id: string) => string
 ): ContractedNode[] => {
   const root = canonical(stationId)
   return topology.nodes.filter(
-    (node) => node.stationId != null && canonical(node.stationId) === root,
+    (node) => node.stationId != null && canonical(node.stationId) === root
   )
 }
 
 const concatPath = (
   edges: readonly ContractedEdge[],
   startId: string,
-  nodeById: ReadonlyMap<string, ContractedNode>,
+  nodeById: ReadonlyMap<string, ContractedNode>
 ): LngLat[] => {
   const out: LngLat[] = []
   let at = startId
@@ -150,7 +151,7 @@ const shortestHopPath = (
   starts: readonly ContractedNode[],
   ends: ReadonlySet<string>,
   adj: ReadonlyMap<string, { to: string; edge: ContractedEdge }[]>,
-  nodeById: ReadonlyMap<string, ContractedNode>,
+  nodeById: ReadonlyMap<string, ContractedNode>
 ): { edges: ContractedEdge[]; startId: string } | null => {
   const dist = new Map<string, number>()
   const prev = new Map<string, { nodeId: string; edge: ContractedEdge }>()
@@ -197,9 +198,7 @@ const shortestHopPath = (
   return { edges, startId: cursor }
 }
 
-const passengerHops = (
-  graph: HopGraph,
-): { from: string; to: string }[] => {
+const passengerHops = (graph: HopGraph): { from: string; to: string }[] => {
   const hops: { from: string; to: string }[] = []
   const seen = new Set<string>()
   for (const [from, tos] of graph.adjacent) {
@@ -221,7 +220,7 @@ export const hopSegmentsFromBundle = (
     hopMinutes?: Record<string, number>
     graph?: HopGraph
     stations?: readonly TrackStation[]
-  },
+  }
 ): HopSegment[] => {
   const graph = options?.graph ?? hopGraphForRailLine(lineId)
   const features = featuresForLine(bundle, lineId)
@@ -245,7 +244,7 @@ export const hopSegmentsFromBundle = (
       fromNodes,
       new Set(toNodes.map((node) => node.id)),
       adj,
-      nodeById,
+      nodeById
     )
     if (!path) continue
     const coordinates = concatPath(path.edges, path.startId, nodeById)
@@ -256,7 +255,7 @@ export const hopSegmentsFromBundle = (
       options?.hopMinutes,
       hop.from,
       hop.to,
-      graph.canonical,
+      graph.canonical
     )
     segments.push({
       lineId,
@@ -272,7 +271,7 @@ export const hopSegmentsFromBundle = (
 }
 
 export const hopSegmentsToPolylines = (
-  segments: readonly HopSegment[],
+  segments: readonly HopSegment[]
 ): RoutePolyline[] =>
   segments.map((segment) => ({
     lineId: segment.lineId,

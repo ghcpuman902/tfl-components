@@ -23,11 +23,7 @@ import {
   formatHeadway,
   patternLabel,
 } from "@/lib/tfl/network-model/line-slice"
-import {
-  MINI_MAP_HEIGHT,
-  MINI_MAP_WIDTH,
-  miniPath,
-} from "./relation-mini-map"
+import { MINI_MAP_HEIGHT, MINI_MAP_WIDTH, miniPath } from "./relation-mini-map"
 
 type OsmVariantSummary = {
   relationId: number
@@ -201,7 +197,12 @@ const RelationMiniMap = ({
 )
 
 type TflPatternRow =
-  | { kind: "pair"; id: string; outbound: ServicePatternEvidence; inbound: ServicePatternEvidence }
+  | {
+      kind: "pair"
+      id: string
+      outbound: ServicePatternEvidence
+      inbound: ServicePatternEvidence
+    }
   | { kind: "single"; id: string; pattern: ServicePatternEvidence }
 
 const sequenceWidth = (stationCount: number): number =>
@@ -220,9 +221,7 @@ const tflPatternRows = (
   dataset: ServicePatternDataset | null
 ): TflPatternRow[] => {
   if (!dataset) return []
-  const byId = new Map(
-    dataset.patterns.map((pattern) => [pattern.id, pattern])
-  )
+  const byId = new Map(dataset.patterns.map((pattern) => [pattern.id, pattern]))
   return dataset.directionPairs.flatMap((pair): TflPatternRow[] => {
     const patterns = pair.patternIds.flatMap((patternId) => {
       const pattern = byId.get(patternId)
@@ -455,8 +454,8 @@ export const RoutePatternInspector = ({
           <div>
             <h3 className="text-base font-medium">Inspect snapshot patterns</h3>
             <p className="text-xs text-muted-foreground">
-              Collapsed call sequences from the optional timetable snapshot.
-              Not an input to the four maps.
+              Collapsed call sequences from the optional timetable snapshot. Not
+              an input to the four maps.
             </p>
           </div>
           <div className="overflow-hidden rounded-lg border border-border">
@@ -608,10 +607,7 @@ export const RoutePatternInspector = ({
                 return (
                   <tr key={variant.relationId} className="align-middle">
                     <td className="px-3 py-2">
-                      <RelationMiniMap
-                        variant={variant}
-                        color={color}
-                      />
+                      <RelationMiniMap variant={variant} color={color} />
                     </td>
                     <td className="px-3 py-2 font-mono">
                       <a

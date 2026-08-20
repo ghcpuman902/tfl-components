@@ -183,7 +183,7 @@ describe("network model line slice", () => {
     assert.equal(topology.edges.length, 2)
     assert.equal(
       topology.nodes.filter((node) => node.kind === "terminus").length,
-      2,
+      2
     )
   })
 
@@ -200,12 +200,20 @@ describe("network model line slice", () => {
     const slice = sliceNetworkModel(snapshot, "elizabeth")
     assert.ok(slice)
     const merged = mergeSnapshotStations(slice.stations)
-    assert.equal(merged.canonicalId("910GPADTON"), merged.canonicalId("940GZZLUPAC"))
+    assert.equal(
+      merged.canonicalId("910GPADTON"),
+      merged.canonicalId("940GZZLUPAC")
+    )
     const topology = snapshotPassengerTopology(slice)
     const names = topology.nodes.map((node) => node.stationName)
-    assert.equal(names.filter((name) => /paddington/i.test(name ?? "")).length, 1)
+    assert.equal(
+      names.filter((name) => /paddington/i.test(name ?? "")).length,
+      1
+    )
     const skip = topology.edges.filter((edge) => isTimetableSkip(edge.service))
-    const spine = topology.edges.filter((edge) => !isTimetableSkip(edge.service))
+    const spine = topology.edges.filter(
+      (edge) => !isTimetableSkip(edge.service)
+    )
     assert.ok(skip.length >= 1)
     assert.ok(spine.length >= 2)
   })
@@ -219,7 +227,7 @@ describe("network model line slice", () => {
     const hop = (left: string, right: string) =>
       topology.edges.find((edge) => {
         const names = [nameOf(edge.from), nameOf(edge.to)].map((name) =>
-          name.toLowerCase(),
+          name.toLowerCase()
         )
         return names.includes(left) && names.includes(right)
       })
@@ -232,16 +240,22 @@ describe("network model line slice", () => {
     assert.equal(
       classifySkipHop(
         [{ patternId: "p", daysOfWeek: ["sunday"], validFrom: "2026-01-01" }],
-        [],
+        []
       ),
-      "occasional",
+      "occasional"
     )
     assert.equal(
       classifySkipHop(
         [
           {
             patternId: "p",
-            daysOfWeek: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+            daysOfWeek: [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+            ],
             validFrom: "2026-01-01",
           },
         ],
@@ -251,16 +265,22 @@ describe("network model line slice", () => {
             timeWindow: "weekday 07:00–09:30",
             headwaySeconds: 180,
           },
-        ],
+        ]
       ),
-      "fast",
+      "fast"
     )
     assert.equal(
       classifySkipHop(
         [
           {
             patternId: "p",
-            daysOfWeek: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+            daysOfWeek: [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+            ],
             validFrom: "2026-01-01",
           },
         ],
@@ -270,9 +290,9 @@ describe("network model line slice", () => {
             timeWindow: "weekday 19:00–24:00",
             headwaySeconds: 810,
           },
-        ],
+        ]
       ),
-      "occasional",
+      "occasional"
     )
   })
 
@@ -286,7 +306,7 @@ describe("network model line slice", () => {
     const collapsed = movements.find(
       (movement) =>
         movement.from.endsWith("910GEALING") &&
-        movement.via.endsWith("910GACTONML"),
+        movement.via.endsWith("910GACTONML")
     )
     assert.ok(collapsed)
     assert.deepEqual(collapsed.patternIds, [
@@ -297,8 +317,14 @@ describe("network model line slice", () => {
 
   it("formats day classes and headways", () => {
     assert.equal(
-      formatDaysOfWeek(["monday", "tuesday", "wednesday", "thursday", "friday"]),
-      "Mon–Fri",
+      formatDaysOfWeek([
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+      ]),
+      "Mon–Fri"
     )
     assert.equal(formatHeadway(300), "5 min")
   })

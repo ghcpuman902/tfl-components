@@ -1,20 +1,20 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import { DocsPageHeader } from "@/components/docs/docs-page-header";
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { RelationshipBadges } from "@/components/docs/relationship-badges";
-import { getDocsEntry } from "@/lib/docs-catalog";
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
+import Link from "next/link"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
+import { RelationshipBadges } from "@/components/docs/relationship-badges"
+import { getDocsEntry } from "@/lib/docs-catalog"
 
 export const metadata: Metadata = {
   title: "Schematic & network maps",
   description:
     "Line diagrams, branches, and journeys. Topology, not geography. A full multi-line network map is not shipped yet.",
-};
+}
 
 export default function MapsSchematicPage() {
-  const entry = getDocsEntry("maps-schematic");
-  if (!entry) notFound();
+  const entry = getDocsEntry("maps-schematic")
+  if (!entry) notFound()
 
   return (
     <DocsReadableWidth>
@@ -32,7 +32,10 @@ export default function MapsSchematicPage() {
         />
 
         <section className="space-y-4">
-          <h2 id="diagram-kinds" className="text-lg font-semibold text-foreground">
+          <h2
+            id="diagram-kinds"
+            className="text-lg font-semibold text-foreground"
+          >
             Diagram kinds
           </h2>
           <dl className="space-y-4 text-sm">
@@ -49,9 +52,7 @@ export default function MapsSchematicPage() {
               </dd>
             </div>
             <div>
-              <dt className="font-medium text-foreground">
-                Branched route
-              </dt>
+              <dt className="font-medium text-foreground">Branched route</dt>
               <dd className="text-muted-foreground">
                 Lanes and joins.{" "}
                 <Link
@@ -102,7 +103,7 @@ export default function MapsSchematicPage() {
             </Link>
             {" · "}
             <Link
-              href="/blocks/week-ahead"
+              href="/labs/week-ahead"
               className="text-foreground underline-offset-4 hover:underline"
             >
               Week ahead
@@ -111,5 +112,5 @@ export default function MapsSchematicPage() {
         </section>
       </article>
     </DocsReadableWidth>
-  );
+  )
 }

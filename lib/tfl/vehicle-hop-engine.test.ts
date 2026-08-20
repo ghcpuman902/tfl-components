@@ -42,7 +42,7 @@ const prediction = (fields: {
 const ingest = (
   tracks: Map<string, VehicleHopTrack>,
   rows: RealtimePrediction[],
-  asOf: number,
+  asOf: number
 ) =>
   ingestVehicleHops({
     tracks,
@@ -63,7 +63,7 @@ describe("ingestVehicleHops", () => {
         prediction({ vehicleId: "241", naptanId: "A", timeToStation: 30 }),
         prediction({ vehicleId: "241", naptanId: "B", timeToStation: 90 }),
       ],
-      1_000,
+      1_000
     )
     assert.ok(position)
     assert.ok(position.lon < -0.14)
@@ -76,13 +76,13 @@ describe("ingestVehicleHops", () => {
     const [first] = ingest(
       tracks,
       [prediction({ vehicleId: "241", naptanId: "A", timeToStation: 30 })],
-      1_000,
+      1_000
     )
     assert.ok(first)
     const [second] = ingest(
       tracks,
       [prediction({ vehicleId: "241", naptanId: "A", timeToStation: 80 })],
-      1_000 + 5_000,
+      1_000 + 5_000
     )
     assert.ok(second)
     assert.ok((second.remainingKm ?? 9) <= (first.remainingKm ?? 0))
@@ -94,12 +94,12 @@ describe("ingestVehicleHops", () => {
     ingest(
       tracks,
       [prediction({ vehicleId: "241", naptanId: "A", timeToStation: 8 })],
-      1_000,
+      1_000
     )
     const [next] = ingest(
       tracks,
       [prediction({ vehicleId: "241", naptanId: "B", timeToStation: 40 })],
-      2_000,
+      2_000
     )
     assert.ok(next)
     assert.equal(next.nextStopId, "B")
@@ -111,12 +111,12 @@ describe("ingestVehicleHops", () => {
     ingest(
       tracks,
       [prediction({ vehicleId: "241", naptanId: "A", timeToStation: 20 })],
-      1_000,
+      1_000
     )
     const [next] = ingest(
       tracks,
       [prediction({ vehicleId: "241", naptanId: "C", timeToStation: 10 })],
-      2_000,
+      2_000
     )
     assert.ok(next)
     assert.equal(next.nextStopId, "A")
@@ -129,12 +129,12 @@ describe("ingestVehicleHops", () => {
     ingest(
       tracks,
       [prediction({ vehicleId: "241", naptanId: "A", timeToStation: 0 })],
-      1_000,
+      1_000
     )
     const later = ingest(
       tracks,
       [prediction({ vehicleId: "241", naptanId: "A", timeToStation: 0 })],
-      1_000 + 51_000,
+      1_000 + 51_000
     )
     assert.equal(later.length, 0)
     assert.equal(tracks.size, 0)
@@ -145,7 +145,7 @@ describe("ingestVehicleHops", () => {
     ingest(
       tracks,
       [prediction({ vehicleId: "241", naptanId: "A", timeToStation: 0 })],
-      1_000,
+      1_000
     )
     const [held] = ingestVehicleHops({
       tracks,
@@ -216,7 +216,7 @@ describe("ingestVehicleHops", () => {
           lineId: "northern",
         }),
       ],
-      1_000,
+      1_000
     )
     assert.equal(placed.length, 2)
     assert.equal(tracks.size, 2)

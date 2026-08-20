@@ -1,36 +1,36 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { Suspense } from "react";
-import Link from "next/link";
-import { DocsPageHeader } from "@/components/docs/docs-page-header";
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width";
-import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code";
-import { RelationshipBadges } from "@/components/docs/relationship-badges";
-import { LiveBusVehiclesDemo } from "@/components/docs/live-vehicle-tracking-lazy";
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
+import { Suspense } from "react"
+import Link from "next/link"
+import { DocsPageHeader } from "@/components/docs/docs-page-header"
+import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
+import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code"
+import { RelationshipBadges } from "@/components/docs/relationship-badges"
+import { LiveBusVehiclesDemo } from "@/components/docs/live-vehicle-tracking-lazy"
 import {
   getDocsEntry,
   getUsedBySlugs,
   type DocsEntry,
-} from "@/lib/docs-catalog";
+} from "@/lib/docs-catalog"
 
 export const metadata: Metadata = {
   title: "Live buses",
   description: "Place buses on a route map from live GPS.",
-};
+}
 
 const USAGE_SNIPPET = `<LiveBusVehicles
   busRouteIds={["24"]}
   targetRequestsPerMinute="max"
   busPositionSource="auto"
-/>`;
+/>`
 
 const DATA_SNIPPET = `const activities = await fetchBodsVehicleActivities({
   boundingBox: [-0.18, 51.48, -0.10, 51.56],
-})`;
+})`
 
 export default function LiveBusVehiclesPage() {
-  const entry = getDocsEntry("live-bus-vehicles");
-  if (!entry) notFound();
+  const entry = getDocsEntry("live-bus-vehicles")
+  if (!entry) notFound()
 
   return (
     <DocsReadableWidth>
@@ -116,5 +116,5 @@ export default function LiveBusVehiclesPage() {
         </section>
       </article>
     </DocsReadableWidth>
-  );
+  )
 }

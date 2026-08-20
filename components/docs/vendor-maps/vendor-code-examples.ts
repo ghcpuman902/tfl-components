@@ -60,7 +60,7 @@ map.on("load", () => {
       "text-halo-width": 1.6,
     },
   });
-});`;
+});`
 
 export const LEAFLET_EXAMPLE = `import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -92,7 +92,7 @@ L.geoJSON(tubeGeometry.stations, {
       weight: 1.25,
       fillOpacity: 1,
     }),
-}).addTo(map);`;
+}).addTo(map);`
 
 export const MAPBOX_EXAMPLE = `import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -133,7 +133,7 @@ map.on("load", () => {
       "circle-stroke-color": "#111827",
     },
   });
-});`;
+});`
 
 export const GOOGLE_MAPS_EXAMPLE = `import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 
@@ -170,4 +170,4 @@ map.data.setStyle((feature) => {
     strokeWeight: 3,
     strokeOpacity: 0.9,
   };
-});`;
+});`

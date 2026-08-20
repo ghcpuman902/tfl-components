@@ -17,7 +17,7 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test 'lib/tfl/**/*.test.ts' 'lib/feedback/**/*.test.ts' && tsx scripts/check-no-server-appkey.ts && tsx scripts/check-registry-urls.ts && tsx scripts/verify-track-graph.ts",
+    "test": "tsx --test 'lib/tfl/**/*.test.ts' 'lib/feedback/**/*.test.ts' 'lib/site-nav.test.ts' 'lib/site-metadata.test.ts' && tsx scripts/check-no-server-appkey.ts && tsx scripts/check-registry-urls.ts && tsx scripts/verify-track-graph.ts",
     "geography:unique-track": "tsx scripts/snapshot-unique-track-geometry.ts",
     "hop-times:snapshot": "tsx scripts/snapshot-line-hop-times.ts",
     "network-model:snapshot": "tsx scripts/snapshot-network-model.ts",
@@ -63,6 +63,7 @@
     "tailwind-merge": "^3.6.0",
     "tfl-ts": "^2.10.0",
     "tw-animate-css": "^1.4.0",
+    "uqr": "^0.1.3",
     "zod": "^4.4.3"
   },
   "devDependencies": {

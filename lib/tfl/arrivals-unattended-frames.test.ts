@@ -8,7 +8,11 @@ import {
 import type { ArrivalsPreparedRow } from "@/lib/tfl/arrivals-prepare"
 import type { RealtimePrediction } from "tfl-ts"
 
-const row = (key: string, index: number, seconds = 60): ArrivalsPreparedRow => ({
+const row = (
+  key: string,
+  index: number,
+  seconds = 60
+): ArrivalsPreparedRow => ({
   key,
   sourceIndex: index,
   arrival: { id: key, timeToStation: seconds } as RealtimePrediction,
@@ -19,7 +23,10 @@ const keys = (frames: ReturnType<typeof buildPinnedFrames>["frames"]) =>
 
 describe("chunkWithFinalBackfill", () => {
   it("backfills only the final short window", () => {
-    assert.deepEqual(chunkWithFinalBackfill([1, 2, 3], 2), [[1, 2], [2, 3]])
+    assert.deepEqual(chunkWithFinalBackfill([1, 2, 3], 2), [
+      [1, 2],
+      [2, 3],
+    ])
     assert.deepEqual(chunkWithFinalBackfill([1, 2, 3, 4], 2), [
       [1, 2],
       [3, 4],
@@ -38,10 +45,36 @@ describe("chunkWithFinalBackfill", () => {
 describe("buildPinnedFrames", () => {
   it("pins the first arrival and chunks later slots with final-window backfill", () => {
     const cases: [number, string[][]][] = [
-      [4, [["r1", "r2", "r3"], ["r1", "r3", "r4"]]],
-      [5, [["r1", "r2", "r3"], ["r1", "r4", "r5"]]],
-      [6, [["r1", "r2", "r3"], ["r1", "r4", "r5"], ["r1", "r5", "r6"]]],
-      [7, [["r1", "r2", "r3"], ["r1", "r4", "r5"], ["r1", "r6", "r7"]]],
+      [
+        4,
+        [
+          ["r1", "r2", "r3"],
+          ["r1", "r3", "r4"],
+        ],
+      ],
+      [
+        5,
+        [
+          ["r1", "r2", "r3"],
+          ["r1", "r4", "r5"],
+        ],
+      ],
+      [
+        6,
+        [
+          ["r1", "r2", "r3"],
+          ["r1", "r4", "r5"],
+          ["r1", "r5", "r6"],
+        ],
+      ],
+      [
+        7,
+        [
+          ["r1", "r2", "r3"],
+          ["r1", "r4", "r5"],
+          ["r1", "r6", "r7"],
+        ],
+      ],
     ]
     for (const [count, expected] of cases) {
       const rows = Array.from({ length: count }, (_, index) =>
@@ -101,7 +134,10 @@ describe("buildPinnedFrames", () => {
     const rows = [row("a", 0), row("b", 1)]
     const { frames, pageCount } = buildPinnedFrames(rows, 4)
     assert.equal(pageCount, 1)
-    assert.deepEqual(frames[0]?.rows.map((item) => item.key), ["a", "b"])
+    assert.deepEqual(
+      frames[0]?.rows.map((item) => item.key),
+      ["a", "b"]
+    )
     assert.equal(frames[0]?.showEndMessage, true)
   })
 

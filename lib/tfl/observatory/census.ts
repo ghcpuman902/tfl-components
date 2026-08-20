@@ -1,10 +1,9 @@
-import type { ObservatoryCensusRecord, ObservatoryState } from "@/lib/tfl/observatory/types"
+import type {
+  ObservatoryCensusRecord,
+  ObservatoryState,
+} from "@/lib/tfl/observatory/types"
 
-export const CENSUS_IDS = [
-  "bus-lines",
-  "bus-points",
-  "bike-points",
-] as const
+export const CENSUS_IDS = ["bus-lines", "bus-points", "bike-points"] as const
 
 export type CensusId = (typeof CENSUS_IDS)[number]
 

@@ -1,5 +1,8 @@
 import { formatStationName } from "@/lib/tfl/diagram-station"
-import type { TransitGeometryBundle, TransitMode } from "@/lib/tfl/geography-types"
+import type {
+  TransitGeometryBundle,
+  TransitMode,
+} from "@/lib/tfl/geography-types"
 import type {
   ContractedEdge,
   ContractedNode,
@@ -51,7 +54,7 @@ const MODE_BY_LINE_MODE: Record<string, TransitMode | undefined> = {
 }
 
 export const transitModeForSnapshotLine = (
-  line: Line,
+  line: Line
 ): TransitMode | undefined => MODE_BY_LINE_MODE[line.mode]
 
 const stationNodeId = (stationId: string): string => `s:${stationId}`
@@ -81,7 +84,7 @@ const preferStation = (cluster: readonly Station[]): Station =>
   cluster[0]!
 
 export const mergeSnapshotStations = (
-  stations: readonly Station[],
+  stations: readonly Station[]
 ): {
   canonicalId: (id: string) => string
   stations: Station[]
@@ -100,8 +103,8 @@ export const mergeSnapshotStations = (
     for (const station of group) {
       const cluster = clusters.find((candidate) =>
         candidate.some(
-          (other) => stationDistanceM(station, other) <= MERGE_STATION_M,
-        ),
+          (other) => stationDistanceM(station, other) <= MERGE_STATION_M
+        )
       )
       if (cluster) cluster.push(station)
       else clusters.push([station])
@@ -145,31 +148,30 @@ const isDaytimeWeekdayWindow = (timeWindow: string): boolean =>
 const isWeekdayWindow = (timeWindow: string): boolean =>
   timeWindow.startsWith("weekday")
 
-export const isTimetableSkip = (
-  service: ContractedEdge["service"],
-): boolean => service === "fast" || service === "occasional"
+export const isTimetableSkip = (service: ContractedEdge["service"]): boolean =>
+  service === "fast" || service === "occasional"
 
 export const classifySkipHop = (
   calendars: readonly PatternCalendar[],
-  frequencies: readonly PatternFrequency[],
+  frequencies: readonly PatternFrequency[]
 ): "fast" | "occasional" => {
   const weekdayPatternIds = new Set(
     calendars
       .filter((row) => isWeekdayCalendar(row.daysOfWeek))
-      .map((row) => row.patternId),
+      .map((row) => row.patternId)
   )
   const hasDaytimeHeadway = frequencies.some(
     (row) =>
       weekdayPatternIds.has(row.patternId) &&
       row.headwaySeconds != null &&
-      isDaytimeWeekdayWindow(row.timeWindow),
+      isDaytimeWeekdayWindow(row.timeWindow)
   )
   return hasDaytimeHeadway ? "fast" : "occasional"
 }
 
 const mappedCalls = (
   pattern: ServicePattern,
-  canonicalId: (id: string) => string,
+  canonicalId: (id: string) => string
 ): string[] => {
   const ids: string[] = []
   for (const raw of pattern.callIds) {
@@ -181,19 +183,23 @@ const mappedCalls = (
 
 export const sliceNetworkModel = (
   snapshot: NetworkModelSnapshot,
-  lineId: string,
+  lineId: string
 ): LineNetworkSlice | null => {
   const line = snapshot.lines.find((entry) => entry.id === lineId)
   if (!line) return null
-  const patterns = snapshot.patterns.filter((pattern) => pattern.lineId === lineId)
+  const patterns = snapshot.patterns.filter(
+    (pattern) => pattern.lineId === lineId
+  )
   const patternIds = new Set(patterns.map((pattern) => pattern.id))
   const callIds = new Set(patterns.flatMap((pattern) => pattern.callIds))
   const pathIds = new Set(
     snapshot.pathMatches
       .filter((match) => patternIds.has(match.patternId))
-      .map((match) => match.pathId),
+      .map((match) => match.pathId)
   )
-  const stations = snapshot.stations.filter((station) => callIds.has(station.id))
+  const stations = snapshot.stations.filter((station) =>
+    callIds.has(station.id)
+  )
   const stationIds = new Set(stations.map((station) => station.id))
   return {
     line,
@@ -201,32 +207,34 @@ export const sliceNetworkModel = (
     hubs: snapshot.hubs.filter(
       (hub) =>
         stationIds.has(hub.id) ||
-        hub.memberStationIds.some((id) => stationIds.has(id)),
+        hub.memberStationIds.some((id) => stationIds.has(id))
     ),
     patterns,
-    calendars: snapshot.calendars.filter((row) => patternIds.has(row.patternId)),
+    calendars: snapshot.calendars.filter((row) =>
+      patternIds.has(row.patternId)
+    ),
     frequencies: snapshot.frequencies.filter((row) =>
-      patternIds.has(row.patternId),
+      patternIds.has(row.patternId)
     ),
     paths: snapshot.paths.filter((path) => pathIds.has(path.id)),
     pathMatches: snapshot.pathMatches.filter((match) =>
-      patternIds.has(match.patternId),
+      patternIds.has(match.patternId)
     ),
     movements: snapshot.movements.filter((movement) =>
-      movement.patternIds.some((patternId) => patternIds.has(patternId)),
+      movement.patternIds.some((patternId) => patternIds.has(patternId))
     ),
   }
 }
 
 export const snapshotPassengerTopology = (
-  slice: LineNetworkSlice,
+  slice: LineNetworkSlice
 ): ContractedTopology => {
   const merged = mergeSnapshotStations(slice.stations)
   const consecutive = new Map<string, string[]>()
   const skippedOver = new Set<string>()
   const spineNeighbors = new Map<string, Set<string>>()
   const calendarsByPattern = new Map(
-    slice.calendars.map((row) => [row.patternId, row]),
+    slice.calendars.map((row) => [row.patternId, row])
   )
   const frequenciesByPattern = new Map<string, PatternFrequency[]>()
   for (const row of slice.frequencies) {
@@ -275,7 +283,7 @@ export const snapshotPassengerTopology = (
       return row ? [row] : []
     })
     const frequencies = patternIds.flatMap(
-      (id) => frequenciesByPattern.get(id) ?? [],
+      (id) => frequenciesByPattern.get(id) ?? []
     )
     const service = classifySkipHop(calendars, frequencies)
     return {
@@ -323,7 +331,7 @@ export const snapshotPassengerTopology = (
 
 export const snapshotMovementsForTopology = (
   slice: LineNetworkSlice,
-  topology: ContractedTopology,
+  topology: ContractedTopology
 ): DirectedTopologyMovement[] => {
   const merged = mergeSnapshotStations(slice.stations)
   const nodeByStationId = new Map<string, string>()
@@ -366,7 +374,7 @@ export const snapshotMovementsForTopology = (
 }
 
 export const snapshotPathsBundle = (
-  slice: LineNetworkSlice,
+  slice: LineNetworkSlice
 ): TransitGeometryBundle | null => {
   if (slice.paths.length === 0) return null
   return {
@@ -445,7 +453,7 @@ export const formatHeadway = (seconds: number | undefined): string => {
 export const skipHopNote = (
   service: "fast" | "occasional",
   calendars: readonly PatternCalendar[],
-  frequencies: readonly PatternFrequency[],
+  frequencies: readonly PatternFrequency[]
 ): string => {
   const days = [
     ...new Set(calendars.flatMap((row) => row.daysOfWeek)),
@@ -454,21 +462,21 @@ export const skipHopNote = (
   const weekdayPatternIds = new Set(
     calendars
       .filter((row) => isWeekdayCalendar(row.daysOfWeek))
-      .map((row) => row.patternId),
+      .map((row) => row.patternId)
   )
   const daytimeSeconds = frequencies
     .filter(
       (row) =>
         weekdayPatternIds.has(row.patternId) &&
         row.headwaySeconds != null &&
-        isDaytimeWeekdayWindow(row.timeWindow),
+        isDaytimeWeekdayWindow(row.timeWindow)
     )
     .reduce<number | undefined>(
       (best, row) =>
         best == null || (row.headwaySeconds ?? Infinity) < best
           ? row.headwaySeconds
           : best,
-      undefined,
+      undefined
     )
   const hasEveningOnly =
     daytimeSeconds == null &&
@@ -476,7 +484,7 @@ export const skipHopNote = (
       (row) =>
         weekdayPatternIds.has(row.patternId) &&
         row.headwaySeconds != null &&
-        isWeekdayWindow(row.timeWindow),
+        isWeekdayWindow(row.timeWindow)
     )
   if (service === "fast") {
     const peak =
@@ -495,7 +503,7 @@ export const skipHopNote = (
 
 export const patternLabel = (
   pattern: ServicePattern,
-  stations: readonly Station[],
+  stations: readonly Station[]
 ): string => {
   const byId = new Map(stations.map((station) => [station.id, station.name]))
   const first = pattern.callIds[0]

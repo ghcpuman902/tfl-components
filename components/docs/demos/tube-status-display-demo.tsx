@@ -20,12 +20,7 @@ async function TubeStatusDisplayLive() {
   }
 
   return (
-    <TubeStatusDisplay
-      data={data}
-      now={fetchedAt}
-      tiles={4}
-      error={error}
-    />
+    <TubeStatusDisplay data={data} now={fetchedAt} tiles={4} error={error} />
   )
 }
 

@@ -1,23 +1,23 @@
-"use client";
+"use client"
 
-import { useMemo, useState, type ChangeEvent } from "react";
-import { LineStrip } from "@/components/tfl/diagram/line-strip";
-import type { StripLabelPlacement } from "@/lib/tfl/strip-model";
-import type { DiagramSegment, DiagramStation } from "@/lib/tfl/diagram-station";
-import { cn } from "@/lib/utils";
+import { useMemo, useState, type ChangeEvent } from "react"
+import { LineStrip } from "@/components/tfl/diagram/line-strip"
+import type { StripLabelPlacement } from "@/lib/tfl/strip-model"
+import type { DiagramSegment, DiagramStation } from "@/lib/tfl/diagram-station"
+import { cn } from "@/lib/utils"
 
 export type LiveStripRoute = {
-  lineId: string;
-  lineName: string;
-  lineColor: string;
-  stations: DiagramStation[];
-  routeError?: string;
-};
+  lineId: string
+  lineName: string
+  lineColor: string
+  stations: DiagramStation[]
+  routeError?: string
+}
 
 type LiveProps = {
-  routes: LiveStripRoute[];
-  defaultLineId?: string;
-};
+  routes: LiveStripRoute[]
+  defaultLineId?: string
+}
 
 export const LiveLineStripPicker = ({
   routes,
@@ -26,23 +26,23 @@ export const LiveLineStripPicker = ({
   const initial =
     routes.find((r) => r.lineId === defaultLineId)?.lineId ??
     routes[0]?.lineId ??
-    defaultLineId;
-  const [lineId, setLineId] = useState(initial);
+    defaultLineId
+  const [lineId, setLineId] = useState(initial)
 
   const route = useMemo(
     () => routes.find((r) => r.lineId === lineId) ?? routes[0],
-    [lineId, routes],
-  );
+    [lineId, routes]
+  )
 
   if (!route) {
     return (
       <p className="text-sm text-muted-foreground">No live routes available.</p>
-    );
+    )
   }
 
   const handleLineChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setLineId(event.target.value);
-  };
+    setLineId(event.target.value)
+  }
 
   return (
     <div className="space-y-4">
@@ -86,18 +86,18 @@ export const LiveLineStripPicker = ({
         </p>
       )}
     </div>
-  );
-};
+  )
+}
 
 /** @deprecated Prefer `LiveLineStripPicker`. */
-export const LiveHorizontalLinePicker = LiveLineStripPicker;
+export const LiveHorizontalLinePicker = LiveLineStripPicker
 
 type PlacementProps = {
-  stations: DiagramStation[];
-  lineColor: string;
-  lineName: string;
-  lineId?: string;
-};
+  stations: DiagramStation[]
+  lineColor: string
+  lineName: string
+  lineId?: string
+}
 
 export const LabelPlacementDemo = ({
   stations,
@@ -105,13 +105,13 @@ export const LabelPlacementDemo = ({
   lineName,
   lineId = "victoria",
 }: PlacementProps) => {
-  const [placement, setPlacement] = useState<StripLabelPlacement>("above");
+  const [placement, setPlacement] = useState<StripLabelPlacement>("above")
 
   const options: { id: StripLabelPlacement; label: string }[] = [
     { id: "above", label: "Above" },
     { id: "below", label: "Below" },
     { id: "alternate", label: "Alternate" },
-  ];
+  ]
 
   return (
     <div className="space-y-4">
@@ -121,7 +121,7 @@ export const LabelPlacementDemo = ({
         className="flex flex-wrap gap-2"
       >
         {options.map((option) => {
-          const selected = placement === option.id;
+          const selected = placement === option.id
           return (
             <button
               key={option.id}
@@ -133,12 +133,12 @@ export const LabelPlacementDemo = ({
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 selected
                   ? "bg-foreground text-background"
-                  : "bg-muted/60 text-foreground hover:bg-muted",
+                  : "bg-muted/60 text-foreground hover:bg-muted"
               )}
             >
               {option.label}
             </button>
-          );
+          )
         })}
       </div>
 
@@ -150,16 +150,16 @@ export const LabelPlacementDemo = ({
         labelPlacement={placement}
       />
     </div>
-  );
-};
+  )
+}
 
 type ClosureProps = {
-  stations: DiagramStation[];
-  lineColor: string;
-  lineName: string;
-  segments: DiagramSegment[];
-  lineId?: string;
-};
+  stations: DiagramStation[]
+  lineColor: string
+  lineName: string
+  segments: DiagramSegment[]
+  lineId?: string
+}
 
 export const PartClosureDemo = ({
   stations,
@@ -175,4 +175,4 @@ export const PartClosureDemo = ({
     lineName={lineName}
     segments={segments}
   />
-);
+)

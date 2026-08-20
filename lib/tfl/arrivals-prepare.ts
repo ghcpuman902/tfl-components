@@ -160,7 +160,7 @@ const sortIndexed = (
  * one vehicle — collapsing them deletes distinct arrivals.
  */
 const isUsableVehicleId = (
-  vehicleId: string | undefined,
+  vehicleId: string | undefined
 ): vehicleId is string => {
   const trimmed = vehicleId?.trim()
   if (!trimmed) return false
@@ -239,9 +239,7 @@ const assignPreparedRows = (
   }))
 }
 
-export const arrivalCanonicalLineId = (
-  arrival: RealtimePrediction,
-): string => {
+export const arrivalCanonicalLineId = (arrival: RealtimePrediction): string => {
   const tagged = arrival as PredictionWithSharedTrackIdentity
   const identity = tagged.sharedTrackIdentity
   const canonicalLineId =
@@ -322,10 +320,7 @@ const resolvePageFill = (
   return { dashCount: spare - 1, showEndMessage: true }
 }
 
-const resolvePageCount = (
-  rowCount: number,
-  pageSize: number
-): number => {
+const resolvePageCount = (rowCount: number, pageSize: number): number => {
   if (pageSize <= 0) return 1
   return Math.max(1, Math.ceil(rowCount / pageSize))
 }
@@ -390,12 +385,11 @@ export const chunkBoundPages = (
   return {
     pageCount,
     pages: Array.from({ length: pageCount }, (_, index) => {
-      const { rows: pageRows, dashCount, showEndMessage } = sliceBoundPage(
-        rows,
-        index,
-        pageSize,
-        options?.lockHeight
-      )
+      const {
+        rows: pageRows,
+        dashCount,
+        showEndMessage,
+      } = sliceBoundPage(rows, index, pageSize, options?.lockHeight)
       return { rows: pageRows, dashCount, showEndMessage }
     }),
   }
@@ -426,10 +420,7 @@ const EMPTY_BOUND = (): ArrivalsPreparedBound => ({
 
 const orderLineIds = (ids: readonly string[]): string[] =>
   [...ids].sort((a, b) =>
-    compareArrivalsLines(
-      { lineId: a, lineName: a },
-      { lineId: b, lineName: b },
-    ),
+    compareArrivalsLines({ lineId: a, lineName: a }, { lineId: b, lineName: b })
   )
 
 type ResolvedLineGroup = {
@@ -438,14 +429,12 @@ type ResolvedLineGroup = {
 }
 
 const resolveLineGroups = (
-  lineGroups: readonly RailArrivalsLineGroup[] | undefined,
+  lineGroups: readonly RailArrivalsLineGroup[] | undefined
 ): Map<string, ResolvedLineGroup> => {
   const membership = new Map<string, ResolvedLineGroup>()
   for (const raw of lineGroups ?? []) {
     const lines = orderLineIds([
-      ...new Set(
-        raw.lines.map((id) => normalizeLineId(id)).filter(Boolean),
-      ),
+      ...new Set(raw.lines.map((id) => normalizeLineId(id)).filter(Boolean)),
     ])
     if (lines.length < 2) continue
     if (lines.some((id) => membership.has(id))) continue
@@ -455,7 +444,10 @@ const resolveLineGroups = (
   return membership
 }
 
-const groupBucketKey = (lineId: string, membership: Map<string, ResolvedLineGroup>) => {
+const groupBucketKey = (
+  lineId: string,
+  membership: Map<string, ResolvedLineGroup>
+) => {
   const group = membership.get(normalizeLineId(lineId))
   if (!group) return lineId
   return `group:${group.lines.join("+")}`
@@ -477,7 +469,7 @@ const sharedTrackIdentityRank = (arrival: RealtimePrediction): number => {
  * train twice. Placeholder ids stay as separate rows.
  */
 const dedupeSharedTrackVehicles = (
-  items: readonly IndexedArrival[],
+  items: readonly IndexedArrival[]
 ): IndexedArrival[] => {
   const byVehicle = new Map<string, IndexedArrival[]>()
   const passthrough: IndexedArrival[] = []
@@ -508,19 +500,19 @@ const dedupeSharedTrackVehicles = (
           (a.arrival.timeToStation ?? 0) - (b.arrival.timeToStation ?? 0)
         if (timeDiff !== 0) return timeDiff
         return a.sourceIndex - b.sourceIndex
-      })[0]!,
+      })[0]!
     )
   }
 
   return [...passthrough, ...picked].sort(
-    (a, b) => a.sourceIndex - b.sourceIndex,
+    (a, b) => a.sourceIndex - b.sourceIndex
   )
 }
 
 const collectRailLines = (
   indexed: readonly IndexedArrival[],
   expectedLines: readonly RailArrivalsLine[],
-  lineGroups?: readonly RailArrivalsLineGroup[],
+  lineGroups?: readonly RailArrivalsLineGroup[]
 ): LineBucket[] => {
   const membership = resolveLineGroups(lineGroups)
   const byLine = new Map<string, LineBucket>()
@@ -530,7 +522,7 @@ const collectRailLines = (
     init: Omit<LineBucket, "items" | "seededEmpty"> & {
       items?: IndexedArrival[]
       seededEmpty?: boolean
-    },
+    }
   ): LineBucket => {
     const existing = byLine.get(key)
     if (existing) return existing
@@ -559,7 +551,7 @@ const collectRailLines = (
       existing.seededEmpty = false
       existing.firstSourceIndex = Math.min(
         existing.firstSourceIndex,
-        item.sourceIndex,
+        item.sourceIndex
       )
       continue
     }
@@ -600,7 +592,9 @@ const collectRailLines = (
       continue
     }
     const lineIds = group?.lines ?? [lineId]
-    const names = lineIds.map((id) => getLineNameTiers(id, expected.lineName).full)
+    const names = lineIds.map(
+      (id) => getLineNameTiers(id, expected.lineName).full
+    )
     ensureBucket(key, {
       lineId: lineIds[0] ?? lineId,
       lineIds,
@@ -636,7 +630,7 @@ type BoundBucket = {
 }
 
 const classifyArrivalBound = (
-  platformName?: string,
+  platformName?: string
 ): {
   kind: Exclude<BoundKind, "none">
   boundId: ArrivalsBoundId | null
@@ -654,14 +648,19 @@ const classifyArrivalBound = (
   if (platformLabel) {
     return { kind: "platform", boundId: null, platformLabel, railDesignation }
   }
-  return { kind: "unknown", boundId: null, platformLabel: null, railDesignation: null }
+  return {
+    kind: "unknown",
+    boundId: null,
+    platformLabel: null,
+    railDesignation: null,
+  }
 }
 
 const boundBucketKey = (
   kind: BoundKind,
   boundId: ArrivalsBoundId | null,
   platformLabel: string | null,
-  railDesignation: ArrivalsRailDesignation | null,
+  railDesignation: ArrivalsRailDesignation | null
 ): string => {
   if (kind === "compass" && boundId) return `compass:${boundId}`
   if (kind === "platform" && platformLabel) {
@@ -686,7 +685,7 @@ const collectRailBounds = (
     kind: BoundKind,
     boundId: ArrivalsBoundId | null,
     railDesignation: ArrivalsRailDesignation | null,
-    sourceIndex: number,
+    sourceIndex: number
   ): BoundBucket => {
     const existing = byBound.get(key)
     if (existing) return existing
@@ -708,14 +707,14 @@ const collectRailBounds = (
       classified.kind,
       classified.boundId,
       classified.platformLabel,
-      classified.railDesignation,
+      classified.railDesignation
     )
     const bucket = ensure(
       key,
       classified.kind,
       classified.boundId,
       classified.railDesignation,
-      item.sourceIndex,
+      item.sourceIndex
     )
     bucket.items.push(item)
     if (classified.platformLabel) {
@@ -740,13 +739,11 @@ const collectRailBounds = (
     const aUnknown = a[1].kind === "unknown"
     const bUnknown = b[1].kind === "unknown"
     if (aUnknown !== bUnknown) return aUnknown ? 1 : -1
-    const aSort =
-      a[1].boundId ? formatArrivalsBoundLabel(a[1].boundId) : a[0]
-    const bSort =
-      b[1].boundId ? formatArrivalsBoundLabel(b[1].boundId) : b[0]
+    const aSort = a[1].boundId ? formatArrivalsBoundLabel(a[1].boundId) : a[0]
+    const bSort = b[1].boundId ? formatArrivalsBoundLabel(b[1].boundId) : b[0]
     return compareArrivalsBounds(
       a[1].kind === "compass" ? aSort : a[1].kind === "unknown" ? null : aSort,
-      b[1].kind === "compass" ? bSort : b[1].kind === "unknown" ? null : bSort,
+      b[1].kind === "compass" ? bSort : b[1].kind === "unknown" ? null : bSort
     )
   })
 
@@ -755,7 +752,8 @@ const collectRailBounds = (
     const platformUniform = uniquePlatforms.length === 1
     const platformLabel = platformUniform ? uniquePlatforms[0]! : null
     const hoistPlatform =
-      bucket.kind === "platform" || (bucket.kind === "compass" && platformUniform)
+      bucket.kind === "platform" ||
+      (bucket.kind === "compass" && platformUniform)
     const label = formatBoundHeading({
       boundId: bucket.boundId,
       platformLabel: hoistPlatform ? platformLabel : null,
@@ -771,7 +769,7 @@ const collectRailBounds = (
       railDesignation: bucket.railDesignation,
       platformUniform: hoistPlatform && platformLabel !== null,
       seededEmpty: bucket.items.length === 0,
-          rows: assignPreparedRows(sortIndexed(bucket.items, sortBy)),
+      rows: assignPreparedRows(sortIndexed(bucket.items, sortBy)),
     }
   })
 }
@@ -808,7 +806,7 @@ export type PrepareRailArrivalsOptions = {
 
 const lineOrderRank = (
   lineIds: readonly string[],
-  order: ReadonlyMap<string, number>,
+  order: ReadonlyMap<string, number>
 ): number | undefined => {
   let best: number | undefined
   for (const lineId of lineIds) {
@@ -831,14 +829,15 @@ export const prepareRailArrivals = ({
   maxRows = DEFAULT_MAX_ROWS,
 }: PrepareRailArrivalsOptions): ArrivalsPreparedBoard => {
   const indexed = indexArrivals(data).filter(
-    (item) => now === undefined || !isExpiredArrivalPrediction(item.arrival, now)
+    (item) =>
+      now === undefined || !isExpiredArrivalPrediction(item.arrival, now)
   )
   const buckets = collectRailLines(indexed, lines, lineGroups)
 
   const explicitOrder =
     lineOrder && lineOrder.length > 0
       ? new Map(
-          lineOrder.map((id, index) => [normalizeLineId(id), index] as const),
+          lineOrder.map((id, index) => [normalizeLineId(id), index] as const)
         )
       : null
 
@@ -851,7 +850,7 @@ export const prepareRailArrivals = ({
       if (bRank !== undefined) return 1
       return compareArrivalsLines(
         { lineId: a.lineId, lineName: a.lineName },
-        { lineId: b.lineId, lineName: b.lineName },
+        { lineId: b.lineId, lineName: b.lineName }
       )
     }
     if (lineSortBy === "source") {
@@ -872,9 +871,10 @@ export const prepareRailArrivals = ({
     )
     const hasInformation = bounds.some((bound) => bound.rows.length > 0)
     return {
-      key: bucket.lineIds.length > 1
-        ? `group:${bucket.lineIds.join("+")}`
-        : bucket.lineId || bucket.lineName,
+      key:
+        bucket.lineIds.length > 1
+          ? `group:${bucket.lineIds.join("+")}`
+          : bucket.lineId || bucket.lineName,
       lineId: bucket.lineId,
       lineIds: bucket.lineIds,
       lineName: bucket.lineName,
@@ -943,7 +943,8 @@ export const prepareBusArrivals = ({
   maxRows = DEFAULT_MAX_ROWS,
 }: PrepareBusArrivalsOptions): ArrivalsPreparedBoard => {
   const indexed = indexArrivals(data).filter(
-    (item) => now === undefined || !isExpiredArrivalPrediction(item.arrival, now)
+    (item) =>
+      now === undefined || !isExpiredArrivalPrediction(item.arrival, now)
   )
 
   if (groupBy !== "route") {

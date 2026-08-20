@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import { ArrivalsResizeDemo } from "@/components/docs/demos/station-labels-explainer";
-import { PlatformChip } from "@/components/tfl/arrivals/platform-chip";
+import { ArrivalsResizeDemo } from "@/components/docs/demos/station-labels-explainer"
+import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
 
-const PLATFORM_FORM_WIDTHS = [232, 208, 184, 160] as const;
+const PLATFORM_FORM_WIDTHS = [232, 208, 184, 160] as const
 
 const PlatformWidthDemo = () => (
   <ul className="flex flex-col gap-3">
@@ -14,14 +14,14 @@ const PlatformWidthDemo = () => (
           style={{ width }}
         >
           <PlatformChip number="4" />
-          <span className="text-xs tabular-nums text-muted-foreground">
+          <span className="text-xs text-muted-foreground tabular-nums">
             {width}px
           </span>
         </div>
       </li>
     ))}
   </ul>
-);
+)
 
 export default function PlatformChipDemo() {
   return (
@@ -29,5 +29,5 @@ export default function PlatformChipDemo() {
       <PlatformWidthDemo />
       <ArrivalsResizeDemo />
     </div>
-  );
+  )
 }

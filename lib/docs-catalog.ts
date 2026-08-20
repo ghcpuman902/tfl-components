@@ -3,7 +3,7 @@
  * Discovery chrome follows J6 / J8 / J9 — docs/TARGET_ARCHITECTURE.md.
  */
 
-import { REGISTRY_BASE } from "@/lib/site";
+import { REGISTRY_BASE } from "@/lib/site"
 
 export type DocsGroupId =
   | "start"
@@ -15,83 +15,71 @@ export type DocsGroupId =
   | "blocks"
   | "board"
   | "tools"
-  | "drafts";
+  | "drafts"
 
 export type DocsEntryKind =
-  | "page"
-  | "component"
-  | "tool"
-  | "placeholder"
-  | "draft"
-  | "block";
+  "page" | "component" | "tool" | "placeholder" | "draft" | "block"
 
 /** Component layer for catalogue badges — omit for start / tools / drafts indexes. */
-export type DocsEntryLayer = "primitive" | "data-aware" | "map";
+export type DocsEntryLayer = "primitive" | "data-aware" | "map"
 
 /** Docs sidebar section (J6). `hidden` = not in docs sidebar. */
 export type DocsSidebarSection =
-  | "get-started"
-  | "components"
-  | "primitives-foundations"
-  | "hidden";
+  "get-started" | "components" | "primitives-foundations" | "hidden"
 
 /** Mode-coloured preferred marker in the Components sidebar. */
 export type DocsModeMarker =
-  | "tube-rail"
-  | "bus"
-  | "river"
-  | "cycle"
-  | "cable"
-  | "map";
+  "tube-rail" | "bus" | "river" | "cycle" | "cable" | "map"
 
 export type DocsEntry = {
-  slug: string;
-  title: string;
-  description: string;
-  group: DocsGroupId;
-  kind: DocsEntryKind;
+  slug: string
+  title: string
+  description: string
+  group: DocsGroupId
+  kind: DocsEntryKind
   /** Route path (absolute from site root). */
-  href: string;
+  href: string
   /** Docs sidebar placement. */
-  sidebarSection: DocsSidebarSection;
+  sidebarSection: DocsSidebarSection
   /** Sort within sidebar section (lower first). */
-  sidebarOrder: number;
+  sidebarOrder: number
   /** Preferred high-level embed — show mode marker in sidebar. */
-  preferred?: boolean;
+  preferred?: boolean
   /** Colour the preferred marker by transport / map type. */
-  modeMarker?: DocsModeMarker;
+  modeMarker?: DocsModeMarker
   /** Registry item name when installable via shadcn. */
-  registryName?: string;
+  registryName?: string
   /** Public registry JSON URL when installable. */
-  registryUrl?: string;
+  registryUrl?: string
   /** Rendering primitive vs data-aware board vs map product. */
-  layer?: DocsEntryLayer;
+  layer?: DocsEntryLayer
   /**
    * Related catalogue slugs this surface composes (primitives / other boards).
    * Rendered as “Built with” badges.
    */
-  builtWith?: readonly string[];
+  builtWith?: readonly string[]
   /** Foundation slugs this surface uses. */
-  usesFoundations?: readonly string[];
+  usesFoundations?: readonly string[]
   /**
    * When true, omit from standard install tables (Drafts / legacy helpers).
    */
-  excludeFromInstallLists?: boolean;
+  excludeFromInstallLists?: boolean
   /** Coming-soon placeholder — no full docs yet. */
-  comingSoon?: boolean;
-};
+  comingSoon?: boolean
+}
 
 export type DocsGroup = {
-  id: DocsGroupId;
-  title: string;
-  description: string;
-};
+  id: DocsGroupId
+  title: string
+  description: string
+}
 
 export const DOCS_GROUPS: readonly DocsGroup[] = [
   {
     id: "start",
     title: "Get started",
-    description: "Introduction, explorer, brand basics, troubleshoot, and data model.",
+    description:
+      "Get started, explorer, brand basics, troubleshoot, and data model.",
   },
   {
     id: "explore",
@@ -125,9 +113,9 @@ export const DOCS_GROUPS: readonly DocsGroup[] = [
   },
   {
     id: "blocks",
-    title: "Blocks",
+    title: "Labs",
     description:
-      "Composed mini-apps (shadcn-style blocks) that demonstrate components together.",
+      "Experimental displays and composed examples built from the component library. These may change or break before version 1.0.",
   },
   {
     id: "board",
@@ -147,7 +135,7 @@ export const DOCS_GROUPS: readonly DocsGroup[] = [
     description:
       "Incubation for experimental work until it meets promotion criteria.",
   },
-] as const;
+] as const
 
 /** Hex colours for sidebar preferred markers (mode pictogram stand-ins). */
 export const MODE_MARKER_COLOURS: Record<
@@ -164,7 +152,7 @@ export const MODE_MARKER_COLOURS: Record<
   cycle: { primary: "#00A13A", label: "Cycle" },
   cable: { primary: "#E21836", label: "Cable car" },
   map: { primary: "#0019A8", label: "Map" },
-};
+}
 
 /** Old catalogue slugs → current (pages / MDX / registry demos). */
 const SLUG_ALIASES: Record<string, string> = {
@@ -181,7 +169,7 @@ const SLUG_ALIASES: Record<string, string> = {
   colors: "colours",
   installation: "troubleshoot",
   "branch-strip": "branch-strip-horizontal",
-};
+}
 
 /**
  * Catalogue slug → content/demo filename under content/components and demos/.
@@ -194,15 +182,15 @@ const CONTENT_ASSET_SLUGS: Record<string, string> = {
   "station-name-labels": "station-name",
   "line-title": "line-name",
   "line-chip": "line-badge",
-};
+}
 
 export const DOCS_ENTRIES: readonly DocsEntry[] = [
   // —— Get started ——
   {
     slug: "introduction",
-    title: "Introduction",
+    title: "Get started",
     description:
-      "Install React components for London transport displays, or configure a hosted board.",
+      "Configure a hosted Board, or install React components for London transport displays.",
     group: "start",
     kind: "page",
     href: "/docs",
@@ -212,8 +200,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "components-index",
     title: "Components",
-    description:
-      "Preferred boards first, then the parts they are built from.",
+    description: "Preferred boards first, then the parts they are built from.",
     group: "start",
     kind: "page",
     href: "/docs/components",
@@ -294,8 +281,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "line-topology",
     title: "Line topology",
-    description:
-      "How TfL station order and OSM track become a passenger line.",
+    description: "How TfL station order and OSM track become a passenger line.",
     group: "start",
     kind: "page",
     href: "/docs/line-topology",
@@ -489,8 +475,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "vehicle-progress",
     title: "Vehicle progress",
-    description:
-      "Place a vehicle on its track from a TfL arrival countdown.",
+    description: "Place a vehicle on its track from a TfL arrival countdown.",
     group: "maps",
     kind: "component",
     href: "/docs/live-vehicle-tracking",
@@ -504,8 +489,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "live-vehicle-tracking",
     title: "Live Tube & Rail vehicles",
-    description:
-      "Place trains on the geographic map from arrival countdowns.",
+    description: "Place trains on the geographic map from arrival countdowns.",
     group: "interfaces",
     kind: "component",
     href: "/docs/live-vehicle-tracking",
@@ -570,8 +554,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "branch-strip-horizontal",
     title: "Branch strip — horizontal",
-    description:
-      "A branched corridor with labels above and below the track.",
+    description: "A branched corridor with labels above and below the track.",
     group: "primitives",
     kind: "component",
     href: "/docs/branch-strip-horizontal",
@@ -684,7 +667,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 10,
   },
 
-  // —— Hidden from docs sidebar (search / redirects / Blocks / Tools / Explorer children) ——
+  // —— Hidden from docs sidebar (search / redirects / Labs / Tools / Explorer children) ——
   {
     slug: "browse-lines",
     title: "Browse lines",
@@ -730,11 +713,12 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   },
   {
     slug: "blocks-index",
-    title: "Blocks",
-    description: "Composed mini-apps outside the component catalog.",
+    title: "Labs",
+    description:
+      "Experimental displays and composed examples built from the component library. These may change or break before version 1.0.",
     group: "blocks",
     kind: "page",
-    href: "/blocks",
+    href: "/labs",
     sidebarSection: "hidden",
     sidebarOrder: 0,
   },
@@ -742,10 +726,10 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "week-ahead",
     title: "Week ahead",
     description:
-      "Block composing status interpretation with schematic line strips.",
+      "Lab composing status interpretation with schematic line strips.",
     group: "blocks",
     kind: "block",
-    href: "/blocks/week-ahead",
+    href: "/labs/week-ahead",
     sidebarSection: "hidden",
     sidebarOrder: 0,
     builtWith: [
@@ -772,8 +756,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "tools-index",
     title: "Tools",
-    description:
-      "Playgrounds that meet the inspect/test/tune/debug criterion.",
+    description: "Playgrounds that meet the inspect/test/tune/debug criterion.",
     group: "tools",
     kind: "page",
     href: "/tools",
@@ -804,128 +787,127 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 0,
     excludeFromInstallLists: true,
   },
-] as const;
+] as const
 
 export const resolveDocsSlug = (slug: string): string =>
-  SLUG_ALIASES[slug] ?? slug;
+  SLUG_ALIASES[slug] ?? slug
 
 /** Filename stem for MDX + demo loaders. */
 export const getContentAssetSlug = (slug: string): string => {
-  const resolved = resolveDocsSlug(slug);
-  return CONTENT_ASSET_SLUGS[resolved] ?? resolved;
-};
+  const resolved = resolveDocsSlug(slug)
+  return CONTENT_ASSET_SLUGS[resolved] ?? resolved
+}
 
 export const getDocsEntry = (slug: string): DocsEntry | undefined => {
-  const resolved = resolveDocsSlug(slug);
-  return DOCS_ENTRIES.find((entry) => entry.slug === resolved);
-};
+  const resolved = resolveDocsSlug(slug)
+  return DOCS_ENTRIES.find((entry) => entry.slug === resolved)
+}
 
 export const getComponentEntries = (): DocsEntry[] =>
   DOCS_ENTRIES.filter(
     (entry) =>
       !entry.comingSoon &&
       (entry.kind === "component" ||
-        (entry.kind === "placeholder" && entry.sidebarSection === "components")),
-  );
+        (entry.kind === "placeholder" && entry.sidebarSection === "components"))
+  )
 
 export const getToolEntries = (): DocsEntry[] =>
-  DOCS_ENTRIES.filter((entry) => entry.kind === "tool");
+  DOCS_ENTRIES.filter((entry) => entry.kind === "tool")
 
 export const getInstallableEntries = (): DocsEntry[] => {
-  const seen = new Set<string>();
+  const seen = new Set<string>()
   return DOCS_ENTRIES.filter((entry) => {
-    if (!entry.registryUrl || entry.excludeFromInstallLists) return false;
-    const key = entry.registryUrl;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-};
+    if (!entry.registryUrl || entry.excludeFromInstallLists) return false
+    const key = entry.registryUrl
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
 
 export const getEntriesByGroup = (groupId: DocsGroupId): DocsEntry[] =>
-  DOCS_ENTRIES.filter((entry) => entry.group === groupId);
+  DOCS_ENTRIES.filter((entry) => entry.group === groupId)
 
 export const getSidebarEntries = (
-  section: Exclude<DocsSidebarSection, "hidden">,
+  section: Exclude<DocsSidebarSection, "hidden">
 ): DocsEntry[] =>
   DOCS_ENTRIES.filter(
-    (entry) => entry.sidebarSection === section && !entry.comingSoon,
-  ).sort((a, b) => a.sidebarOrder - b.sidebarOrder);
+    (entry) => entry.sidebarSection === section && !entry.comingSoon
+  ).sort((a, b) => a.sidebarOrder - b.sidebarOrder)
 
 /** Catalogue rows include named future surfaces; the persistent sidebar does not. */
 export const getCatalogueEntries = (): DocsEntry[] =>
-  DOCS_ENTRIES.filter(
-    (entry) => entry.sidebarSection === "components",
-  ).sort((a, b) => a.sidebarOrder - b.sidebarOrder);
+  DOCS_ENTRIES.filter((entry) => entry.sidebarSection === "components").sort(
+    (a, b) => a.sidebarOrder - b.sidebarOrder
+  )
 
 /** Matches DocsSidebar: get-started top → components → Troubleshoot / licensing tail → primitives. */
-export const GET_STARTED_BOTTOM_FROM = 190;
+export const GET_STARTED_BOTTOM_FROM = 190
 
 /** Tools and Drafts — footer / search in development only (J8). */
 export const isInternalDocsEntry = (entry: DocsEntry): boolean =>
-  entry.group === "tools" || entry.group === "drafts";
+  entry.group === "tools" || entry.group === "drafts"
 
 export const getFlatSidebarOrder = (): DocsEntry[] => {
-  const getStarted = getSidebarEntries("get-started");
+  const getStarted = getSidebarEntries("get-started")
   const getStartedTop = getStarted.filter(
-    (entry) => entry.sidebarOrder < GET_STARTED_BOTTOM_FROM,
-  );
+    (entry) => entry.sidebarOrder < GET_STARTED_BOTTOM_FROM
+  )
   const getStartedBottom = getStarted.filter(
-    (entry) => entry.sidebarOrder >= GET_STARTED_BOTTOM_FROM,
-  );
+    (entry) => entry.sidebarOrder >= GET_STARTED_BOTTOM_FROM
+  )
   return [
     ...getStartedTop,
     ...getSidebarEntries("components"),
     ...getStartedBottom,
     ...getSidebarEntries("primitives-foundations"),
-  ];
-};
+  ]
+}
 
 export const getAdjacentEntries = (
-  slug: string,
+  slug: string
 ): { prev: DocsEntry | null; next: DocsEntry | null } => {
-  const order = getFlatSidebarOrder();
-  const resolved = resolveDocsSlug(slug);
-  const index = order.findIndex((entry) => entry.slug === resolved);
-  if (index < 0) return { prev: null, next: null };
+  const order = getFlatSidebarOrder()
+  const resolved = resolveDocsSlug(slug)
+  const index = order.findIndex((entry) => entry.slug === resolved)
+  if (index < 0) return { prev: null, next: null }
   return {
     prev: index > 0 ? order[index - 1]! : null,
     next: index < order.length - 1 ? order[index + 1]! : null,
-  };
-};
+  }
+}
 
 /** Groups that currently have at least one entry (skips empty reserved slots). */
 export const getPopulatedGroups = (): DocsGroup[] =>
-  DOCS_GROUPS.filter((group) => getEntriesByGroup(group.id).length > 0);
+  DOCS_GROUPS.filter((group) => getEntriesByGroup(group.id).length > 0)
 
 export const getRegistryUrl = (slug: string): string | undefined =>
-  getDocsEntry(slug)?.registryUrl;
+  getDocsEntry(slug)?.registryUrl
 
 export const layerBadgeLabel = (
-  layer: DocsEntryLayer,
+  layer: DocsEntryLayer
 ): "Primitive" | "Data-aware" | "Map" => {
-  if (layer === "primitive") return "Primitive";
-  if (layer === "map") return "Map";
-  return "Data-aware";
-};
+  if (layer === "primitive") return "Primitive"
+  if (layer === "map") return "Map"
+  return "Data-aware"
+}
 
 /** Single hero badge — coming-soon status, then layer, then kind. */
 export const entryBadgeLabel = (entry: DocsEntry): string | null => {
-  if (entry.kind === "placeholder") return "Coming soon";
-  if (entry.layer) return layerBadgeLabel(entry.layer);
-  if (entry.kind === "tool") return "Tool";
-  if (entry.kind === "block") return "Block";
-  if (entry.kind === "draft") return "Draft";
-  return null;
-};
+  if (entry.kind === "placeholder") return "Coming soon"
+  if (entry.layer) return layerBadgeLabel(entry.layer)
+  if (entry.kind === "tool") return "Tool"
+  if (entry.kind === "block") return "Experimental"
+  if (entry.kind === "draft") return "Draft"
+  return null
+}
 
 /** Reverse relationships: which public surfaces list this slug in builtWith / usesFoundations. */
 export const getUsedBySlugs = (slug: string): string[] =>
   DOCS_ENTRIES.filter(
     (entry) =>
-      entry.builtWith?.includes(slug) ||
-      entry.usesFoundations?.includes(slug),
-  ).map((entry) => entry.slug);
+      entry.builtWith?.includes(slug) || entry.usesFoundations?.includes(slug)
+  ).map((entry) => entry.slug)
 
 export const HOME_CATALOG_GROUPS: readonly DocsGroupId[] = [
   "interfaces",
@@ -936,4 +918,4 @@ export const HOME_CATALOG_GROUPS: readonly DocsGroupId[] = [
   "tools",
   "explore",
   "drafts",
-] as const;
+] as const

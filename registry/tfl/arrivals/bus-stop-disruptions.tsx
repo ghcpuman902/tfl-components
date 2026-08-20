@@ -79,8 +79,24 @@ export const BusStopDisruptionBoundary = ({
  * mostly hanging off it.
  */
 const BADGE_GEOMETRY = {
-  sm: { badge: 14, cutout: 9, insetX: 0, insetY: 3, stroke: [2, 6] as const, dot: 2, gap: 1.5 },
-  lg: { badge: 20, cutout: 13, insetX: 0, insetY: 4, stroke: [2.5, 8] as const, dot: 2.5, gap: 2 },
+  sm: {
+    badge: 14,
+    cutout: 9,
+    insetX: 0,
+    insetY: 3,
+    stroke: [2, 6] as const,
+    dot: 2,
+    gap: 1.5,
+  },
+  lg: {
+    badge: 20,
+    cutout: 13,
+    insetX: 0,
+    insetY: 4,
+    stroke: [2.5, 8] as const,
+    dot: 2.5,
+    gap: 2,
+  },
 }
 
 /**
@@ -150,7 +166,11 @@ const DisruptedRouteChip = ({
   chipClassName?: string
 }) => {
   const geometry = BADGE_GEOMETRY[size]
-  const mask = cutoutMaskStyle(geometry.cutout, geometry.insetX, geometry.insetY)
+  const mask = cutoutMaskStyle(
+    geometry.cutout,
+    geometry.insetX,
+    geometry.insetY
+  )
   return (
     <span className="relative inline-flex shrink-0 overflow-visible">
       {variant === "river" ? (
@@ -160,11 +180,7 @@ const DisruptedRouteChip = ({
           style={mask}
         />
       ) : (
-        <BusNumberChip
-          label={lineId}
-          className={chipClassName}
-          style={mask}
-        />
+        <BusNumberChip label={lineId} className={chipClassName} style={mask} />
       )}
       <span
         className="absolute flex items-center justify-center rounded-full"
@@ -176,7 +192,11 @@ const DisruptedRouteChip = ({
           backgroundColor: BUS_DISRUPTION_WARNING_COLOR,
         }}
       >
-        <WarningMark stroke={geometry.stroke} dot={geometry.dot} gap={geometry.gap} />
+        <WarningMark
+          stroke={geometry.stroke}
+          dot={geometry.dot}
+          gap={geometry.gap}
+        />
       </span>
     </span>
   )
@@ -185,7 +205,7 @@ const DisruptedRouteChip = ({
 const disruptionTriggerLabel = (
   variant: StopDisruptionChipVariant,
   lineId: string,
-  description: string,
+  description: string
 ): string => {
   const identity =
     variant === "river"
@@ -217,13 +237,7 @@ export const BusStopDisruptionChips = ({
   const { disruptions, variant, activeLineId, setActiveLineId } = ctx
 
   return (
-    <div
-      className={cn(
-        "flex shrink-0 items-center pr-2",
-        className,
-      )}
-    >
-
+    <div className={cn("flex shrink-0 items-center pr-2", className)}>
       {disruptions.map((disruption) => {
         const isActive = activeLineId === disruption.lineId
         const isDimmed = activeLineId !== null && !isActive
@@ -233,14 +247,14 @@ export const BusStopDisruptionChips = ({
             type="button"
             data-slot={TRIGGER_SLOT}
             className={cn(
-              "flex shrink-0 items-center justify-center px-1.5 first:pl-1 transition-opacity",
+              "flex shrink-0 items-center justify-center px-1.5 transition-opacity first:pl-1",
               isDimmed && "opacity-50"
             )}
             aria-expanded={isActive}
             aria-label={disruptionTriggerLabel(
               variant,
               disruption.lineId,
-              disruption.description,
+              disruption.description
             )}
             onPointerEnter={(event) => {
               if (event.pointerType !== "mouse") return

@@ -1,20 +1,20 @@
-"use client";
+"use client"
 
-import { useState, type ReactNode } from "react";
-import { Check, Copy } from "lucide-react";
+import { useState, type ReactNode } from "react"
+import { Check, Copy } from "lucide-react"
 import {
   explorerPaneClassName,
   explorerSplitFillClassName,
-} from "@/components/explorer/explorer-split";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+} from "@/components/explorer/explorer-split"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { cn } from "@/lib/utils"
 
 type InspectorSectionProps = {
-  title: string;
-  children: ReactNode;
-  className?: string;
-};
+  title: string
+  children: ReactNode
+  className?: string
+}
 
 export const InspectorSection = ({
   title,
@@ -27,26 +27,26 @@ export const InspectorSection = ({
     </h3>
     {children}
   </section>
-);
+)
 
 type CopyableFieldProps = {
-  label: string;
-  value: string;
-  href?: string;
-};
+  label: string
+  value: string
+  href?: string
+}
 
 export const CopyableField = ({ label, value, href }: CopyableFieldProps) => {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false)
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
+      await navigator.clipboard.writeText(value)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1500)
     } catch {
       // Clipboard may be unavailable — ignore.
     }
-  };
+  }
 
   return (
     <div className="flex min-w-0 items-center gap-2 border-b border-border py-2 last:border-0">
@@ -80,26 +80,26 @@ export const CopyableField = ({ label, value, href }: CopyableFieldProps) => {
         {copied ? `${label} copied` : ""}
       </span>
     </div>
-  );
-};
+  )
+}
 
 type CodeSnippetProps = {
-  title: string;
-  code: string;
-};
+  title: string
+  code: string
+}
 
 export const CodeSnippet = ({ title, code }: CodeSnippetProps) => {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false)
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText(code)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
     } catch {
       // ignore
     }
-  };
+  }
 
   return (
     <div className="relative rounded-lg border border-border bg-muted/30 p-3">
@@ -118,30 +118,30 @@ export const CodeSnippet = ({ title, code }: CodeSnippetProps) => {
         {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
       </Button>
     </div>
-  );
-};
+  )
+}
 
 type InspectorJsonProps = {
-  value: unknown;
-};
+  value: unknown
+}
 
 export const InspectorJson = ({ value }: InspectorJsonProps) => (
   <pre className="overflow-x-auto overflow-y-hidden rounded-lg border border-border bg-muted/30 p-3 text-xs">
     {JSON.stringify(value, null, 2)}
   </pre>
-);
+)
 
 type EntityInspectorShellProps = {
-  title: string;
-  subtitle?: string;
-  identity: ReactNode;
-  preview?: ReactNode;
-  relationships?: ReactNode;
-  normalised?: ReactNode;
-  code?: ReactNode;
+  title: string
+  subtitle?: string
+  identity: ReactNode
+  preview?: ReactNode
+  relationships?: ReactNode
+  normalised?: ReactNode
+  code?: ReactNode
   /** Streamed sections after Identity (Preview, Relationships, …). */
-  details?: ReactNode;
-};
+  details?: ReactNode
+}
 
 export const EntityInspectorShell = ({
   title,
@@ -157,7 +157,7 @@ export const EntityInspectorShell = ({
     className={cn(
       explorerPaneClassName,
       "flex min-h-0 min-w-0 flex-col",
-      explorerSplitFillClassName,
+      explorerSplitFillClassName
     )}
   >
     <ScrollArea className={cn("min-h-0", explorerSplitFillClassName)}>
@@ -184,11 +184,13 @@ export const EntityInspectorShell = ({
         ) : null}
 
         {normalised ? (
-          <InspectorSection title="Normalised data">{normalised}</InspectorSection>
+          <InspectorSection title="Normalised data">
+            {normalised}
+          </InspectorSection>
         ) : null}
 
         {code ? <InspectorSection title="Code">{code}</InspectorSection> : null}
       </div>
     </ScrollArea>
   </article>
-);
+)

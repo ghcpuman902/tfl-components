@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import { useEffect, useRef, useState } from "react";
-import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
-import type { FeatureCollection } from "geojson";
+import { useEffect, useRef, useState } from "react"
+import maplibregl from "maplibre-gl"
+import "maplibre-gl/dist/maplibre-gl.css"
+import type { FeatureCollection } from "geojson"
 import {
   OPENFREEMAP_BASEMAP_CREDIT,
   OPENFREEMAP_POSITRON_STYLE_URL,
@@ -11,19 +11,19 @@ import {
   TFL_STATION_ENRICHMENT_CREDIT,
   TRANSIT_GEOMETRY_PUBLIC_ASSETS,
   type TransitGeometryMode,
-} from "@/lib/tfl/geography-credits";
+} from "@/lib/tfl/geography-credits"
 
 type TransitGeometryBundle = {
-  lines: FeatureCollection;
-  stations: FeatureCollection;
-};
+  lines: FeatureCollection
+  stations: FeatureCollection
+}
 
-const LONDON_CENTER: [number, number] = [-0.12, 51.51];
-const LONDON_ZOOM = 10.2;
+const LONDON_CENTER: [number, number] = [-0.12, 51.51]
+const LONDON_ZOOM = 10.2
 
 const MODE_LABELS = TRANSIT_GEOMETRY_PUBLIC_ASSETS.map(
-  (asset) => asset.label,
-).join(", ");
+  (asset) => asset.label
+).join(", ")
 
 /**
  * MapLibre geographic placeholder — provider adapter over unique-track GeoJSON
@@ -31,19 +31,17 @@ const MODE_LABELS = TRANSIT_GEOMETRY_PUBLIC_ASSETS.map(
  * for non-map use; this component is not the geography source of truth.
  */
 export const GeographicMapPlaceholder = () => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">(
-    "loading",
-  );
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [loadedModes, setLoadedModes] = useState<TransitGeometryMode[]>([]);
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const mapRef = useRef<maplibregl.Map | null>(null)
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [loadedModes, setLoadedModes] = useState<TransitGeometryMode[]>([])
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container || mapRef.current) return;
+    const container = containerRef.current
+    if (!container || mapRef.current) return
 
-    let cancelled = false;
+    let cancelled = false
 
     const map = new maplibregl.Map({
       container,
@@ -52,26 +50,29 @@ export const GeographicMapPlaceholder = () => {
       zoom: LONDON_ZOOM,
       attributionControl: { compact: true },
       cooperativeGestures: true,
-    });
+    })
 
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-    mapRef.current = map;
+    map.addControl(
+      new maplibregl.NavigationControl({ showCompass: false }),
+      "top-right"
+    )
+    mapRef.current = map
 
     const handleLoad = async () => {
       try {
         const results = await Promise.all(
           TRANSIT_GEOMETRY_PUBLIC_ASSETS.map(async (asset) => {
-            const response = await fetch(asset.url);
+            const response = await fetch(asset.url)
             if (!response.ok) {
               throw new Error(
-                `Failed to load ${asset.label} geometry (${response.status})`,
-              );
+                `Failed to load ${asset.label} geometry (${response.status})`
+              )
             }
-            const bundle = (await response.json()) as TransitGeometryBundle;
-            return { mode: asset.mode, bundle };
-          }),
-        );
-        if (cancelled) return;
+            const bundle = (await response.json()) as TransitGeometryBundle
+            return { mode: asset.mode, bundle }
+          })
+        )
+        if (cancelled) return
 
         for (const { mode, bundle } of results) {
           map.addSource(`${mode}-lines`, {
@@ -80,14 +81,14 @@ export const GeographicMapPlaceholder = () => {
               type: "FeatureCollection",
               features: bundle.lines.features ?? [],
             },
-          });
+          })
           map.addSource(`${mode}-stations`, {
             type: "geojson",
             data: {
               type: "FeatureCollection",
               features: bundle.stations.features ?? [],
             },
-          });
+          })
         }
 
         // Casings for every mode, then cores — avoids Tube white stroke hiding DLR.
@@ -101,7 +102,7 @@ export const GeographicMapPlaceholder = () => {
               "line-width": 5,
               "line-opacity": 0.85,
             },
-          });
+          })
         }
         for (const { mode } of results) {
           map.addLayer({
@@ -117,7 +118,7 @@ export const GeographicMapPlaceholder = () => {
               ],
               "line-width": 3,
             },
-          });
+          })
         }
         for (const { mode } of results) {
           map.addLayer({
@@ -130,30 +131,30 @@ export const GeographicMapPlaceholder = () => {
               "circle-stroke-width": 1.25,
               "circle-stroke-color": "#111827",
             },
-          });
+          })
         }
 
-        setLoadedModes(results.map((result) => result.mode));
-        setStatus("ready");
+        setLoadedModes(results.map((result) => result.mode))
+        setStatus("ready")
       } catch (error) {
-        if (cancelled) return;
-        setStatus("error");
+        if (cancelled) return
+        setStatus("error")
         setErrorMessage(
-          error instanceof Error ? error.message : "Geometry load failed",
-        );
+          error instanceof Error ? error.message : "Geometry load failed"
+        )
       }
-    };
+    }
 
     map.on("load", () => {
-      void handleLoad();
-    });
+      void handleLoad()
+    })
 
     return () => {
-      cancelled = true;
-      map.remove();
-      mapRef.current = null;
-    };
-  }, []);
+      cancelled = true
+      map.remove()
+      mapRef.current = null
+    }
+  }, [])
 
   return (
     <div className="space-y-3">
@@ -195,5 +196,5 @@ export const GeographicMapPlaceholder = () => {
         </p>
       </aside>
     </div>
-  );
-};
+  )
+}

@@ -1,6 +1,6 @@
 /** Collapse whitespace the way find-in-page treats a typed query. */
 export const normalizeFindPhrase = (value: string): string =>
-  value.replace(/\s+/g, " ").trim();
+  value.replace(/\s+/g, " ").trim()
 
 /**
  * True when searching for `query` would already highlight one of `phrases`
@@ -8,14 +8,14 @@ export const normalizeFindPhrase = (value: string): string =>
  */
 export const isFindCovered = (
   query: string,
-  phrases: readonly string[],
+  phrases: readonly string[]
 ): boolean => {
-  const needle = normalizeFindPhrase(query).toLowerCase();
-  if (!needle) return false;
+  const needle = normalizeFindPhrase(query).toLowerCase()
+  if (!needle) return false
   return phrases.some((phrase) =>
-    normalizeFindPhrase(phrase).toLowerCase().includes(needle),
-  );
-};
+    normalizeFindPhrase(phrase).toLowerCase().includes(needle)
+  )
+}
 
 /** Drop phrases contained in a longer one so match counts stay honest. */
 export const withoutFindSubstrings = (values: readonly string[]): string[] =>
@@ -24,9 +24,9 @@ export const withoutFindSubstrings = (values: readonly string[]): string[] =>
       !values.some(
         (other) =>
           other.length > value.length &&
-          other.toLowerCase().includes(value.toLowerCase()),
-      ),
-  );
+          other.toLowerCase().includes(value.toLowerCase())
+      )
+  )
 
 /**
  * Candidates that find-in-page cannot already hit in `coveredPhrases`.
@@ -34,21 +34,21 @@ export const withoutFindSubstrings = (values: readonly string[]): string[] =>
  */
 export const neededFindPhrases = (
   candidates: readonly string[],
-  coveredPhrases: readonly string[],
+  coveredPhrases: readonly string[]
 ): string[] => {
-  const seen = new Set<string>();
-  const needed: string[] = [];
+  const seen = new Set<string>()
+  const needed: string[] = []
   for (const candidate of candidates) {
-    const trimmed = normalizeFindPhrase(candidate);
-    if (!trimmed) continue;
-    const key = trimmed.toLowerCase();
-    if (seen.has(key)) continue;
-    if (isFindCovered(trimmed, coveredPhrases)) continue;
-    seen.add(key);
-    needed.push(trimmed);
+    const trimmed = normalizeFindPhrase(candidate)
+    if (!trimmed) continue
+    const key = trimmed.toLowerCase()
+    if (seen.has(key)) continue
+    if (isFindCovered(trimmed, coveredPhrases)) continue
+    seen.add(key)
+    needed.push(trimmed)
   }
-  return withoutFindSubstrings(needed);
-};
+  return withoutFindSubstrings(needed)
+}
 
 /**
  * Mount a hidden find chip only when the current query would not already
@@ -59,20 +59,20 @@ export const neededFindPhrases = (
 export const shouldExposeFindPhrase = (
   phrase: string,
   coveredPhrases: readonly string[],
-  findQuery: string,
+  findQuery: string
 ): boolean => {
-  if (isFindCovered(phrase, coveredPhrases)) return false;
-  const query = normalizeFindPhrase(findQuery);
-  if (!query) return true;
-  if (!isFindCovered(query, [phrase])) return false;
-  return !isFindCovered(query, coveredPhrases);
-};
+  if (isFindCovered(phrase, coveredPhrases)) return false
+  const query = normalizeFindPhrase(findQuery)
+  if (!query) return true
+  if (!isFindCovered(query, [phrase])) return false
+  return !isFindCovered(query, coveredPhrases)
+}
 
 export const phrasesToExpose = (
   candidates: readonly string[],
   coveredPhrases: readonly string[],
-  findQuery: string,
+  findQuery: string
 ): string[] =>
   neededFindPhrases(candidates, coveredPhrases).filter((phrase) =>
-    shouldExposeFindPhrase(phrase, coveredPhrases, findQuery),
-  );
+    shouldExposeFindPhrase(phrase, coveredPhrases, findQuery)
+  )

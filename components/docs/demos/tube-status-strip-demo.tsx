@@ -19,14 +19,7 @@ async function TubeStatusStripLive() {
     error = "Could not load line status. Check TfL credentials and try again."
   }
 
-  return (
-    <TubeStatusStrip
-      data={data}
-      now={fetchedAt}
-      units={4}
-      error={error}
-    />
-  )
+  return <TubeStatusStrip data={data} now={fetchedAt} units={4} error={error} />
 }
 
 export default function TubeStatusStripDemo() {

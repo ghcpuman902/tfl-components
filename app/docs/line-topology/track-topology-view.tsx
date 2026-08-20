@@ -52,10 +52,7 @@ import {
 } from "@/lib/tfl/network-model/line-slice"
 import { cn } from "@/lib/utils"
 import { RoutePatternInspector } from "./route-pattern-inspector"
-import {
-  stationGraphScales,
-  useSvgViewport,
-} from "./station-graph-scale"
+import { stationGraphScales, useSvgViewport } from "./station-graph-scale"
 
 type BundlesByMode = Partial<Record<TransitMode, TransitGeometryBundle>>
 
@@ -198,9 +195,7 @@ const boxesOverlap = (
 ) =>
   a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
 
-const placeLabels = (
-  nodes: readonly LaidOutPassengerNode[]
-): LaidOutNode[] => {
+const placeLabels = (nodes: readonly LaidOutPassengerNode[]): LaidOutNode[] => {
   const chosen = new Map<string, (typeof LABEL_SLOTS)[number]>()
   for (const node of nodes) {
     let best = LABEL_SLOTS[0]!
@@ -671,43 +666,43 @@ const TopologyPlot = ({
                   )
                 })}
                 {visibleMovements.map((pair) => {
-                    const a = nodeById.get(pair.a)
-                    const via = nodeById.get(pair.via)
-                    const b = nodeById.get(pair.b)
-                    if (!a || !via || !b) return null
-                    const curve = movementCurve(a, via, b)
-                    const patternIds = [
-                      ...new Set(
-                        pair.directions.flatMap(
-                          (direction) => direction.patternIds
-                        )
-                      ),
-                    ]
-                    return (
-                      <g key={pair.id}>
-                        <path
-                          d={curve}
-                          fill="none"
-                          stroke="var(--background)"
-                          strokeWidth={dual ? 5.5 : 6.5}
-                          strokeLinecap="round"
-                          vectorEffect="non-scaling-stroke"
-                        />
-                        <path
-                          d={curve}
-                          fill="none"
-                          stroke={color}
-                          strokeWidth={dual ? 1.8 : 2.2}
-                          strokeLinecap="round"
-                          vectorEffect="non-scaling-stroke"
-                        >
-                          <title>
-                            {`${pair.directions.length} permitted direction${pair.directions.length === 1 ? "" : "s"}; ${patternIds.length} supporting pattern${patternIds.length === 1 ? "" : "s"}`}
-                          </title>
-                        </path>
-                      </g>
-                    )
-                  })}
+                  const a = nodeById.get(pair.a)
+                  const via = nodeById.get(pair.via)
+                  const b = nodeById.get(pair.b)
+                  if (!a || !via || !b) return null
+                  const curve = movementCurve(a, via, b)
+                  const patternIds = [
+                    ...new Set(
+                      pair.directions.flatMap(
+                        (direction) => direction.patternIds
+                      )
+                    ),
+                  ]
+                  return (
+                    <g key={pair.id}>
+                      <path
+                        d={curve}
+                        fill="none"
+                        stroke="var(--background)"
+                        strokeWidth={dual ? 5.5 : 6.5}
+                        strokeLinecap="round"
+                        vectorEffect="non-scaling-stroke"
+                      />
+                      <path
+                        d={curve}
+                        fill="none"
+                        stroke={color}
+                        strokeWidth={dual ? 1.8 : 2.2}
+                        strokeLinecap="round"
+                        vectorEffect="non-scaling-stroke"
+                      >
+                        <title>
+                          {`${pair.directions.length} permitted direction${pair.directions.length === 1 ? "" : "s"}; ${patternIds.length} supporting pattern${patternIds.length === 1 ? "" : "s"}`}
+                        </title>
+                      </path>
+                    </g>
+                  )
+                })}
                 {painted.map((node) => (
                   <g key={node.id} transform={`translate(${node.x} ${node.y})`}>
                     <circle
@@ -830,8 +825,7 @@ export const TrackTopologyView = ({
   const physicalBundle =
     trackModel === "timetable" ? timetableBundle : osmPhysicalBundle
   const physicalData = useMemo<BundlesByMode>(
-    () =>
-      physicalBundle ? { [mapMode]: physicalBundle } : {},
+    () => (physicalBundle ? { [mapMode]: physicalBundle } : {}),
     [mapMode, physicalBundle]
   )
   const stations = useMemo(() => {
@@ -874,11 +868,7 @@ export const TrackTopologyView = ({
   return (
     <div className="space-y-10">
       <section className="space-y-3" aria-labelledby="passenger-model-heading">
-        <div
-          className="flex flex-wrap gap-1.5"
-          role="group"
-          aria-label="Line"
-        >
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Line">
           {lineOptions.map((option) => {
             const selectedLine = option.lineId === lineId
             return (
@@ -891,7 +881,7 @@ export const TrackTopologyView = ({
                 className={cn(
                   "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                   selectedLine
-                    ? "outline-solid outline-2 outline-offset-1 outline-foreground"
+                    ? "outline-2 outline-offset-1 outline-foreground outline-solid"
                     : "opacity-60 hover:opacity-100"
                 )}
               >
@@ -931,9 +921,9 @@ export const TrackTopologyView = ({
             Physical topology
           </h2>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            Track the geographic map paints. Merged centreline is one stroke
-            per corridor. Both tracks keeps the running lines. Elizabeth line
-            and Overground also have low-resolution timetable shapes.
+            Track the geographic map paints. Merged centreline is one stroke per
+            corridor. Both tracks keeps the running lines. Elizabeth line and
+            Overground also have low-resolution timetable shapes.
           </p>
         </div>
         <div
@@ -973,7 +963,9 @@ export const TrackTopologyView = ({
               data={physicalData}
               modes={[mapMode]}
               lineIds={[selected.lineId]}
-              trackModel={trackModel === "timetable" ? "centreline" : trackModel}
+              trackModel={
+                trackModel === "timetable" ? "centreline" : trackModel
+              }
               className="h-full"
             />
           </div>
@@ -1002,7 +994,9 @@ export const TrackTopologyView = ({
             lineName={selected.lineName}
             color={selected.color}
             variantsBundle={variantsBundle}
-            stopsFile={selected.mode ? OSM_STOPS_BY_MODE[selected.mode] : undefined}
+            stopsFile={
+              selected.mode ? OSM_STOPS_BY_MODE[selected.mode] : undefined
+            }
             dataset={servicePatterns}
             snapshot={snapshotSlice}
           />

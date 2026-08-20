@@ -141,11 +141,8 @@ const nearestLeg = (
   return bestCos >= 0.35 ? best : null
 }
 
-const directedMovementKey = (
-  from: string,
-  via: string,
-  to: string
-): string => `${from}|${via}|${to}`
+const directedMovementKey = (from: string, via: string, to: string): string =>
+  `${from}|${via}|${to}`
 
 const upsertDirectedMovement = (
   movements: Map<string, DirectedTopologyMovement>,
