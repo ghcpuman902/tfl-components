@@ -1,0 +1,32 @@
+import type { Metadata } from "next"
+import { Suspense } from "react"
+import { LANDING_PAPER } from "@/app/temp/landing-palette/palette"
+import { LandingScene } from "./landing-scene"
+import { PostHeroPlaceholder } from "./post-hero-placeholder"
+
+export const metadata: Metadata = {
+  title: "Landing hero (temp)",
+  description:
+    "Temp test: 2.5D room scene with scroll-controlled zoom into a live station board.",
+  robots: { index: false, follow: false },
+}
+
+export default function LandingHeroTempPage() {
+  return (
+    <div className="w-full min-w-0">
+      <p className="sr-only">Temp landing hero test — not linked in nav.</p>
+      <Suspense
+        fallback={
+          <div
+            className="h-svh"
+            style={{ background: LANDING_PAPER.light }}
+            aria-hidden
+          />
+        }
+      >
+        <LandingScene />
+      </Suspense>
+      <PostHeroPlaceholder />
+    </div>
+  )
+}
