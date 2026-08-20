@@ -125,10 +125,10 @@ const StateBadge = ({ state }: { state: DisplayState }) => {
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <span tabIndex={0} className="inline-flex cursor-help">
-          {badge}
-        </span>
+      <TooltipTrigger
+        render={<span tabIndex={0} className="inline-flex cursor-help" />}
+      >
+        {badge}
       </TooltipTrigger>
       <TooltipContent side="bottom" className="max-w-xs">
         {hint}
