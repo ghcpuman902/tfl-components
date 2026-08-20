@@ -1,6 +1,6 @@
 # Landing hero (temp)
 
-Temp test for a 2.5D room landing: horizontal parallax, an elastic scroll-to-zoom into the iPad, a live `/board/view` iframe, and a fake mirror with looping photos.
+Temp test for a 2.5D room landing: horizontal parallax, an elastic scroll-to-zoom into the iPad, a live interactive `/board/view` iframe (Oxford Circus), and a fake mirror with looping photos.
 
 Route: `/temp/landing-hero` — not linked in nav, `noindex`.
 

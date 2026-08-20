@@ -170,8 +170,8 @@ export const BOARD_SETTINGS = {
     url: true,
     form: true,
     ui: {
-      label: "Station name or Stop ID",
-      help: "Search by station name, or paste a TfL Stop ID.",
+      label: "Station",
+      help: "Search by name or paste a Stop ID.",
       control: "text",
     },
   } satisfies ScalarSetting<string | undefined>,
@@ -188,7 +188,7 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Stop name override",
-      help: "Changes the displayed heading. It does not select the data source.",
+      help: "Changes the heading, not the data source.",
       control: "text",
     },
   } satisfies ScalarSetting<string | undefined>,
@@ -205,7 +205,7 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Behaviour",
-      help: "Interactive waits for swipe, click, or keyboard. Unattended advances pageable panels on a timer.",
+      help: "Unattended advances pageable panels on a timer.",
       control: "select",
       options: [
         { value: "interactive", label: "Interactive" },
@@ -235,7 +235,7 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Rows per line",
-      help: "One number applies to every section. A comma list matches line order; empty slots use the section default (3, or 6 when lines share platforms). 0 shows every row.",
+      help: "One number for every line, or a comma list in line order. 0 shows every row.",
       control: "text",
     },
   } satisfies ScalarSetting<number>,
@@ -255,8 +255,7 @@ export const BOARD_SETTINGS = {
     url: true,
     form: true,
     ui: {
-      label: "Lines (optional)",
-      help: "Comma-separated line ids to show, in this order. Leave blank for every line at the station.",
+      label: "Lines",
       control: "text",
     },
   } satisfies ListSetting<readonly string[]>,
@@ -274,7 +273,6 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Wide slot",
-      help: "Comma stack: rail, bus, river, cycle, status. First on small screens.",
       control: "text",
     },
   } satisfies ListSetting<readonly BoardPanelKind[]>,
@@ -308,8 +306,7 @@ export const BOARD_SETTINGS = {
     url: true,
     form: true,
     ui: {
-      label: "Bus stop ID",
-      help: "Boardable bus StopPoint (usually 490…). Search or locate on this page.",
+      label: "Bus stop",
       control: "text",
     },
   } satisfies ScalarSetting<string | undefined>,
@@ -325,8 +322,8 @@ export const BOARD_SETTINGS = {
     url: true,
     form: true,
     ui: {
-      label: "Bus routes (optional)",
-      help: "Comma-separated route ids. Leave blank for every route at the stop.",
+      label: "Bus routes",
+      help: "Leave blank for every route at the stop.",
       control: "text",
     },
   } satisfies ListSetting<readonly string[]>,
@@ -343,7 +340,7 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Bus rows",
-      help: "Visible arrivals per page. 0 shows every row.",
+      help: "0 shows every row.",
       control: "number",
     },
   } satisfies ScalarSetting<number>,
@@ -359,8 +356,8 @@ export const BOARD_SETTINGS = {
     url: true,
     form: true,
     ui: {
-      label: "Pier ID",
-      help: "River pier (930G…). Poll the pier, not a berth.",
+      label: "Pier",
+      help: "Poll the pier, not a berth.",
       control: "text",
     },
   } satisfies ScalarSetting<string | undefined>,
@@ -377,7 +374,7 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "River rows",
-      help: "Visible arrivals per page. 0 shows every row.",
+      help: "0 shows every row.",
       control: "number",
     },
   } satisfies ScalarSetting<number>,
@@ -394,7 +391,6 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Cycle docks",
-      help: "Comma-separated BikePoint ids.",
       control: "text",
     },
   } satisfies ListSetting<readonly string[]>,
@@ -411,7 +407,7 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Cycle tiles",
-      help: "Fixed height in arrivals-row tiles when more than one dock is shown.",
+      help: "Fixed tile height when more than one dock is shown.",
       control: "number",
     },
   } satisfies ScalarSetting<number>,
@@ -428,7 +424,7 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Pin first arrival",
-      help: "Unattended only. Keep the next service visible while later rows rotate.",
+      help: "Keep the next service visible while later rows rotate.",
       control: "select",
       options: [
         { value: "true", label: "Pin first" },
@@ -469,7 +465,7 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Status tiles",
-      help: "Fixed height in arrivals-row tiles. 1 is summary only.",
+      help: "1 is summary only.",
       control: "number",
     },
   } satisfies ScalarSetting<number>,
@@ -485,8 +481,7 @@ export const BOARD_SETTINGS = {
     url: true,
     form: true,
     ui: {
-      label: "Status lines (optional)",
-      help: "Comma-separated line ids for detail. Leave blank for every fetched line.",
+      label: "Status lines",
       control: "text",
     },
   } satisfies ListSetting<readonly string[]>,
@@ -525,7 +520,7 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Status dwell (seconds)",
-      help: "Override the shared 10-second reading interval.",
+      help: "Override the 10-second interval.",
       control: "number",
     },
   } satisfies ScalarSetting<number | undefined>,

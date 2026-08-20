@@ -76,7 +76,7 @@ export const ROUTE_PAGE_META = {
   board: {
     title: "Board",
     description:
-      "Configure a live station display and open a bookmarkable URL.",
+      "Turn any screen into a live TfL departures and status display.",
     path: "/board",
   },
   boardView: {

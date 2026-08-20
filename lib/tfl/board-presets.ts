@@ -4,7 +4,10 @@
  */
 
 import type { BoardSettingId } from "@/lib/tfl/board-settings"
-import type { BoardPanelKind } from "@/lib/tfl/board-panels"
+import {
+  resolveBoardSlots,
+  type BoardPanelKind,
+} from "@/lib/tfl/board-panels"
 import type { BoardConfig } from "@/lib/tfl/board-url-state"
 
 export type BoardPresetId = "station" | "near" | "arrivals" | "status"
@@ -38,8 +41,7 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
   {
     id: "station",
     title: "Station + status",
-    description:
-      "One station’s arrivals and network status. Optional line filter.",
+    description: "Arrivals and network status for one station.",
     available: true,
     formSettings: STATION_FORM,
     slots: { p1: ["rail"], p2: ["status"] },
@@ -47,8 +49,7 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
   {
     id: "near",
     title: "Near me",
-    description:
-      "Nearest rail, bus, and cycle docks, plus status. Locate to pin ids.",
+    description: "Nearest rail, bus, and cycle docks, plus status.",
     available: true,
     formSettings: [
       ...STATION_FORM,
@@ -65,7 +66,7 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
   {
     id: "arrivals",
     title: "Arrivals only",
-    description: "One panel — rail, or switch the slot to bus or river.",
+    description: "One arrivals panel.",
     available: true,
     formSettings: [
       "stop",
@@ -85,7 +86,7 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
   {
     id: "status",
     title: "Status only",
-    description: "Network status in a single panel.",
+    description: "Network status.",
     available: true,
     formSettings: [
       "behaviour",
@@ -102,6 +103,18 @@ export const DEFAULT_BOARD_PRESET_ID: BoardPresetId = "station"
 
 export const getBoardPreset = (id: BoardPresetId): BoardPresetDef =>
   BOARD_PRESETS.find((preset) => preset.id === id) ?? BOARD_PRESETS[0]!
+
+/** Infer the layout card from slot stacks. URL does not name the recipe (J13). */
+export const matchBoardPresetId = (
+  config: Pick<BoardConfig, "slots">
+): BoardPresetId | undefined => {
+  const resolved = resolveBoardSlots(config.slots.p1, config.slots.p2)
+  return BOARD_PRESETS.find(
+    (preset) =>
+      preset.slots.p1.join(",") === resolved.p1.join(",") &&
+      preset.slots.p2.join(",") === resolved.p2.join(",")
+  )?.id
+}
 
 export const applyBoardRecipe = (
   current: BoardConfig,

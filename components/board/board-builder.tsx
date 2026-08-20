@@ -1,24 +1,20 @@
 "use client"
 
-import { useMemo, useState, useSyncExternalStore } from "react"
-import { ChevronDownIcon } from "lucide-react"
-import { BoardConfigForm } from "@/components/board/board-config-form"
-import { BoardUrlLegend } from "@/components/board/board-url-legend"
-import { Badge } from "@/components/ui/badge"
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react"
+import {
+  BoardAdvancedConfig,
+  BoardQuickConfig,
+} from "@/components/board/board-config-form"
+import { BoardPreview } from "@/components/board/board-preview"
+import { BoardShareCard } from "@/components/board/board-share-card"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
 import { useHorizontalScrollEnd } from "@/hooks/use-horizontal-scroll-end"
 import {
@@ -39,14 +35,12 @@ import {
   BOARD_PRESETS,
   DEFAULT_BOARD_PRESET_ID,
   getBoardPreset,
+  matchBoardPresetId,
   type BoardPresetDef,
   type BoardPresetId,
 } from "@/lib/tfl/board-presets"
 import type { BoardSettingId } from "@/lib/tfl/board-settings"
-import { BoardQrDialog } from "@/components/board/board-qr-dialog"
-import { Switch } from "@/components/ui/switch"
 import {
-  BOARD_KEY_MODE_LABEL,
   boardConfigForShare,
   boardKeyModeFromPersist,
   buildShareableBoardHref,
@@ -55,8 +49,10 @@ import {
 } from "@/lib/tfl/board-share"
 import {
   BOARD_VIEW_PATH,
+  boardHashFromConfig,
   describeBoardHrefSegments,
   DEFAULT_BOARD_CONFIG,
+  parseBoardConfig,
   type BoardConfig,
 } from "@/lib/tfl/board-url-state"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
@@ -65,82 +61,20 @@ import { cn } from "@/lib/utils"
 const subscribeToOrigin = () => () => undefined
 const getBrowserOrigin = () => window.location.origin
 const getServerOrigin = () => ""
-
-const PreviewRows = ({ count }: { count: number }) => (
-  <div className="grid min-h-0 flex-1 gap-1">
-    {Array.from({ length: count }, (_, index) => (
-      <span
-        key={index}
-        className="block rounded-sm bg-background/70"
-        style={{ width: `${94 - index * 9}%` }}
-      />
-    ))}
-  </div>
-)
-
-const PresetDiagram = ({ preset }: { preset: BoardPresetId }) => {
-  if (preset === "station") {
-    return (
-      <div className="grid h-24 grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)] gap-1.5 rounded-lg bg-foreground p-2">
-        <div className="flex min-w-0 flex-col gap-1.5 rounded bg-background/15 p-1.5">
-          <span className="h-2.5 w-2/3 rounded-sm bg-background" />
-          <PreviewRows count={4} />
-        </div>
-        <div className="grid min-w-0 grid-rows-[auto_1fr] gap-1.5">
-          <span className="rounded bg-background px-1.5 py-1 text-center text-[0.55rem] leading-none text-foreground">
-            12:42
-          </span>
-          <div className="grid gap-1 rounded bg-background/15 p-1.5">
-            <span className="rounded-sm bg-background/80" />
-            <span className="rounded-sm bg-background/55" />
-            <span className="rounded-sm bg-background/70" />
-            <span className="rounded-sm bg-background/45" />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (preset === "near") {
-    return (
-      <div className="grid h-24 grid-cols-3 grid-rows-2 gap-1.5 rounded-lg bg-foreground p-2">
-        <div className="col-span-2 flex flex-col gap-1 rounded bg-background/20 p-1.5">
-          <span className="h-2 w-1/2 rounded-sm bg-background/80" />
-          <PreviewRows count={2} />
-        </div>
-        <div className="rounded bg-background/50" />
-        <div className="rounded bg-background/35" />
-        <div className="col-span-2 grid grid-cols-3 gap-1 rounded bg-background/15 p-1.5">
-          <span className="rounded-sm bg-background/75" />
-          <span className="rounded-sm bg-background/50" />
-          <span className="rounded-sm bg-background/65" />
-        </div>
-      </div>
-    )
-  }
-
-  if (preset === "arrivals") {
-    return (
-      <div className="flex h-24 flex-col gap-1.5 rounded-lg bg-foreground p-2.5">
-        <span className="mb-0.5 h-2.5 w-2/5 rounded-sm bg-background" />
-        <PreviewRows count={4} />
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex h-24 flex-col gap-1.5 rounded-lg bg-foreground p-2.5">
-      <span className="mb-0.5 h-2.5 w-2/5 rounded-sm bg-background" />
-      <span className="h-3 rounded-sm bg-background/80" />
-      <span className="h-3 w-11/12 rounded-sm bg-background/55" />
-      <span className="h-3 w-4/5 rounded-sm bg-background/70" />
-      <span className="h-3 w-2/3 rounded-sm bg-background/40" />
-    </div>
-  )
-}
+const getClientHash = () => window.location.hash
+const getServerHash = () => ""
+const getClientReady = () => true
+const getServerReady = () => false
 
 const PRESET_FEEDBACK_MOTION = "duration-300 ease-[cubic-bezier(0.05,0,0,1)]"
-const PRESET_COLOR_MOTION = "duration-200 ease-[cubic-bezier(0.05,0,0,1)]"
+
+const configFromHash = (hash: string): BoardConfig => {
+  const parsed = parseBoardConfig(hash)
+  return {
+    ...parsed,
+    stop: parsed.stop ?? HOME_RAIL_STOP.id,
+  }
+}
 
 const PresetCardFeedback = () => (
   <>
@@ -166,58 +100,95 @@ const PresetCardFeedback = () => (
 const PresetCard = ({
   preset,
   active,
+  locateBusy,
   onSelect,
+  onLocate,
 }: {
   preset: BoardPresetDef
   active: boolean
+  locateBusy: boolean
   onSelect: () => void
-}) => (
-  <li
-    className="group/preset relative isolate z-0 shrink-0 snap-start px-1.5 py-3 first:pl-3 last:pr-3 focus-within:z-10 hover:z-10"
-    aria-current={active ? "true" : undefined}
-  >
-    <PresetCardFeedback />
-    <Card
-      className={cn(
-        "relative z-10 h-full w-[82vw] max-w-84 gap-3 py-3 sm:w-80",
-        active ? "ring-2 ring-primary" : "bg-muted/30 text-muted-foreground"
-      )}
+  onLocate: () => void
+}) => {
+  const itemRef = useRef<HTMLLIElement>(null)
+
+  useEffect(() => {
+    if (!active) return
+    const item = itemRef.current
+    const scroller = item?.parentElement
+    if (!item || !scroller) return
+    const itemRect = item.getBoundingClientRect()
+    const scrollerRect = scroller.getBoundingClientRect()
+    if (
+      itemRect.left >= scrollerRect.left - 1 &&
+      itemRect.right <= scrollerRect.right + 1
+    ) {
+      return
+    }
+    item.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    })
+  }, [active])
+
+  return (
+    <li
+      ref={itemRef}
+      className="group/preset relative isolate z-0 w-52 shrink-0 scroll-mx-[max(1rem,calc((100vw-80rem)/2))] sm:w-56"
+      aria-current={active ? "true" : undefined}
     >
-      <button
-        type="button"
-        className="absolute inset-0 z-20 rounded-xl"
-        onClick={onSelect}
-        aria-label={`Use ${preset.title} layout`}
-      />
-      <CardContent className="px-3">
-        <PresetDiagram preset={preset.id} />
-      </CardContent>
-      <CardHeader className="px-3">
-        <CardTitle className="text-base text-foreground">
-          {preset.title}
-        </CardTitle>
-        <CardDescription
-          className={cn(
-            "transition-colors",
-            PRESET_COLOR_MOTION,
-            "group-focus-within/preset:text-foreground group-hover/preset:text-foreground"
-          )}
+      <PresetCardFeedback />
+      <Card
+        className={cn(
+          "relative z-10 h-full gap-2 py-2",
+          active ? "ring-2 ring-primary" : "bg-muted/30 text-muted-foreground"
+        )}
+      >
+        <button
+          type="button"
+          className="flex w-full flex-col gap-2 text-left"
+          onClick={onSelect}
+          aria-label={`Use ${preset.title} layout`}
+          aria-pressed={active}
         >
-          {preset.description}
-        </CardDescription>
-        <CardAction>
-          <Badge variant={preset.available ? "default" : "secondary"}>
-            {preset.available
-              ? active
-                ? "Current"
-                : "Available"
-              : "Not yet available"}
-          </Badge>
-        </CardAction>
-      </CardHeader>
-    </Card>
-  </li>
-)
+          <CardContent className="px-2">
+            {/* eslint-disable-next-line @next/next/no-img-element -- captured board screenshot thumbnail */}
+            <img
+              src={`/board/presets/${preset.id}.png`}
+              alt=""
+              className="h-20 w-full rounded-lg bg-background object-cover object-top"
+            />
+          </CardContent>
+          <CardHeader className="px-3">
+            <CardTitle className="text-base text-foreground">
+              {preset.title}
+            </CardTitle>
+            {preset.description ? (
+              <p className="text-sm text-muted-foreground">
+                {preset.description}
+              </p>
+            ) : null}
+          </CardHeader>
+        </button>
+        {preset.id === "near" ? (
+          <CardHeader className="px-3 pt-0">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="relative z-20"
+              onClick={onLocate}
+              disabled={locateBusy}
+            >
+              {locateBusy ? "Finding nearby stops…" : "Locate near me"}
+            </Button>
+          </CardHeader>
+        ) : null}
+      </Card>
+    </li>
+  )
+}
 
 const initialBoardConfig = (): BoardConfig => ({
   ...DEFAULT_BOARD_CONFIG,
@@ -229,6 +200,38 @@ type BoardBuilderProps = {
   stationLines: BoardStationLinesIndex
   stationNames: BoardStationNamesIndex
   stations: readonly BoardStationSearchItem[]
+}
+
+const formSettingsFromSlots = (config: BoardConfig): BoardSettingId[] => {
+  const resolved = resolveBoardSlots(config.slots.p1, config.slots.p2)
+  const ids = new Set<BoardSettingId>(["behaviour"])
+  if (boardSlotsInclude(resolved, "rail")) {
+    ids.add("stop")
+    ids.add("stopName")
+    ids.add("arrivalsLines")
+    ids.add("arrivalsRows")
+    ids.add("arrivalsPinFirst")
+  }
+  if (boardSlotsInclude(resolved, "bus")) {
+    ids.add("busStop")
+    ids.add("busRoutes")
+    ids.add("busRows")
+  }
+  if (boardSlotsInclude(resolved, "river")) {
+    ids.add("riverStop")
+    ids.add("riverRows")
+  }
+  if (boardSlotsInclude(resolved, "cycle")) {
+    ids.add("cycleDocks")
+    ids.add("cycleTiles")
+  }
+  if (boardSlotsInclude(resolved, "status")) {
+    ids.add("statusSurface")
+    ids.add("statusTiles")
+    ids.add("statusLines")
+    ids.add("statusOverview")
+  }
+  return [...ids]
 }
 
 export const BoardBuilder = ({
@@ -252,53 +255,41 @@ export const BoardBuilder = ({
     DEFAULT_BOARD_PRESET_ID
   )
   const [config, setConfig] = useState<BoardConfig>(initialBoardConfig)
-  const [configOpen, setConfigOpen] = useState(false)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
   const [locateBusy, setLocateBusy] = useState(false)
   const [locateError, setLocateError] = useState<string | null>(null)
   const [keyModeOverride, setKeyModeOverride] = useState<BoardKeyMode | null>(
-    null,
+    null
   )
-  const [qrOpen, setQrOpen] = useState(false)
   const origin = useSyncExternalStore(
     subscribeToOrigin,
     getBrowserOrigin,
     getServerOrigin
   )
+  const hash = useSyncExternalStore(
+    subscribeToOrigin,
+    getClientHash,
+    getServerHash
+  )
+  const isClient = useSyncExternalStore(
+    subscribeToOrigin,
+    getClientReady,
+    getServerReady
+  )
+  const [prevHash, setPrevHash] = useState<string | null>(null)
+
+  if (isClient && prevHash === null) {
+    setPrevHash(hash)
+    if (hash) {
+      const next = configFromHash(hash)
+      setConfig(next)
+      const matched = matchBoardPresetId(next)
+      if (matched) setPresetId(matched)
+    }
+  }
 
   const availablePresets = BOARD_PRESETS.filter((item) => item.available)
-
-  const preset = getBoardPreset(presetId)
-  const resolvedSlots = resolveBoardSlots(config.slots.p1, config.slots.p2)
-  const formSettings = useMemo(() => {
-    const ids = new Set<BoardSettingId>(preset.formSettings)
-    if (boardSlotsInclude(resolvedSlots, "rail")) {
-      ids.add("stop")
-      ids.add("stopName")
-      ids.add("arrivalsLines")
-      ids.add("arrivalsRows")
-      ids.add("arrivalsPinFirst")
-    }
-    if (boardSlotsInclude(resolvedSlots, "bus")) {
-      ids.add("busStop")
-      ids.add("busRoutes")
-      ids.add("busRows")
-    }
-    if (boardSlotsInclude(resolvedSlots, "river")) {
-      ids.add("riverStop")
-      ids.add("riverRows")
-    }
-    if (boardSlotsInclude(resolvedSlots, "cycle")) {
-      ids.add("cycleDocks")
-      ids.add("cycleTiles")
-    }
-    if (boardSlotsInclude(resolvedSlots, "status")) {
-      ids.add("statusSurface")
-      ids.add("statusTiles")
-      ids.add("statusLines")
-      ids.add("statusOverview")
-    }
-    return [...ids]
-  }, [preset.formSettings, resolvedSlots])
+  const formSettings = useMemo(() => formSettingsFromSlots(config), [config])
   const appKey = hydrated ? (getAppKey() ?? "") : ""
   const hasKey = Boolean(appKey)
 
@@ -316,7 +307,7 @@ export const BoardBuilder = ({
 
   const inferredKeyMode = boardKeyModeFromPersist(
     hydrated ? persistMode : undefined,
-    hasKey,
+    hasKey
   )
   const keyMode = keyModeOverride ?? inferredKeyMode
 
@@ -337,6 +328,26 @@ export const BoardBuilder = ({
 
   const absoluteUrl = buildShareableBoardUrl(origin, forUrl, keyMode)
   const legendPath = origin ? `${origin}${BOARD_VIEW_PATH}` : BOARD_VIEW_PATH
+
+  useEffect(() => {
+    if (!isClient) return
+    const nextHash = boardHashFromConfig(shareConfig)
+    if (window.location.hash === nextHash) return
+    const url = `${window.location.pathname}${window.location.search}${nextHash}`
+    window.history.replaceState(window.history.state, "", url)
+  }, [isClient, shareConfig])
+
+  useEffect(() => {
+    if (!isClient) return
+    const handlePop = () => {
+      const next = configFromHash(window.location.hash)
+      setConfig(next)
+      const matched = matchBoardPresetId(next)
+      if (matched) setPresetId(matched)
+    }
+    window.addEventListener("popstate", handlePop)
+    return () => window.removeEventListener("popstate", handlePop)
+  }, [isClient])
 
   const handleKeyModeChange = (checked: boolean) => {
     const nextMode: BoardKeyMode = checked ? "browser" : "portable"
@@ -380,9 +391,6 @@ export const BoardBuilder = ({
         },
       }
 
-      // Positional overrides are stop-relative — drop them on stop change.
-      // A scalar `a.rows` survives. Stop name is an override only — leave
-      // it empty so the board resolves the heading from the Stop ID.
       if (stopChanged) {
         const rows = merged.arrivals.rows
         merged.arrivals = {
@@ -403,15 +411,11 @@ export const BoardBuilder = ({
     })
   }
 
-  const handleManageKey = () => {
-    openDialog()
-  }
-
   const handleSelectRecipe = (id: BoardPresetId) => {
     const nextPreset = getBoardPreset(id)
     setPresetId(id)
     setConfig((current) => applyBoardRecipe(current, nextPreset))
-    setConfigOpen(true)
+    setAdvancedOpen(id !== DEFAULT_BOARD_PRESET_ID)
   }
 
   const handleLocate = () => {
@@ -434,6 +438,7 @@ export const BoardBuilder = ({
           }
           const near = getBoardPreset("near")
           setPresetId("near")
+          setAdvancedOpen(true)
           setConfig((current) => {
             const next = applyBoardRecipe(current, near)
             const p1 = [...near.slots.p1]
@@ -448,7 +453,6 @@ export const BoardBuilder = ({
               cycle: { ...next.cycle, docks: result.docks },
             }
           })
-          setConfigOpen(true)
         } catch (err) {
           setLocateError(
             err instanceof Error ? err.message : "Could not find nearby stops."
@@ -457,26 +461,37 @@ export const BoardBuilder = ({
           setLocateBusy(false)
         }
       },
-      (error) => {
+      (geoError) => {
         setLocateBusy(false)
         setLocateError(
-          error.message || "Location permission is needed to find nearby stops."
+          geoError.message ||
+            "Location permission is needed to find nearby stops."
         )
       },
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 30_000 }
     )
   }
 
+  const formProps = {
+    config,
+    formSettings,
+    servingLines: lookupBoardStationLines(stationLines, config.stop),
+    lineGroups: lookupBoardStationLineGroups(config.stop),
+    autoStopName,
+    stations,
+    onChange: handleConfigChange,
+  }
+
   return (
     <div className="space-y-8">
-      <section className="space-y-3" aria-labelledby="board-layouts-heading">
+      <section className="space-y-2" aria-labelledby="board-layouts-heading">
         <h2 id="board-layouts-heading" className="text-lg font-semibold">
           Layout
         </h2>
-        <div className="relative">
+        <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2">
           <ul
             ref={scrollRef}
-            className="flex snap-x snap-mandatory scrollbar-none overflow-x-auto overscroll-x-contain"
+            className="flex gap-3 overflow-x-auto overscroll-x-contain py-3 scrollbar-none px-[max(1rem,calc((100vw-80rem)/2))] scroll-px-[max(1rem,calc((100vw-80rem)/2))]"
             aria-label="Board layouts"
             tabIndex={0}
           >
@@ -485,221 +500,64 @@ export const BoardBuilder = ({
                 key={item.id}
                 preset={item}
                 active={item.id === presetId}
+                locateBusy={locateBusy}
                 onSelect={() => handleSelectRecipe(item.id)}
+                onLocate={handleLocate}
               />
             ))}
           </ul>
           <div
             aria-hidden
             className={cn(
-              "pointer-events-none absolute inset-y-0 right-0 w-14 bg-linear-to-l from-background via-background/90 to-transparent transition-opacity duration-150 ease-[ease]",
+              "pointer-events-none absolute inset-y-0 right-0 w-8 bg-linear-to-l from-background to-transparent transition-opacity duration-150 ease-[ease] sm:w-10",
               showEndFade ? "opacity-100" : "opacity-0"
             )}
           />
         </div>
-        <div className="flex flex-wrap items-center gap-3 px-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleLocate}
-            disabled={locateBusy}
-          >
-            {locateBusy ? "Finding nearby stops…" : "Locate near me"}
-          </Button>
-          {locateError ? (
-            <p className="text-sm text-destructive" role="alert">
-              {locateError}
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Pins the nearest rail, bus, and cycle docks into the URL. Does not
-              run on the live display.
-            </p>
-          )}
-        </div>
-      </section>
-
-      <Collapsible
-        open={configOpen}
-        onOpenChange={setConfigOpen}
-        className="rounded-xl border border-border"
-      >
-        <CollapsibleTrigger className="flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-          <span>
-            <span className="block text-lg font-semibold text-foreground">
-              Config
-            </span>
-            <span className="block text-sm text-muted-foreground">
-              Station and display settings
-            </span>
-          </span>
-          <ChevronDownIcon
-            className={cn(
-              "size-4 shrink-0 transition-transform duration-150 ease-[ease]",
-              configOpen && "rotate-180"
-            )}
-            aria-hidden
-          />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="border-t border-border">
-          <BoardConfigForm
-            config={config}
-            formSettings={formSettings}
-            servingLines={lookupBoardStationLines(stationLines, config.stop)}
-            lineGroups={lookupBoardStationLineGroups(config.stop)}
-            autoStopName={autoStopName}
-            stations={stations}
-            segments={segments}
-            onChange={handleConfigChange}
-          />
-        </CollapsibleContent>
-      </Collapsible>
-
-      <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
-          <BoardUrlLegend
-            path={legendPath}
-            segments={segments}
-            className="min-w-0 flex-1"
-          />
-          <div className="flex shrink-0 flex-col gap-2 sm:w-40">
-            <Button
-              type="button"
-              variant="outline"
-              data-copy-text={absoluteUrl}
-              aria-label="Copy board URL"
-            >
-              Copy URL
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setQrOpen(true)}
-            >
-              Show QR code
-            </Button>
-            <Button
-              nativeButton={false}
-              render={<a href={href} target="_blank" rel="noreferrer" />}
-            >
-              Open full display
-            </Button>
-          </div>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {BOARD_KEY_MODE_LABEL[keyMode]}
-          {keyMode === "browser"
-            ? ". Another device will need its own key."
-            : ". Anyone with the complete link can use the key and its quota."}
-        </p>
-      </div>
-      <BoardQrDialog
-        open={qrOpen}
-        onOpenChange={setQrOpen}
-        url={absoluteUrl}
-        mode={keyMode}
-      />
-
-      <section className="space-y-3" aria-labelledby="board-preview-heading">
-        <h2 id="board-preview-heading" className="text-lg font-semibold">
-          Preview
-        </h2>
-        <p className="text-sm text-muted-foreground md:hidden">
-          On a phone this preview is a crop. Open the full display to use it.
-        </p>
-        {hydrated ? (
-          <iframe
-            key={href}
-            title="Board preview"
-            src={href}
-            className="h-[min(36rem,68svh)] w-full rounded-lg border border-border bg-background"
-          />
-        ) : (
-          <div
-            className="h-[min(36rem,68svh)] w-full rounded-lg border border-border bg-muted"
-            aria-busy="true"
-            aria-label="Loading board preview"
-          />
-        )}
-        <Button
-          nativeButton={false}
-          className="md:hidden"
-          render={<a href={href} target="_blank" rel="noreferrer" />}
-        >
-          Open full display
-        </Button>
-      </section>
-
-      <section
-        className="space-y-3 rounded-xl border border-border p-4"
-        aria-labelledby="board-key-heading"
-      >
-        <div className="space-y-1">
-          <h2 id="board-key-heading" className="text-lg font-semibold">
-            TfL API key
-          </h2>
-          <p id="board-key-copy" className="text-sm text-muted-foreground">
-            Board loads live TfL data in this browser. The key is not sent to
-            this site&apos;s server, logs, or referrers.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Switch
-            id="board-save-key"
-            checked={keyMode === "browser"}
-            onCheckedChange={handleKeyModeChange}
-            aria-describedby="board-save-key-hint"
-          />
-          <label htmlFor="board-save-key" className="text-sm text-foreground">
-            Save key on this browser
-          </label>
-        </div>
-        <p id="board-save-key-hint" className="text-sm text-muted-foreground">
-          {keyMode === "browser"
-            ? "The generated URL and QR code omit the key. Open the Board in this browser to use the stored key."
-            : "The generated URL and QR code include the key in the hash so you can set up another device without typing it there."}
-        </p>
-        <div className="flex flex-wrap items-center gap-3">
-          {!hydrated ? (
-            <span className="text-sm text-muted-foreground">
-              Checking for a saved key…
-            </span>
-          ) : hasKey && appKeyMasked ? (
-            <>
-              <span className="text-sm">Active key</span>
-              <Button
-                type="button"
-                variant="outline"
-                className="font-mono"
-                onClick={handleManageKey}
-                aria-label={`Manage TfL API key ending ${appKeyMasked.slice(-4)}`}
-                aria-describedby="board-key-copy"
-              >
-                {appKeyMasked}
-              </Button>
-              {persistMode === "session" ? (
-                <span className="text-sm text-muted-foreground">
-                  This tab only
-                </span>
-              ) : null}
-            </>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleManageKey}
-              aria-describedby="board-key-copy"
-            >
-              Add TfL API key
-            </Button>
-          )}
-        </div>
-        {error && status === "invalid" ? (
+        {locateError ? (
           <p className="text-sm text-destructive" role="alert">
-            {error.message}
+            {locateError}
           </p>
         ) : null}
       </section>
+
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(18rem,2fr)_minmax(0,3fr)]">
+        <div className="order-1 min-w-0 space-y-5">
+          <BoardQuickConfig {...formProps} parts="places" />
+          <BoardShareCard
+            url={absoluteUrl}
+            href={href}
+            keyMode={keyMode}
+            onKeyModeChange={handleKeyModeChange}
+            hasKey={hasKey}
+            appKeyMasked={appKeyMasked}
+            persistMode={persistMode}
+            onManageKey={openDialog}
+          />
+          <BoardQuickConfig {...formProps} parts="filters" />
+          {error && status === "invalid" ? (
+            <p className="text-sm text-destructive" role="alert">
+              {error.message}
+            </p>
+          ) : null}
+        </div>
+
+        <BoardPreview
+          className="order-2 min-w-0 lg:sticky lg:top-[calc(var(--site-header-height)+1rem)]"
+          href={href}
+          hydrated={hydrated}
+          hasKey={hasKey}
+          onAddKey={openDialog}
+        />
+      </div>
+
+      <BoardAdvancedConfig
+        {...formProps}
+        segments={segments}
+        legendPath={legendPath}
+        open={advancedOpen}
+        onOpenChange={setAdvancedOpen}
+      />
     </div>
   )
 }

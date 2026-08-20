@@ -1,13 +1,17 @@
 export const CROP_SCALE = 1.06
 export const IPAD_PADDING_FRACTION = 0.08
-/** Long page runway after the zoom so the rest of the landing can keep scrolling. */
-export const HERO_SCROLL_HEIGHT = "220svh"
+/**
+ * Sticky stage is one viewport. Extra height is the zoom pull plus a short
+ * lock so snap can settle, then the next section comes up.
+ */
+export const HERO_SCROLL_HEIGHT =
+  "calc(100dvh - var(--site-header-height) + 28svh)"
 
 /**
  * Fraction of the hero scroll range that owns the camera.
- * After this, the iPad stays zoomed and the page just continues.
+ * Keep this close to 1 — a long tail after the lock is a frozen iPad.
  */
-export const ZOOM_SCROLL_FRACTION = 0.14
+export const ZOOM_SCROLL_FRACTION = 0.86
 /** Fraction of the zoom slice that commits — iOS paging, biased early. */
 export const COMMIT_THRESHOLD = 0.1
 /** iOS settle: ease-out only. Never in-out (that restarts acceleration). */

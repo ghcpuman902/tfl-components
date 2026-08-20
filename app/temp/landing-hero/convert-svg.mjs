@@ -122,11 +122,11 @@ export const IPAD_SCREEN = ${JSON.stringify(IPAD_SCREEN, null, 2)} as const
 export const PICTURE_FRAME_1 = ${JSON.stringify(PICTURE_FRAME_1, null, 2)} as const
 export const PICTURE_FRAME_2 = ${JSON.stringify(PICTURE_FRAME_2, null, 2)} as const
 
-export const BOARD_IFRAME_SRC =
-  "/board/view#stop=940GZZLUOXC&behaviour=unattended&a.rows=3&s.tiles=4"
 export const BOARD_IFRAME_WIDTH = 1280
 export const BOARD_IFRAME_HEIGHT =
   BOARD_IFRAME_WIDTH * (IPAD_SCREEN.height / IPAD_SCREEN.width)
+export const BOARD_IFRAME_RADIUS =
+  BOARD_IFRAME_WIDTH * ((IPAD_SCREEN.rx ?? 0) / IPAD_SCREEN.width)
 
 type LandingArtworkProps = {
   svgRef: Ref<SVGSVGElement | null>

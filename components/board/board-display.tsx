@@ -150,6 +150,16 @@ export const BoardDisplay = ({
   const { hydrated, getAppKey } = useUserTflCredentials()
   const storedKey = hydrated ? getAppKey() : null
   const appKey = config.key ?? storedKey
+
+  useEffect(() => {
+    if (window.self === window.top) return
+    const html = document.documentElement
+    const previous = html.style.overflow
+    html.style.overflow = "hidden"
+    return () => {
+      html.style.overflow = previous
+    }
+  }, [])
   const stopId = config.stop ?? ""
   // URL `stopName` is an override only. Otherwise the catalog paints the
   // heading immediately; the board infers from arrivals when that misses.

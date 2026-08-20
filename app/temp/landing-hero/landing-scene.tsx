@@ -12,6 +12,7 @@ import { HeroCopyPanel, HeroZoomCaption } from "./hero-copy-panel"
 import { IpadBoardFrame } from "./ipad-board-frame"
 import {
   BOARD_IFRAME_HEIGHT,
+  BOARD_IFRAME_RADIUS,
   BOARD_IFRAME_WIDTH,
   PICTURE_FRAME_1,
   PICTURE_FRAME_2,
@@ -286,8 +287,9 @@ export const LandingScene = () => {
           </div>
           <div
             ref={ipadOverlayRef}
-            className="absolute top-0 left-0"
+            className="absolute top-0 left-0 overflow-hidden"
             style={{
+              borderRadius: BOARD_IFRAME_RADIUS,
               pointerEvents: zoomComplete ? "auto" : "none",
               visibility: "hidden",
             }}

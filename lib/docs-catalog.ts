@@ -745,7 +745,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "board-index",
     title: "Board",
     description:
-      "An experimental full-screen TfL display configured through one URL.",
+      "Turn any screen into a live TfL departures and status display.",
     group: "board",
     kind: "page",
     href: "/board",

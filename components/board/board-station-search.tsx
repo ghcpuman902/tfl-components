@@ -127,11 +127,7 @@ export const BoardStationSearch = ({
           className="w-full"
           showClear={inputValue.length > 0}
           aria-invalid={showError ? true : undefined}
-          aria-describedby={
-            showError
-              ? "board-station-error board-station-hint"
-              : "board-station-hint"
-          }
+          aria-describedby={showError ? "board-station-error" : undefined}
         />
         <ComboboxContent>
           <ComboboxEmpty>No stations match that name or Stop ID.</ComboboxEmpty>
@@ -159,10 +155,6 @@ export const BoardStationSearch = ({
             "This Stop ID is not in the station list. Check the ID, or search by name."}
         </p>
       ) : null}
-      <p id="board-station-hint" className="text-sm text-muted-foreground">
-        Type a station name for matches, or paste a TfL Stop ID. Results include
-        the mode or lines that distinguish similar names.
-      </p>
     </div>
   )
 }

@@ -271,7 +271,10 @@ export const useIpadZoom = ({
             duration: COPY_FADE_DURATION,
             onUpdate: () => {
               const opacity = Number(gsap.getProperty(copy, "opacity"))
-              copy.style.pointerEvents = opacity < 0.05 ? "none" : "auto"
+              const actions = copy.querySelector("[data-hero-actions]")
+              if (actions instanceof HTMLElement) {
+                actions.style.pointerEvents = opacity < 0.05 ? "none" : "auto"
+              }
             },
           },
           0
@@ -282,7 +285,14 @@ export const useIpadZoom = ({
         timeline.fromTo(
           caption,
           { opacity: 0 },
-          { opacity: 1, duration: CAPTION_FADE_DURATION },
+          {
+            opacity: 1,
+            duration: CAPTION_FADE_DURATION,
+            onUpdate: () => {
+              const opacity = Number(gsap.getProperty(caption, "opacity"))
+              caption.style.pointerEvents = opacity < 0.05 ? "none" : "auto"
+            },
+          },
           CAPTION_FADE_START
         )
       }

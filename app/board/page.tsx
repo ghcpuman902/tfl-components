@@ -1,8 +1,6 @@
 import type { Metadata } from "next"
 import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 import { BoardBuilder } from "@/components/board/board-builder"
-import { BoardWipNotice } from "@/components/board/board-wip-notice"
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { getBoardStationLinesIndex } from "@/lib/tfl/board-station-lines"
 import {
   getBoardStationNamesIndex,
@@ -17,28 +15,14 @@ export default function BoardBuilderPage() {
   const stations = getBoardStationSearchIndex()
 
   return (
-    <DocsReadableWidth>
+    <div className="mx-auto w-full max-w-7xl">
       <article className="space-y-8">
         <header>
           <h1 className="tfl-title text-3xl text-foreground">Board</h1>
           <p className="mt-2 max-w-prose text-lg text-muted-foreground">
-            Search or locate, pick a layout, preview the display, then copy or
-            open the URL.
+            Turn any screen into a live TfL departures and status display. Pick
+            a station, then open or share the URL full-screen.
           </p>
-          <BoardWipNotice />
-          <div className="mt-6 max-w-prose space-y-3 text-sm text-muted-foreground">
-            <p>
-              Unattended example:{" "}
-              <code className="text-foreground">
-                /board/view#stop=940GZZLUOXC&behaviour=unattended&a.rows=3&s.tiles=4
-              </code>
-            </p>
-            <p>
-              A landscape iPad can take 3 arrival rows per bound and a 4-tile
-              status column. A portrait phone should keep one panel, usually
-              arrivals.
-            </p>
-          </div>
         </header>
 
         <BoardBuilder
@@ -47,6 +31,6 @@ export default function BoardBuilderPage() {
           stations={stations}
         />
       </article>
-    </DocsReadableWidth>
+    </div>
   )
 }

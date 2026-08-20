@@ -98,7 +98,7 @@ export const estimateMobileHeaderRowWidth = (options?: {
   charPx?: number
 }): number => {
   const paddingInlineStartPx = options?.paddingInlineStartPx ?? 16
-  const paddingInlineEndPx = options?.paddingInlineEndPx ?? 4
+  const paddingInlineEndPx = options?.paddingInlineEndPx ?? 10
   const logoPx = options?.logoPx ?? 20
   const logoGapPx = options?.logoGapPx ?? 8
   const wordmarkPx = options?.wordmarkPx ?? 98

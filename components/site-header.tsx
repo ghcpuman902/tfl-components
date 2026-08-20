@@ -165,7 +165,8 @@ export const SiteHeader = ({ pathname }: SiteHeaderProps) => {
 
   return (
     <header className="sticky top-0 z-30 box-border h-(--site-header-height) w-full overflow-x-clip border-b border-border bg-background/60 backdrop-blur backdrop-brightness-110 backdrop-saturate-150">
-      <div className="flex h-full min-w-0 items-center gap-1 overflow-x-clip pr-1 pl-4 md:gap-2 md:pr-1.5">
+      {/* pl-4 to the logo. pr-2.5 plus the 6px icon-sm inset matches that 16px visual edge gap. */}
+      <div className="flex h-full min-w-0 items-center gap-1 overflow-x-clip pr-1 pl-4 md:gap-2">
         <Link
           href="/"
           className="flex min-w-0 shrink items-center gap-2 md:shrink-0"
@@ -207,7 +208,7 @@ export const SiteHeader = ({ pathname }: SiteHeaderProps) => {
             className="hidden w-44 max-w-56 min-w-28 shrink md:block lg:w-52"
           />
           <GitHubLink className="ml-1 hidden shrink-0 md:inline-flex" />
-          <ThemeToggle className="-mr-0.5 shrink-0 md:ml-2.5" />
+          <ThemeToggle className="shrink-0" />
         </div>
       </div>
     </header>
