@@ -89,7 +89,7 @@ type UseIpadZoomArgs = {
   l0Ref: RefObject<SVGGElement | null>
   l1Ref: RefObject<SVGGElement | null>
   copyRef: RefObject<HTMLElement | null>
-  captionRef: RefObject<HTMLElement | null>
+  captionRef: RefObject<HTMLParagraphElement | null>
   reducedMotion: boolean
   onZoomCompleteChange: (complete: boolean) => void
 }
@@ -307,7 +307,7 @@ export const useIpadZoom = ({
         pin: false,
         invalidateOnRefresh: true,
         snap: reducedMotion
-          ? false
+          ? undefined
           : {
               snapTo: (value: number) => {
                 if (value > ZOOM_SCROLL_FRACTION + 0.002) return value

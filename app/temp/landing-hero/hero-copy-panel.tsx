@@ -11,7 +11,7 @@ type HeroCopyPanelProps = {
 }
 
 type HeroZoomCaptionProps = {
-  captionRef: Ref<HTMLElement | null>
+  captionRef: Ref<HTMLParagraphElement | null>
 }
 
 export const HeroCopyPanel = ({ copyRef }: HeroCopyPanelProps) => (

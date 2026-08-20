@@ -50,7 +50,7 @@ export const LandingScene = () => {
   const cameraRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
   const copyRef = useRef<HTMLElement>(null)
-  const captionRef = useRef<HTMLElement>(null)
+  const captionRef = useRef<HTMLParagraphElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const l0Ref = useRef<SVGGElement>(null)
   const l1Ref = useRef<SVGGElement>(null)
