@@ -49,6 +49,8 @@ type LandingArtworkProps = {
   pictureMat2Ref: Ref<SVGRectElement | null>
   onIpadClick: () => void
   onIpadKeyDown: (event: KeyboardEvent<SVGRectElement>) => void
+  ipadAriaLabel?: string
+  ipadPressedClassName?: string
 }
 
 export const LandingArtwork = ({
@@ -64,6 +66,8 @@ export const LandingArtwork = ({
   pictureMat2Ref,
   onIpadClick,
   onIpadKeyDown,
+  ipadAriaLabel = "Zoom in to the station display",
+  ipadPressedClassName,
 }: LandingArtworkProps) => (
   <>
     <style>{ARTWORK_THEME_CSS}</style>
@@ -693,10 +697,10 @@ export const LandingArtwork = ({
               width="144.3998"
               height="90.2392"
               fill="transparent"
-              className="cursor-none"
+              className={ipadPressedClassName ?? "cursor-none"}
               tabIndex={0}
               role="button"
-              aria-label="Zoom in to the station display"
+              aria-label={ipadAriaLabel}
               onClick={onIpadClick}
               onKeyDown={onIpadKeyDown}
             />

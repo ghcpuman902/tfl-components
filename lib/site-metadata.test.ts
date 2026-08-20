@@ -6,6 +6,7 @@ import { pageMetadata, ROUTE_PAGE_META } from "./site-metadata"
 const REQUIRED_ROUTES = [
   "home",
   "docs",
+  "boardUrl",
   "components",
   "explorer",
   "board",

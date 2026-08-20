@@ -13,6 +13,10 @@ import { cn } from "@/lib/utils"
 
 type DocsPageHeaderProps = {
   entry: DocsEntry
+  /** Override the catalog title (sidebar label stays `entry.title`). */
+  title?: string
+  /** Override the catalog one-line intro. */
+  description?: string
   /** Compact “new” mark at the top-right of the title. */
   isNew?: boolean
   /** Extra line under the one-sentence intro (WIP notes, calls to action). */
@@ -34,6 +38,8 @@ type DocsPageHeaderProps = {
  */
 export const DocsPageHeader = ({
   entry,
+  title,
+  description,
   isNew = false,
   notice,
 }: DocsPageHeaderProps) => {
@@ -74,10 +80,10 @@ export const DocsPageHeader = ({
                 newMarkerParentClassName("inline-block pr-7 after:-top-1")
             )}
           >
-            {entry.title}
+            {title ?? entry.title}
           </h1>
           <p className="mt-2 max-w-prose text-muted-foreground">
-            {entry.description}
+            {description ?? entry.description}
           </p>
           {notice}
         </div>

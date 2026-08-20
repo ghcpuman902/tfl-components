@@ -198,6 +198,17 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 10,
   },
   {
+    slug: "board-url",
+    title: "Board URL",
+    description:
+      "Encode a hosted Board in the page address. Configuration lives in the fragment.",
+    group: "start",
+    kind: "page",
+    href: "/docs/board-url",
+    sidebarSection: "get-started",
+    sidebarOrder: 185,
+  },
+  {
     slug: "components-index",
     title: "Components",
     description: "Preferred boards first, then the parts they are built from.",

@@ -6,6 +6,7 @@ import { DocsSearch } from "@/components/docs/docs-search"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { newMarkerParentClassName } from "@/components/new-marker"
 import { buttonVariants } from "@/components/ui/button"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
   Sheet,
   SheetClose,
@@ -14,10 +15,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
 import { GITHUB_REPO } from "@/lib/feedback/constants"
 import { cn } from "@/lib/utils"
 import {
+  DOCS_SIDEBAR_TRIGGER_LABEL,
   MORE_MENU_NAME,
   moreItemsForPlacement,
   primaryLinksForPlacement,
@@ -43,6 +50,8 @@ const NavLinkLabel = ({ children }: { children: React.ReactNode }) => {
 type SiteHeaderProps = {
   /** Current pathname — passed from chrome so Suspense fallbacks stay hook-free. */
   pathname: string
+  /** Docs routes: sidebar trigger sits in this header row, left of the logo. */
+  docsNav?: boolean
 }
 
 const HeaderLink = ({
@@ -57,24 +66,59 @@ const HeaderLink = ({
   className?: string
 }) => {
   const active = linkIsActive(pathname, link.match)
-  return (
+  const isAction = link.prominence === "action"
+  const label = (
+    <>
+      <NavLinkLabel>{link.label}</NavLinkLabel>
+      {link.mobileSubtext && compact ? (
+        <span className="sr-only">{link.mobileSubtext}</span>
+      ) : null}
+    </>
+  )
+
+  const linkClassName = cn(
+    "shrink-0",
+    isAction
+      ? cn(
+          buttonVariants({
+            variant: active ? "default" : "outline",
+            size: "xs",
+          }),
+          compact ? "h-7 px-2" : "h-7 px-2.5",
+          newMarkerParentClassName(
+            compact ? "pr-5 after:top-0" : "pr-6 after:top-0"
+          )
+        )
+      : cn(
+          compact ? "px-1 py-2" : "px-1.5 py-2",
+          link.match === "board" &&
+            newMarkerParentClassName(
+              compact ? "pr-5 after:top-0.5" : "pr-6 after:top-0.5"
+            ),
+          active
+            ? "font-medium text-foreground"
+            : "text-muted-foreground hover:text-foreground"
+        ),
+    className
+  )
+
+  const linkEl = (
     <Link
       href={link.href}
-      className={cn(
-        "shrink-0 py-2",
-        compact ? "px-1" : "px-1.5",
-        link.match === "board" &&
-          newMarkerParentClassName(
-            compact ? "pr-5 after:top-0.5" : "pr-6 after:top-0.5"
-          ),
-        active
-          ? "font-medium text-foreground"
-          : "text-muted-foreground hover:text-foreground",
-        className
-      )}
+      className={linkClassName}
+      aria-label={link.ariaLabel}
     >
-      <NavLinkLabel>{link.label}</NavLinkLabel>
+      {label}
     </Link>
+  )
+
+  if (!link.tooltip) return linkEl
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{linkEl}</TooltipTrigger>
+      <TooltipContent>{link.tooltip}</TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -159,21 +203,32 @@ const MoreMenuItem = ({ item }: { item: SiteMoreItem }) => {
   )
 }
 
-export const SiteHeader = ({ pathname }: SiteHeaderProps) => {
+export const SiteHeader = ({ pathname, docsNav = false }: SiteHeaderProps) => {
   const desktopLinks = primaryLinksForPlacement("desktop")
   const mobileLinks = primaryLinksForPlacement("mobile")
 
   return (
     <header className="sticky top-0 z-30 box-border h-(--site-header-height) w-full overflow-x-clip border-b border-border bg-background/60 backdrop-blur backdrop-brightness-110 backdrop-saturate-150">
       {/* pl-4 to the logo. pr-2.5 plus the 6px icon-sm inset matches that 16px visual edge gap. */}
-      <div className="flex h-full min-w-0 items-center gap-1 overflow-x-clip pr-1 pl-4 md:gap-2">
+      <div className="flex h-full min-w-0 flex-nowrap items-center gap-1 overflow-x-clip pr-1 pl-4 md:gap-2">
+        {docsNav ? (
+          <SidebarTrigger
+            aria-label={DOCS_SIDEBAR_TRIGGER_LABEL}
+            className="relative z-10 size-11 min-h-11 min-w-11 shrink-0 md:hidden"
+          />
+        ) : null}
         <Link
           href="/"
           className="flex min-w-0 shrink items-center gap-2 md:shrink-0"
           aria-label="tfl-components home"
         >
           <TfLRoundel className="size-5 shrink-0" aria-hidden />
-          <span className="truncate text-sm font-medium tracking-tight text-foreground">
+          <span
+            className={cn(
+              "truncate text-sm font-medium tracking-tight text-foreground",
+              docsNav && "max-md:hidden"
+            )}
+          >
             tfl-components
           </span>
         </Link>

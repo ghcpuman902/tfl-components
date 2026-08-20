@@ -426,6 +426,16 @@ export const BoardAdvancedConfig = ({
       <CollapsibleContent className="border-t border-border">
         <div className="grid max-w-3xl gap-5 p-4">
           <BoardUrlLegend path={legendPath} segments={segments} />
+          <p className="text-sm text-muted-foreground">
+            Raw IDs and URL parameters live here. See the{" "}
+            <a
+              href="/docs/board-url"
+              className="text-foreground underline underline-offset-4"
+            >
+              Board URL specification
+            </a>
+            .
+          </p>
           {show(formSettings, "stopName") ? (
             <Field>
               <FieldLabel

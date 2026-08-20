@@ -57,10 +57,16 @@ export const HOME_PAGE_META = {
 export const ROUTE_PAGE_META = {
   home: HOME_PAGE_META,
   docs: {
-    title: "Get started",
+    title: "React component documentation",
     description:
-      "Configure a hosted Board, or install React components for London transport displays.",
+      "Build TfL interfaces using installable React components and normalised tfl-ts data.",
     path: "/docs",
+  },
+  boardUrl: {
+    title: "Board URL",
+    description:
+      "Encode a hosted Board in the page address. Configuration lives in the fragment.",
+    path: "/docs/board-url",
   },
   components: {
     title: "Components",

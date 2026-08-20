@@ -20,6 +20,9 @@ type BoardPreviewProps = {
   hasKey: boolean
   onAddKey: () => void
   className?: string
+  /** Current builder blocks the iframe until a key exists. Staged uses a badge. */
+  requireKeyOverlay?: boolean
+  exampleLabel?: string
 }
 
 export const BoardPreview = ({
@@ -28,6 +31,8 @@ export const BoardPreview = ({
   hasKey,
   onAddKey,
   className,
+  requireKeyOverlay = true,
+  exampleLabel,
 }: BoardPreviewProps) => {
   const [orientation, setOrientation] =
     useState<BoardPreviewOrientation>("landscape")
@@ -76,6 +81,9 @@ export const BoardPreview = ({
         <h2 id="board-preview-heading" className="text-lg font-semibold">
           Preview
         </h2>
+        {exampleLabel ? (
+          <p className="text-sm text-muted-foreground">{exampleLabel}</p>
+        ) : null}
         <div className="flex gap-1">
           <Button
             type="button"
@@ -156,7 +164,7 @@ export const BoardPreview = ({
               aria-label="Loading board preview"
             />
           )}
-          {hydrated && !hasKey ? (
+          {hydrated && !hasKey && requireKeyOverlay ? (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 p-4">
               <Button type="button" onClick={onAddKey}>
                 Add TfL API key — stays in this browser

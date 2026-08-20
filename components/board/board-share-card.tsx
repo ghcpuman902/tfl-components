@@ -82,8 +82,8 @@ export const BoardShareCard = ({
       </div>
       <p id="board-save-key-hint" className="text-sm text-muted-foreground">
         {keyMode === "browser"
-          ? "URL omits the key — works in this browser only."
-          : "Anyone with the complete link can use the key and its quota."}
+          ? "This link omits the key, so it only works in this browser."
+          : "This link includes your TfL key in the page address. Anyone who opens it can use that key and its request quota. Treat the full link as a secret."}
       </p>
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

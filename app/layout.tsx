@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { FontPreferenceProvider } from "@/components/font-preference-provider"
 import { FeedbackDialog } from "@/components/docs/feedback-dialog"
@@ -108,6 +109,7 @@ export default function RootLayout({
         ) : null}
       </head>
       <body>
+        <Analytics />
         <ThemeProvider>
           <FontPreferenceProvider
             adobeFontsConfigured={Boolean(adobeFontsKitId)}

@@ -5,6 +5,9 @@ import { fileURLToPath } from "node:url"
 import { describe, it } from "node:test"
 import {
   DESKTOP_PRIMARY_LINKS,
+  DOCS_NAV_ARIA_LABEL,
+  DOCS_NAV_MOBILE_SUBTEXT,
+  DOCS_NAV_TOOLTIP,
   HEADER_OVERFLOW_POLICY,
   MOBILE_PRIMARY_LINKS,
   MORE_MENU_NAME,
@@ -108,7 +111,8 @@ describe("site navigation", () => {
     assert.match(header, /GITHUB_REPO/)
     assert.match(header, /Star on GitHub/)
     assert.match(header, /ml-1 hidden shrink-0 md:inline-flex/)
-    assert.match(header, /pr-2\.5 pl-4/)
+    assert.match(header, /pr-1 pl-4/)
+    assert.match(header, /flex-nowrap/)
     assert.doesNotMatch(header, /md:ml-2\.5/)
     assert.equal(header.match(/ml-auto/g)?.length, 1)
     assert.doesNotMatch(header, /hidden truncate[\s\S]*md:inline/)
@@ -140,6 +144,25 @@ describe("site navigation", () => {
     assert.match(
       toggle,
       /setTheme\(resolvedTheme === "dark" \? "light" : "dark"\)/
+    )
+  })
+
+  it("keeps the Docs label and describes the component-library path", () => {
+    const docs = DESKTOP_PRIMARY_LINKS.find((link) => link.match === "docs")
+    assert.equal(docs?.label, "Docs")
+    assert.equal(docs?.tooltip, DOCS_NAV_TOOLTIP)
+    assert.equal(docs?.ariaLabel, DOCS_NAV_ARIA_LABEL)
+    assert.equal(docs?.mobileSubtext, DOCS_NAV_MOBILE_SUBTEXT)
+    assert.notEqual(docs?.prominence, "action")
+  })
+
+  it("makes Board the prominent action without reordering the J6 list", () => {
+    const board = DESKTOP_PRIMARY_LINKS[DESKTOP_PRIMARY_LINKS.length - 1]
+    assert.equal(board.label, "Board")
+    assert.equal(board.prominence, "action")
+    assert.deepEqual(
+      DESKTOP_PRIMARY_LINKS.map((link) => link.label),
+      ["Docs", "Components", "Explorer", "Labs", "Board"]
     )
   })
 

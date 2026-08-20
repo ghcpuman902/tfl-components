@@ -18,6 +18,10 @@ You need a React app with [shadcn](https://ui.shadcn.com/docs) already initialis
 3. Put the key in `.env` as `VITE_TFL_APP_KEY`. Vite only exposes names that start with `VITE_`.
 4. Follow the React tab on [Introduction](/docs). That calls TfL from the browser. Do not publish the site with the key in the client.
 
+## Hosted Board by URL
+
+A hosted Board is configured in the `/board/view` fragment, not the query string. See the [Board URL specification](/docs/board-url) for every supported parameter, including how the TfL key stays in the fragment.
+
 ## Common problems
 
 ### The board is empty

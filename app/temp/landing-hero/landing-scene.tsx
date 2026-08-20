@@ -8,6 +8,11 @@ import {
   type KeyboardEvent,
 } from "react"
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
+import { LandingMobileIpadHint } from "@/components/landing/landing-mobile-ipad-hint"
+import {
+  LandingRoomCaption,
+  LandingRoomCopy,
+} from "@/components/landing/landing-room-copy"
 import { HeroCopyPanel, HeroZoomCaption } from "./hero-copy-panel"
 import { IpadAimCursor } from "./ipad-aim-cursor"
 import { IpadBoardFrame } from "./ipad-board-frame"
@@ -42,7 +47,21 @@ const PHOTO_2_HEIGHT =
 
 const LAYER_SMOOTH = 0.16
 
-export const LandingScene = () => {
+type LandingSceneProps = {
+  production?: boolean
+  onCtaClick?: () => void
+  onIpadActivate?: () => void
+  onZoomComplete?: () => void
+  onHeroInteraction?: () => void
+}
+
+export const LandingScene = ({
+  production = false,
+  onCtaClick,
+  onIpadActivate,
+  onZoomComplete,
+  onHeroInteraction,
+}: LandingSceneProps = {}) => {
   const reducedMotion = usePrefersReducedMotion()
   const wrapperRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
@@ -71,12 +90,16 @@ export const LandingScene = () => {
   const [debugProgress, setDebugProgressValue] = useState(0)
 
   const handleZoomCompleteChange = useCallback((complete: boolean) => {
-    setZoomComplete((current) => (current === complete ? current : complete))
-  }, [])
+    setZoomComplete((current) => {
+      if (current === complete) return current
+      if (complete) onZoomComplete?.()
+      return complete
+    })
+  }, [onZoomComplete])
 
   const { valueRef, requestTilt, showTiltButton } = useParallaxInput({
     stageRef,
-    enabled: !reducedMotion,
+    enabled: !reducedMotion && !production,
   })
 
   const { scrollToIpad, setDebugProgress, releaseDebugProgress, progressRef } =
@@ -191,6 +214,7 @@ export const LandingScene = () => {
   }, [zoomComplete])
 
   useEffect(() => {
+    if (production) return
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key !== "d" && event.key !== "D") return
       const target = event.target
@@ -206,10 +230,24 @@ export const LandingScene = () => {
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
+  }, [production])
+
+  const pointerStart = useRef<{ x: number; y: number } | null>(null)
+  const pointerNow = useRef<{ x: number; y: number } | null>(null)
 
   const handleIpadClick = () => {
     if (zoomComplete) return
+    const start = pointerStart.current
+    const now = pointerNow.current ?? start
+    if (
+      production &&
+      start &&
+      now &&
+      Math.hypot(now.x - start.x, now.y - start.y) > 8
+    ) {
+      return
+    }
+    onIpadActivate?.()
     scrollToIpad()
   }
 
@@ -236,6 +274,15 @@ export const LandingScene = () => {
         style={{
           top: "var(--site-header-height)",
           height: "calc(100dvh - var(--site-header-height))",
+          touchAction: production ? "pan-y pinch-zoom" : undefined,
+        }}
+        onPointerDown={(event) => {
+          pointerStart.current = { x: event.clientX, y: event.clientY }
+          pointerNow.current = { x: event.clientX, y: event.clientY }
+          onHeroInteraction?.()
+        }}
+        onPointerMove={(event) => {
+          pointerNow.current = { x: event.clientX, y: event.clientY }
         }}
       >
         <div
@@ -258,6 +305,14 @@ export const LandingScene = () => {
                 pictureMat2Ref={pictureMat2Ref}
                 onIpadClick={handleIpadClick}
                 onIpadKeyDown={handleIpadKeyDown}
+                ipadAriaLabel={
+                  production ? "Zoom in to the live board" : undefined
+                }
+                ipadPressedClassName={
+                  production
+                    ? "cursor-none origin-center transition-transform [@media(hover:hover)_and_(pointer:fine)]:hover:scale-100 active:scale-[0.94]"
+                    : undefined
+                }
               />
             </div>
           </div>
@@ -298,8 +353,23 @@ export const LandingScene = () => {
             <IpadBoardFrame interactive={zoomComplete} />
           </div>
 
-          <HeroCopyPanel copyRef={copyRef} />
-          <HeroZoomCaption captionRef={captionRef} />
+          {production ? (
+            <LandingRoomCopy copyRef={copyRef} onCtaClick={onCtaClick} />
+          ) : (
+            <HeroCopyPanel copyRef={copyRef} />
+          )}
+          {production ? (
+            <LandingRoomCaption captionRef={captionRef} onCtaClick={onCtaClick} />
+          ) : (
+            <HeroZoomCaption captionRef={captionRef} />
+          )}
+          {production ? (
+            <LandingMobileIpadHint
+              hostRef={stageRef}
+              targetRef={iPadHitRef}
+              enabled={!zoomComplete}
+            />
+          ) : null}
 
           {overlayOpacity > 0 ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -312,7 +382,7 @@ export const LandingScene = () => {
             />
           ) : null}
 
-          {showTiltButton ? (
+          {showTiltButton && !production ? (
             <button
               type="button"
               data-landing-chrome

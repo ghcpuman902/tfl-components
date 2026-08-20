@@ -3,6 +3,7 @@ import { Suspense } from "react"
 import Link from "next/link"
 import { ArrowRightIcon } from "lucide-react"
 import { BrowserWindow } from "@/components/docs/browser-window"
+import { DocsVisitBeacon } from "@/components/docs/docs-visit-beacon"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { InstallCommand } from "@/components/docs/install-command"
@@ -182,8 +183,10 @@ const ExternalTextLink = ({
   </a>
 )
 
+const DOCS_FULL_EXAMPLE_HREF = "/docs/tube-rail-arrivals"
+
 const IntroArrivalsFallback = () => (
-  <BrowserWindow>
+  <BrowserWindow previewLimit fullExampleHref={DOCS_FULL_EXAMPLE_HREF}>
     <RailArrivalsBoardSkeleton stopName="Oxford Circus" />
   </BrowserWindow>
 )
@@ -193,7 +196,7 @@ const IntroArrivalsPreview = async () => {
   const boardState = await readHomeArrivalsBoardState(payload, "rail")
 
   return (
-    <BrowserWindow>
+    <BrowserWindow previewLimit fullExampleHref={DOCS_FULL_EXAMPLE_HREF}>
       <RailArrivalsBoard
         data={payload.arrivals}
         lines={HOME_RAIL_LINES}
@@ -212,8 +215,18 @@ export default function DocsIntroductionPage() {
 
   return (
     <DocsReadableWidth>
+      <DocsVisitBeacon />
       <article className="space-y-12">
-        <DocsPageHeader entry={entry} />
+        <DocsPageHeader
+          entry={entry}
+          title="React component documentation"
+          description="Build TfL interfaces using installable React components and normalised tfl-ts data."
+        />
+
+        <p className="max-w-prose">
+          Want a hosted display instead?{" "}
+          <StartAction href="/board">Make a live Board</StartAction>
+        </p>
 
         <section className="space-y-4" aria-labelledby="try-it">
           <h2 id="try-it" className="sr-only">
@@ -222,8 +235,13 @@ export default function DocsIntroductionPage() {
           <Suspense fallback={<IntroArrivalsFallback />}>
             <IntroArrivalsPreview />
           </Suspense>
+          <p className="max-w-prose">
+            Configuring a Board by URL?{" "}
+            <StartAction href="/docs/board-url">
+              Read the Board URL specification
+            </StartAction>
+          </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <StartAction href="/board">Create a Board</StartAction>
             <StartAction href="/docs/components">Browse components</StartAction>
           </div>
           <div className="space-y-2">
