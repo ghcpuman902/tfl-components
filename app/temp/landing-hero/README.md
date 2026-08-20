@@ -6,7 +6,7 @@ Route: `/temp/landing-hero` — not linked in nav, `noindex`.
 
 ## What to try
 
-- Desktop: move the pointer for parallax. The camera tracks the wheel 1:1 over a short slice of the hero; a small pull eases-out to the iPad, then the page keeps scrolling with the camera already locked. Scroll back up through that same slice to ease-out to the wide room. Click the iPad to ease-out to the zoomed position.
+- Desktop: move the pointer for parallax. The camera tracks the wheel 1:1 over a short slice of the hero; a small pull eases-out to the iPad, then the page keeps scrolling with the camera already locked. Scroll back up through that same slice to ease-out to the wide room. While the iPad is in the room, the cursor is an arrow aimed at it, or a circled plus when the pointer is over the device. Click the iPad to ease-out to the zoomed position.
 - Two copy states: a centred headline + CTAs on the wide room, then a one-line caption under the zoomed iPad.
 - Mobile: “Enable tilt” for device orientation (permission required); otherwise parallax follows scroll. The **canvas** (artwork) is sized to cover the viewport and slides so the iPad stays in the padded safe area — the camera stays put at rest and only zooms on scroll. Tall screens crop the sides, wide screens crop the sofa.
 - `D` opens a debug panel: reference-SVG overlay + camera scrub slider.

@@ -9,6 +9,7 @@ import {
 } from "react"
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
 import { HeroCopyPanel, HeroZoomCaption } from "./hero-copy-panel"
+import { IpadAimCursor } from "./ipad-aim-cursor"
 import { IpadBoardFrame } from "./ipad-board-frame"
 import {
   BOARD_IFRAME_HEIGHT,
@@ -314,18 +315,28 @@ export const LandingScene = () => {
           {showTiltButton ? (
             <button
               type="button"
+              data-landing-chrome
               onClick={() => {
                 void requestTilt()
               }}
-              className="absolute right-4 bottom-4 z-20 rounded-full bg-black/55 px-3 py-1.5 text-xs text-white hover:bg-black/70 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+              className="absolute right-4 bottom-4 z-20 cursor-pointer rounded-full bg-black/55 px-3 py-1.5 text-xs text-white hover:bg-black/70 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
             >
               Enable tilt
             </button>
           ) : null}
         </div>
 
+        <IpadAimCursor
+          hostRef={stageRef}
+          targetRef={iPadHitRef}
+          enabled={!zoomComplete}
+        />
+
         {debugOpen ? (
-          <div className="absolute right-3 bottom-3 z-30 flex max-w-xs flex-col gap-2 rounded-md bg-black/70 p-3 text-xs text-white">
+          <div
+            data-landing-chrome
+            className="absolute right-3 bottom-3 z-30 flex max-w-xs cursor-auto flex-col gap-2 rounded-md bg-black/70 p-3 text-xs text-white"
+          >
             <p className="font-medium">Landing debug (D)</p>
             <label className="flex items-center gap-2">
               Overlay

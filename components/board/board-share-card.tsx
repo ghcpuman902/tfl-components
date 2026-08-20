@@ -52,7 +52,69 @@ export const BoardShareCard = ({
 
   return (
     <section className="space-y-3" aria-label="Share">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <Switch
+          id="board-save-key"
+          checked={keyMode === "browser"}
+          onCheckedChange={onKeyModeChange}
+          aria-describedby="board-save-key-hint"
+        />
+        <label htmlFor="board-save-key" className="text-sm text-foreground">
+          Save key on this browser
+        </label>
+        {hasKey && appKeyMasked ? (
+          <button
+            type="button"
+            className="font-mono text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            onClick={onManageKey}
+            aria-label={`Manage TfL API key ending ${appKeyMasked.slice(-4)}`}
+          >
+            {appKeyMasked}
+          </button>
+        ) : (
+          <Button type="button" variant="outline" onClick={onManageKey}>
+            Add TfL API key
+          </Button>
+        )}
+        {persistMode === "session" ? (
+          <span className="text-sm text-muted-foreground">This tab only</span>
+        ) : null}
+      </div>
+      <p id="board-save-key-hint" className="text-sm text-muted-foreground">
+        {keyMode === "browser"
+          ? "URL omits the key — works in this browser only."
+          : "Anyone with the complete link can use the key and its quota."}
+      </p>
+
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <Button
+          nativeButton={false}
+          size="lg"
+          className="h-10 px-3.5"
+          render={<a href={href} target="_blank" rel="noreferrer" />}
+        >
+          <ExternalLinkIcon data-icon="inline-start" />
+          Open display
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className="h-10 px-3.5"
+          onClick={handleCopy}
+          disabled={!url}
+          aria-live="polite"
+        >
+          {copied ? (
+            <CheckIcon data-icon="inline-start" />
+          ) : (
+            <CopyIcon data-icon="inline-start" />
+          )}
+          {copied ? "Copied" : "Copy link"}
+        </Button>
+      </div>
+
+      <div className="flex items-start gap-2">
         <Input
           readOnly
           value={url}
@@ -60,24 +122,6 @@ export const BoardShareCard = ({
           className="min-w-0 flex-1 font-mono text-xs"
           onFocus={(event) => event.currentTarget.select()}
         />
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={handleCopy}
-          aria-label={copied ? "Copied board URL" : "Copy board URL"}
-        >
-          {copied ? <CheckIcon /> : <CopyIcon />}
-        </Button>
-        <Button
-          nativeButton={false}
-          variant="outline"
-          size="icon"
-          aria-label="Open full display"
-          render={<a href={href} target="_blank" rel="noreferrer" />}
-        >
-          <ExternalLinkIcon />
-        </Button>
         {matrix ? (
           <div className="shrink-0 rounded-md bg-white p-1">
             <svg
@@ -106,43 +150,6 @@ export const BoardShareCard = ({
           </div>
         ) : null}
       </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <Switch
-          id="board-save-key"
-          checked={keyMode === "browser"}
-          onCheckedChange={onKeyModeChange}
-          aria-describedby="board-save-key-hint"
-        />
-        <label htmlFor="board-save-key" className="text-sm text-foreground">
-          Save key on this browser
-        </label>
-        {hasKey && appKeyMasked ? (
-          <button
-            type="button"
-            className="font-mono text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            onClick={onManageKey}
-            aria-label={`Manage TfL API key ending ${appKeyMasked.slice(-4)}`}
-          >
-            {appKeyMasked}
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            onClick={onManageKey}
-          >
-            Add TfL API key
-          </button>
-        )}
-        {persistMode === "session" ? (
-          <span className="text-sm text-muted-foreground">This tab only</span>
-        ) : null}
-      </div>
-      <p id="board-save-key-hint" className="text-sm text-muted-foreground">
-        {keyMode === "browser"
-          ? "URL omits the key — works in this browser only."
-          : "Anyone with the complete link can use the key and its quota."}
-      </p>
     </section>
   )
 }

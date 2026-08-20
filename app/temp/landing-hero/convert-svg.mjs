@@ -97,7 +97,7 @@ injectAfterId(
             width="${IPAD_SCREEN.width + IPAD_HIT_PAD.width}"
             height="${IPAD_SCREEN.height + IPAD_HIT_PAD.height}"
             fill="transparent"
-            className="cursor-pointer"
+            className="cursor-none"
             tabIndex={0}
             role="button"
             aria-label="Zoom in to the station display"

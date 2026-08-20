@@ -523,7 +523,7 @@ export const BoardBuilder = ({
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(18rem,2fr)_minmax(0,3fr)]">
         <div className="order-1 min-w-0 space-y-5">
-          <BoardQuickConfig {...formProps} parts="places" />
+          <BoardQuickConfig {...formProps} />
           <BoardShareCard
             url={absoluteUrl}
             href={href}
@@ -534,7 +534,6 @@ export const BoardBuilder = ({
             persistMode={persistMode}
             onManageKey={openDialog}
           />
-          <BoardQuickConfig {...formProps} parts="filters" />
           {error && status === "invalid" ? (
             <p className="text-sm text-destructive" role="alert">
               {error.message}
