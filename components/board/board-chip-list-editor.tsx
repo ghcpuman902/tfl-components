@@ -8,7 +8,13 @@ import {
   type ReactNode,
 } from "react"
 import { createPortal } from "react-dom"
-import { CirclePlus, XIcon } from "lucide-react"
+import {
+  ChipAddBadge,
+  ChipRemoveBadge,
+  EmptySlotChip,
+  InsertCaret,
+  PoolHint,
+} from "@/components/board/chip-drag-ui"
 import {
   moveChipListItem,
   type ChipListZone,
@@ -25,6 +31,7 @@ export type BoardChipListItem = {
 type ChipPlacement = "selected" | "pool" | "ghost"
 
 export type BoardChipListEditorProps = {
+  id?: string
   label: string
   selectedIds: readonly string[]
   poolIds: readonly string[]
@@ -96,48 +103,12 @@ const insertIndexFromPoint = (
   return chipEls.length
 }
 
-const InsertCaret = () => (
-  <span
-    aria-hidden
-    className="h-7 w-0.5 shrink-0 rounded-full bg-foreground/30"
-  />
-)
-
-const EmptySlotChip = () => (
-  <span
-    aria-hidden
-    className="inline-flex h-7 min-w-16 rounded-md border border-dashed border-input/80"
-  />
-)
-
-const DragToAddChip = () => (
-  <span
-    aria-hidden
-    className="inline-flex h-7 items-center rounded-md border border-dashed border-input px-2 text-xs text-muted-foreground"
-  >
-    Drag to add
-  </span>
-)
-
-const DefaultChipPaint = ({
-  item,
-  placement,
-}: {
-  item: BoardChipListItem
-  placement: ChipPlacement
-}) => (
-  <>
-    <span className="truncate">{item.label}</span>
-    {placement === "pool" ? (
-      <CirclePlus
-        className="size-3 shrink-0 text-muted-foreground"
-        aria-hidden
-      />
-    ) : null}
-  </>
+const DefaultChipPaint = ({ item }: { item: BoardChipListItem }) => (
+  <span className="truncate">{item.label}</span>
 )
 
 export const BoardChipListEditor = ({
+  id,
   label,
   selectedIds,
   poolIds,
@@ -299,7 +270,7 @@ export const BoardChipListEditor = ({
     renderChip ? (
       renderChip(item, placement)
     ) : (
-      <DefaultChipPaint item={item} placement={placement} />
+      <DefaultChipPaint item={item} />
     )
 
   const renderChipButton = (id: string, from: ChipListZone) => {
@@ -326,24 +297,17 @@ export const BoardChipListEditor = ({
         )}
       >
         {paint(item, from)}
-        {inSelected ? (
-          <span
-            aria-hidden
-            className="pointer-events-none absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-background text-muted-foreground opacity-0 ring-1 ring-border transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
-          >
-            <XIcon className="size-2.5" />
-          </span>
-        ) : null}
+        {from === "pool" ? <ChipAddBadge /> : null}
+        {inSelected ? <ChipRemoveBadge /> : null}
       </button>
     )
   }
 
   const visibleSelected = selectedIds.filter((id) => id !== activeId)
   const showCaret = overZone === "selected" && insertIndex !== null
-  const showPool = poolIds.length > 0 || poolAction != null
 
   return (
-    <div role="group" aria-label={label} className="space-y-2">
+    <div id={id} role="group" aria-label={label} className="space-y-2">
       <div
         ref={(node) => {
           zoneRefs.current.selected = node
@@ -364,21 +328,22 @@ export const BoardChipListEditor = ({
           <InsertCaret />
         ) : null}
       </div>
-      {showPool ? (
-        <div
-          ref={(node) => {
-            zoneRefs.current.pool = node
-          }}
-          className={cn(
-            "flex min-h-8 flex-wrap items-center gap-1.5 rounded-lg px-0.5 py-0.5",
-            overZone === "pool" && "bg-muted/40"
-          )}
-        >
-          {poolIds.map((id) => renderChipButton(id, "pool"))}
-          {poolIds.length > 0 ? <DragToAddChip /> : null}
-          {poolAction}
-        </div>
-      ) : null}
+      <div
+        ref={(node) => {
+          zoneRefs.current.pool = node
+        }}
+        className={cn(
+          "flex min-h-8 flex-wrap items-center gap-1.5 rounded-lg px-0.5 py-0.5",
+          overZone === "pool" && "bg-muted/40"
+        )}
+      >
+        {poolIds.map((id) => renderChipButton(id, "pool"))}
+        <PoolHint
+          poolCount={poolIds.length}
+          selectedCount={selectedIds.length}
+        />
+        {poolAction}
+      </div>
       {ghost
         ? createPortal(
             <div

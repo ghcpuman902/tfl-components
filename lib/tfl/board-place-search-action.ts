@@ -26,6 +26,12 @@ export type BoardBusStopRoutesResult =
   | { ok: true; routes: readonly string[] }
   | { ok: false; error: string }
 
+export type BoardCycleDockLabelsResult =
+  | { ok: true; labels: Record<string, string> }
+  | { ok: false; error: string }
+
+const MAX_CYCLE_DOCK_LABELS = 16
+
 /**
  * Routes that serve a boarding-point bus stop. Used to prefill `b.routes`.
  */
@@ -46,6 +52,41 @@ export async function getBoardBusStopRoutes(
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Could not load routes."
+    return { ok: false, error: message }
+  }
+}
+
+/**
+ * Names for docks already on the board. Caps the list so this is not an
+ * open BikePoint proxy.
+ */
+export async function getBoardCycleDockLabels(
+  ids: readonly string[]
+): Promise<BoardCycleDockLabelsResult> {
+  const unique = [
+    ...new Set(ids.map((id) => formatBikePointId(id)).filter(Boolean)),
+  ].slice(0, MAX_CYCLE_DOCK_LABELS)
+  if (unique.length === 0) return { ok: true, labels: {} }
+
+  try {
+    const client = getTflClient()
+    const labels: Record<string, string> = {}
+    await Promise.all(
+      unique.map(async (id) => {
+        try {
+          const dock = await client.bikePoint.getById(id)
+          const point = normaliseBikePoint(dock)
+          if (!point) return
+          labels[formatBikePointId(point.id)] = point.name
+        } catch {
+          // Skip unknown or failed ids; chips fall back to a short id.
+        }
+      })
+    )
+    return { ok: true, labels }
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Could not load dock names."
     return { ok: false, error: message }
   }
 }

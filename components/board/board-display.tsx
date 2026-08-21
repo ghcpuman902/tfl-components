@@ -119,7 +119,9 @@ const getServerBoardHash = () => ""
 const subscribeNoop = () => () => undefined
 const getClientReady = () => true
 const getServerReady = () => false
-const getEmbedded = () => window.self !== window.top
+const getEmbedded = () =>
+  window.self !== window.top ||
+  new URLSearchParams(window.location.search).get("embed") === "1"
 const getServerEmbedded = () => false
 
 const useBoardConfigFromHash = (
@@ -197,8 +199,10 @@ export const BoardDisplay = ({
     const html = document.documentElement
     const previous = html.style.overflow
     html.style.overflow = "hidden"
+    html.classList.add("board-embed")
     return () => {
       html.style.overflow = previous
+      html.classList.remove("board-embed")
     }
   }, [embedded])
 
@@ -223,7 +227,6 @@ export const BoardDisplay = ({
   const status = useBoardStatus({
     appKey,
     enabled: ready && showStatus,
-    resetKey: configEpoch,
   })
   const pollStopIds = useMemo(
     () => lookupBoardArrivalsStopIds(arrivalsStopIds, stopId),
@@ -243,7 +246,6 @@ export const BoardDisplay = ({
     appKeyOverride: ready ? appKey : null,
     sharedTrackLineIds: ready && showRail ? sharedTrackLineIds : undefined,
     sharedTrackFamilies: ready && showRail ? sharedTrackFamilies : undefined,
-    resetKey: configEpoch,
   })
 
   const busStopId = config.bus.stop ?? ""
@@ -253,18 +255,15 @@ export const BoardDisplay = ({
   const busArrivals = useDualPathArrivals({
     stopPointId: ready && showBus ? busStopId : "",
     appKeyOverride: ready ? appKey : null,
-    resetKey: configEpoch,
   })
   const riverArrivals = useDualPathArrivals({
     stopPointId: ready && showRiver ? riverStopId : "",
     appKeyOverride: ready ? appKey : null,
-    resetKey: configEpoch,
   })
   const cyclePoints = useDualPathBikePoints({
     dockIds: cycleDockIds,
     appKeyOverride: ready ? appKey : null,
     enabled: ready && showCycle,
-    resetKey: configEpoch,
   })
 
   const handleRefresh = useCallback(() => {
@@ -449,12 +448,14 @@ export const BoardDisplay = ({
 
   const statusData = useMemo(() => {
     const lines = config.status.lines
-    if (!lines?.length) return status.data
+    if (!lines?.length || config.status.overview !== "selection") {
+      return status.data
+    }
     const keep = new Set(lines.map((id) => normalizeLineId(id)))
     return status.data.filter((line) =>
       keep.has(normalizeLineId(line.id ?? ""))
     )
-  }, [status.data, config.status.lines])
+  }, [status.data, config.status.lines, config.status.overview])
 
   const twoColumns = slots.p1.length > 0 && slots.p2.length > 0
 
@@ -610,6 +611,11 @@ export const BoardDisplay = ({
         data={statusData}
         now={status.fetchedAt ?? undefined}
         hideHeader
+        priorityLineIds={
+          statusProps.detailScope === "network"
+            ? statusProps.detailLineIds
+            : undefined
+        }
       />
     )
   }
@@ -644,7 +650,7 @@ export const BoardDisplay = ({
     <div
       className={
         embedded
-          ? "box-border h-dvh w-full overflow-y-auto overscroll-y-contain p-4 [touch-action:pan-y] md:p-6"
+          ? "board-embed box-border h-dvh w-full overflow-y-auto overscroll-y-contain p-4 [scrollbar-width:none] [touch-action:pan-y] [&::-webkit-scrollbar]:hidden md:p-6"
           : "box-border min-h-dvh w-full p-4 md:p-6"
       }
       style={ARRIVALS_RHYTHM_VARS}

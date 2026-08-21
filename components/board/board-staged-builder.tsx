@@ -12,7 +12,11 @@ import {
   type ReactNode,
 } from "react"
 import { BoardAdvancedConfig } from "@/components/board/board-config-form"
-import { BoardLineChipPicker } from "@/components/board/board-line-chip-picker"
+import { BoardModeRoundel } from "@/components/board/board-mode-roundel"
+import {
+  BoardExtraStatusLineEditor,
+  BoardServingLineEditor,
+} from "@/components/board/board-status-line-editor"
 import { BoardPreview } from "@/components/board/board-preview"
 import { BoardPreviewModePills } from "@/components/board/board-preview-mode"
 import { BoardShareCard } from "@/components/board/board-share-card"
@@ -71,7 +75,10 @@ import {
   type BoardNearbyResult,
 } from "@/lib/tfl/board-nearby-action"
 import { boardSlotsInclude, resolveBoardSlots } from "@/lib/tfl/board-panels"
-import type { BoardSettingId } from "@/lib/tfl/board-settings"
+import {
+  BOARD_STATUS_CORE_LINE_IDS,
+  type BoardSettingId,
+} from "@/lib/tfl/board-settings"
 import {
   boardConfigForShare,
   boardKeyModeFromPersist,
@@ -89,6 +96,7 @@ import {
   markBoardSetupStarted,
   parseBoardSetupDraft,
   BOARD_SETUP_DRAFT_STORAGE_KEY,
+  type BoardNearbyMode,
   type BoardScreenProfile,
   type BoardSetupDraft,
   type BoardSetupStage,
@@ -100,6 +108,7 @@ import {
   hashHasBoardConfig,
   parseBoardConfig,
   type BoardConfig,
+  type BoardSlotsConfig,
 } from "@/lib/tfl/board-url-state"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
 import {
@@ -167,9 +176,6 @@ const formSettingsFromConfig = (config: BoardConfig): BoardSettingId[] => {
     ids.add("arrivalsLines")
     ids.add("arrivalsRows")
   }
-  if (boardSlotsInclude(resolved, "status")) {
-    ids.add("statusTiles")
-  }
   if (boardSlotsInclude(resolved, "bus")) {
     ids.add("busStop")
     ids.add("busRoutes")
@@ -187,15 +193,32 @@ const formSettingsFromConfig = (config: BoardConfig): BoardSettingId[] => {
   return [...ids]
 }
 
+const priorityLineIdsFromDraft = (draft: BoardSetupDraft): readonly string[] =>
+  LINE_ORDER.filter(
+    (id) => draft.lineIds.includes(id) || draft.statusLineIds.includes(id)
+  )
+
+const extraStatusLineIdsForServing = (servingIds: readonly string[]) =>
+  BOARD_STATUS_CORE_LINE_IDS.filter((id) => !servingIds.includes(id))
+
+const statusConfigFromDraft = (draft: BoardSetupDraft) => {
+  const lines = priorityLineIdsFromDraft(draft)
+  return {
+    lines: lines.length > 0 ? lines : undefined,
+    overview: draft.statusOnlyThese
+      ? ("selection" as const)
+      : lines.length > 0
+        ? ("network" as const)
+        : undefined,
+  }
+}
+
 const configFromDraft = (draft: BoardSetupDraft): BoardConfig => {
   if (draft.continueWithoutStop) {
     return {
       ...DEFAULT_BOARD_CONFIG,
       slots: { p1: ["status"], p2: [] },
-      status: {
-        lines: draft.statusLineIds.length > 0 ? draft.statusLineIds : undefined,
-        overview: draft.statusLineIds.length > 0 ? "selection" : undefined,
-      },
+      status: statusConfigFromDraft(draft),
     }
   }
 
@@ -219,10 +242,7 @@ const configFromDraft = (draft: BoardSetupDraft): BoardConfig => {
     bus: { stop: draft.busStopId ?? undefined },
     river: includeRiver ? { stop: draft.riverStopId ?? undefined } : {},
     cycle: includeCycle ? { docks: draft.cycleDockIds } : {},
-    status: {
-      lines: draft.statusLineIds.length > 0 ? draft.statusLineIds : undefined,
-      overview: draft.statusLineIds.length > 0 ? "selection" : undefined,
-    },
+    status: statusConfigFromDraft(draft),
   }
 }
 
@@ -265,6 +285,15 @@ const applyNearbyIds = (
       ? result.docks
       : current.cycleDockIds,
 })
+
+const nearbyModesFromSlots = (slots: BoardSlotsConfig): BoardNearbyMode[] => {
+  const resolved = resolveBoardSlots(slots.p1, slots.p2)
+  const modes: BoardNearbyMode[] = []
+  if (boardSlotsInclude(resolved, "bus")) modes.push("bus")
+  if (boardSlotsInclude(resolved, "river")) modes.push("river")
+  if (boardSlotsInclude(resolved, "cycle")) modes.push("cycle")
+  return modes
+}
 
 const mergePartialBoardConfig = (
   current: Partial<BoardConfig>,
@@ -558,6 +587,10 @@ export const BoardStagedBuilder = ({
               stopId: rail?.id ?? current.stopId,
               stopName: rail?.name ?? current.stopName,
               lineIds: lineIds.length > 0 ? lineIds : current.lineIds,
+              statusLineIds:
+                lineIds.length > 0
+                  ? extraStatusLineIdsForServing(lineIds)
+                  : current.statusLineIds,
               busStopId: result.bus?.id ?? null,
               riverStopId: result.river?.id ?? null,
               cycleDockIds: result.docks,
@@ -598,6 +631,20 @@ export const BoardStagedBuilder = ({
         next.stopName !== undefined ? next.stopName || null : current.stopName,
       lineIds: next.arrivals?.lineOrder ?? current.lineIds,
       statusLineIds: next.status?.lines ?? current.statusLineIds,
+      nearbyModes:
+        next.slots !== undefined
+          ? nearbyModesFromSlots(next.slots)
+          : current.nearbyModes,
+      busStopId:
+        next.bus?.stop !== undefined ? next.bus.stop || null : current.busStopId,
+      riverStopId:
+        next.river?.stop !== undefined
+          ? next.river.stop || null
+          : current.riverStopId,
+      cycleDockIds:
+        next.cycle?.docks !== undefined
+          ? next.cycle.docks
+          : current.cycleDockIds,
     }))
   }
 
@@ -897,21 +944,22 @@ export const BoardStagedBuilder = ({
                               station.id === stop ||
                               station.aliasIds.includes(stop)
                           )
-                          updateDraft((current) =>
-                            startIfNeeded({
+                          updateDraft((current) => {
+                            const lineIds = (
+                              lookupBoardStationLines(stationLines, stop) ?? []
+                            ).map((line) => line.lineId)
+                            return startIfNeeded({
                               ...current,
                               continueWithoutStop: false,
                               stopId: stop,
                               stopName: item?.name ?? null,
-                              lineIds: (
-                                lookupBoardStationLines(stationLines, stop) ??
-                                []
-                              ).map((line) => line.lineId),
+                              lineIds,
+                              statusLineIds: extraStatusLineIdsForServing(lineIds),
                               busStopId: null,
                               riverStopId: null,
                               cycleDockIds: [],
                             })
-                          )
+                          })
                           if (stop) {
                             finishStage(2)
                             finishStage(3)
@@ -924,12 +972,28 @@ export const BoardStagedBuilder = ({
                       className="text-sm text-muted-foreground underline underline-offset-4 aria-pressed:text-foreground"
                       aria-pressed={draft.continueWithoutStop}
                       onClick={() => {
-                        updateDraft((current) =>
-                          startIfNeeded({
+                        updateDraft((current) => {
+                          const next = startIfNeeded({
                             ...current,
                             continueWithoutStop: !current.continueWithoutStop,
                           })
-                        )
+                          if (
+                            !current.continueWithoutStop &&
+                            current.statusLineIds.length === 0
+                          ) {
+                            const serving = (
+                              lookupBoardStationLines(
+                                stationLines,
+                                current.stopId ?? undefined
+                              ) ?? []
+                            ).map((line) => line.lineId)
+                            return {
+                              ...next,
+                              statusLineIds: extraStatusLineIdsForServing(serving),
+                            }
+                          }
+                          return next
+                        })
                         finishStage(2)
                       }}
                     >
@@ -940,29 +1004,49 @@ export const BoardStagedBuilder = ({
                     {draft.continueWithoutStop ? null : (
                       <div className="space-y-4">
                         <div>
-                          <h3 className="text-sm font-medium">At this stop</h3>
-                          <BoardLineChipPicker
-                            lines={servingLines}
+                          <h3 className="flex items-center gap-1.5 text-sm font-medium">
+                            <BoardModeRoundel variant="underground" />
+                            At this stop
+                          </h3>
+                          <BoardServingLineEditor
+                            servingLines={servingLines}
+                            lineGroups={lineGroups}
                             selected={draft.lineIds}
                             onChange={(lineOrder) =>
                               updateDraft((current) => ({
                                 ...current,
-                                lineIds: lineOrder ? [...lineOrder] : [],
+                                lineIds: [...lineOrder],
                               }))
                             }
                           />
                         </div>
                         <div>
-                          <h3 className="text-sm font-medium">
-                            Additional status lines
-                          </h3>
-                          <BoardLineChipPicker
+                          <div className="flex items-baseline justify-between gap-3">
+                            <h3 className="flex items-center gap-1.5 text-sm font-medium">
+                              <BoardModeRoundel variant="tfl" />
+                              Also prioritise
+                            </h3>
+                            <button
+                              type="button"
+                              className="text-sm text-muted-foreground underline underline-offset-4 aria-pressed:text-foreground"
+                              aria-pressed={draft.statusOnlyThese}
+                              onClick={() =>
+                                updateDraft((current) => ({
+                                  ...current,
+                                  statusOnlyThese: !current.statusOnlyThese,
+                                }))
+                              }
+                            >
+                              Only show these lines
+                            </button>
+                          </div>
+                          <BoardExtraStatusLineEditor
                             lines={extraStatusLines}
                             selected={draft.statusLineIds}
                             onChange={(lineOrder) =>
                               updateDraft((current) => ({
                                 ...current,
-                                statusLineIds: lineOrder ? [...lineOrder] : [],
+                                statusLineIds: [...lineOrder],
                               }))
                             }
                           />

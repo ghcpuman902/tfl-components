@@ -63,6 +63,9 @@ export const IPHONE_ASPECT = IPHONE.vb.w / IPHONE.vb.h
 /** Circular case radius as CSS `x% / y%` so the skeleton matches the SVG. */
 export const ipadCaseRounding = `${(IPAD.caseRx / IPAD.vb.w) * 100}% / ${(IPAD.caseRx / IPAD.vb.h) * 100}%`
 export const iphoneCaseRounding = `${(IPHONE.caseRx / IPHONE.vb.w) * 100}% / ${(IPHONE.caseRx / IPHONE.vb.h) * 100}%`
+/** Same circular corner on the screen box — a single `%` would squash on wide iPads. */
+export const ipadScreenRounding = `${(IPAD.screen.rx / IPAD.screen.w) * 100}% / ${(IPAD.screen.rx / IPAD.screen.h) * 100}%`
+export const iphoneScreenRounding = `${(IPHONE.screen.rx / IPHONE.screen.w) * 100}% / ${(IPHONE.screen.rx / IPHONE.screen.h) * 100}%`
 
 export const IpadDeviceSvg = ({
   showCable = true,

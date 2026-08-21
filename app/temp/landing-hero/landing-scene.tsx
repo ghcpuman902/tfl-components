@@ -17,6 +17,7 @@ import {
   IPAD_ASPECT,
   ipadCaseRounding,
   ipadScreenInset,
+  ipadScreenRounding,
 } from "@/components/board/board-device-frame"
 import { IpadBoardFrame } from "./ipad-board-frame"
 import {
@@ -33,6 +34,8 @@ import {
 import { MirrorPhotoLoop } from "./mirror-photo-loop"
 import {
   HERO_COPY_BAND,
+  HERO_COPY_GAP,
+  HERO_GROUP_BIAS,
   HERO_TOP_INSET,
   IPAD_FRAME_ASPECT,
   IPAD_FRAME_WIDTH,
@@ -75,8 +78,8 @@ const LandingStaticRoom = () => {
   return (
     <section
       id="landing-room"
-      className="relative w-full overflow-hidden"
-      style={{ height: "calc(100dvh - var(--site-header-height))" }}
+      className="relative flex w-full flex-col overflow-hidden"
+      style={{ height: "calc(100svh - var(--site-header-height))" }}
     >
       <div className="landing-hero-paper absolute inset-0" />
       <div className="absolute inset-0">
@@ -112,7 +115,9 @@ export const LandingScene = ({
   const cameraRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
   const veilRef = useRef<HTMLDivElement>(null)
+  const letterboxRef = useRef<HTMLDivElement>(null)
   const copyRef = useRef<HTMLDivElement>(null)
+  const copySlotRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const l0Ref = useRef<SVGGElement>(null)
   const l1Ref = useRef<SVGGElement>(null)
@@ -170,9 +175,11 @@ export const LandingScene = ({
     cameraRef,
     canvasRef,
     veilRef,
+    letterboxRef,
     svgRef,
     iPadRef,
     copyRef,
+    copySlotRef,
     reducedMotion,
     onRoomCompleteChange: handleRoomCompleteChange,
     onSceneReady: () => {
@@ -277,13 +284,14 @@ export const LandingScene = ({
 
   const landingVars = {
     "--landing-ipad-width": IPAD_FRAME_WIDTH,
-    "--landing-ipad-top": `max(${HERO_TOP_INSET}, calc(${HERO_TOP_INSET} + (100dvh - var(--site-header-height) - ${HERO_COPY_BAND} - (var(--landing-ipad-width) / ${IPAD_FRAME_ASPECT})) / 2))`,
+    "--landing-ipad-top": `max(${HERO_TOP_INSET}, calc((100svh - var(--site-header-height) - (var(--landing-ipad-width) / ${IPAD_FRAME_ASPECT}) - ${HERO_COPY_GAP} - ${HERO_COPY_BAND}) / 2 - ${HERO_GROUP_BIAS}))`,
+    "--landing-copy-top": `calc(var(--landing-ipad-top) + var(--landing-ipad-width) / ${IPAD_FRAME_ASPECT} + ${HERO_COPY_GAP})`,
   } as CSSProperties
 
   if (reducedMotion) {
     return (
       <div className="landing-home w-full min-w-0" style={landingVars}>
-        <section className="mx-auto flex min-h-[calc(100dvh-var(--site-header-height))] w-full flex-col justify-center px-4 pt-4 pb-10">
+        <section className="mx-auto flex min-h-[calc(100svh-var(--site-header-height))] w-full flex-col justify-center px-4 pt-4 pb-10">
           <div
             className="relative mx-auto w-(--landing-ipad-width)"
             style={{ aspectRatio: IPAD_ASPECT }}
@@ -296,7 +304,7 @@ export const LandingScene = ({
                 top: `${ipadScreenInset.top * 100}%`,
                 width: `${ipadScreenInset.width * 100}%`,
                 height: `${ipadScreenInset.height * 100}%`,
-                borderRadius: `${(ipadScreenInset.radius / ipadScreenInset.width) * 100}%`,
+                borderRadius: ipadScreenRounding,
               }}
             >
               <IpadBoardFrame interactive={false} />
@@ -318,7 +326,7 @@ export const LandingScene = ({
         ref={wrapperRef}
         className="relative w-full"
         style={{
-          height: "calc(100dvh - var(--site-header-height) + 100svh)",
+          height: "calc(200svh - var(--site-header-height))",
         }}
       >
         <div
@@ -329,7 +337,7 @@ export const LandingScene = ({
             ref={stageRef}
             className="pointer-events-none relative overflow-hidden"
             style={{
-              height: "calc(100dvh - var(--site-header-height))",
+              height: "calc(100svh - var(--site-header-height))",
               touchAction: production ? "pan-y pinch-zoom" : undefined,
             }}
             onPointerDown={() => {
@@ -399,6 +407,12 @@ export const LandingScene = ({
                 }}
               />
               <div
+                ref={letterboxRef}
+                aria-hidden
+                className="landing-hero-wall-fill pointer-events-none absolute inset-x-0 top-0 origin-top"
+                style={{ height: 0 }}
+              />
+              <div
                 ref={ipadOverlayRef}
                 id="landing-example-board"
                 className="absolute overflow-hidden"
@@ -425,7 +439,7 @@ export const LandingScene = ({
                     top: `${ipadScreenInset.top * 100}%`,
                     width: `${ipadScreenInset.width * 100}%`,
                     height: `${ipadScreenInset.height * 100}%`,
-                    borderRadius: `${(ipadScreenInset.radius / ipadScreenInset.width) * 100}%`,
+                    borderRadius: ipadScreenRounding,
                   }}
                 >
                   <IpadBoardFrame interactive={roomComplete} />
@@ -453,15 +467,14 @@ export const LandingScene = ({
             </div>
 
             <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 z-20"
+              ref={copySlotRef}
+              className="pointer-events-none absolute inset-x-0 z-20"
               style={{
-                height: HERO_COPY_BAND,
+                top: "var(--landing-copy-top)",
                 visibility: roomComplete ? "hidden" : "visible",
               }}
             >
-              <div className="flex size-full items-end justify-center pb-5">
-                {heroCopy}
-              </div>
+              {heroCopy}
             </div>
           </div>
         </div>

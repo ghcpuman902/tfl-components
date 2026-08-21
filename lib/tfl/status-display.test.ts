@@ -184,11 +184,36 @@ describe("buildStatusDisplayFrames", () => {
     })
     const disruption = frames.find((frame) => frame.phase === "disruptions")
     assert.deepEqual(disruption?.headingLineIds, ["central"])
-    assert.equal(
-      disruption?.otherGoodServiceCopy,
-      "Good service on all other lines"
+    assert.equal(disruption?.otherGoodServiceCopy, undefined)
+    const good = frames.find((frame) => frame.phase === "good-service")
+    assert.ok(good)
+    const goodChips = good?.tiles[0]
+    assert.equal(goodChips?.kind, "chips")
+    if (goodChips?.kind === "chips") {
+      assert.deepEqual([...goodChips.lineIds].sort(), ["bakerloo", "victoria"])
+    }
+  })
+
+  it("gives a non-priority disruption an identity frame under network scope", () => {
+    const sections = partitionStatusBoardLines([central, waterlooCity, victoria], {
+      now: SATURDAY,
+    })
+    const frames = buildStatusDisplayFrames(sections, {
+      tiles: 4,
+      detailScope: "network",
+      detailLineIds: ["central"],
+    })
+    const disruption = frames.filter((frame) => frame.phase === "disruptions")
+    assert.equal(disruption[0]?.activeLineId, "central")
+    assert.ok(
+      disruption[0]?.tiles.some((tile) => tile.kind === "announcements")
     )
-    assert.ok(!frames.some((frame) => frame.phase === "good-service"))
+    const other = disruption.find(
+      (frame) => frame.activeLineId === "waterloo-city"
+    )
+    assert.ok(other)
+    assert.equal(other?.tiles.length, 0)
+    assert.deepEqual(other?.headingLineIds, ["central", "waterloo-city"])
   })
 
   it("scopes selection to the selected lines only", () => {

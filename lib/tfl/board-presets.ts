@@ -31,7 +31,6 @@ const STATION_FORM: readonly BoardSettingId[] = [
   "arrivalsRows",
   "arrivalsPinFirst",
   "statusSurface",
-  "statusTiles",
   "statusLines",
   "statusOverview",
 ]
@@ -87,7 +86,6 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
     formSettings: [
       "behaviour",
       "statusSurface",
-      "statusTiles",
       "statusLines",
       "statusOverview",
     ],

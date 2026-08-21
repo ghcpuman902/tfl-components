@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
   BOARD_SETTINGS,
+  BOARD_STATUS_CORE_LINE_IDS,
   FORM_BOARD_SETTING_IDS,
   URL_BOARD_SETTING_IDS,
   parseArrivalsLines,
@@ -121,6 +122,19 @@ describe("parseArrivalsLines / parseLineIdItem", () => {
     assert.equal(
       serializeArrivalsLines(["victoria", "central"]),
       "victoria,central"
+    )
+  })
+})
+
+describe("BOARD_STATUS_CORE_LINE_IDS", () => {
+  it("is Underground plus Elizabeth, without Waterloo & City", () => {
+    assert.ok(BOARD_STATUS_CORE_LINE_IDS.includes("victoria"))
+    assert.ok(BOARD_STATUS_CORE_LINE_IDS.includes("elizabeth"))
+    assert.equal(
+      (BOARD_STATUS_CORE_LINE_IDS as readonly string[]).includes(
+        "waterloo-city"
+      ),
+      false
     )
   })
 })

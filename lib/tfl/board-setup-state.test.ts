@@ -52,6 +52,19 @@ describe("board setup draft", () => {
     })
     assert.equal(parsed?.stage, 3)
     assert.deepEqual(parsed?.lineIds, ["victoria"])
+    assert.equal(parsed?.statusOnlyThese, false)
+  })
+
+  it("keeps an explicit only-these-lines flag", () => {
+    const parsed = parseBoardSetupDraft({
+      id: "ok",
+      stage: 3,
+      statusOnlyThese: true,
+      statusLineIds: ["victoria"],
+    })
+    assert.equal(parsed?.statusOnlyThese, true)
+    assert.deepEqual(parsed?.statusLineIds, ["victoria"])
+    assert.equal(createBoardSetupDraft().statusOnlyThese, false)
   })
 
   it("keeps nearby stop and dock ids from a stored draft", () => {
@@ -126,7 +139,17 @@ describe("board setup draft", () => {
     assert.equal(draft.continueWithoutStop, true)
     assert.equal(draft.stopId, null)
     assert.deepEqual(draft.statusLineIds, ["victoria", "northern"])
+    assert.equal(draft.statusOnlyThese, false)
     assert.equal(draft.keyMode, "skipped")
     assert.deepEqual(draft.nearbyModes, [])
+  })
+
+  it("maps selection overview to only-these-lines", () => {
+    const config = parseBoardConfig(
+      "#p1=status&p2=&s.lines=victoria&s.overview=selection"
+    )
+    const draft = draftFromBoardConfig(config, { id: "watchlist" })
+    assert.equal(draft.statusOnlyThese, true)
+    assert.deepEqual(draft.statusLineIds, ["victoria"])
   })
 })

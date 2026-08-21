@@ -32,6 +32,8 @@ export type BoardSetupDraft = {
   riverStopId: string | null
   cycleDockIds: readonly string[]
   statusLineIds: readonly string[]
+  /** When true, status shows only the priority set (`s.overview=selection`). */
+  statusOnlyThese: boolean
   keyMode: BoardSetupKeyMode | null
   setupStarted: boolean
   completedStages: readonly BoardSetupStage[]
@@ -72,6 +74,7 @@ export const createBoardSetupDraft = (id = "pending"): BoardSetupDraft => ({
   riverStopId: null,
   cycleDockIds: [],
   statusLineIds: [],
+  statusOnlyThese: false,
   keyMode: null,
   setupStarted: false,
   completedStages: [],
@@ -116,6 +119,7 @@ export const parseBoardSetupDraft = (value: unknown): BoardSetupDraft | null => 
           (item): item is string => typeof item === "string"
         )
       : [],
+    statusOnlyThese: value.statusOnlyThese === true,
     keyMode: isKeyMode(value.keyMode) ? value.keyMode : null,
     setupStarted: value.setupStarted === true,
     completedStages,
@@ -235,6 +239,7 @@ export const draftFromBoardConfig = (
     riverStopId: config.river.stop?.trim() || null,
     cycleDockIds: [...(config.cycle.docks ?? [])],
     statusLineIds: [...(config.status.lines ?? [])],
+    statusOnlyThese: config.status.overview === "selection",
     keyMode: config.key?.trim() ? "shared" : "skipped",
     setupStarted: true,
     completedStages: IMPORTED_COMPLETED_STAGES,
@@ -244,6 +249,7 @@ export const draftFromBoardConfig = (
 
 /**
  * URL settings the draft does not own (rows, tiles, behaviour, slots, key).
+ * Status overview is owned by `statusOnlyThese` on the draft.
  * `mergeBoardConfig(configFromDraft(draft), leftover)` should match the live board.
  */
 export const leftoverBoardConfig = (
@@ -280,7 +286,6 @@ export const leftoverBoardConfig = (
   const status: BoardConfig["status"] = {}
   if (config.status.surface) status.surface = config.status.surface
   if (config.status.tiles !== undefined) status.tiles = config.status.tiles
-  if (config.status.overview) status.overview = config.status.overview
   if (config.status.dwell !== undefined) status.dwell = config.status.dwell
   if (Object.keys(status).length > 0) leftover.status = status
 

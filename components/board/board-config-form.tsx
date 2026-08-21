@@ -9,6 +9,12 @@ import {
 } from "react"
 import { ChevronDownIcon } from "lucide-react"
 import { LINE_ORDER } from "tfl-ts"
+import { BoardChipListEditor } from "@/components/board/board-chip-list-editor"
+import { BoardCycleDockPicker } from "@/components/board/board-cycle-dock-picker"
+import {
+  BoardModeRoundel,
+  roundelForSetting,
+} from "@/components/board/board-mode-roundel"
 import { BoardLineChipPicker } from "@/components/board/board-line-chip-picker"
 import { BoardPlaceSearch } from "@/components/board/board-place-search"
 import { BoardSlotEditor } from "@/components/board/board-slot-editor"
@@ -39,13 +45,7 @@ import {
   resolveEffectiveSections,
 } from "@/lib/tfl/board-config-resolve"
 import type { BoardStationLineGroup } from "@/lib/tfl/board-station-lines"
-import {
-  parseDockIdList,
-  parseRouteIdList,
-  sameBusRouteSet,
-  serializeDockIdList,
-  serializeRouteIdList,
-} from "@/lib/tfl/board-panels"
+import { sameChipOrder } from "@/lib/tfl/board-chip-list"
 import { getBoardBusStopRoutes } from "@/lib/tfl/board-place-search-action"
 import {
   BOARD_SETTINGS,
@@ -95,12 +95,16 @@ const FieldLabel = ({
   setting: BoardSettingId
   segments: readonly BoardHrefSegment[]
   children: string
-}) => (
-  <Label htmlFor={htmlFor} className="flex items-center gap-1.5">
-    <BoardSegmentBadge index={boardSegmentIndex(segments, setting)} />
-    <span>{children}</span>
-  </Label>
-)
+}) => {
+  const roundel = roundelForSetting(setting)
+  return (
+    <Label htmlFor={htmlFor} className="flex items-center gap-1.5">
+      {roundel ? <BoardModeRoundel variant={roundel} /> : null}
+      <BoardSegmentBadge index={boardSegmentIndex(segments, setting)} />
+      <span>{children}</span>
+    </Label>
+  )
+}
 
 const Field = ({
   children,
@@ -368,43 +372,23 @@ export const BoardQuickConfig = ({
       {showPlaces && show(formSettings, "cycleDocks") ? (
         <Field>
           <FieldLabel
-            htmlFor="board-cycle-search"
+            htmlFor="board-cycle-docks"
             setting="cycleDocks"
             segments={segments}
           >
             {BOARD_SETTINGS.cycleDocks.ui?.label ?? "Cycle docks"}
           </FieldLabel>
-          <BoardPlaceSearch
-            kind="cycle"
-            onSelect={(place) => {
-              const current = config.cycle.docks ?? []
-              if (current.includes(place.id)) return
-              onChange({
-                cycle: {
-                  ...config.cycle,
-                  docks: [...current, place.id],
-                },
-              })
-            }}
-            inputId="board-cycle-search"
-            placeholder="Search for a cycle dock"
-            emptyMessage="No docks match that search."
-          />
-          <Input
+          <BoardCycleDockPicker
             id="board-cycle-docks"
-            value={serializeDockIdList(config.cycle.docks) ?? ""}
-            onChange={(event) =>
+            docks={config.cycle.docks}
+            onChange={(docks) =>
               onChange({
                 cycle: {
                   ...config.cycle,
-                  docks: parseDockIdList(event.target.value || null),
+                  docks: docks.length > 0 ? [...docks] : undefined,
                 },
               })
             }
-            autoComplete="off"
-            spellCheck={false}
-            placeholder="BikePoints_237,BikePoints_46"
-            aria-label="Cycle dock ids"
           />
         </Field>
       ) : null}
@@ -435,9 +419,6 @@ export const BoardAdvancedConfig = ({
     rowsDraftFromConfig(config.arrivals.rows)
   )
   const [draftBusStop, setDraftBusStop] = useState(config.bus.stop)
-  const [routesDraft, setRoutesDraft] = useState(
-    () => serializeRouteIdList(config.bus.routes) ?? ""
-  )
   const [servingBusRoutes, setServingBusRoutes] = useState<readonly string[]>(
     []
   )
@@ -449,7 +430,6 @@ export const BoardAdvancedConfig = ({
 
   if (config.bus.stop !== draftBusStop) {
     setDraftBusStop(config.bus.stop)
-    setRoutesDraft(serializeRouteIdList(config.bus.routes) ?? "")
   }
 
   const sections = useMemo(
@@ -461,13 +441,23 @@ export const BoardAdvancedConfig = ({
     [config, servingLines, lineGroups]
   )
   const rowsPlaceholder = formatArrivalsRowsPlaceholder(sections)
-  const servingRoutesLabel = serializeRouteIdList(servingBusRoutes) ?? ""
   const displayedBusRoutes = config.bus.routes?.length
     ? config.bus.routes
     : servingBusRoutes
+  const busPoolRoutes = servingBusRoutes.filter(
+    (id) => !displayedBusRoutes.includes(id)
+  )
+  const busRouteItems = useMemo(
+    () =>
+      [...new Set([...displayedBusRoutes, ...servingBusRoutes])].map((id) => ({
+        id,
+        label: id,
+      })),
+    [displayedBusRoutes, servingBusRoutes]
+  )
   const busRoutesCustom =
     Boolean(config.bus.routes?.length) &&
-    !sameBusRouteSet(config.bus.routes ?? [], servingBusRoutes)
+    !sameChipOrder(config.bus.routes ?? [], servingBusRoutes)
   const segments = hideTrigger ? [] : segmentsProp
 
   useEffect(() => {
@@ -510,34 +500,19 @@ export const BoardAdvancedConfig = ({
 
   const persistBusRoutes = (next: readonly string[] | undefined) => {
     const routes =
-      !next?.length || sameBusRouteSet(next, servingBusRoutes)
+      !next?.length || sameChipOrder(next, servingBusRoutes)
         ? undefined
-        : next
+        : [...next]
     onChange({
       bus: {
         ...config.bus,
         routes,
       },
     })
-    return routes
-  }
-
-  const handleBusRoutesChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const draft = event.target.value
-    setRoutesDraft(draft)
-    persistBusRoutes(parseRouteIdList(draft || null))
-  }
-
-  const handleRemoveBusRoute = (routeId: string) => {
-    const routes = persistBusRoutes(
-      displayedBusRoutes.filter((id) => id !== routeId)
-    )
-    setRoutesDraft(serializeRouteIdList(routes) ?? "")
   }
 
   const handleResetBusRoutes = () => {
     persistBusRoutes(undefined)
-    setRoutesDraft("")
   }
 
   const fields = (
@@ -665,31 +640,22 @@ export const BoardAdvancedConfig = ({
                   </button>
                 ) : null}
               </div>
-              <Input
+              <BoardChipListEditor
                 id="board-bus-routes"
-                value={routesDraft || servingRoutesLabel}
-                onChange={handleBusRoutesChange}
-                autoComplete="off"
-                spellCheck={false}
+                label="Bus routes"
+                selectedIds={displayedBusRoutes}
+                poolIds={busPoolRoutes}
+                items={busRouteItems}
+                onChange={(next) => persistBusRoutes(next.selected)}
+                renderChip={(item, placement) => (
+                  <span aria-hidden>
+                    <BusNumberChip
+                      label={item.label}
+                      className={placement === "pool" ? "opacity-70" : undefined}
+                    />
+                  </span>
+                )}
               />
-              {displayedBusRoutes.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {displayedBusRoutes.map((routeId) => (
-                    <button
-                      key={routeId}
-                      type="button"
-                      className="inline-flex items-center gap-1 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                      aria-label={`Remove route ${routeId}`}
-                      onClick={() => handleRemoveBusRoute(routeId)}
-                    >
-                      <BusNumberChip label={routeId} />
-                      <span aria-hidden className="text-sm text-muted-foreground">
-                        ×
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
             </Field>
           ) : null}
 
@@ -790,33 +756,6 @@ export const BoardAdvancedConfig = ({
                 }
               />
               <Help>{BOARD_SETTINGS.cycleTiles.ui?.help}</Help>
-            </Field>
-          ) : null}
-
-          {show(formSettings, "statusTiles") ? (
-            <Field>
-              <FieldLabel
-                htmlFor="board-status-tiles"
-                setting="statusTiles"
-                segments={segments}
-              >
-                {BOARD_SETTINGS.statusTiles.ui?.label ?? "Status max height"}
-              </FieldLabel>
-              <NumberField
-                id="board-status-tiles"
-                min={0}
-                max={16}
-                value={config.status.tiles ?? 0}
-                onChange={(tiles) =>
-                  onChange({
-                    status: {
-                      tiles:
-                        tiles === 0 || tiles === undefined ? undefined : tiles,
-                    },
-                  })
-                }
-              />
-              <Help>{BOARD_SETTINGS.statusTiles.ui?.help}</Help>
             </Field>
           ) : null}
 

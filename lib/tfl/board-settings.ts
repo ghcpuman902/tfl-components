@@ -77,6 +77,25 @@ const STATUS_OVERVIEWS = new Set<BoardStatusOverview>([
   "none",
 ])
 const LINE_ORDER_SET = new Set<string>(LINE_ORDER)
+
+/**
+ * Default status priority extras: Underground + Elizabeth, minus Waterloo &
+ * City. Station lines union with this set; Overground / DLR / Tram / W&C
+ * stay off unless they serve the stop.
+ */
+export const BOARD_STATUS_CORE_LINE_IDS = [
+  "bakerloo",
+  "central",
+  "circle",
+  "district",
+  "elizabeth",
+  "hammersmith-city",
+  "jubilee",
+  "metropolitan",
+  "northern",
+  "piccadilly",
+  "victoria",
+] as const
 const LEGACY_MODE_TO_BEHAVIOUR: Record<string, BoardBehaviour> = {
   static: "interactive",
   mouse: "interactive",
@@ -506,7 +525,7 @@ export const BOARD_SETTINGS = {
     serialize: (value: number) => serializeRowsItem(value),
     isDefault: (value: number) => value === 0,
     url: true,
-    form: true,
+    form: false,
     ui: {
       label: "Status max height",
       help: "0 expands (the default). 1 is summary only.",

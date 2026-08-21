@@ -21,7 +21,11 @@ import type {
   RailArrivalsLineGroup,
 } from "@/lib/tfl/arrivals-prepare"
 import { HOME_RAIL_LINES, HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
-import { getLineNameTiers, railLineModeName } from "@/lib/tfl/line-names"
+import {
+  getLineNameTiers,
+  joinLineNames,
+  railLineModeName,
+} from "@/lib/tfl/line-names"
 import { getStationCatalog } from "@/lib/tfl/station-catalog"
 
 /**
@@ -338,3 +342,52 @@ export const lookupSharedTrackFamilies = (
   stopId: string | undefined
 ): readonly (readonly string[])[] | undefined =>
   lookupCuratedStopTable(SHARED_TRACK_FAMILIES_BY_STOP, stopId)
+
+export type BoardLineChipUnit =
+  | { kind: "line"; lineId: string }
+  | { kind: "group"; lineIds: readonly string[]; label: string }
+
+/**
+ * Fold shared-platform groups into one chip unit. Ungrouped lines stay
+ * single. First-appearance order follows `servingLines`.
+ */
+export const groupServingLinesIntoChipUnits = (
+  servingLines: readonly RailArrivalsLine[],
+  lineGroups: readonly BoardStationLineGroup[] | undefined
+): BoardLineChipUnit[] => {
+  const groups = lineGroups ?? []
+  const seen = new Set<string>()
+  const units: BoardLineChipUnit[] = []
+
+  for (const line of servingLines) {
+    if (seen.has(line.lineId)) continue
+    const group = groups.find((item) => item.lines.includes(line.lineId))
+    if (group && group.lines.length > 1) {
+      const present = group.lines.filter((id) =>
+        servingLines.some((row) => row.lineId === id)
+      )
+      for (const id of present) seen.add(id)
+      units.push({
+        kind: "group",
+        lineIds: present,
+        label:
+          group.label ??
+          joinLineNames(present.map((id) => getLineNameTiers(id).full)),
+      })
+      continue
+    }
+    seen.add(line.lineId)
+    units.push({ kind: "line", lineId: line.lineId })
+  }
+  return units
+}
+
+export const expandChipUnits = (
+  units: readonly BoardLineChipUnit[]
+): string[] =>
+  units.flatMap((unit) =>
+    unit.kind === "line" ? [unit.lineId] : [...unit.lineIds]
+  )
+
+export const chipUnitKey = (unit: BoardLineChipUnit): string =>
+  unit.kind === "line" ? unit.lineId : unit.lineIds.join("+")

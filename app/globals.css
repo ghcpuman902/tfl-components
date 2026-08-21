@@ -220,20 +220,28 @@ html[data-tfl-type-profile="johnston-compatible"] {
     background-color: color-mix(in oklch, var(--foreground) 42%, transparent);
   }
 
-  /* Homepage: no overlay track/thumb while scrolling (especially iOS). */
-  html:has(.landing-home) {
+  /* Homepage + embedded Board: no overlay track/thumb while scrolling. */
+  html:has(.landing-home),
+  html:has(.board-embed),
+  .board-embed {
     scrollbar-width: none;
     scrollbar-gutter: auto;
   }
   html:has(.landing-home)::-webkit-scrollbar,
-  html:has(.landing-home) *::-webkit-scrollbar {
+  html:has(.landing-home) *::-webkit-scrollbar,
+  html:has(.board-embed)::-webkit-scrollbar,
+  html:has(.board-embed) *::-webkit-scrollbar,
+  .board-embed::-webkit-scrollbar {
     width: 0;
     height: 0;
     display: none;
     background: transparent;
   }
   html:has(.landing-home)::-webkit-scrollbar-thumb,
-  html:has(.landing-home) *::-webkit-scrollbar-thumb {
+  html:has(.landing-home) *::-webkit-scrollbar-thumb,
+  html:has(.board-embed)::-webkit-scrollbar-thumb,
+  html:has(.board-embed) *::-webkit-scrollbar-thumb,
+  .board-embed::-webkit-scrollbar-thumb {
     background: transparent;
   }
 }

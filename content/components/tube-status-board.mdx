@@ -42,6 +42,12 @@ export default function Page({ data, fetchedAt }) {
 
 The live board has two sections: **Service Disruptions** then **Good Service**. Timetable-closed lines (Waterloo & City weekends, end of traffic day) stay in Disruptions, sorted last after incidents and planned engineering — not a separate group, and not under Good Service. Week ahead still highlights Waterloo & City on Saturday. An empty Good Service group is omitted — a filtered fetch that returns only disrupted lines will not paint `Good Service (0 lines)`.
 
+Pass `priorityLineIds` to keep specific lines open at the top of Service Disruptions. Other disrupted lines collapse to a title and severity chip — expand one to read it. Good Service always lists every line you fetched.
+
+```tsx
+<TubeStatusBoard data={data} now={fetchedAt} priorityLineIds={["central", "victoria"]} />
+```
+
 Columns follow the board's own width, not the viewport: Disruptions stay 1 / 2 / 3 so the reason copy can breathe; Good Service is 2 / 3 / 5 because those rows are titles only. Good Service titles auto-abbreviate at narrow grid widths (full → middle → 3-letter code) via [`Line title`](/docs/line-title). Tier data lives in `lib/tfl/line-names.ts`. `compact` is the exception: one column, and the section title tiles stay off.
 
 ## Variations
@@ -69,7 +75,7 @@ Pass `hideHeader` when the parent already has a title.
 
 The board paints whatever you pass as `data`. Filter at the fetch — do not load the whole network and hide rows afterwards.
 
-`compact` is the watchlist layout: one column, no **Service Disruptions** / **Good Service** title tiles, no attribution footer. Pair it with `hideHeader` when the parent already names the lines.
+`compact` is the watchlist layout: one column, no **Service Disruptions** / **Good Service** title tiles, no attribution footer. Pair it with `hideHeader` when the parent already names the lines. `compact` shows only the lines you name — there is no "other lines" summary. To keep the full board but draw attention to a few lines instead, pass `priorityLineIds`.
 
 ```tsx
 const { data, fetchedAt } = await getCachedLineStatuses([
@@ -96,7 +102,7 @@ import { TubeStatusDisplay } from "@/components/tfl/status/tube-status-display"
 <TubeStatusDisplay data={data} now={fetchedAt} tiles={4} />
 ```
 
-`detailScope` is `network`, `selection`, or `none`. Use `network` only when the fetch covers every line you mention.
+`detailScope="network"` keeps every fetched line in Good Service and gives your `detailLineIds` lines a full reason; other disrupted lines get a brief identity frame instead of disappearing. `selection` shows only those lines. `none` drops the phase-wide chips.
 
 ## Status strip
 
@@ -149,6 +155,7 @@ Each step is opt-out:
 | `now` | `number` | Clock for validity windows. Pass cache `fetchedAt`. |
 | `hideHeader` | `boolean` | Omit the board header. |
 | `compact` | `boolean` | Watchlist: one column, no section title tiles, no footer. Pass only the lines you want. |
+| `priorityLineIds` | `readonly string[]` | Keep these lines expanded; others collapse. Omit to expand every line. |
 | `currentOnly` | `boolean` | Keep operative announcements, not `isNow` (default `true`). |
 | `dedupe` | `boolean` | Collapse equal or contained paragraphs (default `true`). |
 | `rawReason` | `boolean` | Keep TfL's unstripped `reason` string (default `false`). |

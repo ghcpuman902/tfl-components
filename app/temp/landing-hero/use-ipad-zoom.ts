@@ -6,14 +6,19 @@ import { getLandingGsap } from "./gsap-client"
 import { IPAD_CASE } from "./landing-artwork"
 import {
   CROP_SCALE,
-  HERO_COPY_BAND,
+  HERO_COPY_GAP,
+  HERO_GROUP_BIAS,
   HERO_SIDE_INSET,
   HERO_TOP_INSET,
   COPY_FADE_DURATION,
   COPY_FADE_START,
+  LETTERBOX_FADE_DURATION,
+  LETTERBOX_FADE_START,
   ROOM_COMPLETE_AT,
   ROOM_FADE_DURATION,
   ROOM_FADE_START,
+  ROOM_IPAD_VIEW_MARGIN,
+  ROOM_MIN_HEIGHT_FILL,
   ROOM_VEIL_OPACITY,
 } from "./scene-constants"
 
@@ -54,7 +59,8 @@ const layoutCoverCanvas = (
 const framedIpadCamera = (
   svg: SVGSVGElement,
   composition: HTMLElement,
-  canvas: HTMLElement
+  canvas: HTMLElement,
+  copySlot?: HTMLElement | null
 ) => {
   const { coverScale, panX, panY, viewBox } = layoutCoverCanvas(
     svg,
@@ -69,17 +75,21 @@ const framedIpadCamera = (
   const iPadTop = panY + (IPAD_CASE.y - viewBox.y) * coverScale
 
   const topInset = readCssLength(HERO_TOP_INSET, 16)
-  const copyBand = readCssLength(HERO_COPY_BAND, 104)
+  const copyGap = readCssLength(HERO_COPY_GAP, 20)
+  const groupBias = readCssLength(HERO_GROUP_BIAS, 20)
+  const measuredCopy = copySlot?.getBoundingClientRect().height ?? 0
+  const copyBand = Math.max(measuredCopy, readCssLength("4.25rem", 68))
   const availableWidth = width * (1 - HERO_SIDE_INSET * 2)
-  const availableHeight = Math.max(80, height - topInset - copyBand)
+  const maxIpadHeight = Math.max(80, height - topInset - copyGap - copyBand)
   const desiredWidth = Math.min(
     availableWidth,
-    availableHeight * (IPAD_CASE.width / IPAD_CASE.height)
+    maxIpadHeight * (IPAD_CASE.width / IPAD_CASE.height)
   )
   const desiredHeight = desiredWidth * (IPAD_CASE.height / IPAD_CASE.width)
-  const desiredTop =
-    topInset + Math.max(0, (availableHeight - desiredHeight) / 2)
+  const groupHeight = desiredHeight + copyGap + copyBand
+  const desiredTop = Math.max(topInset, (height - groupHeight) / 2 - groupBias)
   const desiredLeft = (width - desiredWidth) / 2
+  const copyTop = desiredTop + desiredHeight + copyGap
 
   const targetScale = desiredWidth / iPadWidth
   const iPadCenterX = iPadLeft + iPadWidth / 2
@@ -89,6 +99,54 @@ const framedIpadCamera = (
     targetScale,
     targetX: desiredLeft + desiredWidth / 2 - targetScale * iPadCenterX,
     targetY: desiredTop + desiredHeight / 2 - targetScale * iPadCenterY,
+    copyTop,
+  }
+}
+
+/**
+ * Keep the room filling the viewport. Pan so the iPad stays in frame.
+ * Scale down only as far as needed for that crop — never the full width.
+ * Leftover top (if any) is a late letterbox, not a mid-scroll crop.
+ */
+const roomEndCamera = (
+  svg: SVGSVGElement,
+  composition: HTMLElement,
+  canvas: HTMLElement
+) => {
+  const { coverScale, panX, panY, viewBox } = layoutCoverCanvas(
+    svg,
+    composition,
+    canvas
+  )
+  const width = composition.clientWidth
+  const height = composition.clientHeight
+  const iPadLeft = IPAD_CASE.x
+  const iPadRight = IPAD_CASE.x + IPAD_CASE.width
+  const neededW = iPadRight - iPadLeft + ROOM_IPAD_VIEW_MARGIN * 2
+  const targetScale = clamp(
+    width / (coverScale * neededW),
+    ROOM_MIN_HEIGHT_FILL,
+    1
+  )
+  const shownW = width / (coverScale * targetScale)
+  const maxLeft = viewBox.x + Math.max(0, viewBox.width - shownW)
+  let visibleLeft = viewBox.x + (viewBox.width - shownW) / 2
+  if (iPadRight + ROOM_IPAD_VIEW_MARGIN > visibleLeft + shownW) {
+    visibleLeft = iPadRight + ROOM_IPAD_VIEW_MARGIN - shownW
+  }
+  if (iPadLeft - ROOM_IPAD_VIEW_MARGIN < visibleLeft) {
+    visibleLeft = iPadLeft - ROOM_IPAD_VIEW_MARGIN
+  }
+  visibleLeft = clamp(visibleLeft, viewBox.x, maxLeft)
+
+  const canvasH = viewBox.height * coverScale
+  const letterbox = Math.max(0, height - canvasH * targetScale)
+
+  return {
+    targetScale,
+    targetX: -targetScale * (panX + (visibleLeft - viewBox.x) * coverScale),
+    targetY: letterbox > 0.5 ? letterbox - targetScale * panY : 0,
+    letterbox,
   }
 }
 
@@ -98,9 +156,11 @@ type UseIpadZoomArgs = {
   cameraRef: RefObject<HTMLElement | null>
   canvasRef: RefObject<HTMLElement | null>
   veilRef: RefObject<HTMLElement | null>
+  letterboxRef?: RefObject<HTMLElement | null>
   svgRef: RefObject<SVGSVGElement | null>
   iPadRef: RefObject<SVGGElement | null>
   copyRef: RefObject<HTMLElement | null>
+  copySlotRef: RefObject<HTMLElement | null>
   reducedMotion: boolean
   onRoomCompleteChange: (complete: boolean) => void
   onSceneReady: () => void
@@ -112,9 +172,11 @@ export const useIpadZoom = ({
   cameraRef,
   canvasRef,
   veilRef,
+  letterboxRef,
   svgRef,
   iPadRef,
   copyRef,
+  copySlotRef,
   reducedMotion,
   onRoomCompleteChange,
   onSceneReady,
@@ -141,20 +203,41 @@ export const useIpadZoom = ({
     const camera = cameraRef.current
     const canvas = canvasRef.current
     const veil = veilRef.current
+    const letterbox = letterboxRef?.current
     const svg = svgRef.current
     const iPad = iPadRef.current
     const copy = copyRef.current
+    const copySlot = copySlotRef.current
     if (!wrapper || !composition || !camera || !canvas || !svg || !iPad) return
 
     const ctx = gsap.context(() => {
-      const startCamera = () => framedIpadCamera(svg, composition, canvas)
+      const startCamera = () => {
+        const next = framedIpadCamera(svg, composition, canvas, copySlot)
+        if (copySlot) {
+          copySlot.style.top = `${next.copyTop}px`
+          copySlot.style.bottom = "auto"
+          copySlot.style.height = "auto"
+        }
+        return next
+      }
+      const endCamera = () => {
+        const next = roomEndCamera(svg, composition, canvas)
+        if (letterbox) {
+          letterbox.style.height = `${next.letterbox}px`
+        }
+        return next
+      }
       const start = startCamera()
+      endCamera()
       gsap.set(camera, {
         x: start.targetX,
         y: start.targetY,
         scale: start.targetScale,
         transformOrigin: "0 0",
       })
+      if (letterbox) {
+        gsap.set(letterbox, { scaleY: 0, transformOrigin: "50% 0%" })
+      }
 
       const timeline = gsap.timeline({
         paused: true,
@@ -170,13 +253,22 @@ export const useIpadZoom = ({
           transformOrigin: "0 0",
         },
         {
-          x: 0,
-          y: 0,
-          scale: 1,
+          x: () => endCamera().targetX,
+          y: () => endCamera().targetY,
+          scale: () => endCamera().targetScale,
           duration: 1,
         },
         0
       )
+
+      if (letterbox) {
+        timeline.fromTo(
+          letterbox,
+          { scaleY: 0, transformOrigin: "50% 0%" },
+          { scaleY: 1, duration: LETTERBOX_FADE_DURATION },
+          LETTERBOX_FADE_START
+        )
+      }
 
       if (veil) {
         timeline.fromTo(
@@ -213,6 +305,7 @@ export const useIpadZoom = ({
         invalidateOnRefresh: true,
         onRefresh: (self) => {
           startCamera()
+          endCamera()
           timeline.invalidate()
           applyProgress(self.progress)
         },
@@ -239,18 +332,7 @@ export const useIpadZoom = ({
       triggerRef.current = null
       ctx.revert()
     }
-  }, [
-    applyProgress,
-    cameraRef,
-    canvasRef,
-    compositionRef,
-    copyRef,
-    iPadRef,
-    reducedMotion,
-    svgRef,
-    veilRef,
-    wrapperRef,
-  ])
+  }, [applyProgress, reducedMotion])
 
   return { progressRef }
 }

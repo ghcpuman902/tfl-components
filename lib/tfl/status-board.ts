@@ -108,3 +108,24 @@ export const partitionStatusBoardLines = (
     goodService: sortBoardLines(buckets.goodService, options.now),
   }
 }
+
+const lineIdOf = (row: StatusBoardLine): string =>
+  row.line.id?.trim() || row.line.name?.trim() || "unknown"
+
+/**
+ * Split a already-sorted section into priority vs other without re-sorting.
+ * Empty / omitted `priorityLineIds` treats every row as priority.
+ */
+export const splitByPriority = (
+  rows: readonly StatusBoardLine[],
+  priorityLineIds: readonly string[] | undefined
+): { priority: StatusBoardLine[]; other: StatusBoardLine[] } => {
+  if (!priorityLineIds?.length) return { priority: [...rows], other: [] }
+  const wanted = new Set(priorityLineIds)
+  const priority: StatusBoardLine[] = []
+  const other: StatusBoardLine[] = []
+  for (const row of rows) {
+    ;(wanted.has(lineIdOf(row)) ? priority : other).push(row)
+  }
+  return { priority, other }
+}

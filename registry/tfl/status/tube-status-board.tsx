@@ -5,12 +5,19 @@ import { ExternalLink, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text"
 import { LineColorBar } from "@/components/tfl/brand/line-badge"
-import { StatusDisruptionBlock } from "@/components/tfl/status/status-disruption-copy"
+import {
+  DISRUPTION_LEADING_CLASS,
+  StatusDisruptionBlock,
+} from "@/components/tfl/status/status-disruption-copy"
 import { LineName } from "@/components/tfl/brand/line-name"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
 import { StationNameTitle } from "@/components/tfl/station-name"
 import { getLineNameTiers } from "@/lib/tfl/line-names"
-import { partitionStatusBoardLines } from "@/lib/tfl/status-board"
+import {
+  partitionStatusBoardLines,
+  splitByPriority,
+} from "@/lib/tfl/status-board"
+import type { LineAnnouncement } from "@/lib/tfl/status-reason"
 import type { StatusLine } from "@/lib/tfl/status-types"
 
 export type { StatusLine } from "@/lib/tfl/status-types"
@@ -58,6 +65,12 @@ type Props = {
    * `LONDON TRAMS:`. Default strips those prefixes.
    */
   rawReason?: boolean
+  /**
+   * Keep these lines expanded at the top of Service Disruptions.
+   * Other disrupted lines collapse to a title and severity. Omit to
+   * expand every line.
+   */
+  priorityLineIds?: readonly string[]
 }
 
 /**
@@ -130,6 +143,49 @@ const TILE_CLASS =
 
 /** Resolves via `data-line` → `--line-color` from tfl-colours tokens. */
 const lineTitleClass = "tfl-dark-line-text text-[var(--line-color)]"
+
+const CollapsedDisruptionRow = ({
+  lineId,
+  modeName,
+  name,
+  announcements,
+  quiet,
+}: {
+  lineId?: string
+  modeName?: string
+  name: string
+  announcements: readonly LineAnnouncement[]
+  quiet?: boolean
+}) => {
+  const severity = announcements[0]?.statusSeverityDescription?.trim()
+  return (
+    <details className="group flex flex-col">
+      <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+        <StatusLineHeader
+          lineId={lineId}
+          modeName={modeName}
+          name={name}
+          trailing={
+            <>
+              {severity ? (
+                <span className="max-w-[40%] truncate text-base text-muted-foreground">
+                  {severity}
+                </span>
+              ) : null}
+              <span
+                aria-hidden
+                className="ml-1 shrink-0 text-lg leading-none text-muted-foreground transition-transform group-open:rotate-45"
+              >
+                +
+              </span>
+            </>
+          }
+        />
+      </summary>
+      <StatusDisruptionBlock announcements={announcements} quiet={quiet} />
+    </details>
+  )
+}
 
 const StatusLineHeader = ({
   lineId,
@@ -316,6 +372,7 @@ export const TubeStatusBoard = ({
   currentOnly = true,
   dedupe = true,
   rawReason = false,
+  priorityLineIds,
   children,
 }: Props) => {
   const { disruptions, goodService } = partitionStatusBoardLines(data ?? [], {
@@ -324,6 +381,8 @@ export const TubeStatusBoard = ({
     rawReason,
     now,
   })
+  const disruptionSplit = splitByPriority(disruptions, priorityLineIds)
+  const goodSplit = splitByPriority(goodService, priorityLineIds)
 
   return (
     <div className={BOARD_ROOT_CLASS} style={BOARD_RHYTHM_VARS}>
@@ -343,7 +402,7 @@ export const TubeStatusBoard = ({
         >
           <StatusSectionHeading compact={compact} title="Service Disruptions" />
           <div className={disruptionGridClass(compact)}>
-            {disruptions.map(({ line, announcements, kind }) => {
+            {disruptionSplit.priority.map(({ line, announcements, kind }) => {
               return (
                 <div key={line.id ?? line.name} className="flex flex-col">
                   <StatusLineHeader
@@ -359,6 +418,16 @@ export const TubeStatusBoard = ({
                 </div>
               )
             })}
+            {disruptionSplit.other.map(({ line, announcements, kind }) => (
+              <CollapsedDisruptionRow
+                key={line.id ?? line.name}
+                lineId={line.id}
+                modeName={line.modeName}
+                name={line.name ?? line.id ?? "Line"}
+                announcements={announcements}
+                quiet={kind === "closed"}
+              />
+            ))}
           </div>
         </div>
       )}
@@ -387,7 +456,7 @@ export const TubeStatusBoard = ({
             }
           />
           <div className={goodServiceGridClass(compact)}>
-            {goodService.map(({ line, announcements }) => {
+            {goodSplit.priority.map(({ line, announcements }) => {
               const infoLabel =
                 announcements[0]?.statusSeverityDescription?.trim()
               return (
@@ -407,6 +476,16 @@ export const TubeStatusBoard = ({
               )
             })}
           </div>
+          {goodSplit.other.length > 0 ? (
+            <p
+              className={cn(
+                "m-0 text-sm text-muted-foreground",
+                DISRUPTION_LEADING_CLASS
+              )}
+            >
+              Good service on all other lines
+            </p>
+          ) : null}
         </div>
       )}
 
