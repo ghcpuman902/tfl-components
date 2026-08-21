@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react"
-import { domToBlob } from "modern-screenshot"
 import {
   BugIcon,
   GitPullRequestIcon,
@@ -66,6 +65,7 @@ type ScreenshotState = {
 
 const captureViewport = async (): Promise<ScreenshotState> => {
   try {
+    const { domToBlob } = await import("modern-screenshot")
     const scrollX = window.scrollX
     const scrollY = window.scrollY
     const width = window.innerWidth

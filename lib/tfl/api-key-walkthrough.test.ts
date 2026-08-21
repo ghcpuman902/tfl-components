@@ -20,11 +20,14 @@ describe("TfL API key walkthrough", () => {
     )
   })
 
-  it("sends subscribe steps to the 500 Requests product", () => {
+  it("sends the subscribe step to the 500 Requests product", () => {
     assert.match(TFL_API_PORTAL_PRODUCT_URL, /product#product=2357355709892/)
     const productSteps = TFL_API_KEY_WALKTHROUGH.filter(
       (step) => step.href === TFL_API_PORTAL_PRODUCT_URL
     )
-    assert.ok(productSteps.length >= 2)
+    assert.deepEqual(
+      productSteps.map((step) => step.id),
+      ["f-subscribe"]
+    )
   })
 })

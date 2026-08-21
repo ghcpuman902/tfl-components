@@ -15,11 +15,28 @@ export const LandingPage = async () => {
   )
 }
 
+/** Match the room scroll height so the PPR shell does not collapse into the footer. */
 export const LandingFallback = () => (
-  <div className="landing-home w-full min-w-0" aria-hidden>
+  <>
+    <style>{heroArtworkThemeStyleSheet()}</style>
     <div
-      className="mx-auto mt-4 w-[min(92vw,calc((100svh-var(--site-header-height)-1rem-1.25rem-6.5rem)*1.421))]"
-      style={{ aspectRatio: "125.7409 / 88.4773" }}
-    />
-  </div>
+      className="landing-home relative w-full min-w-0 overflow-x-clip"
+      aria-hidden
+    >
+      <div
+        className="relative w-full"
+        style={{ height: "calc(200svh - var(--site-header-height))" }}
+      >
+        <div
+          className="sticky"
+          style={{
+            top: "var(--site-header-height)",
+            height: "calc(100svh - var(--site-header-height))",
+          }}
+        >
+          <div className="landing-hero-paper absolute inset-0" />
+        </div>
+      </div>
+    </div>
+  </>
 )

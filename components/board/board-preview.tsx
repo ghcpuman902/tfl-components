@@ -233,7 +233,7 @@ export const BoardPreview = ({
                 </div>
               ) : (
                 <div
-                  className="size-full bg-muted"
+                  className="size-full animate-pulse bg-muted"
                   aria-busy="true"
                   aria-label="Loading board preview"
                 />

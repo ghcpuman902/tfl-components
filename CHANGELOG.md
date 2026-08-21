@@ -11,6 +11,31 @@ Tags `v0.1.0`–`v0.4.0` predate the split and mixed both tracks. From `web-v0.5
 
 ## Web app
 
+### [web-v0.7.0] - 2026-08-21
+
+Room landing, staged Board onboarding, and a performance pass that keeps first paint stable without changing the loaded UI. Installable registry work from this range ships as **[0.6.0](#060---2026-08-21)** on the components track.
+
+#### Added
+
+- Homepage is the 3D room landing, with Board as the staged builder at `/board`
+- Public TfL metadata observatory
+- Homepage PPR shell now reserves the room’s scroll height and paper colour so the footer does not jump when the scene streams in
+- Board builder Suspense fallback reserves the device preview slot
+- Live board shows arrivals skeletons until the URL hash hydrates, matching status and cycle hire
+
+#### Changed
+
+- Next.js 16.3.1 → 16.3.2
+- Feedback screenshots load `modern-screenshot` only when a capture runs, so it is not on every page’s initial JS
+- Font preference context value is stable across unrelated renders
+
+#### Fixed
+
+- Search-result options expose `aria-selected` for the listbox role
+- API-key walkthrough test asserts the subscribe step, not a second product URL that was never on that step
+
+---
+
 ### [web-v0.6.0] - 2026-08-15
 
 Board builder, Explorer credentials, and Cache Components polish on the docs site. Installable registry work from this range ships as **[0.5.0](#050---2026-08-15)** on the components track.
@@ -63,6 +88,24 @@ These registry items already exist on `main` but are **not** part of `web-v0.5.0
 ---
 
 ## Components
+
+### [0.6.0] - 2026-08-21
+
+River boards, unattended display, live bus geography, and a registry rebuild so install payloads match current source. Registry installs pin `tfl-ts@^2.10.0`.
+
+#### Added
+
+- `river-bus-arrivals-board` and `river-route-chip`
+- Unattended / pin-first behaviour on arrivals and status surfaces
+- `tfl-bus-geo-map` for live bus vehicles
+- Cycle Hire map/detail polish already on `main` since 0.5.0
+
+#### Changed
+
+- Registry `tfl-ts` dependency is `tfl-ts@^2.10.0`
+- Rebuilt `/r/*.json` from current `registry/tfl` source
+
+---
 
 ### [0.5.0] - 2026-08-15
 

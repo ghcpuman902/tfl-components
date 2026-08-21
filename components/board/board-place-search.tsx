@@ -348,7 +348,7 @@ export const BoardPlaceSearch = ({
           className="divide-y divide-border rounded-lg border border-border"
         >
           {places.map((place) => (
-            <li key={place.id} role="option">
+            <li key={place.id} role="option" aria-selected="false">
               <button
                 type="button"
                 className="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm hover:bg-muted"

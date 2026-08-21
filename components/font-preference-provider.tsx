@@ -3,8 +3,10 @@
 import {
   createContext,
   startTransition,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react"
@@ -89,22 +91,28 @@ export const FontPreferenceProvider = ({
     applyFontAttributes(initialFont, adobeFontsConfigured)
   }, [adobeFontsConfigured])
 
-  const setFont = (next: FontPreference) => {
-    const selectedFont =
-      next === "p22" && !adobeFontsConfigured ? "default" : next
-    setFontState(selectedFont)
-    applyFontAttributes(selectedFont, adobeFontsConfigured)
-    window.localStorage.setItem(STORAGE_KEY, selectedFont)
-  }
+  const setFont = useCallback(
+    (next: FontPreference) => {
+      const selectedFont =
+        next === "p22" && !adobeFontsConfigured ? "default" : next
+      setFontState(selectedFont)
+      applyFontAttributes(selectedFont, adobeFontsConfigured)
+      window.localStorage.setItem(STORAGE_KEY, selectedFont)
+    },
+    [adobeFontsConfigured]
+  )
+
+  const value = useMemo(
+    () => ({
+      font,
+      setFont,
+      adobeFontsConfigured,
+    }),
+    [adobeFontsConfigured, font, setFont]
+  )
 
   return (
-    <FontPreferenceContext.Provider
-      value={{
-        font,
-        setFont,
-        adobeFontsConfigured,
-      }}
-    >
+    <FontPreferenceContext.Provider value={value}>
       {children}
     </FontPreferenceContext.Provider>
   )

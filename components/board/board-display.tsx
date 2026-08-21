@@ -476,7 +476,7 @@ export const BoardDisplay = ({
           behaviour={config.behaviour}
           pinFirst={arrivalsProps.pinFirst}
           startDelayMs={unattended ? 0 : undefined}
-          loading={arrivals.loading}
+          loading={!ready || arrivals.loading}
           error={arrivalsError}
           classNames={BOUND_COLUMNS_CLASS_NAMES}
         />
@@ -495,7 +495,7 @@ export const BoardDisplay = ({
           behaviour={config.behaviour}
           pinFirst={arrivalsProps.pinFirst}
           startDelayMs={unattended ? 400 : undefined}
-          loading={busArrivals.loading}
+          loading={!ready || busArrivals.loading}
           error={busError}
         />
       )
@@ -513,7 +513,7 @@ export const BoardDisplay = ({
           behaviour={config.behaviour}
           pinFirst={arrivalsProps.pinFirst}
           startDelayMs={unattended ? 800 : undefined}
-          loading={riverArrivals.loading}
+          loading={!ready || riverArrivals.loading}
           error={riverError}
         />
       )

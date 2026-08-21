@@ -5,7 +5,8 @@ import { getSiteStats } from "@/lib/site-stats"
 import { SITE_AUTHOR, SITE_INDEPENDENCE } from "@/lib/site"
 import { APP_VERSION_LABEL } from "@/lib/version"
 
-const formatCount = (n: number) => new Intl.NumberFormat("en-GB").format(n)
+const COUNT_FORMAT = new Intl.NumberFormat("en-GB")
+const formatCount = (n: number) => COUNT_FORMAT.format(n)
 
 const StatsFallback = () => (
   <p className="text-xs text-muted-foreground" aria-hidden>
