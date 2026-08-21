@@ -15,7 +15,7 @@ export const LandingSimpleHero = ({ context }: LandingSimpleHeroProps) => {
 
   return (
     <>
-      <section className="mx-auto flex min-h-[min(32rem,calc(100svh-var(--site-header-height)))] w-full max-w-6xl flex-col justify-center gap-8 px-4 pt-10 pb-8 md:px-8">
+      <section className="mx-auto flex min-h-[min(20rem,calc(100svh-var(--site-header-height)))] w-full max-w-6xl flex-col justify-center gap-6 px-4 pt-8 pb-6 md:px-8">
         <p className="max-w-2xl text-2xl text-foreground md:text-4xl">
           Want a live TfL board like this:{" "}
           <Link

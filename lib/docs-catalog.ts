@@ -190,7 +190,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "introduction",
     title: "Get started",
     description:
-      "Configure a hosted Board, or install React components for London transport displays.",
+      "Build TfL interfaces using installable React components and normalised tfl-ts data.",
     group: "start",
     kind: "page",
     href: "/docs",
@@ -211,7 +211,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "components-index",
     title: "Components",
-    description: "Preferred boards first, then the parts they are built from.",
+    description: "Boards, maps, and the parts they are built from.",
     group: "start",
     kind: "page",
     href: "/docs/components",
@@ -350,7 +350,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "tube-rail-arrivals",
     title: "Tube & Rail Arrivals",
     description:
-      "Departures at a Tube or rail station, grouped by line and bound.",
+      "Next trains at a Tube or rail station, grouped by line and bound.",
     group: "interfaces",
     kind: "component",
     href: "/docs/tube-rail-arrivals",
@@ -368,7 +368,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "tube-rail-status",
     title: "Tube & Rail Status",
     description:
-      "Severity-sorted status for Tube, Elizabeth, Overground, DLR, and Tram.",
+      "Line status for Tube, Elizabeth, Overground, DLR, and Tram.",
     group: "interfaces",
     kind: "component",
     href: "/docs/tube-rail-status",
@@ -386,7 +386,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "bus-arrivals",
     title: "Bus Arrivals",
     description:
-      "Departures at a bus stop. Flat by default, or grouped by route.",
+      "Next buses at a stop, listed together or grouped by route.",
     group: "interfaces",
     kind: "component",
     href: "/docs/bus-arrivals",
@@ -404,14 +404,12 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "bus-disruptions",
     title: "Bus disruption information",
     description:
-      "Route-level disruption summaries for use with or without a bus arrivals board. Component boundary still under design.",
+      "Route-level disruption summaries.",
     group: "interfaces",
     kind: "placeholder",
     href: "/docs/bus-disruptions",
-    sidebarSection: "components",
-    sidebarOrder: 35,
-    preferred: true,
-    modeMarker: "bus",
+    sidebarSection: "hidden",
+    sidebarOrder: 0,
     layer: "data-aware",
     comingSoon: true,
   },
@@ -419,7 +417,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "river-bus-arrivals",
     title: "River bus arrivals",
     description:
-      "Departures at a river bus pier. Flat by default, or grouped by route.",
+      "Next river buses at a pier, listed together or grouped by route.",
     group: "interfaces",
     kind: "component",
     href: "/docs/river-bus-arrivals",
@@ -437,7 +435,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "cycle-hire-docks",
     title: "Cycle hire docks",
     description:
-      "Show exact Santander Cycles availability for one dock, or compare nearby docks on a map.",
+      "Santander Cycles availability for one dock, or nearby docks on a map.",
     group: "interfaces",
     kind: "component",
     href: "/docs/cycle-hire-docks",
@@ -454,7 +452,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "maps-geographic",
     title: "Map – Tube & Rail (Geo)",
     description:
-      "Track geometry as GeoJSON for Tube, Elizabeth, Overground, DLR, and Tram. Use the packaged MapLibre map, or draw the same files in your own SDK.",
+      "Geographic track for Tube, Elizabeth, Overground, DLR, and Tram.",
     group: "maps",
     kind: "component",
     href: "/docs/map-geographic",
@@ -545,7 +543,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "line-strip",
     title: "Simple line strip",
     description:
-      "A line diagram from route data: colour, labels, and closures already applied.",
+      "A line diagram with colour, station labels, and closures.",
     group: "interfaces",
     kind: "component",
     href: "/docs/line-strip",
@@ -597,7 +595,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "station-name-labels",
     title: "Station name labels",
     description:
-      "How station names shrink with width while copy, find, and screen readers keep the full name.",
+      "Station names that fit the width. Copy, find, and screen readers keep the full name.",
     group: "primitives",
     kind: "component",
     href: "/docs/station-name-labels",
@@ -622,8 +620,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "bus-number-chip",
     title: "Bus number chip",
-    description:
-      "Bus route number in a red rectangle. Fixed width, optically centred.",
+    description: "Bus route number in a red rectangle.",
     group: "primitives",
     kind: "component",
     href: "/docs/bus-number-chip",
@@ -652,7 +649,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "line-chip",
     title: "Line chip",
     description:
-      "Filled chips and colour bars that paint official line colours from Colours tokens.",
+      "Filled chips and colour bars in official line colours.",
     group: "primitives",
     kind: "component",
     href: "/docs/line-chip",
@@ -685,7 +682,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     description: "Lines grouped by mode with links to route stations.",
     group: "explore",
     kind: "page",
-    href: "/docs/explorer?kind=lines&domain=tube-rail",
+    href: "/docs/explorer/lines",
     sidebarSection: "hidden",
     sidebarOrder: 0,
   },
@@ -695,7 +692,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     description: "Stop sequence for one line and direction.",
     group: "explore",
     kind: "page",
-    href: "/docs/explorer?kind=lines&domain=tube-rail&id=central",
+    href: "/docs/explorer/lines/tube-rail/central",
     sidebarSection: "hidden",
     sidebarOrder: 0,
   },
@@ -706,7 +703,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
       "Find bus stops near you or by name, then inspect live arrivals.",
     group: "explore",
     kind: "page",
-    href: "/docs/explorer?domain=bus",
+    href: "/docs/explorer/points/bus",
     sidebarSection: "hidden",
     sidebarOrder: 0,
   },
@@ -756,7 +753,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "board-index",
     title: "Board",
     description:
-      "Turn any screen into a live TfL departures and status display.",
+      "Arrivals and line status for a stop you choose.",
     group: "board",
     kind: "page",
     href: "/board",
@@ -846,11 +843,11 @@ export const getSidebarEntries = (
     (entry) => entry.sidebarSection === section && !entry.comingSoon
   ).sort((a, b) => a.sidebarOrder - b.sidebarOrder)
 
-/** Catalogue rows include named future surfaces; the persistent sidebar does not. */
+/** Published Components rows. Coming-soon placeholders stay off discovery. */
 export const getCatalogueEntries = (): DocsEntry[] =>
-  DOCS_ENTRIES.filter((entry) => entry.sidebarSection === "components").sort(
-    (a, b) => a.sidebarOrder - b.sidebarOrder
-  )
+  DOCS_ENTRIES.filter(
+    (entry) => entry.sidebarSection === "components" && !entry.comingSoon
+  ).sort((a, b) => a.sidebarOrder - b.sidebarOrder)
 
 /** Matches DocsSidebar: get-started top → components → Troubleshoot / licensing tail → primitives. */
 export const GET_STARTED_BOTTOM_FROM = 190

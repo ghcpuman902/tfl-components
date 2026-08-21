@@ -1,17 +1,39 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react"
 import { BoardAdvancedConfig } from "@/components/board/board-config-form"
 import { BoardLineChipPicker } from "@/components/board/board-line-chip-picker"
 import { BoardPreview } from "@/components/board/board-preview"
+import { BoardPreviewModePills } from "@/components/board/board-preview-mode"
 import { BoardShareCard } from "@/components/board/board-share-card"
 import { BoardStationSearch } from "@/components/board/board-station-search"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
+import {
+  TFL_API_PORTAL_URL,
+  TflApiKeyObtainLinks,
+  TflApiKeyPortalNote,
+} from "@/components/user-tfl-api-key-copy"
 import { useLandingTrack } from "@/components/landing/landing-analytics"
 import type { AnalyticsContext } from "@/lib/analytics/context"
 import { defaultAnalyticsContext } from "@/lib/analytics/context"
+import { elapsedSinceExposureMs } from "@/lib/landing/timing"
 import {
   lookupBoardStationLineGroups,
   lookupBoardStationLines,
@@ -37,12 +59,10 @@ import {
   completeBoardStage,
   createBoardSetupDraft,
   detectScreenProfile,
-  goToBoardStage,
   markBoardSetupCompleted,
   markBoardSetupStarted,
   parseBoardSetupDraft,
   BOARD_SETUP_DRAFT_STORAGE_KEY,
-  BOARD_STAGE_LABELS,
   type BoardScreenProfile,
   type BoardSetupDraft,
   type BoardSetupStage,
@@ -63,6 +83,28 @@ const getOrigin = () => window.location.origin
 const getServerOrigin = () => ""
 
 const EXAMPLE_STOP = HOME_RAIL_STOP
+
+const LockedRegion = ({
+  locked,
+  children,
+  className,
+}: {
+  locked: boolean
+  children: ReactNode
+  className?: string
+}) => (
+  <div className={cn("relative min-w-0", className)}>
+    <div
+      className={cn(locked && "pointer-events-none select-none")}
+      inert={locked || undefined}
+    >
+      {children}
+    </div>
+    {locked ? (
+      <div className="absolute inset-0 z-10 bg-background/60" aria-hidden />
+    ) : null}
+  </div>
+)
 
 const persistDraft = (draft: BoardSetupDraft) => {
   try {
@@ -174,30 +216,43 @@ export const BoardStagedBuilder = ({
   } = useUserTflCredentials()
   const [draft, setDraft] = useState<BoardSetupDraft>(createBoardSetupDraft)
   const [ready, setReady] = useState(false)
-  const [detected, setDetected] = useState(() =>
-    detectScreenProfile(1280, 800)
-  )
   const [locateBusy, setLocateBusy] = useState(false)
   const [locateMessage, setLocateMessage] = useState<string | null>(null)
-  const [previewOpen, setPreviewOpen] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [keyDraft, setKeyDraft] = useState("")
   const [keyHelpOpen, setKeyHelpOpen] = useState(false)
-  const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const searchWrapRef = useRef<HTMLDivElement | null>(null)
   const lastAnnounce = useRef("")
+
+  const focusSearch = () => {
+    window.requestAnimationFrame(() => {
+      searchWrapRef.current?.querySelector("input")?.focus()
+    })
+  }
 
   useEffect(() => {
     const stored = readDraft()
-    setDraft(
+    const next =
       stored ??
-        createBoardSetupDraft(
-          typeof crypto !== "undefined" && "randomUUID" in crypto
-            ? crypto.randomUUID()
-            : "draft-local"
-        )
+      createBoardSetupDraft(
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : "draft-local"
+      )
+    const nextDetected = detectScreenProfile(
+      window.innerWidth,
+      window.innerHeight
     )
-    setDetected(detectScreenProfile(window.innerWidth, window.innerHeight))
-    setReady(true)
+    const frame = window.requestAnimationFrame(() => {
+      const desktop = window.innerWidth >= 1024
+      setDraft({
+        ...next,
+        screenProfile: next.screenProfile ?? nextDetected.profile,
+        stage: next.stage === 1 && desktop ? 2 : next.stage,
+      })
+      setReady(true)
+    })
+    return () => window.cancelAnimationFrame(frame)
   }, [])
 
   useEffect(() => {
@@ -218,6 +273,7 @@ export const BoardStagedBuilder = ({
     track("board_setup_started", {
       stage: current.stage,
       screenProfile: current.screenProfile ?? undefined,
+      time_to_setup_start_ms: elapsedSinceExposureMs(),
     })
     return markBoardSetupStarted(current)
   }
@@ -281,21 +337,16 @@ export const BoardStagedBuilder = ({
   )
   const absoluteUrl = buildShareableBoardUrl(origin, forUrl, keyMode)
   const legendPath = origin ? `${origin}${BOARD_VIEW_PATH}` : BOARD_VIEW_PATH
-  const isExample =
-    !draft.screenProfile && !draft.stopId && !draft.continueWithoutStop
-  const announce = [
-    draft.screenProfile ? `Screen ${draft.screenProfile}` : "Example board",
-    draft.continueWithoutStop
-      ? "Network status"
-      : (draft.stopName ?? autoStopName ?? EXAMPLE_STOP.name),
-  ].join(". ")
+  const announce = draft.continueWithoutStop
+    ? "Network status"
+    : (draft.stopName ?? autoStopName ?? "")
 
   useEffect(() => {
     if (announce === lastAnnounce.current) return
     lastAnnounce.current = announce
   }, [announce])
 
-  const completeSetup = (reason: "open" | "copy" | "qr") => {
+  const completeSetup = useCallback((reason: "open" | "copy" | "qr") => {
     void reason
     updateDraft((current) => {
       const { draft: next, firstCompletion } = markBoardSetupCompleted(current)
@@ -310,12 +361,13 @@ export const BoardStagedBuilder = ({
       }
       return next
     })
-  }
+  }, [track])
 
   const handleLocate = () => {
     if (!navigator.geolocation) {
-      setLocateMessage("Location is not available. Search for a stop instead.")
-      window.requestAnimationFrame(() => searchInputRef.current?.focus())
+      setLocateMessage("Location is not available.")
+      setAdvancedOpen(true)
+      focusSearch()
       return
     }
     setLocateBusy(true)
@@ -329,10 +381,16 @@ export const BoardStagedBuilder = ({
           )
           if (!result.ok) {
             setLocateMessage(result.error)
-            searchInputRef.current?.focus()
+            setAdvancedOpen(true)
+            focusSearch()
             return
           }
           const rail = result.rail
+          const lineIds = rail
+            ? (lookupBoardStationLines(stationLines, rail.id) ?? []).map(
+                (line) => line.lineId
+              )
+            : []
           updateDraft((current) =>
             startIfNeeded({
               ...current,
@@ -340,6 +398,7 @@ export const BoardStagedBuilder = ({
               continueWithoutStop: false,
               stopId: rail?.id ?? current.stopId,
               stopName: rail?.name ?? current.stopName,
+              lineIds: lineIds.length > 0 ? lineIds : current.lineIds,
               nearbyModes: [
                 result.bus ? "bus" : null,
                 result.river ? "river" : null,
@@ -349,17 +408,20 @@ export const BoardStagedBuilder = ({
               ),
             })
           )
+          if (!rail) setAdvancedOpen(true)
         } catch {
-          setLocateMessage("Could not find a nearby stop. Search instead.")
-          searchInputRef.current?.focus()
+          setLocateMessage("Could not find a nearby stop.")
+          setAdvancedOpen(true)
+          focusSearch()
         } finally {
           setLocateBusy(false)
         }
       },
       () => {
         setLocateBusy(false)
-        setLocateMessage("Location was not shared. Search for a stop instead.")
-        searchInputRef.current?.focus()
+        setLocateMessage("Location was not shared.")
+        setAdvancedOpen(true)
+        focusSearch()
       },
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 30_000 }
     )
@@ -384,460 +446,382 @@ export const BoardStagedBuilder = ({
     })
   )
 
-  const preview = (
-    <BoardPreview
-      className="min-w-0 lg:sticky lg:top-[calc(var(--site-header-height)+1rem)]"
-      href={href}
-      hydrated={hydrated}
-      hasKey={hasKey}
-      onAddKey={openDialog}
-      requireKeyOverlay={false}
-      exampleLabel={
-        isExample ? `Example · ${EXAMPLE_STOP.name}` : undefined
-      }
-    />
-  )
+  const handlePreviewMode = (profile: BoardScreenProfile) => {
+    updateDraft((current) =>
+      startIfNeeded({
+        ...current,
+        screenProfile: profile,
+      })
+    )
+  }
+
+  const handleSaveKey = async () => {
+    if (!keyDraft.trim()) return
+    const result = await save(keyDraft, "local")
+    if (result.ok) {
+      updateDraft((current) => ({
+        ...startIfNeeded(current),
+        keyMode: "own",
+      }))
+      finishStage(4)
+    }
+  }
+
+  const locked = hydrated && !hasKey
+  const previewProfile = draft.screenProfile ?? "large"
+  const selectedStopLabel = draft.continueWithoutStop
+    ? "Network status"
+    : (draft.stopName ?? autoStopName)
+  const selectedStopContext = (() => {
+    if (!draft.stopId || draft.continueWithoutStop) return ""
+    const item = stations.find(
+      (station) =>
+        station.id === draft.stopId ||
+        station.aliasIds.includes(draft.stopId ?? "")
+    )
+    return item?.context ? ` · ${item.context}` : ""
+  })()
 
   return (
-    <div className="space-y-8">
-      <ol className="flex flex-wrap gap-2 text-sm" aria-label="Setup steps">
-        {([1, 2, 3, 4, 5] as const).map((stage) => (
-          <li key={stage}>
-            <button
-              type="button"
-              className={cn(
-                "rounded-md px-2 py-1",
-                draft.stage === stage
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              onClick={() => updateDraft((current) => goToBoardStage(current, stage))}
-              aria-current={draft.stage === stage ? "step" : undefined}
-            >
-              {stage} {BOARD_STAGE_LABELS[stage]}
-            </button>
-          </li>
-        ))}
-      </ol>
-
+    <div className="space-y-4">
       <p className="sr-only" aria-live="polite">
         {announce}
       </p>
 
-      <div className="grid items-start gap-8 lg:grid-cols-[minmax(18rem,2fr)_minmax(0,3fr)]">
-        <div className="order-1 min-w-0 space-y-6">
-          {draft.stage === 1 ? (
-            <section className="space-y-4" aria-labelledby="board-stage-1">
-              <h2 id="board-stage-1" className="text-xl font-semibold">
-                Where will your board live?
+      <div
+        className={cn(
+          "grid items-start gap-3",
+          "grid-cols-[minmax(0,11rem)_minmax(0,1fr)]",
+          "[grid-template-areas:'key_key'_'loc_preview'_'share_share']",
+          "sm:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)] sm:gap-8",
+          "sm:[grid-template-areas:'key_preview'_'loc_preview'_'share_preview']"
+        )}
+      >
+          <section
+            aria-labelledby="board-key-heading"
+            className="[grid-area:key] space-y-2"
+          >
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <h2
+                id="board-key-heading"
+                className="font-heading text-sm font-medium text-foreground"
+              >
+                Get a free TfL API key
               </h2>
-              <div className="grid gap-3">
-                {(
-                  [
-                    ["this", `This screen (Recommended) · ${detected.sizeLabel}`],
-                    ["small", "Small screen"],
-                    ["large", "Large screen"],
-                  ] as const satisfies readonly [
-                    BoardScreenProfile,
-                    string,
-                  ][]
-                ).map(([value, label]) => (
-                  <Button
-                    key={value}
-                    type="button"
-                    variant={
-                      draft.screenProfile === value ? "default" : "outline"
-                    }
-                    className="h-auto justify-start px-4 py-3 text-left whitespace-normal"
-                    onClick={() => {
-                      updateDraft((current) =>
-                        startIfNeeded({
-                          ...current,
-                          screenProfile: value,
-                        })
-                      )
-                    }}
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
-              <Button type="button" onClick={() => finishStage(1)}>
-                Continue
-              </Button>
-            </section>
-          ) : null}
+              <a
+                href={TFL_API_PORTAL_URL}
+                className="text-sm text-foreground underline underline-offset-4"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                api-portal.tfl.gov.uk
+              </a>
+            </div>
+            {hasKey ? (
+              <button
+                type="button"
+                className="font-mono text-sm text-foreground underline-offset-4 hover:underline"
+                onClick={openDialog}
+                aria-label={
+                  appKeyMasked
+                    ? `Manage TfL API key ending ${appKeyMasked.slice(-4)}`
+                    : "Manage TfL API key"
+                }
+              >
+                {appKeyMasked}
+              </button>
+            ) : (
+              <form
+                className="flex flex-col gap-2 sm:flex-row"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  void handleSaveKey()
+                }}
+              >
+                <Input
+                  id="board-tfl-key"
+                  type="password"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={keyDraft}
+                  onChange={(event) => {
+                    setKeyDraft(event.target.value)
+                  }}
+                  placeholder="Paste your key"
+                  aria-labelledby="board-key-heading"
+                  className="min-w-0 flex-1"
+                />
+                <Button type="submit" variant="outline" className="shrink-0">
+                  Save
+                </Button>
+              </form>
+            )}
+            {error && status === "invalid" ? (
+              <p className="text-sm text-destructive" role="alert">
+                {error.message}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className="text-sm text-muted-foreground underline underline-offset-4"
+              onClick={() => setKeyHelpOpen(true)}
+            >
+              Teach me how
+            </button>
+          </section>
 
-          {draft.stage === 2 ? (
-            <section className="space-y-4" aria-labelledby="board-stage-2">
-              <h2 id="board-stage-2" className="text-xl font-semibold">
-                Which stop should this board follow?
-              </h2>
-              <div className="flex flex-wrap gap-2">
+          <LockedRegion locked={locked} className="[grid-area:loc]">
+            <div>
+              <section
+                aria-labelledby="board-location-heading"
+                className="space-y-2"
+              >
+                <h2 id="board-location-heading" className="sr-only">
+                  Stop
+                </h2>
                 <Button
                   type="button"
+                  variant="outline"
+                  className="w-full"
                   onClick={handleLocate}
                   disabled={locateBusy}
                 >
                   {locateBusy ? "Finding a stop…" : "Use my location"}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    updateDraft((current) =>
-                      startIfNeeded({
-                        ...current,
-                        continueWithoutStop: true,
-                        stopId: null,
-                        stopName: null,
-                      })
-                    )
-                    finishStage(2)
-                  }}
-                >
-                  Continue without a stop
-                </Button>
-              </div>
-              {locateMessage ? (
-                <p className="text-sm text-muted-foreground" role="status">
-                  {locateMessage}
-                </p>
-              ) : null}
-              <div>
-                <p className="mb-2 text-sm font-medium">Search</p>
-                <BoardStationSearch
-                  stations={stations}
-                  stopId={draft.stopId ?? undefined}
-                  onStopChange={(stop) => {
-                    const item = stations.find(
-                      (station) =>
-                        station.id === stop || station.aliasIds.includes(stop)
-                    )
-                    updateDraft((current) =>
-                      startIfNeeded({
-                        ...current,
-                        continueWithoutStop: false,
-                        stopId: stop,
-                        stopName: item?.name ?? null,
-                        lineIds: (
-                          lookupBoardStationLines(stationLines, stop) ?? []
-                        ).map((line) => line.lineId),
-                      })
-                    )
-                  }}
-                />
-              </div>
-              <Button
-                type="button"
-                onClick={() => finishStage(2)}
-                disabled={!draft.stopId && !draft.continueWithoutStop}
-              >
-                Continue
-              </Button>
-            </section>
-          ) : null}
-
-          {draft.stage === 3 ? (
-            <section className="space-y-4" aria-labelledby="board-stage-3">
-              <h2 id="board-stage-3" className="text-xl font-semibold">
-                Services
-              </h2>
-              {draft.continueWithoutStop ? (
-                <p className="text-muted-foreground">
-                  This board follows network status, not a stop.
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium">At this stop</h3>
-                    <BoardLineChipPicker
-                      lines={servingLines}
-                      selected={draft.lineIds}
-                      onChange={(lineOrder) =>
-                        updateDraft((current) => ({
-                          ...current,
-                          lineIds: lineOrder ? [...lineOrder] : [],
-                        }))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium">Nearby</h3>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {(["bus", "river", "cycle"] as const).map((mode) => (
-                        <Button
-                          key={mode}
-                          type="button"
-                          size="sm"
-                          variant={
-                            draft.nearbyModes.includes(mode)
-                              ? "default"
-                              : "outline"
-                          }
-                          onClick={() =>
-                            updateDraft((current) => ({
-                              ...current,
-                              nearbyModes: current.nearbyModes.includes(mode)
-                                ? current.nearbyModes.filter(
-                                    (item) => item !== mode
-                                  )
-                                : [...current.nearbyModes, mode],
-                            }))
-                          }
-                        >
-                          {mode === "bus"
-                            ? "Bus"
-                            : mode === "river"
-                              ? "River"
-                              : "Cycle hire"}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium">
-                      Additional status lines
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Status only — these lines do not serve this stop.
-                    </p>
-                    <BoardLineChipPicker
-                      lines={extraStatusLines}
-                      selected={draft.statusLineIds}
-                      onChange={(lineOrder) =>
-                        updateDraft((current) => ({
-                          ...current,
-                          statusLineIds: lineOrder ? [...lineOrder] : [],
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
-              )}
-              <Button type="button" onClick={() => finishStage(3)}>
-                Continue
-              </Button>
-            </section>
-          ) : null}
-
-          {draft.stage === 4 ? (
-            <section className="space-y-4" aria-labelledby="board-stage-4">
-              <h2 id="board-stage-4" className="text-xl font-semibold">
-                Keep your board live
-              </h2>
-              {!hasKey ? (
-                <p className="text-sm text-muted-foreground" role="status">
-                  Shared data · add a TfL key for your own quota
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground" role="status">
-                  Using your TfL key {appKeyMasked}
-                </p>
-              )}
-              <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="board-tfl-key">
-                  Add my TfL key (Recommended)
-                </label>
-                <Input
-                  id="board-tfl-key"
-                  type="password"
-                  autoComplete="off"
-                  value={keyDraft}
-                  onChange={(event) => setKeyDraft(event.target.value)}
-                  spellCheck={false}
-                />
-                <Button
-                  type="button"
-                  onClick={async () => {
-                    if (!keyDraft.trim()) return
-                    const result = await save(keyDraft, "local")
-                    if (result.ok) {
-                      updateDraft((current) => ({
-                        ...current,
-                        keyMode: "own",
-                      }))
-                    }
-                  }}
-                >
-                  Save key
-                </Button>
-                {error && status === "invalid" ? (
-                  <p className="text-sm text-destructive" role="alert">
-                    {error.message}
+                {locateMessage ? (
+                  <p className="text-sm text-muted-foreground" role="status">
+                    {locateMessage}
                   </p>
                 ) : null}
-              </div>
-              <details
-                open={keyHelpOpen}
-                onToggle={(event) =>
-                  setKeyHelpOpen(event.currentTarget.open)
-                }
-              >
-                <summary className="cursor-pointer text-sm text-muted-foreground">
-                  How to get a TfL key
-                </summary>
-                <p className="mt-2 max-w-prose text-sm text-muted-foreground">
-                  Register at{" "}
-                  <a
-                    href="https://api-portal.tfl.gov.uk/"
-                    className="text-foreground underline underline-offset-4"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    api-portal.tfl.gov.uk
-                  </a>
-                  , subscribe to 500 Requests per min, then copy Primary or
-                  Secondary from Profile.
-                </p>
-              </details>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  updateDraft((current) => ({
-                    ...current,
-                    keyMode: current.keyMode ?? "shared",
-                  }))
-                  finishStage(4)
-                }}
-              >
-                Continue with shared data
-              </Button>
-              {hasKey ? (
-                <Button type="button" onClick={() => finishStage(4)}>
-                  Continue
-                </Button>
-              ) : null}
-            </section>
-          ) : null}
-
-          {draft.stage === 5 ? (
-            <section className="space-y-4" aria-labelledby="board-stage-5">
-              <h2 id="board-stage-5" className="text-xl font-semibold">
-                Ready
-              </h2>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  Screen: {draft.screenProfile ?? "this"}{" "}
-                  <button
-                    type="button"
-                    className="underline underline-offset-4"
-                    onClick={() =>
-                      updateDraft((current) => goToBoardStage(current, 1))
-                    }
-                  >
-                    Edit
-                  </button>
-                </li>
-                <li>
-                  Stop:{" "}
-                  {draft.continueWithoutStop
-                    ? "Network status"
-                    : (draft.stopName ?? autoStopName ?? "Example")}{" "}
-                  <button
-                    type="button"
-                    className="underline underline-offset-4"
-                    onClick={() =>
-                      updateDraft((current) => goToBoardStage(current, 2))
-                    }
-                  >
-                    Edit
-                  </button>
-                </li>
-                <li>
-                  Key: {draft.keyMode === "own" ? "your key" : "shared data"}{" "}
-                  <button
-                    type="button"
-                    className="underline underline-offset-4"
-                    onClick={() =>
-                      updateDraft((current) => goToBoardStage(current, 4))
-                    }
-                  >
-                    Edit
-                  </button>
-                </li>
-              </ul>
-              <BoardShareCard
-                url={absoluteUrl}
-                href={href}
-                keyMode={keyMode}
-                onKeyModeChange={(checked) => {
-                  if (checked && appKey.trim()) void save(appKey, "local")
-                }}
-                hasKey={hasKey}
-                appKeyMasked={appKeyMasked}
-                persistMode={persistMode}
-                onManageKey={openDialog}
-              />
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  nativeButton={false}
-                  render={
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={() => completeSetup("open")}
-                    />
-                  }
-                >
-                  Open full-screen
-                </Button>
-                <Button
+                {draft.stopId || draft.continueWithoutStop ? (
+                  <p className="text-sm text-foreground">
+                    {selectedStopLabel}
+                    {selectedStopContext}
+                  </p>
+                ) : null}
+                <button
                   type="button"
-                  variant="outline"
+                  className="text-sm text-muted-foreground underline underline-offset-4"
                   onClick={() => {
-                    completeSetup("copy")
-                    if (absoluteUrl) {
-                      void navigator.clipboard.writeText(absoluteUrl)
+                    setAdvancedOpen((open) => !open)
+                    if (!advancedOpen) {
+                      focusSearch()
                     }
                   }}
+                  aria-expanded={advancedOpen}
                 >
-                  Copy setup link
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => completeSetup("qr")}
+                  Customise
+                </button>
+                {advancedOpen ? (
+                  <div className="space-y-4 pt-1">
+                    <div ref={searchWrapRef}>
+                      <BoardStationSearch
+                        stations={stations}
+                        stopId={draft.stopId ?? undefined}
+                        onStopChange={(stop) => {
+                          const item = stations.find(
+                            (station) =>
+                              station.id === stop ||
+                              station.aliasIds.includes(stop)
+                          )
+                          updateDraft((current) =>
+                            startIfNeeded({
+                              ...current,
+                              continueWithoutStop: false,
+                              stopId: stop,
+                              stopName: item?.name ?? null,
+                              lineIds: (
+                                lookupBoardStationLines(stationLines, stop) ??
+                                []
+                              ).map((line) => line.lineId),
+                            })
+                          )
+                          if (stop) {
+                            finishStage(2)
+                            finishStage(3)
+                          }
+                        }}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="text-sm text-muted-foreground underline underline-offset-4"
+                      onClick={() => {
+                        updateDraft((current) =>
+                          startIfNeeded({
+                            ...current,
+                            continueWithoutStop: true,
+                            stopId: null,
+                            stopName: null,
+                          })
+                        )
+                        finishStage(2)
+                      }}
+                    >
+                      Network status only
+                    </button>
+                    {draft.continueWithoutStop ? null : (
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="text-sm font-medium">At this stop</h3>
+                          <BoardLineChipPicker
+                            lines={servingLines}
+                            selected={draft.lineIds}
+                            onChange={(lineOrder) =>
+                              updateDraft((current) => ({
+                                ...current,
+                                lineIds: lineOrder ? [...lineOrder] : [],
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium">Nearby</h3>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {(["bus", "river", "cycle"] as const).map(
+                              (mode) => (
+                                <Button
+                                  key={mode}
+                                  type="button"
+                                  size="sm"
+                                  variant={
+                                    draft.nearbyModes.includes(mode)
+                                      ? "default"
+                                      : "outline"
+                                  }
+                                  onClick={() =>
+                                    updateDraft((current) => ({
+                                      ...current,
+                                      nearbyModes:
+                                        current.nearbyModes.includes(mode)
+                                          ? current.nearbyModes.filter(
+                                              (item) => item !== mode
+                                            )
+                                          : [...current.nearbyModes, mode],
+                                    }))
+                                  }
+                                >
+                                  {mode === "bus"
+                                    ? "Bus"
+                                    : mode === "river"
+                                      ? "River"
+                                      : "Cycle hire"}
+                                </Button>
+                              )
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium">
+                            Additional status lines
+                          </h3>
+                          <BoardLineChipPicker
+                            lines={extraStatusLines}
+                            selected={draft.statusLineIds}
+                            onChange={(lineOrder) =>
+                              updateDraft((current) => ({
+                                ...current,
+                                statusLineIds: lineOrder ? [...lineOrder] : [],
+                              }))
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <BoardAdvancedConfig
+                      config={config}
+                      formSettings={formSettings}
+                      servingLines={servingLines}
+                      lineGroups={lineGroups}
+                      autoStopName={autoStopName}
+                      stations={stations}
+                      segments={segments}
+                      legendPath={legendPath}
+                      onChange={handleConfigChange}
+                      open
+                      onOpenChange={setAdvancedOpen}
+                      hideTrigger
+                    />
+                  </div>
+                ) : null}
+              </section>
+            </div>
+          </LockedRegion>
+
+          <LockedRegion locked={locked} className="[grid-area:share]">
+              <section aria-labelledby="board-share-heading" className="space-y-2">
+                <h2
+                  id="board-share-heading"
+                  className="font-heading text-sm font-medium text-foreground"
                 >
-                  QR ready
-                </Button>
-              </div>
-            </section>
-          ) : null}
+                  Share the link
+                </h2>
+                <BoardShareCard
+                  url={absoluteUrl}
+                  href={href}
+                  keyMode={keyMode}
+                  onKeyModeChange={(checked) => {
+                    if (checked && appKey.trim()) void save(appKey, "local")
+                  }}
+                  hasKey={hasKey}
+                  appKeyMasked={appKeyMasked}
+                  persistMode={persistMode}
+                  onManageKey={openDialog}
+                  onOpen={() => completeSetup("open")}
+                  onCopy={() => completeSetup("copy")}
+                  onQrRendered={() => completeSetup("qr")}
+                />
+              </section>
+          </LockedRegion>
 
-          <BoardAdvancedConfig
-            config={config}
-            formSettings={formSettings}
-            servingLines={servingLines}
-            lineGroups={lineGroups}
-            autoStopName={autoStopName}
-            stations={stations}
-            segments={segments}
-            legendPath={legendPath}
-            onChange={handleConfigChange}
-            open={advancedOpen}
-            onOpenChange={setAdvancedOpen}
-          />
-        </div>
-
-        <div className="order-2 min-w-0">
-          <div className="lg:hidden">
-            <Button
-              type="button"
-              variant="outline"
-              className="mb-3"
-              onClick={() => setPreviewOpen((open) => !open)}
-              aria-expanded={previewOpen}
-            >
-              {previewOpen ? "Hide preview" : "Show preview"}
-            </Button>
-            {previewOpen ? preview : null}
+        <LockedRegion locked={locked} className="[grid-area:preview]">
+          <div className="flex w-full flex-col items-center gap-3 lg:sticky lg:top-[calc(var(--site-header-height)+1rem)]">
+            <BoardPreview
+              className="min-w-0"
+              href={href}
+              hydrated={hydrated}
+              hasKey={hasKey}
+              onAddKey={openDialog}
+              requireKeyOverlay={false}
+              screenProfile={previewProfile}
+              compact
+            />
+            <BoardPreviewModePills
+              value={previewProfile}
+              onChange={handlePreviewMode}
+            />
           </div>
-          <div className="hidden lg:block">{preview}</div>
-        </div>
+        </LockedRegion>
       </div>
+
+      <Sheet open={keyHelpOpen} onOpenChange={setKeyHelpOpen}>
+        <SheetContent side="bottom" className="gap-0">
+          <SheetHeader>
+            <SheetTitle>How to get a key</SheetTitle>
+            <SheetDescription>
+              <TflApiKeyObtainLinks />
+            </SheetDescription>
+          </SheetHeader>
+          <div className="space-y-3 px-4 pb-6">
+            <TflApiKeyPortalNote />
+            <p className="text-sm text-muted-foreground">
+              The key stays in this browser.
+            </p>
+            <Button
+              nativeButton={false}
+              render={
+                <a
+                  href={TFL_API_PORTAL_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+            >
+              Open TfL portal
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

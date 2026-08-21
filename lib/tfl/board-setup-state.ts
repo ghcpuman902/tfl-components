@@ -6,7 +6,7 @@
 export const BOARD_SETUP_STAGES = [1, 2, 3, 4, 5] as const
 export type BoardSetupStage = (typeof BOARD_SETUP_STAGES)[number]
 
-export type BoardScreenProfile = "this" | "small" | "large"
+export type BoardScreenProfile = "small" | "large"
 export type BoardSetupKeyMode = "own" | "shared" | "skipped"
 export type BoardNearbyMode = "bus" | "river" | "cycle"
 
@@ -41,7 +41,7 @@ const isStage = (value: unknown): value is BoardSetupStage =>
   value === 1 || value === 2 || value === 3 || value === 4 || value === 5
 
 const isScreenProfile = (value: unknown): value is BoardScreenProfile =>
-  value === "this" || value === "small" || value === "large"
+  value === "small" || value === "large"
 
 const isKeyMode = (value: unknown): value is BoardSetupKeyMode =>
   value === "own" || value === "shared" || value === "skipped"
@@ -129,7 +129,7 @@ export const completeBoardStage = (
   }
 }
 
-/** Fires once per draft on the first of: open fullscreen, copy link, QR ready. */
+/** Fires once per draft on the first of: open fullscreen, copy link, or a rendered QR. */
 export const markBoardSetupCompleted = (
   draft: BoardSetupDraft
 ): { draft: BoardSetupDraft; firstCompletion: boolean } => {
@@ -153,15 +153,30 @@ export const detectScreenProfile = (
 ): {
   profile: BoardScreenProfile
   orientation: "portrait" | "landscape"
-  sizeLabel: string
 } => {
   const orientation = width >= height ? "landscape" : "portrait"
-  const shortest = Math.min(width, height)
   const profile: BoardScreenProfile =
-    shortest < 500 ? "small" : shortest > 900 ? "large" : "this"
-  return {
-    profile,
-    orientation,
-    sizeLabel: `${Math.round(width)}×${Math.round(height)} ${orientation}`,
+    orientation === "landscape" || width >= 768 ? "large" : "small"
+  return { profile, orientation }
+}
+
+export const BOARD_PREVIEW_SMALL_FRAME = { width: 390, height: 844 } as const
+/** Matches the landing-hero iPad screen aspect (110.3998 × 82.2392). */
+export const BOARD_PREVIEW_LARGE_FRAME = { width: 1280, height: 953 } as const
+
+export type BoardPreviewFrame = {
+  width: number
+  height: number
+  chrome: "phone" | "none"
+  density: "compact" | "roomy"
+}
+
+/** Small = narrow/phone frame. Large = wide frame. Never fitted to the current viewport. */
+export const previewFrameForProfile = (
+  profile: BoardScreenProfile
+): BoardPreviewFrame => {
+  if (profile === "small") {
+    return { ...BOARD_PREVIEW_SMALL_FRAME, chrome: "phone", density: "compact" }
   }
+  return { ...BOARD_PREVIEW_LARGE_FRAME, chrome: "none", density: "roomy" }
 }

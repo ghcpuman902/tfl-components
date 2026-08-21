@@ -1,10 +1,11 @@
 export const LANDING_EXPERIMENT_VERSION = "v1"
 export const LANDING_EXPERIMENT_KEY = "landing-variant"
-/** Disabled until the staged Board ships to production. */
+/** Disabled until assignment, attribution, and production analytics are verified. */
 export const LANDING_EXPERIMENT_ENABLED = false
 export const LANDING_ASSIGNMENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 export const LANDING_OVERRIDE_PARAM = "landing"
 export const LANDING_ASSIGNMENT_COOKIE = "tfl_landing"
+export const LANDING_ASSIGNMENT_HEADER = "x-tfl-landing-assignment"
 
 export type LandingVariant = "room" | "simple"
 export type LandingAssignmentVariant = LandingVariant | "control"
@@ -35,6 +36,69 @@ export const parseLandingVariant = (
   return null
 }
 
+export const parseLandingAssignmentCookie = (
+  raw: string | undefined
+): LandingVariant | null => {
+  if (!raw) return null
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      "variant" in parsed &&
+      "v" in parsed &&
+      parsed.v === LANDING_EXPERIMENT_VERSION
+    ) {
+      return parseLandingVariant(String(parsed.variant))
+    }
+  } catch {
+    return parseLandingVariant(raw)
+  }
+  return parseLandingVariant(raw)
+}
+
+export const serializeLandingAssignmentCookie = (
+  variant: LandingVariant
+): string => JSON.stringify({ variant, v: LANDING_EXPERIMENT_VERSION })
+
+export const encodeLandingAssignmentHeader = (
+  assignment: LandingAssignment,
+  deviceClass: LandingDeviceClass
+): string =>
+  JSON.stringify({
+    variant: assignment.variant,
+    qa: assignment.qa,
+    excludeFromResults: assignment.excludeFromResults,
+    persist: assignment.persist,
+    deviceClass,
+  })
+
+export const decodeLandingAssignmentHeader = (
+  raw: string | null
+): (LandingAssignment & { deviceClass: LandingDeviceClass }) | null => {
+  if (!raw) return null
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (typeof parsed !== "object" || parsed === null) return null
+    const record = parsed as Record<string, unknown>
+    const variant =
+      record.variant === "control"
+        ? "control"
+        : parseLandingVariant(String(record.variant))
+    if (!variant) return null
+    const deviceClass = record.deviceClass === "mobile" ? "mobile" : "desktop"
+    return {
+      variant,
+      qa: record.qa === true,
+      excludeFromResults: record.excludeFromResults === true,
+      persist: record.persist === true,
+      deviceClass,
+    }
+  } catch {
+    return null
+  }
+}
+
 const FNV_OFFSET = 2166136261
 const hashToBucket = (value: string): number => {
   let hash = FNV_OFFSET
@@ -52,6 +116,20 @@ export const isBotUserAgent = (userAgent: string): boolean =>
 
 export const deviceClassFromWidth = (width: number): LandingDeviceClass =>
   width < 768 ? "mobile" : "desktop"
+
+/** Fallback when Sec-CH-Viewport-Width is not yet available. Tablets count as desktop. */
+export const deviceClassFromUserAgent = (
+  userAgent: string
+): LandingDeviceClass => {
+  if (
+    /iPhone|iPod|Android.+Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(
+      userAgent
+    )
+  ) {
+    return "mobile"
+  }
+  return "desktop"
+}
 
 /**
  * Server-side landing assignment.

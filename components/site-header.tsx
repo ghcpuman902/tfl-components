@@ -20,7 +20,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
+import { HeaderRoundel } from "@/components/site-header-roundel"
 import { GITHUB_REPO } from "@/lib/feedback/constants"
 import { cn } from "@/lib/utils"
 import {
@@ -66,7 +66,6 @@ const HeaderLink = ({
   className?: string
 }) => {
   const active = linkIsActive(pathname, link.match)
-  const isAction = link.prominence === "action"
   const label = (
     <>
       <NavLinkLabel>{link.label}</NavLinkLabel>
@@ -78,27 +77,14 @@ const HeaderLink = ({
 
   const linkClassName = cn(
     "shrink-0",
-    isAction
-      ? cn(
-          buttonVariants({
-            variant: active ? "default" : "outline",
-            size: "xs",
-          }),
-          compact ? "h-7 px-2" : "h-7 px-2.5",
-          newMarkerParentClassName(
-            compact ? "pr-5 after:top-0" : "pr-6 after:top-0"
-          )
-        )
-      : cn(
-          compact ? "px-1 py-2" : "px-1.5 py-2",
-          link.match === "board" &&
-            newMarkerParentClassName(
-              compact ? "pr-5 after:top-0.5" : "pr-6 after:top-0.5"
-            ),
-          active
-            ? "font-medium text-foreground"
-            : "text-muted-foreground hover:text-foreground"
-        ),
+    compact ? "px-1 py-2" : "px-1.5 py-2",
+    link.match === "board" &&
+      newMarkerParentClassName(
+        compact ? "pr-5 after:top-0.5" : "pr-6 after:top-0.5"
+      ),
+    active
+      ? "font-medium text-foreground underline decoration-1 underline-offset-[6px]"
+      : "text-muted-foreground hover:text-foreground",
     className
   )
 
@@ -232,7 +218,7 @@ export const SiteHeader = ({ pathname, docsNav = false }: SiteHeaderProps) => {
           className="flex min-w-0 shrink items-center gap-2 md:shrink-0"
           aria-label="tfl-components home"
         >
-          <TfLRoundel className="size-5 shrink-0" aria-hidden />
+          <HeaderRoundel className="size-5 shrink-0" />
           <span
             className={cn(
               "truncate text-sm font-medium tracking-tight text-foreground",

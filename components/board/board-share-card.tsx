@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { CheckIcon, CopyIcon, ExternalLinkIcon } from "lucide-react"
 import { encode } from "uqr"
 import { Button } from "@/components/ui/button"
@@ -19,6 +19,9 @@ type BoardShareCardProps = {
   appKeyMasked: string | null
   persistMode: "local" | "session" | undefined
   onManageKey: () => void
+  onOpen?: () => void
+  onCopy?: () => void
+  onQrRendered?: () => void
 }
 
 export const BoardShareCard = ({
@@ -30,8 +33,12 @@ export const BoardShareCard = ({
   appKeyMasked,
   persistMode,
   onManageKey,
+  onOpen,
+  onCopy,
+  onQrRendered,
 }: BoardShareCardProps) => {
   const [copied, setCopied] = useState(false)
+  const qrAnnounced = useRef(false)
   const matrix = useMemo(
     () => (url ? encode(url, { ecc: "M", border: 2 }) : null),
     [url]
@@ -39,8 +46,15 @@ export const BoardShareCard = ({
   const size = matrix?.size ?? 0
   const cells = matrix?.data ?? []
 
+  useEffect(() => {
+    if (!matrix || qrAnnounced.current) return
+    qrAnnounced.current = true
+    onQrRendered?.()
+  }, [matrix, onQrRendered])
+
   const handleCopy = () => {
     if (!url) return
+    onCopy?.()
     void navigator.clipboard.writeText(url).then(
       () => {
         setCopied(true)
@@ -71,18 +85,14 @@ export const BoardShareCard = ({
           >
             {appKeyMasked}
           </button>
-        ) : (
-          <Button type="button" variant="outline" onClick={onManageKey}>
-            Add TfL API key
-          </Button>
-        )}
+        ) : null}
         {persistMode === "session" ? (
           <span className="text-sm text-muted-foreground">This tab only</span>
         ) : null}
       </div>
       <p id="board-save-key-hint" className="text-sm text-muted-foreground">
         {keyMode === "browser"
-          ? "This link omits the key, so it only works in this browser."
+          ? "Your TfL key stays on this device and is not included in this link."
           : "This link includes your TfL key in the page address. Anyone who opens it can use that key and its request quota. Treat the full link as a secret."}
       </p>
 
@@ -91,10 +101,17 @@ export const BoardShareCard = ({
           nativeButton={false}
           size="lg"
           className="h-10 px-3.5"
-          render={<a href={href} target="_blank" rel="noreferrer" />}
+          render={
+            <a
+              href={href}
+              target="_blank"
+              rel="noreferrer"
+              onClick={onOpen}
+            />
+          }
         >
           <ExternalLinkIcon data-icon="inline-start" />
-          Open display
+          Open Board
         </Button>
         <Button
           type="button"

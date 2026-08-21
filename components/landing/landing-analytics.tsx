@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react"
 import { analyticsPropsFromContext, type AnalyticsContext } from "@/lib/analytics/context"
 import { trackSiteEvent } from "@/lib/analytics/track"
 import type { AnalyticsEventName, AnalyticsEventProps } from "@/lib/analytics/events"
+import { recordLandingExposure } from "@/lib/landing/timing"
 
 type LandingAnalyticsProps = {
   context: AnalyticsContext
@@ -15,6 +16,7 @@ export const LandingAnalytics = ({ context }: LandingAnalyticsProps) => {
   useEffect(() => {
     if (sent.current) return
     sent.current = true
+    recordLandingExposure()
     trackSiteEvent("landing_exposure", analyticsPropsFromContext(context))
   }, [context])
 

@@ -8,6 +8,7 @@ import { LandingSetupSteps } from "@/components/landing/landing-setup-steps"
 import { LandingWarmTransition } from "@/components/landing/landing-warm-transition"
 import { useLandingTrack } from "@/components/landing/landing-analytics"
 import type { AnalyticsContext } from "@/lib/analytics/context"
+import { elapsedSinceExposureMs } from "@/lib/landing/timing"
 
 type LandingRoomVariantProps = {
   context: AnalyticsContext
@@ -28,6 +29,12 @@ export const LandingRoomVariant = ({ context }: LandingRoomVariantProps) => {
         onIpadActivate={() => track("landing_ipad_activate")}
         onZoomComplete={() => track("landing_zoom_complete")}
         onHeroInteraction={() => track("landing_hero_interaction")}
+        onExampleSeen={() => track("landing_example_seen")}
+        onExampleInteraction={() =>
+          track("landing_example_interaction", {
+            time_to_example_interaction_ms: elapsedSinceExposureMs(),
+          })
+        }
       />
       <LandingWarmTransition />
       <LandingProofMosaic />

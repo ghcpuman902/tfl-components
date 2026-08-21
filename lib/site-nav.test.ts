@@ -107,6 +107,8 @@ describe("site navigation", () => {
     assert.doesNotMatch(header, /overflow-x-auto/)
     assert.match(header, /aria-label=\{MORE_MENU_NAME\}/)
     assert.match(header, /tfl-components/)
+    assert.match(header, /HeaderRoundel/)
+    assert.doesNotMatch(header, /TfLRoundel/)
     assert.match(header, /ml-auto flex min-w-0 shrink items-center/)
     assert.match(header, /GITHUB_REPO/)
     assert.match(header, /Star on GitHub/)
@@ -167,17 +169,27 @@ describe("site navigation", () => {
     assert.equal(docs?.tooltip, DOCS_NAV_TOOLTIP)
     assert.equal(docs?.ariaLabel, DOCS_NAV_ARIA_LABEL)
     assert.equal(docs?.mobileSubtext, DOCS_NAV_MOBILE_SUBTEXT)
-    assert.notEqual(docs?.prominence, "action")
+    assert.equal("prominence" in (docs ?? {}), false)
   })
 
-  it("makes Board the prominent action without reordering the J6 list", () => {
+  it("keeps Board last in the J6 list without button chrome", () => {
     const board = DESKTOP_PRIMARY_LINKS[DESKTOP_PRIMARY_LINKS.length - 1]
     assert.equal(board.label, "Board")
-    assert.equal(board.prominence, "action")
+    assert.equal("prominence" in board, false)
     assert.deepEqual(
       DESKTOP_PRIMARY_LINKS.map((link) => link.label),
       ["Docs", "Components", "Explorer", "Labs", "Board"]
     )
+    const header = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/site-header.tsx"
+      ),
+      "utf8"
+    )
+    assert.doesNotMatch(header, /link\.prominence/)
+    assert.doesNotMatch(header, /isAction/)
+    assert.match(header, /underline-offset-\[6px\]/)
   })
 
   it("marks Labs and Board routes without treating Labs as a primary docs page", () => {

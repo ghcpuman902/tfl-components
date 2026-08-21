@@ -78,7 +78,7 @@ Web Analytics does not need an extra env var. Enable it on the Vercel project (*
 node -e "console.log(crypto.randomBytes(32).toString('base64url'))"
 ```
 
-Add the same value to Preview and Production. Missing `FLAGS_SECRET` must not block the site from rendering.
+Add the same value to Development, Preview, and Production on the Vercel project. A local `.env.local` value is enough for `next dev`; preview/production still need the project env var. Missing `FLAGS_SECRET` must not block the site from rendering.
 
 After Production has `CRON_SECRET`, merge to `main`. The next production deploy picks up the var and registers the cron. Confirm with:
 

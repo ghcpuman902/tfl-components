@@ -69,12 +69,12 @@ const DomainTileLabel = ({
 
 type ExplorerShellProps = {
   state: ExplorerState
-  children: ReactNode
+  children?: ReactNode
 }
 
 /**
- * Kind → Domain chrome. Only the active panel is mounted by the parent
- * page/loader — this shell only navigates URL state.
+ * Kind → Domain chrome. Path state comes from the server layout so this
+ * client tree does not call `usePathname()` during prerender.
  */
 export const ExplorerShell = ({ state, children }: ExplorerShellProps) => {
   const router = useRouter()

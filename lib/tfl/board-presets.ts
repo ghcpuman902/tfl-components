@@ -15,7 +15,6 @@ export type BoardPresetId = "station" | "near" | "arrivals" | "status"
 export type BoardPresetDef = {
   id: BoardPresetId
   title: string
-  description: string
   available: boolean
   formSettings: readonly BoardSettingId[]
   slots: {
@@ -41,7 +40,6 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
   {
     id: "station",
     title: "Station + status",
-    description: "Arrivals and network status for one station.",
     available: true,
     formSettings: STATION_FORM,
     slots: { p1: ["rail"], p2: ["status"] },
@@ -49,7 +47,6 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
   {
     id: "near",
     title: "Near me",
-    description: "Nearest rail, bus, and cycle docks, plus status.",
     available: true,
     formSettings: [
       ...STATION_FORM,
@@ -66,7 +63,6 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
   {
     id: "arrivals",
     title: "Arrivals only",
-    description: "One arrivals panel.",
     available: true,
     formSettings: [
       "stop",
@@ -86,7 +82,6 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
   {
     id: "status",
     title: "Status only",
-    description: "Network status.",
     available: true,
     formSettings: [
       "behaviour",

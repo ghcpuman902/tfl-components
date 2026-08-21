@@ -2,6 +2,8 @@
 
 Selection in `/docs/explorer` must **paint identity immediately** from data already on the client (cached directory, search hit, featured seed). Route sequences, arrivals, status, and occupancy that need a server round-trip **stream in** behind a close `<Suspense>` via `use(promise)`.
 
+Hierarchy is the path (`/docs/explorer/lines/tube-rail/victoria/outbound`). `view` and `q` stay as query chrome (`history.pushState`, no RSC). Kind / domain / id / dir use `router.push` so `"use cache"` details can fill on demand.
+
 This is a Cache Components pattern: the list + Identity are the static/cached shell; Preview / Relationships / Normalised that depend on `id` (and `dir`) are dynamic slots.
 
 ## Split
@@ -50,7 +52,9 @@ Canonical: `LineInspector`, `PointInspectorDeferred`.
 ## Direction, arrivals, occupancy
 
 - **Inbound / outbound** live with the stop sequence they control (Relationships), not in Identity.
-- Seed arrivals are a promise **only for the default-selected seed**. Other points use the visitor key; identity still paints from the list/search hit.
+- Line route + status snapshots use `getExplorerLineDetails` for **any** selected line (path-keyed site cache), not only the seed. Visitor key is for Search / Locate / non-seed arrivals / occupancy / Refresh.
+- Catalog / featured point arrivals use `getExplorerCachedArrivals` for **any** selected directory id (path-keyed site cache). Search / Locate hits outside that directory use the visitor key; identity still paints from the list/search hit.
+- River piers are a complete cached directory (topology + coords), same search model as Tube & rail: type-to-filter and Locate stay local. Only arrivals are live.
 - Tube & rail identity may list hub sibling StopPoints from static `STATION_HUBS`. Preview arrivals poll every sibling that carries a TfL prediction line (`arrivalsStopIds` on the catalog row).
 - Cycle occupancy on featured docks is already on the seed row — treat it as identity-adjacent; do not block Identity on a second fetch.
 
@@ -84,4 +88,5 @@ router.push(href);
 | Seed arrivals promise | `getExplorerCachedArrivals` |
 | Line inspector | `components/explorer/entity-inspector/line-inspector.tsx` |
 | Point inspector | `PointInspectorDeferred` in `point-inspector.tsx` |
-| Page wiring | `app/docs/explorer/page.tsx` |
+| Page wiring | `app/docs/explorer/[[...segments]]/page.tsx` |
+| Explorer chrome | `app/docs/explorer/layout.tsx` |

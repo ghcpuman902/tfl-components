@@ -46,7 +46,7 @@ export async function getExplorerLineRoute(
   direction: ExplorerDirection
 ): Promise<ExplorerLineRoute> {
   "use cache"
-  cacheLife({ revalidate: 300 })
+  cacheLife("days")
   cacheTag("tfl-route", `tfl-route-${lineId}-${direction}`)
 
   const client = getTflClient()

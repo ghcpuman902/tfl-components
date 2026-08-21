@@ -5,6 +5,10 @@ import {
   EXPLORER_PATH,
   buildExplorerHref,
   domainsForKind,
+  legacyExplorerRedirectHref,
+  mergeExplorerChrome,
+  parseExplorerPath,
+  parseExplorerPathname,
   parseExplorerState,
 } from "./explorer-url-state"
 
@@ -110,16 +114,94 @@ describe("parseExplorerState", () => {
   })
 })
 
-describe("buildExplorerHref", () => {
-  it("returns bare path for defaults", () => {
-    assert.equal(buildExplorerHref({}), EXPLORER_PATH)
+describe("parseExplorerPath", () => {
+  it("returns defaults for empty segments", () => {
+    assert.deepEqual(parseExplorerPath([]), {
+      ...DEFAULT_EXPLORER_STATE,
+      id: undefined,
+      q: undefined,
+    })
   })
 
-  it("omits default values", () => {
+  it("treats /lines as lines / tube-rail", () => {
+    const state = parseExplorerPath(["lines"])
+    assert.equal(state.kind, "lines")
+    assert.equal(state.domain, "tube-rail")
+    assert.equal(state.id, undefined)
+  })
+
+  it("parses kind / domain / id / outbound", () => {
+    const state = parseExplorerPath([
+      "lines",
+      "tube-rail",
+      "victoria",
+      "outbound",
+    ])
+    assert.deepEqual(state, {
+      kind: "lines",
+      domain: "tube-rail",
+      view: "list",
+      id: "victoria",
+      dir: "outbound",
+      q: undefined,
+    })
+  })
+
+  it("lowercases line ids and keeps point id case", () => {
+    assert.equal(parseExplorerPath(["lines", "bus", "N97"]).id, "n97")
+    assert.equal(
+      parseExplorerPath(["points", "bus", "490010245E"]).id,
+      "490010245E"
+    )
+  })
+
+  it("decodes encoded point ids", () => {
+    const state = parseExplorerPath(["points", "cycle", "BikePoints%5F1"])
+    assert.equal(state.id, "BikePoints_1")
+  })
+})
+
+describe("parseExplorerPathname", () => {
+  it("parses the explorer root and nested paths", () => {
+    assert.equal(parseExplorerPathname(EXPLORER_PATH).kind, "points")
+    assert.equal(parseExplorerPathname(`${EXPLORER_PATH}/`).kind, "points")
+    assert.equal(parseExplorerPathname(`${EXPLORER_PATH}/lines`).kind, "lines")
+    assert.equal(parseExplorerPathname(`${EXPLORER_PATH}/points`).kind, "points")
+    assert.equal(
+      parseExplorerPathname(`${EXPLORER_PATH}/points/tube-rail/940GZZLUOXC`).id,
+      "940GZZLUOXC"
+    )
+    assert.equal(
+      parseExplorerPathname(`${EXPLORER_PATH}/lines/bus/n97`).id,
+      "n97"
+    )
+  })
+})
+
+describe("buildExplorerHref", () => {
+  it("always includes kind, even for default points / tube-rail", () => {
+    assert.equal(buildExplorerHref({}), `${EXPLORER_PATH}/points`)
     assert.equal(
       buildExplorerHref({ kind: "points", domain: "tube-rail" }),
-      EXPLORER_PATH
+      `${EXPLORER_PATH}/points`
     )
+    assert.equal(
+      buildExplorerHref({ kind: "lines", domain: "tube-rail" }),
+      `${EXPLORER_PATH}/lines`
+    )
+  })
+
+  it("round-trips a point id path", () => {
+    const href = buildExplorerHref({
+      kind: "points",
+      domain: "bus",
+      id: "490010245E",
+    })
+    assert.equal(href, `${EXPLORER_PATH}/points/bus/490010245E`)
+    const parsed = parseExplorerPathname(href)
+    assert.equal(parsed.kind, "points")
+    assert.equal(parsed.domain, "bus")
+    assert.equal(parsed.id, "490010245E")
   })
 
   it("lowercases line ids so night-bus links match the directory", () => {
@@ -128,7 +210,7 @@ describe("buildExplorerHref", () => {
       domain: "bus",
       id: "N97",
     })
-    assert.equal(href, `${EXPLORER_PATH}?kind=lines&domain=bus&id=n97`)
+    assert.equal(href, `${EXPLORER_PATH}/lines/bus/n97`)
   })
 
   it("preserves point id case", () => {
@@ -137,7 +219,22 @@ describe("buildExplorerHref", () => {
       domain: "bus",
       id: "490010245E",
     })
-    assert.ok(href.includes("id=490010245E"))
+    assert.equal(href, `${EXPLORER_PATH}/points/bus/490010245E`)
+  })
+
+  it("appends outbound as a path segment and keeps view/q as query", () => {
+    const href = buildExplorerHref({
+      kind: "lines",
+      domain: "tube-rail",
+      id: "central",
+      dir: "outbound",
+      view: "map",
+      q: "baker",
+    })
+    assert.equal(
+      href,
+      `${EXPLORER_PATH}/lines/tube-rail/central/outbound?view=map&q=baker`
+    )
   })
 
   it("clamps cycle when switching to lines", () => {
@@ -149,11 +246,11 @@ describe("buildExplorerHref", () => {
         domain: "cycle",
       }
     )
-    assert.ok(href.includes("kind=lines"))
-    assert.ok(!href.includes("domain=cycle"))
+    assert.equal(href, `${EXPLORER_PATH}/lines`)
+    assert.ok(!href.includes("cycle"))
   })
 
-  it("round-trips with parseExplorerState", () => {
+  it("round-trips with parseExplorerPathname and chrome query", () => {
     const original = {
       kind: "lines" as const,
       domain: "tube-rail" as const,
@@ -164,8 +261,27 @@ describe("buildExplorerHref", () => {
     }
     const href = buildExplorerHref(original)
     const url = new URL(href, "https://example.com")
-    const parsed = parseExplorerState(url.searchParams)
+    const parsed = mergeExplorerChrome(
+      parseExplorerPathname(url.pathname),
+      url.searchParams
+    )
     assert.deepEqual(parsed, { ...original, q: undefined })
+  })
+})
+
+describe("legacyExplorerRedirectHref", () => {
+  it("returns null when hierarchy is already in the path", () => {
+    assert.equal(
+      legacyExplorerRedirectHref(new URLSearchParams("view=map")),
+      null
+    )
+  })
+
+  it("maps legacy query hierarchy onto a path and keeps chrome", () => {
+    const href = legacyExplorerRedirectHref(
+      new URLSearchParams("kind=lines&domain=bus&id=N97&view=map")
+    )
+    assert.equal(href, `${EXPLORER_PATH}/lines/bus/n97?view=map`)
   })
 })
 

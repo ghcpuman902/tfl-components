@@ -24,7 +24,7 @@ const [stop, data] = await Promise.all([
 
 Poll the pier (`NaptanFerryPort`, ids like `930G…`). A berth (`9300…`) returns no predictions. `towards` is blank — use `getNormalizedArrivals` from tfl-ts 2.10, or keep `getArrivals` and fall through to `destinationName` the way this board does. The board keeps only live river-bus lines. If you pass `now`, use the timestamp captured with the response, not a live clock.
 
-Tube and rail use [`RailArrivalsBoard`](/docs/tube-rail-arrivals). Bus uses [`BusArrivalsBoard`](/docs/bus-arrivals). The three share row chrome and the tile rhythm, not the high-level API. Fetching stays in the app. Nearby search lives under [Explorer → River](/docs/explorer?domain=river).
+Tube and rail use [`RailArrivalsBoard`](/docs/tube-rail-arrivals). Bus uses [`BusArrivalsBoard`](/docs/bus-arrivals). The three share row chrome and the tile rhythm, not the high-level API. Fetching stays in the app. Nearby search lives under [Explorer → River](/docs/explorer/points/river).
 
 ## Render
 

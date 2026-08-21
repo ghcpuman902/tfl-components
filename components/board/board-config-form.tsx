@@ -345,10 +345,12 @@ export const BoardAdvancedConfig = ({
   onChange,
   open,
   onOpenChange,
+  hideTrigger = false,
 }: BoardConfigFieldsProps & {
   legendPath: string
   open: boolean
   onOpenChange: (open: boolean) => void
+  hideTrigger?: boolean
 }) => {
   const [draftStop, setDraftStop] = useState(config.stop)
   const [rowsDraft, setRowsDraft] = useState(() =>
@@ -405,29 +407,12 @@ export const BoardAdvancedConfig = ({
     })
   }
 
-  return (
-    <Collapsible
-      open={open}
-      onOpenChange={onOpenChange}
-      className="rounded-xl border border-border"
-    >
-      <CollapsibleTrigger className="flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-        <span className="block text-lg font-semibold text-foreground">
-          Advanced
-        </span>
-        <ChevronDownIcon
-          className={cn(
-            "size-4 shrink-0 transition-transform duration-150 ease-[ease]",
-            open && "rotate-180"
-          )}
-          aria-hidden
-        />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="border-t border-border">
-        <div className="grid max-w-3xl gap-5 p-4">
+  const fields = (
+        <div className={cn("grid max-w-3xl gap-5", hideTrigger ? "pt-1" : "p-4")}>
           <BoardUrlLegend path={legendPath} segments={segments} />
+          {hideTrigger ? null : (
           <p className="text-sm text-muted-foreground">
-            Raw IDs and URL parameters live here. See the{" "}
+            See the{" "}
             <a
               href="/docs/board-url"
               className="text-foreground underline underline-offset-4"
@@ -436,6 +421,7 @@ export const BoardAdvancedConfig = ({
             </a>
             .
           </p>
+          )}
           {show(formSettings, "stopName") ? (
             <Field>
               <FieldLabel
@@ -781,6 +767,30 @@ export const BoardAdvancedConfig = ({
             </Field>
           ) : null}
         </div>
+  )
+
+  if (hideTrigger) return fields
+
+  return (
+    <Collapsible
+      open={open}
+      onOpenChange={onOpenChange}
+      className="rounded-xl border border-border"
+    >
+      <CollapsibleTrigger className="flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+        <span className="block text-lg font-semibold text-foreground">
+          Advanced
+        </span>
+        <ChevronDownIcon
+          className={cn(
+            "size-4 shrink-0 transition-transform duration-150 ease-[ease]",
+            open && "rotate-180"
+          )}
+          aria-hidden
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="border-t border-border">
+        {fields}
       </CollapsibleContent>
     </Collapsible>
   )

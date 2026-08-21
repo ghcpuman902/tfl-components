@@ -70,7 +70,7 @@ export const ROUTE_PAGE_META = {
   },
   components: {
     title: "Components",
-    description: "Preferred boards first, then the parts they are built from.",
+    description: "Boards, maps, and the parts they are built from.",
     path: "/docs/components",
   },
   explorer: {
@@ -82,7 +82,7 @@ export const ROUTE_PAGE_META = {
   board: {
     title: "Board",
     description:
-      "Turn any screen into a live TfL departures and status display.",
+      "Arrivals and line status for a stop you choose.",
     path: "/board",
   },
   boardView: {

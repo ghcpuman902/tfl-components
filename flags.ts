@@ -1,4 +1,4 @@
-import { flag } from "@vercel/flags/next"
+import { flag } from "flags/next"
 import {
   LANDING_EXPERIMENT_KEY,
   type LandingAssignmentVariant,

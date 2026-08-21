@@ -33,7 +33,7 @@ const RiverBusArrivalsLiveBoard = ({
           <code className="text-xs">tfl.stopPoint.getArrivals</code> as{" "}
           <code className="text-xs">data</code>. Nearby search lives under{" "}
           <Link
-            href="/docs/explorer?domain=river"
+            href="/docs/explorer/points/river"
             className="text-foreground underline underline-offset-4"
           >
             Explorer → River

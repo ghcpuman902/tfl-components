@@ -2,17 +2,24 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
+import {
+  IpadDeviceSvg,
+  IphoneDeviceSvg,
+  IPAD_ASPECT,
+  IPHONE_ASPECT,
+  ipadScreenInset,
+  iphoneScreenInset,
+} from "@/components/board/board-device-frame"
+import {
+  previewFrameForProfile,
+  type BoardScreenProfile,
+} from "@/lib/tfl/board-setup-state"
 import { cn } from "@/lib/utils"
 
-const LANDSCAPE = { width: 1180, height: 820 } as const
-const PORTRAIT = { width: 390, height: 844 } as const
-const MAX_HEIGHT_PX = 36 * 16
-const MAX_HEIGHT_VH = 0.68
-const PHONE_PAD_X = 10
-const PHONE_PAD_TOP = 10
-const PHONE_PAD_BOTTOM = 22
-
-type BoardPreviewOrientation = "landscape" | "portrait"
+const MAX_HEIGHT_PX = 34 * 16
+const MAX_HEIGHT_VH = 0.58
+const COMPACT_HEIGHT_PX = 22 * 16
+const COMPACT_HEIGHT_VH = 0.42
 
 type BoardPreviewProps = {
   href: string
@@ -20,9 +27,9 @@ type BoardPreviewProps = {
   hasKey: boolean
   onAddKey: () => void
   className?: string
-  /** Current builder blocks the iframe until a key exists. Staged uses a badge. */
   requireKeyOverlay?: boolean
-  exampleLabel?: string
+  screenProfile?: BoardScreenProfile | null
+  compact?: boolean
 }
 
 export const BoardPreview = ({
@@ -32,31 +39,28 @@ export const BoardPreview = ({
   onAddKey,
   className,
   requireKeyOverlay = true,
-  exampleLabel,
+  screenProfile = "large",
+  compact = false,
 }: BoardPreviewProps) => {
-  const [orientation, setOrientation] =
-    useState<BoardPreviewOrientation>("landscape")
-  const frame = orientation === "landscape" ? LANDSCAPE : PORTRAIT
+  const profile = screenProfile ?? "large"
+  const frame = previewFrameForProfile(profile)
+  const isPhone = profile === "small"
+  const aspect = isPhone ? IPHONE_ASPECT : IPAD_ASPECT
+  const inset = isPhone ? iphoneScreenInset : ipadScreenInset
   const containerRef = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(0.5)
-  const isPortrait = orientation === "portrait"
-  const chromeX = isPortrait ? PHONE_PAD_X * 2 : 0
-  const chromeY = isPortrait ? PHONE_PAD_TOP + PHONE_PAD_BOTTOM : 0
+  const [box, setBox] = useState({ width: 320, height: 200 })
 
   useEffect(() => {
     const element = containerRef.current
     if (!element) return
 
     const update = () => {
-      const width = element.clientWidth
-      const maxHeight = Math.min(MAX_HEIGHT_PX, window.innerHeight * MAX_HEIGHT_VH)
-      setScale(
-        Math.min(
-          Math.max(width - chromeX, 1) / frame.width,
-          Math.max(maxHeight - chromeY, 1) / frame.height,
-          1
-        )
-      )
+      const availableWidth = element.clientWidth
+      const maxHeight = compact
+        ? Math.min(COMPACT_HEIGHT_PX, window.innerHeight * COMPACT_HEIGHT_VH)
+        : Math.min(MAX_HEIGHT_PX, window.innerHeight * MAX_HEIGHT_VH)
+      const width = Math.min(availableWidth, maxHeight * aspect)
+      setBox({ width, height: width / aspect })
     }
 
     update()
@@ -67,99 +71,51 @@ export const BoardPreview = ({
       observer.disconnect()
       window.removeEventListener("resize", update)
     }
-  }, [chromeX, chromeY, frame.height, frame.width])
+  }, [aspect, compact])
 
-  const screenWidth = frame.width * scale
-  const screenHeight = frame.height * scale
+  const screenWidth = box.width * inset.width
+  const screenHeight = box.height * inset.height
+  const scale = Math.min(screenWidth / frame.width, screenHeight / frame.height)
 
   return (
-    <section
-      className={cn("space-y-2", className)}
-      aria-labelledby="board-preview-heading"
+    <div
+      ref={containerRef}
+      className={cn("flex w-full justify-center", className)}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="board-preview-heading" className="text-lg font-semibold">
-          Preview
-        </h2>
-        {exampleLabel ? (
-          <p className="text-sm text-muted-foreground">{exampleLabel}</p>
-        ) : null}
-        <div className="flex gap-1">
-          <Button
-            type="button"
-            size="sm"
-            variant={orientation === "landscape" ? "default" : "outline"}
-            aria-pressed={orientation === "landscape"}
-            onClick={() => setOrientation("landscape")}
-          >
-            Landscape
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={orientation === "portrait" ? "default" : "outline"}
-            aria-pressed={orientation === "portrait"}
-            onClick={() => setOrientation("portrait")}
-          >
-            Portrait
-          </Button>
-        </div>
-      </div>
-      <p className="text-sm text-muted-foreground">
-        {orientation === "landscape"
-          ? "A landscape iPad can take 3 arrival rows per bound and a 4-tile status column."
-          : "A portrait phone should keep one panel, usually arrivals."}
-      </p>
-      <div ref={containerRef} className="w-full">
+      <div
+        className="relative shrink-0 drop-shadow-md"
+        style={{ width: box.width, height: box.height }}
+      >
+        {isPhone ? <IphoneDeviceSvg /> : <IpadDeviceSvg />}
         <div
-          className={cn(
-            "relative overflow-hidden bg-background",
-            isPortrait
-              ? "rounded-[2rem] bg-foreground"
-              : "rounded-xl border border-border"
-          )}
+          className="absolute overflow-hidden bg-background"
           style={{
-            width: isPortrait ? screenWidth + chromeX : screenWidth,
-            height: isPortrait ? screenHeight + chromeY : screenHeight,
-            padding: isPortrait
-              ? `${PHONE_PAD_TOP}px ${PHONE_PAD_X}px ${PHONE_PAD_BOTTOM}px`
-              : undefined,
+            left: `${inset.left * 100}%`,
+            top: `${inset.top * 100}%`,
+            width: `${inset.width * 100}%`,
+            height: `${inset.height * 100}%`,
+            borderRadius: isPhone ? "1.15rem" : "1.35rem",
           }}
         >
-          {isPortrait ? (
-            <div
-              aria-hidden
-              className="pointer-events-none absolute top-1.5 left-1/2 z-10 h-1.5 w-20 -translate-x-1/2 rounded-full bg-background/40"
-            />
-          ) : null}
           {hydrated ? (
             <div
-              className="overflow-hidden bg-background"
+              className="origin-top-left"
               style={{
-                width: screenWidth,
-                height: screenHeight,
-                borderRadius: isPortrait ? "1.25rem" : undefined,
+                width: frame.width,
+                height: frame.height,
+                transform: `scale(${scale})`,
               }}
             >
-              <div
-                className="origin-top-left"
-                style={{
-                  width: frame.width,
-                  height: frame.height,
-                  transform: `scale(${scale})`,
-                }}
-              >
-                <iframe
-                  key={`${href}-${orientation}`}
-                  title="Board preview"
-                  src={href}
-                  className="h-full w-full border-0 bg-background"
-                />
-              </div>
+              <iframe
+                key={`${href}-${profile}`}
+                title="Board preview"
+                src={href}
+                className="h-full w-full border-0 bg-background"
+              />
             </div>
           ) : (
             <div
-              className="h-full w-full bg-muted"
+              className="size-full bg-muted"
               aria-busy="true"
               aria-label="Loading board preview"
             />
@@ -171,14 +127,14 @@ export const BoardPreview = ({
               </Button>
             </div>
           ) : null}
-          {isPortrait ? (
+          {isPhone ? (
             <div
               aria-hidden
-              className="pointer-events-none absolute bottom-1.5 left-1/2 h-1 w-24 -translate-x-1/2 rounded-full bg-background/50"
+              className="pointer-events-none absolute top-2 left-1/2 z-10 h-5 w-[28%] -translate-x-1/2 rounded-full bg-[#3d4f46]"
             />
           ) : null}
         </div>
       </div>
-    </section>
+    </div>
   )
 }

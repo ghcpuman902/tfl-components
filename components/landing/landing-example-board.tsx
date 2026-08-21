@@ -4,6 +4,7 @@ import { useRef, type ReactNode } from "react"
 import { LandingExampleObserver } from "@/components/landing/landing-example-observer"
 import { useLandingTrack } from "@/components/landing/landing-analytics"
 import type { AnalyticsContext } from "@/lib/analytics/context"
+import { elapsedSinceExposureMs } from "@/lib/landing/timing"
 
 type LandingExampleBoardProps = {
   context: AnalyticsContext
@@ -23,7 +24,9 @@ export const LandingExampleBoard = ({
       onPointerDown={() => {
         if (interacted.current) return
         interacted.current = true
-        track("landing_example_interaction")
+        track("landing_example_interaction", {
+          time_to_example_interaction_ms: elapsedSinceExposureMs(),
+        })
       }}
     >
       <LandingExampleObserver

@@ -36,11 +36,14 @@ const getCoarsePointer = () => window.matchMedia(COARSE_QUERY).matches
 type UseParallaxInputArgs = {
   stageRef: RefObject<HTMLElement | null>
   enabled: boolean
+  /** Production Room: pointer parallax only — no tilt or scroll fallback. */
+  production?: boolean
 }
 
 export const useParallaxInput = ({
   stageRef,
   enabled,
+  production = false,
 }: UseParallaxInputArgs) => {
   const valueRef = useRef(0)
   const pointerActiveRef = useRef(false)
@@ -87,13 +90,13 @@ export const useParallaxInput = ({
     }
 
     const handleOrientation = (event: DeviceOrientationEvent) => {
-      if (!tiltEnabled || pointerActiveRef.current) return
+      if (production || !tiltEnabled || pointerActiveRef.current) return
       const gamma = event.gamma ?? 0
       valueRef.current = clamp(gamma / 30, -1, 1)
     }
 
     const handleScrollFallback = () => {
-      if (pointerActiveRef.current || tiltEnabled) return
+      if (production || pointerActiveRef.current || tiltEnabled) return
       const doc = document.documentElement
       const max = doc.scrollHeight - window.innerHeight
       if (max <= 0) return
@@ -114,11 +117,11 @@ export const useParallaxInput = ({
       window.removeEventListener("deviceorientation", handleOrientation)
       window.removeEventListener("scroll", handleScrollFallback)
     }
-  }, [enabled, stageRef, tiltEnabled])
+  }, [enabled, production, stageRef, tiltEnabled])
 
   return {
     valueRef,
     requestTilt,
-    showTiltButton: enabled && isCoarse && !tiltEnabled,
+    showTiltButton: enabled && !production && isCoarse && !tiltEnabled,
   }
 }

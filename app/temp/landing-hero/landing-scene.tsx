@@ -8,7 +8,9 @@ import {
   type KeyboardEvent,
 } from "react"
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
+import { useDocumentVisible } from "@/hooks/use-document-visible"
 import { LandingMobileIpadHint } from "@/components/landing/landing-mobile-ipad-hint"
+import { LandingExampleObserver } from "@/components/landing/landing-example-observer"
 import {
   LandingRoomCaption,
   LandingRoomCopy,
@@ -53,6 +55,8 @@ type LandingSceneProps = {
   onIpadActivate?: () => void
   onZoomComplete?: () => void
   onHeroInteraction?: () => void
+  onExampleSeen?: () => void
+  onExampleInteraction?: () => void
 }
 
 export const LandingScene = ({
@@ -61,8 +65,11 @@ export const LandingScene = ({
   onIpadActivate,
   onZoomComplete,
   onHeroInteraction,
+  onExampleSeen,
+  onExampleInteraction,
 }: LandingSceneProps = {}) => {
   const reducedMotion = usePrefersReducedMotion()
+  const pageVisible = useDocumentVisible()
   const wrapperRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const compositionRef = useRef<HTMLDivElement>(null)
@@ -99,7 +106,8 @@ export const LandingScene = ({
 
   const { valueRef, requestTilt, showTiltButton } = useParallaxInput({
     stageRef,
-    enabled: !reducedMotion && !production,
+    enabled: !reducedMotion,
+    production,
   })
 
   const { scrollToIpad, setDebugProgress, releaseDebugProgress, progressRef } =
@@ -163,7 +171,15 @@ export const LandingScene = ({
 
     let frame = 0
     const tick = () => {
-      const pointer = reducedMotion ? 0 : valueRef.current
+      if (!pageVisible) {
+        frame = window.requestAnimationFrame(tick)
+        return
+      }
+      const pointer = reducedMotion
+        ? 0
+        : production
+          ? valueRef.current * 0.45
+          : valueRef.current
       const dolly = reducedMotion ? 0 : progressRef.current
       for (const layer of layers) {
         const targetX = pointer * layer.xAmount + dolly * layer.dollyX
@@ -203,7 +219,7 @@ export const LandingScene = ({
     }
     frame = window.requestAnimationFrame(tick)
     return () => window.cancelAnimationFrame(frame)
-  }, [progressRef, reducedMotion, valueRef])
+  }, [pageVisible, production, progressRef, reducedMotion, valueRef])
 
   useEffect(() => {
     const hit = iPadHitRef.current
@@ -232,6 +248,7 @@ export const LandingScene = ({
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [production])
 
+  const exampleInteracted = useRef(false)
   const pointerStart = useRef<{ x: number; y: number } | null>(null)
   const pointerNow = useRef<{ x: number; y: number } | null>(null)
 
@@ -325,7 +342,7 @@ export const LandingScene = ({
           >
             <MirrorPhotoLoop
               slides={HOME_HERO_PORTRAIT_SLIDES}
-              frozen={reducedMotion}
+              frozen={reducedMotion || !pageVisible}
               intervalMs={4200}
             />
           </div>
@@ -337,21 +354,33 @@ export const LandingScene = ({
           >
             <MirrorPhotoLoop
               slides={HOME_HERO_LANDSCAPE_SLIDES}
-              frozen={reducedMotion}
+              frozen={reducedMotion || !pageVisible}
               intervalMs={5400}
             />
           </div>
           <div
             ref={ipadOverlayRef}
+            id="landing-example-board"
             className="absolute top-0 left-0 overflow-hidden"
             style={{
               borderRadius: BOARD_IFRAME_RADIUS,
               pointerEvents: zoomComplete ? "auto" : "none",
               visibility: "hidden",
             }}
+            onPointerDown={() => {
+              if (!zoomComplete || exampleInteracted.current) return
+              exampleInteracted.current = true
+              onExampleInteraction?.()
+            }}
           >
             <IpadBoardFrame interactive={zoomComplete} />
           </div>
+          {production && zoomComplete ? (
+            <LandingExampleObserver
+              targetId="landing-example-board"
+              onSeen={() => onExampleSeen?.()}
+            />
+          ) : null}
 
           {production ? (
             <LandingRoomCopy copyRef={copyRef} onCtaClick={onCtaClick} />
@@ -399,7 +428,7 @@ export const LandingScene = ({
         <IpadAimCursor
           hostRef={stageRef}
           targetRef={iPadHitRef}
-          enabled={!zoomComplete}
+          enabled={!zoomComplete && pageVisible}
         />
 
         {debugOpen ? (

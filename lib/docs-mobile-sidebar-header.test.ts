@@ -59,4 +59,19 @@ describe("docs mobile sidebar trigger position", () => {
     assert.match(header, /className="relative z-10 size-11[\s\S]*md:hidden"/)
     assert.equal(SITE_NAV_BREAKPOINTS.tablet, 768)
   })
+
+  it("keeps the drawer on Base UI modal defaults for focus trap, Escape, and scroll lock", () => {
+    const sidebar = read("../components/ui/sidebar.tsx")
+    const sheet = read("../components/ui/sheet.tsx")
+    assert.match(sidebar, /<Sheet open=\{openMobile\}/)
+    assert.doesNotMatch(sidebar, /modal=\{false\}/)
+    assert.match(sheet, /Dialog as SheetPrimitive/)
+    assert.doesNotMatch(sheet, /modal=\{false\}/)
+  })
+
+  it("does not move the trigger beside the breadcrumb", () => {
+    const pageHeader = read("../components/docs/docs-page-header.tsx")
+    assert.doesNotMatch(pageHeader, /SidebarTrigger/)
+    assert.match(pageHeader, /text-sm text-muted-foreground/)
+  })
 })

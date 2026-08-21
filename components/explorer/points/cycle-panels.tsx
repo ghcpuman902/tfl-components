@@ -1,10 +1,13 @@
 "use client"
 
 import { useMemo } from "react"
-import { useRouter } from "next/navigation"
 import { PointInspector } from "@/components/explorer/entity-inspector/point-inspector"
 import { CyclePointFinder } from "@/components/explorer/cycle-point-finder"
 import { ExplorerSplit } from "@/components/explorer/explorer-split"
+import {
+  pushExplorerHref,
+  useExplorerChromeState,
+} from "@/components/explorer/use-explorer-chrome"
 import { useOptimisticPoint } from "@/components/explorer/use-optimistic-selection"
 import {
   normaliseBikePoint,
@@ -21,8 +24,11 @@ type PointsCycleFindProps = {
   docks: readonly ExplorerCyclePoint[]
 }
 
-export const PointsCycleFind = ({ state, docks }: PointsCycleFindProps) => {
-  const router = useRouter()
+export const PointsCycleFind = ({
+  state: pathState,
+  docks,
+}: PointsCycleFindProps) => {
+  const state = useExplorerChromeState(pathState)
   const initialPoints = useMemo(
     () =>
       docks
@@ -43,7 +49,7 @@ export const PointsCycleFind = ({ state, docks }: PointsCycleFindProps) => {
           selectedId={selected?.id ?? state.id}
           view={state.view}
           onViewChange={(view) =>
-            router.push(buildExplorerHref({ view }, state), { scroll: false })
+            pushExplorerHref(buildExplorerHref({ view }, state))
           }
           initialQuery={state.q}
           initialPoints={initialPoints}

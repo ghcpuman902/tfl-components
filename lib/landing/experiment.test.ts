@@ -2,13 +2,16 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
   assignLandingVariant,
+  deviceClassFromUserAgent,
   isBotUserAgent,
   LANDING_EXPERIMENT_ENABLED,
+  parseLandingAssignmentCookie,
   parseLandingVariant,
+  serializeLandingAssignmentCookie,
 } from "./experiment"
 
 describe("landing experiment assignment", () => {
-  it("stays disabled until staged Board is production", () => {
+  it("stays disabled until assignment and analytics are verified in production", () => {
     assert.equal(LANDING_EXPERIMENT_ENABLED, false)
   })
 
@@ -40,6 +43,21 @@ describe("landing experiment assignment", () => {
     })
     assert.equal(assignment.variant, "simple")
     assert.equal(assignment.excludeFromResults, false)
+  })
+
+  it("classifies phones as mobile from the user agent and tablets as desktop", () => {
+    assert.equal(
+      deviceClassFromUserAgent(
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)"
+      ),
+      "mobile"
+    )
+    assert.equal(
+      deviceClassFromUserAgent(
+        "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15"
+      ),
+      "desktop"
+    )
   })
 
   it("splits desktop visitors once enabled", () => {
@@ -104,5 +122,38 @@ describe("landing experiment assignment", () => {
     assert.equal(bot.excludeFromResults, true)
     assert.equal(isBotUserAgent("Googlebot/2.1"), true)
     assert.equal(isBotUserAgent("Mozilla/5.0"), false)
+  })
+
+  it("reuses a persisted desktop assignment and does not persist QA overrides", () => {
+    const reused = assignLandingVariant({
+      enabled: true,
+      deviceClass: "desktop",
+      visitorId: "visitor-a",
+      override: null,
+      isPreview: false,
+      isBot: false,
+      persisted: "room",
+    })
+    assert.equal(reused.variant, "room")
+    assert.equal(reused.persist, true)
+
+    const qa = assignLandingVariant({
+      enabled: true,
+      deviceClass: "desktop",
+      visitorId: "visitor-a",
+      override: "simple",
+      isPreview: false,
+      isBot: false,
+      persisted: "room",
+    })
+    assert.equal(qa.persist, false)
+    assert.equal(qa.excludeFromResults, true)
+  })
+
+  it("round-trips the assignment cookie without storing QA overrides", () => {
+    const raw = serializeLandingAssignmentCookie("room")
+    assert.equal(parseLandingAssignmentCookie(raw), "room")
+    assert.equal(parseLandingAssignmentCookie("simple"), "simple")
+    assert.equal(parseLandingAssignmentCookie(undefined), null)
   })
 })

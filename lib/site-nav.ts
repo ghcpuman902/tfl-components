@@ -17,8 +17,6 @@ export type SiteNavLink = {
   tooltip?: string
   ariaLabel?: string
   mobileSubtext?: string
-  /** Outline/filled action. Board is the public CTA; others stay links. */
-  prominence?: "link" | "action"
 }
 
 export type SiteMoreItem = {
@@ -36,7 +34,7 @@ export const DOCS_SIDEBAR_TRIGGER_LABEL = "Open documentation navigation"
 
 /**
  * Desktop order stays Docs first and Board last (frozen J6).
- * Board is the visually prominent action; Docs stays a normal link.
+ * Active item uses an underline — no filled/outline button chrome.
  */
 export const DESKTOP_PRIMARY_LINKS: readonly SiteNavLink[] = [
   {
@@ -50,7 +48,7 @@ export const DESKTOP_PRIMARY_LINKS: readonly SiteNavLink[] = [
   { href: "/docs/components", label: "Components", match: "components" },
   { href: "/docs/explorer", label: "Explorer", match: "explorer" },
   { href: "/labs", label: "Labs", match: "labs" },
-  { href: "/board", label: "Board", match: "board", prominence: "action" },
+  { href: "/board", label: "Board", match: "board" },
 ]
 
 /** Mobile keeps the desktop first and last items. More follows them. */

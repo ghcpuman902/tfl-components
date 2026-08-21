@@ -99,7 +99,7 @@ export default function RootLayout({
         hammersmith.variable
       )}
     >
-      <head>
+      <body>
         {fontPreferenceScript ? (
           <Script
             id="tfl-font-preference"
@@ -107,8 +107,6 @@ export default function RootLayout({
             dangerouslySetInnerHTML={{ __html: fontPreferenceScript }}
           />
         ) : null}
-      </head>
-      <body>
         <Analytics />
         <ThemeProvider>
           <FontPreferenceProvider

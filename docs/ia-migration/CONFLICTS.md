@@ -16,5 +16,6 @@ Frozen Stage 1 was not silently edited during archaeology. Human resolutions: [D
 | C10 | **Open — product brief 2026-08-19** | Public TfL metadata observatory ships at `/observatory` with a production footer + search entry. Frozen J6 / J8 header and docs sidebar have no slot for an observation surface. Not added to the header or Get started sidebar. |
 | C11 | **Open — product brief 2026-08-20** | Mobile docs sidebar trigger moved into the global header, left of the logo, same row, 44×44. Frozen J6 still describes a trigger under the header. Header order unchanged. |
 | C12 | **Open — product brief 2026-08-20** | Board is a small filled/outlined header action. Frozen J6 still lists it as a text link last on desktop. Docs remains the first text link and keeps the “Docs” label. |
+| C13 | **Open — product brief 2026-08-21** | Bus disruption is not a Components catalogue or sidebar surface. J13 still records an unresolved component-boundary after prototypes. Drafts stay under `/drafts`; `/docs/bus-disruptions` remains a coming-soon route, hidden from discovery. |
 
 **J6 (2026-08-10):** Stage 1 **sidebar taxonomy** (Interfaces / Primitives / Foundations / Maps as separate nav groups) rejected after shipping. Frozen docs amended — not archaeology. Composition layers and “maps not under Tools” remain.

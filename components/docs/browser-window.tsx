@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowRightIcon } from "lucide-react"
+import { PlusIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export const DOCS_BROWSER_PREVIEW_MAX_HEIGHT_CLASS = "max-h-80"
@@ -50,14 +50,14 @@ export const BrowserWindow = ({
     >
       <div className="p-4 md:p-6">{children}</div>
       {previewLimit ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-24 items-end bg-linear-to-t from-background via-background/85 to-transparent">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-24 items-end justify-center bg-linear-to-t from-background via-background/85 to-transparent">
           {fullExampleHref ? (
             <Link
               href={fullExampleHref}
-              className="pointer-events-auto mb-3 ml-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary underline underline-offset-4 md:ml-6"
+              className="pointer-events-auto mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-background/95 px-3.5 py-1.5 text-sm font-medium text-foreground shadow-xs hover:bg-muted"
             >
+              <PlusIcon className="size-3.5 shrink-0" aria-hidden />
               {DOCS_BROWSER_PREVIEW_ACTION_LABEL}
-              <ArrowRightIcon className="size-3.5 shrink-0" aria-hidden />
             </Link>
           ) : null}
         </div>

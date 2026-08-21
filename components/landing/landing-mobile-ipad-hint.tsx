@@ -1,7 +1,17 @@
 "use client"
 
-import { useEffect, useRef, type RefObject } from "react"
+import { useEffect, useRef, useSyncExternalStore, type RefObject } from "react"
 import { ArrowDown, CirclePlus } from "lucide-react"
+
+const COARSE_QUERY = "(pointer: coarse)"
+
+const subscribeCoarsePointer = (onChange: () => void) => {
+  const media = window.matchMedia(COARSE_QUERY)
+  media.addEventListener("change", onChange)
+  return () => media.removeEventListener("change", onChange)
+}
+
+const getCoarsePointer = () => window.matchMedia(COARSE_QUERY).matches
 
 type LandingMobileIpadHintProps = {
   hostRef: RefObject<HTMLElement | null>
@@ -15,11 +25,16 @@ export const LandingMobileIpadHint = ({
   enabled,
 }: LandingMobileIpadHintProps) => {
   const hintRef = useRef<HTMLDivElement>(null)
+  const isCoarse = useSyncExternalStore(
+    subscribeCoarsePointer,
+    getCoarsePointer,
+    () => false
+  )
 
   useEffect(() => {
     const host = hostRef.current
     const hint = hintRef.current
-    if (!enabled || !host || !hint) return
+    if (!enabled || !isCoarse || !host || !hint) return
 
     let frame = 0
     const paint = () => {
@@ -38,9 +53,9 @@ export const LandingMobileIpadHint = ({
     }
     frame = window.requestAnimationFrame(paint)
     return () => window.cancelAnimationFrame(frame)
-  }, [enabled, hostRef, targetRef])
+  }, [enabled, hostRef, isCoarse, targetRef])
 
-  if (!enabled) return null
+  if (!enabled || !isCoarse) return null
 
   return (
     <div

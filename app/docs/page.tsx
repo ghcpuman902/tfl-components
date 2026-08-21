@@ -14,6 +14,7 @@ import {
   RailArrivalsBoardSkeleton,
 } from "@/components/tfl/arrivals/rail-arrivals-board"
 import { getDocsEntry } from "@/lib/docs-catalog"
+import { readAttributionContext } from "@/lib/landing/assignment"
 import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 import { TFL_BRAND_LINKS } from "@/lib/tfl/brand"
 import {
@@ -146,6 +147,11 @@ export default function Page() {
   return <RailArrivalsBoard data={data} stopName="Oxford Circus" />
 }`
 
+const DocsVisitFromLanding = async () => {
+  const analyticsContext = await readAttributionContext()
+  return <DocsVisitBeacon context={analyticsContext} />
+}
+
 export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.docs)
 
 const TFL_API_PORTAL = "https://api-portal.tfl.gov.uk/"
@@ -159,10 +165,10 @@ const StartAction = ({
 }) => (
   <Link
     href={href}
-    className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-primary underline underline-offset-4"
+    className="inline-flex items-baseline gap-1.5 font-medium text-primary underline underline-offset-4"
   >
     {children}
-    <ArrowRightIcon className="size-3.5 shrink-0" aria-hidden />
+    <ArrowRightIcon className="size-4 shrink-0" aria-hidden />
   </Link>
 )
 
@@ -215,7 +221,9 @@ export default function DocsIntroductionPage() {
 
   return (
     <DocsReadableWidth>
-      <DocsVisitBeacon />
+      <Suspense fallback={null}>
+        <DocsVisitFromLanding />
+      </Suspense>
       <article className="space-y-12">
         <DocsPageHeader
           entry={entry}

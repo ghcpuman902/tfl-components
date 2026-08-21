@@ -1,11 +1,17 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { defaultAnalyticsContext } from "@/lib/analytics/context"
-import { analyticsPropsFromContext } from "@/lib/analytics/context"
+import {
+  analyticsPropsFromContext,
+  type AnalyticsContext,
+} from "@/lib/analytics/context"
 import { trackSiteEvent } from "@/lib/analytics/track"
 
-export const DocsVisitBeacon = () => {
+type DocsVisitBeaconProps = {
+  context: AnalyticsContext
+}
+
+export const DocsVisitBeacon = ({ context }: DocsVisitBeaconProps) => {
   const sent = useRef(false)
 
   useEffect(() => {
@@ -20,11 +26,8 @@ export const DocsVisitBeacon = () => {
       return
     }
     sent.current = true
-    trackSiteEvent(
-      "landing_docs_visit",
-      analyticsPropsFromContext(defaultAnalyticsContext("control"))
-    )
-  }, [])
+    trackSiteEvent("landing_docs_visit", analyticsPropsFromContext(context))
+  }, [context])
 
   return null
 }

@@ -33,7 +33,7 @@ export type AnalyticsReferrerCategory =
   | "other"
 export type AnalyticsKeyMode = "own" | "shared" | "skipped"
 export type AnalyticsLandingVariant = "room" | "simple" | "control"
-export type AnalyticsScreenProfile = "this" | "small" | "large"
+export type AnalyticsScreenProfile = "small" | "large"
 export type AnalyticsBoardStage = 1 | 2 | 3 | 4 | 5
 
 export const ANALYTICS_ALLOWED_KEYS = [
@@ -50,6 +50,8 @@ export const ANALYTICS_ALLOWED_KEYS = [
   "stopSelected",
   "modesCount",
   "keyMode",
+  "time_to_example_interaction_ms",
+  "time_to_setup_start_ms",
 ] as const
 
 export type AnalyticsEventProps = {
@@ -66,6 +68,8 @@ export type AnalyticsEventProps = {
   stopSelected?: boolean
   modesCount?: number
   keyMode?: AnalyticsKeyMode
+  time_to_example_interaction_ms?: number
+  time_to_setup_start_ms?: number
 }
 
 export const isAnalyticsEventName = (
