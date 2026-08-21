@@ -6,12 +6,14 @@ import {
   ObservatoryView,
 } from "@/components/observatory/observatory-view"
 import { loadObservatoryPageData } from "@/lib/tfl/observatory/load-page-data"
+import { pageMetadata } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "TfL metadata",
   description:
     "Independent observation of TfL line, stop, and route metadata. Not line status.",
-}
+  path: "/observatory",
+})
 
 const ObservatoryBody = async () => {
   await connection()

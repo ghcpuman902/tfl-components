@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "Draft: Bus disruption surface",
   description:
     "A separate disruption list that does not share arrivals row height.",
+  robots: { index: false, follow: false },
 }
 
 const SAMPLE_DISRUPTIONS = prepareBusStopDisruptions(

@@ -1,7 +1,7 @@
 "use client"
 
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
-import { buildBoardHref } from "@/lib/tfl/board-url-state"
+import { BOARD_VIEW_PATH, buildBoardHref } from "@/lib/tfl/board-url-state"
 import {
   BOARD_IFRAME_HEIGHT,
   BOARD_IFRAME_WIDTH,
@@ -12,7 +12,10 @@ type IpadBoardFrameProps = {
 }
 
 /** Default hosted Board — interactive Oxford Circus, rail + status. */
-const BOARD_IFRAME_SRC = buildBoardHref({ stop: HOME_RAIL_STOP.id })
+const BOARD_IFRAME_SRC = buildBoardHref({ stop: HOME_RAIL_STOP.id }).replace(
+  BOARD_VIEW_PATH,
+  `${BOARD_VIEW_PATH}?embed=1`
+)
 
 export const IpadBoardFrame = ({ interactive }: IpadBoardFrameProps) => (
   <div

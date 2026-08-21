@@ -26,7 +26,7 @@ const [stop, data] = await Promise.all([
     relatedLinks: [
       { href: "/docs/bus-arrivals", label: "Bus Arrivals" },
       { href: "/docs/tube-rail-status", label: "Tube & Rail Status" },
-      { href: "/docs/explorer?domain=river", label: "Explorer · River" },
+      { href: "/docs/explorer/points/river", label: "Explorer · River" },
       { href: "/docs/colors", label: "Colours" },
     ],
   })

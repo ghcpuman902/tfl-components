@@ -5,12 +5,9 @@ import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { NationalRailPictogram } from "@/components/tfl/national-rail-pictogram"
 import { getDocsEntry } from "@/lib/docs-catalog"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
-  title: "Icons & pictograms",
-  description:
-    "Mode pictograms and diagram markers — what ships safely vs protected marks.",
-}
+export const metadata: Metadata = docsEntryMetadata("icons")
 
 export default function FoundationsIconsPage() {
   const entry = getDocsEntry("icons")

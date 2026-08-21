@@ -3,7 +3,10 @@ import { describe, it } from "node:test"
 import { HOME_RAIL_STOP } from "./home-arrivals-stops"
 import {
   buildBoardStationLinesIndex,
+  chipUnitKey,
+  expandChipUnits,
   getBoardStationLinesIndex,
+  groupServingLinesIntoChipUnits,
   lookupBoardStationLineGroups,
   lookupBoardStationLines,
   lookupSharedTrackFamilies,
@@ -202,5 +205,51 @@ describe("lookupSharedTrackLineIds", () => {
     const families = lookupSharedTrackFamilies("940GZZLUPAC")
     assert.ok(families)
     assert.deepEqual(families, [["district", "circle", "hammersmith-city"]])
+  })
+})
+
+describe("groupServingLinesIntoChipUnits", () => {
+  const index = buildBoardStationLinesIndex()
+
+  it("keeps ungrouped stops as one chip per line", () => {
+    const serving = lookupBoardStationLines(index, HOME_RAIL_STOP.id) ?? []
+    const units = groupServingLinesIntoChipUnits(serving, undefined)
+    assert.deepEqual(
+      units.map((unit) => chipUnitKey(unit)),
+      serving.map((line) => line.lineId)
+    )
+  })
+
+  it("folds Circle / H&C / Met at Liverpool Street", () => {
+    const serving = lookupBoardStationLines(index, "940GZZLULVT") ?? []
+    const units = groupServingLinesIntoChipUnits(
+      serving,
+      lookupBoardStationLineGroups("940GZZLULVT")
+    )
+    const group = units.find((unit) => unit.kind === "group")
+    assert.deepEqual(group?.kind === "group" ? [...group.lineIds] : [], [
+      "circle",
+      "hammersmith-city",
+      "metropolitan",
+    ])
+    assert.deepEqual(expandChipUnits(units).sort(), [
+      ...serving.map((line) => line.lineId),
+    ].sort())
+  })
+
+  it("keeps Metropolitan separate at Baker Street", () => {
+    const serving = lookupBoardStationLines(index, "940GZZLUBST") ?? []
+    const units = groupServingLinesIntoChipUnits(
+      serving,
+      lookupBoardStationLineGroups("940GZZLUBST")
+    )
+    const group = units.find((unit) => unit.kind === "group")
+    assert.deepEqual(group?.kind === "group" ? [...group.lineIds] : [], [
+      "circle",
+      "hammersmith-city",
+    ])
+    assert.ok(
+      units.some((unit) => unit.kind === "line" && unit.lineId === "metropolitan")
+    )
   })
 })

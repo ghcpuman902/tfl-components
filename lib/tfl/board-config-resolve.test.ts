@@ -313,11 +313,11 @@ describe("shared-platform sections", () => {
 })
 
 describe("resolveStatusProps", () => {
-  it("defaults to a four-tile network display", () => {
+  it("defaults to an expanded network display", () => {
     const props = resolveStatusProps(DEFAULT_BOARD_CONFIG)
     assert.deepEqual(props, {
       surface: "display",
-      tiles: 4,
+      tiles: 0,
       detailScope: "network",
       detailLineIds: undefined,
       dwellMs: undefined,

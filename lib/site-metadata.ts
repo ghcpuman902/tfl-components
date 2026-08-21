@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { getDocsEntry } from "@/lib/docs-catalog"
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site"
 
 export type PageMetaInput = {
@@ -48,6 +49,22 @@ export const pageMetadata = ({
   }
 }
 
+/** Catalogue title, description, canonical, and social tags for a docs slug. */
+export const docsEntryMetadata = (slug: string): Metadata => {
+  const entry = getDocsEntry(slug)
+  if (!entry) {
+    return {
+      title: "Not found",
+      robots: { index: false, follow: false },
+    }
+  }
+  return pageMetadata({
+    title: entry.title,
+    description: entry.description,
+    path: entry.href.split("?")[0]!,
+  })
+}
+
 export const HOME_PAGE_META = {
   title: SITE_NAME,
   description: SITE_DESCRIPTION,
@@ -57,14 +74,20 @@ export const HOME_PAGE_META = {
 export const ROUTE_PAGE_META = {
   home: HOME_PAGE_META,
   docs: {
-    title: "Get started",
+    title: "React component documentation",
     description:
-      "Configure a hosted Board, or install React components for London transport displays.",
+      "Build TfL interfaces using installable React components and normalised tfl-ts data.",
     path: "/docs",
+  },
+  boardUrl: {
+    title: "Board URL",
+    description:
+      "Encode a hosted Board in the page address. Configuration lives in the fragment.",
+    path: "/docs/board-url",
   },
   components: {
     title: "Components",
-    description: "Preferred boards first, then the parts they are built from.",
+    description: "Boards, maps, and the parts they are built from.",
     path: "/docs/components",
   },
   explorer: {
@@ -76,7 +99,7 @@ export const ROUTE_PAGE_META = {
   board: {
     title: "Board",
     description:
-      "Turn any screen into a live TfL departures and status display.",
+      "Arrivals and line status for a stop you choose.",
     path: "/board",
   },
   boardView: {
@@ -113,7 +136,7 @@ export const ROUTE_PAGE_META = {
   privacy: {
     title: "Privacy",
     description:
-      "What this site stores in the browser, including TfL keys and a visitor cookie.",
+      "What this site stores in the browser, including TfL keys and a visitor cookie, and how page analytics are collected.",
     path: "/privacy",
   },
   howItWasBuilt: {

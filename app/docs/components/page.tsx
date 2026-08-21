@@ -13,12 +13,29 @@ import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 
 export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.components)
 
+/** Bust Next/browser caches when recapturing thumbs that keep the same path. */
+const CATALOG_PREVIEW_VERSION = "preview-node-2"
+
+const catalogPreview = (file: string): string =>
+  `/images/catalog/${file}.png?v=${CATALOG_PREVIEW_VERSION}`
+
 const CATALOG_PREVIEWS: Partial<Record<string, string>> = {
-  "tube-rail-arrivals": "/images/catalog/tube-rail-arrivals.png",
-  "tube-rail-status": "/images/catalog/tube-rail-status.png",
-  "bus-arrivals": "/images/catalog/bus-arrivals.png",
-  "cycle-hire-docks": "/images/catalog/cycle-hire-docks.png",
-  "maps-geographic": "/images/catalog/maps-geographic.png",
+  "tube-rail-arrivals": catalogPreview("tube-rail-arrivals"),
+  "tube-rail-status": catalogPreview("tube-rail-status"),
+  "bus-arrivals": catalogPreview("bus-arrivals"),
+  "river-bus-arrivals": catalogPreview("river-bus-arrivals"),
+  "cycle-hire-docks": catalogPreview("cycle-hire-docks"),
+  "maps-geographic": catalogPreview("maps-geographic"),
+  "maps-bus": catalogPreview("maps-bus"),
+  "live-vehicle-tracking": catalogPreview("live-vehicle-tracking"),
+  "live-bus-vehicles": catalogPreview("live-bus-vehicles"),
+  "line-strip": catalogPreview("line-strip"),
+  "branch-strip-horizontal": catalogPreview("branch-strip-horizontal"),
+  "branch-strip-vertical": catalogPreview("branch-strip-vertical"),
+  "platform-chip": catalogPreview("platform-chip"),
+  "bus-number-chip": catalogPreview("bus-number-chip"),
+  "line-title": catalogPreview("line-title"),
+  "line-chip": catalogPreview("line-chip"),
 }
 
 export default function DocsComponentsCataloguePage() {
@@ -28,21 +45,7 @@ export default function DocsComponentsCataloguePage() {
   return (
     <DocsReadableWidth>
       <article className="space-y-8">
-        <DocsPageHeader
-          entry={entry}
-          notice={
-            <p className="mt-3 text-sm text-muted-foreground">
-              New here?{" "}
-              <Link
-                href="/docs"
-                className="text-foreground underline underline-offset-4"
-              >
-                Get started
-              </Link>{" "}
-              covers install and first use.
-            </p>
-          }
-        />
+        <DocsPageHeader entry={entry} />
 
         <section aria-label="Component catalogue">
           <ul className="divide-y divide-border border-y border-border">
@@ -53,7 +56,7 @@ export default function DocsComponentsCataloguePage() {
                 <li key={item.slug}>
                   <Link
                     href={item.href}
-                    className="flex flex-col gap-3 py-4 hover:bg-muted/40 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
+                    className="relative isolate flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6 before:pointer-events-none before:absolute before:inset-y-0 before:-inset-x-3 before:-z-10 before:origin-center before:scale-x-[0.95] before:rounded-lg before:bg-muted/40 before:opacity-0 before:transition-[scale,opacity] before:duration-200 before:ease-[cubic-bezier(0.19,1,0.22,1)] before:content-[''] hover:before:scale-x-100 hover:before:opacity-100 focus-visible:before:scale-x-100 focus-visible:before:opacity-100 motion-reduce:before:scale-x-100 motion-reduce:before:duration-150"
                   >
                     <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -75,7 +78,7 @@ export default function DocsComponentsCataloguePage() {
                         width={384}
                         height={216}
                         sizes="192px"
-                        unoptimized={item.slug === "tube-rail-arrivals"}
+                        unoptimized
                         className="aspect-video w-full max-w-48 shrink-0 rounded-md border border-border object-cover object-top sm:w-48"
                       />
                     ) : (

@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
-import { BoardBuilder } from "@/components/board/board-builder"
+import { BoardStagedBuilder } from "@/components/board/board-staged-builder"
+import { readAttributionContext } from "@/lib/landing/assignment"
 import { getBoardStationLinesIndex } from "@/lib/tfl/board-station-lines"
 import {
   getBoardStationNamesIndex,
@@ -9,28 +11,53 @@ import {
 
 export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.board)
 
-export default function BoardBuilderPage() {
-  const stationLines = getBoardStationLinesIndex()
-  const stationNames = getBoardStationNamesIndex()
-  const stations = getBoardStationSearchIndex()
+const BoardFromParams = async () => {
+  const [stationLines, stationNames, stations, analyticsContext] =
+    await Promise.all([
+      Promise.resolve(getBoardStationLinesIndex()),
+      Promise.resolve(getBoardStationNamesIndex()),
+      Promise.resolve(getBoardStationSearchIndex()),
+      readAttributionContext(),
+    ])
 
   return (
     <div className="mx-auto w-full max-w-7xl">
-      <article className="space-y-8">
-        <header>
+      <article className="space-y-5">
+        <header className="text-center">
           <h1 className="tfl-title text-3xl text-foreground">Board</h1>
-          <p className="mt-2 max-w-prose text-lg text-muted-foreground">
-            Turn any screen into a live TfL departures and status display. Pick
-            a station, then open or share the URL full-screen.
+          <p className="mt-1 text-sm text-muted-foreground">
+            Arrivals and line status for a stop you choose.
           </p>
         </header>
 
-        <BoardBuilder
+        <BoardStagedBuilder
           stationLines={stationLines}
           stationNames={stationNames}
           stations={stations}
+          analyticsContext={analyticsContext}
         />
       </article>
     </div>
+  )
+}
+
+export default function BoardBuilderPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto w-full max-w-7xl">
+          <article className="space-y-5">
+            <header className="text-center">
+              <h1 className="tfl-title text-3xl text-foreground">Board</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Arrivals and line status for a stop you choose.
+              </p>
+            </header>
+          </article>
+        </div>
+      }
+    >
+      <BoardFromParams />
+    </Suspense>
   )
 }

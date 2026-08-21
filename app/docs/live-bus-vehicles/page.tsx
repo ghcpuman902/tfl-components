@@ -12,11 +12,9 @@ import {
   getUsedBySlugs,
   type DocsEntry,
 } from "@/lib/docs-catalog"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
-  title: "Live buses",
-  description: "Place buses on a route map from live GPS.",
-}
+export const metadata: Metadata = docsEntryMetadata("live-bus-vehicles")
 
 const USAGE_SNIPPET = `<LiveBusVehicles
   busRouteIds={["24"]}

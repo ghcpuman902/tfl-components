@@ -14,8 +14,11 @@ export const syncOverlayToSvg = (
     return
   }
   overlay.style.visibility = "visible"
+  overlay.style.left = "0px"
+  overlay.style.top = "0px"
   overlay.style.width = `${nativeWidth}px`
   overlay.style.height = `${nativeHeight}px`
+  overlay.style.aspectRatio = "auto"
   overlay.style.transformOrigin = "0 0"
   overlay.style.translate = `${rect.left - hostRect.left}px ${rect.top - hostRect.top}px`
   overlay.style.scale = String(rect.width / nativeWidth)

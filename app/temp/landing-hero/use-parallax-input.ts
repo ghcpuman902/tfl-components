@@ -69,21 +69,29 @@ export const useParallaxInput = ({
   useEffect(() => {
     if (!enabled) {
       valueRef.current = 0
+      pointerActiveRef.current = false
       return
     }
 
     const handlePointerMove = (event: PointerEvent) => {
+      if (!hasFinePointer()) return
       const stage = stageRef.current
-      if (!stage || !hasFinePointer()) return
-      pointerActiveRef.current = true
+      if (!stage) return
       const rect = stage.getBoundingClientRect()
       if (rect.width <= 0) return
+      const inside =
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom
+      if (!inside) {
+        pointerActiveRef.current = false
+        if (!tiltEnabled) valueRef.current = 0
+        return
+      }
+      pointerActiveRef.current = true
       const nx = ((event.clientX - rect.left) / rect.width) * 2 - 1
       valueRef.current = clamp(nx, -1, 1)
-    }
-
-    const handlePointerLeave = () => {
-      pointerActiveRef.current = false
     }
 
     const handleOrientation = (event: DeviceOrientationEvent) => {
@@ -92,33 +100,18 @@ export const useParallaxInput = ({
       valueRef.current = clamp(gamma / 30, -1, 1)
     }
 
-    const handleScrollFallback = () => {
-      if (pointerActiveRef.current || tiltEnabled) return
-      const doc = document.documentElement
-      const max = doc.scrollHeight - window.innerHeight
-      if (max <= 0) return
-      const progress = clamp(window.scrollY / max, 0, 1)
-      valueRef.current = Math.sin(progress * Math.PI) * 0.7
-    }
-
-    const stage = stageRef.current
-    stage?.addEventListener("pointermove", handlePointerMove)
-    stage?.addEventListener("pointerleave", handlePointerLeave)
+    window.addEventListener("pointermove", handlePointerMove, { passive: true })
     window.addEventListener("deviceorientation", handleOrientation)
-    window.addEventListener("scroll", handleScrollFallback, { passive: true })
-    handleScrollFallback()
 
     return () => {
-      stage?.removeEventListener("pointermove", handlePointerMove)
-      stage?.removeEventListener("pointerleave", handlePointerLeave)
+      window.removeEventListener("pointermove", handlePointerMove)
       window.removeEventListener("deviceorientation", handleOrientation)
-      window.removeEventListener("scroll", handleScrollFallback)
     }
   }, [enabled, stageRef, tiltEnabled])
 
   return {
     valueRef,
     requestTilt,
-    showTiltButton: enabled && isCoarse && !tiltEnabled,
+    showMotionUnlock: enabled && isCoarse && !tiltEnabled,
   }
 }

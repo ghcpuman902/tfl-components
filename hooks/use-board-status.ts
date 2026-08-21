@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { sortLinesBySeverityAndOrder } from "tfl-ts"
 import { createBrowserTflClient } from "@/lib/tfl/browser-tfl-client"
 import { getCachedLineStatusesAction } from "@/lib/tfl/cached-status-action"
@@ -8,7 +8,8 @@ import { shouldPausePollingForVisibility } from "@/lib/tfl/dual-path-arrivals"
 import type { StatusLine } from "@/lib/tfl/status-types"
 import { translateTflClientError } from "@/lib/tfl/tfl-error-translation"
 
-const DEFAULT_POLL_MS = 60_000
+export const STATUS_POLL_MS = 60_000
+const DEFAULT_POLL_MS = STATUS_POLL_MS
 
 /** Keep in sync with `CACHED_STATUS_MODES` / `DEFAULT_STATUS_MODES`. */
 const STATUS_MODES = [
@@ -24,6 +25,8 @@ type UseBoardStatusOptions = {
   appKey: string | null
   pollMs?: number
   enabled?: boolean
+  /** Changing this tears down the current poller (hash-only board updates). */
+  resetKey?: string
 }
 
 type UseBoardStatusResult = {
@@ -33,6 +36,7 @@ type UseBoardStatusResult = {
   loading: boolean
   error: string | null
   source: "site" | "user"
+  refresh: () => void
 }
 
 /**
@@ -43,6 +47,7 @@ export const useBoardStatus = ({
   appKey,
   pollMs = DEFAULT_POLL_MS,
   enabled = true,
+  resetKey,
 }: UseBoardStatusOptions): UseBoardStatusResult => {
   const trimmed = appKey?.trim() ?? ""
   const source = trimmed ? "user" : "site"
@@ -51,6 +56,12 @@ export const useBoardStatus = ({
   const [fetchedAt, setFetchedAt] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [refreshNonce, setRefreshNonce] = useState(0)
+
+  const refresh = useCallback(() => {
+    setLoading(true)
+    setRefreshNonce((n) => n + 1)
+  }, [])
 
   useEffect(() => {
     if (!enabled) return
@@ -144,7 +155,7 @@ export const useBoardStatus = ({
       clearTimer()
       document.removeEventListener("visibilitychange", handleVisibility)
     }
-  }, [enabled, pollMs, source, trimmed])
+  }, [enabled, pollMs, source, trimmed, refreshNonce, resetKey])
 
-  return { data, fetchedAt, loading, error, source }
+  return { data, fetchedAt, loading, error, source, refresh }
 }

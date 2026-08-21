@@ -88,10 +88,12 @@ Dock Street, Wapping       23 bikes   2 e-bikes   4 spaces
 
 ## Multiple docks
 
-The first tile shows the cycle roundel and `Cycle hire docks`. When there is
-more than one page, its right edge holds the page indicator. Interactive
-controls occupy the same reserved area, so dock names and counts do not shift
-when controls appear. The remaining tiles show one dock each.
+The first tile shows the cycle roundel and `Cycle hire docks`, matching the
+arrivals board title: full-tile roundel and title type. When there is more
+than one page, its right edge holds the page indicator. Interactive hover
+pointers show quiet arrows and an `n/m` count at all times. Touch sees
+half-opacity dots and swipes the dock rows. Dock names and counts do not
+shift when controls appear. The remaining tiles show one dock each.
 
 ## One dock
 
@@ -121,10 +123,11 @@ Pages are sequential and do not overlap. A short final page uses quiet empty
 rows to keep the panel height. A main dock should be supplied alone or repeated
 by the caller when that is genuinely required.
 
-Interactive use matches the arrivals pager. Pages sit in a native horizontal
-scroll-snap track below the heading. Hover-capable pointers get controls in the
-heading; touch can swipe the dock rows. After inactivity on a later page,
-return to the first page. Hide all paging chrome when there is only one page.
+Interactive pages sit in a native horizontal scroll-snap track below the
+heading. Hover-capable pointers show quiet arrows and an `n/m` count on the
+heading; they stay visible. Touch swipes the dock rows and sees half-opacity
+dots. After inactivity on a later page, return to the first page. Hide all
+paging chrome when there is only one page.
 
 Unattended keeps the configured height and advances without input. Pages are
 not swipeable. Use dots in the heading because these are equal pages of docks;
@@ -154,8 +157,10 @@ segments: movement would imply that bikes changed while the page was visible.
 
 ## Map
 
-The map accepts `tiles` and uses the same 48px unit as the display. Refresh its
-markers in place; it does not join the dock paging sequence.
+The map accepts `tiles` and uses the same 48px unit as the display. The hosted
+Board defaults to this map so nearby docks stay on one glance. Config can
+switch to the paged list. Refresh map markers in place; the map does not join
+the dock paging sequence.
 
 Keep the marker as a ratio glance. Three exact values around every marker would
 make nearby docks harder to compare. Compose the unattended dock display beside or

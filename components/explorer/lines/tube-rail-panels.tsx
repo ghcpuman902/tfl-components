@@ -3,6 +3,7 @@
 import { LineInspector } from "@/components/explorer/entity-inspector/line-inspector"
 import { useOptimisticLine } from "@/components/explorer/use-optimistic-selection"
 import { LineColorBar } from "@/components/tfl/brand/line-badge"
+import { LineName } from "@/components/tfl/brand/line-name"
 import type { ExplorerState } from "@/lib/tfl/explorer-url-state"
 import type {
   ExplorerLineDetailsPayload,
@@ -32,25 +33,26 @@ export const LinesTubeRailPanel = ({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start">
-      <ul className="grid gap-2 sm:grid-cols-2">
+      <ul className="grid min-w-0 gap-2 sm:grid-cols-2">
         {lines.map((line) => {
           const selected = line.id === selectedLine?.id
           return (
-            <li key={line.id}>
+            <li key={line.id} className="min-w-0">
               <button
                 type="button"
                 aria-pressed={selected}
+                aria-label={line.name}
                 onClick={() => handleSelectLine(line.id)}
                 className={cn(
-                  "flex w-full flex-col gap-2 rounded-lg border border-border bg-card p-3 text-left transition-colors hover:bg-muted/50",
+                  "flex w-full min-w-0 flex-col gap-2 rounded-lg border border-border bg-card p-3 text-left transition-colors hover:bg-muted/50",
                   selected && "ring-1 ring-primary"
                 )}
               >
                 <span
                   data-line={line.id}
-                  className="tfl-dark-line-text font-semibold text-[var(--line-color)]"
+                  className="tfl-dark-line-text block w-full min-w-0 font-semibold text-[var(--line-color)]"
                 >
-                  {line.name}
+                  <LineName lineId={line.id} name={line.name} wrap />
                 </span>
                 <LineColorBar lineId={line.id} modeName={line.modeName} />
                 <code className="text-xs text-muted-foreground">{line.id}</code>

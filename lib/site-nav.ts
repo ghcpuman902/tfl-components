@@ -14,6 +14,9 @@ export type SiteNavLink = {
   match: "docs" | "components" | "explorer" | "board" | "labs"
   /** Compact labels used in the 320px header row. */
   shortLabel?: string
+  tooltip?: string
+  ariaLabel?: string
+  mobileSubtext?: string
 }
 
 export type SiteMoreItem = {
@@ -24,12 +27,24 @@ export type SiteMoreItem = {
   mobileOnly?: boolean
 }
 
+export const DOCS_NAV_TOOLTIP = "React component documentation"
+export const DOCS_NAV_ARIA_LABEL = "Docs: React component library"
+export const DOCS_NAV_MOBILE_SUBTEXT = "Documentation for the component library"
+export const DOCS_SIDEBAR_TRIGGER_LABEL = "Open documentation navigation"
+
 /**
- * Desktop order. First (Docs) and last (Board) are the high-impact ends;
- * the middle items collapse into More on mobile.
+ * Desktop order stays Docs first and Board last (frozen J6).
+ * Active item uses an underline — no filled/outline button chrome.
  */
 export const DESKTOP_PRIMARY_LINKS: readonly SiteNavLink[] = [
-  { href: "/docs", label: "Docs", match: "docs" },
+  {
+    href: "/docs",
+    label: "Docs",
+    match: "docs",
+    tooltip: DOCS_NAV_TOOLTIP,
+    ariaLabel: DOCS_NAV_ARIA_LABEL,
+    mobileSubtext: DOCS_NAV_MOBILE_SUBTEXT,
+  },
   { href: "/docs/components", label: "Components", match: "components" },
   { href: "/docs/explorer", label: "Explorer", match: "explorer" },
   { href: "/labs", label: "Labs", match: "labs" },
@@ -86,6 +101,8 @@ export const HEADER_OVERFLOW_POLICY = {
  * Conservative header-row budget for the mobile primary row:
  * wordmark + Docs + Board + More + theme toggle, no scrolling nav.
  */
+export const DOCS_SIDEBAR_TRIGGER_PX = 44
+
 export const estimateMobileHeaderRowWidth = (options?: {
   paddingInlineStartPx?: number
   paddingInlineEndPx?: number
@@ -96,6 +113,7 @@ export const estimateMobileHeaderRowWidth = (options?: {
   gapPx?: number
   themeTogglePx?: number
   charPx?: number
+  docsSidebarTriggerPx?: number
 }): number => {
   const paddingInlineStartPx = options?.paddingInlineStartPx ?? 16
   const paddingInlineEndPx = options?.paddingInlineEndPx ?? 10
@@ -106,6 +124,7 @@ export const estimateMobileHeaderRowWidth = (options?: {
   const gapPx = options?.gapPx ?? 4
   const themeTogglePx = options?.themeTogglePx ?? 28
   const charPx = options?.charPx ?? 7
+  const docsSidebarTriggerPx = options?.docsSidebarTriggerPx ?? 0
   const labels = [
     ...MOBILE_PRIMARY_LINKS.map((link) => link.label),
     MORE_MENU_NAME,
@@ -116,6 +135,7 @@ export const estimateMobileHeaderRowWidth = (options?: {
   )
   return (
     paddingInlineStartPx +
+    (docsSidebarTriggerPx > 0 ? docsSidebarTriggerPx + gapPx : 0) +
     logoPx +
     logoGapPx +
     wordmarkPx +
@@ -126,6 +146,13 @@ export const estimateMobileHeaderRowWidth = (options?: {
     paddingInlineEndPx
   )
 }
+
+/** Docs mobile header hides the wordmark so the 44px trigger stays on the logo row. */
+export const estimateDocsMobileHeaderRowWidth = (): number =>
+  estimateMobileHeaderRowWidth({
+    wordmarkPx: 0,
+    docsSidebarTriggerPx: DOCS_SIDEBAR_TRIGGER_PX,
+  })
 
 export const mobileHeaderFits = (viewportWidth: number): boolean =>
   estimateMobileHeaderRowWidth() <= viewportWidth

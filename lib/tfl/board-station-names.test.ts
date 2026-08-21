@@ -9,6 +9,7 @@ import {
   looksLikeBoardStopId,
   lookupBoardStationName,
   matchBoardStationSearchItem,
+  matchBoardStationSearchQuery,
   parseBoardStationPick,
   resolveBoardStationQuery,
   resolveBoardStopNameOverride,
@@ -51,6 +52,23 @@ describe("buildBoardStationSearchIndex", () => {
     assert.ok(aliasId)
     const matched = matchBoardStationSearchItem(items, aliasId)
     assert.equal(matched?.id, withAlias.id)
+  })
+
+  it("matches King's Cross without apostrophe, period, or Saint spelled out", () => {
+    const kings = items.find((item) => item.name === "King's Cross St. Pancras")
+    assert.ok(kings)
+    assert.equal(matchBoardStationSearchQuery(kings, "kings cross"), true)
+    assert.equal(matchBoardStationSearchQuery(kings, "st pancras"), true)
+    assert.equal(matchBoardStationSearchQuery(kings, "saint pancras"), true)
+  })
+
+  it("matches Liverpool Street from St and diagram Road abbreviations", () => {
+    const liverpool = items.find((item) => item.name === "Liverpool Street")
+    const finchley = items.find((item) => item.name === "Finchley Road")
+    assert.ok(liverpool)
+    assert.ok(finchley)
+    assert.equal(matchBoardStationSearchQuery(liverpool, "liverpool st"), true)
+    assert.equal(matchBoardStationSearchQuery(finchley, "finchley rd"), true)
   })
 
   it("adds line names when two stations share a display name", () => {

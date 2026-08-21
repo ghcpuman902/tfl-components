@@ -46,6 +46,14 @@ export const maskUserTflAppKey = (appKey: string): string => {
   return `••••${trimmed.slice(-4)}`
 }
 
+/** Password-style field value: bullets for the secret, last four visible. */
+export const displayTflAppKey = (appKey: string): string => {
+  const trimmed = appKey.trim()
+  if (!trimmed) return ""
+  if (trimmed.length <= 4) return trimmed
+  return `${"•".repeat(trimmed.length - 4)}${trimmed.slice(-4)}`
+}
+
 const parseStored = (raw: string | null): StoredUserTflCredentials | null => {
   if (!raw) return null
   try {

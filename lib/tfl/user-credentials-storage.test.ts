@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
+  displayTflAppKey,
   isPlausibleTflAppKey,
   maskUserTflAppKey,
 } from "./user-credentials-storage"
@@ -36,6 +37,15 @@ describe("maskUserTflAppKey", () => {
     assert.equal(
       maskUserTflAppKey("abcdef0123456789abcdef0123456789"),
       "••••6789"
+    )
+  })
+})
+
+describe("displayTflAppKey", () => {
+  it("keeps the last four characters visible", () => {
+    assert.equal(
+      displayTflAppKey("abcdef0123456789abcdef0123456789"),
+      `${"•".repeat(28)}6789`
     )
   })
 })

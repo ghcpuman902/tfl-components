@@ -6,8 +6,9 @@ import type { ExplorerCachedArrivals } from "@/lib/tfl/explorer/selection"
 export type { ExplorerCachedArrivals }
 
 /**
- * Site-cached arrivals for one Explorer seed stop.
- * Call only for the default-selected station/stop — not for arbitrary ids.
+ * Site-cached arrivals for one Explorer catalog / featured stop.
+ * Keyed by stop id — on-demand, not build-time. Search hits outside the
+ * loaded directory still use the visitor key.
  */
 export async function getExplorerCachedArrivals(
   stopPointId: string,

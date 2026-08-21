@@ -6,12 +6,15 @@ import { TypographyBodySkeleton } from "@/components/tfl/page-skeletons"
 import { StationTypographyLab } from "@/components/tfl/station-typography-lab"
 import { getDocsEntry } from "@/lib/docs-catalog"
 import { getStationCatalog } from "@/lib/tfl/station-catalog"
+import { pageMetadata } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Station typography",
   description:
     "A–Z destination labels with deterministic two-line word breaks, measured in Hammersmith One.",
-}
+  path: "/tools/typography",
+  robots: { index: false, follow: false },
+})
 
 async function TypographyBody() {
   const stations = await getStationCatalog()

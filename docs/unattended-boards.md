@@ -193,15 +193,15 @@ allocated tiles  N   heading + N - 1 content tiles
 
 When the detailed lines are filtered, the display scope stays explicit:
 
-- `network`: summarise every fetched line, but show detail only for the filter;
+- `network`: every fetched good-service line stays in the Good service
+  chips. Priority (`detailLineIds`) disruptions get a full reason; other
+  disrupted lines follow as brief identity frames, not mute heading chips;
 - `selection`: summarise and detail only the selected lines; or
 - `none`: omit phase-wide line chips and give the title row to the current
   line.
 
-Do not say "all other lines" when only the selected subset was fetched. If the
-Board has network-wide data but details only selected lines, "Good service on
-all other lines" is accurate. Prefer line chips over that sentence when the
-available tile count is small.
+Do not say "all other lines" when only the selected subset was fetched.
+Prefer line chips over that sentence when the available tile count is small.
 
 Long reasons break at readable boundaries. Prefer complete announcements or
 sentences. If one announcement exceeds the body allocation, split it into text

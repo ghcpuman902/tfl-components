@@ -12,6 +12,7 @@ import {
   getUsedBySlugs,
   type DocsEntry,
 } from "@/lib/docs-catalog"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 import { loadComponentDemo } from "@/lib/load-component-demo"
 import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code"
 import { TubeStatusBoardSkeleton } from "@/components/tfl/status/tube-status-board"
@@ -166,12 +167,9 @@ export const componentDocsMetadata = async (
 ): Promise<Metadata> => {
   const entry = getDocsEntry(slug)
   if (!entry || entry.kind !== "component") {
-    return { title: "Not found" }
+    return { title: "Not found", robots: { index: false, follow: false } }
   }
-  return {
-    title: entry.title,
-    description: entry.description,
-  }
+  return docsEntryMetadata(slug)
 }
 
 export const renderComponentDocs = ({

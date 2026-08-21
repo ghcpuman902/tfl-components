@@ -1,9 +1,4 @@
-import type { Metadata } from "next"
 import { Suspense } from "react"
-import { notFound } from "next/navigation"
-import { DocsPageHeader } from "@/components/docs/docs-page-header"
-import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
-import { ExplorerShell } from "@/components/explorer/explorer-shell"
 import { PointsTubeRailFind } from "@/components/explorer/points/tube-rail-panels"
 import { PointsBusFind } from "@/components/explorer/points/bus-panels"
 import { PointsCycleFind } from "@/components/explorer/points/cycle-panels"
@@ -12,9 +7,9 @@ import { LinesTubeRailPanel } from "@/components/explorer/lines/tube-rail-panels
 import { LinesBusPanel } from "@/components/explorer/lines/bus-panels"
 import { LinesRiverPanel } from "@/components/explorer/lines/river-panels"
 import { ExploreBodySkeleton } from "@/components/tfl/page-skeletons"
-import { getDocsEntry } from "@/lib/docs-catalog"
 import {
-  parseExplorerState,
+  domainsForKind,
+  parseExplorerPath,
   type ExplorerState,
 } from "@/lib/tfl/explorer-url-state"
 import { getExplorerCachedArrivals } from "@/lib/tfl/explorer/cached-arrivals"
@@ -28,17 +23,15 @@ import {
 } from "@/lib/tfl/explorer/lines-tube-rail"
 import { getExplorerBusLines } from "@/lib/tfl/explorer/lines-bus"
 import { getExplorerRiverLines } from "@/lib/tfl/explorer/lines-river"
-import { HOME_RIVER_STOP } from "@/lib/tfl/home-arrivals-stops"
 import {
+  explorerIdsEqual,
   firstOrMatching,
   firstOrMatchingPoint,
+  pointMatchesId,
 } from "@/lib/tfl/explorer/selection"
-import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
-
-export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.explorer)
 
 type PageProps = {
-  searchParams: Promise<Record<string, string | string[] | undefined>>
+  params: Promise<{ segments?: string[] }>
 }
 
 /**
@@ -48,11 +41,13 @@ type PageProps = {
  */
 function ExplorerTubeRailPointsPanel({ state }: { state: ExplorerState }) {
   const stations = getExplorerTubeRailPoints()
-  const seed = stations[0]
   const selected = firstOrMatchingPoint(stations, state.id)
+  const inDirectory =
+    selected != null &&
+    (state.id == null || pointMatchesId(selected, state.id))
   const cachedArrivalsPromise =
-    seed && selected?.id === seed.id
-      ? getExplorerCachedArrivals(seed.id, seed.displayName)
+    inDirectory
+      ? getExplorerCachedArrivals(selected.id, selected.displayName)
       : undefined
   return (
     <PointsTubeRailFind
@@ -65,14 +60,10 @@ function ExplorerTubeRailPointsPanel({ state }: { state: ExplorerState }) {
 
 function ExplorerTubeRailLinesPanel({ state }: { state: ExplorerState }) {
   const lines = getExplorerTubeRailLines()
-  const seed = lines[0]
   const selected = firstOrMatching(lines, state.id)
-  // Only the seed line gets a free site-key preview; other lines need the
-  // visitor's own key (see docs/tfl-user-credentials-design.md §4/§7).
-  const detailsPromise =
-    seed && selected?.id === seed.id
-      ? getExplorerLineDetails(selected.id, state.dir)
-      : null
+  const detailsPromise = selected
+    ? getExplorerLineDetails(selected.id, state.dir)
+    : null
   return (
     <LinesTubeRailPanel
       state={state}
@@ -97,11 +88,13 @@ function ExplorerActivePanel({ state }: { state: ExplorerState }) {
 async function ExplorerActivePanelAsync({ state }: { state: ExplorerState }) {
   if (state.kind === "points" && state.domain === "bus") {
     const featured = await getExplorerFeaturedBusStops()
-    const seed = featured.stops[0]
     const selected = firstOrMatching(featured.stops, state.id)
+    const inDirectory =
+      selected != null &&
+      (state.id == null || explorerIdsEqual(selected.id, state.id))
     const cachedArrivalsPromise =
-      seed && selected?.id === seed.id
-        ? getExplorerCachedArrivals(seed.id, seed.name)
+      inDirectory
+        ? getExplorerCachedArrivals(selected.id, selected.name)
         : undefined
     return (
       <PointsBusFind
@@ -114,12 +107,13 @@ async function ExplorerActivePanelAsync({ state }: { state: ExplorerState }) {
 
   if (state.kind === "points" && state.domain === "river") {
     const piers = await getExplorerRiverPiers()
-    const seed =
-      piers.find((pier) => pier.id === HOME_RIVER_STOP.id) ?? piers[0]
     const selected = firstOrMatching(piers, state.id)
+    const inDirectory =
+      selected != null &&
+      (state.id == null || explorerIdsEqual(selected.id, state.id))
     const cachedArrivalsPromise =
-      seed && selected?.id === seed.id
-        ? getExplorerCachedArrivals(seed.id, seed.name)
+      inDirectory
+        ? getExplorerCachedArrivals(selected.id, selected.name)
         : undefined
     return (
       <PointsRiverFind
@@ -137,15 +131,10 @@ async function ExplorerActivePanelAsync({ state }: { state: ExplorerState }) {
 
   if (state.kind === "lines" && state.domain === "bus") {
     const lines = await getExplorerBusLines()
-    const seed = lines[0]
     const selected = firstOrMatching(lines, state.id)
-    // Seed-only free preview — bus has hundreds of routes, so gating every
-    // other selection behind the visitor's key keeps the shared key's
-    // 500 req/min ceiling from fanning out across the whole directory.
-    const detailsPromise =
-      seed && selected?.id === seed.id
-        ? getExplorerLineDetails(selected.id, state.dir)
-        : null
+    const detailsPromise = selected
+      ? getExplorerLineDetails(selected.id, state.dir)
+      : null
     return (
       <LinesBusPanel
         state={state}
@@ -157,12 +146,10 @@ async function ExplorerActivePanelAsync({ state }: { state: ExplorerState }) {
 
   if (state.kind === "lines" && state.domain === "river") {
     const lines = getExplorerRiverLines()
-    const seed = lines[0]
     const selected = firstOrMatching(lines, state.id)
-    const detailsPromise =
-      seed && selected?.id === seed.id
-        ? getExplorerLineDetails(selected.id, state.dir)
-        : null
+    const detailsPromise = selected
+      ? getExplorerLineDetails(selected.id, state.dir)
+      : null
     return (
       <LinesRiverPanel
         state={state}
@@ -175,35 +162,36 @@ async function ExplorerActivePanelAsync({ state }: { state: ExplorerState }) {
   return null
 }
 
-async function ExplorerFromParams({ searchParams }: PageProps) {
-  const params = await searchParams
-  const state = parseExplorerState(params)
+export function generateStaticParams() {
+  return [
+    { segments: [] },
+    ...(["points", "lines"] as const).flatMap((kind) => [
+      { segments: [kind] },
+      ...domainsForKind(kind).map((domain) => ({
+        segments: [kind, domain],
+      })),
+    ]),
+  ]
+}
 
+export default function DocsExplorerPage({ params }: PageProps) {
   return (
-    <ExplorerShell state={state}>
-      <Suspense
-        key={`${state.kind}:${state.domain}`}
-        fallback={<ExploreBodySkeleton />}
-      >
-        <ExplorerActivePanel state={state} />
-      </Suspense>
-    </ExplorerShell>
+    <Suspense fallback={<ExploreBodySkeleton />}>
+      <DocsExplorerFromParams params={params} />
+    </Suspense>
   )
 }
 
-export default function DocsExplorerPage({ searchParams }: PageProps) {
-  const entry = getDocsEntry("explore-index")
-  if (!entry) notFound()
+async function DocsExplorerFromParams({ params }: PageProps) {
+  const { segments } = await params
+  const state = parseExplorerPath(segments ?? [])
 
   return (
-    <DocsReadableWidth>
-      <article className="space-y-8">
-        <DocsPageHeader entry={entry} />
-
-        <Suspense fallback={<ExploreBodySkeleton />}>
-          <ExplorerFromParams searchParams={searchParams} />
-        </Suspense>
-      </article>
-    </DocsReadableWidth>
+    <Suspense
+      key={`${state.kind}:${state.domain}`}
+      fallback={<ExploreBodySkeleton />}
+    >
+      <ExplorerActivePanel state={state} />
+    </Suspense>
   )
 }

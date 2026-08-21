@@ -13,6 +13,7 @@ import {
   parseArrivalsRows,
   parseBehaviour,
   parseBooleanFlag,
+  parseCycleSurface,
   parseDwellSeconds,
   parseOptionalString,
   parseRowsItem,
@@ -21,6 +22,7 @@ import {
   serializeArrivalsLines,
   serializeArrivalsRows,
   type BoardBehaviour,
+  type BoardCycleSurface,
   type BoardSettingId,
   type BoardStatusOverview,
   type BoardStatusSurface,
@@ -39,7 +41,7 @@ import {
 export const BOARD_PATH = "/board"
 export const BOARD_VIEW_PATH = "/board/view"
 
-export type { BoardBehaviour, BoardStatusOverview, BoardStatusSurface }
+export type { BoardBehaviour, BoardCycleSurface, BoardStatusOverview, BoardStatusSurface }
 export type { BoardPanelKind }
 
 export type BoardArrivalsConfig = {
@@ -74,6 +76,7 @@ export type BoardRiverConfig = {
 
 export type BoardCycleConfig = {
   docks?: readonly string[]
+  surface?: BoardCycleSurface
   tiles?: number
 }
 
@@ -170,6 +173,8 @@ export const parseBoardConfig = (
   const cycle: BoardCycleConfig = {}
   const docks = parseDockIdList(params.get("c.docks"))
   if (docks !== undefined) cycle.docks = docks
+  const cycleSurface = parseCycleSurface(params.get("c.surface") ?? "")
+  if (cycleSurface !== undefined) cycle.surface = cycleSurface
   const cycleTiles = parseRowsItem(params.get("c.tiles") ?? "")
   if (cycleTiles !== undefined) cycle.tiles = Math.max(1, cycleTiles)
 
@@ -177,7 +182,7 @@ export const parseBoardConfig = (
   const surface = parseStatusSurface(params.get("s.surface") ?? "")
   if (surface !== undefined) status.surface = surface
   const tiles = parseRowsItem(params.get("s.tiles") ?? "")
-  if (tiles !== undefined) status.tiles = Math.max(1, tiles)
+  if (tiles !== undefined) status.tiles = tiles
   const statusLines = parseArrivalsLines(params.get("s.lines"))
   if (statusLines !== undefined) status.lines = statusLines
   const overview = parseStatusOverview(params.get("s.overview") ?? "")
@@ -221,6 +226,7 @@ const KNOWN_HASH_PARAMS = new Set<string>([
   BOARD_SETTINGS.riverStop.param,
   BOARD_SETTINGS.riverRows.param,
   BOARD_SETTINGS.cycleDocks.param,
+  BOARD_SETTINGS.cycleSurface.param,
   BOARD_SETTINGS.cycleTiles.param,
   BOARD_SETTINGS.statusSurface.param,
   BOARD_SETTINGS.statusTiles.param,
@@ -231,6 +237,15 @@ const KNOWN_HASH_PARAMS = new Set<string>([
   "fit",
   "key",
 ])
+
+/** True when the fragment has at least one known board param (not just junk). */
+export const hashHasBoardConfig = (input: string | URLSearchParams): boolean => {
+  const params = paramsFromInput(input)
+  for (const key of params.keys()) {
+    if (KNOWN_HASH_PARAMS.has(key)) return true
+  }
+  return false
+}
 
 /** Unknown fragment params, encoded the same way as known segments. */
 export const collectUnknownBoardParams = (
@@ -426,6 +441,18 @@ export const describeBoardHrefSegments = (
     segments.push({
       setting: "cycleDocks",
       text: encodeSegment(BOARD_SETTINGS.cycleDocks.param, docksSerialized),
+    })
+  }
+  if (
+    merged.cycle.surface !== undefined &&
+    !BOARD_SETTINGS.cycleSurface.isDefault(merged.cycle.surface)
+  ) {
+    segments.push({
+      setting: "cycleSurface",
+      text: encodeSegment(
+        BOARD_SETTINGS.cycleSurface.param,
+        BOARD_SETTINGS.cycleSurface.serialize(merged.cycle.surface)
+      ),
     })
   }
   if (

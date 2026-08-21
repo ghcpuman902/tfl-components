@@ -1,8 +1,20 @@
 "use client"
 
-import { useMemo, useState, type ChangeEvent, type ReactNode } from "react"
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from "react"
 import { ChevronDownIcon } from "lucide-react"
 import { LINE_ORDER } from "tfl-ts"
+import { BoardChipListEditor } from "@/components/board/board-chip-list-editor"
+import { BoardCycleDockPicker } from "@/components/board/board-cycle-dock-picker"
+import {
+  BoardModeRoundel,
+  roundelForSetting,
+} from "@/components/board/board-mode-roundel"
 import { BoardLineChipPicker } from "@/components/board/board-line-chip-picker"
 import { BoardPlaceSearch } from "@/components/board/board-place-search"
 import { BoardSlotEditor } from "@/components/board/board-slot-editor"
@@ -16,6 +28,12 @@ import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select"
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -27,16 +45,13 @@ import {
   resolveEffectiveSections,
 } from "@/lib/tfl/board-config-resolve"
 import type { BoardStationLineGroup } from "@/lib/tfl/board-station-lines"
-import {
-  parseDockIdList,
-  parseRouteIdList,
-  serializeDockIdList,
-  serializeRouteIdList,
-} from "@/lib/tfl/board-panels"
+import { sameChipOrder } from "@/lib/tfl/board-chip-list"
+import { getBoardBusStopRoutes } from "@/lib/tfl/board-place-search-action"
 import {
   BOARD_SETTINGS,
   parseArrivalsRows,
   type BoardSettingId,
+  type BoardSettingOption,
 } from "@/lib/tfl/board-settings"
 import type { BoardStationSearchItem } from "@/lib/tfl/board-station-names"
 import {
@@ -75,23 +90,47 @@ const FieldLabel = ({
   setting,
   segments,
   children,
+  hideRoundel = false,
 }: {
   htmlFor: string
   setting: BoardSettingId
   segments: readonly BoardHrefSegment[]
   children: string
-}) => (
-  <Label htmlFor={htmlFor} className="flex items-center gap-1.5">
-    <BoardSegmentBadge index={boardSegmentIndex(segments, setting)} />
-    <span>{children}</span>
-  </Label>
-)
+  hideRoundel?: boolean
+}) => {
+  const roundel = hideRoundel ? null : roundelForSetting(setting)
+  return (
+    <Label htmlFor={htmlFor} className="flex items-center gap-1.5">
+      {roundel ? <BoardModeRoundel variant={roundel} /> : null}
+      <BoardSegmentBadge index={boardSegmentIndex(segments, setting)} />
+      <span>{children}</span>
+    </Label>
+  )
+}
 
 const Field = ({
   children,
 }: {
   children: ReactNode
 }) => <div className="space-y-2">{children}</div>
+
+const FormGroup = ({
+  title,
+  roundel,
+  children,
+}: {
+  title: string
+  roundel: "underground" | "buses" | "river" | "cycles"
+  children: ReactNode
+}) => (
+  <section className="space-y-4" aria-label={title}>
+    <h3 className="flex items-center gap-1.5 text-sm font-medium">
+      <BoardModeRoundel variant={roundel} />
+      {title}
+    </h3>
+    <div className="space-y-4">{children}</div>
+  </section>
+)
 
 const Help = ({ children }: { children: ReactNode }) =>
   children ? (
@@ -107,7 +146,7 @@ const NativeSelect = ({
   id: string
   value: string
   onChange: (value: string) => void
-  options: readonly { value: string; label: string }[]
+  options: readonly BoardSettingOption[]
 }) => (
   <select
     id={id}
@@ -123,15 +162,78 @@ const NativeSelect = ({
   </select>
 )
 
+const DescribedSelect = ({
+  id,
+  value,
+  ariaLabel,
+  onChange,
+  options,
+}: {
+  id: string
+  value: string
+  ariaLabel: string
+  onChange: (value: string) => void
+  options: readonly BoardSettingOption[]
+}) => {
+  const selected =
+    options.find((option) => option.value === value) ?? options[0]
+
+  return (
+    <Select
+      value={value}
+      onValueChange={(next) => {
+        if (next) onChange(next)
+      }}
+    >
+      <SelectTrigger
+        id={id}
+        aria-label={ariaLabel}
+        className="h-auto w-full min-h-8 whitespace-normal py-1.5 data-[size=default]:h-auto"
+      >
+        {selected ? (
+          <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5 text-left">
+            <span>{selected.label}</span>
+            {selected.description ? (
+              <span className="text-xs font-normal text-muted-foreground">
+                {selected.description}
+              </span>
+            ) : null}
+          </span>
+        ) : null}
+      </SelectTrigger>
+      <SelectContent align="start" alignItemWithTrigger={false}>
+        {options.map((option) => (
+          <SelectItem
+            key={option.value}
+            value={option.value}
+            className="items-start py-1.5"
+          >
+            <span className="flex flex-col items-start gap-0.5 whitespace-normal">
+              <span>{option.label}</span>
+              {option.description ? (
+                <span className="text-xs font-normal text-muted-foreground">
+                  {option.description}
+                </span>
+              ) : null}
+            </span>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
 const NumberField = ({
   id,
   value,
+  fallback,
   min,
   max,
   onChange,
 }: {
   id: string
   value: number | undefined
+  fallback?: number
   min: number
   max: number
   onChange: (value: number | undefined) => void
@@ -141,7 +243,7 @@ const NumberField = ({
     type="number"
     min={min}
     max={max}
-    value={value ?? ""}
+    value={value ?? fallback ?? ""}
     onChange={(event) => {
       const raw = event.target.value
       onChange(raw === "" ? undefined : Number(raw))
@@ -163,15 +265,24 @@ export const BoardQuickConfig = ({
   onChange,
   parts = "all",
 }: BoardConfigFieldsProps & {
-  parts?: "places" | "filters" | "all"
+  parts?: "places" | "filters" | "nearby" | "all"
 }) => {
   const servingCandidates = servingLines ?? []
   const showPlaces = parts === "places" || parts === "all"
+  const showNearby = parts === "nearby" || showPlaces
   const showFilters = parts === "filters" || parts === "all"
   const hasLinePicker =
     show(formSettings, "arrivalsLines") && servingCandidates.length > 1
 
   if (parts === "filters" && !hasLinePicker) return null
+  if (
+    parts === "nearby" &&
+    !show(formSettings, "busStop") &&
+    !show(formSettings, "riverStop") &&
+    !show(formSettings, "cycleDocks")
+  ) {
+    return null
+  }
 
   return (
     <div className="grid gap-5">
@@ -210,7 +321,7 @@ export const BoardQuickConfig = ({
         </Field>
       ) : null}
 
-      {showPlaces && show(formSettings, "busStop") ? (
+      {showNearby && show(formSettings, "busStop") ? (
         <Field>
           <FieldLabel
             htmlFor="board-bus-search"
@@ -229,25 +340,10 @@ export const BoardQuickConfig = ({
             placeholder="Search for a bus stop"
             emptyMessage="No bus stops match that search."
           />
-          <details className="text-sm">
-            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-              Stop ID
-            </summary>
-            <Input
-              id="board-bus-stop"
-              className="mt-2"
-              value={config.bus.stop ?? ""}
-              onChange={(event) =>
-                onChange({ bus: { ...config.bus, stop: event.target.value } })
-              }
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </details>
         </Field>
       ) : null}
 
-      {showPlaces && show(formSettings, "riverStop") ? (
+      {showNearby && show(formSettings, "riverStop") ? (
         <Field>
           <FieldLabel
             htmlFor="board-river-search"
@@ -266,67 +362,31 @@ export const BoardQuickConfig = ({
             placeholder="Search for a river pier"
             emptyMessage="No piers match that search."
           />
-          <details className="text-sm">
-            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-              Pier ID
-            </summary>
-            <Input
-              id="board-river-stop"
-              className="mt-2"
-              value={config.river.stop ?? ""}
-              onChange={(event) =>
-                onChange({
-                  river: { ...config.river, stop: event.target.value },
-                })
-              }
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="930GCAW"
-            />
-          </details>
         </Field>
       ) : null}
 
-      {showPlaces && show(formSettings, "cycleDocks") ? (
+      {showNearby && show(formSettings, "cycleDocks") ? (
         <Field>
           <FieldLabel
-            htmlFor="board-cycle-search"
+            htmlFor="board-cycle-docks"
             setting="cycleDocks"
             segments={segments}
           >
             {BOARD_SETTINGS.cycleDocks.ui?.label ?? "Cycle docks"}
           </FieldLabel>
-          <BoardPlaceSearch
-            kind="cycle"
-            onSelect={(place) => {
-              const current = config.cycle.docks ?? []
-              if (current.includes(place.id)) return
-              onChange({
-                cycle: {
-                  ...config.cycle,
-                  docks: [...current, place.id],
-                },
-              })
-            }}
-            inputId="board-cycle-search"
-            placeholder="Search for a cycle dock"
-            emptyMessage="No docks match that search."
-          />
-          <Input
+          <BoardCycleDockPicker
+            key={config.stop ?? "cycle-docks"}
             id="board-cycle-docks"
-            value={serializeDockIdList(config.cycle.docks) ?? ""}
-            onChange={(event) =>
+            stopId={config.stop}
+            docks={config.cycle.docks}
+            onChange={(docks) =>
               onChange({
                 cycle: {
                   ...config.cycle,
-                  docks: parseDockIdList(event.target.value || null),
+                  docks: docks.length > 0 ? [...docks] : undefined,
                 },
               })
             }
-            autoComplete="off"
-            spellCheck={false}
-            placeholder="BikePoints_237,BikePoints_46"
-            aria-label="Cycle dock ids"
           />
         </Field>
       ) : null}
@@ -340,24 +400,38 @@ export const BoardAdvancedConfig = ({
   servingLines,
   lineGroups,
   autoStopName,
-  segments = [],
+  segments: segmentsProp = [],
   legendPath,
   onChange,
   open,
   onOpenChange,
+  hideTrigger = false,
 }: BoardConfigFieldsProps & {
   legendPath: string
   open: boolean
   onOpenChange: (open: boolean) => void
+  hideTrigger?: boolean
 }) => {
   const [draftStop, setDraftStop] = useState(config.stop)
   const [rowsDraft, setRowsDraft] = useState(() =>
     rowsDraftFromConfig(config.arrivals.rows)
   )
+  const [draftBusStop, setDraftBusStop] = useState(config.bus.stop)
+  const [servingBusRoutes, setServingBusRoutes] = useState<readonly string[]>(
+    []
+  )
+  const [discardedBusRoutes, setDiscardedBusRoutes] = useState<readonly string[]>(
+    []
+  )
 
   if (config.stop !== draftStop) {
     setDraftStop(config.stop)
     setRowsDraft(rowsDraftFromConfig(config.arrivals.rows))
+  }
+
+  if (config.bus.stop !== draftBusStop) {
+    setDraftBusStop(config.bus.stop)
+    setDiscardedBusRoutes([])
   }
 
   const sections = useMemo(
@@ -369,7 +443,41 @@ export const BoardAdvancedConfig = ({
     [config, servingLines, lineGroups]
   )
   const rowsPlaceholder = formatArrivalsRowsPlaceholder(sections)
-  const busRoutes = config.bus.routes ?? []
+  const displayedBusRoutes = config.bus.routes?.length
+    ? config.bus.routes
+    : servingBusRoutes
+  const busPoolRoutes = servingBusRoutes.filter(
+    (id) =>
+      !displayedBusRoutes.includes(id) && !discardedBusRoutes.includes(id)
+  )
+  const busRouteItems = useMemo(
+    () =>
+      [...new Set([...displayedBusRoutes, ...busPoolRoutes])].map((id) => ({
+        id,
+        label: id,
+      })),
+    [busPoolRoutes, displayedBusRoutes]
+  )
+  const busRoutesCustom =
+    Boolean(config.bus.routes?.length) &&
+    !sameChipOrder(config.bus.routes ?? [], servingBusRoutes)
+  const segments = hideTrigger ? [] : segmentsProp
+
+  useEffect(() => {
+    const stop = config.bus.stop?.trim()
+    if (!stop) {
+      setServingBusRoutes([])
+      return
+    }
+    let cancelled = false
+    void getBoardBusStopRoutes(stop).then((result) => {
+      if (cancelled) return
+      setServingBusRoutes(result.ok ? result.routes : [])
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [config.bus.stop])
 
   const handleStopNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange({ stopName: event.target.value })
@@ -381,7 +489,6 @@ export const BoardAdvancedConfig = ({
     if (!draft) {
       onChange({
         arrivals: {
-          ...config.arrivals,
           rows: undefined,
         },
       })
@@ -389,44 +496,47 @@ export const BoardAdvancedConfig = ({
     }
     onChange({
       arrivals: {
-        ...config.arrivals,
         rows: parseArrivalsRows(draft),
       },
     })
   }
 
-  const handleRemoveBusRoute = (routeId: string) => {
-    const next = busRoutes.filter((id) => id !== routeId)
+  const persistBusRoutes = (next: readonly string[] | undefined) => {
+    const routes =
+      !next?.length || sameChipOrder(next, servingBusRoutes)
+        ? undefined
+        : [...next]
     onChange({
       bus: {
         ...config.bus,
-        routes: next.length > 0 ? next : undefined,
+        routes,
       },
     })
   }
 
-  return (
-    <Collapsible
-      open={open}
-      onOpenChange={onOpenChange}
-      className="rounded-xl border border-border"
-    >
-      <CollapsibleTrigger className="flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-        <span className="block text-lg font-semibold text-foreground">
-          Advanced
-        </span>
-        <ChevronDownIcon
-          className={cn(
-            "size-4 shrink-0 transition-transform duration-150 ease-[ease]",
-            open && "rotate-180"
+  const handleResetBusRoutes = () => {
+    persistBusRoutes(undefined)
+    setDiscardedBusRoutes([])
+  }
+
+  const fields = (
+        <div className={cn("flex max-w-3xl flex-col gap-5", hideTrigger ? "pt-1" : "p-4")}>
+          {hideTrigger ? null : (
+            <>
+              <BoardUrlLegend path={legendPath} segments={segments} />
+              <p className="text-sm text-muted-foreground">
+                See the{" "}
+                <a
+                  href="/docs/board-url"
+                  className="text-foreground underline underline-offset-4"
+                >
+                  Board URL specification
+                </a>
+                .
+              </p>
+            </>
           )}
-          aria-hidden
-        />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="border-t border-border">
-        <div className="grid max-w-3xl gap-5 p-4">
-          <BoardUrlLegend path={legendPath} segments={segments} />
-          {show(formSettings, "stopName") ? (
+          {hideTrigger ? null : show(formSettings, "stopName") ? (
             <Field>
               <FieldLabel
                 htmlFor="board-stop-name"
@@ -464,12 +574,11 @@ export const BoardAdvancedConfig = ({
               <Input
                 id="board-rows"
                 name="a.rows"
-                value={rowsDraft}
+                value={rowsDraft || rowsPlaceholder}
                 onChange={handleRowsChange}
                 autoComplete="off"
                 spellCheck={false}
                 inputMode="numeric"
-                placeholder={rowsPlaceholder}
                 aria-describedby={
                   rowsPreview
                     ? "board-rows-preview board-rows-hint"
@@ -515,162 +624,243 @@ export const BoardAdvancedConfig = ({
             </Field>
           ) : null}
 
-          {show(formSettings, "busRoutes") ? (
-            <Field>
-              <FieldLabel
-                htmlFor="board-bus-routes"
-                setting="busRoutes"
-                segments={segments}
-              >
-                {BOARD_SETTINGS.busRoutes.ui?.label ?? "Bus routes"}
-              </FieldLabel>
-              <Input
-                id="board-bus-routes"
-                value={serializeRouteIdList(config.bus.routes) ?? ""}
-                onChange={(event) =>
-                  onChange({
-                    bus: {
-                      ...config.bus,
-                      routes: parseRouteIdList(event.target.value || null),
-                    },
-                  })
-                }
-                autoComplete="off"
-                spellCheck={false}
-                placeholder="73,n8"
-              />
-              {busRoutes.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {busRoutes.map((routeId) => (
-                    <button
-                      key={routeId}
-                      type="button"
-                      className="inline-flex items-center gap-1 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                      aria-label={`Remove route ${routeId}`}
-                      onClick={() => handleRemoveBusRoute(routeId)}
-                    >
-                      <BusNumberChip label={routeId} />
-                      <span aria-hidden className="text-sm text-muted-foreground">
-                        ×
-                      </span>
-                    </button>
-                  ))}
-                </div>
+          {show(formSettings, "busStop") ||
+          show(formSettings, "busRoutes") ||
+          show(formSettings, "busRows") ? (
+            <FormGroup title="Bus" roundel="buses">
+              {show(formSettings, "busStop") ? (
+                <Field>
+                  <FieldLabel
+                    htmlFor="board-bus-search"
+                    setting="busStop"
+                    segments={segments}
+                    hideRoundel
+                  >
+                    {BOARD_SETTINGS.busStop.ui?.label ?? "Bus stop"}
+                  </FieldLabel>
+                  <BoardPlaceSearch
+                    kind="bus"
+                    selectedId={config.bus.stop}
+                    onSelect={(place) =>
+                      onChange({ bus: { ...config.bus, stop: place.id } })
+                    }
+                    inputId="board-bus-search"
+                    placeholder="Search for a bus stop"
+                    emptyMessage="No bus stops match that search."
+                  />
+                </Field>
               ) : null}
-              <Help>{BOARD_SETTINGS.busRoutes.ui?.help}</Help>
-            </Field>
+              {show(formSettings, "busRoutes") ? (
+                <Field>
+                  <div className="flex items-center justify-between gap-2">
+                    <FieldLabel
+                      htmlFor="board-bus-routes"
+                      setting="busRoutes"
+                      segments={segments}
+                      hideRoundel
+                    >
+                      {BOARD_SETTINGS.busRoutes.ui?.label ?? "Bus routes"}
+                    </FieldLabel>
+                    {busRoutesCustom ? (
+                      <button
+                        type="button"
+                        className="text-sm text-muted-foreground underline underline-offset-4"
+                        onClick={handleResetBusRoutes}
+                      >
+                        Reset
+                      </button>
+                    ) : null}
+                  </div>
+                  <BoardChipListEditor
+                    id="board-bus-routes"
+                    label="Bus routes"
+                    selectedIds={displayedBusRoutes}
+                    poolIds={busPoolRoutes}
+                    items={busRouteItems}
+                    onChange={(next) => {
+                      persistBusRoutes(next.selected)
+                      setDiscardedBusRoutes(
+                        servingBusRoutes.filter(
+                          (id) =>
+                            !next.selected.includes(id) &&
+                            !next.pool.includes(id)
+                        )
+                      )
+                    }}
+                    renderChip={(item, placement) => (
+                      <span aria-hidden>
+                        <BusNumberChip
+                          label={item.label}
+                          className={
+                            placement === "pool" ? "opacity-70" : undefined
+                          }
+                        />
+                      </span>
+                    )}
+                  />
+                </Field>
+              ) : null}
+              {show(formSettings, "busRows") ? (
+                <Field>
+                  <FieldLabel
+                    htmlFor="board-bus-rows"
+                    setting="busRows"
+                    segments={segments}
+                    hideRoundel
+                  >
+                    {BOARD_SETTINGS.busRows.ui?.label ?? "Bus rows"}
+                  </FieldLabel>
+                  <NumberField
+                    id="board-bus-rows"
+                    min={0}
+                    max={16}
+                    value={config.bus.rows}
+                    fallback={BOARD_SETTINGS.busRows.defaultValue}
+                    onChange={(rows) =>
+                      onChange({ bus: { ...config.bus, rows } })
+                    }
+                  />
+                  <Help>{BOARD_SETTINGS.busRows.ui?.help}</Help>
+                </Field>
+              ) : null}
+            </FormGroup>
           ) : null}
 
-          {show(formSettings, "busRows") ? (
-            <Field>
-              <FieldLabel
-                htmlFor="board-bus-rows"
-                setting="busRows"
-                segments={segments}
-              >
-                {BOARD_SETTINGS.busRows.ui?.label ?? "Bus rows"}
-              </FieldLabel>
-              <NumberField
-                id="board-bus-rows"
-                min={0}
-                max={16}
-                value={config.bus.rows}
-                onChange={(rows) =>
-                  onChange({ bus: { ...config.bus, rows } })
-                }
-              />
-            </Field>
+          {show(formSettings, "riverStop") || show(formSettings, "riverRows") ? (
+            <FormGroup title="River" roundel="river">
+              {show(formSettings, "riverStop") ? (
+                <Field>
+                  <FieldLabel
+                    htmlFor="board-river-search"
+                    setting="riverStop"
+                    segments={segments}
+                    hideRoundel
+                  >
+                    {BOARD_SETTINGS.riverStop.ui?.label ?? "Pier"}
+                  </FieldLabel>
+                  <BoardPlaceSearch
+                    kind="river"
+                    selectedId={config.river.stop}
+                    onSelect={(place) =>
+                      onChange({ river: { ...config.river, stop: place.id } })
+                    }
+                    inputId="board-river-search"
+                    placeholder="Search for a river pier"
+                    emptyMessage="No piers match that search."
+                  />
+                </Field>
+              ) : null}
+              {show(formSettings, "riverRows") ? (
+                <Field>
+                  <FieldLabel
+                    htmlFor="board-river-rows"
+                    setting="riverRows"
+                    segments={segments}
+                    hideRoundel
+                  >
+                    {BOARD_SETTINGS.riverRows.ui?.label ?? "River rows"}
+                  </FieldLabel>
+                  <NumberField
+                    id="board-river-rows"
+                    min={0}
+                    max={16}
+                    value={config.river.rows}
+                    fallback={BOARD_SETTINGS.riverRows.defaultValue}
+                    onChange={(rows) =>
+                      onChange({ river: { ...config.river, rows } })
+                    }
+                  />
+                  <Help>{BOARD_SETTINGS.riverRows.ui?.help}</Help>
+                </Field>
+              ) : null}
+            </FormGroup>
           ) : null}
 
-          {show(formSettings, "riverRows") ? (
-            <Field>
-              <FieldLabel
-                htmlFor="board-river-rows"
-                setting="riverRows"
-                segments={segments}
-              >
-                {BOARD_SETTINGS.riverRows.ui?.label ?? "River rows"}
-              </FieldLabel>
-              <NumberField
-                id="board-river-rows"
-                min={0}
-                max={16}
-                value={config.river.rows}
-                onChange={(rows) =>
-                  onChange({ river: { ...config.river, rows } })
-                }
-              />
-            </Field>
-          ) : null}
-
-          {show(formSettings, "cycleTiles") ? (
-            <Field>
-              <FieldLabel
-                htmlFor="board-cycle-tiles"
-                setting="cycleTiles"
-                segments={segments}
-              >
-                {BOARD_SETTINGS.cycleTiles.ui?.label ?? "Cycle tiles"}
-              </FieldLabel>
-              <NumberField
-                id="board-cycle-tiles"
-                min={1}
-                max={16}
-                value={config.cycle.tiles}
-                onChange={(tiles) =>
-                  onChange({ cycle: { ...config.cycle, tiles } })
-                }
-              />
-            </Field>
-          ) : null}
-
-          {show(formSettings, "statusSurface") ? (
-            <Field>
-              <FieldLabel
-                htmlFor="board-status-surface"
-                setting="statusSurface"
-                segments={segments}
-              >
-                {BOARD_SETTINGS.statusSurface.ui?.label ?? "Status surface"}
-              </FieldLabel>
-              <NativeSelect
-                id="board-status-surface"
-                value={config.status.surface ?? "display"}
-                onChange={(value) =>
-                  onChange({
-                    status: {
-                      ...config.status,
-                      surface: value as NonNullable<
-                        BoardConfig["status"]["surface"]
-                      >,
-                    },
-                  })
-                }
-                options={BOARD_SETTINGS.statusSurface.ui?.options ?? []}
-              />
-            </Field>
-          ) : null}
-
-          {show(formSettings, "statusTiles") ? (
-            <Field>
-              <FieldLabel
-                htmlFor="board-status-tiles"
-                setting="statusTiles"
-                segments={segments}
-              >
-                {BOARD_SETTINGS.statusTiles.ui?.label ?? "Status tiles"}
-              </FieldLabel>
-              <NumberField
-                id="board-status-tiles"
-                min={1}
-                max={16}
-                value={config.status.tiles}
-                onChange={(tiles) =>
-                  onChange({ status: { ...config.status, tiles } })
-                }
-              />
-              <Help>{BOARD_SETTINGS.statusTiles.ui?.help}</Help>
-            </Field>
+          {show(formSettings, "cycleDocks") ||
+          show(formSettings, "cycleSurface") ||
+          show(formSettings, "cycleTiles") ? (
+            <FormGroup title="Cycle" roundel="cycles">
+              {show(formSettings, "cycleDocks") ? (
+                <Field>
+                  <FieldLabel
+                    htmlFor="board-cycle-docks"
+                    setting="cycleDocks"
+                    segments={segments}
+                    hideRoundel
+                  >
+                    {BOARD_SETTINGS.cycleDocks.ui?.label ?? "Cycle docks"}
+                  </FieldLabel>
+                  <BoardCycleDockPicker
+                    key={config.stop ?? "cycle-docks"}
+                    id="board-cycle-docks"
+                    stopId={config.stop}
+                    docks={config.cycle.docks}
+                    onChange={(docks) =>
+                      onChange({
+                        cycle: {
+                          ...config.cycle,
+                          docks: docks.length > 0 ? [...docks] : undefined,
+                        },
+                      })
+                    }
+                  />
+                </Field>
+              ) : null}
+              {show(formSettings, "cycleSurface") ? (
+                <Field>
+                  <FieldLabel
+                    htmlFor="board-cycle-surface"
+                    setting="cycleSurface"
+                    segments={segments}
+                    hideRoundel
+                  >
+                    {BOARD_SETTINGS.cycleSurface.ui?.label ?? "Cycle view"}
+                  </FieldLabel>
+                  <NativeSelect
+                    id="board-cycle-surface"
+                    value={
+                      config.cycle.surface ??
+                      BOARD_SETTINGS.cycleSurface.defaultValue
+                    }
+                    onChange={(value) =>
+                      onChange({
+                        cycle: {
+                          ...config.cycle,
+                          surface: value as NonNullable<
+                            BoardConfig["cycle"]["surface"]
+                          >,
+                        },
+                      })
+                    }
+                    options={BOARD_SETTINGS.cycleSurface.ui?.options ?? []}
+                  />
+                  <Help>{BOARD_SETTINGS.cycleSurface.ui?.help}</Help>
+                </Field>
+              ) : null}
+              {show(formSettings, "cycleTiles") ? (
+                <Field>
+                  <FieldLabel
+                    htmlFor="board-cycle-tiles"
+                    setting="cycleTiles"
+                    segments={segments}
+                    hideRoundel
+                  >
+                    {BOARD_SETTINGS.cycleTiles.ui?.label ?? "Cycle tiles"}
+                  </FieldLabel>
+                  <NumberField
+                    id="board-cycle-tiles"
+                    min={1}
+                    max={16}
+                    value={config.cycle.tiles}
+                    fallback={BOARD_SETTINGS.cycleTiles.defaultValue}
+                    onChange={(tiles) =>
+                      onChange({ cycle: { ...config.cycle, tiles } })
+                    }
+                  />
+                  <Help>{BOARD_SETTINGS.cycleTiles.ui?.help}</Help>
+                </Field>
+              ) : null}
+            </FormGroup>
           ) : null}
 
           {show(formSettings, "statusLines") ? (
@@ -744,33 +934,55 @@ export const BoardAdvancedConfig = ({
             </Field>
           ) : null}
 
-          <Field>
-            <p className="text-sm font-medium text-foreground">Slots</p>
-            <BoardSlotEditor
-              slots={config.slots}
-              onChange={(slots) => onChange({ slots })}
-            />
-          </Field>
-
-          {show(formSettings, "behaviour") ? (
+          <div className="mt-8 space-y-5">
             <Field>
-              <Label htmlFor="board-behaviour">
-                {BOARD_SETTINGS.behaviour.ui?.label}
-              </Label>
-              <NativeSelect
-                id="board-behaviour"
-                value={config.behaviour}
-                onChange={(value) =>
-                  onChange({
-                    behaviour: value as BoardConfig["behaviour"],
-                  })
-                }
-                options={BOARD_SETTINGS.behaviour.ui?.options ?? []}
+              <BoardSlotEditor
+                slots={config.slots}
+                onChange={(slots) => onChange({ slots })}
               />
-              <Help>{BOARD_SETTINGS.behaviour.ui?.help}</Help>
             </Field>
-          ) : null}
+
+            {show(formSettings, "behaviour") ? (
+              <Field>
+                <DescribedSelect
+                  id="board-behaviour"
+                  ariaLabel={BOARD_SETTINGS.behaviour.ui?.label ?? "Behaviour"}
+                  value={config.behaviour}
+                  onChange={(value) =>
+                    onChange({
+                      behaviour: value as BoardConfig["behaviour"],
+                    })
+                  }
+                  options={BOARD_SETTINGS.behaviour.ui?.options ?? []}
+                />
+              </Field>
+            ) : null}
+          </div>
         </div>
+  )
+
+  if (hideTrigger) return fields
+
+  return (
+    <Collapsible
+      open={open}
+      onOpenChange={onOpenChange}
+      className="rounded-xl border border-border"
+    >
+      <CollapsibleTrigger className="flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+        <span className="block text-lg font-semibold text-foreground">
+          Advanced
+        </span>
+        <ChevronDownIcon
+          className={cn(
+            "size-4 shrink-0 transition-transform duration-150 ease-[ease]",
+            open && "rotate-180"
+          )}
+          aria-hidden
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="border-t border-border">
+        {fields}
       </CollapsibleContent>
     </Collapsible>
   )

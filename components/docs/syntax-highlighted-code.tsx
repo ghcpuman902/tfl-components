@@ -107,8 +107,8 @@ export const SyntaxHighlightedCode = ({
   const lineCount = code.split("\n").length
   const isPeek =
     typeof peekLines === "number" && peekLines > 0 && lineCount > peekLines
-  // text-sm leading-normal ≈ 1.25rem per line + py-3 (1.5rem)
-  const peekMaxHeight = isPeek ? `${peekLines * 1.25 + 1.5}rem` : undefined
+  // text-sm leading-normal ≈ 1.25rem per line + py-4 (2rem)
+  const peekMaxHeight = isPeek ? `${peekLines * 1.25 + 2}rem` : undefined
 
   const codeInner = highlightedHtml ? (
     <code
@@ -178,7 +178,7 @@ export const SyntaxHighlightedCode = ({
       >
         <pre
           className={cn(
-            "block w-full overflow-x-auto overflow-y-hidden rounded-lg bg-muted pt-3 pr-14 pl-4 text-sm leading-normal",
+            "block w-full overflow-x-auto overflow-y-hidden rounded-lg bg-muted py-4 pr-14 pl-4 text-sm leading-normal",
             isPeek && "rounded-none bg-transparent",
             preClassName
           )}

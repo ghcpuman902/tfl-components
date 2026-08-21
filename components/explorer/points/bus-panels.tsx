@@ -1,10 +1,13 @@
 "use client"
 
 import { useMemo } from "react"
-import { useRouter } from "next/navigation"
 import { PointInspectorDeferred } from "@/components/explorer/entity-inspector/point-inspector"
 import { BusPointFinder } from "@/components/explorer/bus-point-finder"
 import { ExplorerSplit } from "@/components/explorer/explorer-split"
+import {
+  pushExplorerHref,
+  useExplorerChromeState,
+} from "@/components/explorer/use-explorer-chrome"
 import { useOptimisticPoint } from "@/components/explorer/use-optimistic-selection"
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
 import {
@@ -36,11 +39,11 @@ type PointsBusFindProps = {
 }
 
 export const PointsBusFind = ({
-  state,
+  state: pathState,
   stops,
   cachedArrivalsPromise,
 }: PointsBusFindProps) => {
-  const router = useRouter()
+  const state = useExplorerChromeState(pathState)
   const initialPoints = useMemo(() => stops.map(toPoint), [stops])
   const { selected, detailsPending, handleSelectPoint } = useOptimisticPoint(
     initialPoints,
@@ -54,7 +57,7 @@ export const PointsBusFind = ({
           selectedId={selected?.id ?? state.id}
           view={state.view}
           onViewChange={(view) =>
-            router.push(buildExplorerHref({ view }, state), { scroll: false })
+            pushExplorerHref(buildExplorerHref({ view }, state))
           }
           initialQuery={state.q}
           initialPoints={initialPoints}

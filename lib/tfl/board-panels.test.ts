@@ -2,10 +2,13 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
   isDefaultBoardSlots,
+  moveBoardPanel,
   parseBoardPanels,
   parseDockIdList,
+  normalizeBusRouteIds,
   parseRouteIdList,
   resolveBoardSlots,
+  sameBusRouteSet,
   serializeBoardPanels,
   serializeDockIdList,
 } from "./board-panels"
@@ -60,6 +63,54 @@ describe("resolveBoardSlots", () => {
   })
 })
 
+describe("moveBoardPanel", () => {
+  const slots = { p1: ["rail"] as const, p2: ["status"] as const }
+
+  it("adds an unused kind to the wide slot", () => {
+    assert.deepEqual(moveBoardPanel(slots, "bus", "p1"), {
+      p1: ["rail", "bus"],
+      p2: ["status"],
+    })
+  })
+
+  it("moves a kind from one slot to the other", () => {
+    assert.deepEqual(moveBoardPanel(slots, "rail", "p2"), {
+      p1: [],
+      p2: ["status", "rail"],
+    })
+  })
+
+  it("returns a kind to the unused pool", () => {
+    assert.deepEqual(moveBoardPanel(slots, "status", "pool"), {
+      p1: ["rail"],
+      p2: [],
+    })
+  })
+
+  it("appends when the kind is already in the slot and no index is given", () => {
+    assert.equal(moveBoardPanel(slots, "rail", "p1"), slots)
+  })
+
+  it("reorders within a slot", () => {
+    assert.deepEqual(
+      moveBoardPanel({ p1: ["rail", "bus"], p2: ["status"] }, "bus", "p1", 0),
+      { p1: ["bus", "rail"], p2: ["status"] }
+    )
+  })
+
+  it("inserts at an index when moving across slots", () => {
+    assert.deepEqual(
+      moveBoardPanel(
+        { p1: ["rail", "bus"], p2: ["status"] },
+        "status",
+        "p1",
+        1
+      ),
+      { p1: ["rail", "status", "bus"], p2: [] }
+    )
+  })
+})
+
 describe("isDefaultBoardSlots", () => {
   it("is true when both slots match the omitted default", () => {
     assert.equal(isDefaultBoardSlots(undefined, undefined), true)
@@ -72,6 +123,17 @@ describe("isDefaultBoardSlots", () => {
 describe("route and dock lists", () => {
   it("parses bus routes", () => {
     assert.deepEqual(parseRouteIdList("73,N8,73,nope"), ["73", "n8"])
+  })
+
+  it("sorts serving routes into a stable set", () => {
+    assert.deepEqual(normalizeBusRouteIds(["N8", "9", "205", "18"]), [
+      "9",
+      "18",
+      "205",
+      "n8",
+    ])
+    assert.equal(sameBusRouteSet(["n8", "73"], ["73", "N8"]), true)
+    assert.equal(sameBusRouteSet(["73"], ["73", "n8"]), false)
   })
 
   it("normalizes BikePoint ids", () => {

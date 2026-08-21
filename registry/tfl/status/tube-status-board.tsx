@@ -5,12 +5,19 @@ import { ExternalLink, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text"
 import { LineColorBar } from "@/components/tfl/brand/line-badge"
-import { StatusDisruptionBlock } from "@/components/tfl/status/status-disruption-copy"
+import {
+  DISRUPTION_LEADING_CLASS,
+  StatusDisruptionBlock,
+} from "@/components/tfl/status/status-disruption-copy"
 import { LineName } from "@/components/tfl/brand/line-name"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
 import { StationNameTitle } from "@/components/tfl/station-name"
 import { getLineNameTiers } from "@/lib/tfl/line-names"
-import { partitionStatusBoardLines } from "@/lib/tfl/status-board"
+import {
+  partitionStatusBoardLines,
+  splitByPriority,
+} from "@/lib/tfl/status-board"
+import type { LineAnnouncement } from "@/lib/tfl/status-reason"
 import type { StatusLine } from "@/lib/tfl/status-types"
 
 export type { StatusLine } from "@/lib/tfl/status-types"
@@ -32,9 +39,9 @@ type Props = {
   /** When true, omit the page header (useful inside a layout that already has one). */
   hideHeader?: boolean
   /**
-   * Watchlist mode: one column, no section title tiles, no attribution
-   * footer. Pass only the lines you care about as `data`. Empty Good
-   * Service is omitted — you will not see "Good Service (0 lines)".
+   * Watchlist mode: one column, no section title tiles. Pass only the
+   * lines you care about as `data`. Empty Good Service is omitted — you
+   * will not see "Good Service (0 lines)".
    */
   compact?: boolean
   /**
@@ -58,6 +65,12 @@ type Props = {
    * `LONDON TRAMS:`. Default strips those prefixes.
    */
   rawReason?: boolean
+  /**
+   * Keep these lines expanded at the top of Service Disruptions.
+   * Other disrupted lines collapse to a title and severity. Omit to
+   * expand every line.
+   */
+  priorityLineIds?: readonly string[]
 }
 
 /**
@@ -126,13 +139,53 @@ const BOARD_RHYTHM_VARS = {
 const BOARD_ROOT_CLASS = "flex w-full flex-col text-base @container/status"
 
 const TILE_CLASS =
-  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden"
-
-/** Pull the brand bar into the tile without shrinking the title box. */
-const LINE_BAR_PULL_CLASS = "pointer-events-none -mt-1"
+  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] min-w-0 shrink-0 overflow-clip"
 
 /** Resolves via `data-line` → `--line-color` from tfl-colours tokens. */
 const lineTitleClass = "tfl-dark-line-text text-[var(--line-color)]"
+
+const CollapsedDisruptionRow = ({
+  lineId,
+  modeName,
+  name,
+  announcements,
+  quiet,
+}: {
+  lineId?: string
+  modeName?: string
+  name: string
+  announcements: readonly LineAnnouncement[]
+  quiet?: boolean
+}) => {
+  const severity = announcements[0]?.statusSeverityDescription?.trim()
+  return (
+    <details className="group flex flex-col">
+      <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+        <StatusLineHeader
+          lineId={lineId}
+          modeName={modeName}
+          name={name}
+          trailing={
+            <>
+              {severity ? (
+                <span className="max-w-[40%] truncate text-base text-muted-foreground">
+                  {severity}
+                </span>
+              ) : null}
+              <span
+                aria-hidden
+                className="ml-1 shrink-0 text-lg leading-none text-muted-foreground transition-transform group-open:rotate-45"
+              >
+                +
+              </span>
+            </>
+          }
+        />
+      </summary>
+      <StatusDisruptionBlock announcements={announcements} quiet={quiet} />
+    </details>
+  )
+}
 
 const StatusLineHeader = ({
   lineId,
@@ -145,25 +198,26 @@ const StatusLineHeader = ({
   name: string
   trailing?: ReactNode
 }) => (
-  <div className="min-w-0">
-    <header
-      data-line={lineId}
-      className={cn("relative flex items-center", TILE_CLASS)}
+  <header
+    data-line={lineId}
+    className={cn("relative flex min-w-0 items-center", TILE_CLASS)}
+  >
+    <h3
+      className={cn(
+        "m-0 min-w-0 flex-1 pr-2 text-xl leading-7 font-semibold",
+        lineTitleClass
+      )}
     >
-      <h3
-        className={cn(
-          "m-0 min-w-0 flex-1 pr-2 text-xl leading-7 font-semibold",
-          lineTitleClass
-        )}
-      >
-        <LineName lineId={lineId} name={name} />
-      </h3>
-      {trailing}
-    </header>
-    <div className={LINE_BAR_PULL_CLASS} aria-hidden>
+      <LineName lineId={lineId} name={name} />
+    </h3>
+    {trailing}
+    <div
+      className="pointer-events-none absolute inset-x-0 bottom-0"
+      aria-hidden
+    >
       <LineColorBar lineId={lineId} modeName={modeName} heightClass="h-1" />
     </div>
-  </div>
+  </header>
 )
 
 const StatusSectionTitle = ({
@@ -252,8 +306,8 @@ type SkeletonProps = {
   /** Line IDs to paint (defaults to `LINE_ORDER` Tube & Rail set). */
   lineIds?: readonly string[]
   /**
-   * Watchlist mode: one column, no section title tile, no attribution
-   * footer. Pass the same `lineIds` you will fetch.
+   * Watchlist mode: one column, no section title tile. Pass the same
+   * `lineIds` you will fetch.
    */
   compact?: boolean
 }
@@ -302,21 +356,6 @@ export const TubeStatusBoardSkeleton = ({
         })}
       </div>
     </div>
-
-    {compact ? null : (
-      <div
-        className={cn(
-          "flex items-center border-t text-center text-base text-muted-foreground",
-          TILE_CLASS
-        )}
-      >
-        <p className="w-full text-balance">
-          Data from Transport for London via{" "}
-          <span className="text-blue-500">tfl-ts</span>. Pass normalised rows as{" "}
-          <code className="text-xs">data</code>.
-        </p>
-      </div>
-    )}
   </div>
 )
 
@@ -333,6 +372,7 @@ export const TubeStatusBoard = ({
   currentOnly = true,
   dedupe = true,
   rawReason = false,
+  priorityLineIds,
   children,
 }: Props) => {
   const { disruptions, goodService } = partitionStatusBoardLines(data ?? [], {
@@ -341,6 +381,8 @@ export const TubeStatusBoard = ({
     rawReason,
     now,
   })
+  const disruptionSplit = splitByPriority(disruptions, priorityLineIds)
+  const goodSplit = splitByPriority(goodService, priorityLineIds)
 
   return (
     <div className={BOARD_ROOT_CLASS} style={BOARD_RHYTHM_VARS}>
@@ -360,7 +402,7 @@ export const TubeStatusBoard = ({
         >
           <StatusSectionHeading compact={compact} title="Service Disruptions" />
           <div className={disruptionGridClass(compact)}>
-            {disruptions.map(({ line, announcements, kind }) => {
+            {disruptionSplit.priority.map(({ line, announcements, kind }) => {
               return (
                 <div key={line.id ?? line.name} className="flex flex-col">
                   <StatusLineHeader
@@ -376,6 +418,16 @@ export const TubeStatusBoard = ({
                 </div>
               )
             })}
+            {disruptionSplit.other.map(({ line, announcements, kind }) => (
+              <CollapsedDisruptionRow
+                key={line.id ?? line.name}
+                lineId={line.id}
+                modeName={line.modeName}
+                name={line.name ?? line.id ?? "Line"}
+                announcements={announcements}
+                quiet={kind === "closed"}
+              />
+            ))}
           </div>
         </div>
       )}
@@ -404,7 +456,7 @@ export const TubeStatusBoard = ({
             }
           />
           <div className={goodServiceGridClass(compact)}>
-            {goodService.map(({ line, announcements }) => {
+            {goodSplit.priority.map(({ line, announcements }) => {
               const infoLabel =
                 announcements[0]?.statusSeverityDescription?.trim()
               return (
@@ -424,26 +476,16 @@ export const TubeStatusBoard = ({
               )
             })}
           </div>
-        </div>
-      )}
-
-      {compact ? null : (
-        <div
-          className={cn(
-            "flex items-center border-t text-center text-base text-muted-foreground",
-            TILE_CLASS
-          )}
-        >
-          <p className="w-full text-balance">
-            Data from Transport for London via{" "}
-            <Link
-              href="https://www.npmjs.com/package/tfl-ts"
-              className="text-blue-500 hover:underline"
+          {goodSplit.other.length > 0 ? (
+            <p
+              className={cn(
+                "m-0 text-sm text-muted-foreground",
+                DISRUPTION_LEADING_CLASS
+              )}
             >
-              tfl-ts
-            </Link>
-            . Pass normalised rows as <code className="text-xs">data</code>.
-          </p>
+              Good service on all other lines
+            </p>
+          ) : null}
         </div>
       )}
 

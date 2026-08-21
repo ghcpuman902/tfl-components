@@ -10,8 +10,8 @@ type RouteSequenceResult = Awaited<
 /**
  * Shapes a raw `line.get` + `line.getRouteSequence` pair into the normalised
  * `ExplorerLineRoute`. Pure, no server-only imports — safe to call from the
- * cached seed fetch (site key, `lib/tfl/explorer/lines-tube-rail.ts`) or the
- * keyed live fetch for any other line (visitor key, in `LineInspector`).
+ * cached site-key fetch (`lib/tfl/explorer/lines-tube-rail.ts`) or a keyed
+ * live refresh in `LineInspector`.
  */
 export const shapeExplorerLineRoute = (
   lineId: string,

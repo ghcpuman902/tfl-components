@@ -16,6 +16,7 @@ import {
   explorerResultsPaneClassName,
   explorerSplitFillClassName,
 } from "@/components/explorer/explorer-split"
+import { useExplorerChromeState } from "@/components/explorer/use-explorer-chrome"
 import { useOptimisticLine } from "@/components/explorer/use-optimistic-selection"
 import { RiverRouteChip } from "@/components/tfl/arrivals/river-route-chip"
 import {
@@ -68,10 +69,11 @@ const filterRiverLines = (
 
 /** Cached river-bus line directory — filter locally over wrapping route chips. */
 export const LinesRiverPanel = ({
-  state,
+  state: pathState,
   lines,
   detailsPromise,
 }: LinesRiverPanelProps) => {
+  const state = useExplorerChromeState(pathState)
   const listId = useId()
   const listPaneRef = useRef<HTMLDivElement>(null)
   const selectedChipRef = useRef<HTMLButtonElement>(null)

@@ -1,6 +1,9 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { partitionStatusBoardLines } from "@/lib/tfl/status-board"
+import {
+  partitionStatusBoardLines,
+  splitByPriority,
+} from "@/lib/tfl/status-board"
 import type { StatusLine } from "@/lib/tfl/status-types"
 
 const SATURDAY = Date.parse("2026-08-15T16:30:00Z")
@@ -244,5 +247,27 @@ describe("partitionStatusBoardLines", () => {
     assert.equal(wind.disruptions[0]?.kind, "incident")
     assert.deepEqual(ids(hours.disruptions), ["emirates-air-line"])
     assert.equal(hours.disruptions[0]?.kind, "closed")
+  })
+})
+
+describe("splitByPriority", () => {
+  it("treats every row as priority when the list is empty", () => {
+    const sections = partitionStatusBoardLines(
+      [jubilee, victoria, metropolitan],
+      { now: SATURDAY }
+    )
+    const split = splitByPriority(sections.disruptions, [])
+    assert.deepEqual(ids(split.priority), ids(sections.disruptions))
+    assert.deepEqual(ids(split.other), [])
+  })
+
+  it("keeps severity order inside each bucket", () => {
+    const sections = partitionStatusBoardLines(
+      [jubilee, metropolitan, victoria, waterlooCity],
+      { now: SATURDAY }
+    )
+    const split = splitByPriority(sections.disruptions, ["metropolitan"])
+    assert.deepEqual(ids(split.priority), ["metropolitan"])
+    assert.deepEqual(ids(split.other), ["jubilee", "waterloo-city"])
   })
 })

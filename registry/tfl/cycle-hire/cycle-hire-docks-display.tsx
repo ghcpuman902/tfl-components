@@ -8,9 +8,9 @@ import {
   useState,
   type CSSProperties,
 } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { Play } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { StationName } from "@/components/tfl/station-name"
+import { StationName, StationNameTitle } from "@/components/tfl/station-name"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
 import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types"
 import {
@@ -40,10 +40,15 @@ const BOARD_RHYTHM_VARS = {
 } as CSSProperties
 
 const TILE_CLASS =
-  "relative box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip"
+  "relative box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] min-w-0 shrink-0 overflow-clip"
 
 const ROW_RULE_CLASS =
   "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60"
+
+const TITLE_CLASS =
+  "tfl-title [font-synthesis:none] [font-weight:var(--tfl-title-weight,400)] [letter-spacing:var(--tfl-title-tracking,0)]"
+
+const ROUNDEL_CLASS = "size-[var(--arrivals-row)] shrink-0"
 
 type TileProps = {
   dock: CycleHireDock
@@ -164,7 +169,7 @@ export const CycleHireDockTile = ({
     <div
       className={cn(
         TILE_CLASS,
-        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-2 pb-1 text-sm",
+        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 pb-1 text-base",
         className
       )}
       aria-label={`${dock.name}: ${ariaStatus}${dock.isTemporary ? ", temporary" : ""}`}
@@ -177,7 +182,7 @@ export const CycleHireDockTile = ({
             maxLines={1}
             allowAbbreviation
             allowScaleDown
-            className="leading-none font-medium"
+            className="font-medium"
           />
         </div>
         {dock.isTemporary ? (
@@ -190,7 +195,7 @@ export const CycleHireDockTile = ({
 
       <div
         className={cn(
-          "shrink-0 items-center text-xs font-semibold",
+          "shrink-0 items-center font-semibold tabular-nums",
           !dock.isLocked && totalDocks > 0 ? "flex gap-3" : "flex justify-end"
         )}
         aria-hidden="true"
@@ -247,7 +252,7 @@ const EmptyTile = ({ message, role }: { message?: string; role?: "alert" }) => (
     className={cn(
       TILE_CLASS,
       ROW_RULE_CLASS,
-      "flex items-center truncate px-2 text-sm text-muted-foreground"
+      "flex items-center truncate text-base text-muted-foreground"
     )}
     role={role}
   >
@@ -275,30 +280,93 @@ const Page = ({
   </div>
 )
 
-const PageDots = ({
+const DisplayPager = ({
   pageIndex,
   pageCount,
+  interactive,
+  onPrevious,
+  onNext,
 }: {
   pageIndex: number
   pageCount: number
+  interactive: boolean
+  onPrevious?: () => void
+  onNext?: () => void
 }) => {
   if (pageCount <= 1) return null
-  return (
-    <div
-      className="flex min-w-0 items-center justify-end gap-1 text-muted-foreground"
-      aria-label={`Page ${pageIndex + 1} of ${pageCount}`}
-    >
-      {Array.from({ length: pageCount }, (_, index) => (
-        <span
-          key={index}
-          className={cn(
-            "size-1.5 shrink-0 rounded-full bg-current",
-            index === pageIndex ? "opacity-100" : "opacity-40"
-          )}
-          aria-hidden="true"
+
+  const atStart = pageIndex <= 0
+  const atEnd = pageIndex >= pageCount - 1
+  const dots = Array.from({ length: pageCount }, (_, index) => (
+    <span
+      key={index}
+      className={cn(
+        "size-1.5 rounded-full bg-current",
+        index === pageIndex ? "opacity-100" : "opacity-40"
+      )}
+    />
+  ))
+
+  const controls = (
+    <>
+      <button
+        type="button"
+        aria-label="Previous dock page"
+        disabled={atStart}
+        onClick={onPrevious}
+        className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-1.5 pl-0 text-muted-foreground before:absolute before:inset-x-[-0.25rem] before:inset-y-[-0.5rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
+      >
+        <Play
+          className="size-3 -scale-x-100 fill-current stroke-none"
+          aria-hidden
         />
-      ))}
-    </div>
+      </button>
+      <span className="min-w-[2.75ch] text-center text-xs leading-none tabular-nums">
+        <span aria-hidden="true">
+          {pageIndex + 1}/{pageCount}
+        </span>
+        <span className="sr-only">
+          Page {pageIndex + 1} of {pageCount}
+        </span>
+      </span>
+      <button
+        type="button"
+        aria-label="Next dock page"
+        disabled={atEnd}
+        onClick={onNext}
+        className="relative inline-flex h-6 min-w-6 cursor-pointer items-center justify-center pr-0 pl-1.5 text-muted-foreground before:absolute before:inset-x-[-0.25rem] before:inset-y-[-0.5rem] before:content-[''] disabled:pointer-events-none disabled:cursor-default disabled:opacity-25"
+      >
+        <Play className="size-3 fill-current stroke-none" aria-hidden />
+      </button>
+    </>
+  )
+
+  if (!interactive) {
+    return (
+      <div
+        className="pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 text-muted-foreground opacity-50"
+        aria-label={`Page ${pageIndex + 1} of ${pageCount}`}
+      >
+        {dots}
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="absolute inset-y-0 right-0 hidden items-center bg-linear-to-l from-background from-70% via-background to-transparent pl-6 text-muted-foreground [@media(hover:hover)]:flex">
+        {controls}
+      </div>
+      <div
+        className="pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 text-muted-foreground opacity-50 [@media(hover:hover)]:hidden"
+        aria-hidden="true"
+      >
+        {dots}
+      </div>
+      <span className="sr-only [@media(hover:hover)]:hidden">
+        Page {pageIndex + 1} of {pageCount}
+      </span>
+    </>
   )
 }
 
@@ -319,41 +387,27 @@ const DisplayHeader = ({
     className={cn(
       TILE_CLASS,
       ROW_RULE_CLASS,
-      "flex items-center gap-3 px-2 text-xl leading-7 font-semibold"
+      "flex min-w-0 items-center gap-x-3 text-3xl"
     )}
   >
-    <TfLRoundel variant="cycles" className="size-8 shrink-0" />
-    <p className="m-0 min-w-0 flex-1 truncate">Cycle hire docks</p>
-    {pageCount > 1 ? (
-      <div className="relative flex min-w-24 shrink-0 items-center justify-end">
-        <PageDots pageIndex={pageIndex} pageCount={pageCount} />
-        {interactive ? (
-          <div className="absolute inset-y-0 right-0 flex items-center gap-1 bg-background opacity-0 group-hover:opacity-100 focus-within:opacity-100">
-            <button
-              type="button"
-              className="flex size-7 items-center justify-center rounded-full border bg-background shadow-sm disabled:opacity-30"
-              onClick={onPrevious}
-              disabled={pageIndex === 0}
-              aria-label="Previous dock page"
-            >
-              <ChevronLeft className="size-4" aria-hidden="true" />
-            </button>
-            <span className="min-w-7 text-center text-xs font-normal text-muted-foreground tabular-nums">
-              {pageIndex + 1}/{pageCount}
-            </span>
-            <button
-              type="button"
-              className="flex size-7 items-center justify-center rounded-full border bg-background shadow-sm disabled:opacity-30"
-              onClick={onNext}
-              disabled={pageIndex === pageCount - 1}
-              aria-label="Next dock page"
-            >
-              <ChevronRight className="size-4" aria-hidden="true" />
-            </button>
-          </div>
-        ) : null}
-      </div>
-    ) : null}
+    <TfLRoundel variant="cycles" className={ROUNDEL_CLASS} aria-hidden />
+    <h2
+      className={cn(
+        "m-0 flex h-full min-w-0 flex-1 items-center",
+        TITLE_CLASS,
+        pageCount > 1 && "pr-24"
+      )}
+      aria-label="Cycle hire docks"
+    >
+      <StationNameTitle name="Cycle hire docks" />
+    </h2>
+    <DisplayPager
+      pageIndex={pageIndex}
+      pageCount={pageCount}
+      interactive={interactive}
+      onPrevious={onPrevious}
+      onNext={onNext}
+    />
   </div>
 )
 
@@ -372,11 +426,11 @@ const SingleDockRoundelTile = ({
     <div
       className={cn(
         TILE_CLASS,
-        "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-2 pb-1 text-sm"
+        "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 pb-1 text-base"
       )}
       aria-label={`${dock.name}: ${standardBikes} bikes, ${eBikes} e-bikes, ${emptyDocks} spaces${showBrokenCount ? `, ${brokenDocks} broken` : ""}`}
     >
-      <TfLRoundel variant="cycles" className="size-8 shrink-0" />
+      <TfLRoundel variant="cycles" className={ROUNDEL_CLASS} aria-hidden />
       <div className="flex min-w-0 items-center gap-2" aria-hidden="true">
         <div className="min-w-0 flex-1">
           <StationName
@@ -385,7 +439,7 @@ const SingleDockRoundelTile = ({
             maxLines={1}
             allowAbbreviation
             allowScaleDown
-            className="leading-none font-medium"
+            className="font-medium"
           />
         </div>
         {dock.isTemporary ? (
@@ -395,7 +449,7 @@ const SingleDockRoundelTile = ({
         ) : null}
       </div>
       <div
-        className="flex shrink-0 items-center gap-3 text-xs font-semibold"
+        className="flex shrink-0 items-center gap-3 font-semibold tabular-nums"
         aria-hidden="true"
       >
         {dock.isLocked ? (
@@ -460,19 +514,19 @@ const SingleDockStackedTile = ({
       className={cn(TILE_CLASS, "grid grid-rows-3 text-[0.6875rem]")}
       aria-label={`${dock.name}: ${standardBikes} bikes, ${eBikes} e-bikes, ${emptyDocks} spaces${showBrokenCount ? `, ${brokenDocks} broken` : ""}`}
     >
-      <div className="flex min-w-0 items-center px-2" aria-hidden="true">
+      <div className="flex min-w-0 items-center" aria-hidden="true">
         <StationName
           name={dock.name}
           layout="auto"
           maxLines={1}
           allowAbbreviation
           allowScaleDown
-          className="leading-none font-medium"
+          className="font-medium"
         />
       </div>
       <DockSlotBlocks dock={dock} showBroken={showBroken} className="w-full" />
       <div
-        className="flex items-center justify-between gap-3 px-2 font-medium tracking-wide uppercase"
+        className="flex items-center justify-between gap-3 font-medium tracking-wide uppercase"
         aria-hidden="true"
       >
         {dock.isLocked ? (
@@ -776,7 +830,7 @@ export const CycleHireDocksDisplay = ({
 
   return (
     <div
-      className={cn("group flex w-full flex-col overflow-hidden", className)}
+      className={cn("flex w-full flex-col overflow-hidden", className)}
       style={style}
       aria-label="Cycle hire docks"
       onPointerEnter={idleReturn.handlePointerEnter}
@@ -795,7 +849,7 @@ export const CycleHireDocksDisplay = ({
       />
       <div
         ref={containerRef}
-        className="flex snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 snap-x snap-mandatory scrollbar-none gap-x-6 overflow-x-auto overflow-y-clip overscroll-x-contain"
         style={{ height: `calc(var(--arrivals-row) * ${bodyRows})` }}
         onScroll={idleReturn.handleScroll}
       >
@@ -803,7 +857,7 @@ export const CycleHireDocksDisplay = ({
           <section
             key={cycleHireDisplayPageId(page)}
             ref={setSlideRef(index)}
-            className="h-full w-full shrink-0 snap-start"
+            className="h-full w-full min-w-full shrink-0 snap-start snap-always"
             aria-label={`Dock page ${index + 1} of ${pageCount}`}
           >
             <Page docks={page} rows={bodyRows} showBroken={showBroken} />
@@ -836,7 +890,7 @@ export const CycleHireDocksDisplaySkeleton = ({
       >
         {singleDockVariant === "stacked" ? (
           <div className={cn(TILE_CLASS, "grid grid-rows-3")} aria-hidden>
-            <div className="flex items-center px-2">
+            <div className="flex items-center">
               <span className="h-2.5 w-2/5 rounded-sm bg-muted" />
             </div>
             <div className="flex gap-0.5">
@@ -844,7 +898,7 @@ export const CycleHireDocksDisplaySkeleton = ({
                 <span key={index} className="min-w-0 flex-1 bg-muted" />
               ))}
             </div>
-            <div className="flex items-center justify-between px-2">
+            <div className="flex items-center justify-between">
               <span className="h-2 w-1/3 rounded-sm bg-muted" />
               <span className="h-2 w-1/5 rounded-sm bg-muted" />
             </div>
@@ -853,11 +907,11 @@ export const CycleHireDocksDisplaySkeleton = ({
           <div
             className={cn(
               TILE_CLASS,
-              "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-2 pb-1"
+              "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 pb-1"
             )}
             aria-hidden
           >
-            <TfLRoundel variant="cycles" className="size-8 shrink-0" />
+            <TfLRoundel variant="cycles" className={ROUNDEL_CLASS} />
             <span className="h-3 w-2/5 rounded-sm bg-muted" />
             <span className="h-3 w-40 max-w-full rounded-sm bg-muted" />
             <span className="absolute inset-x-0 bottom-0 h-1 bg-muted" />
@@ -881,7 +935,7 @@ export const CycleHireDocksDisplaySkeleton = ({
       {Array.from({ length: Math.max(0, tiles - 1) }, (_, index) => (
         <div
           key={index}
-          className={cn(TILE_CLASS, "flex items-center gap-3 px-2 pb-1")}
+          className={cn(TILE_CLASS, "flex items-center gap-x-3 pb-1")}
           aria-hidden="true"
         >
           <span className="h-3 w-2/5 rounded-sm bg-muted" />

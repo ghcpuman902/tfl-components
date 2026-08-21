@@ -10,12 +10,9 @@ import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { RelationshipBadges } from "@/components/docs/relationship-badges"
 import { getDocsEntry, getUsedBySlugs } from "@/lib/docs-catalog"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
-  title: "Station name labels",
-  description:
-    "How station names shrink with width while copy, find, and screen readers keep the full name.",
-}
+export const metadata: Metadata = docsEntryMetadata("station-name-labels")
 
 export default function StationLabelsFoundationPage() {
   const entry = getDocsEntry("station-labels")

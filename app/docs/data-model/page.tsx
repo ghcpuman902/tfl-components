@@ -2,12 +2,9 @@ import type { Metadata } from "next"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { getDocsEntry } from "@/lib/docs-catalog"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
-  title: "Data model",
-  description:
-    "The shared passenger network behind maps and line diagrams — a small derived set, not a full timetable.",
-}
+export const metadata: Metadata = docsEntryMetadata("data-model")
 
 export default async function DocsDataModelPage() {
   const entry = getDocsEntry("data-model")!

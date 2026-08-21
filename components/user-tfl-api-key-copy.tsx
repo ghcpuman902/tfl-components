@@ -1,10 +1,19 @@
-"use client"
-
 import type { ReactNode } from "react"
+import {
+  TFL_API_PORTAL_PRODUCT_URL,
+  TFL_API_PORTAL_PRODUCTS_URL,
+  TFL_API_PORTAL_PROFILE_URL,
+  TFL_API_PORTAL_SIGNUP_URL,
+  TFL_API_PORTAL_URL,
+} from "@/lib/tfl/api-portal"
 
-export const TFL_API_PORTAL_URL = "https://api-portal.tfl.gov.uk/"
-export const TFL_API_PORTAL_PRODUCTS_URL = `${TFL_API_PORTAL_URL}products`
-export const TFL_API_PORTAL_PROFILE_URL = `${TFL_API_PORTAL_URL}profile`
+export {
+  TFL_API_PORTAL_PRODUCT_URL,
+  TFL_API_PORTAL_PRODUCTS_URL,
+  TFL_API_PORTAL_PROFILE_URL,
+  TFL_API_PORTAL_SIGNUP_URL,
+  TFL_API_PORTAL_URL,
+}
 
 type TflPortalLinkProps = {
   href: string

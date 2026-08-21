@@ -5,6 +5,9 @@ import { fileURLToPath } from "node:url"
 import { describe, it } from "node:test"
 import {
   DESKTOP_PRIMARY_LINKS,
+  DOCS_NAV_ARIA_LABEL,
+  DOCS_NAV_MOBILE_SUBTEXT,
+  DOCS_NAV_TOOLTIP,
   HEADER_OVERFLOW_POLICY,
   MOBILE_PRIMARY_LINKS,
   MORE_MENU_NAME,
@@ -104,11 +107,14 @@ describe("site navigation", () => {
     assert.doesNotMatch(header, /overflow-x-auto/)
     assert.match(header, /aria-label=\{MORE_MENU_NAME\}/)
     assert.match(header, /tfl-components/)
+    assert.match(header, /HeaderRoundel/)
+    assert.doesNotMatch(header, /TfLRoundel/)
     assert.match(header, /ml-auto flex min-w-0 shrink items-center/)
     assert.match(header, /GITHUB_REPO/)
     assert.match(header, /Star on GitHub/)
     assert.match(header, /ml-1 hidden shrink-0 md:inline-flex/)
-    assert.match(header, /pr-2\.5 pl-4/)
+    assert.match(header, /pr-1 pl-4/)
+    assert.match(header, /flex-nowrap/)
     assert.doesNotMatch(header, /md:ml-2\.5/)
     assert.equal(header.match(/ml-auto/g)?.length, 1)
     assert.doesNotMatch(header, /hidden truncate[\s\S]*md:inline/)
@@ -141,6 +147,49 @@ describe("site navigation", () => {
       toggle,
       /setTheme\(resolvedTheme === "dark" \? "light" : "dark"\)/
     )
+  })
+
+  it("mounts the Docs tooltip on the Link via Base UI render, not asChild", () => {
+    const header = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/site-header.tsx"
+      ),
+      "utf8"
+    )
+    assert.match(header, /link\.tooltip/)
+    assert.match(header, /TooltipTrigger/)
+    assert.match(header, /render=\{/)
+    assert.doesNotMatch(header, /asChild>\{linkEl\}/)
+  })
+
+  it("keeps the Docs label and describes the component-library path", () => {
+    const docs = DESKTOP_PRIMARY_LINKS.find((link) => link.match === "docs")
+    assert.equal(docs?.label, "Docs")
+    assert.equal(docs?.tooltip, DOCS_NAV_TOOLTIP)
+    assert.equal(docs?.ariaLabel, DOCS_NAV_ARIA_LABEL)
+    assert.equal(docs?.mobileSubtext, DOCS_NAV_MOBILE_SUBTEXT)
+    assert.equal("prominence" in (docs ?? {}), false)
+  })
+
+  it("keeps Board last in the J6 list without button chrome", () => {
+    const board = DESKTOP_PRIMARY_LINKS[DESKTOP_PRIMARY_LINKS.length - 1]
+    assert.equal(board.label, "Board")
+    assert.equal("prominence" in board, false)
+    assert.deepEqual(
+      DESKTOP_PRIMARY_LINKS.map((link) => link.label),
+      ["Docs", "Components", "Explorer", "Labs", "Board"]
+    )
+    const header = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/site-header.tsx"
+      ),
+      "utf8"
+    )
+    assert.doesNotMatch(header, /link\.prominence/)
+    assert.doesNotMatch(header, /isAction/)
+    assert.match(header, /underline-offset-\[6px\]/)
   })
 
   it("marks Labs and Board routes without treating Labs as a primary docs page", () => {

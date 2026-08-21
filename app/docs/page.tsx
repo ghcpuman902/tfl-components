@@ -3,6 +3,7 @@ import { Suspense } from "react"
 import Link from "next/link"
 import { ArrowRightIcon } from "lucide-react"
 import { BrowserWindow } from "@/components/docs/browser-window"
+import { DocsVisitBeacon } from "@/components/docs/docs-visit-beacon"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { InstallCommand } from "@/components/docs/install-command"
@@ -13,7 +14,9 @@ import {
   RailArrivalsBoardSkeleton,
 } from "@/components/tfl/arrivals/rail-arrivals-board"
 import { getDocsEntry } from "@/lib/docs-catalog"
+import { readAttributionContext } from "@/lib/landing/assignment"
 import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
+import { TFL_API_PORTAL_PRODUCT_URL } from "@/components/user-tfl-api-key-copy"
 import { TFL_BRAND_LINKS } from "@/lib/tfl/brand"
 import {
   getCachedHomeRailArrivals,
@@ -145,9 +148,12 @@ export default function Page() {
   return <RailArrivalsBoard data={data} stopName="Oxford Circus" />
 }`
 
-export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.docs)
+const DocsVisitFromLanding = async () => {
+  const analyticsContext = await readAttributionContext()
+  return <DocsVisitBeacon context={analyticsContext} />
+}
 
-const TFL_API_PORTAL = "https://api-portal.tfl.gov.uk/"
+export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.docs)
 
 const StartAction = ({
   href,
@@ -158,10 +164,10 @@ const StartAction = ({
 }) => (
   <Link
     href={href}
-    className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-primary underline underline-offset-4"
+    className="inline-flex items-baseline gap-1.5 font-medium text-primary underline underline-offset-4"
   >
     {children}
-    <ArrowRightIcon className="size-3.5 shrink-0" aria-hidden />
+    <ArrowRightIcon className="size-4 shrink-0" aria-hidden />
   </Link>
 )
 
@@ -182,8 +188,10 @@ const ExternalTextLink = ({
   </a>
 )
 
+const DOCS_FULL_EXAMPLE_HREF = "/docs/tube-rail-arrivals"
+
 const IntroArrivalsFallback = () => (
-  <BrowserWindow>
+  <BrowserWindow previewLimit fullExampleHref={DOCS_FULL_EXAMPLE_HREF}>
     <RailArrivalsBoardSkeleton stopName="Oxford Circus" />
   </BrowserWindow>
 )
@@ -193,7 +201,7 @@ const IntroArrivalsPreview = async () => {
   const boardState = await readHomeArrivalsBoardState(payload, "rail")
 
   return (
-    <BrowserWindow>
+    <BrowserWindow previewLimit fullExampleHref={DOCS_FULL_EXAMPLE_HREF}>
       <RailArrivalsBoard
         data={payload.arrivals}
         lines={HOME_RAIL_LINES}
@@ -212,8 +220,20 @@ export default function DocsIntroductionPage() {
 
   return (
     <DocsReadableWidth>
+      <Suspense fallback={null}>
+        <DocsVisitFromLanding />
+      </Suspense>
       <article className="space-y-12">
-        <DocsPageHeader entry={entry} />
+        <DocsPageHeader
+          entry={entry}
+          title="React component documentation"
+          description="Build TfL interfaces using installable React components and normalised tfl-ts data."
+        />
+
+        <p className="max-w-prose">
+          Want a hosted display instead?{" "}
+          <StartAction href="/board">Make a live Board</StartAction>
+        </p>
 
         <section className="space-y-4" aria-labelledby="try-it">
           <h2 id="try-it" className="sr-only">
@@ -222,8 +242,13 @@ export default function DocsIntroductionPage() {
           <Suspense fallback={<IntroArrivalsFallback />}>
             <IntroArrivalsPreview />
           </Suspense>
+          <p className="max-w-prose">
+            Configuring a Board by URL?{" "}
+            <StartAction href="/docs/board-url">
+              Read the Board URL specification
+            </StartAction>
+          </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <StartAction href="/board">Create a Board</StartAction>
             <StartAction href="/docs/components">Browse components</StartAction>
           </div>
           <div className="space-y-2">
@@ -276,13 +301,13 @@ export default function DocsIntroductionPage() {
         <section className="space-y-3">
           <h2 id="get-a-key" className="text-lg font-semibold">
             1. Get a free TfL key from the{" "}
-            <ExternalTextLink href={TFL_API_PORTAL}>
+            <ExternalTextLink href={TFL_API_PORTAL_PRODUCT_URL}>
               TfL API portal
             </ExternalTextLink>
           </h2>
           <p className="max-w-prose text-muted-foreground">
             Subscribe to 500 Requests per min, then copy Primary or Secondary
-            from Profile into <code className="text-xs">.env.local</code>. NOTE:{" "}
+            from Profile into <code className="text-xs">.env.local</code>.{" "}
             <code className="text-xs">app_id</code> has been unused since Jan
             2021.
           </p>
@@ -317,15 +342,15 @@ export default function DocsIntroductionPage() {
             >
               Hammersmith One
             </Link>
-            . Or if you have Adobe subscription, a closer match is P22
-            Underground, see{" "}
+            . If you have an Adobe subscription, P22 Underground is a closer
+            match. See{" "}
             <Link
               href="/docs/typography"
               className="text-foreground underline underline-offset-4"
             >
               Typography
             </Link>{" "}
-            for more details.
+            for details.
           </p>
         </section>
 
@@ -394,11 +419,10 @@ export default function DocsIntroductionPage() {
             </TabsContent>
             <TabsContent value="route" className="space-y-3">
               <p className="max-w-prose text-sm text-muted-foreground">
-                This method expose an API endpoint (
-                <code className="text-xs">/api/arrivals</code>) anyone can call,
-                here we demostrated how to add security with CORS, to fully
-                prevent abuse, consider implementing IP whitelisting or API key
-                authentication.
+                This method exposes an API endpoint (
+                <code className="text-xs">/api/arrivals</code>) anyone can call.
+                The example adds CORS. To fully prevent abuse, consider IP
+                whitelisting or API key authentication.
               </p>
               <div className="space-y-1.5">
                 <p className="text-xs text-muted-foreground">

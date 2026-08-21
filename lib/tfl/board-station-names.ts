@@ -13,6 +13,7 @@ import {
   STATION_CATALOG_MODES,
   type CatalogStation,
 } from "@/lib/tfl/station-catalog"
+import { stationNameMatchesQuery } from "@/lib/tfl/station-name-match"
 
 export type BoardStationNamesIndex = Readonly<Record<string, string>>
 
@@ -100,6 +101,20 @@ let searchMemo: BoardStationSearchItem[] | undefined
 export const getBoardStationSearchIndex = (): BoardStationSearchItem[] => {
   searchMemo ??= buildBoardStationSearchIndex()
   return searchMemo
+}
+
+/** Name, mode context, or Stop ID — same fold as Explorer and StationName find. */
+export const matchBoardStationSearchQuery = (
+  item: BoardStationSearchItem,
+  query: string
+): boolean => {
+  const trimmed = query.trim()
+  if (!trimmed) return true
+  if (stationNameMatchesQuery(item.name, trimmed)) return true
+  if (stationNameMatchesQuery(item.context, trimmed)) return true
+  const lower = trimmed.toLowerCase()
+  if (item.id.toLowerCase().includes(lower)) return true
+  return item.aliasIds.some((alias) => alias.toLowerCase().includes(lower))
 }
 
 export const matchBoardStationSearchItem = (

@@ -1,10 +1,13 @@
 "use client"
 
 import { useMemo } from "react"
-import { useRouter } from "next/navigation"
 import { PointInspectorDeferred } from "@/components/explorer/entity-inspector/point-inspector"
 import { ExplorerSplit } from "@/components/explorer/explorer-split"
 import { TubeRailPointFinder } from "@/components/explorer/tube-rail-point-finder"
+import {
+  pushExplorerHref,
+  useExplorerChromeState,
+} from "@/components/explorer/use-explorer-chrome"
 import { useOptimisticPoint } from "@/components/explorer/use-optimistic-selection"
 import { normaliseRailPoint } from "@/lib/tfl/explorer-point-normalise"
 import {
@@ -24,11 +27,11 @@ type PointsTubeRailFindProps = {
 }
 
 export const PointsTubeRailFind = ({
-  state,
+  state: pathState,
   stations,
   cachedArrivalsPromise,
 }: PointsTubeRailFindProps) => {
-  const router = useRouter()
+  const state = useExplorerChromeState(pathState)
   const initialPoints = useMemo(
     () => stations.map(normaliseRailPoint),
     [stations]
@@ -46,7 +49,7 @@ export const PointsTubeRailFind = ({
           selectedId={selected?.id ?? state.id}
           view={state.view}
           onViewChange={(view) =>
-            router.push(buildExplorerHref({ view }, state), { scroll: false })
+            pushExplorerHref(buildExplorerHref({ view }, state))
           }
           initialQuery={state.q}
           initialPoints={initialPoints}

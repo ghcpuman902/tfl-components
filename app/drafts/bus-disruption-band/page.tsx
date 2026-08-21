@@ -7,6 +7,7 @@ import { prepareBusStopDisruptions } from "@/lib/tfl/prepare-bus-stop-disruption
 export const metadata: Metadata = {
   title: "Draft: Bus disruption band",
   description: "Keep arrival rows fixed and show disruption as a compact band.",
+  robots: { index: false, follow: false },
 }
 
 const SAMPLE_DISRUPTIONS = prepareBusStopDisruptions(

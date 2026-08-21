@@ -7,7 +7,7 @@ import { PostHeroPlaceholder } from "./post-hero-placeholder"
 export const metadata: Metadata = {
   title: "Landing hero (temp)",
   description:
-    "Temp test: 2.5D room scene with scroll-controlled zoom into a live station board.",
+    "Temp test: 2.5D room scene with scroll-controlled pull-back from a framed iPad.",
   robots: { index: false, follow: false },
 }
 

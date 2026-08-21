@@ -1,11 +1,12 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { SITE_NAME, SITE_URL } from "./site"
-import { pageMetadata, ROUTE_PAGE_META } from "./site-metadata"
+import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "./site"
+import { docsEntryMetadata, pageMetadata, ROUTE_PAGE_META } from "./site-metadata"
 
 const REQUIRED_ROUTES = [
   "home",
   "docs",
+  "boardUrl",
   "components",
   "explorer",
   "board",
@@ -73,5 +74,23 @@ describe("route metadata", () => {
         ?.title,
       SITE_NAME
     )
+  })
+
+  it("leads the home description with the homepage fold line", () => {
+    assert.equal(
+      ROUTE_PAGE_META.home.description.startsWith(SITE_TAGLINE),
+      true
+    )
+  })
+
+  it("gives catalogue pages a canonical URL and social tags", () => {
+    const meta = docsEntryMetadata("tube-rail-arrivals")
+    assert.equal(meta.title, "Tube & Rail Arrivals")
+    assert.equal(
+      meta.alternates?.canonical,
+      `${SITE_URL}/docs/tube-rail-arrivals`
+    )
+    assert.equal(meta.openGraph?.url, `${SITE_URL}/docs/tube-rail-arrivals`)
+    assert.equal(meta.twitter?.card, "summary_large_image")
   })
 })

@@ -1,6 +1,8 @@
 /**
  * Stable URL state for `/docs/explorer`.
- * Invalid params fall back safely — never throw.
+ * Hierarchy lives in the path; `view` / `q` stay as query chrome.
+ * Invalid segments fall back safely — never throw.
+ * Legacy `?kind=&domain=&id=&dir=` is still parsed for redirects.
  * Legacy `?tab=` is ignored (Browse/Find tabs removed).
  */
 
@@ -38,6 +40,14 @@ const POINTS_DOMAINS = new Set<ExplorerDomain>([
   "cycle",
 ])
 const LINES_DOMAINS = new Set<ExplorerDomain>(["tube-rail", "bus", "river"])
+
+/** Query keys that used to encode hierarchy — now path segments. */
+export const LEGACY_EXPLORER_PATH_KEYS = [
+  "kind",
+  "domain",
+  "id",
+  "dir",
+] as const
 
 const firstParam = (
   value: string | string[] | undefined
@@ -96,71 +106,160 @@ const canonicalExplorerId = (
   return kind === "lines" ? id.toLowerCase() : id
 }
 
+const decodeSegment = (raw: string): string => {
+  try {
+    return decodeURIComponent(raw)
+  } catch {
+    return raw
+  }
+}
+
+const clampState = (state: ExplorerState): ExplorerState => {
+  if (state.kind === "lines" && state.domain === "cycle") {
+    return { ...state, domain: "tube-rail" }
+  }
+  return state
+}
+
 export type ExplorerSearchParams = Record<string, string | string[] | undefined>
 
-/** Parse Explorer query params with safe fallbacks. */
+const getSearchValue = (
+  searchParams: ExplorerSearchParams | URLSearchParams,
+  key: string
+): string | undefined => {
+  if (searchParams instanceof URLSearchParams) {
+    return searchParams.get(key) ?? undefined
+  }
+  return firstParam(searchParams[key])
+}
+
+/** Parse `view` / `q` query chrome. */
+export const parseExplorerChrome = (
+  searchParams: ExplorerSearchParams | URLSearchParams
+): Pick<ExplorerState, "view" | "q"> => ({
+  view: parseView(getSearchValue(searchParams, "view")),
+  q: parseOptionalString(getSearchValue(searchParams, "q")),
+})
+
+export const mergeExplorerChrome = (
+  pathState: ExplorerState,
+  searchParams: ExplorerSearchParams | URLSearchParams
+): ExplorerState => ({
+  ...pathState,
+  ...parseExplorerChrome(searchParams),
+})
+
+/** Parse Explorer query params with safe fallbacks (legacy + chrome). */
 export const parseExplorerState = (
   searchParams: ExplorerSearchParams | URLSearchParams
 ): ExplorerState => {
-  const get = (key: string): string | undefined => {
-    if (searchParams instanceof URLSearchParams) {
-      return searchParams.get(key) ?? undefined
-    }
-    return firstParam(searchParams[key])
+  const kind = parseKind(getSearchValue(searchParams, "kind"))
+  const domain = parseDomain(kind, getSearchValue(searchParams, "domain"))
+  const dir = parseDir(getSearchValue(searchParams, "dir"))
+  const id = canonicalExplorerId(
+    kind,
+    parseOptionalString(getSearchValue(searchParams, "id"))
+  )
+  const chrome = parseExplorerChrome(searchParams)
+
+  return clampState({ kind, domain, dir, id, ...chrome })
+}
+
+/** Parse `/docs/explorer/{kind}/{domain}/{id}/{dir}` path segments. */
+export const parseExplorerPath = (
+  segments: readonly string[]
+): ExplorerState => {
+  const decoded = segments.map(decodeSegment).filter(Boolean)
+  const kindRaw = decoded[0]
+  const kind = kindRaw && KINDS.has(kindRaw as ExplorerKind)
+    ? (kindRaw as ExplorerKind)
+    : DEFAULT_EXPLORER_STATE.kind
+  const domain = parseDomain(kind, decoded[1])
+  const idRaw = parseOptionalString(decoded[2])
+  const id = canonicalExplorerId(kind, idRaw)
+  const dir =
+    kind === "lines" ? parseDir(decoded[3]) : DEFAULT_EXPLORER_STATE.dir
+
+  return {
+    kind,
+    domain,
+    view: DEFAULT_EXPLORER_STATE.view,
+    dir,
+    id,
+    q: undefined,
   }
+}
 
-  const kind = parseKind(get("kind"))
-  const domain = parseDomain(kind, get("domain"))
-  const view = parseView(get("view"))
-  const dir = parseDir(get("dir"))
-  const id = canonicalExplorerId(kind, parseOptionalString(get("id")))
-  const q = parseOptionalString(get("q"))
+/** Parse a full pathname under `/docs/explorer`. */
+export const parseExplorerPathname = (pathname: string): ExplorerState => {
+  const trimmed =
+    pathname.length > 1 && pathname.endsWith("/")
+      ? pathname.slice(0, -1)
+      : pathname
+  if (trimmed === EXPLORER_PATH) {
+    return parseExplorerPath([])
+  }
+  const prefix = `${EXPLORER_PATH}/`
+  if (!trimmed.startsWith(prefix)) {
+    return parseExplorerPath([])
+  }
+  return parseExplorerPath(trimmed.slice(prefix.length).split("/"))
+}
 
-  return { kind, domain, view, dir, id, q }
+export const hasLegacyExplorerPathQuery = (
+  searchParams: URLSearchParams
+): boolean => LEGACY_EXPLORER_PATH_KEYS.some((key) => searchParams.has(key))
+
+/**
+ * Canonical path (+ chrome query) for a legacy `?kind=&domain=&id=&dir=` URL.
+ * Returns null when there is nothing to redirect.
+ */
+export const legacyExplorerRedirectHref = (
+  searchParams: URLSearchParams
+): string | null => {
+  if (!hasLegacyExplorerPathQuery(searchParams)) return null
+  return buildExplorerHref(parseExplorerState(searchParams))
 }
 
 /**
  * Build a shareable Explorer href from a base state + partial override.
- * Omits default values so shared links stay short.
+ * Always includes `kind`. Default domain is omitted when there is no id.
+ * `/docs/explorer` still parses as points / tube-rail.
  */
 export const buildExplorerHref = (
   next: Partial<ExplorerState>,
   base: ExplorerState = DEFAULT_EXPLORER_STATE
 ): string => {
-  const merged: ExplorerState = {
+  const merged = clampState({
     ...base,
     ...next,
-  }
+  })
 
-  // Cycle is only valid under points — clamp when switching to lines.
-  if (merged.kind === "lines" && merged.domain === "cycle") {
-    merged.domain = "tube-rail"
+  const id = canonicalExplorerId(merged.kind, merged.id)
+  const parts = [EXPLORER_PATH, merged.kind]
+  const omitDefaultDomain =
+    !id && merged.domain === DEFAULT_EXPLORER_STATE.domain
+  if (!omitDefaultDomain) {
+    parts.push(merged.domain)
   }
+  if (id) {
+    parts.push(encodeURIComponent(id))
+    if (merged.kind === "lines" && merged.dir !== DEFAULT_EXPLORER_STATE.dir) {
+      parts.push(merged.dir)
+    }
+  }
+  const path = parts.join("/")
 
   const params = new URLSearchParams()
-
-  if (merged.kind !== DEFAULT_EXPLORER_STATE.kind) {
-    params.set("kind", merged.kind)
-  }
-  if (merged.domain !== DEFAULT_EXPLORER_STATE.domain) {
-    params.set("domain", merged.domain)
-  }
   if (merged.view !== DEFAULT_EXPLORER_STATE.view) {
     params.set("view", merged.view)
-  }
-  if (merged.dir !== DEFAULT_EXPLORER_STATE.dir) {
-    params.set("dir", merged.dir)
-  }
-  const id = canonicalExplorerId(merged.kind, merged.id)
-  if (id) {
-    params.set("id", id)
   }
   if (merged.q) {
     params.set("q", merged.q)
   }
 
   const query = params.toString()
-  return query ? `${EXPLORER_PATH}?${query}` : EXPLORER_PATH
+  return query ? `${path}?${query}` : path
 }
 
 /** Domains available for a given kind. */

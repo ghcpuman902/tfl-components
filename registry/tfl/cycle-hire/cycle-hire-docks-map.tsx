@@ -416,9 +416,11 @@ export const CycleHireDocksMap = ({
     }
 
     if (map.isStyleLoaded()) {
-      run()
+      queueMicrotask(run)
     } else {
-      map.once("load", run)
+      map.once("load", () => {
+        queueMicrotask(run)
+      })
     }
 
     const handleMoveEnd = () => {

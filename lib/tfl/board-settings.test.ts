@@ -2,11 +2,13 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
   BOARD_SETTINGS,
+  BOARD_STATUS_CORE_LINE_IDS,
   FORM_BOARD_SETTING_IDS,
   URL_BOARD_SETTING_IDS,
   parseArrivalsLines,
   parseArrivalsRows,
   parseBehaviour,
+  parseCycleSurface,
   parseLineIdItem,
   parseRowsItem,
   serializeArrivalsLines,
@@ -39,6 +41,8 @@ describe("board-settings allowlist", () => {
     assert.ok(FORM_BOARD_SETTING_IDS.includes("statusSurface"))
     assert.ok(FORM_BOARD_SETTING_IDS.includes("statusLines"))
     assert.ok(FORM_BOARD_SETTING_IDS.includes("statusOverview"))
+    assert.ok(FORM_BOARD_SETTING_IDS.includes("cycleSurface"))
+    assert.ok(URL_BOARD_SETTING_IDS.includes("cycleSurface"))
   })
 })
 
@@ -122,10 +126,31 @@ describe("parseArrivalsLines / parseLineIdItem", () => {
   })
 })
 
+describe("BOARD_STATUS_CORE_LINE_IDS", () => {
+  it("is Underground plus Elizabeth, without Waterloo & City", () => {
+    assert.ok(BOARD_STATUS_CORE_LINE_IDS.includes("victoria"))
+    assert.ok(BOARD_STATUS_CORE_LINE_IDS.includes("elizabeth"))
+    assert.equal(
+      (BOARD_STATUS_CORE_LINE_IDS as readonly string[]).includes(
+        "waterloo-city"
+      ),
+      false
+    )
+  })
+})
+
 describe("behaviour parser", () => {
   it("accepts known values, maps legacy mode, and rejects others", () => {
     assert.equal(parseBehaviour("unattended"), "unattended")
     assert.equal(parseBehaviour("static"), "interactive")
     assert.equal(parseBehaviour("voice"), undefined)
+  })
+})
+
+describe("cycle surface parser", () => {
+  it("accepts map and display, and rejects others", () => {
+    assert.equal(parseCycleSurface("map"), "map")
+    assert.equal(parseCycleSurface("display"), "display")
+    assert.equal(parseCycleSurface("list"), undefined)
   })
 })

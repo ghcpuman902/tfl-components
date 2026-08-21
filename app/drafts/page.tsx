@@ -2,12 +2,15 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { SectionHub } from "@/components/docs/section-hub"
 import { getDocsEntry } from "@/lib/docs-catalog"
+import { pageMetadata } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Drafts",
   description:
     "Incubation for experimental work until promotion criteria are met.",
-}
+  path: "/drafts",
+  robots: { index: false, follow: false },
+})
 
 export default function DraftsIndexPage() {
   const entry = getDocsEntry("drafts-index")

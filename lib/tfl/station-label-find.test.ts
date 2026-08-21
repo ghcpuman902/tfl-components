@@ -83,4 +83,21 @@ describe("stationFindAliases", () => {
     const covered = stationFindCoveredPhrases(["London", "Liverpool St"])
     assert.ok(covered.includes("Liverpool Street"))
   })
+
+  it("exposes apostrophe-free and Saint forms for King's Cross St. Pancras", () => {
+    const aliases = stationFindAliases("King's Cross St. Pancras", [
+      "King's Cross St. Pancras",
+    ])
+    assert.ok(aliases.includes("Kings Cross St. Pancras"))
+    assert.ok(aliases.includes("Kings Cross St Pancras"))
+    assert.ok(aliases.includes("King's Cross Saint Pancras"))
+  })
+
+  it("exposes period-free and Saint forms for St. Paul's", () => {
+    const aliases = stationFindAliases("St. Paul's", ["St. Paul's"])
+    assert.ok(aliases.includes("St Pauls") || aliases.includes("Saint Pauls"))
+    assert.ok(
+      aliases.includes("Saint Paul's") || aliases.includes("Saint Pauls")
+    )
+  })
 })

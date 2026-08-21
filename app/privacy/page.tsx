@@ -9,7 +9,7 @@ export default function PrivacyPage() {
   return (
     <SiteProsePage
       title="Privacy"
-      description="This site stores a few things in your browser so demos and personal boards can work. It does not run a third-party analytics SDK."
+      description="This site stores a few things in your browser so demos and personal boards can work."
     >
       <section className="space-y-2">
         <h2 id="keys" className="text-lg font-semibold text-foreground">
@@ -60,6 +60,17 @@ export default function PrivacyPage() {
           Component installs and GitHub stars are counted on the server from
           registry requests and the GitHub API, not from a tracker on every
           page.
+        </p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 id="analytics" className="text-lg font-semibold text-foreground">
+          Analytics
+        </h2>
+        <p>
+          Page views and a small set of product events (landing, Board setup,
+          docs visits) go to Vercel Web Analytics. TfL keys, searches, and Board
+          URLs are not included. There is no advertising tracker.
         </p>
       </section>
     </SiteProsePage>

@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch"
 import { StationName } from "@/components/tfl/station-name"
 import { TFL_BLUE } from "@/lib/tfl/brand-colours"
 import type { CatalogStation } from "@/lib/tfl/station-catalog"
+import { stationNameMatchesQuery } from "@/lib/tfl/station-name-match"
 import type { StationLabelFormatResult } from "@/lib/tfl/station-typography"
 import { cn } from "@/lib/utils"
 
@@ -21,14 +22,6 @@ const letterOf = (name: string): string => {
   const ch = name.trim().charAt(0).toUpperCase()
   return /[A-Z]/.test(ch) ? ch : "#"
 }
-
-/** Normalize for search: straight/curly apostrophes, case. */
-const normalizeSearch = (value: string): string =>
-  value
-    .toLowerCase()
-    .replace(/[\u2018\u2019\u02BC\u0060]/g, "'")
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
 
 /**
  * Interactive A–Z typography lab: measure Hammersmith One, balance two-line
@@ -46,14 +39,15 @@ export const StationTypographyLab = ({
   const [diagnostics, setDiagnostics] = useState<CardDiagnostics>({})
 
   const filtered = useMemo(() => {
-    const q = normalizeSearch(query.trim())
+    const q = query.trim()
     if (!q) return stations
-    return stations.filter((s) => {
-      const haystack = normalizeSearch(
-        `${s.displayName} ${s.name} ${s.lines.join(" ")} ${s.modes.join(" ")}`
-      )
-      return haystack.includes(q)
-    })
+    return stations.filter(
+      (s) =>
+        stationNameMatchesQuery(s.displayName, q) ||
+        stationNameMatchesQuery(s.name, q) ||
+        stationNameMatchesQuery(s.lines.join(" "), q) ||
+        stationNameMatchesQuery(s.modes.join(" "), q)
+    )
   }, [query, stations])
 
   const grouped = useMemo(() => {

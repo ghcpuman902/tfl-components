@@ -23,4 +23,4 @@ Clicks must paint **Identity** (id, name, mode) from the in-memory directory **b
 - Derive the inspector title only from `state.id` (click waits on the full RSC).
 - `use()` the seed arrivals promise while a different point is selected.
 
-Canonical: `LineInspector`, `PointInspectorDeferred`, `app/docs/explorer/page.tsx`.
+Canonical: `LineInspector`, `PointInspectorDeferred`, `app/docs/explorer/[[...segments]]/page.tsx`.

@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { FontPreferenceProvider } from "@/components/font-preference-provider"
 import { FeedbackDialog } from "@/components/docs/feedback-dialog"
@@ -11,7 +12,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { Geist_Mono, Hammersmith_One } from "next/font/google"
 import Script from "next/script"
 import type { Metadata, Viewport } from "next"
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site"
+import { SITE_AUTHOR, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site"
 import { cn } from "@/lib/utils"
 
 import "./globals.css"
@@ -65,7 +66,9 @@ export const metadata: Metadata = {
     template: "%s · tfl-components",
   },
   description: SITE_DESCRIPTION,
-  applicationName: "tfl-components",
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_AUTHOR.name, url: SITE_AUTHOR.url }],
+  creator: SITE_AUTHOR.name,
   openGraph: {
     type: "website",
     locale: "en_GB",
@@ -88,7 +91,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="en-GB"
       suppressHydrationWarning
       className={cn(
         /* Page-level scroll + Baseline scrollbar-gutter:stable (needs overflow ≠ visible). */
@@ -98,7 +101,7 @@ export default function RootLayout({
         hammersmith.variable
       )}
     >
-      <head>
+      <body>
         {fontPreferenceScript ? (
           <Script
             id="tfl-font-preference"
@@ -106,8 +109,7 @@ export default function RootLayout({
             dangerouslySetInnerHTML={{ __html: fontPreferenceScript }}
           />
         ) : null}
-      </head>
-      <body>
+        <Analytics />
         <ThemeProvider>
           <FontPreferenceProvider
             adobeFontsConfigured={Boolean(adobeFontsKitId)}

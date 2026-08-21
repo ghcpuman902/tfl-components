@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { getDocsEntry } from "@/lib/docs-catalog"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 import type { TransitGeometryBundle } from "@/lib/tfl/geography-types"
 import type { LineHopTimesSnapshot } from "@/lib/tfl/geometry/line-hop-times"
 import hopTimesJson from "@/data/geography/line-hop-times.json"
@@ -26,10 +27,7 @@ import { TrackTopologyView } from "./track-topology-view"
 
 const entry = getDocsEntry("line-topology")!
 
-export const metadata: Metadata = {
-  title: entry.title,
-  description: entry.description,
-}
+export const metadata: Metadata = docsEntryMetadata("line-topology")
 
 const asBundle = (value: unknown): TransitGeometryBundle =>
   value as TransitGeometryBundle

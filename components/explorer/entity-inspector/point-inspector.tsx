@@ -43,7 +43,7 @@ type PointInspectorProps = {
   point: ExplorerPoint
   /** Optional preloaded cycle dock for cached occupancy preview. */
   cycleDock?: CycleHireDock | null
-  /** Site-cached arrivals for the default-selected seed stop. */
+  /** Site-cached arrivals for a catalog / featured stop. */
   cachedArrivals?: ExplorerCachedArrivals | null
 }
 
@@ -51,7 +51,7 @@ type PointInspectorDeferredProps = Omit<
   PointInspectorProps,
   "cachedArrivals"
 > & {
-  /** Unresolved seed arrivals — inspector identity paints while this streams. */
+  /** Unresolved catalog arrivals — inspector identity paints while this streams. */
   cachedArrivalsPromise?: Promise<ExplorerCachedArrivals | null>
   /** Local selection has not caught up to the URL yet — skip a stale promise. */
   detailsPending?: boolean

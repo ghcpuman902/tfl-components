@@ -2,8 +2,7 @@
 
 import { Suspense, use, useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
-import { LineColorBar } from "@/components/tfl/brand/line-badge"
-import { TubeStatusBoard } from "@/components/tfl/status/tube-status-board"
+import { DataSourceLabel } from "@/components/docs/data-source-label"
 import {
   CodeSnippet,
   CopyableField,
@@ -12,9 +11,12 @@ import {
   InspectorSection,
 } from "@/components/explorer/entity-inspector/entity-inspector"
 import { KeyPrompt } from "@/components/explorer/entity-inspector/point-inspector"
-import { DataSourceLabel } from "@/components/docs/data-source-label"
+import { OverflowRevealText } from "@/components/explorer/overflow-reveal-text"
+import { LineColorBar } from "@/components/tfl/brand/line-badge"
+import { TubeStatusBoard } from "@/components/tfl/status/tube-status-board"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useExplorerKeyedQuery } from "@/hooks/use-explorer-keyed-query"
+import { formatStationName } from "@/lib/tfl/diagram-station"
 import {
   buildExplorerHref,
   type ExplorerDirection,
@@ -137,7 +139,7 @@ const OrderedStopsList = ({
         No stop sequence returned for this line.
       </p>
     ) : (
-      <ol className="space-y-1" role="list">
+      <ol className="m-0 grid list-none grid-cols-[3ch_minmax(0,1fr)_auto] gap-x-3 p-0">
         {stops.map((stop, index) => {
           const stopHref = stop.id
             ? buildExplorerHref({
@@ -146,31 +148,25 @@ const OrderedStopsList = ({
                 id: stop.id,
               })
             : undefined
+          const displayName = formatStationName(stop.name ?? "Unknown")
           return (
             <li
               key={`${stop.id ?? stop.name}-${index}`}
-              className="flex items-baseline gap-3 border-b border-border py-1.5 text-sm last:border-0"
+              className="col-span-3 grid grid-cols-subgrid items-center border-b border-border py-1.5 text-sm last:border-0"
             >
-              <span className="w-7 text-muted-foreground tabular-nums">
+              <span className="text-end text-muted-foreground tabular-nums">
                 {index + 1}
               </span>
-              {stopHref ? (
-                <Link
-                  href={stopHref}
-                  className="min-w-0 truncate font-medium underline-offset-4 hover:underline"
-                >
-                  {stop.name ?? "Unknown"}
-                </Link>
-              ) : (
-                <span className="min-w-0 truncate font-medium">
-                  {stop.name ?? "Unknown"}
-                </span>
-              )}
+              <OverflowRevealText
+                href={stopHref}
+                text={displayName}
+                className="font-medium"
+              />
               {stop.id ? (
-                <code className="ml-auto shrink-0 text-xs text-muted-foreground">
-                  {stop.id}
-                </code>
-              ) : null}
+                <code className="text-xs text-muted-foreground">{stop.id}</code>
+              ) : (
+                <span />
+              )}
             </li>
           )
         })}
@@ -266,16 +262,6 @@ const LineInspectorDetails = ({
                 : "Cached status not loaded for this line."}
             </p>
           )}
-          {ready ? (
-            <DataSourceLabel
-              source="live"
-              fetchedAt={statusFetchedAt ?? undefined}
-              loading={loading}
-              onRefresh={handleRefreshStatus}
-            />
-          ) : displayStatus ? (
-            <DataSourceLabel source="cached" />
-          ) : null}
         </div>
       </InspectorSection>
 
@@ -289,6 +275,17 @@ const LineInspectorDetails = ({
           />
         </div>
       </InspectorSection>
+
+      {ready ? (
+        <DataSourceLabel
+          source="live"
+          fetchedAt={statusFetchedAt ?? undefined}
+          loading={loading}
+          onRefresh={handleRefreshStatus}
+        />
+      ) : displayStatus ? (
+        <DataSourceLabel source="cached" />
+      ) : null}
 
       <InspectorSection title="Normalised data">
         <InspectorJson
@@ -318,9 +315,8 @@ type LineInspectorLiveDetailsProps = {
 }
 
 /**
- * Live route + status for any line **other than the seed** — requires the
- * visitor's own TfL API key (see docs/tfl-user-credentials-design.md §4/§7).
- * Mirrors `PointInspectorLive`'s key-gated preview pattern.
+ * Keyed live route + status when the server did not pass a details promise.
+ * Visitor key only — no site-key fallback.
  */
 const LineInspectorLiveDetails = ({
   lineId,
@@ -393,7 +389,7 @@ const LineInspectorLiveDetails = ({
           <div className="space-y-2">
             {directionToggle}
             <p className="text-sm text-muted-foreground">
-              Add a TfL API key to load the stop sequence for this line.
+              Add a TfL API key to load live status for this line.
             </p>
           </div>
         </InspectorSection>
@@ -426,12 +422,6 @@ const LineInspectorLiveDetails = ({
               Live status has not loaded yet.
             </p>
           )}
-          <DataSourceLabel
-            source="live"
-            fetchedAt={fetchedAt ?? undefined}
-            loading={loading}
-            onRefresh={handleRefresh}
-          />
         </div>
       </InspectorSection>
 
@@ -445,6 +435,13 @@ const LineInspectorLiveDetails = ({
           />
         </div>
       </InspectorSection>
+
+      <DataSourceLabel
+        source="live"
+        fetchedAt={fetchedAt ?? undefined}
+        loading={loading}
+        onRefresh={handleRefresh}
+      />
 
       <InspectorSection title="Normalised data">
         <InspectorJson
@@ -537,7 +534,6 @@ export const LineInspector = ({
             />
           </Suspense>
         ) : (
-          // Not the cached seed — live route + status need the visitor's key.
           <LineInspectorLiveDetails
             key={line.id}
             lineId={line.id}

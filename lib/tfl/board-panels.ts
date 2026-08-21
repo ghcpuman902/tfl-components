@@ -3,6 +3,8 @@
  * Slots say what goes where; domain ids stay on a.* / b.* / r.* / c.* / s.*.
  */
 
+import { compareBusRouteNames } from "@/lib/tfl/arrivals-route-sort"
+
 export const BOARD_PANEL_KINDS = [
   "rail",
   "bus",
@@ -99,6 +101,47 @@ export const boardSlotsInclude = (
   kind: BoardPanelKind
 ): boolean => slots.p1.includes(kind) || slots.p2.includes(kind)
 
+export type BoardSlotZone = "p1" | "p2" | "pool"
+
+const insertAt = (
+  list: readonly BoardPanelKind[],
+  kind: BoardPanelKind,
+  index: number | undefined
+): BoardPanelKind[] => {
+  const next = [...list]
+  const at =
+    index === undefined
+      ? next.length
+      : Math.max(0, Math.min(index, next.length))
+  next.splice(at, 0, kind)
+  return next
+}
+
+/** Move a panel into a slot (optional index) or back to the unused pool. */
+export const moveBoardPanel = (
+  slots: BoardResolvedSlots,
+  kind: BoardPanelKind,
+  to: BoardSlotZone,
+  index?: number
+): BoardResolvedSlots => {
+  const without = {
+    p1: slots.p1.filter((item) => item !== kind),
+    p2: slots.p2.filter((item) => item !== kind),
+  }
+  if (to === "pool") return without
+  const next =
+    to === "p1"
+      ? { p1: insertAt(without.p1, kind, index), p2: without.p2 }
+      : { p1: without.p1, p2: insertAt(without.p2, kind, index) }
+  if (
+    samePanelList(next.p1, slots.p1) &&
+    samePanelList(next.p2, slots.p2)
+  ) {
+    return slots
+  }
+  return next
+}
+
 /** Bus / river route ids: `73`, `n8`, `el1`. */
 export const parseRouteIdItem = (raw: string): string | undefined => {
   const id = raw.trim().toLowerCase()
@@ -128,6 +171,29 @@ export const serializeRouteIdList = (
   if (!value?.length) return undefined
   const parsed = parseRouteIdList(value.join(","))
   return parsed?.join(",")
+}
+
+export const normalizeBusRouteIds = (
+  raw: readonly string[]
+): readonly string[] => {
+  const seen = new Set<string>()
+  const ids: string[] = []
+  for (const item of raw) {
+    const id = parseRouteIdItem(item)
+    if (!id || seen.has(id)) continue
+    seen.add(id)
+    ids.push(id)
+  }
+  return ids.toSorted(compareBusRouteNames)
+}
+
+export const sameBusRouteSet = (
+  left: readonly string[],
+  right: readonly string[]
+): boolean => {
+  const a = normalizeBusRouteIds(left)
+  const b = normalizeBusRouteIds(right)
+  return a.length === b.length && a.every((id, index) => id === b[index])
 }
 
 export const formatBikePointId = (id: string): string => {

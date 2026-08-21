@@ -68,6 +68,18 @@ printf '%s' 'PASTE_SECRET_HERE' | vercel env add CRON_SECRET preview
 
 Do not commit the value. Put it in `.env.local` (or `.env.development.local`) as `CRON_SECRET=…`.
 
+## Vercel Web Analytics and Flags
+
+Web Analytics does not need an extra env var. Enable it on the Vercel project (**Analytics → Web Analytics**) so `@vercel/analytics` custom events from `lib/analytics/track.ts` are stored. See [vercel.md](./vercel.md#web-analytics-landing--board-events).
+
+`FLAGS_SECRET` is optional until you use the Vercel Flags toolbar or encrypted overrides. There is no homepage experiment flag. Generate 32 random bytes as base64url:
+
+```bash
+node -e "console.log(crypto.randomBytes(32).toString('base64url'))"
+```
+
+Add the same value to Development, Preview, and Production on the Vercel project. A local `.env.local` value is enough for `next dev`; preview/production still need the project env var. Missing `FLAGS_SECRET` must not block the site from rendering.
+
 After Production has `CRON_SECRET`, merge to `main`. The next production deploy picks up the var and registers the cron. Confirm with:
 
 ```bash

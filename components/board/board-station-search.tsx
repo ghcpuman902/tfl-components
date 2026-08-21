@@ -12,6 +12,7 @@ import {
 import {
   displayBoardStationValue,
   matchBoardStationSearchItem,
+  matchBoardStationSearchQuery,
   parseBoardStationPick,
   resolveBoardStationQuery,
   type BoardStationSearchItem,
@@ -21,15 +22,6 @@ type BoardStationSearchProps = {
   stations: readonly BoardStationSearchItem[]
   stopId: string | undefined
   onStopChange: (stopId: string) => void
-}
-
-const matchesQuery = (item: BoardStationSearchItem, query: string): boolean => {
-  const q = query.trim().toLowerCase()
-  if (!q) return true
-  if (item.name.toLowerCase().includes(q)) return true
-  if (item.context.toLowerCase().includes(q)) return true
-  if (item.id.toLowerCase().includes(q)) return true
-  return item.aliasIds.some((alias) => alias.toLowerCase().includes(q))
 }
 
 export const BoardStationSearch = ({
@@ -47,7 +39,8 @@ export const BoardStationSearch = ({
   )
 
   const items = useMemo(
-    () => stations.filter((item) => matchesQuery(item, inputValue)),
+    () =>
+      stations.filter((item) => matchBoardStationSearchQuery(item, inputValue)),
     [inputValue, stations]
   )
 

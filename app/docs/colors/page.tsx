@@ -12,13 +12,10 @@ import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { RelationshipBadges } from "@/components/docs/relationship-badges"
 import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code"
 import { getDocsEntry, getUsedBySlugs } from "@/lib/docs-catalog"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 import { REGISTRY_BASE } from "@/lib/site"
 
-export const metadata: Metadata = {
-  title: "Colours",
-  description:
-    "Official TfL line and mode colours. Arrivals boards and status already apply them.",
-}
+export const metadata: Metadata = docsEntryMetadata("colours")
 
 const DATA_LINE_SNIPPET = `// data-line resolves --line-color / --line-ink for you
 <span

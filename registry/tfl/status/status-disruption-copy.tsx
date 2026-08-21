@@ -6,7 +6,7 @@ export type StatusDisruptionCopyItem = {
   statusSeverityDescription?: string
 }
 
-/** Half-tile leading — wrapping copy stays on the arrivals baseline. */
+/** Half-tile leading — each wrapped line is exactly `--arrivals-row / 2`. */
 export const DISRUPTION_LEADING_CLASS = "leading-[calc(var(--arrivals-row)/2)]"
 
 const DISRUPTION_COPY_CLASS = cn(
@@ -14,8 +14,9 @@ const DISRUPTION_COPY_CLASS = cn(
   DISRUPTION_LEADING_CLASS
 )
 
+/** `align-top` keeps the 20px chip inside the half-tile line box. */
 const SeverityChip = ({ label }: { label: string }) => (
-  <QuietChip className="mr-[0.35em] align-[length:calc((1lh-1.25rem)/2)]">
+  <QuietChip className="mr-[0.35em] align-top">
     {label}
   </QuietChip>
 )

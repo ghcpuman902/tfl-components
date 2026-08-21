@@ -131,7 +131,7 @@ export const IpadAimCursor = ({
     <div
       ref={cursorRef}
       aria-hidden
-      className="pointer-events-none fixed top-0 left-0 z-40 size-8 text-white opacity-0 filter-[drop-shadow(0_1px_2px_rgb(0_0_0/0.7))]"
+      className="pointer-events-none fixed top-0 left-0 z-40 size-8 text-white opacity-0 [@media(hover:hover)_and_(pointer:fine)]:block"
     >
       <div
         ref={arrowRef}

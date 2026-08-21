@@ -131,7 +131,8 @@ const StatusDisplayFrameView = ({
   canAdvance: boolean
   frameKey: string
 }) => {
-  const bodyTiles = Math.max(0, tiles - 1)
+  const expand = tiles <= 0
+  const bodyTiles = expand ? 1 : Math.max(0, tiles - 1)
   const announcementTile = frame.tiles.find(
     (tile) => tile.kind === "announcements"
   )
@@ -181,12 +182,17 @@ const StatusDisplayFrameView = ({
       {bodyTiles > 0 ? (
         <div
           className={cn(
-            "relative overflow-clip",
+            "relative",
+            !expand && "overflow-clip",
             announcementTile && "bg-muted"
           )}
-          style={{
-            height: `calc(var(--arrivals-row) * ${bodyTiles})`,
-          }}
+          style={
+            expand
+              ? undefined
+              : {
+                  height: `calc(var(--arrivals-row) * ${bodyTiles})`,
+                }
+          }
         >
           {announcementTile && announcementTile.kind === "announcements" ? (
             <div className="py-[calc(var(--arrivals-row)/4)]">
@@ -297,13 +303,19 @@ export const TubeStatusDisplay = ({
   const frame = frames[sequence.index] ?? frames[0]
   const heightClass = "flex w-full flex-col"
 
+  const expand = tiles <= 0
+  const lockedHeight = expand
+    ? undefined
+    : `calc(var(--arrivals-row) * ${tiles})`
+  const fillerTiles = expand ? 0 : Math.max(0, tiles - 1)
+
   if (error) {
     return (
       <div
         className={cn(heightClass, className)}
         style={{
           ...BOARD_RHYTHM_VARS,
-          minHeight: `calc(var(--arrivals-row) * ${tiles})`,
+          minHeight: lockedHeight,
         }}
         role="alert"
       >
@@ -315,7 +327,7 @@ export const TubeStatusDisplay = ({
         >
           {error}
         </p>
-        {Array.from({ length: tiles - 1 }, (_, index) => (
+        {Array.from({ length: fillerTiles }, (_, index) => (
           <div key={index} className={TILE_CLASS} aria-hidden />
         ))}
       </div>
@@ -328,7 +340,7 @@ export const TubeStatusDisplay = ({
         className={cn(heightClass, className)}
         style={{
           ...BOARD_RHYTHM_VARS,
-          minHeight: `calc(var(--arrivals-row) * ${tiles})`,
+          minHeight: lockedHeight,
         }}
         role="status"
       >
@@ -337,7 +349,7 @@ export const TubeStatusDisplay = ({
         >
           No status
         </p>
-        {Array.from({ length: tiles - 1 }, (_, index) => (
+        {Array.from({ length: fillerTiles }, (_, index) => (
           <div key={index} className={TILE_CLASS} aria-hidden />
         ))}
       </div>
@@ -349,7 +361,7 @@ export const TubeStatusDisplay = ({
       className={cn(heightClass, className)}
       style={{
         ...BOARD_RHYTHM_VARS,
-        minHeight: `calc(var(--arrivals-row) * ${tiles})`,
+        minHeight: lockedHeight,
       }}
       onFocus={sequence.handleFocus}
       onBlur={sequence.handleBlur}
