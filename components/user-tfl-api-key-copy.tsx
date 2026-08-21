@@ -1,4 +1,11 @@
 import type { ReactNode } from "react"
+import {
+  TFL_API_PORTAL_PRODUCT_URL,
+  TFL_API_PORTAL_PRODUCTS_URL,
+  TFL_API_PORTAL_PROFILE_URL,
+  TFL_API_PORTAL_SIGNUP_URL,
+  TFL_API_PORTAL_URL,
+} from "@/lib/tfl/api-portal"
 
 export {
   TFL_API_PORTAL_PRODUCT_URL,
@@ -6,7 +13,7 @@ export {
   TFL_API_PORTAL_PROFILE_URL,
   TFL_API_PORTAL_SIGNUP_URL,
   TFL_API_PORTAL_URL,
-} from "@/lib/tfl/api-portal"
+}
 
 type TflPortalLinkProps = {
   href: string

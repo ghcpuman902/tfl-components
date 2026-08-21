@@ -48,10 +48,8 @@ export const installSvgDomShim = () => {
   const documentShim = {
     createElementNS: (_ns: string, tagName: string) => new ShimSvgNode(tagName),
   }
-  const global = globalThis as typeof globalThis & {
-    document?: typeof documentShim
-  }
-  if (!global.document) {
-    global.document = documentShim
+  const host = globalThis as { document?: typeof documentShim }
+  if (!host.document) {
+    host.document = documentShim
   }
 }

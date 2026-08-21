@@ -283,7 +283,7 @@ export const BoardChipListEditor = ({
       <DefaultChipPaint item={item} />
     )
 
-  const renderChipButton = (id: string, from: ChipListZone) => {
+  const renderChipButton = (id: string, from: Exclude<ChipPlacement, "ghost">) => {
     const item = byId.get(id) ?? { id, label: id }
     const inSelected = from === "selected"
     return (
