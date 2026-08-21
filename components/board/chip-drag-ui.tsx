@@ -1,4 +1,4 @@
-import { CirclePlus, XIcon } from "lucide-react"
+import { CirclePlus, Trash2Icon, XIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /** Always on for touch; hover/focus on fine pointers. */
@@ -67,3 +67,22 @@ export const PoolHint = ({
   if (selectedCount > 0) return <DragToRemoveChip />
   return null
 }
+
+export const ChipBin = ({
+  binRef,
+  active,
+}: {
+  binRef: (node: HTMLElement | null) => void
+  active?: boolean
+}) => (
+  <div
+    ref={binRef}
+    aria-label="Drag here to remove"
+    className={cn(
+      "flex size-8 shrink-0 items-center justify-center rounded-md border border-dashed border-input text-muted-foreground",
+      active && "border-destructive/60 bg-destructive/10 text-destructive"
+    )}
+  >
+    <Trash2Icon className="size-3.5" aria-hidden />
+  </div>
+)

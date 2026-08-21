@@ -10,6 +10,7 @@ import {
 import { createPortal } from "react-dom"
 import {
   ChipAddBadge,
+  ChipBin,
   ChipRemoveBadge,
   EmptySlotChip,
   InsertCaret,
@@ -70,7 +71,7 @@ const zoneFromPoint = (
   y: number,
   refs: Record<ChipListZone, HTMLElement | null>
 ): ChipListZone | null => {
-  for (const zone of ["selected", "pool"] as const) {
+  for (const zone of ["selected", "pool", "bin"] as const) {
     const el = refs[zone]
     if (!el) continue
     const rect = el.getBoundingClientRect()
@@ -121,6 +122,7 @@ export const BoardChipListEditor = ({
   const zoneRefs = useRef<Record<ChipListZone, HTMLElement | null>>({
     selected: null,
     pool: null,
+    bin: null,
   })
   const chipRefs = useRef<Partial<Record<string, HTMLElement | null>>>({})
   const sessionRef = useRef<DragSession | null>(null)
@@ -152,7 +154,7 @@ export const BoardChipListEditor = ({
   ): { zone: ChipListZone; index?: number } | null => {
     const zone = zoneFromPoint(x, y, zoneRefs.current)
     if (!zone) return null
-    if (zone === "pool") return { zone }
+    if (zone === "pool" || zone === "bin") return { zone }
     const chipEls = selectedRef.current
       .filter((item) => item !== dragging)
       .map((item) => chipRefs.current[item] ?? null)
@@ -263,6 +265,14 @@ export const BoardChipListEditor = ({
     ) {
       event.preventDefault()
       commit(id, "pool")
+      return
+    }
+    if (
+      from === "pool" &&
+      (event.key === "Backspace" || event.key === "Delete")
+    ) {
+      event.preventDefault()
+      commit(id, "bin")
     }
   }
 
@@ -328,21 +338,29 @@ export const BoardChipListEditor = ({
           <InsertCaret />
         ) : null}
       </div>
-      <div
-        ref={(node) => {
-          zoneRefs.current.pool = node
-        }}
-        className={cn(
-          "flex min-h-8 flex-wrap items-center gap-1.5 rounded-lg px-0.5 py-0.5",
-          overZone === "pool" && "bg-muted/40"
-        )}
-      >
-        {poolIds.map((id) => renderChipButton(id, "pool"))}
-        <PoolHint
-          poolCount={poolIds.length}
-          selectedCount={selectedIds.length}
+      <div className="flex items-start gap-2">
+        <div
+          ref={(node) => {
+            zoneRefs.current.pool = node
+          }}
+          className={cn(
+            "flex min-h-8 min-w-0 flex-1 flex-wrap items-center gap-1.5 rounded-lg px-0.5 py-0.5",
+            overZone === "pool" && "bg-muted/40"
+          )}
+        >
+          {poolIds.map((id) => renderChipButton(id, "pool"))}
+          <PoolHint
+            poolCount={poolIds.length}
+            selectedCount={selectedIds.length}
+          />
+          {poolAction}
+        </div>
+        <ChipBin
+          binRef={(node) => {
+            zoneRefs.current.bin = node
+          }}
+          active={overZone === "bin"}
         />
-        {poolAction}
       </div>
       {ghost
         ? createPortal(

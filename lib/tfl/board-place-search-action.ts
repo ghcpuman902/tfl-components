@@ -30,6 +30,10 @@ export type BoardCycleDockLabelsResult =
   | { ok: true; labels: Record<string, string> }
   | { ok: false; error: string }
 
+export type BoardPlaceLabelResult =
+  | { ok: true; place: BoardPlaceHit }
+  | { ok: false; error: string }
+
 const MAX_CYCLE_DOCK_LABELS = 16
 
 /**
@@ -52,6 +56,74 @@ export async function getBoardBusStopRoutes(
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Could not load routes."
+    return { ok: false, error: message }
+  }
+}
+
+export async function getBoardRiverPiers(): Promise<SearchBoardPlacesResult> {
+  try {
+    const piers = await getExplorerRiverPiers()
+    return {
+      ok: true,
+      places: piers.map((pier) => ({
+        id: pier.id,
+        name: pier.name,
+        context: pier.lines.join(", "),
+      })),
+    }
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Could not load piers."
+    return { ok: false, error: message }
+  }
+}
+
+export async function getBoardPlaceLabel(
+  kind: "bus" | "river",
+  id: string
+): Promise<BoardPlaceLabelResult> {
+  const trimmed = id.trim()
+  if (!trimmed) return { ok: false, error: "No stop selected." }
+
+  try {
+    if (kind === "river") {
+      const piers = await getExplorerRiverPiers()
+      const pier = piers.find((item) => item.id === trimmed)
+      if (!pier) return { ok: false, error: "Unknown pier." }
+      return {
+        ok: true,
+        place: {
+          id: pier.id,
+          name: pier.name,
+          context: pier.lines.join(", "),
+        },
+      }
+    }
+
+    if (!isBoardableBusStopId(trimmed)) {
+      return { ok: false, error: "Unknown bus stop." }
+    }
+    const client = getTflClient()
+    const details = await client.stopPoint.get([trimmed])
+    const detail = Array.isArray(details) ? details[0] : details
+    const stop = detail ? mapStopPoint(detail) : null
+    if (!stop) return { ok: false, error: "Unknown bus stop." }
+    return {
+      ok: true,
+      place: {
+        id: stop.id,
+        name: stop.name,
+        context: [
+          stop.stopLetter,
+          stop.towards ? `towards ${stop.towards}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      },
+    }
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Could not load stop name."
     return { ok: false, error: message }
   }
 }

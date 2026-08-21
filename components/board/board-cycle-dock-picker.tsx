@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { formatBikePointId } from "@/lib/tfl/board-panels"
+import { getBoardNearbyPlacesForStop } from "@/lib/tfl/board-nearby-action"
 import { getBoardCycleDockLabels } from "@/lib/tfl/board-place-search-action"
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
 import type { ExplorerView } from "@/lib/tfl/explorer-url-state"
@@ -22,12 +23,14 @@ const dockLabelFallback = (id: string): string =>
 
 type BoardCycleDockPickerProps = {
   id?: string
+  stopId?: string
   docks?: readonly string[]
   onChange: (docks: readonly string[]) => void
 }
 
 export const BoardCycleDockPicker = ({
   id,
+  stopId,
   docks,
   onChange,
 }: BoardCycleDockPickerProps) => {
@@ -37,18 +40,56 @@ export const BoardCycleDockPicker = ({
     ],
     [docks]
   )
+  const [seedIds, setSeedIds] = useState<string[]>([])
   const [poolIds, setPoolIds] = useState<string[]>([])
+  const [binnedIds, setBinnedIds] = useState<Set<string>>(() => new Set())
   const [labels, setLabels] = useState<Record<string, string>>({})
   const [finderOpen, setFinderOpen] = useState(false)
   const [view, setView] = useState<ExplorerView>("list")
 
   useEffect(() => {
-    const selectedSet = new Set(selected)
-    setPoolIds((current) => current.filter((id) => !selectedSet.has(id)))
-  }, [selected])
+    if (!stopId) {
+      setSeedIds([])
+      return
+    }
+    let cancelled = false
+    void getBoardNearbyPlacesForStop(stopId).then((result) => {
+      if (cancelled || !result.ok) return
+      setSeedIds(result.docks.map((dockId) => formatBikePointId(dockId)))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [stopId])
+
+  useEffect(() => {
+    setPoolIds((current) => {
+      const selectedSet = new Set(selected)
+      const next: string[] = []
+      const seen = new Set<string>()
+      for (const dockId of [...current, ...seedIds]) {
+        if (
+          selectedSet.has(dockId) ||
+          binnedIds.has(dockId) ||
+          seen.has(dockId)
+        ) {
+          continue
+        }
+        seen.add(dockId)
+        next.push(dockId)
+      }
+      if (
+        next.length === current.length &&
+        next.every((dockId, index) => dockId === current[index])
+      ) {
+        return current
+      }
+      return next
+    })
+  }, [binnedIds, seedIds, selected])
 
   const missingKey = [...selected, ...poolIds]
-    .filter((id) => !labels[id])
+    .filter((dockId) => !labels[dockId])
     .toSorted()
     .join(",")
 
@@ -67,20 +108,25 @@ export const BoardCycleDockPicker = ({
 
   const items = useMemo(
     () =>
-      [...new Set([...selected, ...poolIds])].map((id) => ({
-        id,
-        label: labels[id] ?? dockLabelFallback(id),
+      [...new Set([...selected, ...poolIds])].map((dockId) => ({
+        id: dockId,
+        label: labels[dockId] ?? dockLabelFallback(dockId),
       })),
     [labels, poolIds, selected]
   )
 
   const handleAddPoint = (point: ExplorerPoint) => {
-    const id = formatBikePointId(point.id)
-    if (!id) return
-    setLabels((current) => ({ ...current, [id]: point.name }))
-    if (selected.includes(id)) return
-    setPoolIds((current) => current.filter((item) => item !== id))
-    onChange([...selected, id])
+    const dockId = formatBikePointId(point.id)
+    if (!dockId) return
+    setLabels((current) => ({ ...current, [dockId]: point.name }))
+    setBinnedIds((current) => {
+      if (!current.has(dockId)) return current
+      const next = new Set(current)
+      next.delete(dockId)
+      return next
+    })
+    if (selected.includes(dockId) || poolIds.includes(dockId)) return
+    setPoolIds((current) => [...current, dockId])
   }
 
   return (
@@ -92,6 +138,19 @@ export const BoardCycleDockPicker = ({
         poolIds={poolIds}
         items={items}
         onChange={(next) => {
+          const before = new Set([...selected, ...poolIds])
+          const after = new Set([...next.selected, ...next.pool])
+          setBinnedIds((current) => {
+            let changed = false
+            const nextBinned = new Set(current)
+            for (const dockId of before) {
+              if (!after.has(dockId) && !nextBinned.has(dockId)) {
+                nextBinned.add(dockId)
+                changed = true
+              }
+            }
+            return changed ? nextBinned : current
+          })
           onChange(next.selected)
           setPoolIds([...next.pool])
         }}

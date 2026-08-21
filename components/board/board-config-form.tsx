@@ -245,15 +245,24 @@ export const BoardQuickConfig = ({
   onChange,
   parts = "all",
 }: BoardConfigFieldsProps & {
-  parts?: "places" | "filters" | "all"
+  parts?: "places" | "filters" | "nearby" | "all"
 }) => {
   const servingCandidates = servingLines ?? []
   const showPlaces = parts === "places" || parts === "all"
+  const showNearby = parts === "nearby" || showPlaces
   const showFilters = parts === "filters" || parts === "all"
   const hasLinePicker =
     show(formSettings, "arrivalsLines") && servingCandidates.length > 1
 
   if (parts === "filters" && !hasLinePicker) return null
+  if (
+    parts === "nearby" &&
+    !show(formSettings, "busStop") &&
+    !show(formSettings, "riverStop") &&
+    !show(formSettings, "cycleDocks")
+  ) {
+    return null
+  }
 
   return (
     <div className="grid gap-5">
@@ -292,7 +301,7 @@ export const BoardQuickConfig = ({
         </Field>
       ) : null}
 
-      {showPlaces && show(formSettings, "busStop") ? (
+      {showNearby && show(formSettings, "busStop") ? (
         <Field>
           <FieldLabel
             htmlFor="board-bus-search"
@@ -311,25 +320,10 @@ export const BoardQuickConfig = ({
             placeholder="Search for a bus stop"
             emptyMessage="No bus stops match that search."
           />
-          <details className="text-sm">
-            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-              Stop ID
-            </summary>
-            <Input
-              id="board-bus-stop"
-              className="mt-2"
-              value={config.bus.stop ?? ""}
-              onChange={(event) =>
-                onChange({ bus: { ...config.bus, stop: event.target.value } })
-              }
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </details>
         </Field>
       ) : null}
 
-      {showPlaces && show(formSettings, "riverStop") ? (
+      {showNearby && show(formSettings, "riverStop") ? (
         <Field>
           <FieldLabel
             htmlFor="board-river-search"
@@ -348,28 +342,10 @@ export const BoardQuickConfig = ({
             placeholder="Search for a river pier"
             emptyMessage="No piers match that search."
           />
-          <details className="text-sm">
-            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-              Pier ID
-            </summary>
-            <Input
-              id="board-river-stop"
-              className="mt-2"
-              value={config.river.stop ?? ""}
-              onChange={(event) =>
-                onChange({
-                  river: { ...config.river, stop: event.target.value },
-                })
-              }
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="930GCAW"
-            />
-          </details>
         </Field>
       ) : null}
 
-      {showPlaces && show(formSettings, "cycleDocks") ? (
+      {showNearby && show(formSettings, "cycleDocks") ? (
         <Field>
           <FieldLabel
             htmlFor="board-cycle-docks"
@@ -379,7 +355,9 @@ export const BoardQuickConfig = ({
             {BOARD_SETTINGS.cycleDocks.ui?.label ?? "Cycle docks"}
           </FieldLabel>
           <BoardCycleDockPicker
+            key={config.stop ?? "cycle-docks"}
             id="board-cycle-docks"
+            stopId={config.stop}
             docks={config.cycle.docks}
             onChange={(docks) =>
               onChange({
@@ -422,6 +400,9 @@ export const BoardAdvancedConfig = ({
   const [servingBusRoutes, setServingBusRoutes] = useState<readonly string[]>(
     []
   )
+  const [discardedBusRoutes, setDiscardedBusRoutes] = useState<readonly string[]>(
+    []
+  )
 
   if (config.stop !== draftStop) {
     setDraftStop(config.stop)
@@ -430,6 +411,7 @@ export const BoardAdvancedConfig = ({
 
   if (config.bus.stop !== draftBusStop) {
     setDraftBusStop(config.bus.stop)
+    setDiscardedBusRoutes([])
   }
 
   const sections = useMemo(
@@ -445,15 +427,16 @@ export const BoardAdvancedConfig = ({
     ? config.bus.routes
     : servingBusRoutes
   const busPoolRoutes = servingBusRoutes.filter(
-    (id) => !displayedBusRoutes.includes(id)
+    (id) =>
+      !displayedBusRoutes.includes(id) && !discardedBusRoutes.includes(id)
   )
   const busRouteItems = useMemo(
     () =>
-      [...new Set([...displayedBusRoutes, ...servingBusRoutes])].map((id) => ({
+      [...new Set([...displayedBusRoutes, ...busPoolRoutes])].map((id) => ({
         id,
         label: id,
       })),
-    [displayedBusRoutes, servingBusRoutes]
+    [busPoolRoutes, displayedBusRoutes]
   )
   const busRoutesCustom =
     Boolean(config.bus.routes?.length) &&
@@ -513,6 +496,7 @@ export const BoardAdvancedConfig = ({
 
   const handleResetBusRoutes = () => {
     persistBusRoutes(undefined)
+    setDiscardedBusRoutes([])
   }
 
   const fields = (
@@ -557,6 +541,15 @@ export const BoardAdvancedConfig = ({
               </Help>
             </Field>
           ) : null}
+
+          <BoardQuickConfig
+            parts="nearby"
+            config={config}
+            formSettings={formSettings}
+            servingLines={servingLines}
+            segments={segments}
+            onChange={onChange}
+          />
 
           {show(formSettings, "arrivalsRows") ? (
             <Field>
@@ -646,7 +639,15 @@ export const BoardAdvancedConfig = ({
                 selectedIds={displayedBusRoutes}
                 poolIds={busPoolRoutes}
                 items={busRouteItems}
-                onChange={(next) => persistBusRoutes(next.selected)}
+                onChange={(next) => {
+                  persistBusRoutes(next.selected)
+                  setDiscardedBusRoutes(
+                    servingBusRoutes.filter(
+                      (id) =>
+                        !next.selected.includes(id) && !next.pool.includes(id)
+                    )
+                  )
+                }}
                 renderChip={(item, placement) => (
                   <span aria-hidden>
                     <BusNumberChip

@@ -7,9 +7,9 @@ import { IPAD_CASE } from "./landing-artwork"
 import {
   CROP_SCALE,
   HERO_COPY_GAP,
-  HERO_GROUP_BIAS,
   HERO_SIDE_INSET,
   HERO_TOP_INSET,
+  IPAD_FRAME_WIDTH,
   COPY_FADE_DURATION,
   COPY_FADE_START,
   LETTERBOX_FADE_DURATION,
@@ -59,8 +59,7 @@ const layoutCoverCanvas = (
 const framedIpadCamera = (
   svg: SVGSVGElement,
   composition: HTMLElement,
-  canvas: HTMLElement,
-  copySlot?: HTMLElement | null
+  canvas: HTMLElement
 ) => {
   const { coverScale, panX, panY, viewBox } = layoutCoverCanvas(
     svg,
@@ -68,27 +67,23 @@ const framedIpadCamera = (
     canvas
   )
   const width = composition.clientWidth
-  const height = composition.clientHeight
   const iPadWidth = IPAD_CASE.width * coverScale
   const iPadHeight = IPAD_CASE.height * coverScale
   const iPadLeft = panX + (IPAD_CASE.x - viewBox.x) * coverScale
   const iPadTop = panY + (IPAD_CASE.y - viewBox.y) * coverScale
 
-  const topInset = readCssLength(HERO_TOP_INSET, 16)
-  const copyGap = readCssLength(HERO_COPY_GAP, 20)
-  const groupBias = readCssLength(HERO_GROUP_BIAS, 20)
-  const measuredCopy = copySlot?.getBoundingClientRect().height ?? 0
-  const copyBand = Math.max(measuredCopy, readCssLength("4.25rem", 68))
-  const availableWidth = width * (1 - HERO_SIDE_INSET * 2)
-  const maxIpadHeight = Math.max(80, height - topInset - copyGap - copyBand)
-  const desiredWidth = Math.min(
-    availableWidth,
-    maxIpadHeight * (IPAD_CASE.width / IPAD_CASE.height)
+  const styles = getComputedStyle(composition)
+  const desiredWidth = readCssLength(
+    styles.getPropertyValue("--landing-ipad-width").trim() || IPAD_FRAME_WIDTH,
+    width * (1 - HERO_SIDE_INSET * 2)
+  )
+  const desiredTop = readCssLength(
+    styles.getPropertyValue("--landing-ipad-top").trim() || HERO_TOP_INSET,
+    16
   )
   const desiredHeight = desiredWidth * (IPAD_CASE.height / IPAD_CASE.width)
-  const groupHeight = desiredHeight + copyGap + copyBand
-  const desiredTop = Math.max(topInset, (height - groupHeight) / 2 - groupBias)
   const desiredLeft = (width - desiredWidth) / 2
+  const copyGap = readCssLength(HERO_COPY_GAP, 20)
   const copyTop = desiredTop + desiredHeight + copyGap
 
   const targetScale = desiredWidth / iPadWidth
@@ -212,7 +207,7 @@ export const useIpadZoom = ({
 
     const ctx = gsap.context(() => {
       const startCamera = () => {
-        const next = framedIpadCamera(svg, composition, canvas, copySlot)
+        const next = framedIpadCamera(svg, composition, canvas)
         if (copySlot) {
           copySlot.style.top = `${next.copyTop}px`
           copySlot.style.bottom = "auto"

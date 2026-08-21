@@ -1,10 +1,11 @@
 "use client"
 
-import { type KeyboardEvent } from "react"
+import { type KeyboardEvent, useState } from "react"
 import { createPortal } from "react-dom"
 import { LineBadge, LineBadgeGroup } from "@/components/tfl/brand/line-badge"
 import {
   ChipAddBadge,
+  ChipBin,
   ChipRemoveBadge,
   EmptySlotChip,
   InsertCaret,
@@ -218,12 +219,18 @@ export const BoardExtraStatusLineEditor = ({
   onChange,
 }: ExtraEditorProps) => {
   const byId = new Map(lines.map((line) => [line.lineId, line]))
+  const [hiddenIds, setHiddenIds] = useState<ReadonlySet<string>>(() => new Set())
   const selectedIds = selected.filter((id) => byId.has(id))
   const poolIds = lines
     .map((line) => line.lineId)
-    .filter((id) => !selectedIds.includes(id))
+    .filter((id) => !selectedIds.includes(id) && !hiddenIds.has(id))
 
-  const move = (id: string, to: "selected" | "pool", index?: number) => {
+  const move = (id: string, to: "selected" | "pool" | "bin", index?: number) => {
+    if (to === "bin") {
+      setHiddenIds((current) => new Set([...current, id]))
+      onChange(selectedIds.filter((item) => item !== id))
+      return
+    }
     if (to === "pool") {
       onChange(selectedIds.filter((item) => item !== id))
       return
@@ -231,9 +238,13 @@ export const BoardExtraStatusLineEditor = ({
     onChange(insertId(selectedIds, id, index))
   }
 
-  const drag = useChipDragSort<string, "selected" | "pool">({
-    zones: ["selected", "pool"],
-    itemsInZone: (zone) => (zone === "selected" ? selectedIds : poolIds),
+  const drag = useChipDragSort<string, "selected" | "pool" | "bin">({
+    zones: ["selected", "pool", "bin"],
+    itemsInZone: (zone) => {
+      if (zone === "selected") return selectedIds
+      if (zone === "pool") return poolIds
+      return []
+    },
     onDrop: (id, zone, index) => move(id, zone, index),
     onClick: (id, from) => move(id, from === "pool" ? "selected" : "pool"),
   })
@@ -254,6 +265,14 @@ export const BoardExtraStatusLineEditor = ({
     ) {
       event.preventDefault()
       move(id, "pool")
+      return
+    }
+    if (
+      from === "pool" &&
+      (event.key === "Backspace" || event.key === "Delete")
+    ) {
+      event.preventDefault()
+      move(id, "bin")
     }
   }
 
@@ -303,17 +322,23 @@ export const BoardExtraStatusLineEditor = ({
           <InsertCaret />
         ) : null}
       </div>
-      <div
-        ref={drag.zoneRef("pool")}
-        className={cn(
-          "flex min-h-8 flex-wrap items-center gap-1.5 rounded-lg px-0.5 py-0.5",
-          drag.overZone === "pool" && "bg-muted/40"
-        )}
-      >
-        {poolIds.map((id) => renderChip(id, "pool"))}
-        <PoolHint
-          poolCount={poolIds.length}
-          selectedCount={selectedIds.length}
+      <div className="flex items-start gap-2">
+        <div
+          ref={drag.zoneRef("pool")}
+          className={cn(
+            "flex min-h-8 min-w-0 flex-1 flex-wrap items-center gap-1.5 rounded-lg px-0.5 py-0.5",
+            drag.overZone === "pool" && "bg-muted/40"
+          )}
+        >
+          {poolIds.map((id) => renderChip(id, "pool"))}
+          <PoolHint
+            poolCount={poolIds.length}
+            selectedCount={selectedIds.length}
+          />
+        </div>
+        <ChipBin
+          binRef={drag.zoneRef("bin")}
+          active={drag.overZone === "bin"}
         />
       </div>
       {ghostLine && drag.ghost

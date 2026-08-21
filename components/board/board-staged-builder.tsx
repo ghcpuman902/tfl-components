@@ -224,10 +224,8 @@ const configFromDraft = (draft: BoardSetupDraft): BoardConfig => {
 
   const stop = draft.stopId ?? EXAMPLE_STOP.id
   const p1: Array<"rail" | "bus" | "cycle" | "river"> = ["rail", "bus"]
-  const includeCycle =
-    draft.nearbyModes.includes("cycle") && draft.cycleDockIds.length > 0
-  const includeRiver =
-    draft.nearbyModes.includes("river") && Boolean(draft.riverStopId)
+  const includeCycle = draft.nearbyModes.includes("cycle")
+  const includeRiver = draft.nearbyModes.includes("river")
   if (includeCycle) p1.push("cycle")
   if (includeRiver) p1.push("river")
 

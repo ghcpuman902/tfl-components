@@ -33,6 +33,9 @@ import {
 } from "@/components/docs/home-hero-photos"
 import { MirrorPhotoLoop } from "./mirror-photo-loop"
 import {
+  DOLLY_PARALLAX,
+  DOLLY_SCALE,
+  DOLLY_Y,
   HERO_COPY_BAND,
   HERO_COPY_GAP,
   HERO_GROUP_BIAS,
@@ -163,10 +166,9 @@ export const LandingScene = ({
     window.scrollTo({ top: Math.max(0, top), behavior: "smooth" })
   }, [onHeroInteraction, reducedMotion])
 
-  const { valueRef, requestTilt, showTiltButton } = useParallaxInput({
+  const { valueRef, requestTilt, showMotionUnlock } = useParallaxInput({
     stageRef,
     enabled: !reducedMotion && roomComplete,
-    production,
   })
 
   const { progressRef } = useIpadZoom({
@@ -191,10 +193,46 @@ export const LandingScene = ({
     if (reducedMotion) return
 
     const layers = [
-      { el: l0Ref.current, xAmount: PARALLAX_X.l0, x: 0, scale: 1 },
-      { el: l1Ref.current, xAmount: PARALLAX_X.l1, x: 0, scale: 1 },
-      { el: l2Ref.current, xAmount: PARALLAX_X.l2, x: 0, scale: 1 },
-      { el: l3Ref.current, xAmount: PARALLAX_X.l3, x: 0, scale: 1 },
+      {
+        el: l0Ref.current,
+        xAmount: PARALLAX_X.l0,
+        dollyX: DOLLY_PARALLAX.l0,
+        dollyY: DOLLY_Y.l0,
+        dollyScale: DOLLY_SCALE.l0,
+        x: 0,
+        y: 0,
+        scale: 1,
+      },
+      {
+        el: l1Ref.current,
+        xAmount: PARALLAX_X.l1,
+        dollyX: DOLLY_PARALLAX.l1,
+        dollyY: DOLLY_Y.l1,
+        dollyScale: DOLLY_SCALE.l1,
+        x: 0,
+        y: 0,
+        scale: 1,
+      },
+      {
+        el: l2Ref.current,
+        xAmount: PARALLAX_X.l2,
+        dollyX: DOLLY_PARALLAX.l2,
+        dollyY: DOLLY_Y.l2,
+        dollyScale: DOLLY_SCALE.l2,
+        x: 0,
+        y: 0,
+        scale: 1,
+      },
+      {
+        el: l3Ref.current,
+        xAmount: PARALLAX_X.l3,
+        dollyX: DOLLY_PARALLAX.l3,
+        dollyY: DOLLY_Y.l3,
+        dollyScale: DOLLY_SCALE.l3,
+        x: 0,
+        y: 0,
+        scale: 1,
+      },
     ].filter((layer): layer is typeof layer & { el: SVGGElement } =>
       Boolean(layer.el)
     )
@@ -210,18 +248,16 @@ export const LandingScene = ({
         frame = window.requestAnimationFrame(tick)
         return
       }
-      const pointer =
-        roomComplete && production
-          ? valueRef.current * 0.45
-          : roomComplete
-            ? valueRef.current
-            : 0
+      const pointer = roomComplete ? valueRef.current : 0
+      const dolly = Math.sin(progressRef.current * Math.PI)
       for (const layer of layers) {
-        const targetX = pointer * layer.xAmount
-        const targetScale = 1
+        const targetX = pointer * layer.xAmount + dolly * layer.dollyX
+        const targetY = dolly * layer.dollyY
+        const targetScale = 1 + dolly * layer.dollyScale
         layer.x += (targetX - layer.x) * LAYER_SMOOTH
+        layer.y += (targetY - layer.y) * LAYER_SMOOTH
         layer.scale += (targetScale - layer.scale) * LAYER_SMOOTH
-        layer.el.style.translate = `${layer.x}px`
+        layer.el.style.translate = `${layer.x}px ${layer.y}px`
         layer.el.style.scale = String(layer.scale)
       }
 
@@ -256,7 +292,7 @@ export const LandingScene = ({
     return () => window.cancelAnimationFrame(frame)
   }, [
     pageVisible,
-    production,
+    progressRef,
     reducedMotion,
     roomComplete,
     sceneReady,
@@ -330,14 +366,16 @@ export const LandingScene = ({
         }}
       >
         <div
-          className="sticky z-10 h-0"
-          style={{ top: "var(--site-header-height)" }}
+          className="sticky z-10"
+          style={{
+            top: "var(--site-header-height)",
+            height: "calc(100svh - var(--site-header-height))",
+          }}
         >
           <div
             ref={stageRef}
-            className="pointer-events-none relative overflow-hidden"
+            className="pointer-events-none relative h-full overflow-hidden"
             style={{
-              height: "calc(100svh - var(--site-header-height))",
               touchAction: production ? "pan-y pinch-zoom" : undefined,
             }}
             onPointerDown={() => {
@@ -452,16 +490,17 @@ export const LandingScene = ({
                 />
               ) : null}
 
-              {showTiltButton && !production ? (
+              {showMotionUnlock ? (
                 <button
                   type="button"
                   data-landing-chrome
                   onClick={() => {
+                    onHeroInteraction?.()
                     void requestTilt()
                   }}
-                  className="pointer-events-auto absolute right-4 bottom-4 z-20 cursor-pointer rounded-full bg-black/55 px-3 py-1.5 text-xs text-white hover:bg-black/70 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                  className="pointer-events-auto absolute bottom-[18%] left-4 z-20 inline-flex items-center text-[clamp(0.9375rem,0.85rem+0.3vw,1rem)] text-foreground underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
                 >
-                  Enable tilt
+                  Unlock motion
                 </button>
               ) : null}
             </div>

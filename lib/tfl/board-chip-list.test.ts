@@ -33,6 +33,16 @@ describe("moveChipListItem", () => {
     assert.deepEqual(next.pool, ["73", "17"])
   })
 
+  it("discards a chip from both lists", () => {
+    const next = moveChipListItem(
+      { selected: ["17", "30"], pool: ["73"] },
+      "17",
+      "bin"
+    )
+    assert.deepEqual(next.selected, ["30"])
+    assert.deepEqual(next.pool, ["73"])
+  })
+
   it("returns the same state when the drop does not change order", () => {
     const state = { selected: ["17", "30"], pool: ["73"] }
     const next = moveChipListItem(state, "17", "selected", 0)

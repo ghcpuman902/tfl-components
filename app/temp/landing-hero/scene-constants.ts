@@ -24,25 +24,35 @@ export const IPAD_FRAME_WIDTH = `min(${(1 - HERO_SIDE_INSET * 2) * 100}vw, calc(
  * iPad can settle onto the table.
  */
 export const PARALLAX_X = {
-  l0: 28,
-  l1: 15,
-  l2: 6,
-  l3: 1,
+  l0: 36,
+  l1: 18,
+  l2: 8,
+  l3: 2,
 } as const
 
-/** Scroll-driven depth, smaller than pointer parallax — a focal-length cue. */
+/**
+ * Extra layer motion while the camera dollies out. Near layers (sofa, wall)
+ * recede more; L3 (ceiling / glass in the mirror) lags so it reads farther.
+ */
 export const DOLLY_PARALLAX = {
-  l0: 10,
-  l1: 5,
-  l2: 2,
-  l3: 0.3,
+  l0: 26,
+  l1: 14,
+  l2: 0,
+  l3: -10,
+} as const
+
+export const DOLLY_Y = {
+  l0: 14,
+  l1: 7,
+  l2: 0,
+  l3: -22,
 } as const
 
 export const DOLLY_SCALE = {
-  l0: 0.04,
-  l1: 0.022,
-  l2: 0.01,
-  l3: 0.003,
+  l0: 0.14,
+  l1: 0.07,
+  l2: 0,
+  l3: -0.1,
 } as const
 
 export const PHOTO_OVERLAY_WIDTH = 640

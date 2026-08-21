@@ -1,4 +1,4 @@
-export type ChipListZone = "selected" | "pool"
+export type ChipListZone = "selected" | "pool" | "bin"
 
 export type ChipListState = {
   selected: readonly string[]
@@ -20,7 +20,7 @@ const insertAt = (
 const sameList = (left: readonly string[], right: readonly string[]): boolean =>
   left.length === right.length && left.every((id, index) => id === right[index])
 
-/** Move a chip into the selected list (optional index) or the unused pool. */
+/** Move a chip into the selected list (optional index), the unused pool, or discard. */
 export const moveChipListItem = (
   state: ChipListState,
   id: string,
@@ -29,6 +29,16 @@ export const moveChipListItem = (
 ): ChipListState => {
   const selected = state.selected.filter((item) => item !== id)
   const pool = state.pool.filter((item) => item !== id)
+  if (to === "bin") {
+    const next = { selected, pool }
+    if (
+      sameList(next.selected, state.selected) &&
+      sameList(next.pool, state.pool)
+    ) {
+      return state
+    }
+    return next
+  }
   const next: ChipListState =
     to === "pool"
       ? { selected, pool: [...pool, id] }

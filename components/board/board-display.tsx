@@ -164,11 +164,11 @@ const DEGRADED_HINT =
 const NO_STOP_HINT =
   "Add a stop id to the URL to show live arrivals for one station."
 
-const NO_BUS_HINT = "Add a bus stop id to the URL to show live bus arrivals."
+const NO_BUS_HINT = "Choose a bus stop to show live bus arrivals."
 
-const NO_RIVER_HINT = "Add a pier id to the URL to show live river arrivals."
+const NO_RIVER_HINT = "Choose a pier to show live river arrivals."
 
-const NO_CYCLE_HINT = "Add cycle dock ids to the URL to show nearby bikes."
+const NO_CYCLE_HINT = "Choose cycle docks to show nearby bikes."
 
 type BoardDisplayProps = {
   /** Server-built compact stop → serving lines index. */
