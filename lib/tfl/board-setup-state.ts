@@ -3,6 +3,12 @@
  * Analytics must never receive keys, coordinates, or raw searches.
  */
 
+import {
+  boardSlotsInclude,
+  resolveBoardSlots,
+} from "@/lib/tfl/board-panels"
+import type { BoardConfig } from "@/lib/tfl/board-url-state"
+
 export const BOARD_SETUP_STAGES = [1, 2, 3, 4, 5] as const
 export type BoardSetupStage = (typeof BOARD_SETUP_STAGES)[number]
 
@@ -22,6 +28,9 @@ export type BoardSetupDraft = {
   locationUsed: boolean
   lineIds: readonly string[]
   nearbyModes: readonly BoardNearbyMode[]
+  busStopId: string | null
+  riverStopId: string | null
+  cycleDockIds: readonly string[]
   statusLineIds: readonly string[]
   keyMode: BoardSetupKeyMode | null
   setupStarted: boolean
@@ -59,6 +68,9 @@ export const createBoardSetupDraft = (id = "pending"): BoardSetupDraft => ({
   locationUsed: false,
   lineIds: [],
   nearbyModes: [],
+  busStopId: null,
+  riverStopId: null,
+  cycleDockIds: [],
   statusLineIds: [],
   keyMode: null,
   setupStarted: false,
@@ -93,6 +105,11 @@ export const parseBoardSetupDraft = (value: unknown): BoardSetupDraft | null => 
       : [],
     nearbyModes: Array.isArray(value.nearbyModes)
       ? value.nearbyModes.filter(isNearbyMode)
+      : [],
+    busStopId: typeof value.busStopId === "string" ? value.busStopId : null,
+    riverStopId: typeof value.riverStopId === "string" ? value.riverStopId : null,
+    cycleDockIds: Array.isArray(value.cycleDockIds)
+      ? value.cycleDockIds.filter((item): item is string => typeof item === "string")
       : [],
     statusLineIds: Array.isArray(value.statusLineIds)
       ? value.statusLineIds.filter(
@@ -179,4 +196,93 @@ export const previewFrameForProfile = (
     return { ...BOARD_PREVIEW_SMALL_FRAME, chrome: "phone", density: "compact" }
   }
   return { ...BOARD_PREVIEW_LARGE_FRAME, chrome: "none", density: "roomy" }
+}
+
+const IMPORTED_COMPLETED_STAGES: readonly BoardSetupStage[] = [1, 2, 3, 4]
+
+/** Map a live board URL into a completed Ready-stage draft. */
+export const draftFromBoardConfig = (
+  config: BoardConfig,
+  options?: { id?: string; screenProfile?: BoardScreenProfile | null }
+): BoardSetupDraft => {
+  const slots = resolveBoardSlots(config.slots.p1, config.slots.p2)
+  const hasRail = boardSlotsInclude(slots, "rail")
+  const hasBus =
+    boardSlotsInclude(slots, "bus") || Boolean(config.bus.stop)
+  const hasRiver =
+    boardSlotsInclude(slots, "river") || Boolean(config.river.stop)
+  const hasCycle =
+    boardSlotsInclude(slots, "cycle") ||
+    (config.cycle.docks?.length ?? 0) > 0
+  const hasStatus = boardSlotsInclude(slots, "status")
+  const stopId = config.stop?.trim() || null
+  const nearbyModes: BoardNearbyMode[] = []
+  if (hasBus) nearbyModes.push("bus")
+  if (hasRiver) nearbyModes.push("river")
+  if (hasCycle) nearbyModes.push("cycle")
+
+  return {
+    id: options?.id ?? "pending",
+    stage: 5,
+    screenProfile: options?.screenProfile ?? null,
+    stopId,
+    stopName: config.stopName?.trim() || null,
+    continueWithoutStop: !stopId && !hasRail && hasStatus,
+    locationUsed: false,
+    lineIds: [...(config.arrivals.lineOrder ?? [])],
+    nearbyModes,
+    busStopId: config.bus.stop?.trim() || null,
+    riverStopId: config.river.stop?.trim() || null,
+    cycleDockIds: [...(config.cycle.docks ?? [])],
+    statusLineIds: [...(config.status.lines ?? [])],
+    keyMode: config.key?.trim() ? "shared" : "skipped",
+    setupStarted: true,
+    completedStages: IMPORTED_COMPLETED_STAGES,
+    setupCompleted: true,
+  }
+}
+
+/**
+ * URL settings the draft does not own (rows, tiles, behaviour, slots, key).
+ * `mergeBoardConfig(configFromDraft(draft), leftover)` should match the live board.
+ */
+export const leftoverBoardConfig = (
+  config: BoardConfig
+): Partial<BoardConfig> => {
+  const leftover: Partial<BoardConfig> = {
+    behaviour: config.behaviour,
+    slots: config.slots,
+  }
+  const key = config.key?.trim()
+  if (key) leftover.key = key
+
+  const arrivals: BoardConfig["arrivals"] = {}
+  if (config.arrivals.rows !== undefined) arrivals.rows = config.arrivals.rows
+  if (config.arrivals.pinFirst !== undefined) {
+    arrivals.pinFirst = config.arrivals.pinFirst
+  }
+  if (Object.keys(arrivals).length > 0) leftover.arrivals = arrivals
+
+  const bus: BoardConfig["bus"] = {}
+  if (config.bus.routes) bus.routes = config.bus.routes
+  if (config.bus.rows !== undefined) bus.rows = config.bus.rows
+  if (Object.keys(bus).length > 0) leftover.bus = bus
+
+  const river: BoardConfig["river"] = {}
+  if (config.river.rows !== undefined) river.rows = config.river.rows
+  if (Object.keys(river).length > 0) leftover.river = river
+
+  const cycle: BoardConfig["cycle"] = {}
+  if (config.cycle.surface) cycle.surface = config.cycle.surface
+  if (config.cycle.tiles !== undefined) cycle.tiles = config.cycle.tiles
+  if (Object.keys(cycle).length > 0) leftover.cycle = cycle
+
+  const status: BoardConfig["status"] = {}
+  if (config.status.surface) status.surface = config.status.surface
+  if (config.status.tiles !== undefined) status.tiles = config.status.tiles
+  if (config.status.overview) status.overview = config.status.overview
+  if (config.status.dwell !== undefined) status.dwell = config.status.dwell
+  if (Object.keys(status).length > 0) leftover.status = status
+
+  return leftover
 }

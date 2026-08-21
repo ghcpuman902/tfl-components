@@ -3,25 +3,25 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
-  type KeyboardEvent,
+  type CSSProperties,
 } from "react"
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
 import { useDocumentVisible } from "@/hooks/use-document-visible"
-import { LandingMobileIpadHint } from "@/components/landing/landing-mobile-ipad-hint"
 import { LandingExampleObserver } from "@/components/landing/landing-example-observer"
+import { LandingFoldCopy } from "@/components/landing/landing-fold-copy"
 import {
-  LandingRoomCaption,
-  LandingRoomCopy,
-} from "@/components/landing/landing-room-copy"
-import { HeroCopyPanel, HeroZoomCaption } from "./hero-copy-panel"
-import { IpadAimCursor } from "./ipad-aim-cursor"
+  IpadDeviceSvg,
+  IPAD_ASPECT,
+  ipadCaseRounding,
+  ipadScreenInset,
+} from "@/components/board/board-device-frame"
 import { IpadBoardFrame } from "./ipad-board-frame"
 import {
-  BOARD_IFRAME_HEIGHT,
-  BOARD_IFRAME_RADIUS,
-  BOARD_IFRAME_WIDTH,
+  BOARD_CASE_HEIGHT,
+  BOARD_CASE_WIDTH,
   PICTURE_FRAME_1,
   PICTURE_FRAME_2,
   LandingArtwork,
@@ -32,11 +32,13 @@ import {
 } from "@/components/docs/home-hero-photos"
 import { MirrorPhotoLoop } from "./mirror-photo-loop"
 import {
-  DOLLY_PARALLAX,
-  DOLLY_SCALE,
-  HERO_SCROLL_HEIGHT,
+  HERO_COPY_BAND,
+  HERO_TOP_INSET,
+  IPAD_FRAME_ASPECT,
+  IPAD_FRAME_WIDTH,
   PARALLAX_X,
   PHOTO_OVERLAY_WIDTH,
+  ROOM_VEIL_OPACITY,
 } from "./scene-constants"
 import { syncOverlayToSvg } from "./sync-overlay"
 import { useIpadZoom } from "./use-ipad-zoom"
@@ -52,17 +54,51 @@ const LAYER_SMOOTH = 0.16
 type LandingSceneProps = {
   production?: boolean
   onCtaClick?: () => void
-  onIpadActivate?: () => void
   onZoomComplete?: () => void
   onHeroInteraction?: () => void
   onExampleSeen?: () => void
   onExampleInteraction?: () => void
 }
 
+const LandingStaticRoom = () => {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const l0Ref = useRef<SVGGElement>(null)
+  const l1Ref = useRef<SVGGElement>(null)
+  const l2Ref = useRef<SVGGElement>(null)
+  const l3Ref = useRef<SVGGElement>(null)
+  const iPadRef = useRef<SVGGElement>(null)
+  const iPadHitRef = useRef<SVGRectElement>(null)
+  const iPadScreenRef = useRef<SVGRectElement>(null)
+  const pictureMat1Ref = useRef<SVGRectElement>(null)
+  const pictureMat2Ref = useRef<SVGRectElement>(null)
+
+  return (
+    <section
+      id="landing-room"
+      className="relative w-full overflow-hidden"
+      style={{ height: "calc(100dvh - var(--site-header-height))" }}
+    >
+      <div className="landing-hero-paper absolute inset-0" />
+      <div className="absolute inset-0">
+        <LandingArtwork
+          svgRef={svgRef}
+          l0Ref={l0Ref}
+          l1Ref={l1Ref}
+          l2Ref={l2Ref}
+          l3Ref={l3Ref}
+          iPadRef={iPadRef}
+          iPadHitRef={iPadHitRef}
+          iPadScreenRef={iPadScreenRef}
+          pictureMat1Ref={pictureMat1Ref}
+          pictureMat2Ref={pictureMat2Ref}
+        />
+      </div>
+    </section>
+  )
+}
+
 export const LandingScene = ({
   production = false,
-  onCtaClick,
-  onIpadActivate,
   onZoomComplete,
   onHeroInteraction,
   onExampleSeen,
@@ -75,8 +111,8 @@ export const LandingScene = ({
   const compositionRef = useRef<HTMLDivElement>(null)
   const cameraRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
-  const copyRef = useRef<HTMLElement>(null)
-  const captionRef = useRef<HTMLParagraphElement>(null)
+  const veilRef = useRef<HTMLDivElement>(null)
+  const copyRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const l0Ref = useRef<SVGGElement>(null)
   const l1Ref = useRef<SVGGElement>(null)
@@ -84,6 +120,7 @@ export const LandingScene = ({
   const l3Ref = useRef<SVGGElement>(null)
   const iPadRef = useRef<SVGGElement>(null)
   const iPadHitRef = useRef<SVGRectElement>(null)
+  const iPadCaseRef = useRef<SVGRectElement>(null)
   const iPadScreenRef = useRef<SVGRectElement>(null)
   const pictureMat1Ref = useRef<SVGRectElement>(null)
   const pictureMat2Ref = useRef<SVGRectElement>(null)
@@ -91,75 +128,66 @@ export const LandingScene = ({
   const photo1OverlayRef = useRef<HTMLDivElement>(null)
   const photo2OverlayRef = useRef<HTMLDivElement>(null)
 
-  const [zoomComplete, setZoomComplete] = useState(false)
-  const [debugOpen, setDebugOpen] = useState(false)
-  const [overlayOpacity, setOverlayOpacity] = useState(0)
-  const [debugProgress, setDebugProgressValue] = useState(0)
+  const [roomComplete, setRoomComplete] = useState(false)
+  const [sceneReady, setSceneReady] = useState(false)
 
-  const handleZoomCompleteChange = useCallback((complete: boolean) => {
-    setZoomComplete((current) => {
+  const handleRoomCompleteChange = useCallback((complete: boolean) => {
+    setRoomComplete((current) => {
       if (current === complete) return current
       if (complete) onZoomComplete?.()
       return complete
     })
   }, [onZoomComplete])
 
+  const handleSeeSpace = useCallback(() => {
+    onHeroInteraction?.()
+    if (reducedMotion) {
+      document.getElementById("landing-room")?.scrollIntoView({
+        behavior: "auto",
+        block: "start",
+      })
+      return
+    }
+    const wrapper = wrapperRef.current
+    if (!wrapper) return
+    const top =
+      window.scrollY +
+      wrapper.getBoundingClientRect().top +
+      wrapper.offsetHeight -
+      window.innerHeight
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" })
+  }, [onHeroInteraction, reducedMotion])
+
   const { valueRef, requestTilt, showTiltButton } = useParallaxInput({
     stageRef,
-    enabled: !reducedMotion,
+    enabled: !reducedMotion && roomComplete,
     production,
   })
 
-  const { scrollToIpad, setDebugProgress, releaseDebugProgress, progressRef } =
-    useIpadZoom({
-      wrapperRef,
-      compositionRef,
-      cameraRef,
-      canvasRef,
-      svgRef,
-      iPadRef,
-      l0Ref,
-      l1Ref,
-      copyRef,
-      captionRef,
-      reducedMotion,
-      onZoomCompleteChange: handleZoomCompleteChange,
-    })
+  const { progressRef } = useIpadZoom({
+    wrapperRef,
+    compositionRef,
+    cameraRef,
+    canvasRef,
+    veilRef,
+    svgRef,
+    iPadRef,
+    copyRef,
+    reducedMotion,
+    onRoomCompleteChange: handleRoomCompleteChange,
+    onSceneReady: () => {
+      setSceneReady(true)
+    },
+  })
 
   useEffect(() => {
+    if (reducedMotion) return
+
     const layers = [
-      {
-        el: l0Ref.current,
-        xAmount: PARALLAX_X.l0,
-        dollyX: DOLLY_PARALLAX.l0,
-        dollyScale: DOLLY_SCALE.l0,
-        x: 0,
-        scale: 1,
-      },
-      {
-        el: l1Ref.current,
-        xAmount: PARALLAX_X.l1,
-        dollyX: DOLLY_PARALLAX.l1,
-        dollyScale: DOLLY_SCALE.l1,
-        x: 0,
-        scale: 1,
-      },
-      {
-        el: l2Ref.current,
-        xAmount: PARALLAX_X.l2,
-        dollyX: DOLLY_PARALLAX.l2,
-        dollyScale: DOLLY_SCALE.l2,
-        x: 0,
-        scale: 1,
-      },
-      {
-        el: l3Ref.current,
-        xAmount: PARALLAX_X.l3,
-        dollyX: DOLLY_PARALLAX.l3,
-        dollyScale: DOLLY_SCALE.l3,
-        x: 0,
-        scale: 1,
-      },
+      { el: l0Ref.current, xAmount: PARALLAX_X.l0, x: 0, scale: 1 },
+      { el: l1Ref.current, xAmount: PARALLAX_X.l1, x: 0, scale: 1 },
+      { el: l2Ref.current, xAmount: PARALLAX_X.l2, x: 0, scale: 1 },
+      { el: l3Ref.current, xAmount: PARALLAX_X.l3, x: 0, scale: 1 },
     ].filter((layer): layer is typeof layer & { el: SVGGElement } =>
       Boolean(layer.el)
     )
@@ -175,15 +203,15 @@ export const LandingScene = ({
         frame = window.requestAnimationFrame(tick)
         return
       }
-      const pointer = reducedMotion
-        ? 0
-        : production
+      const pointer =
+        roomComplete && production
           ? valueRef.current * 0.45
-          : valueRef.current
-      const dolly = reducedMotion ? 0 : progressRef.current
+          : roomComplete
+            ? valueRef.current
+            : 0
       for (const layer of layers) {
-        const targetX = pointer * layer.xAmount + dolly * layer.dollyX
-        const targetScale = 1 + dolly * layer.dollyScale
+        const targetX = pointer * layer.xAmount
+        const targetScale = 1
         layer.x += (targetX - layer.x) * LAYER_SMOOTH
         layer.scale += (targetScale - layer.scale) * LAYER_SMOOTH
         layer.el.style.translate = `${layer.x}px`
@@ -191,7 +219,7 @@ export const LandingScene = ({
       }
 
       const host = compositionRef.current
-      if (host) {
+      if (host && sceneReady) {
         syncOverlayToSvg(
           photo1OverlayRef.current,
           pictureMat1Ref.current,
@@ -208,10 +236,10 @@ export const LandingScene = ({
         )
         syncOverlayToSvg(
           ipadOverlayRef.current,
-          iPadScreenRef.current,
+          iPadCaseRef.current,
           host,
-          BOARD_IFRAME_WIDTH,
-          BOARD_IFRAME_HEIGHT
+          BOARD_CASE_WIDTH,
+          BOARD_CASE_HEIGHT
         )
       }
 
@@ -219,262 +247,224 @@ export const LandingScene = ({
     }
     frame = window.requestAnimationFrame(tick)
     return () => window.cancelAnimationFrame(frame)
-  }, [pageVisible, production, progressRef, reducedMotion, valueRef])
+  }, [
+    pageVisible,
+    production,
+    reducedMotion,
+    roomComplete,
+    sceneReady,
+    valueRef,
+  ])
 
-  useEffect(() => {
-    const hit = iPadHitRef.current
-    if (!hit) return
-    hit.style.pointerEvents = zoomComplete ? "none" : "auto"
-    hit.setAttribute("aria-hidden", zoomComplete ? "true" : "false")
-    if (zoomComplete) hit.blur()
-  }, [zoomComplete])
-
-  useEffect(() => {
-    if (production) return
-    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key !== "d" && event.key !== "D") return
-      const target = event.target
-      if (
-        target instanceof HTMLElement &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable)
-      ) {
-        return
-      }
-      setDebugOpen((current) => !current)
-    }
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [production])
+  useLayoutEffect(() => {
+    if (!sceneReady) return
+    const host = compositionRef.current
+    if (!host) return
+    syncOverlayToSvg(
+      ipadOverlayRef.current,
+      iPadCaseRef.current,
+      host,
+      BOARD_CASE_WIDTH,
+      BOARD_CASE_HEIGHT
+    )
+  }, [sceneReady])
 
   const exampleInteracted = useRef(false)
-  const pointerStart = useRef<{ x: number; y: number } | null>(null)
-  const pointerNow = useRef<{ x: number; y: number } | null>(null)
 
-  const handleIpadClick = () => {
-    if (zoomComplete) return
-    const start = pointerStart.current
-    const now = pointerNow.current ?? start
-    if (
-      production &&
-      start &&
-      now &&
-      Math.hypot(now.x - start.x, now.y - start.y) > 8
-    ) {
-      return
-    }
-    onIpadActivate?.()
-    scrollToIpad()
-  }
+  const heroCopy = (
+    <LandingFoldCopy copyRef={copyRef} onContinue={handleSeeSpace} />
+  )
 
-  const handleIpadKeyDown = (event: KeyboardEvent<SVGRectElement>) => {
-    if (event.key !== "Enter" && event.key !== " ") return
-    event.preventDefault()
-    handleIpadClick()
-  }
+  const landingVars = {
+    "--landing-ipad-width": IPAD_FRAME_WIDTH,
+    "--landing-ipad-top": `max(${HERO_TOP_INSET}, calc(${HERO_TOP_INSET} + (100dvh - var(--site-header-height) - ${HERO_COPY_BAND} - (var(--landing-ipad-width) / ${IPAD_FRAME_ASPECT})) / 2))`,
+  } as CSSProperties
 
-  const handleDebugProgress = (value: number) => {
-    setDebugProgressValue(value)
-    setDebugProgress(value)
+  if (reducedMotion) {
+    return (
+      <div className="landing-home w-full min-w-0" style={landingVars}>
+        <section className="mx-auto flex min-h-[calc(100dvh-var(--site-header-height))] w-full flex-col justify-center px-4 pt-4 pb-10">
+          <div
+            className="relative mx-auto w-(--landing-ipad-width)"
+            style={{ aspectRatio: IPAD_ASPECT }}
+          >
+            <IpadDeviceSvg showCable={false} />
+            <div
+              className="absolute overflow-hidden"
+              style={{
+                left: `${ipadScreenInset.left * 100}%`,
+                top: `${ipadScreenInset.top * 100}%`,
+                width: `${ipadScreenInset.width * 100}%`,
+                height: `${ipadScreenInset.height * 100}%`,
+                borderRadius: `${(ipadScreenInset.radius / ipadScreenInset.width) * 100}%`,
+              }}
+            >
+              <IpadBoardFrame interactive={false} />
+            </div>
+          </div>
+          <div className="mt-5">{heroCopy}</div>
+        </section>
+        <LandingStaticRoom />
+      </div>
+    )
   }
 
   return (
     <div
-      ref={wrapperRef}
-      className="relative w-full"
-      style={{ height: HERO_SCROLL_HEIGHT }}
+      className="landing-home relative w-full min-w-0 overflow-x-clip"
+      style={landingVars}
     >
       <div
-        ref={stageRef}
-        className="landing-hero-paper sticky z-0 overflow-hidden"
+        ref={wrapperRef}
+        className="relative w-full"
         style={{
-          top: "var(--site-header-height)",
-          height: "calc(100dvh - var(--site-header-height))",
-          touchAction: production ? "pan-y pinch-zoom" : undefined,
-        }}
-        onPointerDown={(event) => {
-          pointerStart.current = { x: event.clientX, y: event.clientY }
-          pointerNow.current = { x: event.clientX, y: event.clientY }
-          onHeroInteraction?.()
-        }}
-        onPointerMove={(event) => {
-          pointerNow.current = { x: event.clientX, y: event.clientY }
+          height: "calc(100dvh - var(--site-header-height) + 100svh)",
         }}
       >
         <div
-          ref={compositionRef}
-          className="absolute inset-x-0 top-0 overflow-hidden"
-          style={{ height: "calc(100svh - var(--site-header-height))" }}
+          className="sticky z-10 h-0"
+          style={{ top: "var(--site-header-height)" }}
         >
-          <div ref={cameraRef} className="relative size-full">
-            <div ref={canvasRef} className="absolute top-0 left-0">
-              <LandingArtwork
-                svgRef={svgRef}
-                l0Ref={l0Ref}
-                l1Ref={l1Ref}
-                l2Ref={l2Ref}
-                l3Ref={l3Ref}
-                iPadRef={iPadRef}
-                iPadHitRef={iPadHitRef}
-                iPadScreenRef={iPadScreenRef}
-                pictureMat1Ref={pictureMat1Ref}
-                pictureMat2Ref={pictureMat2Ref}
-                onIpadClick={handleIpadClick}
-                onIpadKeyDown={handleIpadKeyDown}
-                ipadAriaLabel={
-                  production ? "Zoom in to the live board" : undefined
-                }
-                ipadPressedClassName={
-                  production
-                    ? "cursor-none origin-center transition-transform [@media(hover:hover)_and_(pointer:fine)]:hover:scale-100 active:scale-[0.94]"
-                    : undefined
-                }
-              />
-            </div>
-          </div>
-
           <div
-            ref={photo1OverlayRef}
-            aria-hidden
-            className="pointer-events-none absolute top-0 left-0 overflow-hidden"
-            style={{ visibility: "hidden" }}
-          >
-            <MirrorPhotoLoop
-              slides={HOME_HERO_PORTRAIT_SLIDES}
-              frozen={reducedMotion || !pageVisible}
-              intervalMs={4200}
-            />
-          </div>
-          <div
-            ref={photo2OverlayRef}
-            aria-hidden
-            className="pointer-events-none absolute top-0 left-0 overflow-hidden"
-            style={{ visibility: "hidden" }}
-          >
-            <MirrorPhotoLoop
-              slides={HOME_HERO_LANDSCAPE_SLIDES}
-              frozen={reducedMotion || !pageVisible}
-              intervalMs={5400}
-            />
-          </div>
-          <div
-            ref={ipadOverlayRef}
-            id="landing-example-board"
-            className="absolute top-0 left-0 overflow-hidden"
+            ref={stageRef}
+            className="pointer-events-none relative overflow-hidden"
             style={{
-              borderRadius: BOARD_IFRAME_RADIUS,
-              pointerEvents: zoomComplete ? "auto" : "none",
-              visibility: "hidden",
+              height: "calc(100dvh - var(--site-header-height))",
+              touchAction: production ? "pan-y pinch-zoom" : undefined,
             }}
             onPointerDown={() => {
-              if (!zoomComplete || exampleInteracted.current) return
-              exampleInteracted.current = true
-              onExampleInteraction?.()
+              onHeroInteraction?.()
             }}
           >
-            <IpadBoardFrame interactive={zoomComplete} />
-          </div>
-          {production && zoomComplete ? (
-            <LandingExampleObserver
-              targetId="landing-example-board"
-              onSeen={() => onExampleSeen?.()}
-            />
-          ) : null}
-
-          {production ? (
-            <LandingRoomCopy copyRef={copyRef} onCtaClick={onCtaClick} />
-          ) : (
-            <HeroCopyPanel copyRef={copyRef} />
-          )}
-          {production ? (
-            <LandingRoomCaption captionRef={captionRef} onCtaClick={onCtaClick} />
-          ) : (
-            <HeroZoomCaption captionRef={captionRef} />
-          )}
-          {production ? (
-            <LandingMobileIpadHint
-              hostRef={stageRef}
-              targetRef={iPadHitRef}
-              enabled={!zoomComplete}
-            />
-          ) : null}
-
-          {overlayOpacity > 0 ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src="/images/landing/landing-reference.svg"
-              alt=""
-              aria-hidden
-              className="pointer-events-none absolute inset-0 size-full object-cover"
-              style={{ opacity: overlayOpacity }}
-            />
-          ) : null}
-
-          {showTiltButton && !production ? (
-            <button
-              type="button"
-              data-landing-chrome
-              onClick={() => {
-                void requestTilt()
-              }}
-              className="absolute right-4 bottom-4 z-20 cursor-pointer rounded-full bg-black/55 px-3 py-1.5 text-xs text-white hover:bg-black/70 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+            <div className="landing-hero-paper pointer-events-none absolute inset-0" />
+            <div
+              ref={compositionRef}
+              className="absolute inset-x-0 top-0 overflow-hidden"
+              style={{ height: "calc(100svh - var(--site-header-height))" }}
             >
-              Enable tilt
-            </button>
-          ) : null}
+              <div
+                ref={cameraRef}
+                className="relative size-full"
+                style={{ visibility: sceneReady ? "visible" : "hidden" }}
+              >
+                <div ref={canvasRef} className="absolute top-0 left-0">
+                  <LandingArtwork
+                    svgRef={svgRef}
+                    l0Ref={l0Ref}
+                    l1Ref={l1Ref}
+                    l2Ref={l2Ref}
+                    l3Ref={l3Ref}
+                    iPadRef={iPadRef}
+                    iPadHitRef={iPadHitRef}
+                    iPadCaseRef={iPadCaseRef}
+                    iPadScreenRef={iPadScreenRef}
+                    pictureMat1Ref={pictureMat1Ref}
+                    pictureMat2Ref={pictureMat2Ref}
+                    hideIpadSilhouette
+                  />
+                </div>
+              </div>
+
+              <div
+                ref={photo1OverlayRef}
+                aria-hidden
+                className="pointer-events-none absolute top-0 left-0 overflow-hidden"
+                style={{ visibility: "hidden" }}
+              >
+                <MirrorPhotoLoop
+                  slides={HOME_HERO_PORTRAIT_SLIDES}
+                  frozen={!pageVisible}
+                  intervalMs={4200}
+                />
+              </div>
+              <div
+                ref={photo2OverlayRef}
+                aria-hidden
+                className="pointer-events-none absolute top-0 left-0 overflow-hidden"
+                style={{ visibility: "hidden" }}
+              >
+                <MirrorPhotoLoop
+                  slides={HOME_HERO_LANDSCAPE_SLIDES}
+                  frozen={!pageVisible}
+                  intervalMs={5400}
+                />
+              </div>
+              <div
+                ref={veilRef}
+                aria-hidden
+                className="landing-hero-paper pointer-events-none absolute inset-0"
+                style={{
+                  opacity: ROOM_VEIL_OPACITY,
+                  visibility: sceneReady ? "visible" : "hidden",
+                }}
+              />
+              <div
+                ref={ipadOverlayRef}
+                id="landing-example-board"
+                className="absolute overflow-hidden"
+                style={{
+                  top: "var(--landing-ipad-top)",
+                  left: "50%",
+                  width: "var(--landing-ipad-width)",
+                  aspectRatio: IPAD_FRAME_ASPECT,
+                  translate: "-50% 0",
+                  borderRadius: ipadCaseRounding,
+                  pointerEvents: roomComplete ? "auto" : "none",
+                }}
+                onPointerDown={() => {
+                  if (!roomComplete || exampleInteracted.current) return
+                  exampleInteracted.current = true
+                  onExampleInteraction?.()
+                }}
+              >
+                <IpadDeviceSvg showCable={false} />
+                <div
+                  className="absolute overflow-hidden"
+                  style={{
+                    left: `${ipadScreenInset.left * 100}%`,
+                    top: `${ipadScreenInset.top * 100}%`,
+                    width: `${ipadScreenInset.width * 100}%`,
+                    height: `${ipadScreenInset.height * 100}%`,
+                    borderRadius: `${(ipadScreenInset.radius / ipadScreenInset.width) * 100}%`,
+                  }}
+                >
+                  <IpadBoardFrame interactive={roomComplete} />
+                </div>
+              </div>
+              {production && roomComplete ? (
+                <LandingExampleObserver
+                  targetId="landing-example-board"
+                  onSeen={() => onExampleSeen?.()}
+                />
+              ) : null}
+
+              {showTiltButton && !production ? (
+                <button
+                  type="button"
+                  data-landing-chrome
+                  onClick={() => {
+                    void requestTilt()
+                  }}
+                  className="pointer-events-auto absolute right-4 bottom-4 z-20 cursor-pointer rounded-full bg-black/55 px-3 py-1.5 text-xs text-white hover:bg-black/70 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                >
+                  Enable tilt
+                </button>
+              ) : null}
+            </div>
+
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 z-20"
+              style={{
+                height: HERO_COPY_BAND,
+                visibility: roomComplete ? "hidden" : "visible",
+              }}
+            >
+              <div className="flex size-full items-end justify-center pb-5">
+                {heroCopy}
+              </div>
+            </div>
+          </div>
         </div>
-
-        <IpadAimCursor
-          hostRef={stageRef}
-          targetRef={iPadHitRef}
-          enabled={!zoomComplete && pageVisible}
-        />
-
-        {debugOpen ? (
-          <div
-            data-landing-chrome
-            className="absolute right-3 bottom-3 z-30 flex max-w-xs cursor-auto flex-col gap-2 rounded-md bg-black/70 p-3 text-xs text-white"
-          >
-            <p className="font-medium">Landing debug (D)</p>
-            <label className="flex items-center gap-2">
-              Overlay
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={overlayOpacity}
-                onChange={(event) =>
-                  setOverlayOpacity(Number(event.target.value))
-                }
-              />
-            </label>
-            <label className="flex items-center gap-2">
-              Camera
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={debugProgress}
-                onChange={(event) =>
-                  handleDebugProgress(Number(event.target.value))
-                }
-              />
-            </label>
-            <button
-              type="button"
-              className="self-start underline"
-              onClick={() => {
-                releaseDebugProgress()
-                setDebugProgressValue(0)
-              }}
-            >
-              Resume scroll
-            </button>
-          </div>
-        ) : null}
       </div>
     </div>
   )

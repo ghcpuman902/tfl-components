@@ -1,6 +1,12 @@
 "use client"
 
-import { useMemo, useState, type ChangeEvent, type ReactNode } from "react"
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from "react"
 import { ChevronDownIcon } from "lucide-react"
 import { LINE_ORDER } from "tfl-ts"
 import { BoardLineChipPicker } from "@/components/board/board-line-chip-picker"
@@ -16,6 +22,12 @@ import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select"
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -30,13 +42,16 @@ import type { BoardStationLineGroup } from "@/lib/tfl/board-station-lines"
 import {
   parseDockIdList,
   parseRouteIdList,
+  sameBusRouteSet,
   serializeDockIdList,
   serializeRouteIdList,
 } from "@/lib/tfl/board-panels"
+import { getBoardBusStopRoutes } from "@/lib/tfl/board-place-search-action"
 import {
   BOARD_SETTINGS,
   parseArrivalsRows,
   type BoardSettingId,
+  type BoardSettingOption,
 } from "@/lib/tfl/board-settings"
 import type { BoardStationSearchItem } from "@/lib/tfl/board-station-names"
 import {
@@ -107,7 +122,7 @@ const NativeSelect = ({
   id: string
   value: string
   onChange: (value: string) => void
-  options: readonly { value: string; label: string }[]
+  options: readonly BoardSettingOption[]
 }) => (
   <select
     id={id}
@@ -123,15 +138,78 @@ const NativeSelect = ({
   </select>
 )
 
+const DescribedSelect = ({
+  id,
+  value,
+  ariaLabel,
+  onChange,
+  options,
+}: {
+  id: string
+  value: string
+  ariaLabel: string
+  onChange: (value: string) => void
+  options: readonly BoardSettingOption[]
+}) => {
+  const selected =
+    options.find((option) => option.value === value) ?? options[0]
+
+  return (
+    <Select
+      value={value}
+      onValueChange={(next) => {
+        if (next) onChange(next)
+      }}
+    >
+      <SelectTrigger
+        id={id}
+        aria-label={ariaLabel}
+        className="h-auto w-full min-h-8 whitespace-normal py-1.5 data-[size=default]:h-auto"
+      >
+        {selected ? (
+          <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5 text-left">
+            <span>{selected.label}</span>
+            {selected.description ? (
+              <span className="text-xs font-normal text-muted-foreground">
+                {selected.description}
+              </span>
+            ) : null}
+          </span>
+        ) : null}
+      </SelectTrigger>
+      <SelectContent align="start" alignItemWithTrigger={false}>
+        {options.map((option) => (
+          <SelectItem
+            key={option.value}
+            value={option.value}
+            className="items-start py-1.5"
+          >
+            <span className="flex flex-col items-start gap-0.5 whitespace-normal">
+              <span>{option.label}</span>
+              {option.description ? (
+                <span className="text-xs font-normal text-muted-foreground">
+                  {option.description}
+                </span>
+              ) : null}
+            </span>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
 const NumberField = ({
   id,
   value,
+  fallback,
   min,
   max,
   onChange,
 }: {
   id: string
   value: number | undefined
+  fallback?: number
   min: number
   max: number
   onChange: (value: number | undefined) => void
@@ -141,7 +219,7 @@ const NumberField = ({
     type="number"
     min={min}
     max={max}
-    value={value ?? ""}
+    value={value ?? fallback ?? ""}
     onChange={(event) => {
       const raw = event.target.value
       onChange(raw === "" ? undefined : Number(raw))
@@ -340,7 +418,7 @@ export const BoardAdvancedConfig = ({
   servingLines,
   lineGroups,
   autoStopName,
-  segments = [],
+  segments: segmentsProp = [],
   legendPath,
   onChange,
   open,
@@ -356,10 +434,22 @@ export const BoardAdvancedConfig = ({
   const [rowsDraft, setRowsDraft] = useState(() =>
     rowsDraftFromConfig(config.arrivals.rows)
   )
+  const [draftBusStop, setDraftBusStop] = useState(config.bus.stop)
+  const [routesDraft, setRoutesDraft] = useState(
+    () => serializeRouteIdList(config.bus.routes) ?? ""
+  )
+  const [servingBusRoutes, setServingBusRoutes] = useState<readonly string[]>(
+    []
+  )
 
   if (config.stop !== draftStop) {
     setDraftStop(config.stop)
     setRowsDraft(rowsDraftFromConfig(config.arrivals.rows))
+  }
+
+  if (config.bus.stop !== draftBusStop) {
+    setDraftBusStop(config.bus.stop)
+    setRoutesDraft(serializeRouteIdList(config.bus.routes) ?? "")
   }
 
   const sections = useMemo(
@@ -371,7 +461,30 @@ export const BoardAdvancedConfig = ({
     [config, servingLines, lineGroups]
   )
   const rowsPlaceholder = formatArrivalsRowsPlaceholder(sections)
-  const busRoutes = config.bus.routes ?? []
+  const servingRoutesLabel = serializeRouteIdList(servingBusRoutes) ?? ""
+  const displayedBusRoutes = config.bus.routes?.length
+    ? config.bus.routes
+    : servingBusRoutes
+  const busRoutesCustom =
+    Boolean(config.bus.routes?.length) &&
+    !sameBusRouteSet(config.bus.routes ?? [], servingBusRoutes)
+  const segments = hideTrigger ? [] : segmentsProp
+
+  useEffect(() => {
+    const stop = config.bus.stop?.trim()
+    if (!stop) {
+      setServingBusRoutes([])
+      return
+    }
+    let cancelled = false
+    void getBoardBusStopRoutes(stop).then((result) => {
+      if (cancelled) return
+      setServingBusRoutes(result.ok ? result.routes : [])
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [config.bus.stop])
 
   const handleStopNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange({ stopName: event.target.value })
@@ -383,7 +496,6 @@ export const BoardAdvancedConfig = ({
     if (!draft) {
       onChange({
         arrivals: {
-          ...config.arrivals,
           rows: undefined,
         },
       })
@@ -391,38 +503,61 @@ export const BoardAdvancedConfig = ({
     }
     onChange({
       arrivals: {
-        ...config.arrivals,
         rows: parseArrivalsRows(draft),
       },
     })
   }
 
-  const handleRemoveBusRoute = (routeId: string) => {
-    const next = busRoutes.filter((id) => id !== routeId)
+  const persistBusRoutes = (next: readonly string[] | undefined) => {
+    const routes =
+      !next?.length || sameBusRouteSet(next, servingBusRoutes)
+        ? undefined
+        : next
     onChange({
       bus: {
         ...config.bus,
-        routes: next.length > 0 ? next : undefined,
+        routes,
       },
     })
+    return routes
+  }
+
+  const handleBusRoutesChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const draft = event.target.value
+    setRoutesDraft(draft)
+    persistBusRoutes(parseRouteIdList(draft || null))
+  }
+
+  const handleRemoveBusRoute = (routeId: string) => {
+    const routes = persistBusRoutes(
+      displayedBusRoutes.filter((id) => id !== routeId)
+    )
+    setRoutesDraft(serializeRouteIdList(routes) ?? "")
+  }
+
+  const handleResetBusRoutes = () => {
+    persistBusRoutes(undefined)
+    setRoutesDraft("")
   }
 
   const fields = (
         <div className={cn("grid max-w-3xl gap-5", hideTrigger ? "pt-1" : "p-4")}>
-          <BoardUrlLegend path={legendPath} segments={segments} />
           {hideTrigger ? null : (
-          <p className="text-sm text-muted-foreground">
-            See the{" "}
-            <a
-              href="/docs/board-url"
-              className="text-foreground underline underline-offset-4"
-            >
-              Board URL specification
-            </a>
-            .
-          </p>
+            <>
+              <BoardUrlLegend path={legendPath} segments={segments} />
+              <p className="text-sm text-muted-foreground">
+                See the{" "}
+                <a
+                  href="/docs/board-url"
+                  className="text-foreground underline underline-offset-4"
+                >
+                  Board URL specification
+                </a>
+                .
+              </p>
+            </>
           )}
-          {show(formSettings, "stopName") ? (
+          {hideTrigger ? null : show(formSettings, "stopName") ? (
             <Field>
               <FieldLabel
                 htmlFor="board-stop-name"
@@ -460,12 +595,11 @@ export const BoardAdvancedConfig = ({
               <Input
                 id="board-rows"
                 name="a.rows"
-                value={rowsDraft}
+                value={rowsDraft || rowsPlaceholder}
                 onChange={handleRowsChange}
                 autoComplete="off"
                 spellCheck={false}
                 inputMode="numeric"
-                placeholder={rowsPlaceholder}
                 aria-describedby={
                   rowsPreview
                     ? "board-rows-preview board-rows-hint"
@@ -513,31 +647,34 @@ export const BoardAdvancedConfig = ({
 
           {show(formSettings, "busRoutes") ? (
             <Field>
-              <FieldLabel
-                htmlFor="board-bus-routes"
-                setting="busRoutes"
-                segments={segments}
-              >
-                {BOARD_SETTINGS.busRoutes.ui?.label ?? "Bus routes"}
-              </FieldLabel>
+              <div className="flex items-center justify-between gap-2">
+                <FieldLabel
+                  htmlFor="board-bus-routes"
+                  setting="busRoutes"
+                  segments={segments}
+                >
+                  {BOARD_SETTINGS.busRoutes.ui?.label ?? "Bus routes"}
+                </FieldLabel>
+                {busRoutesCustom ? (
+                  <button
+                    type="button"
+                    className="text-sm text-muted-foreground underline underline-offset-4"
+                    onClick={handleResetBusRoutes}
+                  >
+                    Reset
+                  </button>
+                ) : null}
+              </div>
               <Input
                 id="board-bus-routes"
-                value={serializeRouteIdList(config.bus.routes) ?? ""}
-                onChange={(event) =>
-                  onChange({
-                    bus: {
-                      ...config.bus,
-                      routes: parseRouteIdList(event.target.value || null),
-                    },
-                  })
-                }
+                value={routesDraft || servingRoutesLabel}
+                onChange={handleBusRoutesChange}
                 autoComplete="off"
                 spellCheck={false}
-                placeholder="73,n8"
               />
-              {busRoutes.length > 0 ? (
+              {displayedBusRoutes.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
-                  {busRoutes.map((routeId) => (
+                  {displayedBusRoutes.map((routeId) => (
                     <button
                       key={routeId}
                       type="button"
@@ -553,7 +690,6 @@ export const BoardAdvancedConfig = ({
                   ))}
                 </div>
               ) : null}
-              <Help>{BOARD_SETTINGS.busRoutes.ui?.help}</Help>
             </Field>
           ) : null}
 
@@ -571,10 +707,12 @@ export const BoardAdvancedConfig = ({
                 min={0}
                 max={16}
                 value={config.bus.rows}
+                fallback={BOARD_SETTINGS.busRows.defaultValue}
                 onChange={(rows) =>
                   onChange({ bus: { ...config.bus, rows } })
                 }
               />
+              <Help>{BOARD_SETTINGS.busRows.ui?.help}</Help>
             </Field>
           ) : null}
 
@@ -592,10 +730,43 @@ export const BoardAdvancedConfig = ({
                 min={0}
                 max={16}
                 value={config.river.rows}
+                fallback={BOARD_SETTINGS.riverRows.defaultValue}
                 onChange={(rows) =>
                   onChange({ river: { ...config.river, rows } })
                 }
               />
+              <Help>{BOARD_SETTINGS.riverRows.ui?.help}</Help>
+            </Field>
+          ) : null}
+
+          {show(formSettings, "cycleSurface") ? (
+            <Field>
+              <FieldLabel
+                htmlFor="board-cycle-surface"
+                setting="cycleSurface"
+                segments={segments}
+              >
+                {BOARD_SETTINGS.cycleSurface.ui?.label ?? "Cycle view"}
+              </FieldLabel>
+              <NativeSelect
+                id="board-cycle-surface"
+                value={
+                  config.cycle.surface ??
+                  BOARD_SETTINGS.cycleSurface.defaultValue
+                }
+                onChange={(value) =>
+                  onChange({
+                    cycle: {
+                      ...config.cycle,
+                      surface: value as NonNullable<
+                        BoardConfig["cycle"]["surface"]
+                      >,
+                    },
+                  })
+                }
+                options={BOARD_SETTINGS.cycleSurface.ui?.options ?? []}
+              />
+              <Help>{BOARD_SETTINGS.cycleSurface.ui?.help}</Help>
             </Field>
           ) : null}
 
@@ -613,37 +784,12 @@ export const BoardAdvancedConfig = ({
                 min={1}
                 max={16}
                 value={config.cycle.tiles}
+                fallback={BOARD_SETTINGS.cycleTiles.defaultValue}
                 onChange={(tiles) =>
                   onChange({ cycle: { ...config.cycle, tiles } })
                 }
               />
-            </Field>
-          ) : null}
-
-          {show(formSettings, "statusSurface") ? (
-            <Field>
-              <FieldLabel
-                htmlFor="board-status-surface"
-                setting="statusSurface"
-                segments={segments}
-              >
-                {BOARD_SETTINGS.statusSurface.ui?.label ?? "Status surface"}
-              </FieldLabel>
-              <NativeSelect
-                id="board-status-surface"
-                value={config.status.surface ?? "display"}
-                onChange={(value) =>
-                  onChange({
-                    status: {
-                      ...config.status,
-                      surface: value as NonNullable<
-                        BoardConfig["status"]["surface"]
-                      >,
-                    },
-                  })
-                }
-                options={BOARD_SETTINGS.statusSurface.ui?.options ?? []}
-              />
+              <Help>{BOARD_SETTINGS.cycleTiles.ui?.help}</Help>
             </Field>
           ) : null}
 
@@ -654,15 +800,20 @@ export const BoardAdvancedConfig = ({
                 setting="statusTiles"
                 segments={segments}
               >
-                {BOARD_SETTINGS.statusTiles.ui?.label ?? "Status tiles"}
+                {BOARD_SETTINGS.statusTiles.ui?.label ?? "Status max height"}
               </FieldLabel>
               <NumberField
                 id="board-status-tiles"
-                min={1}
+                min={0}
                 max={16}
-                value={config.status.tiles}
+                value={config.status.tiles ?? 0}
                 onChange={(tiles) =>
-                  onChange({ status: { ...config.status, tiles } })
+                  onChange({
+                    status: {
+                      tiles:
+                        tiles === 0 || tiles === undefined ? undefined : tiles,
+                    },
+                  })
                 }
               />
               <Help>{BOARD_SETTINGS.statusTiles.ui?.help}</Help>
@@ -741,7 +892,6 @@ export const BoardAdvancedConfig = ({
           ) : null}
 
           <Field>
-            <p className="text-sm font-medium text-foreground">Slots</p>
             <BoardSlotEditor
               slots={config.slots}
               onChange={(slots) => onChange({ slots })}
@@ -750,11 +900,9 @@ export const BoardAdvancedConfig = ({
 
           {show(formSettings, "behaviour") ? (
             <Field>
-              <Label htmlFor="board-behaviour">
-                {BOARD_SETTINGS.behaviour.ui?.label}
-              </Label>
-              <NativeSelect
+              <DescribedSelect
                 id="board-behaviour"
+                ariaLabel={BOARD_SETTINGS.behaviour.ui?.label ?? "Behaviour"}
                 value={config.behaviour}
                 onChange={(value) =>
                   onChange({
@@ -763,7 +911,6 @@ export const BoardAdvancedConfig = ({
                 }
                 options={BOARD_SETTINGS.behaviour.ui?.options ?? []}
               />
-              <Help>{BOARD_SETTINGS.behaviour.ui?.help}</Help>
             </Field>
           ) : null}
         </div>

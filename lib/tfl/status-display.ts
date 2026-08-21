@@ -283,15 +283,18 @@ const goodServiceBodyFrames = (
 /**
  * Turn partitioned status sections into a fixed-height unattended sequence.
  * One tile is summary-only. N tiles = heading + N - 1 content tiles.
+ * 0 expands: no height cap, all copy on one page.
  */
 export const buildStatusDisplayFrames = (
   sections: StatusBoardSections,
   options: StatusDisplayOptions
 ): StatusDisplayFrame[] => {
-  const tiles = Math.max(1, Math.floor(options.tiles))
+  const expand = options.tiles <= 0
   const scope = options.detailScope ?? "network"
   const charsPerTile = options.charsPerTile ?? DEFAULT_CHARS_PER_TILE
-  const bodyTiles = tiles - 1
+  const bodyTiles = expand
+    ? Number.POSITIVE_INFINITY
+    : Math.max(1, Math.floor(options.tiles)) - 1
   const detailIds = options.detailLineIds
 
   const disruptionSummary =

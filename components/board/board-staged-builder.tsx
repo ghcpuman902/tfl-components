@@ -3,10 +3,12 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
+  type ClipboardEvent,
   type ReactNode,
 } from "react"
 import { BoardAdvancedConfig } from "@/components/board/board-config-form"
@@ -16,7 +18,19 @@ import { BoardPreviewModePills } from "@/components/board/board-preview-mode"
 import { BoardShareCard } from "@/components/board/board-share-card"
 import { BoardStationSearch } from "@/components/board/board-station-search"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Sheet,
   SheetContent,
@@ -25,11 +39,17 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
+import { TflApiKeyWalkthrough } from "@/components/board/tfl-api-key-walkthrough"
+import { TFL_API_PORTAL_PRODUCT_URL } from "@/components/user-tfl-api-key-copy"
+import { useIsMobile } from "@/hooks/use-mobile"
 import {
-  TFL_API_PORTAL_URL,
-  TflApiKeyObtainLinks,
-  TflApiKeyPortalNote,
-} from "@/components/user-tfl-api-key-copy"
+  CheckIcon,
+  ChevronDownIcon,
+  CircleXIcon,
+  CopyIcon,
+  ExternalLinkIcon,
+  LocateIcon,
+} from "lucide-react"
 import { useLandingTrack } from "@/components/landing/landing-analytics"
 import type { AnalyticsContext } from "@/lib/analytics/context"
 import { defaultAnalyticsContext } from "@/lib/analytics/context"
@@ -45,7 +65,11 @@ import {
   type BoardStationNamesIndex,
   type BoardStationSearchItem,
 } from "@/lib/tfl/board-station-names"
-import { getBoardNearbyPlaces } from "@/lib/tfl/board-nearby-action"
+import {
+  getBoardNearbyPlaces,
+  getBoardNearbyPlacesForStop,
+  type BoardNearbyResult,
+} from "@/lib/tfl/board-nearby-action"
 import { boardSlotsInclude, resolveBoardSlots } from "@/lib/tfl/board-panels"
 import type { BoardSettingId } from "@/lib/tfl/board-settings"
 import {
@@ -59,6 +83,8 @@ import {
   completeBoardStage,
   createBoardSetupDraft,
   detectScreenProfile,
+  draftFromBoardConfig,
+  leftoverBoardConfig,
   markBoardSetupCompleted,
   markBoardSetupStarted,
   parseBoardSetupDraft,
@@ -71,9 +97,15 @@ import {
   BOARD_VIEW_PATH,
   DEFAULT_BOARD_CONFIG,
   describeBoardHrefSegments,
+  hashHasBoardConfig,
+  parseBoardConfig,
   type BoardConfig,
 } from "@/lib/tfl/board-url-state"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
+import {
+  displayTflAppKey,
+  isPlausibleTflAppKey,
+} from "@/lib/tfl/user-credentials-storage"
 import { LINE_ORDER } from "tfl-ts"
 import { getLineNameTiers } from "@/lib/tfl/line-names"
 import { cn } from "@/lib/utils"
@@ -95,7 +127,7 @@ const LockedRegion = ({
 }) => (
   <div className={cn("relative min-w-0", className)}>
     <div
-      className={cn(locked && "pointer-events-none select-none")}
+      className={cn("h-full min-h-0", locked && "pointer-events-none select-none")}
       inert={locked || undefined}
     >
       {children}
@@ -132,16 +164,11 @@ const formSettingsFromConfig = (config: BoardConfig): BoardSettingId[] => {
   const ids = new Set<BoardSettingId>(["behaviour"])
   if (boardSlotsInclude(resolved, "rail")) {
     ids.add("stop")
-    ids.add("stopName")
     ids.add("arrivalsLines")
     ids.add("arrivalsRows")
-    ids.add("arrivalsPinFirst")
   }
   if (boardSlotsInclude(resolved, "status")) {
-    ids.add("statusSurface")
     ids.add("statusTiles")
-    ids.add("statusLines")
-    ids.add("statusOverview")
   }
   if (boardSlotsInclude(resolved, "bus")) {
     ids.add("busStop")
@@ -154,6 +181,7 @@ const formSettingsFromConfig = (config: BoardConfig): BoardSettingId[] => {
   }
   if (boardSlotsInclude(resolved, "cycle")) {
     ids.add("cycleDocks")
+    ids.add("cycleSurface")
     ids.add("cycleTiles")
   }
   return [...ids]
@@ -166,15 +194,19 @@ const configFromDraft = (draft: BoardSetupDraft): BoardConfig => {
       slots: { p1: ["status"], p2: [] },
       status: {
         lines: draft.statusLineIds.length > 0 ? draft.statusLineIds : undefined,
+        overview: draft.statusLineIds.length > 0 ? "selection" : undefined,
       },
     }
   }
 
   const stop = draft.stopId ?? EXAMPLE_STOP.id
-  const p1: Array<"rail" | "bus" | "cycle" | "river"> = ["rail"]
-  if (draft.nearbyModes.includes("bus")) p1.push("bus")
-  if (draft.nearbyModes.includes("cycle")) p1.push("cycle")
-  if (draft.nearbyModes.includes("river")) p1.push("river")
+  const p1: Array<"rail" | "bus" | "cycle" | "river"> = ["rail", "bus"]
+  const includeCycle =
+    draft.nearbyModes.includes("cycle") && draft.cycleDockIds.length > 0
+  const includeRiver =
+    draft.nearbyModes.includes("river") && Boolean(draft.riverStopId)
+  if (includeCycle) p1.push("cycle")
+  if (includeRiver) p1.push("river")
 
   return {
     ...DEFAULT_BOARD_CONFIG,
@@ -184,11 +216,68 @@ const configFromDraft = (draft: BoardSetupDraft): BoardConfig => {
     arrivals: {
       lineOrder: draft.lineIds.length > 0 ? draft.lineIds : undefined,
     },
+    bus: { stop: draft.busStopId ?? undefined },
+    river: includeRiver ? { stop: draft.riverStopId ?? undefined } : {},
+    cycle: includeCycle ? { docks: draft.cycleDockIds } : {},
     status: {
       lines: draft.statusLineIds.length > 0 ? draft.statusLineIds : undefined,
+      overview: draft.statusLineIds.length > 0 ? "selection" : undefined,
     },
   }
 }
+
+const mergeBoardConfig = (
+  base: BoardConfig,
+  extra: Partial<BoardConfig>
+): BoardConfig => ({
+  ...base,
+  ...extra,
+  slots: extra.slots ?? base.slots,
+  arrivals: { ...base.arrivals, ...extra.arrivals },
+  bus: { ...base.bus, ...extra.bus },
+  river: { ...base.river, ...extra.river },
+  cycle: { ...base.cycle, ...extra.cycle },
+  status: { ...base.status, ...extra.status },
+})
+
+const draftNeedsNearbyIds = (draft: BoardSetupDraft): boolean => {
+  if (draft.continueWithoutStop) return false
+  return (
+    !draft.busStopId ||
+    (draft.nearbyModes.includes("river") && !draft.riverStopId) ||
+    (draft.nearbyModes.includes("cycle") && draft.cycleDockIds.length === 0)
+  )
+}
+
+const applyNearbyIds = (
+  current: BoardSetupDraft,
+  result: Extract<BoardNearbyResult, { ok: true }>
+): BoardSetupDraft => ({
+  ...current,
+  busStopId:
+    !current.busStopId ? (result.bus?.id ?? current.busStopId) : current.busStopId,
+  riverStopId:
+    current.nearbyModes.includes("river") && !current.riverStopId
+      ? (result.river?.id ?? current.riverStopId)
+      : current.riverStopId,
+  cycleDockIds:
+    current.nearbyModes.includes("cycle") && current.cycleDockIds.length === 0
+      ? result.docks
+      : current.cycleDockIds,
+})
+
+const mergePartialBoardConfig = (
+  current: Partial<BoardConfig>,
+  next: Partial<BoardConfig>
+): Partial<BoardConfig> => ({
+  ...current,
+  ...next,
+  arrivals: { ...current.arrivals, ...next.arrivals },
+  bus: { ...current.bus, ...next.bus },
+  river: { ...current.river, ...next.river },
+  cycle: { ...current.cycle, ...next.cycle },
+  status: { ...current.status, ...next.status },
+})
 
 type BoardStagedBuilderProps = {
   stationLines: BoardStationLinesIndex
@@ -201,28 +290,38 @@ export const BoardStagedBuilder = ({
   stationLines,
   stationNames,
   stations,
-  analyticsContext = defaultAnalyticsContext("control"),
+  analyticsContext = defaultAnalyticsContext("room"),
 }: BoardStagedBuilderProps) => {
   const track = useLandingTrack(analyticsContext)
   const {
     hydrated,
-    appKeyMasked,
     persistMode,
     error,
     getAppKey,
     openDialog,
     save,
+    clear,
     status,
   } = useUserTflCredentials()
+  const isMobile = useIsMobile()
   const [draft, setDraft] = useState<BoardSetupDraft>(createBoardSetupDraft)
   const [ready, setReady] = useState(false)
   const [locateBusy, setLocateBusy] = useState(false)
   const [locateMessage, setLocateMessage] = useState<string | null>(null)
   const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [advancedConfig, setAdvancedConfig] = useState<Partial<BoardConfig>>(
+    {}
+  )
   const [keyDraft, setKeyDraft] = useState("")
   const [keyHelpOpen, setKeyHelpOpen] = useState(false)
+  const [keyCopied, setKeyCopied] = useState(false)
+  const [keyFormatError, setKeyFormatError] = useState(false)
+  const [keyFieldFocused, setKeyFieldFocused] = useState(false)
+  const lastKeyAttempt = useRef("")
+  const keyInputRef = useRef<HTMLInputElement | null>(null)
   const searchWrapRef = useRef<HTMLDivElement | null>(null)
   const lastAnnounce = useRef("")
+  const nearbyFillKey = useRef<string | null>(null)
 
   const focusSearch = () => {
     window.requestAnimationFrame(() => {
@@ -231,18 +330,35 @@ export const BoardStagedBuilder = ({
   }
 
   useEffect(() => {
-    const stored = readDraft()
-    const next =
-      stored ??
-      createBoardSetupDraft(
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : "draft-local"
-      )
     const nextDetected = detectScreenProfile(
       window.innerWidth,
       window.innerHeight
     )
+    const newId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : "draft-local"
+    const hash = window.location.hash
+    const imported =
+      hashHasBoardConfig(hash) ? parseBoardConfig(hash) : null
+    const importedDraft = imported
+      ? draftFromBoardConfig(imported, {
+          id: newId,
+          screenProfile: nextDetected.profile,
+        })
+      : null
+    const stored = importedDraft ? null : readDraft()
+    const next = importedDraft ?? stored ?? createBoardSetupDraft(newId)
+    if (imported && importedDraft) {
+      setAdvancedConfig(leftoverBoardConfig(imported))
+      setAdvancedOpen(true)
+      persistDraft(importedDraft)
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${window.location.search}`
+      )
+    }
     const frame = window.requestAnimationFrame(() => {
       const desktop = window.innerWidth >= 1024
       setDraft({
@@ -260,6 +376,30 @@ export const BoardStagedBuilder = ({
     persistDraft(draft)
   }, [draft, ready])
 
+  useEffect(() => {
+    if (!hydrated) return
+    const stored = getAppKey()
+    const imported = advancedConfig.key?.trim()
+    if (stored) {
+      setKeyDraft((current) => current || stored)
+      return
+    }
+    if (imported) {
+      setKeyDraft((current) => current || imported)
+    }
+  }, [advancedConfig.key, getAppKey, hydrated])
+
+  const scrollKeyInputToEnd = () => {
+    const input = keyInputRef.current
+    if (!input) return
+    input.scrollLeft = input.scrollWidth
+  }
+
+  useLayoutEffect(() => {
+    if (!keyDraft || keyFieldFocused) return
+    scrollKeyInputToEnd()
+  }, [keyDraft, keyFieldFocused])
+
   const updateDraft = (
     next: BoardSetupDraft | ((current: BoardSetupDraft) => BoardSetupDraft)
   ) => {
@@ -267,6 +407,22 @@ export const BoardStagedBuilder = ({
       typeof next === "function" ? next(current) : next
     )
   }
+
+  useEffect(() => {
+    if (!ready || draft.continueWithoutStop || !draftNeedsNearbyIds(draft))
+      return
+    const stopId = draft.stopId ?? EXAMPLE_STOP.id
+    const key = `${stopId}:${[...draft.nearbyModes].sort().join(",")}`
+    if (nearbyFillKey.current === key) return
+    nearbyFillKey.current = key
+    void getBoardNearbyPlacesForStop(stopId).then((result) => {
+      if (!result.ok) {
+        nearbyFillKey.current = null
+        return
+      }
+      updateDraft((current) => applyNearbyIds(current, result))
+    })
+  }, [draft, ready])
 
   const startIfNeeded = (current: BoardSetupDraft) => {
     if (current.setupStarted) return current
@@ -297,7 +453,10 @@ export const BoardStagedBuilder = ({
     })
   }
 
-  const config = useMemo(() => configFromDraft(draft), [draft])
+  const config = useMemo(
+    () => mergeBoardConfig(configFromDraft(draft), advancedConfig),
+    [advancedConfig, draft]
+  )
   const servingLines = lookupBoardStationLines(stationLines, config.stop) ?? []
   const lineGroups = lookupBoardStationLineGroups(config.stop)
   const autoStopName = lookupBoardStationName(stationNames, config.stop)
@@ -319,7 +478,7 @@ export const BoardStagedBuilder = ({
       ...config,
       stop: config.stop?.trim() || undefined,
       stopName: resolveBoardStopNameOverride(config.stopName, autoStopName),
-      key: appKey.trim() || undefined,
+      key: appKey.trim() || config.key?.trim() || undefined,
     }),
     [appKey, autoStopName, config]
   )
@@ -399,6 +558,9 @@ export const BoardStagedBuilder = ({
               stopId: rail?.id ?? current.stopId,
               stopName: rail?.name ?? current.stopName,
               lineIds: lineIds.length > 0 ? lineIds : current.lineIds,
+              busStopId: result.bus?.id ?? null,
+              riverStopId: result.river?.id ?? null,
+              cycleDockIds: result.docks,
               nearbyModes: [
                 result.bus ? "bus" : null,
                 result.river ? "river" : null,
@@ -428,6 +590,7 @@ export const BoardStagedBuilder = ({
   }
 
   const handleConfigChange = (next: Partial<BoardConfig>) => {
+    setAdvancedConfig((current) => mergePartialBoardConfig(current, next))
     updateDraft((current) => ({
       ...current,
       stopId: next.stop !== undefined ? next.stop || null : current.stopId,
@@ -455,9 +618,17 @@ export const BoardStagedBuilder = ({
     )
   }
 
-  const handleSaveKey = async () => {
-    if (!keyDraft.trim()) return
-    const result = await save(keyDraft, "local")
+  const handleSaveKey = async (raw: string) => {
+    const trimmed = raw.trim()
+    if (!trimmed) return
+    if (lastKeyAttempt.current === trimmed && status === "ready") return
+    if (!isPlausibleTflAppKey(trimmed).ok) {
+      setKeyFormatError(true)
+      return
+    }
+    setKeyFormatError(false)
+    lastKeyAttempt.current = trimmed
+    const result = await save(trimmed, "local")
     if (result.ok) {
       updateDraft((current) => ({
         ...startIfNeeded(current),
@@ -467,8 +638,57 @@ export const BoardStagedBuilder = ({
     }
   }
 
+  const handleKeyDraftChange = (next: string) => {
+    if (!next) {
+      lastKeyAttempt.current = ""
+      setKeyFormatError(false)
+      setKeyDraft("")
+      if (hasKey) clear()
+      return
+    }
+    if (/^[a-zA-Z0-9]+$/.test(next)) {
+      setKeyDraft(next)
+      setKeyFormatError(false)
+      if (isPlausibleTflAppKey(next).ok) void handleSaveKey(next)
+      return
+    }
+    if (next.length < keyDraft.length) {
+      const shortened = keyDraft.slice(0, next.length)
+      setKeyDraft(shortened)
+      setKeyFormatError(false)
+      if (!shortened && hasKey) clear()
+    }
+  }
+
+  const handleKeyPaste = (event: ClipboardEvent<HTMLInputElement>) => {
+    const pasted = event.clipboardData.getData("text").trim()
+    if (!pasted) return
+    event.preventDefault()
+    setKeyDraft(pasted)
+    void handleSaveKey(pasted)
+  }
+
+  const handleClearKey = () => {
+    lastKeyAttempt.current = ""
+    setKeyFormatError(false)
+    setKeyDraft("")
+    if (hasKey) clear()
+  }
+
+  const handleCopyKey = () => {
+    const value = getAppKey() ?? keyDraft
+    if (!value) return
+    void navigator.clipboard.writeText(value).then(
+      () => {
+        setKeyCopied(true)
+        window.setTimeout(() => setKeyCopied(false), 2000)
+      },
+      () => undefined
+    )
+  }
+
   const locked = hydrated && !hasKey
-  const previewProfile = draft.screenProfile ?? "large"
+  const previewProfile = draft.screenProfile
   const selectedStopLabel = draft.continueWithoutStop
     ? "Network status"
     : (draft.stopName ?? autoStopName)
@@ -483,94 +703,136 @@ export const BoardStagedBuilder = ({
   })()
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 md:flex md:min-h-[calc(100dvh-var(--site-header-height)-10.5rem)] md:flex-col md:justify-center">
       <p className="sr-only" aria-live="polite">
         {announce}
       </p>
 
       <div
         className={cn(
-          "grid items-start gap-3",
-          "grid-cols-[minmax(0,11rem)_minmax(0,1fr)]",
-          "[grid-template-areas:'key_key'_'loc_preview'_'share_share']",
-          "sm:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)] sm:gap-8",
-          "sm:[grid-template-areas:'key_preview'_'loc_preview'_'share_preview']"
+          "mx-auto grid w-full max-w-md items-start gap-5",
+          "grid-cols-1 [grid-template-areas:'key'_'loc'_'preview'_'share']",
+          "md:max-w-none md:grid-cols-[minmax(16rem,22rem)_minmax(0,max-content)]",
+          "md:items-stretch md:justify-center md:gap-8 md:[grid-template-areas:none]"
         )}
       >
+        <div className="contents md:col-start-1 md:row-start-1 md:flex md:flex-col md:gap-5">
           <section
             aria-labelledby="board-key-heading"
-            className="[grid-area:key] space-y-2"
+            className="[grid-area:key] space-y-2 md:[grid-area:auto]"
           >
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <h2
-                id="board-key-heading"
-                className="font-heading text-sm font-medium text-foreground"
-              >
-                Get a free TfL API key
-              </h2>
+            <h2
+              id="board-key-heading"
+              className="font-heading text-sm font-medium text-pretty text-foreground"
+            >
+              Get a free TfL API key from{" "}
               <a
-                href={TFL_API_PORTAL_URL}
-                className="text-sm text-foreground underline underline-offset-4"
+                href={TFL_API_PORTAL_PRODUCT_URL}
+                className="inline-flex items-center gap-1 underline underline-offset-4"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 api-portal.tfl.gov.uk
-              </a>
-            </div>
-            {hasKey ? (
-              <button
-                type="button"
-                className="font-mono text-sm text-foreground underline-offset-4 hover:underline"
-                onClick={openDialog}
-                aria-label={
-                  appKeyMasked
-                    ? `Manage TfL API key ending ${appKeyMasked.slice(-4)}`
-                    : "Manage TfL API key"
-                }
-              >
-                {appKeyMasked}
-              </button>
-            ) : (
-              <form
-                className="flex flex-col gap-2 sm:flex-row"
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  void handleSaveKey()
-                }}
-              >
-                <Input
+                <ExternalLinkIcon className="size-3.5" aria-hidden />
+                <span className="sr-only">(opens in a new tab)</span>
+              </a>{" "}
+              and come back
+            </h2>
+            <div className="flex items-center gap-1.5">
+              <InputGroup>
+                <InputGroupInput
+                  ref={keyInputRef}
                   id="board-tfl-key"
-                  type="password"
+                  type="text"
+                  inputMode="text"
                   autoComplete="off"
                   spellCheck={false}
-                  value={keyDraft}
+                  value={displayTflAppKey(keyDraft)}
                   onChange={(event) => {
-                    setKeyDraft(event.target.value)
+                    handleKeyDraftChange(event.target.value)
+                  }}
+                  onPaste={handleKeyPaste}
+                  onFocus={() => setKeyFieldFocused(true)}
+                  onBlur={() => {
+                    setKeyFieldFocused(false)
+                    window.requestAnimationFrame(scrollKeyInputToEnd)
                   }}
                   placeholder="Paste your key"
                   aria-labelledby="board-key-heading"
-                  className="min-w-0 flex-1"
+                  aria-invalid={keyFormatError || status === "invalid"}
+                  aria-describedby="board-tfl-key-status"
+                  className={cn(
+                    "font-mono",
+                    keyDraft && !keyFieldFocused && "text-right"
+                  )}
                 />
-                <Button type="submit" variant="outline" className="shrink-0">
-                  Save
+                {keyDraft ? (
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      size="icon-xs"
+                      aria-label="Clear key"
+                      onClick={handleClearKey}
+                    >
+                      <CircleXIcon />
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                ) : null}
+              </InputGroup>
+              {keyDraft ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="shrink-0"
+                  onClick={handleCopyKey}
+                  aria-label={keyCopied ? "Key copied" : "Copy key"}
+                >
+                  {keyCopied ? <CheckIcon /> : <CopyIcon />}
                 </Button>
-              </form>
-            )}
-            {error && status === "invalid" ? (
-              <p className="text-sm text-destructive" role="alert">
-                {error.message}
+              ) : null}
+            </div>
+            {keyFormatError ||
+            status === "invalid" ||
+            status === "validating" ||
+            (status === "ready" && hasKey) ? (
+              <p
+                id="board-tfl-key-status"
+                className={cn(
+                  "text-xs",
+                  keyFormatError || status === "invalid"
+                    ? "text-destructive"
+                    : status === "ready"
+                      ? "text-emerald-700 dark:text-emerald-400"
+                      : "text-muted-foreground"
+                )}
+                role={
+                  keyFormatError || status === "invalid" ? "alert" : "status"
+                }
+              >
+                {keyFormatError || status === "invalid" ? (
+                  "wrong format"
+                ) : status === "validating" ? (
+                  "Checking…"
+                ) : (
+                  <span className="inline-flex items-center gap-1">
+                    <CheckIcon className="size-3.5" aria-hidden />
+                    saved
+                  </span>
+                )}
               </p>
             ) : null}
-            <button
-              type="button"
-              className="text-sm text-muted-foreground underline underline-offset-4"
-              onClick={() => setKeyHelpOpen(true)}
-            >
-              Teach me how
-            </button>
+            {status === "ready" && hasKey ? null : (
+              <button
+                type="button"
+                className="mx-auto mt-4 block text-center text-sm text-muted-foreground underline underline-offset-4"
+                onClick={() => setKeyHelpOpen(true)}
+              >
+                Teach me how
+              </button>
+            )}
           </section>
 
-          <LockedRegion locked={locked} className="[grid-area:loc]">
+          <LockedRegion locked={locked} className="[grid-area:loc] md:[grid-area:auto]">
             <div>
               <section
                 aria-labelledby="board-location-heading"
@@ -586,7 +848,8 @@ export const BoardStagedBuilder = ({
                   onClick={handleLocate}
                   disabled={locateBusy}
                 >
-                  {locateBusy ? "Finding a stop…" : "Use my location"}
+                  <LocateIcon data-icon="inline-start" aria-hidden />
+                  {locateBusy ? "Finding a stop…" : "Pick for me"}
                 </Button>
                 {locateMessage ? (
                   <p className="text-sm text-muted-foreground" role="status">
@@ -599,19 +862,29 @@ export const BoardStagedBuilder = ({
                     {selectedStopContext}
                   </p>
                 ) : null}
-                <button
-                  type="button"
-                  className="text-sm text-muted-foreground underline underline-offset-4"
-                  onClick={() => {
-                    setAdvancedOpen((open) => !open)
-                    if (!advancedOpen) {
-                      focusSearch()
-                    }
-                  }}
-                  aria-expanded={advancedOpen}
-                >
-                  Customise
-                </button>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-0.5 text-sm text-muted-foreground"
+                    onClick={() => {
+                      setAdvancedOpen((open) => !open)
+                      if (!advancedOpen) {
+                        focusSearch()
+                      }
+                    }}
+                    aria-expanded={advancedOpen}
+                  >
+                    <span className="underline underline-offset-4">Customise</span>
+                    <ChevronDownIcon
+                      data-icon="inline-end"
+                      className={cn(
+                        "size-4 transition-transform",
+                        advancedOpen && "rotate-180"
+                      )}
+                      aria-hidden
+                    />
+                  </button>
+                </div>
                 {advancedOpen ? (
                   <div className="space-y-4 pt-1">
                     <div ref={searchWrapRef}>
@@ -634,6 +907,9 @@ export const BoardStagedBuilder = ({
                                 lookupBoardStationLines(stationLines, stop) ??
                                 []
                               ).map((line) => line.lineId),
+                              busStopId: null,
+                              riverStopId: null,
+                              cycleDockIds: [],
                             })
                           )
                           if (stop) {
@@ -645,20 +921,21 @@ export const BoardStagedBuilder = ({
                     </div>
                     <button
                       type="button"
-                      className="text-sm text-muted-foreground underline underline-offset-4"
+                      className="text-sm text-muted-foreground underline underline-offset-4 aria-pressed:text-foreground"
+                      aria-pressed={draft.continueWithoutStop}
                       onClick={() => {
                         updateDraft((current) =>
                           startIfNeeded({
                             ...current,
-                            continueWithoutStop: true,
-                            stopId: null,
-                            stopName: null,
+                            continueWithoutStop: !current.continueWithoutStop,
                           })
                         )
                         finishStage(2)
                       }}
                     >
-                      Network status only
+                      {draft.continueWithoutStop
+                        ? "Both rail and status"
+                        : "Change to status only"}
                     </button>
                     {draft.continueWithoutStop ? null : (
                       <div className="space-y-4">
@@ -674,42 +951,6 @@ export const BoardStagedBuilder = ({
                               }))
                             }
                           />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium">Nearby</h3>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {(["bus", "river", "cycle"] as const).map(
-                              (mode) => (
-                                <Button
-                                  key={mode}
-                                  type="button"
-                                  size="sm"
-                                  variant={
-                                    draft.nearbyModes.includes(mode)
-                                      ? "default"
-                                      : "outline"
-                                  }
-                                  onClick={() =>
-                                    updateDraft((current) => ({
-                                      ...current,
-                                      nearbyModes:
-                                        current.nearbyModes.includes(mode)
-                                          ? current.nearbyModes.filter(
-                                              (item) => item !== mode
-                                            )
-                                          : [...current.nearbyModes, mode],
-                                    }))
-                                  }
-                                >
-                                  {mode === "bus"
-                                    ? "Bus"
-                                    : mode === "river"
-                                      ? "River"
-                                      : "Cycle hire"}
-                                </Button>
-                              )
-                            )}
-                          </div>
                         </div>
                         <div>
                           <h3 className="text-sm font-medium">
@@ -748,80 +989,72 @@ export const BoardStagedBuilder = ({
             </div>
           </LockedRegion>
 
-          <LockedRegion locked={locked} className="[grid-area:share]">
-              <section aria-labelledby="board-share-heading" className="space-y-2">
-                <h2
-                  id="board-share-heading"
-                  className="font-heading text-sm font-medium text-foreground"
-                >
-                  Share the link
-                </h2>
-                <BoardShareCard
-                  url={absoluteUrl}
-                  href={href}
-                  keyMode={keyMode}
-                  onKeyModeChange={(checked) => {
-                    if (checked && appKey.trim()) void save(appKey, "local")
-                  }}
-                  hasKey={hasKey}
-                  appKeyMasked={appKeyMasked}
-                  persistMode={persistMode}
-                  onManageKey={openDialog}
-                  onOpen={() => completeSetup("open")}
-                  onCopy={() => completeSetup("copy")}
-                  onQrRendered={() => completeSetup("qr")}
-                />
-              </section>
+          <LockedRegion locked={locked} className="[grid-area:share] md:[grid-area:auto]">
+            <BoardShareCard
+              url={absoluteUrl}
+              href={href}
+              onOpen={() => completeSetup("open")}
+              onCopy={() => completeSetup("copy")}
+              onQrRendered={() => completeSetup("qr")}
+            />
           </LockedRegion>
+        </div>
 
-        <LockedRegion locked={locked} className="[grid-area:preview]">
-          <div className="flex w-full flex-col items-center gap-3 lg:sticky lg:top-[calc(var(--site-header-height)+1rem)]">
+        <LockedRegion
+          locked={locked}
+          className="[grid-area:preview] w-full min-w-0 md:col-start-2 md:row-start-1 md:min-h-full md:w-auto md:self-stretch md:[grid-area:auto]"
+        >
+          <div className="flex w-full flex-col items-center gap-3 md:sticky md:top-[calc(var(--site-header-height)+1rem)]">
             <BoardPreview
-              className="min-w-0"
               href={href}
               hydrated={hydrated}
               hasKey={hasKey}
               onAddKey={openDialog}
               requireKeyOverlay={false}
               screenProfile={previewProfile}
-              compact
             />
             <BoardPreviewModePills
-              value={previewProfile}
+              value={previewProfile ?? (isMobile ? "small" : "large")}
               onChange={handlePreviewMode}
             />
           </div>
         </LockedRegion>
       </div>
 
-      <Sheet open={keyHelpOpen} onOpenChange={setKeyHelpOpen}>
-        <SheetContent side="bottom" className="gap-0">
-          <SheetHeader>
-            <SheetTitle>How to get a key</SheetTitle>
-            <SheetDescription>
-              <TflApiKeyObtainLinks />
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-3 px-4 pb-6">
-            <TflApiKeyPortalNote />
-            <p className="text-sm text-muted-foreground">
-              The key stays in this browser.
-            </p>
-            <Button
-              nativeButton={false}
-              render={
-                <a
-                  href={TFL_API_PORTAL_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                />
-              }
-            >
-              Open TfL portal
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
+      {isMobile ? (
+        <Sheet open={keyHelpOpen} onOpenChange={setKeyHelpOpen}>
+          <SheetContent
+            side="bottom"
+            className="max-h-[85dvh] gap-0 overflow-y-auto"
+          >
+            <SheetHeader className="text-center">
+              <SheetTitle className="text-center">
+                How to get a key — step by step
+              </SheetTitle>
+              <SheetDescription className="sr-only">
+                Steps from sign up to copying a key.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="space-y-5 px-4 pb-6">
+              <TflApiKeyWalkthrough />
+            </div>
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <Dialog open={keyHelpOpen} onOpenChange={setKeyHelpOpen}>
+          <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-3xl">
+            <DialogHeader className="text-center">
+              <DialogTitle className="text-center">
+                How to get a key — step by step
+              </DialogTitle>
+              <DialogDescription className="sr-only">
+                Steps from sign up to copying a key.
+              </DialogDescription>
+            </DialogHeader>
+            <TflApiKeyWalkthrough />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }

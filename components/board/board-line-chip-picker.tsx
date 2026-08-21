@@ -1,12 +1,6 @@
 "use client"
 
-import { useState } from "react"
 import { LineBadge } from "@/components/tfl/brand/line-badge"
-import { Input } from "@/components/ui/input"
-import {
-  parseArrivalsLines,
-  serializeArrivalsLines,
-} from "@/lib/tfl/board-settings"
 import { cn } from "@/lib/utils"
 
 export type BoardLineChipPickerLine = {
@@ -51,8 +45,6 @@ export const BoardLineChipPicker = ({
   onChange,
   id,
 }: BoardLineChipPickerProps) => {
-  const [asText, setAsText] = useState(false)
-  const [draft, setDraft] = useState("")
   const candidateIds = allCandidateIds(lines)
   const included = includedSet(selected, candidateIds)
 
@@ -68,77 +60,32 @@ export const BoardLineChipPicker = ({
     onChange(isShowingAll(next, candidateIds) ? undefined : next)
   }
 
-  const handleEditAsText = () => {
-    setDraft(serializeArrivalsLines(selected) ?? "")
-    setAsText(true)
-  }
-
-  const handleUseChips = () => {
-    onChange(parseArrivalsLines(draft || null))
-    setAsText(false)
-  }
-
-  if (asText) {
-    return (
-      <div className="space-y-2">
-        <Input
-          id={id}
-          value={draft}
-          onChange={(event) => {
-            const next = event.target.value.toLowerCase().replace(/[^a-z0-9,-]/g, "")
-            setDraft(next)
-            onChange(parseArrivalsLines(next || null))
-          }}
-          autoComplete="off"
-          spellCheck={false}
-          placeholder={candidateIds.join(",")}
-        />
-        <button
-          type="button"
-          className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-          onClick={handleUseChips}
-        >
-          Use chips
-        </button>
-      </div>
-    )
-  }
-
   if (candidateIds.length === 0) return null
 
   return (
-    <div className="space-y-2">
-      <div id={id} className="flex flex-wrap gap-1.5" role="group">
-        {lines.map((line) => {
-          const on = included.has(line.lineId)
-          return (
-            <button
-              key={line.lineId}
-              type="button"
-              aria-pressed={on}
-              aria-label={`${line.lineName ?? line.lineId}${on ? "" : ", hidden"}`}
-              onClick={() => handleToggle(line.lineId)}
-              className={cn(
-                "rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-                !on && "opacity-40 grayscale"
-              )}
-            >
-              <LineBadge
-                lineId={line.lineId}
-                name={line.lineName}
-                className="pointer-events-none"
-              />
-            </button>
-          )
-        })}
-      </div>
-      <button
-        type="button"
-        className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-        onClick={handleEditAsText}
-      >
-        Edit as text
-      </button>
+    <div id={id} className="flex flex-wrap gap-1.5" role="group">
+      {lines.map((line) => {
+        const on = included.has(line.lineId)
+        return (
+          <button
+            key={line.lineId}
+            type="button"
+            aria-pressed={on}
+            aria-label={`${line.lineName ?? line.lineId}${on ? "" : ", hidden"}`}
+            onClick={() => handleToggle(line.lineId)}
+            className={cn(
+              "rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+              !on && "opacity-40 grayscale"
+            )}
+          >
+            <LineBadge
+              lineId={line.lineId}
+              name={line.lineName}
+              className="pointer-events-none"
+            />
+          </button>
+        )
+      })}
     </div>
   )
 }

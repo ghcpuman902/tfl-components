@@ -154,6 +154,17 @@ describe("filterExplorerTubeRailPoints", () => {
     assert.equal(results[0]?.name, "King's Cross St. Pancras")
   })
 
+  it("matches St. Pancras without the period and as Saint", () => {
+    assert.equal(
+      filterExplorerTubeRailPoints(FIXTURES, "st pancras")[0]?.name,
+      "King's Cross St. Pancras"
+    )
+    assert.equal(
+      filterExplorerTubeRailPoints(FIXTURES, "saint pancras")[0]?.name,
+      "King's Cross St. Pancras"
+    )
+  })
+
   it("matches naptan, alias, hub, and hub-member ids", () => {
     assert.equal(
       filterExplorerTubeRailPoints(FIXTURES, "940GZZLUHSC")[0]?.name,
@@ -191,6 +202,20 @@ describe("filterExplorerTubeRailPoints", () => {
     const results = filterExplorerTubeRailPoints(catalogue, "Hammersmith")
     assert.equal(results[0]?.name, "Hammersmith")
     assert.ok(results.some((entry) => entry.name === "Aldgate East"))
+  })
+
+  it("matches live catalogue names from Saint and Road abbreviations", () => {
+    const catalogue = getExplorerTubeRailPoints().map(normaliseRailPoint)
+    assert.ok(
+      names(filterExplorerTubeRailPoints(catalogue, "saint pauls")).includes(
+        "St. Paul's"
+      )
+    )
+    assert.ok(
+      names(filterExplorerTubeRailPoints(catalogue, "finchley rd")).includes(
+        "Finchley Road"
+      )
+    )
   })
 })
 

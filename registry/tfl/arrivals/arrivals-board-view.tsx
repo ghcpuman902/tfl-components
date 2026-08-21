@@ -104,7 +104,7 @@ export const ARRIVALS_RHYTHM_VARS = {
  * Clip, not `hidden`: tiles must not become scroll containers above the page track.
  */
 export const ARRIVALS_TILE_CLASS =
-  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip"
+  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] min-w-0 shrink-0 overflow-clip"
 
 const TITLE_CLASS =
   "tfl-title [font-synthesis:none] [font-weight:var(--tfl-title-weight,400)] [letter-spacing:var(--tfl-title-tracking,0)]"
@@ -146,7 +146,7 @@ export const ArrivalsBoardSkeleton = ({
 }) => (
   <div
     data-slot="arrivals-board"
-    className={cn("@container/arrivals w-full", className)}
+    className={cn("@container/arrivals min-w-0 w-full", className)}
     style={ARRIVALS_RHYTHM_VARS}
     aria-busy
     aria-label="Loading arrivals"
@@ -239,7 +239,7 @@ const GroupBody = ({
   // `grid-cols-1` (not block) so consumer `grid-cols-*` variants merge cleanly.
   const subgroupsClassName = cn(
     LIST_RESET_CLASS,
-    "grid grid-cols-1",
+    "min-w-0 grid grid-cols-1",
     classNames?.subgroups
   )
 
@@ -410,7 +410,7 @@ export const ArrivalsBoardView = ({
   return (
     <div
       data-slot="arrivals-board"
-      className={cn("@container/arrivals w-full", className)}
+      className={cn("@container/arrivals min-w-0 w-full", className)}
       style={ARRIVALS_RHYTHM_VARS}
     >
       <BusStopDisruptionBoundary
@@ -503,7 +503,7 @@ export const ArrivalsBoardView = ({
         ) : isRouteArrivalsMode(mode) ? (
           <div
             data-slot="arrivals-groups"
-            className={cn("grid grid-cols-1", classNames?.groups)}
+            className={cn("grid min-w-0 grid-cols-1", classNames?.groups)}
           >
             {prepared.groups.map((group, index) => (
               <ArrivalsPagedGroup
@@ -525,7 +525,7 @@ export const ArrivalsBoardView = ({
         ) : (
           <div
             data-slot="arrivals-groups"
-            className={cn("grid grid-cols-1", classNames?.groups)}
+            className={cn("grid min-w-0 grid-cols-1", classNames?.groups)}
           >
             {prepared.groups.map((group) => (
               <section

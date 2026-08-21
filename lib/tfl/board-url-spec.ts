@@ -37,6 +37,7 @@ const settingType = (id: BoardSettingId): string => {
   if (id === "arrivalsPinFirst") return "boolean"
   if (
     id === "behaviour" ||
+    id === "cycleSurface" ||
     id === "statusSurface" ||
     id === "statusOverview"
   ) {

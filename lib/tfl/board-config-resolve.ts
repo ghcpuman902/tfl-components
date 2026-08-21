@@ -352,7 +352,7 @@ export const resolveArrivalsProps = (
 export const resolveStatusProps = (
   config: BoardConfig
 ): ResolvedStatusProps => {
-  const tiles = Math.max(1, config.status.tiles ?? 4)
+  const tiles = config.status.tiles ?? 0
   const dwellMs =
     config.status.dwell !== undefined ? config.status.dwell * 1000 : undefined
   return {

@@ -5,6 +5,7 @@ import {
   DEFAULT_BOARD_CONFIG,
   buildBoardHref,
   describeBoardHrefSegments,
+  hashHasBoardConfig,
   normalizeBoardHash,
   parseBoardConfig,
 } from "./board-url-state"
@@ -75,6 +76,14 @@ describe("parseBoardConfig", () => {
     assert.deepEqual(config.arrivals, {})
   })
 
+  it("detects a known board hash vs empty or junk", () => {
+    assert.equal(hashHasBoardConfig(""), false)
+    assert.equal(hashHasBoardConfig("#"), false)
+    assert.equal(hashHasBoardConfig("#future=yes"), false)
+    assert.equal(hashHasBoardConfig("#stop=940GZZLUOXC"), true)
+    assert.equal(hashHasBoardConfig("#key=abc123"), true)
+  })
+
   it("parses scalar a.rows", () => {
     const config = parseBoardConfig("a.rows=6")
     assert.equal(config.arrivals.rows, 6)
@@ -134,6 +143,19 @@ describe("parseBoardConfig", () => {
     assert.deepEqual(config.cycle.docks, ["BikePoints_237", "BikePoints_46"])
   })
 
+  it("parses cycle list surface and tiles", () => {
+    const config = parseBoardConfig(
+      "p1=cycle&c.docks=BikePoints_237&c.surface=display&c.tiles=2"
+    )
+    assert.equal(config.cycle.surface, "display")
+    assert.equal(config.cycle.tiles, 2)
+  })
+
+  it("ignores unknown cycle surface values", () => {
+    const config = parseBoardConfig("p1=cycle&c.surface=list")
+    assert.equal(config.cycle.surface, undefined)
+  })
+
   it("parses river and keeps behaviour independent of slots", () => {
     const config = parseBoardConfig(
       "behaviour=unattended&p1=river&r.stop=930GCAW&r.rows=4"
@@ -186,6 +208,28 @@ describe("buildBoardHref", () => {
         cycle: { docks: ["BikePoints_237", "BikePoints_46"] },
       }),
       `${BOARD_VIEW_PATH}#stop=940GZZLIVST&p1=rail,bus,cycle&p2=status&b.stop=490000091G&c.docks=BikePoints_237,BikePoints_46`
+    )
+  })
+
+  it("omits default cycle map surface and 6-tile height", () => {
+    assert.equal(
+      buildBoardHref({
+        stop: "940GZZLIVST",
+        slots: { p1: ["cycle"], p2: [] },
+        cycle: { docks: ["BikePoints_237"], surface: "map", tiles: 6 },
+      }),
+      `${BOARD_VIEW_PATH}#stop=940GZZLIVST&p1=cycle&c.docks=BikePoints_237`
+    )
+  })
+
+  it("serializes cycle list surface and a non-default tile height", () => {
+    assert.equal(
+      buildBoardHref({
+        stop: "940GZZLIVST",
+        slots: { p1: ["cycle"], p2: [] },
+        cycle: { docks: ["BikePoints_237"], surface: "display", tiles: 2 },
+      }),
+      `${BOARD_VIEW_PATH}#stop=940GZZLIVST&p1=cycle&c.docks=BikePoints_237&c.surface=display&c.tiles=2`
     )
   })
 

@@ -4,11 +4,14 @@ import {
   completeBoardStage,
   createBoardSetupDraft,
   detectScreenProfile,
+  draftFromBoardConfig,
+  leftoverBoardConfig,
   markBoardSetupCompleted,
   markBoardSetupStarted,
   parseBoardSetupDraft,
   previewFrameForProfile,
 } from "./board-setup-state"
+import { parseBoardConfig } from "./board-url-state"
 
 describe("board setup draft", () => {
   it("starts on screen selection and records the first meaningful action once", () => {
@@ -51,6 +54,20 @@ describe("board setup draft", () => {
     assert.deepEqual(parsed?.lineIds, ["victoria"])
   })
 
+  it("keeps nearby stop and dock ids from a stored draft", () => {
+    const parsed = parseBoardSetupDraft({
+      id: "ok",
+      stage: 3,
+      nearbyModes: ["bus", "cycle"],
+      busStopId: "490000091G",
+      cycleDockIds: ["BikePoints_237"],
+    })
+    assert.deepEqual(parsed?.nearbyModes, ["bus", "cycle"])
+    assert.equal(parsed?.busStopId, "490000091G")
+    assert.deepEqual(parsed?.cycleDockIds, ["BikePoints_237"])
+    assert.equal(parsed?.riverStopId, null)
+  })
+
   it("detects a wide or landscape viewport as large, and a narrow portrait as small", () => {
     assert.equal(detectScreenProfile(390, 844).orientation, "portrait")
     assert.equal(detectScreenProfile(390, 844).profile, "small")
@@ -68,5 +85,48 @@ describe("board setup draft", () => {
     assert.equal(large.width, 1280)
     assert.equal(large.height, 953)
     assert.equal(large.density, "roomy")
+  })
+
+  it("maps a live board config into a completed Ready-stage draft", () => {
+    const config = parseBoardConfig(
+      "#stop=940GZZDLSHA&stopName=Shadwell&p1=rail,bus,cycle&p2=status&a.lines=dlr,windrush&b.stop=490014016N&c.docks=BikePoints_490,BikePoints_46&s.lines=dlr&s.tiles=4&behaviour=unattended&key=abc123"
+    )
+    const draft = draftFromBoardConfig(config, {
+      id: "imported",
+      screenProfile: "large",
+    })
+    assert.equal(draft.id, "imported")
+    assert.equal(draft.stage, 5)
+    assert.deepEqual(draft.completedStages, [1, 2, 3, 4])
+    assert.equal(draft.setupStarted, true)
+    assert.equal(draft.setupCompleted, true)
+    assert.equal(draft.stopId, "940GZZDLSHA")
+    assert.equal(draft.stopName, "Shadwell")
+    assert.equal(draft.continueWithoutStop, false)
+    assert.deepEqual(draft.lineIds, ["dlr", "windrush"])
+    assert.deepEqual(draft.nearbyModes, ["bus", "cycle"])
+    assert.equal(draft.busStopId, "490014016N")
+    assert.deepEqual(draft.cycleDockIds, ["BikePoints_490", "BikePoints_46"])
+    assert.deepEqual(draft.statusLineIds, ["dlr"])
+    assert.equal(draft.keyMode, "shared")
+    assert.equal(draft.screenProfile, "large")
+
+    const leftover = leftoverBoardConfig(config)
+    assert.equal(leftover.behaviour, "unattended")
+    assert.equal(leftover.key, "abc123")
+    assert.deepEqual(leftover.slots, { p1: ["rail", "bus", "cycle"], p2: ["status"] })
+    assert.equal(leftover.status?.tiles, 4)
+    assert.equal(leftover.arrivals?.lineOrder, undefined)
+    assert.equal(leftover.bus?.stop, undefined)
+  })
+
+  it("marks a status-only board as continue-without-stop", () => {
+    const config = parseBoardConfig("#p1=status&p2=&s.lines=victoria,northern")
+    const draft = draftFromBoardConfig(config, { id: "status-only" })
+    assert.equal(draft.continueWithoutStop, true)
+    assert.equal(draft.stopId, null)
+    assert.deepEqual(draft.statusLineIds, ["victoria", "northern"])
+    assert.equal(draft.keyMode, "skipped")
+    assert.deepEqual(draft.nearbyModes, [])
   })
 })

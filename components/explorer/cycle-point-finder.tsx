@@ -23,6 +23,8 @@ type CyclePointFinderProps = {
   /** Featured cached docks — shown until Search / Locate replaces them. */
   initialPoints?: readonly ExplorerPoint[]
   emptyMessage?: string
+  /** Select the first hit after Search / Locate. Default true. */
+  autoSelectFirst?: boolean
 }
 
 export const CyclePointFinder = ({
@@ -33,6 +35,7 @@ export const CyclePointFinder = ({
   initialQuery = "",
   initialPoints = [],
   emptyMessage = "No matching docks.",
+  autoSelectFirst = true,
 }: CyclePointFinderProps) => {
   const { loading, error, setError, runKeyed } = useExplorerKeyedQuery()
   const [points, setPoints] = useState<ExplorerPoint[]>(() => [
@@ -62,7 +65,7 @@ export const CyclePointFinder = ({
 
     if (result.ok) {
       setPoints(result.data)
-      if (result.data[0]) onSelect(result.data[0])
+      if (autoSelectFirst && result.data[0]) onSelect(result.data[0])
     }
   }
 
@@ -84,7 +87,7 @@ export const CyclePointFinder = ({
 
       if (result.ok) {
         setPoints(result.data)
-        if (result.data[0]) onSelect(result.data[0])
+        if (autoSelectFirst && result.data[0]) onSelect(result.data[0])
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not read location.")
@@ -109,8 +112,8 @@ export const CyclePointFinder = ({
     setPoints(result.data)
     setSearchOrigin({ lat, lon })
     setFitSearchKey((key) => key + 1)
-    if (result.data[0]) onSelect(result.data[0])
-    else setError("No docks in this area.")
+    if (autoSelectFirst && result.data[0]) onSelect(result.data[0])
+    else if (!result.data[0]) setError("No docks in this area.")
   }
 
   return (

@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type CSSProperties } from "react"
 import { Button } from "@/components/ui/button"
 import {
   IpadDeviceSvg,
   IphoneDeviceSvg,
-  IPAD_ASPECT,
-  IPHONE_ASPECT,
+  ipadCaseRounding,
   ipadScreenInset,
+  iphoneCaseRounding,
   iphoneScreenInset,
 } from "@/components/board/board-device-frame"
 import {
@@ -16,10 +16,14 @@ import {
 } from "@/lib/tfl/board-setup-state"
 import { cn } from "@/lib/utils"
 
-const MAX_HEIGHT_PX = 34 * 16
-const MAX_HEIGHT_VH = 0.58
-const COMPACT_HEIGHT_PX = 22 * 16
-const COMPACT_HEIGHT_VH = 0.42
+const SLOT_WIDE =
+  "w-full max-w-[calc(min(42dvh,22rem)*125.7409/88.4773)] md:w-[min(calc(min(50dvh,26rem)*125.7409/88.4773),calc(100vw-26rem))] md:max-w-none"
+const SLOT_NARROW =
+  "w-full max-w-[calc(min(42dvh,22rem)*75/154)] md:w-[min(calc(min(50dvh,26rem)*75/154),calc(100vw-26rem))] md:max-w-none"
+const SLOT_UNRESOLVED = cn(
+  "w-full max-w-[calc(min(42dvh,22rem)*75/154)]",
+  "md:w-[min(calc(min(50dvh,26rem)*125.7409/88.4773),calc(100vw-26rem))] md:max-w-none"
+)
 
 type BoardPreviewProps = {
   href: string
@@ -29,7 +33,6 @@ type BoardPreviewProps = {
   className?: string
   requireKeyOverlay?: boolean
   screenProfile?: BoardScreenProfile | null
-  compact?: boolean
 }
 
 export const BoardPreview = ({
@@ -40,100 +43,125 @@ export const BoardPreview = ({
   className,
   requireKeyOverlay = true,
   screenProfile = "large",
-  compact = false,
 }: BoardPreviewProps) => {
-  const profile = screenProfile ?? "large"
-  const frame = previewFrameForProfile(profile)
+  const profile = screenProfile
   const isPhone = profile === "small"
-  const aspect = isPhone ? IPHONE_ASPECT : IPAD_ASPECT
+  const frame = profile ? previewFrameForProfile(profile) : null
   const inset = isPhone ? iphoneScreenInset : ipadScreenInset
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [box, setBox] = useState({ width: 320, height: 200 })
+  const caseRounding = isPhone ? iphoneCaseRounding : ipadCaseRounding
+  const [reveal, setReveal] = useState(false)
+  const screenRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
 
   useEffect(() => {
-    const element = containerRef.current
-    if (!element) return
-
-    const update = () => {
-      const availableWidth = element.clientWidth
-      const maxHeight = compact
-        ? Math.min(COMPACT_HEIGHT_PX, window.innerHeight * COMPACT_HEIGHT_VH)
-        : Math.min(MAX_HEIGHT_PX, window.innerHeight * MAX_HEIGHT_VH)
-      const width = Math.min(availableWidth, maxHeight * aspect)
-      setBox({ width, height: width / aspect })
+    if (!profile) {
+      setReveal(false)
+      return
     }
+    setReveal(false)
+    const id = window.requestAnimationFrame(() => setReveal(true))
+    return () => window.cancelAnimationFrame(id)
+  }, [profile])
 
+  useEffect(() => {
+    const element = screenRef.current
+    if (!element || !frame) return
+    const update = () => {
+      const width = element.clientWidth
+      const height = element.clientHeight
+      if (width <= 0 || height <= 0) return
+      setScale(Math.min(width / frame.width, height / frame.height))
+    }
     update()
     const observer = new ResizeObserver(update)
     observer.observe(element)
-    window.addEventListener("resize", update)
-    return () => {
-      observer.disconnect()
-      window.removeEventListener("resize", update)
-    }
-  }, [aspect, compact])
-
-  const screenWidth = box.width * inset.width
-  const screenHeight = box.height * inset.height
-  const scale = Math.min(screenWidth / frame.width, screenHeight / frame.height)
+    return () => observer.disconnect()
+  }, [frame?.width, frame?.height])
 
   return (
-    <div
-      ref={containerRef}
-      className={cn("flex w-full justify-center", className)}
-    >
+    <div className={cn("flex w-full justify-center md:w-auto", className)}>
       <div
-        className="relative shrink-0 drop-shadow-md"
-        style={{ width: box.width, height: box.height }}
+        className={cn(
+          "relative @container",
+          profile === "small"
+            ? SLOT_NARROW
+            : profile === "large"
+              ? SLOT_WIDE
+              : SLOT_UNRESOLVED
+        )}
+        style={
+          {
+            "--preview-rounding-narrow": iphoneCaseRounding,
+            "--preview-rounding-wide": ipadCaseRounding,
+          } as CSSProperties
+        }
       >
-        {isPhone ? <IphoneDeviceSvg /> : <IpadDeviceSvg />}
         <div
-          className="absolute overflow-hidden bg-background"
-          style={{
-            left: `${inset.left * 100}%`,
-            top: `${inset.top * 100}%`,
-            width: `${inset.width * 100}%`,
-            height: `${inset.height * 100}%`,
-            borderRadius: isPhone ? "1.15rem" : "1.35rem",
-          }}
-        >
-          {hydrated ? (
+          aria-hidden
+          className={cn(
+            profile === "small"
+              ? "aspect-75/154"
+              : profile === "large"
+                ? "aspect-[125.7409/88.4773]"
+                : "aspect-75/154 md:aspect-[125.7409/88.4773]",
+            "w-full bg-muted",
+            !profile &&
+              "rounded-(--preview-rounding-narrow) md:rounded-(--preview-rounding-wide)"
+          )}
+          style={profile ? { borderRadius: caseRounding } : undefined}
+        />
+        {profile && frame ? (
+          <div
+            className={cn(
+              "absolute inset-0 drop-shadow-md transition-opacity duration-300 motion-reduce:transition-none motion-reduce:opacity-100",
+              reveal ? "opacity-100" : "opacity-0"
+            )}
+          >
+            {isPhone ? <IphoneDeviceSvg /> : <IpadDeviceSvg />}
             <div
-              className="origin-top-left"
+              ref={screenRef}
+              className="absolute overflow-hidden bg-background"
               style={{
-                width: frame.width,
-                height: frame.height,
-                transform: `scale(${scale})`,
+                left: `${inset.left * 100}%`,
+                top: `${inset.top * 100}%`,
+                width: `${inset.width * 100}%`,
+                height: `${inset.height * 100}%`,
+                borderRadius: `calc(${inset.radius} * 100cqw)`,
               }}
             >
-              <iframe
-                key={`${href}-${profile}`}
-                title="Board preview"
-                src={href}
-                className="h-full w-full border-0 bg-background"
-              />
+              {hydrated ? (
+                <div
+                  className="absolute top-0 left-0 origin-top-left"
+                  style={{
+                    width: frame.width,
+                    height: frame.height,
+                    transform: `scale(${scale})`,
+                  }}
+                >
+                  <iframe
+                    key={`${href}-${profile}`}
+                    title="Board preview"
+                    src={href}
+                    className="h-full w-full overflow-auto border-0 bg-background [touch-action:pan-y]"
+                  />
+                </div>
+              ) : (
+                <div
+                  className="size-full bg-muted"
+                  aria-busy="true"
+                  aria-label="Loading board preview"
+                />
+              )}
+              {hydrated && !hasKey && requireKeyOverlay ? (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 p-4">
+                  <Button type="button" onClick={onAddKey}>
+                    Add TfL API key — stays in this browser
+                  </Button>
+                </div>
+              ) : null}
             </div>
-          ) : (
-            <div
-              className="size-full bg-muted"
-              aria-busy="true"
-              aria-label="Loading board preview"
-            />
-          )}
-          {hydrated && !hasKey && requireKeyOverlay ? (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 p-4">
-              <Button type="button" onClick={onAddKey}>
-                Add TfL API key — stays in this browser
-              </Button>
-            </div>
-          ) : null}
-          {isPhone ? (
-            <div
-              aria-hidden
-              className="pointer-events-none absolute top-2 left-1/2 z-10 h-5 w-[28%] -translate-x-1/2 rounded-full bg-[#3d4f46]"
-            />
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
     </div>
   )

@@ -219,6 +219,23 @@ html[data-tfl-type-profile="johnston-compatible"] {
   [data-feedback-dialog]::-webkit-scrollbar-thumb:hover {
     background-color: color-mix(in oklch, var(--foreground) 42%, transparent);
   }
+
+  /* Homepage: no overlay track/thumb while scrolling (especially iOS). */
+  html:has(.landing-home) {
+    scrollbar-width: none;
+    scrollbar-gutter: auto;
+  }
+  html:has(.landing-home)::-webkit-scrollbar,
+  html:has(.landing-home) *::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+    background: transparent;
+  }
+  html:has(.landing-home)::-webkit-scrollbar-thumb,
+  html:has(.landing-home) *::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
 }
 
 /*

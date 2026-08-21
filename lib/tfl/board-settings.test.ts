@@ -7,6 +7,7 @@ import {
   parseArrivalsLines,
   parseArrivalsRows,
   parseBehaviour,
+  parseCycleSurface,
   parseLineIdItem,
   parseRowsItem,
   serializeArrivalsLines,
@@ -39,6 +40,8 @@ describe("board-settings allowlist", () => {
     assert.ok(FORM_BOARD_SETTING_IDS.includes("statusSurface"))
     assert.ok(FORM_BOARD_SETTING_IDS.includes("statusLines"))
     assert.ok(FORM_BOARD_SETTING_IDS.includes("statusOverview"))
+    assert.ok(FORM_BOARD_SETTING_IDS.includes("cycleSurface"))
+    assert.ok(URL_BOARD_SETTING_IDS.includes("cycleSurface"))
   })
 })
 
@@ -127,5 +130,13 @@ describe("behaviour parser", () => {
     assert.equal(parseBehaviour("unattended"), "unattended")
     assert.equal(parseBehaviour("static"), "interactive")
     assert.equal(parseBehaviour("voice"), undefined)
+  })
+})
+
+describe("cycle surface parser", () => {
+  it("accepts map and display, and rejects others", () => {
+    assert.equal(parseCycleSurface("map"), "map")
+    assert.equal(parseCycleSurface("display"), "display")
+    assert.equal(parseCycleSurface("list"), undefined)
   })
 })

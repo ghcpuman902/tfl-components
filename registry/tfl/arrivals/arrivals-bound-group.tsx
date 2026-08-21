@@ -99,7 +99,7 @@ export type ArrivalsBoardClassNames = {
  * This file cannot import those constants — the view imports this module.
  */
 const TILE_CLASS =
-  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip"
+  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] min-w-0 shrink-0 overflow-clip"
 
 const ROW_RULE_CLASS =
   "relative after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60"
@@ -1177,10 +1177,14 @@ export const ArrivalsGroupHeader = ({
   return (
     <header
       data-line={isMerged ? undefined : lineKey || undefined}
-      className={cn("relative flex items-center border-b-4", TILE_CLASS)}
-      style={{
-        borderBottomColor: overlayBar ? "transparent" : "var(--line-color)",
-      }}
+      className={cn(
+        "relative flex items-center",
+        !overlayBar && "border-b-4",
+        TILE_CLASS
+      )}
+      style={
+        overlayBar ? undefined : { borderBottomColor: "var(--line-color)" }
+      }
     >
       <LineHeadingTag
         className={cn(

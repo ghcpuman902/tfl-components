@@ -30,7 +30,7 @@ export const analyticsPropsFromContext = (
 })
 
 export const defaultAnalyticsContext = (
-  variant: AnalyticsLandingVariant = "control"
+  variant: AnalyticsLandingVariant = "room"
 ): AnalyticsContext => ({
   experimentVersion: LANDING_EXPERIMENT_VERSION,
   variant,
@@ -38,5 +38,5 @@ export const defaultAnalyticsContext = (
   viewportCategory: "desktop",
   referrerCategory: "direct",
   qa: false,
-  excludeFromResults: variant === "control",
+  excludeFromResults: false,
 })

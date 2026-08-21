@@ -58,7 +58,7 @@ The Next.js app in this repo is the developer environment (docs, demos, Labs). I
 ```bash
 pnpm install
 cp .env.example .env.local
-# fill TFL_APP_KEY from https://api-portal.tfl.gov.uk/ (Products → 500 Requests per min → Profile / Show)
+# fill TFL_APP_KEY from https://api-portal.tfl.gov.uk/product#product=2357355709892 (Profile / Show)
 pnpm dev
 ```
 

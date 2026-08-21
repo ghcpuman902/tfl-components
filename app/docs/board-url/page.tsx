@@ -3,6 +3,7 @@ import Link from "next/link"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code"
+import { TFL_API_PORTAL_PRODUCT_URL } from "@/components/user-tfl-api-key-copy"
 import { getDocsEntry } from "@/lib/docs-catalog"
 import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 import {
@@ -14,8 +15,6 @@ import {
 } from "@/lib/tfl/board-url-spec"
 
 export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.boardUrl)
-
-const TFL_API_PORTAL = "https://api-portal.tfl.gov.uk/"
 
 const ExampleBlock = ({
   label,
@@ -170,7 +169,7 @@ export default function BoardUrlSpecPage() {
             use that key and its request quota. Treat the complete link as a
             secret. Get a key from the{" "}
             <a
-              href={TFL_API_PORTAL}
+              href={TFL_API_PORTAL_PRODUCT_URL}
               className="text-foreground underline underline-offset-4"
               target="_blank"
               rel="noopener noreferrer"

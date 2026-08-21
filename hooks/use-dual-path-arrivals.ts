@@ -16,7 +16,8 @@ import {
 } from "@/lib/tfl/live-arrivals-action"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
 
-const DEFAULT_POLL_MS = 20_000
+export const ARRIVALS_POLL_MS = 20_000
+const DEFAULT_POLL_MS = ARRIVALS_POLL_MS
 
 const INVALID_KEY_FALLBACK =
   "Your TfL API key was rejected. Replace or clear it in the sidebar."
@@ -44,6 +45,8 @@ type UseDualPathArrivalsOptions = {
    * Applied in order; exclusive-segment is never downgraded to ambiguous.
    */
   sharedTrackFamilies?: readonly (readonly string[])[]
+  /** Changing this tears down the current poller (hash-only board updates). */
+  resetKey?: string
 }
 
 type UseDualPathArrivalsResult = {
@@ -68,6 +71,7 @@ export const useDualPathArrivals = ({
   appKeyOverride,
   sharedTrackLineIds,
   sharedTrackFamilies,
+  resetKey,
 }: UseDualPathArrivalsOptions): UseDualPathArrivalsResult => {
   const {
     status,
@@ -338,6 +342,7 @@ export const useDualPathArrivals = ({
     overrideKey,
     getAppKey,
     markInvalid,
+    resetKey,
   ])
 
   if (isInvalid) {

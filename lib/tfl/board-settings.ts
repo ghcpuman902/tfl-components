@@ -9,7 +9,6 @@
 
 import { LINE_ORDER, normalizeLineId } from "tfl-ts"
 import { RAIL_ARRIVALS_DEFAULT_PAGE_SIZE } from "@/lib/tfl/arrivals-defaults"
-import { CYCLE_HIRE_DISPLAY_DEFAULT_TILES } from "@/lib/tfl/cycle-hire-display"
 import {
   parseDockIdItem,
   parsePanelKind,
@@ -23,14 +22,21 @@ export type BoardScope =
   "shell" | "arrivals" | "status" | "bus" | "river" | "cycle"
 
 export type BoardBehaviour = "interactive" | "unattended"
+export type BoardCycleSurface = "map" | "display"
 export type BoardStatusSurface = "display" | "strip"
 export type BoardStatusOverview = "network" | "selection" | "none"
+
+export type BoardSettingOption = {
+  value: string
+  label: string
+  description?: string
+}
 
 export type BoardSettingUi = {
   label: string
   help?: string
   control: "select" | "number" | "text"
-  options?: readonly { value: string; label: string }[]
+  options?: readonly BoardSettingOption[]
 }
 
 type SettingBase<T> = {
@@ -63,6 +69,7 @@ export type ListSetting<T> = SettingBase<T> & {
 export type BoardSetting<T = unknown> = ScalarSetting<T> | ListSetting<T>
 
 const BEHAVIOURS = new Set<BoardBehaviour>(["interactive", "unattended"])
+const CYCLE_SURFACES = new Set<BoardCycleSurface>(["map", "display"])
 const STATUS_SURFACES = new Set<BoardStatusSurface>(["display", "strip"])
 const STATUS_OVERVIEWS = new Set<BoardStatusOverview>([
   "network",
@@ -90,6 +97,15 @@ export const parseBehaviour = (raw: string): BoardBehaviour | undefined => {
     return trimmed as BoardBehaviour
   }
   return LEGACY_MODE_TO_BEHAVIOUR[trimmed]
+}
+
+export const parseCycleSurface = (
+  raw: string
+): BoardCycleSurface | undefined => {
+  const trimmed = raw.trim()
+  return CYCLE_SURFACES.has(trimmed as BoardCycleSurface)
+    ? (trimmed as BoardCycleSurface)
+    : undefined
 }
 
 export const parseStatusSurface = (
@@ -205,11 +221,19 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Behaviour",
-      help: "Unattended advances pageable panels on a timer.",
+      help: "Interactive is for touchscreens like iPad. Unattended is for monitors without touch.",
       control: "select",
       options: [
-        { value: "interactive", label: "Interactive" },
-        { value: "unattended", label: "Unattended" },
+        {
+          value: "interactive",
+          label: "Interactive",
+          description: "For touchscreens like iPad",
+        },
+        {
+          value: "unattended",
+          label: "Unattended",
+          description: "For monitors without touch",
+        },
       ],
     },
   } satisfies ScalarSetting<BoardBehaviour>,
@@ -323,7 +347,6 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Bus routes",
-      help: "Leave blank for every route at the stop.",
       control: "text",
     },
   } satisfies ListSetting<readonly string[]>,
@@ -340,7 +363,7 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Bus rows",
-      help: "0 shows every row.",
+      help: "0 expands. Default is 3.",
       control: "number",
     },
   } satisfies ScalarSetting<number>,
@@ -374,7 +397,7 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "River rows",
-      help: "0 shows every row.",
+      help: "0 expands. Default is 3.",
       control: "number",
     },
   } satisfies ScalarSetting<number>,
@@ -395,19 +418,40 @@ export const BOARD_SETTINGS = {
     },
   } satisfies ListSetting<readonly string[]>,
 
+  cycleSurface: {
+    kind: "scalar",
+    param: "c.surface",
+    scope: "cycle",
+    defaultValue: "map" as BoardCycleSurface,
+    parse: parseCycleSurface,
+    serialize: (value: BoardCycleSurface) => value,
+    isDefault: (value: BoardCycleSurface) => value === "map",
+    url: true,
+    form: true,
+    ui: {
+      label: "Cycle view",
+      help: "Map shows every dock at once. List pages them as tiles.",
+      control: "select",
+      options: [
+        { value: "map", label: "Map" },
+        { value: "display", label: "List" },
+      ],
+    },
+  } satisfies ScalarSetting<BoardCycleSurface>,
+
   cycleTiles: {
     kind: "scalar",
     param: "c.tiles",
     scope: "cycle",
-    defaultValue: CYCLE_HIRE_DISPLAY_DEFAULT_TILES,
+    defaultValue: 6,
     parse: parseRowsItem,
     serialize: serializeRowsItem,
-    isDefault: (value: number) => value === CYCLE_HIRE_DISPLAY_DEFAULT_TILES,
+    isDefault: (value: number) => value === 6,
     url: true,
     form: true,
     ui: {
       label: "Cycle tiles",
-      help: "Fixed tile height when more than one dock is shown.",
+      help: "Height in board tiles. Default is 6.",
       control: "number",
     },
   } satisfies ScalarSetting<number>,
@@ -457,15 +501,15 @@ export const BOARD_SETTINGS = {
     kind: "scalar",
     param: "s.tiles",
     scope: "status",
-    defaultValue: 4,
+    defaultValue: 0,
     parse: parseRowsItem,
     serialize: (value: number) => serializeRowsItem(value),
-    isDefault: (value: number) => value === 4,
+    isDefault: (value: number) => value === 0,
     url: true,
     form: true,
     ui: {
-      label: "Status tiles",
-      help: "1 is summary only.",
+      label: "Status max height",
+      help: "0 expands (the default). 1 is summary only.",
       control: "number",
     },
   } satisfies ScalarSetting<number>,

@@ -63,32 +63,20 @@ Events this branch emits (never keys, coordinates, raw searches, credentialed UR
 
 | Event | When |
 |---|---|
-| `landing_exposure` | Homepage paints a variant |
-| `landing_hero_interaction` / `landing_ipad_activate` / `landing_zoom_complete` | Room hero |
-| `landing_cta_click` | Board CTA |
-| `landing_example_seen` / `landing_example_interaction` | Simple live board, or Room zoomed board |
+| `landing_exposure` | Homepage paints |
+| `landing_hero_interaction` / `landing_zoom_complete` | Room pull-back |
+| `landing_cta_click` | Board or docs CTA on the homepage |
+| `landing_example_seen` / `landing_example_interaction` | Live board in the room iPad |
 | `board_setup_started` / `board_stage_completed` / `board_setup_completed` | Staged `/board` |
 | `landing_docs_visit` | `/docs` arrived from `/` |
 
 `landing_example_interaction` includes `time_to_example_interaction_ms` and `board_setup_started` includes `time_to_setup_start_ms`, both elapsed from the current landing exposure.
 
-Preview, bot, and `?landing=` / `?flag-landing-variant=` traffic set `excludeFromResults` and are dropped in `trackSiteEvent`. They will not appear in production experiment totals even if the dashboard shows raw preview hits.
+Events send `variant: "room"`. Page views still need Web Analytics enabled. Custom events will silently no-op if it is off — that is not a render error.
 
-Page views still need Web Analytics enabled. Custom events will silently no-op if it is off — that is not a render error.
+## Flags
 
-## Flags (declaration only)
-
-`flags.ts` declares `landing-variant` for the Vercel Flags Explorer. Assignment itself lives in `lib/landing/assignment.ts` (cookie + QA query). The flag `decide()` stays `control` until staged Board is production.
-
-Flags Explorer reads definitions from `/.well-known/vercel/flags` (`app/.well-known/vercel/flags/route.ts`). That route is gated by `FLAGS_SECRET`.
-
-To use the toolbar / encrypted overrides on preview:
-
-```bash
-node -e "console.log(crypto.randomBytes(32).toString('base64url'))"
-```
-
-Add the value as `FLAGS_SECRET` for **Development**, **Preview**, and **Production** in the Vercel project env settings (32 random bytes, base64url). A local `.env.local` value is enough for `next dev`; preview/production still need the project env var. Missing `FLAGS_SECRET` must not be required for the site to render.
+`/.well-known/vercel/flags` stays mounted for the Flags Explorer. There is no homepage experiment flag. Missing `FLAGS_SECRET` must not be required for the site to render.
 
 ## Preview workflow
 
@@ -105,7 +93,7 @@ A **Ready** Vercel deployment with a white screen or React overlay is a **browse
 2. DevTools → **Console**. Copy the first red exception and component stack. That is the source of truth — not Analytics, not Flags.
 3. DevTools → **Network**. Confirm the document is `200` and the RSC flight is not a 500.
 4. If the overlay says hydration / `useLinkStatus` / `useSidebar`, it is chrome, not TfL data.
-5. QA variants without changing production: `/?landing=simple`, `/?landing=room`. `/` must stay the current homepage while the experiment is disabled. `/board` is the staged setup.
+5. `/` is the room homepage. `/board` is the staged setup.
 
 Analytics setup does not diagnose a client exception. Enable Web Analytics after the preview paints.
 

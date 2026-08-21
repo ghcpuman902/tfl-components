@@ -7,6 +7,13 @@ import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
 import { distanceMeters, isValidLatLon } from "@/lib/tfl/geo"
 import { getLineNameTiers } from "@/lib/tfl/line-names"
 import { STATION_CATALOG_MODES } from "@/lib/tfl/station-catalog"
+import {
+  foldStationSearchText,
+  stationSearchNameForms,
+  stationSearchQueryForms,
+  stationSearchTokens,
+  stationSearchTokensMatch,
+} from "@/lib/tfl/station-name-match"
 
 export const EXPLORER_LOCATE_RADIUS_METERS = 800
 export const EXPLORER_LOCATE_LIMIT = 25
@@ -19,20 +26,9 @@ const RANK_LINE = 4
 const RANK_MODE = 5
 const RANK_NONE = 9
 
-const DIACRITICS = /\p{M}/gu
-const NON_ALNUM = /[^a-z0-9]+/g
 const NAME_COMPARE = { sensitivity: "base" } as const
 
-const fold = (value: string): string =>
-  value
-    .normalize("NFKD")
-    .replace(DIACRITICS, "")
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[''`´]/g, "")
-    .replace(NON_ALNUM, " ")
-    .trim()
-    .replace(/\s+/g, " ")
+const fold = foldStationSearchText
 
 const MODE_NEEDLES: ReadonlyMap<string, readonly string[]> = new Map([
   ...STATION_CATALOG_MODES.map(
@@ -47,28 +43,8 @@ const MODE_NEEDLES: ReadonlyMap<string, readonly string[]> = new Map([
 
 const lineNeedlesCache = new Map<string, readonly string[]>()
 
-const tokensOf = (folded: string): readonly string[] =>
-  folded.length === 0 ? [] : folded.split(" ")
-
-/** Query tokens appear in order as prefixes of haystack tokens. */
-const tokensMatch = (
-  haystackTokens: readonly string[],
-  queryTokens: readonly string[]
-): boolean => {
-  if (queryTokens.length === 0) return false
-  let index = 0
-  for (const queryToken of queryTokens) {
-    while (
-      index < haystackTokens.length &&
-      !haystackTokens[index]!.startsWith(queryToken)
-    ) {
-      index += 1
-    }
-    if (index >= haystackTokens.length) return false
-    index += 1
-  }
-  return true
-}
+const tokensOf = stationSearchTokens
+const tokensMatch = stationSearchTokensMatch
 
 const foldedMatches = (
   haystack: string,
@@ -107,17 +83,21 @@ const idHaystacks = (point: ExplorerPoint): string[] => {
   return ids
 }
 
-const nameRank = (
-  foldedName: string,
-  query: string,
-  queryTokens: readonly string[]
-): number => {
-  if (!foldedName) return RANK_NONE
-  if (foldedName === query) return RANK_NAME_EXACT
-  if (foldedName.startsWith(query)) return RANK_NAME_PREFIX
+const nameRank = (name: string, foldedQuery: string): number => {
+  const forms = stationSearchNameForms(name)
+  if (forms.length === 0) return RANK_NONE
+  if (forms.some((form) => form === foldedQuery)) return RANK_NAME_EXACT
+  if (forms.some((form) => form.startsWith(foldedQuery))) {
+    return RANK_NAME_PREFIX
+  }
+  const queryForms = stationSearchQueryForms(foldedQuery)
   if (
-    foldedName.includes(query) ||
-    tokensMatch(tokensOf(foldedName), queryTokens)
+    forms.some((form) =>
+      queryForms.some(
+        (query) =>
+          form.includes(query) || tokensMatch(tokensOf(form), tokensOf(query))
+      )
+    )
   ) {
     return RANK_NAME_CONTAINS
   }
@@ -171,7 +151,7 @@ const matchRank = (
   rawIdQuery: string
 ): number =>
   Math.min(
-    nameRank(fold(point.name), query, queryTokens),
+    nameRank(point.name, query),
     idRank(point, rawIdQuery),
     lineRank(point, query, queryTokens),
     modeRank(point, query, queryTokens)

@@ -1,11 +1,6 @@
 "use client"
 
 import { LandingScene } from "@/app/temp/landing-hero/landing-scene"
-import { LandingDeveloperPath } from "@/components/landing/landing-developer-path"
-import { LandingFinalCta } from "@/components/landing/landing-final-cta"
-import { LandingProofMosaic } from "@/components/landing/landing-proof-mosaic"
-import { LandingSetupSteps } from "@/components/landing/landing-setup-steps"
-import { LandingWarmTransition } from "@/components/landing/landing-warm-transition"
 import { useLandingTrack } from "@/components/landing/landing-analytics"
 import type { AnalyticsContext } from "@/lib/analytics/context"
 import { elapsedSinceExposureMs } from "@/lib/landing/timing"
@@ -26,7 +21,6 @@ export const LandingRoomVariant = ({ context }: LandingRoomVariantProps) => {
       <LandingScene
         production
         onCtaClick={handleCtaClick}
-        onIpadActivate={() => track("landing_ipad_activate")}
         onZoomComplete={() => track("landing_zoom_complete")}
         onHeroInteraction={() => track("landing_hero_interaction")}
         onExampleSeen={() => track("landing_example_seen")}
@@ -36,11 +30,6 @@ export const LandingRoomVariant = ({ context }: LandingRoomVariantProps) => {
           })
         }
       />
-      <LandingWarmTransition />
-      <LandingProofMosaic />
-      <LandingSetupSteps />
-      <LandingDeveloperPath />
-      <LandingFinalCta onCtaClick={handleCtaClick} />
     </div>
   )
 }

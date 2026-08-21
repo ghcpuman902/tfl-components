@@ -1,7 +1,10 @@
 "use client"
 
-import { useEffect, useMemo, useSyncExternalStore } from "react"
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react"
+import dynamic from "next/dynamic"
 import { normalizeLineId } from "tfl-ts"
+import { ARRIVALS_RHYTHM_VARS } from "@/components/tfl/arrivals/arrivals-board-view"
+import { BoardViewFooter } from "@/components/board/board-view-footer"
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
 import { RiverBusArrivalsBoard } from "@/components/tfl/arrivals/river-bus-arrivals-board"
@@ -18,9 +21,15 @@ import {
   TubeStatusDisplaySkeleton,
 } from "@/components/tfl/status/tube-status-display"
 import { TubeStatusStrip } from "@/components/tfl/status/tube-status-strip"
-import { useBoardStatus } from "@/hooks/use-board-status"
-import { useDualPathArrivals } from "@/hooks/use-dual-path-arrivals"
-import { useDualPathBikePoints } from "@/hooks/use-dual-path-bike-points"
+import { STATUS_POLL_MS, useBoardStatus } from "@/hooks/use-board-status"
+import {
+  ARRIVALS_POLL_MS,
+  useDualPathArrivals,
+} from "@/hooks/use-dual-path-arrivals"
+import {
+  BIKE_POLL_MS,
+  useDualPathBikePoints,
+} from "@/hooks/use-dual-path-bike-points"
 import {
   boardSlotsInclude,
   resolveBoardSlots,
@@ -47,17 +56,42 @@ import {
   type BoardStationNamesIndex,
 } from "@/lib/tfl/board-station-names"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
+import { BOARD_SETTINGS } from "@/lib/tfl/board-settings"
 import {
+  BOARD_PATH,
   normalizeBoardHash,
   parseBoardConfig,
   type BoardConfig,
 } from "@/lib/tfl/board-url-state"
 
+const CycleHireDocksMap = dynamic(
+  () =>
+    import("@/components/tfl/cycle-hire/cycle-hire-docks").then(
+      (mod) => mod.CycleHireDocksMap
+    ),
+  { ssr: false }
+)
+
 /** Same bound-columns arrangement as the rail arrivals docs demo. */
 const BOUND_COLUMNS_CLASS_NAMES = {
   subgroups:
-    "@min-[30rem]/arrivals-group:grid-cols-2 @min-[30rem]/arrivals-group:gap-x-6",
+    "@min-[30rem]/arrivals-group:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @min-[30rem]/arrivals-group:gap-x-6",
 } as const
+
+/** Half-tile — `gap-8` (32px) is off the 24px baseline. */
+const BOARD_RHYTHM_GAP_CLASS = "gap-y-[calc(var(--arrivals-row)/2)]"
+
+const CycleHireMapSkeleton = ({ tiles }: { tiles: number }) => (
+  <div
+    className="w-full animate-pulse bg-muted"
+    style={{
+      ...ARRIVALS_RHYTHM_VARS,
+      height: `calc(var(--arrivals-row) * ${tiles})`,
+    }}
+    aria-busy
+    aria-label="Loading cycle hire map"
+  />
+)
 
 const replaceHashIfNeeded = (nextHash: string) => {
   if (window.location.hash === nextHash) return
@@ -85,10 +119,12 @@ const getServerBoardHash = () => ""
 const subscribeNoop = () => () => undefined
 const getClientReady = () => true
 const getServerReady = () => false
+const getEmbedded = () => window.self !== window.top
+const getServerEmbedded = () => false
 
 const useBoardConfigFromHash = (
   stationNames: BoardStationNamesIndex
-): { config: BoardConfig; ready: boolean } => {
+): { config: BoardConfig; ready: boolean; configEpoch: string } => {
   const hash = useSyncExternalStore(
     subscribeToBoardHash,
     getBoardHash,
@@ -117,7 +153,7 @@ const useBoardConfigFromHash = (
     replaceHashIfNeeded(normalizeBoardHash(liveHash, { stopName }))
   }, [hash, stationNames])
 
-  return { config, ready }
+  return { config, ready, configEpoch: hash }
 }
 
 const DEGRADED_HINT =
@@ -146,20 +182,26 @@ export const BoardDisplay = ({
   stationNames,
   arrivalsStopIds,
 }: BoardDisplayProps) => {
-  const { config, ready } = useBoardConfigFromHash(stationNames)
+  const { config, ready, configEpoch } = useBoardConfigFromHash(stationNames)
   const { hydrated, getAppKey } = useUserTflCredentials()
   const storedKey = hydrated ? getAppKey() : null
   const appKey = config.key ?? storedKey
+  const embedded = useSyncExternalStore(
+    subscribeNoop,
+    getEmbedded,
+    getServerEmbedded
+  )
 
   useEffect(() => {
-    if (window.self === window.top) return
+    if (!embedded) return
     const html = document.documentElement
     const previous = html.style.overflow
     html.style.overflow = "hidden"
     return () => {
       html.style.overflow = previous
     }
-  }, [])
+  }, [embedded])
+
   const stopId = config.stop ?? ""
   // URL `stopName` is an override only. Otherwise the catalog paints the
   // heading immediately; the board infers from arrivals when that misses.
@@ -181,6 +223,7 @@ export const BoardDisplay = ({
   const status = useBoardStatus({
     appKey,
     enabled: ready && showStatus,
+    resetKey: configEpoch,
   })
   const pollStopIds = useMemo(
     () => lookupBoardArrivalsStopIds(arrivalsStopIds, stopId),
@@ -200,6 +243,7 @@ export const BoardDisplay = ({
     appKeyOverride: ready ? appKey : null,
     sharedTrackLineIds: ready && showRail ? sharedTrackLineIds : undefined,
     sharedTrackFamilies: ready && showRail ? sharedTrackFamilies : undefined,
+    resetKey: configEpoch,
   })
 
   const busStopId = config.bus.stop ?? ""
@@ -209,16 +253,90 @@ export const BoardDisplay = ({
   const busArrivals = useDualPathArrivals({
     stopPointId: ready && showBus ? busStopId : "",
     appKeyOverride: ready ? appKey : null,
+    resetKey: configEpoch,
   })
   const riverArrivals = useDualPathArrivals({
     stopPointId: ready && showRiver ? riverStopId : "",
     appKeyOverride: ready ? appKey : null,
+    resetKey: configEpoch,
   })
   const cyclePoints = useDualPathBikePoints({
     dockIds: cycleDockIds,
     appKeyOverride: ready ? appKey : null,
     enabled: ready && showCycle,
+    resetKey: configEpoch,
   })
+
+  const handleRefresh = useCallback(() => {
+    if (showRail) arrivals.refresh()
+    if (showBus) busArrivals.refresh()
+    if (showRiver) riverArrivals.refresh()
+    if (showCycle) cyclePoints.refresh()
+    if (showStatus) status.refresh()
+  }, [
+    arrivals.refresh,
+    busArrivals.refresh,
+    cyclePoints.refresh,
+    riverArrivals.refresh,
+    showBus,
+    showCycle,
+    showRail,
+    showRiver,
+    showStatus,
+    status.refresh,
+  ])
+
+  const pollSources = useMemo(
+    () => [
+      {
+        fetchedAt: arrivals.fetchedAt,
+        pollMs: ARRIVALS_POLL_MS,
+        enabled: ready && showRail,
+      },
+      {
+        fetchedAt: busArrivals.fetchedAt,
+        pollMs: ARRIVALS_POLL_MS,
+        enabled: ready && showBus,
+      },
+      {
+        fetchedAt: riverArrivals.fetchedAt,
+        pollMs: ARRIVALS_POLL_MS,
+        enabled: ready && showRiver,
+      },
+      {
+        fetchedAt: cyclePoints.fetchedAt,
+        pollMs: BIKE_POLL_MS,
+        enabled: ready && showCycle,
+      },
+      {
+        fetchedAt: status.fetchedAt,
+        pollMs: STATUS_POLL_MS,
+        enabled: ready && showStatus,
+        polls: status.source === "user",
+      },
+    ],
+    [
+      arrivals.fetchedAt,
+      busArrivals.fetchedAt,
+      cyclePoints.fetchedAt,
+      ready,
+      riverArrivals.fetchedAt,
+      showBus,
+      showCycle,
+      showRail,
+      showRiver,
+      showStatus,
+      status.fetchedAt,
+      status.source,
+    ]
+  )
+
+  const refreshing =
+    (showRail && arrivals.loading) ||
+    (showBus && busArrivals.loading) ||
+    (showRiver && riverArrivals.loading) ||
+    (showCycle && cyclePoints.loading) ||
+    (showStatus && status.loading)
 
   const servingLines = useMemo(
     () => lookupBoardStationLines(stationLines, stopId),
@@ -400,19 +518,51 @@ export const BoardDisplay = ({
       )
     }
     if (kind === "cycle") {
-      if (
+      const cycleTiles =
+        config.cycle.tiles ?? BOARD_SETTINGS.cycleTiles.defaultValue
+      const cycleSurface =
+        config.cycle.surface ?? BOARD_SETTINGS.cycleSurface.defaultValue
+      const cycleLoading =
         !ready ||
         (cyclePoints.loading && cyclePoints.data.length === 0 && !cycleError)
-      ) {
-        return <CycleHireDocksDisplaySkeleton tiles={config.cycle.tiles ?? 2} />
+
+      if (cycleSurface === "display") {
+        if (cycleLoading) {
+          return <CycleHireDocksDisplaySkeleton tiles={cycleTiles} />
+        }
+        return (
+          <CycleHireDocksDisplay
+            data={cyclePoints.data}
+            tiles={cycleTiles}
+            behaviour={config.behaviour}
+            startDelayMs={unattended ? 1200 : undefined}
+            error={cycleError}
+          />
+        )
+      }
+
+      if (cycleLoading) {
+        return <CycleHireMapSkeleton tiles={cycleTiles} />
+      }
+      if (cycleError) {
+        return (
+          <div
+            className="flex items-center text-base text-destructive"
+            style={{
+              ...ARRIVALS_RHYTHM_VARS,
+              height: `calc(var(--arrivals-row) * ${cycleTiles})`,
+            }}
+            role="alert"
+          >
+            {cycleError}
+          </div>
+        )
       }
       return (
-        <CycleHireDocksDisplay
+        <CycleHireDocksMap
           data={cyclePoints.data}
-          tiles={config.cycle.tiles}
-          behaviour={config.behaviour}
-          startDelayMs={unattended ? 1200 : undefined}
-          error={cycleError}
+          tiles={cycleTiles}
+          showNavigation={!unattended}
         />
       )
     }
@@ -422,7 +572,7 @@ export const BoardDisplay = ({
       (status.loading && status.data.length === 0 && !status.error)
     ) {
       return unattended ? (
-        <TubeStatusDisplaySkeleton tiles={statusProps.tiles} />
+        <TubeStatusDisplaySkeleton tiles={statusProps.tiles || 4} />
       ) : (
         <TubeStatusBoardSkeleton />
       )
@@ -432,7 +582,7 @@ export const BoardDisplay = ({
         <TubeStatusStrip
           data={statusData}
           now={status.fetchedAt ?? undefined}
-          units={statusProps.tiles}
+          units={statusProps.tiles || 4}
           detailScope={statusProps.detailScope}
           detailLineIds={statusProps.detailLineIds}
           dwellMs={statusProps.dwellMs}
@@ -472,12 +622,18 @@ export const BoardDisplay = ({
     if (kinds.length === 0) return null
     return (
       <section
-        className={wide && twoColumns ? "min-w-0 md:col-span-2" : "min-w-0"}
+        className={
+          wide && twoColumns
+            ? "min-w-0 overflow-x-clip md:col-span-2"
+            : "min-w-0 overflow-x-clip"
+        }
         aria-label={label}
       >
-        <div className="grid gap-8">
+        <div className={`grid min-w-0 grid-cols-1 ${BOARD_RHYTHM_GAP_CLASS}`}>
           {kinds.map((kind) => (
-            <div key={kind}>{renderPanel(kind)}</div>
+            <div key={kind} className="min-w-0">
+              {renderPanel(kind)}
+            </div>
           ))}
         </div>
       </section>
@@ -485,13 +641,20 @@ export const BoardDisplay = ({
   }
 
   return (
-    <div className="box-border min-h-dvh w-full p-4 md:p-6">
+    <div
+      className={
+        embedded
+          ? "box-border h-dvh w-full overflow-y-auto overscroll-y-contain p-4 [touch-action:pan-y] md:p-6"
+          : "box-border min-h-dvh w-full p-4 md:p-6"
+      }
+      style={ARRIVALS_RHYTHM_VARS}
+    >
       <h1 className="sr-only">Live board</h1>
       <div
         className={
           twoColumns
-            ? "grid grid-cols-1 items-start gap-8 md:grid-cols-3 md:gap-x-6"
-            : "grid grid-cols-1 items-start gap-8"
+            ? `grid min-w-0 grid-cols-1 items-start ${BOARD_RHYTHM_GAP_CLASS} md:grid-cols-3 md:gap-x-6`
+            : `grid min-w-0 grid-cols-1 items-start ${BOARD_RHYTHM_GAP_CLASS}`
         }
       >
         {renderStack(slots.p1, "Wide slot", true)}
@@ -503,6 +666,12 @@ export const BoardDisplay = ({
       {statusHint ? (
         <p className="mt-3 text-sm text-muted-foreground">{statusHint}</p>
       ) : null}
+      <BoardViewFooter
+        sources={pollSources}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+        editHref={`${BOARD_PATH}${configEpoch}`}
+      />
     </div>
   )
 }

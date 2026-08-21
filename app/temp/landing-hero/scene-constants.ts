@@ -1,27 +1,24 @@
 export const CROP_SCALE = 1.06
-export const IPAD_PADDING_FRACTION = 0.08
-/**
- * Sticky stage is one viewport. Extra height is the zoom pull plus a short
- * lock so snap can settle, then the next section comes up.
- */
-export const HERO_SCROLL_HEIGHT =
-  "calc(100dvh - var(--site-header-height) + 28svh)"
+
+/** Matching landing-ipad case 125.7409×88.4773. */
+export const IPAD_FRAME_ASPECT = 125.7409 / 88.4773
+
+/** Side inset so the hero iPad does not kiss the viewport edge. */
+export const HERO_SIDE_INSET = 0.04
+export const HERO_TOP_INSET = "1rem"
+/** Headline + continue control reserved at the bottom of the first fold. */
+export const HERO_COPY_BAND = "6.5rem"
 
 /**
- * Fraction of the hero scroll range that owns the camera.
- * Keep this close to 1 — a long tail after the lock is a frozen iPad.
+ * First-fold iPad: as large as the useful viewport allows, leaving the
+ * copy band free. Same token at every width — height does the rest.
  */
-export const ZOOM_SCROLL_FRACTION = 0.86
-/** Fraction of the zoom slice that commits — iOS paging, biased early. */
-export const COMMIT_THRESHOLD = 0.1
-/** iOS settle: ease-out only. Never in-out (that restarts acceleration). */
-export const SETTLE_DURATION_MIN = 0.42
-export const SETTLE_DURATION_MAX = 0.55
-export const SETTLE_EASE = "power3.out"
-export const SNAP_DELAY = 0.04
-export const CLICK_SETTLE_DURATION = 0.55
-export const CLICK_SETTLE_EASE = "power3.out"
+export const IPAD_FRAME_WIDTH = `min(${(1 - HERO_SIDE_INSET * 2) * 100}vw, calc((100dvh - var(--site-header-height) - ${HERO_COPY_BAND}) * ${IPAD_FRAME_ASPECT}))`
 
+/**
+ * Sticky stage is one viewport. Extra height is the pull-back so the
+ * iPad can settle onto the table.
+ */
 export const PARALLAX_X = {
   l0: 28,
   l1: 15,
@@ -29,7 +26,7 @@ export const PARALLAX_X = {
   l3: 1,
 } as const
 
-/** Scroll-driven depth, smaller than pointer parallax — a focal-length cue, not a second zoom. */
+/** Scroll-driven depth, smaller than pointer parallax — a focal-length cue. */
 export const DOLLY_PARALLAX = {
   l0: 10,
   l1: 5,
@@ -46,12 +43,13 @@ export const DOLLY_SCALE = {
 
 export const PHOTO_OVERLAY_WIDTH = 640
 
-export const DEFOCUS = {
-  l0: { blur: 14, opacity: 0.15, duration: 0.5, start: 0 },
-  l1: { blur: 8, opacity: 0.4, duration: 0.45, start: 0.18 },
-} as const
-
-export const COPY_FADE_DURATION = 0.32
-export const CAPTION_FADE_START = 0.75
-export const CAPTION_FADE_DURATION = 0.25
-export const ZOOM_COMPLETE_AT = 0.98
+/**
+ * One paper veil over the composited room. Light enough that the room
+ * reads as a background, heavy enough that the iPad stays the subject.
+ */
+export const ROOM_VEIL_OPACITY = 0.42
+export const ROOM_FADE_START = 0.08
+export const ROOM_FADE_DURATION = 0.55
+export const COPY_FADE_START = 0.04
+export const COPY_FADE_DURATION = 0.28
+export const ROOM_COMPLETE_AT = 0.98

@@ -133,6 +133,25 @@ describe("buildStatusDisplayFrames", () => {
     assert.equal(disruption[0]?.tiles[0]?.kind, "announcements")
   })
 
+  it("expands a long disruption onto one page when tiles is 0", () => {
+    const long = line(
+      "central",
+      "Central",
+      6,
+      "Severe Delays",
+      `Central Line: ${"Delayed at every station. ".repeat(20)}`
+    )
+    const sections = partitionStatusBoardLines([long], { now: SATURDAY })
+    const frames = buildStatusDisplayFrames(sections, {
+      tiles: 0,
+      charsPerTile: 40,
+    })
+    const disruption = frames.filter((frame) => frame.phase === "disruptions")
+    assert.equal(disruption.length, 1)
+    assert.equal(disruption[0]?.pageCount, 1)
+    assert.equal(disruption[0]?.tiles[0]?.kind, "announcements")
+  })
+
   it("pages only when one announcement exceeds the body", () => {
     const long = line(
       "central",

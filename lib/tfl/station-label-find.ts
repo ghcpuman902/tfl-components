@@ -1,6 +1,7 @@
 import { formatStationName } from "@/lib/tfl/diagram-station"
 import { neededFindPhrases, normalizeFindPhrase } from "@/lib/tfl/find-coverage"
 import { STATION_ABBR_FIND_COMPLETIONS } from "@/lib/tfl/station-abbreviations"
+import { stationSearchAliasForms } from "@/lib/tfl/station-name-match"
 
 export { STATION_ABBR_FIND_COMPLETIONS } from "@/lib/tfl/station-abbreviations"
 export {
@@ -112,6 +113,8 @@ export const stationFindAliases = (
       stationAndForm(visualJoined),
       stripStationApostrophes(visualJoined),
       normalizeStationApostrophes(visualJoined),
+      ...stationSearchAliasForms(copyName),
+      ...stationSearchAliasForms(visualJoined),
     ],
     covered
   )

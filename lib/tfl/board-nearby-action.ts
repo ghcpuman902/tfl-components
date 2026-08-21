@@ -6,9 +6,10 @@ import { getTflClient } from "@/lib/tfl/client"
 import { getExplorerRiverPiers } from "@/lib/tfl/explorer/points-river"
 import { isValidLatLon, truncateLatLon } from "@/lib/tfl/geo"
 import { formatBikePointId } from "@/lib/tfl/board-panels"
+import { stationCoord } from "@/lib/tfl/station-coords"
 
 const RIVER_RADIUS_METERS = 600
-const CYCLE_RADIUS_METERS = 400
+const CYCLE_RADIUS_METERS = 100
 const CYCLE_LIMIT = 4
 
 export type BoardNearbyResult =
@@ -78,4 +79,15 @@ export async function getBoardNearbyPlaces(
       err instanceof Error ? err.message : "Failed to find nearby stops."
     return { ok: false, error: message }
   }
+}
+
+/** Same discovery, using a catalogue station instead of GPS. */
+export async function getBoardNearbyPlacesForStop(
+  stopId: string
+): Promise<BoardNearbyResult> {
+  const coord = stationCoord(stopId)
+  if (!coord) {
+    return { ok: false, error: "Unknown stop." }
+  }
+  return getBoardNearbyPlaces(coord.lat, coord.lon)
 }

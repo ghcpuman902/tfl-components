@@ -118,8 +118,13 @@ export const UserTflCredentialsProvider = ({
         return { ok: false as const, error: err }
       }
 
+      const saved = writeStoredUserTflCredentials(trimmed, persist, Date.now())
+      appKeyRef.current = saved.appKey
+      setAppKey(saved.appKey)
+      setPersistMode(saved.persist)
       setStatus("validating")
       setError(null)
+
       const result = await validateUserTflAppKey(trimmed)
       if (!result.ok) {
         setStatus("invalid")
@@ -127,10 +132,6 @@ export const UserTflCredentialsProvider = ({
         return { ok: false as const, error: result.error }
       }
 
-      const saved = writeStoredUserTflCredentials(trimmed, persist, Date.now())
-      appKeyRef.current = saved.appKey
-      setAppKey(saved.appKey)
-      setPersistMode(saved.persist)
       setStatus("ready")
       setError(null)
       setShapeWarning(null)

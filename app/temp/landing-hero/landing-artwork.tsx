@@ -10,6 +10,12 @@ export const LANDING_VIEWBOX = "0 0 1559.3951 1011.3564"
 export const LANDING_VIEWBOX_WIDTH = 1559.3951
 export const LANDING_VIEWBOX_HEIGHT = 1011.3564
 
+export const IPAD_CASE = {
+  x: 1045.9538,
+  y: 505.041,
+  width: 125.7409,
+  height: 88.4773,
+} as const
 export const IPAD_SCREEN = {
   x: 1049.449,
   y: 508.3357,
@@ -35,6 +41,11 @@ export const BOARD_IFRAME_HEIGHT =
   BOARD_IFRAME_WIDTH * (IPAD_SCREEN.height / IPAD_SCREEN.width)
 export const BOARD_IFRAME_RADIUS =
   BOARD_IFRAME_WIDTH * ((IPAD_SCREEN.rx ?? 0) / IPAD_SCREEN.width)
+/** Chrome overlay sized so the inset screen matches `BOARD_IFRAME_*`. */
+export const BOARD_CASE_WIDTH =
+  BOARD_IFRAME_WIDTH * (IPAD_CASE.width / IPAD_SCREEN.width)
+export const BOARD_CASE_HEIGHT =
+  BOARD_CASE_WIDTH * (IPAD_CASE.height / IPAD_CASE.width)
 
 type LandingArtworkProps = {
   svgRef: Ref<SVGSVGElement | null>
@@ -44,13 +55,15 @@ type LandingArtworkProps = {
   l3Ref: Ref<SVGGElement | null>
   iPadRef: Ref<SVGGElement | null>
   iPadHitRef: Ref<SVGRectElement | null>
+  iPadCaseRef?: Ref<SVGRectElement | null>
   iPadScreenRef: Ref<SVGRectElement | null>
   pictureMat1Ref: Ref<SVGRectElement | null>
   pictureMat2Ref: Ref<SVGRectElement | null>
-  onIpadClick: () => void
-  onIpadKeyDown: (event: KeyboardEvent<SVGRectElement>) => void
+  onIpadClick?: () => void
+  onIpadKeyDown?: (event: KeyboardEvent<SVGRectElement>) => void
   ipadAriaLabel?: string
   ipadPressedClassName?: string
+  hideIpadSilhouette?: boolean
 }
 
 export const LandingArtwork = ({
@@ -61,13 +74,15 @@ export const LandingArtwork = ({
   l3Ref,
   iPadRef,
   iPadHitRef,
+  iPadCaseRef,
   iPadScreenRef,
   pictureMat1Ref,
   pictureMat2Ref,
   onIpadClick,
   onIpadKeyDown,
-  ipadAriaLabel = "Zoom in to the station display",
+  ipadAriaLabel,
   ipadPressedClassName,
+  hideIpadSilhouette = false,
 }: LandingArtworkProps) => (
   <>
     <style>{ARTWORK_THEME_CSS}</style>
@@ -670,6 +685,7 @@ export const LandingArtwork = ({
           />
           <g ref={iPadRef} id="landing-ipad">
             <rect
+              ref={iPadCaseRef}
               className="landing-cls-47"
               x="1045.9538"
               y="505.041"
@@ -677,6 +693,7 @@ export const LandingArtwork = ({
               height="88.4773"
               rx="8.9667"
               ry="8.9667"
+              opacity={hideIpadSilhouette ? 0 : undefined}
             />
             <rect
               ref={iPadScreenRef}
@@ -689,17 +706,18 @@ export const LandingArtwork = ({
               height="82.2392"
               rx="6.9508"
               ry="6.9508"
+              opacity={hideIpadSilhouette ? 0 : undefined}
             />
             <rect
               ref={iPadHitRef}
-              x="1045.449"
-              y="504.3357"
-              width="144.3998"
-              height="90.2392"
+              x="1045.9538"
+              y="505.041"
+              width="125.7409"
+              height="88.4773"
               fill="transparent"
-              className={ipadPressedClassName ?? "cursor-none"}
-              tabIndex={0}
-              role="button"
+              className={ipadPressedClassName ?? "pointer-events-none"}
+              tabIndex={onIpadClick ? 0 : undefined}
+              role={onIpadClick ? "button" : undefined}
               aria-label={ipadAriaLabel}
               onClick={onIpadClick}
               onKeyDown={onIpadKeyDown}
@@ -709,17 +727,7 @@ export const LandingArtwork = ({
               cx="1165.7805"
               cy="549.2796"
               r="3.4612"
-            />
-            <rect
-              className="landing-cls-56"
-              x="1171.6947"
-              y="547.6891"
-              width="8.2482"
-              height="3.6"
-            />
-            <path
-              className="landing-cls-24"
-              d="M1179.9076,549.4553c12.9293,0,18.7176,6.0926,18.7176,33.7631,0,31.6235-22.8064,27.8117-47.4823,27.8117"
+              opacity={hideIpadSilhouette ? 0 : undefined}
             />
           </g>
           <g id="Plant">

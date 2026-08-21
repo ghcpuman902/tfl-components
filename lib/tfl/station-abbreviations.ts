@@ -19,6 +19,7 @@ export type StationAbbreviationEntry = {
  * Conservative abbreviations used on diagrams.
  * Prefer official short forms already common on TfL maps.
  * Do not abbreviate proper-name tokens (Market, Green, Hill, Cross, …).
+ * Saint / `St.` is search-only — see `station-name-match.ts`.
  */
 export const STATION_ABBREVIATION_ENTRIES: readonly StationAbbreviationEntry[] =
   [

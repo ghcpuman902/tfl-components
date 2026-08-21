@@ -72,7 +72,7 @@ Do not commit the value. Put it in `.env.local` (or `.env.development.local`) as
 
 Web Analytics does not need an extra env var. Enable it on the Vercel project (**Analytics → Web Analytics**) so `@vercel/analytics` custom events from `lib/analytics/track.ts` are stored. See [vercel.md](./vercel.md#web-analytics-landing--board-events).
 
-`FLAGS_SECRET` is optional until you use the Vercel Flags toolbar or encrypted overrides. Generate 32 random bytes as base64url:
+`FLAGS_SECRET` is optional until you use the Vercel Flags toolbar or encrypted overrides. There is no homepage experiment flag. Generate 32 random bytes as base64url:
 
 ```bash
 node -e "console.log(crypto.randomBytes(32).toString('base64url'))"

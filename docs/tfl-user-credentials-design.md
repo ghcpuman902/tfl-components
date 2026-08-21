@@ -96,7 +96,7 @@ Collapsed offcanvas: same control remains in the drawer footer.
 - Label: **Add TfL API key**.
 - Opens a small dialog (pattern: `FeedbackDialog` — Dialog, not an always-expanded form).
 - Copy (short):
-  - Subscribe to **500 Requests per min** on [api-portal.tfl.gov.uk](https://api-portal.tfl.gov.uk/), then Profile / Show.
+  - Subscribe to **500 Requests per min** on [api-portal.tfl.gov.uk](https://api-portal.tfl.gov.uk/product#product=2357355709892), then Profile / Show.
   - Stored **only in this browser**; never sent to tfl.manglekuo.com.
   - Used for **live demos that run in your browser**; homepage and cached boards still use the site key.
 - Single password-style field: **TfL API key**.

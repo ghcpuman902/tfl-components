@@ -56,6 +56,7 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
       "riverStop",
       "riverRows",
       "cycleDocks",
+      "cycleSurface",
       "cycleTiles",
     ],
     slots: { p1: ["rail", "bus", "cycle"], p2: ["status"] },

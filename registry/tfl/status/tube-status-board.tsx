@@ -32,9 +32,9 @@ type Props = {
   /** When true, omit the page header (useful inside a layout that already has one). */
   hideHeader?: boolean
   /**
-   * Watchlist mode: one column, no section title tiles, no attribution
-   * footer. Pass only the lines you care about as `data`. Empty Good
-   * Service is omitted — you will not see "Good Service (0 lines)".
+   * Watchlist mode: one column, no section title tiles. Pass only the
+   * lines you care about as `data`. Empty Good Service is omitted — you
+   * will not see "Good Service (0 lines)".
    */
   compact?: boolean
   /**
@@ -126,10 +126,7 @@ const BOARD_RHYTHM_VARS = {
 const BOARD_ROOT_CLASS = "flex w-full flex-col text-base @container/status"
 
 const TILE_CLASS =
-  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-hidden"
-
-/** Pull the brand bar into the tile without shrinking the title box. */
-const LINE_BAR_PULL_CLASS = "pointer-events-none -mt-1"
+  "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] min-w-0 shrink-0 overflow-clip"
 
 /** Resolves via `data-line` → `--line-color` from tfl-colours tokens. */
 const lineTitleClass = "tfl-dark-line-text text-[var(--line-color)]"
@@ -145,25 +142,26 @@ const StatusLineHeader = ({
   name: string
   trailing?: ReactNode
 }) => (
-  <div className="min-w-0">
-    <header
-      data-line={lineId}
-      className={cn("relative flex items-center", TILE_CLASS)}
+  <header
+    data-line={lineId}
+    className={cn("relative flex min-w-0 items-center", TILE_CLASS)}
+  >
+    <h3
+      className={cn(
+        "m-0 min-w-0 flex-1 pr-2 text-xl leading-7 font-semibold",
+        lineTitleClass
+      )}
     >
-      <h3
-        className={cn(
-          "m-0 min-w-0 flex-1 pr-2 text-xl leading-7 font-semibold",
-          lineTitleClass
-        )}
-      >
-        <LineName lineId={lineId} name={name} />
-      </h3>
-      {trailing}
-    </header>
-    <div className={LINE_BAR_PULL_CLASS} aria-hidden>
+      <LineName lineId={lineId} name={name} />
+    </h3>
+    {trailing}
+    <div
+      className="pointer-events-none absolute inset-x-0 bottom-0"
+      aria-hidden
+    >
       <LineColorBar lineId={lineId} modeName={modeName} heightClass="h-1" />
     </div>
-  </div>
+  </header>
 )
 
 const StatusSectionTitle = ({
@@ -252,8 +250,8 @@ type SkeletonProps = {
   /** Line IDs to paint (defaults to `LINE_ORDER` Tube & Rail set). */
   lineIds?: readonly string[]
   /**
-   * Watchlist mode: one column, no section title tile, no attribution
-   * footer. Pass the same `lineIds` you will fetch.
+   * Watchlist mode: one column, no section title tile. Pass the same
+   * `lineIds` you will fetch.
    */
   compact?: boolean
 }
@@ -302,21 +300,6 @@ export const TubeStatusBoardSkeleton = ({
         })}
       </div>
     </div>
-
-    {compact ? null : (
-      <div
-        className={cn(
-          "flex items-center border-t text-center text-base text-muted-foreground",
-          TILE_CLASS
-        )}
-      >
-        <p className="w-full text-balance">
-          Data from Transport for London via{" "}
-          <span className="text-blue-500">tfl-ts</span>. Pass normalised rows as{" "}
-          <code className="text-xs">data</code>.
-        </p>
-      </div>
-    )}
   </div>
 )
 
@@ -424,26 +407,6 @@ export const TubeStatusBoard = ({
               )
             })}
           </div>
-        </div>
-      )}
-
-      {compact ? null : (
-        <div
-          className={cn(
-            "flex items-center border-t text-center text-base text-muted-foreground",
-            TILE_CLASS
-          )}
-        >
-          <p className="w-full text-balance">
-            Data from Transport for London via{" "}
-            <Link
-              href="https://www.npmjs.com/package/tfl-ts"
-              className="text-blue-500 hover:underline"
-            >
-              tfl-ts
-            </Link>
-            . Pass normalised rows as <code className="text-xs">data</code>.
-          </p>
         </div>
       )}
 

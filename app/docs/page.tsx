@@ -16,6 +16,7 @@ import {
 import { getDocsEntry } from "@/lib/docs-catalog"
 import { readAttributionContext } from "@/lib/landing/assignment"
 import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
+import { TFL_API_PORTAL_PRODUCT_URL } from "@/components/user-tfl-api-key-copy"
 import { TFL_BRAND_LINKS } from "@/lib/tfl/brand"
 import {
   getCachedHomeRailArrivals,
@@ -153,8 +154,6 @@ const DocsVisitFromLanding = async () => {
 }
 
 export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.docs)
-
-const TFL_API_PORTAL = "https://api-portal.tfl.gov.uk/"
 
 const StartAction = ({
   href,
@@ -302,7 +301,7 @@ export default function DocsIntroductionPage() {
         <section className="space-y-3">
           <h2 id="get-a-key" className="text-lg font-semibold">
             1. Get a free TfL key from the{" "}
-            <ExternalTextLink href={TFL_API_PORTAL}>
+            <ExternalTextLink href={TFL_API_PORTAL_PRODUCT_URL}>
               TfL API portal
             </ExternalTextLink>
           </h2>

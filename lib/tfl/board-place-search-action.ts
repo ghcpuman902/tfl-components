@@ -2,7 +2,11 @@
 
 import { searchBusStops } from "@/lib/tfl/actions"
 import { filterNamedPlaces } from "@/lib/tfl/board-nearby"
-import { formatBikePointId } from "@/lib/tfl/board-panels"
+import {
+  formatBikePointId,
+  normalizeBusRouteIds,
+} from "@/lib/tfl/board-panels"
+import { isBoardableBusStopId, mapStopPoint } from "@/lib/tfl/bus-stop-shape"
 import { getTflClient } from "@/lib/tfl/client"
 import { getExplorerRiverPiers } from "@/lib/tfl/explorer/points-river"
 import { normaliseBikePoint } from "@/lib/tfl/explorer-point-normalise"
@@ -17,6 +21,34 @@ export type BoardPlaceHit = {
 
 export type SearchBoardPlacesResult =
   { ok: true; places: BoardPlaceHit[] } | { ok: false; error: string }
+
+export type BoardBusStopRoutesResult =
+  | { ok: true; routes: readonly string[] }
+  | { ok: false; error: string }
+
+/**
+ * Routes that serve a boarding-point bus stop. Used to prefill `b.routes`.
+ */
+export async function getBoardBusStopRoutes(
+  stopId: string
+): Promise<BoardBusStopRoutesResult> {
+  const trimmed = stopId.trim()
+  if (!trimmed || !isBoardableBusStopId(trimmed)) {
+    return { ok: false, error: "No bus stop selected." }
+  }
+
+  try {
+    const client = getTflClient()
+    const details = await client.stopPoint.get([trimmed])
+    const detail = Array.isArray(details) ? details[0] : details
+    const stop = detail ? mapStopPoint(detail) : null
+    return { ok: true, routes: normalizeBusRouteIds(stop?.lines ?? []) }
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Could not load routes."
+    return { ok: false, error: message }
+  }
+}
 
 /**
  * Discover a bus stop, river pier, or cycle dock for the Board builder.
