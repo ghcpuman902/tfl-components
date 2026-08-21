@@ -186,7 +186,7 @@ export const BoardStagedBuilder = ({
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const lastAnnounce = useRef("")
 
-  if (typeof window !== "undefined" && !ready) {
+  useEffect(() => {
     const stored = readDraft()
     setDraft(
       stored ??
@@ -198,7 +198,7 @@ export const BoardStagedBuilder = ({
     )
     setDetected(detectScreenProfile(window.innerWidth, window.innerHeight))
     setReady(true)
-  }
+  }, [])
 
   useEffect(() => {
     if (!ready) return

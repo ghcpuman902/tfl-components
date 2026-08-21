@@ -14,5 +14,9 @@ export const trackSiteEvent = (
 ) => {
   const safe = redactAnalyticsProps({ ...props }, secrets)
   if (safe.excludeFromResults) return
-  vercelTrack(name, safe)
+  try {
+    vercelTrack(name, safe)
+  } catch {
+    // Analytics must never take down the page (preview or production).
+  }
 }

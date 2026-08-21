@@ -70,18 +70,20 @@ export const assignLandingVariant = (
     }
   }
 
-  if (input.isPreview || input.isBot) {
+  // Disabled experiment always serves the current homepage, including
+  // Vercel previews. Preview/bot exclusion is results-only, not a variant.
+  if (!input.enabled) {
     return {
-      variant: "simple",
+      variant: "control",
       qa: false,
       excludeFromResults: true,
       persist: false,
     }
   }
 
-  if (!input.enabled) {
+  if (input.isPreview || input.isBot) {
     return {
-      variant: "control",
+      variant: "simple",
       qa: false,
       excludeFromResults: true,
       persist: false,

@@ -102,21 +102,31 @@ const HeaderLink = ({
     className
   )
 
-  const linkEl = (
-    <Link
-      href={link.href}
-      className={linkClassName}
-      aria-label={link.ariaLabel}
-    >
-      {label}
-    </Link>
-  )
-
-  if (!link.tooltip) return linkEl
+  if (!link.tooltip) {
+    return (
+      <Link
+        href={link.href}
+        className={linkClassName}
+        aria-label={link.ariaLabel}
+      >
+        {label}
+      </Link>
+    )
+  }
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{linkEl}</TooltipTrigger>
+      <TooltipTrigger
+        render={
+          <Link
+            href={link.href}
+            className={linkClassName}
+            aria-label={link.ariaLabel}
+          />
+        }
+      >
+        {label}
+      </TooltipTrigger>
       <TooltipContent>{link.tooltip}</TooltipContent>
     </Tooltip>
   )

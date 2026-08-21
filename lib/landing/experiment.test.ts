@@ -67,7 +67,21 @@ describe("landing experiment assignment", () => {
     assert.equal(parseLandingVariant("nope"), null)
   })
 
-  it("excludes preview deploys and bots", () => {
+  it("keeps the current homepage on preview while the experiment is disabled", () => {
+    const preview = assignLandingVariant({
+      enabled: false,
+      deviceClass: "desktop",
+      visitorId: "visitor-a",
+      override: null,
+      isPreview: true,
+      isBot: false,
+      persisted: null,
+    })
+    assert.equal(preview.variant, "control")
+    assert.equal(preview.excludeFromResults, true)
+  })
+
+  it("excludes preview deploys and bots from results once enabled", () => {
     const preview = assignLandingVariant({
       enabled: true,
       deviceClass: "desktop",

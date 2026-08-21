@@ -147,6 +147,20 @@ describe("site navigation", () => {
     )
   })
 
+  it("mounts the Docs tooltip on the Link via Base UI render, not asChild", () => {
+    const header = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/site-header.tsx"
+      ),
+      "utf8"
+    )
+    assert.match(header, /link\.tooltip/)
+    assert.match(header, /TooltipTrigger/)
+    assert.match(header, /render=\{/)
+    assert.doesNotMatch(header, /asChild>\{linkEl\}/)
+  })
+
   it("keeps the Docs label and describes the component-library path", () => {
     const docs = DESKTOP_PRIMARY_LINKS.find((link) => link.match === "docs")
     assert.equal(docs?.label, "Docs")

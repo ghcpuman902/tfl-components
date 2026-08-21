@@ -33,6 +33,8 @@ With Vercel linked to GitHub, every PR gets a preview URL automatically. Use it 
 - Sharing with non-technical stakeholders
 - Agent/human iteration on layout (screenshot → fix → repeat)
 
+If the preview is **Ready** but the browser shows a React overlay, that is a client exception — check the Console, not Vercel build logs. Web Analytics setup is in [vercel.md](./vercel.md#web-analytics-landing--board-events).
+
 ## Communication
 
 - Link the Vercel preview in the PR description.

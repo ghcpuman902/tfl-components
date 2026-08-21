@@ -8,6 +8,8 @@ import {
  * Vercel Flags declaration for the homepage landing experiment.
  * Assignment is decided in `lib/landing/assignment.ts` (server cookie + QA).
  * This flag stays `control` until the staged Board is production.
+ * FLAGS_SECRET is only required for the toolbar / encrypted overrides —
+ * see docs/vercel.md. Do not call this flag during render until that is set.
  */
 export const landingVariantFlag = flag<LandingAssignmentVariant>({
   key: LANDING_EXPERIMENT_KEY,
