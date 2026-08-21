@@ -14,6 +14,7 @@ import {
   getUsedBySlugs,
   type DocsEntry,
 } from "@/lib/docs-catalog"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 import {
   MAPLIBRE_EXAMPLE,
   LEAFLET_EXAMPLE,
@@ -29,11 +30,7 @@ import {
 } from "@/components/docs/map-geographic-lazy"
 import uniqueTrackManifest from "@/data/geography/unique-track/manifest.json"
 
-export const metadata: Metadata = {
-  title: "Map – Tube & Rail (Geo)",
-  description:
-    "Track geometry as GeoJSON for Tube, Elizabeth, Overground, DLR, and Tram. Use the packaged MapLibre map, or draw the same files in your own SDK.",
-}
+export const metadata: Metadata = docsEntryMetadata("maps-geographic")
 
 const USAGE_SNIPPET = `import { TflGeographicMap } from "@/components/tfl/geography/tfl-geographic-map"
 

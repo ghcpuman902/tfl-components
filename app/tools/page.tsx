@@ -2,12 +2,15 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { SectionHub } from "@/components/docs/section-hub"
 import { getDocsEntry } from "@/lib/docs-catalog"
+import { pageMetadata } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Tools",
   description:
-    "Developer playgrounds — inspect, test, tune, or debug. Not embeddable product UI.",
-}
+    "Developer playgrounds. Inspect, test, tune, or debug. Not embeddable product UI.",
+  path: "/tools",
+  robots: { index: false, follow: false },
+})
 
 export default function ToolsIndexPage() {
   const entry = getDocsEntry("tools-index")

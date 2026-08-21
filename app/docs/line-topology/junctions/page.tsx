@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { getDocsEntry } from "@/lib/docs-catalog"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 import type { TransitGeometryBundle } from "@/lib/tfl/geography-types"
 import tubeCentre from "@/data/geography/unique-track/tube/full.json"
 import overgroundCentre from "@/data/geography/unique-track/overground/full.json"
@@ -22,10 +23,7 @@ import { JunctionCasesView } from "../junction-cases-view"
 
 const entry = getDocsEntry("line-topology-junctions")!
 
-export const metadata: Metadata = {
-  title: entry.title,
-  description: entry.description,
-}
+export const metadata: Metadata = docsEntryMetadata("line-topology-junctions")
 
 const asBundle = (value: unknown): TransitGeometryBundle =>
   value as TransitGeometryBundle

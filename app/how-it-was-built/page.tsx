@@ -87,8 +87,8 @@ export default function HowItWasBuiltPage() {
         <p>
           Station names wrap and abbreviate on a 48px tile. Find, copy, and
           screen readers still need the full name. That constraint produced the
-          findable-text primitive, not a CSS truncate. Motion on the homepage is
-          optional and has a pause control. There is no WCAG certificate behind
+          findable-text primitive, not a CSS truncate. Motion on the homepage
+          respects reduced-motion preferences. There is no WCAG certificate behind
           that work. Details are on{" "}
           <Link
             href="/accessibility"

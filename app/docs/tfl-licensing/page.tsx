@@ -4,12 +4,9 @@ import { notFound } from "next/navigation"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { getDocsEntry } from "@/lib/docs-catalog"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
-  title: "Licensing & brand use",
-  description:
-    "What installing a component does and does not grant for TfL brand assets.",
-}
+export const metadata: Metadata = docsEntryMetadata("licensing")
 
 export default function FoundationsLicensingPage() {
   const entry = getDocsEntry("licensing")

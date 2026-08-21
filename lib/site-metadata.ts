@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { getDocsEntry } from "@/lib/docs-catalog"
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site"
 
 export type PageMetaInput = {
@@ -46,6 +47,22 @@ export const pageMetadata = ({
       description,
     },
   }
+}
+
+/** Catalogue title, description, canonical, and social tags for a docs slug. */
+export const docsEntryMetadata = (slug: string): Metadata => {
+  const entry = getDocsEntry(slug)
+  if (!entry) {
+    return {
+      title: "Not found",
+      robots: { index: false, follow: false },
+    }
+  }
+  return pageMetadata({
+    title: entry.title,
+    description: entry.description,
+    path: entry.href.split("?")[0]!,
+  })
 }
 
 export const HOME_PAGE_META = {
@@ -119,7 +136,7 @@ export const ROUTE_PAGE_META = {
   privacy: {
     title: "Privacy",
     description:
-      "What this site stores in the browser, including TfL keys and a visitor cookie.",
+      "What this site stores in the browser, including TfL keys and a visitor cookie, and how page analytics are collected.",
     path: "/privacy",
   },
   howItWasBuilt: {

@@ -1,5 +1,6 @@
 import type { Ref } from "react"
 import { ChevronDownIcon } from "lucide-react"
+import { SITE_TAGLINE } from "@/lib/site"
 import { cn } from "@/lib/utils"
 
 type LandingFoldCopyProps = {
@@ -21,7 +22,7 @@ export const LandingFoldCopy = ({
     )}
   >
     <h1 className="text-pretty text-[clamp(1.0625rem,0.95rem+0.45vw,1.25rem)] leading-snug font-normal text-foreground">
-      Turn any screen into a London Transport board.
+      {SITE_TAGLINE}
     </h1>
     {onContinue ? (
       <button

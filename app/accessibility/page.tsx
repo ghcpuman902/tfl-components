@@ -23,8 +23,8 @@ export default function AccessibilityPage() {
           Keyboard use on primary navigation, docs search, the Board station
           search, and theme control. Contrast against the site chrome tokens in
           light and dark themes. Station names keep a full accessible name when
-          the painted label wraps or abbreviates. The homepage slideshow stops
-          under <code className="text-xs">prefers-reduced-motion</code>.
+          the painted label wraps or abbreviates. The homepage room respects{" "}
+          <code className="text-xs">prefers-reduced-motion</code>.
         </p>
         <p>
           There is no documented WCAG conformance claim. No formal audit has

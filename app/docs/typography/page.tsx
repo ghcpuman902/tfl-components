@@ -8,13 +8,10 @@ import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { RelationshipBadges } from "@/components/docs/relationship-badges"
 import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code"
 import { getDocsEntry, getUsedBySlugs } from "@/lib/docs-catalog"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 import { TFL_BRAND_LINKS } from "@/lib/tfl/brand"
 
-export const metadata: Metadata = {
-  title: "Typography",
-  description:
-    "TfL uses licensed Johnston; compare Hammersmith One and P22 Underground for web interfaces.",
-}
+export const metadata: Metadata = docsEntryMetadata("typography")
 
 const HAMMERSMITH_NEXT_SNIPPET = `import { Hammersmith_One } from "next/font/google";
 

@@ -5,12 +5,9 @@ import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { RelationshipBadges } from "@/components/docs/relationship-badges"
 import { getDocsEntry } from "@/lib/docs-catalog"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
-  title: "Schematic & network maps",
-  description:
-    "Line diagrams, branches, and journeys. Topology, not geography. A full multi-line network map is not shipped yet.",
-}
+export const metadata: Metadata = docsEntryMetadata("maps-schematic")
 
 export default function MapsSchematicPage() {
   const entry = getDocsEntry("maps-schematic")

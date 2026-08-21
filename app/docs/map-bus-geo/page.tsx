@@ -15,6 +15,7 @@ import {
   getUsedBySlugs,
   type DocsEntry,
 } from "@/lib/docs-catalog"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 import {
   getCachedBusRouteGeometry,
   type BusRouteDirection,
@@ -25,10 +26,7 @@ const PREVIEW_BUS_ROUTE_ID = "1"
 const SUPERLOOP_ROUTE_ID = "sl1"
 const PREVIEW_BUS_DIRECTION: BusRouteDirection = "outbound"
 
-export const metadata: Metadata = {
-  title: "Map – Bus (Geo)",
-  description: "A geographic map of one bus route.",
-}
+export const metadata: Metadata = docsEntryMetadata("maps-bus")
 
 const USAGE_SNIPPET = `import { TflBusGeoMap } from "@/components/tfl/geography/tfl-bus-geo-map"
 

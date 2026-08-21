@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { getDocsEntry, type DocsEntry } from "@/lib/docs-catalog"
+import { pageMetadata } from "@/lib/site-metadata"
 
 type ComingSoonPageProps = {
   slug: string
@@ -11,10 +12,20 @@ type ComingSoonPageProps = {
 
 export const comingSoonMetadata = (slug: string): Metadata => {
   const entry = getDocsEntry(slug)
-  return {
-    title: entry?.title ?? "Coming soon",
-    description: entry?.description,
+  if (!entry) {
+    return pageMetadata({
+      title: "Coming soon",
+      description: "This page is not built yet.",
+      path: "/docs",
+      robots: { index: false, follow: false },
+    })
   }
+  return pageMetadata({
+    title: entry.title,
+    description: entry.description,
+    path: entry.href.split("?")[0]!,
+    robots: { index: false, follow: true },
+  })
 }
 
 export const ComingSoonDocsPage = ({ slug }: ComingSoonPageProps) => {

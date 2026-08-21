@@ -9,14 +9,9 @@ import { DataSourceLabel } from "@/components/docs/data-source-label"
 import { WeekAheadSection } from "@/components/tfl/week-ahead/week-ahead-section"
 import { WeekAheadSkeleton } from "@/components/tfl/week-ahead/week-ahead-skeleton"
 import { getDocsEntry } from "@/lib/docs-catalog"
-import { pageMetadata } from "@/lib/site-metadata"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 
-export const metadata: Metadata = pageMetadata({
-  title: "Week ahead",
-  description:
-    "Compose status data with schematic line strips for the week ahead.",
-  path: "/labs/week-ahead",
-})
+export const metadata: Metadata = docsEntryMetadata("week-ahead")
 
 export default function WeekAheadLabPage() {
   const entry = getDocsEntry("week-ahead")!

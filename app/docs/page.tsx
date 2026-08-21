@@ -307,7 +307,7 @@ export default function DocsIntroductionPage() {
           </h2>
           <p className="max-w-prose text-muted-foreground">
             Subscribe to 500 Requests per min, then copy Primary or Secondary
-            from Profile into <code className="text-xs">.env.local</code>. NOTE:{" "}
+            from Profile into <code className="text-xs">.env.local</code>.{" "}
             <code className="text-xs">app_id</code> has been unused since Jan
             2021.
           </p>
@@ -342,15 +342,15 @@ export default function DocsIntroductionPage() {
             >
               Hammersmith One
             </Link>
-            . Or if you have Adobe subscription, a closer match is P22
-            Underground, see{" "}
+            . If you have an Adobe subscription, P22 Underground is a closer
+            match. See{" "}
             <Link
               href="/docs/typography"
               className="text-foreground underline underline-offset-4"
             >
               Typography
             </Link>{" "}
-            for more details.
+            for details.
           </p>
         </section>
 
@@ -419,11 +419,10 @@ export default function DocsIntroductionPage() {
             </TabsContent>
             <TabsContent value="route" className="space-y-3">
               <p className="max-w-prose text-sm text-muted-foreground">
-                This method expose an API endpoint (
-                <code className="text-xs">/api/arrivals</code>) anyone can call,
-                here we demostrated how to add security with CORS, to fully
-                prevent abuse, consider implementing IP whitelisting or API key
-                authentication.
+                This method exposes an API endpoint (
+                <code className="text-xs">/api/arrivals</code>) anyone can call.
+                The example adds CORS. To fully prevent abuse, consider IP
+                whitelisting or API key authentication.
               </p>
               <div className="space-y-1.5">
                 <p className="text-xs text-muted-foreground">

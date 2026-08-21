@@ -2,12 +2,9 @@ import type { Metadata } from "next"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { getDocsEntry } from "@/lib/docs-catalog"
+import { docsEntryMetadata } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
-  title: "Troubleshoot",
-  description:
-    "Set up Next.js or Vite, fix an empty board, and why this can differ from TfL Go.",
-}
+export const metadata: Metadata = docsEntryMetadata("troubleshoot")
 
 export default async function DocsTroubleshootPage() {
   const entry = getDocsEntry("troubleshoot")!
