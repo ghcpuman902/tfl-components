@@ -25,6 +25,9 @@ type CyclePointFinderProps = {
   emptyMessage?: string
   /** Select the first hit after Search / Locate. Default true. */
   autoSelectFirst?: boolean
+  /** Docks already on the board — list shows as added. */
+  addedIds?: readonly string[]
+  addable?: boolean
 }
 
 export const CyclePointFinder = ({
@@ -36,6 +39,8 @@ export const CyclePointFinder = ({
   initialPoints = [],
   emptyMessage = "No matching docks.",
   autoSelectFirst = true,
+  addedIds,
+  addable = false,
 }: CyclePointFinderProps) => {
   const { loading, error, setError, runKeyed } = useExplorerKeyedQuery()
   const [points, setPoints] = useState<ExplorerPoint[]>(() => [
@@ -131,6 +136,8 @@ export const CyclePointFinder = ({
       searchPlaceholder="Search cycle hire docks"
       searchValue={query}
       onSearchValueChange={setQuery}
+      addedIds={addedIds}
+      addable={addable}
       renderMap={(props) => (
         <ExplorerPointMapLazy
           {...props}

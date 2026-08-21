@@ -12,6 +12,7 @@ import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
 import { useDocumentVisible } from "@/hooks/use-document-visible"
 import { LandingExampleObserver } from "@/components/landing/landing-example-observer"
 import { LandingFoldCopy } from "@/components/landing/landing-fold-copy"
+import { LandingRoomChat } from "@/components/landing/landing-room-chat"
 import {
   IpadDeviceSvg,
   IPAD_ASPECT,
@@ -105,6 +106,7 @@ const LandingStaticRoom = () => {
 
 export const LandingScene = ({
   production = false,
+  onCtaClick,
   onZoomComplete,
   onHeroInteraction,
   onExampleSeen,
@@ -490,6 +492,11 @@ export const LandingScene = ({
                 />
               ) : null}
 
+              <LandingRoomChat
+                active={roomComplete}
+                onBoardClick={onCtaClick}
+              />
+
               {showMotionUnlock ? (
                 <button
                   type="button"
@@ -498,7 +505,7 @@ export const LandingScene = ({
                     onHeroInteraction?.()
                     void requestTilt()
                   }}
-                  className="pointer-events-auto absolute bottom-[18%] left-4 z-20 inline-flex items-center text-[clamp(0.9375rem,0.85rem+0.3vw,1rem)] text-foreground underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+                  className="pointer-events-auto absolute right-4 bottom-4 z-20 inline-flex items-center text-[clamp(0.9375rem,0.85rem+0.3vw,1rem)] text-foreground underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
                 >
                   Unlock motion
                 </button>

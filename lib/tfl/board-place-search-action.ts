@@ -17,6 +17,7 @@ export type BoardPlaceHit = {
   id: string
   name: string
   context?: string
+  stopLetter?: string
 }
 
 export type SearchBoardPlacesResult =
@@ -113,12 +114,8 @@ export async function getBoardPlaceLabel(
       place: {
         id: stop.id,
         name: stop.name,
-        context: [
-          stop.stopLetter,
-          stop.towards ? `towards ${stop.towards}` : null,
-        ]
-          .filter(Boolean)
-          .join(" · "),
+        stopLetter: stop.stopLetter,
+        context: stop.towards ? `towards ${stop.towards}` : undefined,
       },
     }
   } catch (err) {
@@ -185,12 +182,8 @@ export async function searchBoardPlaces(
         places: result.stops.map((stop) => ({
           id: stop.id,
           name: stop.name,
-          context: [
-            stop.stopLetter,
-            stop.towards ? `towards ${stop.towards}` : null,
-          ]
-            .filter(Boolean)
-            .join(" · "),
+          stopLetter: stop.stopLetter,
+          context: stop.towards ? `towards ${stop.towards}` : undefined,
         })),
       }
     }

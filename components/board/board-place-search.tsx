@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useId, useMemo, useState } from "react"
+import { LocateFixed } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Combobox,
@@ -10,7 +11,14 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox"
-import { Input } from "@/components/ui/input"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group"
+import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
+import { getNearbyBusStops } from "@/lib/tfl/actions"
 import {
   getBoardPlaceLabel,
   getBoardRiverPiers,
@@ -18,6 +26,7 @@ import {
   type BoardPlaceHit,
   type BoardPlaceKind,
 } from "@/lib/tfl/board-place-search-action"
+import { getGeolocation } from "@/hooks/use-explorer-keyed-query"
 
 type BoardPlaceSearchProps = {
   kind: Exclude<BoardPlaceKind, "cycle">
@@ -27,6 +36,20 @@ type BoardPlaceSearchProps = {
   placeholder: string
   emptyMessage: string
 }
+
+const PlaceIdentity = ({ place }: { place: BoardPlaceHit }) => (
+  <span className="flex min-w-0 items-center gap-2">
+    <span className="flex min-w-0 items-center gap-1.5">
+      <span className="truncate font-medium">{place.name}</span>
+      {place.stopLetter ? (
+        <StopLetterBadge letter={place.stopLetter} size="sm" />
+      ) : null}
+    </span>
+    <code className="ml-auto shrink-0 text-xs text-muted-foreground">
+      {place.id}
+    </code>
+  </span>
+)
 
 const SelectedPlaceBox = ({
   place,
@@ -38,20 +61,50 @@ const SelectedPlaceBox = ({
   emptyLabel: string
 }) => (
   <div className="rounded-xl border border-input bg-muted/20 px-3 py-2">
-    {place || fallbackId ? (
+    {place ? (
       <>
-        <p className="text-sm font-medium text-foreground">
-          {place?.name ?? fallbackId}
-        </p>
-        {place?.context ? (
-          <p className="text-xs text-muted-foreground">{place.context}</p>
+        <PlaceIdentity place={place} />
+        {place.context ? (
+          <p className="mt-0.5 text-xs text-muted-foreground">{place.context}</p>
         ) : null}
       </>
+    ) : fallbackId ? (
+      <code className="text-xs text-muted-foreground">{fallbackId}</code>
     ) : (
       <p className="text-sm text-muted-foreground">{emptyLabel}</p>
     )}
   </div>
 )
+
+const resolvePlacePick = (
+  value: unknown,
+  catalogue: readonly BoardPlaceHit[]
+): BoardPlaceHit | undefined => {
+  if (value == null) return undefined
+  if (typeof value === "object" && !Array.isArray(value)) {
+    const record = value as Record<string, unknown>
+    const id = typeof record.id === "string" ? record.id.trim() : ""
+    if (!id) return undefined
+    return catalogue.find((place) => place.id === id) ?? {
+      id,
+      name: typeof record.name === "string" ? record.name : id,
+      context: typeof record.context === "string" ? record.context : undefined,
+      stopLetter:
+        typeof record.stopLetter === "string" ? record.stopLetter : undefined,
+    }
+  }
+  if (typeof value !== "string") return undefined
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+  if (trimmed.startsWith("{")) {
+    try {
+      return resolvePlacePick(JSON.parse(trimmed) as unknown, catalogue)
+    } catch {
+      return undefined
+    }
+  }
+  return catalogue.find((place) => place.id === trimmed)
+}
 
 export const BoardPlaceSearch = ({
   kind,
@@ -113,6 +166,20 @@ export const BoardPlaceSearch = ({
     )
   }, [piers, query])
 
+  const handleSelect = (
+    place: BoardPlaceHit,
+    options?: { keepResults?: boolean }
+  ) => {
+    if (!place.id) return
+    setSelected(place)
+    if (!options?.keepResults) {
+      setQuery("")
+      setPlaces([])
+    }
+    setError(null)
+    onSelect(place)
+  }
+
   const handleSearch = async () => {
     const trimmed = query.trim()
     if (trimmed.length < 2) {
@@ -133,16 +200,45 @@ export const BoardPlaceSearch = ({
     if (result.places.length === 0) setError(emptyMessage)
   }
 
-  const handleSelect = (place: BoardPlaceHit) => {
-    setSelected(place)
-    setQuery("")
-    setPlaces([])
+  const handleLocate = async () => {
+    setBusy(true)
     setError(null)
-    onSelect(place)
+    try {
+      const origin = await getGeolocation()
+      const result = await getNearbyBusStops(origin.lat, origin.lon)
+      setBusy(false)
+      if (!result.ok) {
+        setPlaces([])
+        setError(
+          result.error.startsWith("No bus stops")
+            ? "No bus stops nearby."
+            : result.error
+        )
+        return
+      }
+      const nearby = result.stops.map((stop) => ({
+        id: stop.id,
+        name: stop.name,
+        stopLetter: stop.stopLetter,
+        context: stop.towards ? `towards ${stop.towards}` : undefined,
+      }))
+      setPlaces(nearby)
+      const nearest = nearby[0]
+      if (nearest) handleSelect(nearest, { keepResults: true })
+    } catch (err) {
+      setBusy(false)
+      setPlaces([])
+      setError(
+        err instanceof Error ? err.message : "Could not read location."
+      )
+    }
   }
 
   if (kind === "river") {
-    const value = selected?.id === selectedId ? selected : null
+    const value =
+      selected?.id === selectedId
+        ? selected
+        : (piers.find((pier) => pier.id === selectedId) ?? null)
     return (
       <div className="space-y-2">
         <SelectedPlaceBox
@@ -154,7 +250,8 @@ export const BoardPlaceSearch = ({
           items={[...riverItems]}
           value={value}
           onValueChange={(place) => {
-            if (place) handleSelect(place)
+            const resolved = resolvePlacePick(place, piers)
+            if (resolved) handleSelect(resolved)
           }}
           inputValue={query}
           onInputValueChange={setQuery}
@@ -175,7 +272,7 @@ export const BoardPlaceSearch = ({
               {(item) => (
                 <ComboboxItem key={item.id} value={item}>
                   <span className="flex min-w-0 flex-col">
-                    <span>{item.name}</span>
+                    <PlaceIdentity place={item} />
                     {item.context ? (
                       <span className="text-xs text-muted-foreground">
                         {item.context}
@@ -199,22 +296,36 @@ export const BoardPlaceSearch = ({
         emptyLabel="No bus stop yet"
       />
       <div className="flex gap-2">
-        <Input
-          id={inputId}
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault()
-              void handleSearch()
-            }
-          }}
-          autoComplete="off"
-          spellCheck={false}
-          placeholder={placeholder}
-          aria-controls={listId}
-          aria-expanded={places.length > 0}
-        />
+        <InputGroup className="h-9 min-w-0 flex-1">
+          <InputGroupInput
+            id={inputId}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault()
+                void handleSearch()
+              }
+            }}
+            autoComplete="off"
+            spellCheck={false}
+            placeholder={placeholder}
+            aria-controls={listId}
+            aria-expanded={places.length > 0}
+          />
+          <InputGroupAddon align="inline-end">
+            <InputGroupButton
+              type="button"
+              size="icon-xs"
+              aria-label="Use my location"
+              disabled={busy}
+              onClick={() => void handleLocate()}
+              className="h-full w-8 rounded-[calc(var(--radius-lg)-2px)]"
+            >
+              <LocateFixed className="size-4" aria-hidden />
+            </InputGroupButton>
+          </InputGroupAddon>
+        </InputGroup>
         <Button
           type="button"
           variant="outline"
@@ -240,11 +351,11 @@ export const BoardPlaceSearch = ({
             <li key={place.id} role="option">
               <button
                 type="button"
-                className="flex w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-muted"
+                className="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm hover:bg-muted"
                 onClick={() => handleSelect(place)}
                 aria-label={`Use ${place.name}`}
               >
-                <span>{place.name}</span>
+                <PlaceIdentity place={place} />
                 {place.context ? (
                   <span className="text-xs text-muted-foreground">
                     {place.context}

@@ -125,8 +125,9 @@ export const BoardCycleDockPicker = ({
       next.delete(dockId)
       return next
     })
-    if (selected.includes(dockId) || poolIds.includes(dockId)) return
-    setPoolIds((current) => [...current, dockId])
+    if (selected.includes(dockId)) return
+    setPoolIds((current) => current.filter((item) => item !== dockId))
+    onChange([...selected, dockId])
   }
 
   return (
@@ -172,9 +173,28 @@ export const BoardCycleDockPicker = ({
           <DialogHeader>
             <DialogTitle>Add cycle docks</DialogTitle>
             <DialogDescription>
-              Search by name, or locate docks nearby.
+              Search by name, or locate docks nearby. Click a dock to add it
+              to the board.
             </DialogDescription>
           </DialogHeader>
+          {selected.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {selected.map((dockId) => (
+                <span
+                  key={dockId}
+                  className="inline-flex max-w-full items-center gap-1 rounded-md border border-input bg-background px-2 py-0.5 text-xs"
+                >
+                  <span className="truncate">
+                    {labels[dockId] ?? dockLabelFallback(dockId)}
+                  </span>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Nothing on the board yet. Click a dock to add it.
+            </p>
+          )}
           {finderOpen ? (
             <div className="@container/explorer min-h-0 flex-1">
               <CyclePointFinder
@@ -183,6 +203,8 @@ export const BoardCycleDockPicker = ({
                 view={view}
                 onViewChange={setView}
                 autoSelectFirst={false}
+                addedIds={selected}
+                addable
                 emptyMessage="No matching docks."
               />
             </div>

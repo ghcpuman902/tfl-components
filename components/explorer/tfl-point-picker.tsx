@@ -28,6 +28,7 @@
 
 import {
   useId,
+  useMemo,
   useRef,
   useState,
   type FormEvent,
@@ -35,6 +36,8 @@ import {
   type ReactNode,
 } from "react"
 import {
+  Check,
+  CirclePlus,
   List,
   Loader2,
   LocateFixed,
@@ -89,6 +92,10 @@ export type TfLPointPickerProps = {
   onSearchValueChange?: (value: string) => void
   /** Metres from a geo target. Bus name search leaves this off. */
   showDistance?: boolean
+  /** Ids already added — used with `addable` for a plus / added hint. */
+  addedIds?: readonly string[]
+  /** Hover shows a plus; added ids show a check. */
+  addable?: boolean
   className?: string
 }
 
@@ -104,6 +111,8 @@ const SEARCH_INPUT_CLASS =
 type PointResultOptionProps = {
   point: ExplorerPoint
   selected: boolean
+  added: boolean
+  addable: boolean
   active: boolean
   onSelect: (point: ExplorerPoint) => void
   showDistance: boolean
@@ -112,6 +121,8 @@ type PointResultOptionProps = {
 const PointResultOption = ({
   point,
   selected,
+  added,
+  addable,
   active,
   onSelect,
   showDistance,
@@ -128,15 +139,17 @@ const PointResultOption = ({
       : null,
     point.bikes !== undefined ? `${point.bikes} bikes` : null,
   ].filter(Boolean)
+  const marked = selected || added
 
   return (
     <button
       type="button"
       role="option"
-      aria-selected={selected}
+      aria-selected={marked}
       tabIndex={active ? 0 : -1}
       onClick={() => onSelect(point)}
       aria-label={[
+        addable ? (added ? "Added" : "Add") : null,
         point.name,
         stopLetter ? `stop ${stopLetter}` : null,
         point.towards ? `towards ${point.towards}` : null,
@@ -144,12 +157,12 @@ const PointResultOption = ({
         .filter(Boolean)
         .join(", ")}
       className={cn(
-        "flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors",
+        "group/result flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors",
         "[contain-intrinsic-size:auto_3.25rem] [content-visibility:auto]",
         explorerPaneItemClassName,
         "hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset",
-        selected && "bg-muted ring-1 ring-primary ring-inset",
-        active && !selected && "bg-muted/40"
+        marked && "bg-muted ring-1 ring-primary ring-inset",
+        active && !marked && "bg-muted/40"
       )}
     >
       <span className="flex min-w-0 items-center gap-2">
@@ -162,6 +175,19 @@ const PointResultOption = ({
         <code className="ml-auto shrink-0 text-xs text-muted-foreground">
           {point.id}
         </code>
+        {addable ? (
+          added ? (
+            <Check
+              className="size-4 shrink-0 text-primary"
+              aria-hidden
+            />
+          ) : (
+            <CirclePlus
+              className="size-4 shrink-0 text-primary opacity-0 transition-opacity group-hover/result:opacity-100 group-focus-visible/result:opacity-100"
+              aria-hidden
+            />
+          )
+        ) : null}
       </span>
       {meta.length > 0 ? (
         <span className="text-xs text-muted-foreground">
@@ -189,9 +215,15 @@ export const TfLPointPicker = ({
   searchValue,
   onSearchValueChange,
   showDistance = true,
+  addedIds,
+  addable = false,
   className,
 }: TfLPointPickerProps) => {
   const listId = useId()
+  const added = useMemo(
+    () => new Set(addedIds ?? []),
+    [addedIds]
+  )
   const inputRef = useRef<HTMLInputElement>(null)
   const [internalQuery, setInternalQuery] = useState("")
 
@@ -399,6 +431,8 @@ export const TfLPointPicker = ({
               key={point.id}
               point={point}
               selected={point.id === selectedId}
+              added={added.has(point.id)}
+              addable={addable}
               active={index === resolvedActiveIndex}
               onSelect={onSelect}
               showDistance={showDistance}
