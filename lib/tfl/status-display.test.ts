@@ -195,9 +195,12 @@ describe("buildStatusDisplayFrames", () => {
   })
 
   it("gives a non-priority disruption an identity frame under network scope", () => {
-    const sections = partitionStatusBoardLines([central, waterlooCity, victoria], {
-      now: SATURDAY,
-    })
+    const sections = partitionStatusBoardLines(
+      [central, waterlooCity, victoria],
+      {
+        now: SATURDAY,
+      }
+    )
     const frames = buildStatusDisplayFrames(sections, {
       tiles: 4,
       detailScope: "network",
@@ -224,10 +227,9 @@ describe("buildStatusDisplayFrames", () => {
       "Severe Delays",
       "Jubilee Line: Severe delays due to an earlier signal failure."
     )
-    const sections = partitionStatusBoardLines(
-      [bakerloo, victoria, jubilee],
-      { now: SATURDAY }
-    )
+    const sections = partitionStatusBoardLines([bakerloo, victoria, jubilee], {
+      now: SATURDAY,
+    })
     const frames = buildStatusDisplayFrames(sections, {
       tiles: 4,
       detailScope: "network",
