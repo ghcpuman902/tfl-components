@@ -1,7 +1,9 @@
 /**
- * Web app manifest for `/board/view`.
- * Add to Home Screen must reopen the rendered board as fullscreen, not the
- * docs site, and must never put a TfL key in the manifest.
+ * Web app manifest for every `/board/view` — interactive and unattended.
+ * Add to Home Screen must reopen the rendered board fullscreen with no
+ * browser chrome and no status bar (Android `display: fullscreen`; iOS
+ * falls back to standalone + a translucent status bar). Never include a
+ * TfL key.
  */
 
 import { SITE_URL } from "@/lib/site"
@@ -279,6 +281,7 @@ export const BOARD_VIEW_MANIFEST = {
   categories: ["travel", "utilities"],
 } as const satisfies BoardViewWebAppManifest
 
+/** iOS cannot hide the status bar; translucent is the no-opaque-bar mode. */
 export const BOARD_VIEW_APPLE_WEB_APP = {
   capable: true,
   title: BOARD_VIEW_MANIFEST_SHORT_NAME,
