@@ -60,6 +60,7 @@ import {
   type BoardStationNamesIndex,
 } from "@/lib/tfl/board-station-names"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
+import { useBoardHomeScreen } from "@/hooks/use-board-home-screen"
 import { BOARD_SETTINGS } from "@/lib/tfl/board-settings"
 import {
   BOARD_PATH,
@@ -197,9 +198,11 @@ export const BoardDisplay = ({
     getEmbedded,
     getServerEmbedded
   )
+  const { fromHomeScreen, homeScreenPadding } = useBoardHomeScreen()
+  const fillScreen = embedded || fromHomeScreen
 
   useEffect(() => {
-    if (!embedded) return
+    if (!fillScreen) return
     const html = document.documentElement
     const previous = html.style.overflow
     html.style.overflow = "hidden"
@@ -208,7 +211,7 @@ export const BoardDisplay = ({
       html.style.overflow = previous
       html.classList.remove("board-embed")
     }
-  }, [embedded])
+  }, [fillScreen])
 
   const stopId = config.stop ?? ""
   // URL `stopName` is an override only. Otherwise the catalog paints the
@@ -686,11 +689,11 @@ export const BoardDisplay = ({
   return (
     <div
       className={
-        embedded
+        fillScreen
           ? "board-embed box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain p-4 md:p-6 [&::-webkit-scrollbar]:hidden"
           : "box-border min-h-dvh w-full p-4 md:p-6"
       }
-      style={ARRIVALS_RHYTHM_VARS}
+      style={{ ...ARRIVALS_RHYTHM_VARS, ...homeScreenPadding }}
     >
       <h1 className="sr-only">Live board</h1>
       <div
