@@ -216,6 +216,32 @@ describe("buildStatusDisplayFrames", () => {
     assert.deepEqual(other?.headingLineIds, ["central", "waterloo-city"])
   })
 
+  it("keeps another disruption collapsed when selected lines are all good", () => {
+    const jubilee = line(
+      "jubilee",
+      "Jubilee",
+      6,
+      "Severe Delays",
+      "Jubilee Line: Severe delays due to an earlier signal failure."
+    )
+    const sections = partitionStatusBoardLines(
+      [bakerloo, victoria, jubilee],
+      { now: SATURDAY }
+    )
+    const frames = buildStatusDisplayFrames(sections, {
+      tiles: 4,
+      detailScope: "network",
+      detailLineIds: ["central", "victoria", "bakerloo"],
+    })
+    const disruption = frames.filter((frame) => frame.phase === "disruptions")
+    assert.equal(disruption[0]?.activeLineId, "jubilee")
+    assert.equal(disruption[0]?.tiles.length, 0)
+    assert.ok(
+      !disruption[0]?.tiles.some((tile) => tile.kind === "announcements")
+    )
+    assert.deepEqual(disruption[0]?.headingLineIds, ["jubilee"])
+  })
+
   it("scopes selection to the selected lines only", () => {
     const sections = partitionStatusBoardLines([central, bakerloo, victoria], {
       now: SATURDAY,

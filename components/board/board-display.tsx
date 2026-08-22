@@ -369,7 +369,14 @@ export const BoardDisplay = ({
     () => resolveArrivalsProps(config, servingLines, dataLineIds, lineGroups),
     [config, servingLines, dataLineIds, lineGroups]
   )
-  const statusProps = useMemo(() => resolveStatusProps(config), [config])
+  const statusProps = useMemo(
+    () =>
+      resolveStatusProps(
+        config,
+        servingLines?.map((line) => line.lineId)
+      ),
+    [config, servingLines]
+  )
   const unattended = config.behaviour === "unattended"
   const pageSizeByLine = useMemo(() => {
     // A scalar `a.rows` broadcasts to every section — do not keep the

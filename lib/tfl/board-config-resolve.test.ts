@@ -324,6 +324,30 @@ describe("resolveStatusProps", () => {
     })
   })
 
+  it("uses serving line ids as detailLineIds when s.lines is empty", () => {
+    const props = resolveStatusProps(
+      DEFAULT_BOARD_CONFIG,
+      HOME_RAIL_LINES.map((line) => line.lineId)
+    )
+    assert.deepEqual(props.detailLineIds, ["bakerloo", "central", "victoria"])
+  })
+
+  it("lets explicit s.lines win over serving line ids", () => {
+    const props = resolveStatusProps(
+      {
+        ...DEFAULT_BOARD_CONFIG,
+        status: { lines: ["jubilee"] },
+      },
+      HOME_RAIL_LINES.map((line) => line.lineId)
+    )
+    assert.deepEqual(props.detailLineIds, ["jubilee"])
+  })
+
+  it("keeps detailLineIds unset when there are no serving lines", () => {
+    const props = resolveStatusProps(DEFAULT_BOARD_CONFIG, [])
+    assert.equal(props.detailLineIds, undefined)
+  })
+
   it("maps s.* config onto display props", () => {
     const props = resolveStatusProps({
       ...DEFAULT_BOARD_CONFIG,
