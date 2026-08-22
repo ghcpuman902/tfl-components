@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react"
 import { normalizeLineId, type RealtimePrediction } from "tfl-ts"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
+import { ArrivalsStatusSentence } from "@/components/tfl/arrivals/quiet-chip"
 import type { RoundelPreset } from "@/lib/tfl/roundel-presets"
 import { StationNameTitle } from "@/components/tfl/station-name"
 import {
@@ -13,6 +14,7 @@ import {
   ARRIVALS_EMPTY_COPY,
   ARRIVALS_LINE_EMPTY_COPY,
   arrivalsLineEmptyCopy,
+  resolveArrivalsStatusChip,
   resolveLineArrivalsEmptyKind,
   type ArrivalsEmptyKind,
   type ArrivalsStatusSignal,
@@ -243,17 +245,29 @@ const GroupBody = ({
   lineStatus?: readonly ArrivalsStatusSignal[]
 }) => {
   const labeledBounds = group.bounds.filter((bound) => bound.label)
+  const emptyState =
+    mode === "rail"
+      ? resolveLineArrivalsEmptyKind({
+          lineIds: group.lineIds,
+          rowCount: group.hasInformation ? 1 : 0,
+          nowMs,
+          lineStatus,
+        })
+      : null
   const lineEmptyCopy =
     mode === "rail"
-      ? arrivalsLineEmptyCopy(
-          resolveLineArrivalsEmptyKind({
-            lineIds: group.lineIds,
-            rowCount: group.hasInformation ? 1 : 0,
-            nowMs,
-            lineStatus,
-          })
-        )
+      ? arrivalsLineEmptyCopy(emptyState)
       : ARRIVALS_LINE_EMPTY_COPY
+  const emptyChip =
+    mode === "rail" && !group.hasInformation
+      ? resolveArrivalsStatusChip({
+          lineIds: group.lineIds,
+          hasTrains: false,
+          emptyKind: emptyState?.kind ?? "empty",
+          lineStatus,
+          nowMs,
+        })
+      : null
   // `grid-cols-1` (not block) so consumer `grid-cols-*` variants merge cleanly.
   const subgroupsClassName = cn(
     LIST_RESET_CLASS,
@@ -278,7 +292,7 @@ const GroupBody = ({
           )}
           aria-label={`${group.lineName}: ${lineEmptyCopy}`}
         >
-          {lineEmptyCopy}
+          <ArrivalsStatusSentence chip={emptyChip} sentence={lineEmptyCopy} />
         </li>
         {Array.from({ length: dashCount }, (_, index) => (
           <li
@@ -319,6 +333,7 @@ const GroupBody = ({
           dwellMs={dwellMs}
           startDelayMs={startDelayMs}
           emptyCopy={lineEmptyCopy}
+          statusChip={emptyChip}
         />
       ))}
     </ul>
@@ -514,7 +529,7 @@ export const ArrivalsBoardView = ({
             )}
             role="status"
           >
-            {emptyCopy}
+            <ArrivalsStatusSentence sentence={emptyCopy} />
           </p>
         ) : prepared.layout === "flat" ? (
           <ArrivalsPagedList
@@ -573,6 +588,16 @@ export const ArrivalsBoardView = ({
                   group={group}
                   mode={mode}
                   headingLevel={headingLevel}
+                  statusChip={
+                    mode === "rail" && group.hasInformation
+                      ? resolveArrivalsStatusChip({
+                          lineIds: group.lineIds,
+                          hasTrains: true,
+                          lineStatus,
+                          nowMs: now,
+                        })
+                      : null
+                  }
                 />
                 <GroupBody
                   group={group}

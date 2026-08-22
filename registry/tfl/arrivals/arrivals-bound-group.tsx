@@ -19,7 +19,11 @@ import {
   ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
   formatArrivalsRankLabel,
 } from "@/components/tfl/arrivals/chip-text"
-import { ArrivalRankChip } from "@/components/tfl/arrivals/quiet-chip"
+import {
+  ArrivalRankChip,
+  ArrivalsStatusSentence,
+  QuietChip,
+} from "@/components/tfl/arrivals/quiet-chip"
 import { useInteractiveIdleReturn } from "@/hooks/use-interactive-idle-return"
 import { useUnattendedSequence } from "@/hooks/use-unattended-sequence"
 import {
@@ -662,6 +666,7 @@ const PagedArrivalRows = ({
   isLast,
   emptyLabel,
   emptyCopy = ARRIVALS_LINE_EMPTY_COPY,
+  statusChip,
   showLineChip = false,
   hoistPlatform = false,
   hoistRouteChip = false,
@@ -674,6 +679,7 @@ const PagedArrivalRows = ({
   isLast: boolean
   emptyLabel: string
   emptyCopy?: string
+  statusChip?: string | null
   showLineChip?: boolean
   hoistPlatform?: boolean
   hoistRouteChip?: boolean
@@ -693,7 +699,7 @@ const PagedArrivalRows = ({
           )}
           aria-label={emptyLabel}
         >
-          {emptyCopy}
+          <ArrivalsStatusSentence chip={statusChip} sentence={emptyCopy} />
         </li>
       ) : (
         rows.map((row, index) => (
@@ -728,6 +734,7 @@ const ArrivalsPageTrack = ({
   isLast,
   emptyLabel,
   emptyCopy,
+  statusChip,
   containerRef,
   setSlideRef,
   className,
@@ -741,6 +748,7 @@ const ArrivalsPageTrack = ({
   isLast: boolean
   emptyLabel: string
   emptyCopy?: string
+  statusChip?: string | null
   containerRef: RefObject<HTMLDivElement | null>
   setSlideRef: (index: number) => (element: HTMLElement | null) => void
   className?: string
@@ -765,6 +773,7 @@ const ArrivalsPageTrack = ({
           isLast={isLast}
           emptyLabel={emptyLabel}
           emptyCopy={emptyCopy}
+          statusChip={statusChip}
           showLineChip={showLineChip}
           hoistPlatform={hoistPlatform}
           hoistRouteChip={hoistRouteChip}
@@ -799,6 +808,7 @@ const ArrivalsPageTrack = ({
             isLast={isLast}
             emptyLabel={emptyLabel}
             emptyCopy={emptyCopy}
+            statusChip={statusChip}
             showLineChip={showLineChip}
             hoistPlatform={hoistPlatform}
             hoistRouteChip={hoistRouteChip}
@@ -906,6 +916,7 @@ const UnattendedArrivalFrames = ({
   isLast,
   emptyLabel,
   emptyCopy,
+  statusChip,
   className,
   showLineChip = false,
   hoistPlatform = false,
@@ -916,6 +927,7 @@ const UnattendedArrivalFrames = ({
   isLast: boolean
   emptyLabel: string
   emptyCopy?: string
+  statusChip?: string | null
   className?: string
   showLineChip?: boolean
   hoistPlatform?: boolean
@@ -936,6 +948,7 @@ const UnattendedArrivalFrames = ({
         isLast={isLast}
         emptyLabel={emptyLabel}
         emptyCopy={emptyCopy}
+        statusChip={statusChip}
         showLineChip={showLineChip}
         hoistPlatform={hoistPlatform}
         hoistRouteChip={hoistRouteChip}
@@ -1042,6 +1055,7 @@ export const ArrivalsBoundGroup = ({
   startDelayMs,
   idleReturnMs = INTERACTIVE_IDLE_RETURN_MS,
   emptyCopy = ARRIVALS_LINE_EMPTY_COPY,
+  statusChip,
 }: {
   bound: ArrivalsPreparedBound
   mode: ArrivalsBoardMode
@@ -1056,6 +1070,7 @@ export const ArrivalsBoundGroup = ({
   startDelayMs?: number
   idleReturnMs?: number
   emptyCopy?: string
+  statusChip?: string | null
 }) => {
   const canPage = Boolean(bound.label) && pageSize > 0
   const unattended = behaviour === "unattended" && canPage
@@ -1137,6 +1152,7 @@ export const ArrivalsBoundGroup = ({
           isLast={isLastBound}
           emptyLabel={emptyLabel}
           emptyCopy={emptyCopy}
+          statusChip={statusChip}
           className={classNames?.rows}
           showLineChip={showLineChip}
           hoistPlatform={bound.platformUniform}
@@ -1148,6 +1164,7 @@ export const ArrivalsBoundGroup = ({
           isLast={isLastBound}
           emptyLabel={emptyLabel}
           emptyCopy={emptyCopy}
+          statusChip={statusChip}
           containerRef={containerRef}
           setSlideRef={setSlideRef}
           className={classNames?.rows}
@@ -1165,11 +1182,13 @@ export const ArrivalsGroupHeader = ({
   mode = "rail",
   headingLevel,
   pager,
+  statusChip,
 }: {
   group: ArrivalsPreparedGroup
   mode?: ArrivalsBoardMode
   headingLevel: 1 | 2
   pager?: ReactNode
+  statusChip?: string | null
 }) => {
   const LineHeadingTag = headingLevel === 2 ? "h3" : "h2"
   const lineIds = group.lineIds.length > 0 ? group.lineIds : [group.lineId]
@@ -1210,6 +1229,9 @@ export const ArrivalsGroupHeader = ({
       >
         {isMerged ? <LineName lineIds={lineIds} group /> : group.lineName}
       </LineHeadingTag>
+      {statusChip ? (
+        <QuietChip className="mr-2 shrink-0">{statusChip}</QuietChip>
+      ) : null}
       {pager}
       {isMerged ? (
         <div

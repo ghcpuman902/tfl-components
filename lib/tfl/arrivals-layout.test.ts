@@ -309,12 +309,91 @@ describe("arrivals board layout API", () => {
       })
     )
     assert.ok(html.includes("No service until 10:30."))
+    assert.ok(html.includes("Planned Closure"))
+    assert.equal(
+      html.includes("Planned Closure. No service until 10:30."),
+      false
+    )
+    assert.equal(html.includes("Part Closure"), false)
     assert.equal(html.includes("No arrivals right now."), false)
     assert.equal(html.includes("Service has ended for tonight."), false)
-    assert.equal(html.includes("Planned Closure"), false)
     assert.equal(html.includes("until 1030"), false)
     assert.equal(html.includes("Replacement buses"), false)
     assert.equal(slotCount(html, "arrivals-group"), 1)
+  })
+
+  it("shows Service Closed chip with overnight ended copy", () => {
+    const now = londonDayStartMs("2026-08-22") + 1 * 3_600_000 + 25 * 60_000
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: [],
+        lines: [{ lineId: "district", lineName: "District", modeName: "tube" }],
+        stopName: "Tower Hill",
+        now,
+        lineStatus: [
+          {
+            id: "district",
+            lineStatuses: [
+              {
+                statusSeverity: 20,
+                statusSeverityDescription: "Service Closed",
+                reason:
+                  "District Line: Service will resume at 06:00. Planned engineering works.",
+                disruption: { category: "RealTime" },
+                validityPeriods: [{ isNow: true }],
+              },
+            ],
+          },
+        ],
+      })
+    )
+    assert.ok(html.includes("Service Closed"))
+    assert.ok(html.includes("Service has ended for tonight."))
+    assert.equal(
+      html.includes("Service Closed. Service has ended for tonight."),
+      false
+    )
+    assert.equal(html.includes("resume at 06:00"), false)
+    assert.equal(html.includes("No service."), false)
+  })
+
+  it("shows Minor Delays on the group header when trains are listed", () => {
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: [
+          prediction({
+            id: "c-w-1",
+            lineId: "central",
+            lineName: "Central",
+            modeName: "tube",
+            platformName: "Westbound - Platform 1",
+            towards: "Ealing Broadway",
+            timeToStation: 45,
+          }),
+        ],
+        lines: [{ lineId: "central", lineName: "Central", modeName: "tube" }],
+        stopName: "Oxford Circus",
+        lineStatus: [
+          {
+            id: "central",
+            lineStatuses: [
+              {
+                statusSeverity: 9,
+                statusSeverityDescription: "Minor Delays",
+                reason:
+                  "Central Line: Minor delays due to an earlier signal failure.",
+                disruption: { category: "RealTime" },
+                validityPeriods: [{ isNow: true }],
+              },
+            ],
+          },
+        ],
+      })
+    )
+    assert.ok(html.includes("Minor Delays"))
+    assert.ok(html.includes("Ealing Broadway"))
+    assert.equal(html.includes("No arrivals right now."), false)
+    assert.equal(html.includes("signal failure"), false)
   })
 
   it("uses a fixed 5ch box for mixed-line identity chips", () => {

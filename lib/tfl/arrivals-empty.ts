@@ -73,6 +73,48 @@ const DELAY_ONLY_DESCRIPTIONS = new Set([
   "issues reported",
 ])
 
+/** Official labels that do not explain missing or present trains. */
+const ARRIVALS_CHIP_HIDE = new Set([
+  "good service",
+  "special service",
+  "no issues",
+  "no exceptional delays",
+  "no step free access",
+  "information",
+  "exit only",
+  "change of frequency",
+])
+
+/** Closure / suspension labels that explain an empty board. */
+const ARRIVALS_CHIP_ON_EMPTY = new Set([
+  "planned closure",
+  "part closure",
+  "part closed",
+  "service closed",
+  "not running",
+  "suspended",
+  "part suspended",
+  "closed",
+  "no service",
+  "bus service",
+  "closure",
+])
+
+/** Labels that explain a group that still has trains. */
+const ARRIVALS_CHIP_ON_TRAINS = new Set([
+  "minor delays",
+  "severe delays",
+  "reduced service",
+  "diverted",
+  "issues reported",
+  "planned closure",
+  "part closure",
+  "part closed",
+  "suspended",
+  "part suspended",
+  "bus service",
+])
+
 const londonHourFormatter = new Intl.DateTimeFormat("en-GB", {
   timeZone: LONDON_TIME_ZONE,
   hour: "2-digit",
@@ -212,8 +254,23 @@ const statusDescription = (status: LineStatusLike): string =>
     .trim()
     .toLowerCase()
 
+/** Official TfL `statusSeverityDescription` as sent — never reason text. */
+export const officialStatusDescription = (
+  status: LineStatusLike | undefined
+): string | undefined => {
+  const label = (
+    status?.statusSeverityDescription ??
+    status?.severityDescription ??
+    ""
+  ).trim()
+  return label || undefined
+}
+
 const isDelayOnlyStatus = (status: LineStatusLike): boolean =>
   DELAY_ONLY_DESCRIPTIONS.has(statusDescription(status))
+
+const isServiceClosedStatus = (status: LineStatusLike | undefined): boolean =>
+  Boolean(status && statusDescription(status) === "service closed")
 
 /**
  * Current closure / suspension / planned work — not Good Service, info, or
@@ -280,6 +337,68 @@ export const statusKindForcesArrivalsUnavailable = (
   _kind: StatusKind | undefined
 ): false => false
 
+/**
+ * Worst current row across a group (shared-platform merge included).
+ * Uses `getWorstCurrentStatus` — Circle Planned Closure (4) beats District
+ * Part Closure (5).
+ */
+export const groupWorstCurrentStatus = (
+  lineIds: readonly string[],
+  lineStatus: readonly ArrivalsStatusSignal[] | undefined,
+  nowMs?: number
+): LineStatusLike | undefined => {
+  const ids = servingLineIds(lineIds)
+  if (!ids.length || !lineStatus?.length) return undefined
+  const byId = indexStatusSignals(lineStatus)
+  const statuses: LineStatusLike[] = []
+  for (const id of ids) {
+    const line = byId[normalizeLineId(id)]
+    if (line?.lineStatuses?.length) {
+      statuses.push(...line.lineStatuses)
+    }
+  }
+  if (!statuses.length) return undefined
+  return getWorstCurrentStatus(
+    statuses,
+    nowMs !== undefined ? { now: nowMs } : undefined
+  )
+}
+
+type ResolveArrivalsStatusChipOptions = {
+  lineIds: readonly string[]
+  hasTrains: boolean
+  emptyKind?: ArrivalsEmptyKind | null
+  lineStatus?: readonly ArrivalsStatusSignal[]
+  nowMs?: number
+  hasError?: boolean
+}
+
+/**
+ * QuietChip label for arrivals. Official description only; never stitched
+ * into the arrivals sentence and never taken from `reason`.
+ */
+export const resolveArrivalsStatusChip = ({
+  lineIds,
+  hasTrains,
+  emptyKind,
+  lineStatus,
+  nowMs,
+  hasError = false,
+}: ResolveArrivalsStatusChipOptions): string | null => {
+  if (hasError || emptyKind === "offline") return null
+  const worst = groupWorstCurrentStatus(lineIds, lineStatus, nowMs)
+  const label = officialStatusDescription(worst)
+  if (!label) return null
+  const key = label.toLowerCase()
+  if (ARRIVALS_CHIP_HIDE.has(key)) return null
+  if (hasTrains) {
+    if (key === "service closed") return null
+    return ARRIVALS_CHIP_ON_TRAINS.has(key) ? label : null
+  }
+  if (DELAY_ONLY_DESCRIPTIONS.has(key)) return null
+  return ARRIVALS_CHIP_ON_EMPTY.has(key) ? label : null
+}
+
 const resolveGroupDisruption = (
   lineIds: readonly string[],
   lineStatus: readonly ArrivalsStatusSignal[] | undefined,
@@ -318,7 +437,21 @@ const classifySuccessfulRailEmpty = (
 ): ArrivalsEmptyState => {
   const ids = servingLineIds(lineIds)
   const disrupted = resolveGroupDisruption(ids, lineStatus, nowMs)
-  if (disrupted) return disrupted
+  const overnight =
+    ids.length === 0
+      ? isLikelyRailServiceEnded(nowMs)
+      : groupFinishedOvernight(ids, nowMs)
+  if (disrupted) {
+    // Timetable / overnight Service Closed keeps ended + chip, not "No service."
+    if (
+      overnight &&
+      disrupted.resumeMs === undefined &&
+      isServiceClosedStatus(groupWorstCurrentStatus(ids, lineStatus, nowMs))
+    ) {
+      return { kind: "ended" }
+    }
+    return disrupted
+  }
   if (!isLikelyRailServiceEnded(nowMs)) return { kind: "empty" }
   if (ids.length === 0) return { kind: "ended" }
   return { kind: groupFinishedOvernight(ids, nowMs) ? "ended" : "empty" }

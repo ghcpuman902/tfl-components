@@ -14,6 +14,7 @@ import {
   lineLikelyFinishedOvernight,
   overlappingValidityToDateMs,
   resolveArrivalsEmptyKind,
+  resolveArrivalsStatusChip,
   resolveLineArrivalsEmptyKind,
   statusKindForcesArrivalsUnavailable,
   type ArrivalsEmptyState,
@@ -311,7 +312,7 @@ describe("status as an arrivals signal", () => {
     assert.equal(arrivalsLineEmptyCopy(state), ARRIVALS_EMPTY_COPY.ended)
   })
 
-  it("notes current Service Closed as disrupted without the reason", () => {
+  it("keeps overnight Service Closed as ended, with a chip, never the reason", () => {
     const lineStatus = [serviceClosed("district")]
     const state = resolveLineArrivalsEmptyKind({
       lineIds: ["district"],
@@ -320,8 +321,16 @@ describe("status as an arrivals signal", () => {
       lineStatus,
     })
     const copy = arrivalsLineEmptyCopy(state)
-    assert.equal(kindOf(state), "disrupted")
-    assert.equal(copy, ARRIVALS_EMPTY_COPY.disrupted)
+    const chip = resolveArrivalsStatusChip({
+      lineIds: ["district"],
+      hasTrains: false,
+      emptyKind: state?.kind,
+      lineStatus,
+      nowMs: SAT_0125,
+    })
+    assert.equal(kindOf(state), "ended")
+    assert.equal(copy, ARRIVALS_EMPTY_COPY.ended)
+    assert.equal(chip, "Service Closed")
     assert.equal(copy.includes("resume"), false)
     assert.equal(copy.includes("Service Closed"), false)
     assert.equal(copy.includes("engineering"), false)
@@ -380,7 +389,7 @@ describe("status as an arrivals signal", () => {
           lineStatus: [goodService("circle"), serviceClosed("district")],
         })
       ),
-      "disrupted"
+      "ended"
     )
     assert.equal(circleStillRunning.lineId, "circle")
   })
@@ -408,10 +417,18 @@ describe("current disruption windows", () => {
       lineStatus,
     })
     const copy = arrivalsLineEmptyCopy(state)
+    const chip = resolveArrivalsStatusChip({
+      lineIds: ["circle", "district"],
+      hasTrains: false,
+      emptyKind: state?.kind,
+      lineStatus,
+      nowMs: SAT_0836,
+    })
     assert.equal(kindOf(state), "disrupted")
     assert.equal(state?.resumeMs, Date.parse("2026-08-22T09:30:00Z"))
     assert.equal(formatLondonClockTime(state?.resumeMs ?? 0), "10:30")
     assert.equal(copy, "No service until 10:30.")
+    assert.equal(chip, "Planned Closure")
     assert.equal(copy.includes("Planned Closure"), false)
     assert.equal(copy.includes("Part Closure"), false)
     assert.equal(copy.includes("1030"), false)
@@ -476,6 +493,16 @@ describe("current disruption windows", () => {
     assert.equal(kindOf(state), "disrupted")
     assert.equal(state?.resumeMs, undefined)
     assert.equal(arrivalsLineEmptyCopy(state), ARRIVALS_EMPTY_COPY.disrupted)
+    assert.equal(
+      resolveArrivalsStatusChip({
+        lineIds: ["district"],
+        hasTrains: false,
+        emptyKind: state?.kind,
+        lineStatus,
+        nowMs: SAT_0836,
+      }),
+      "Part Closure"
+    )
   })
 
   it("returns null on fetch error even with the Saturday closure window", () => {
@@ -662,6 +689,157 @@ describe("resolveArrivalsEmptyKind aggregation", () => {
         })
       ),
       "offline"
+    )
+  })
+})
+
+describe("arrivals status QuietChip", () => {
+  const chipOf = (options: Parameters<typeof resolveArrivalsStatusChip>[0]) =>
+    resolveArrivalsStatusChip(options)
+
+  it("shows Planned Closure on the live Circle+District merge, not Part Closure", () => {
+    const lineStatus = [circlePlannedClosure(), districtPartClosure()]
+    assert.equal(
+      chipOf({
+        lineIds: ["circle", "district"],
+        hasTrains: false,
+        emptyKind: "disrupted",
+        lineStatus,
+        nowMs: SAT_0836,
+      }),
+      "Planned Closure"
+    )
+  })
+
+  it("shows Part Closure when that is the only empty-board status", () => {
+    assert.equal(
+      chipOf({
+        lineIds: ["district"],
+        hasTrains: false,
+        emptyKind: "disrupted",
+        lineStatus: [districtPartClosure()],
+        nowMs: SAT_0836,
+      }),
+      "Part Closure"
+    )
+  })
+
+  it("hides Good Service on empty and ended", () => {
+    assert.equal(
+      chipOf({
+        lineIds: ["district"],
+        hasTrains: false,
+        emptyKind: "empty",
+        lineStatus: [goodService("district")],
+        nowMs: SAT_0836,
+      }),
+      null
+    )
+    assert.equal(
+      chipOf({
+        lineIds: ["district"],
+        hasTrains: false,
+        emptyKind: "ended",
+        lineStatus: [goodService("district")],
+        nowMs: SAT_0125,
+      }),
+      null
+    )
+  })
+
+  it("hides delay-only labels on an empty board", () => {
+    assert.equal(
+      chipOf({
+        lineIds: ["district"],
+        hasTrains: false,
+        emptyKind: "empty",
+        lineStatus: [minorDelays("district")],
+        nowMs: SAT_0836,
+      }),
+      null
+    )
+  })
+
+  it("shows Minor Delays next to a group that still has trains", () => {
+    assert.equal(
+      chipOf({
+        lineIds: ["district"],
+        hasTrains: true,
+        lineStatus: [minorDelays("district")],
+        nowMs: SAT_0836,
+      }),
+      "Minor Delays"
+    )
+  })
+
+  it("hides Service Closed when trains are somehow present", () => {
+    assert.equal(
+      chipOf({
+        lineIds: ["district"],
+        hasTrains: true,
+        lineStatus: [serviceClosed("district")],
+        nowMs: SAT_0125,
+      }),
+      null
+    )
+  })
+
+  it("shows Suspended on disrupted with no toDate", () => {
+    assert.equal(
+      chipOf({
+        lineIds: ["district"],
+        hasTrains: false,
+        emptyKind: "disrupted",
+        lineStatus: [suspended("district")],
+        nowMs: SAT_0125,
+      }),
+      "Suspended"
+    )
+  })
+
+  it("hides the chip on offline and fetch error", () => {
+    assert.equal(
+      chipOf({
+        lineIds: ["district"],
+        hasTrains: false,
+        emptyKind: "offline",
+        lineStatus: [circlePlannedClosure()],
+        nowMs: SAT_0836,
+      }),
+      null
+    )
+    assert.equal(
+      chipOf({
+        lineIds: ["district"],
+        hasTrains: false,
+        emptyKind: "disrupted",
+        hasError: true,
+        lineStatus: [circlePlannedClosure()],
+        nowMs: SAT_0836,
+      }),
+      null
+    )
+  })
+
+  it("notes daytime Service Closed as disrupted with a chip, not the reason", () => {
+    const lineStatus = [serviceClosed("district")]
+    const state = resolveLineArrivalsEmptyKind({
+      lineIds: ["district"],
+      rowCount: 0,
+      nowMs: SAT_0836,
+      lineStatus,
+    })
+    assert.equal(kindOf(state), "disrupted")
+    assert.equal(arrivalsLineEmptyCopy(state), ARRIVALS_EMPTY_COPY.disrupted)
+    assert.equal(
+      chipOf({
+        lineIds: ["district"],
+        hasTrains: false,
+        emptyKind: state?.kind,
+        lineStatus,
+        nowMs: SAT_0836,
+      }),
+      "Service Closed"
     )
   })
 })
