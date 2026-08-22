@@ -292,12 +292,19 @@ const limitRowsPerBound = (
     }
   })
 
+export type ArrivalsPageLeftover = {
+  label: string
+  sentence: string
+}
+
 export type ArrivalsPageFill = {
   rows: ArrivalsPreparedRow[]
   /** Quiet dash tiles between the last arrival (or empty row) and the end message. */
   dashCount: number
   /** Final spare tile on a short page that still has arrivals. */
   showEndMessage: boolean
+  /** Rail-only leftover status tile. Never replaces a train row. */
+  leftover?: ArrivalsPageLeftover
 }
 
 export type ArrivalsLockHeight = boolean | "when-paged"
@@ -393,6 +400,54 @@ export const chunkBoundPages = (
       return { rows: pageRows, dashCount, showEndMessage }
     }),
   }
+}
+
+/**
+ * Rail leftover status after `chunkBoundPages`. Occupies an already-spare
+ * last-page slot, or adds one following page when `canAddPage` and the last
+ * page is full. Never replaces a train. Empty boards stay on the empty-row
+ * path. Bus / river callers must not use this.
+ */
+export const applyRailLeftoverStatus = (
+  pages: readonly ArrivalsPageFill[],
+  leftover: ArrivalsPageLeftover | null,
+  canAddPage: boolean
+): ArrivalsPageFill[] => {
+  if (!leftover || pages.length === 0) return [...pages]
+  const hasTrains = pages.some((page) => page.rows.length > 0)
+  if (!hasTrains) return [...pages]
+
+  const lastIndex = pages.length - 1
+  const last = pages[lastIndex]!
+
+  if (last.showEndMessage) {
+    return pages.map((page, index) =>
+      index === lastIndex ? { ...page, showEndMessage: false, leftover } : page
+    )
+  }
+
+  if (last.dashCount > 0) {
+    return pages.map((page, index) =>
+      index === lastIndex
+        ? { ...page, dashCount: page.dashCount - 1, leftover }
+        : page
+    )
+  }
+
+  if (canAddPage) {
+    const pageSize = last.rows.length
+    return [
+      ...pages,
+      {
+        rows: [],
+        dashCount: Math.max(0, pageSize - 1),
+        showEndMessage: false,
+        leftover,
+      },
+    ]
+  }
+
+  return [...pages]
 }
 
 type LineBucket = {

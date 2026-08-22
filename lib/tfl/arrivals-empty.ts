@@ -112,8 +112,23 @@ const ARRIVALS_CHIP_ON_TRAINS = new Set([
   "part closed",
   "suspended",
   "part suspended",
-  "bus service",
 ])
+
+/** May create a following leftover page when the last page is exactly full. */
+const ARRIVALS_LEFTOVER_CAN_ADD_PAGE = new Set([
+  "severe delays",
+  "suspended",
+  "part suspended",
+])
+
+/** Arrivals-owned leftover-tile sentence. Never stitched to the chip. */
+export const ARRIVALS_LEFTOVER_SENTENCE = "Expect longer waits."
+
+export type ArrivalsLeftoverStatus = {
+  label: string
+  sentence: string
+  canAddPage: boolean
+}
 
 const londonHourFormatter = new Intl.DateTimeFormat("en-GB", {
   timeZone: LONDON_TIME_ZONE,
@@ -399,6 +414,45 @@ export const resolveArrivalsStatusChip = ({
   return ARRIVALS_CHIP_ON_EMPTY.has(key) ? label : null
 }
 
+/**
+ * Leftover rail tile when a group still has trains. Empty boards stay on the
+ * empty-row path. Delay-only labels never add a page.
+ */
+export const resolveArrivalsLeftoverStatus = ({
+  lineIds,
+  lineStatus,
+  nowMs,
+  hasError = false,
+}: {
+  lineIds: readonly string[]
+  lineStatus?: readonly ArrivalsStatusSignal[]
+  nowMs?: number
+  hasError?: boolean
+}): ArrivalsLeftoverStatus | null => {
+  const label = resolveArrivalsStatusChip({
+    lineIds,
+    hasTrains: true,
+    lineStatus,
+    nowMs,
+    hasError,
+  })
+  if (!label) return null
+  return {
+    label,
+    sentence: ARRIVALS_LEFTOVER_SENTENCE,
+    canAddPage: ARRIVALS_LEFTOVER_CAN_ADD_PAGE.has(label.toLowerCase()),
+  }
+}
+
+const plannedWorkResumeMs = (
+  status: LineStatusLike,
+  nowMs: number
+): number | undefined => {
+  if (status.disruption?.category !== "PlannedWork") return undefined
+  if (isDelayOnlyStatus(status)) return undefined
+  return overlappingValidityToDateMs(status, nowMs)
+}
+
 const resolveGroupDisruption = (
   lineIds: readonly string[],
   lineStatus: readonly ArrivalsStatusSignal[] | undefined,
@@ -406,7 +460,7 @@ const resolveGroupDisruption = (
 ): ArrivalsEmptyState | null => {
   if (!lineIds.length || !lineStatus?.length) return null
   const byId = indexStatusSignals(lineStatus)
-  let resumeMs: number | undefined
+  const resumes: number[] = []
   for (const id of lineIds) {
     const line = byId[normalizeLineId(id)]
     const worst = getWorstCurrentStatus(line?.lineStatuses, { now: nowMs })
@@ -414,15 +468,15 @@ const resolveGroupDisruption = (
       worst ? getStatusKind(worst) : undefined
     )
     if (!isCurrentArrivalsDisruption(worst, nowMs) || !worst) return null
-    const lineResumeMs = overlappingValidityToDateMs(worst, nowMs)
-    if (lineResumeMs !== undefined) {
-      resumeMs =
-        resumeMs === undefined ? lineResumeMs : Math.min(resumeMs, lineResumeMs)
-    }
+    const lineResumeMs = plannedWorkResumeMs(worst, nowMs)
+    if (lineResumeMs !== undefined) resumes.push(lineResumeMs)
   }
-  return resumeMs === undefined
-    ? { kind: "disrupted" }
-    : { kind: "disrupted", resumeMs }
+  const sameResume =
+    resumes.length === lineIds.length &&
+    resumes.every((value) => value === resumes[0])
+  return sameResume
+    ? { kind: "disrupted", resumeMs: resumes[0] }
+    : { kind: "disrupted" }
 }
 
 /**

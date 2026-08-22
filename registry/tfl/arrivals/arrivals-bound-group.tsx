@@ -49,6 +49,7 @@ import {
   ARRIVALS_END_COPY,
   ARRIVALS_END_COPY_SHORT,
   ARRIVALS_LINE_EMPTY_COPY,
+  type ArrivalsLeftoverStatus,
 } from "@/lib/tfl/arrivals-empty"
 import {
   formatArrivalsBoundLabel,
@@ -61,8 +62,10 @@ import { resolveArrivalsDestinationText } from "@/lib/tfl/arrivals-destination-t
 import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort"
 import { getLineNameTiers, joinLineNames } from "@/lib/tfl/line-names"
 import {
+  applyRailLeftoverStatus,
   chunkBoundPages,
   type ArrivalsPageFill,
+  type ArrivalsPageLeftover,
   type ArrivalsPreparedBound,
   type ArrivalsPreparedGroup,
   type ArrivalsPreparedRow,
@@ -658,10 +661,34 @@ const ArrivalsEndMessageTile = ({ showRule }: { showRule: boolean }) => (
   </li>
 )
 
+const LeftoverStatusTile = ({
+  leftover,
+  showRule,
+}: {
+  leftover: ArrivalsPageLeftover
+  showRule: boolean
+}) => (
+  <li
+    data-slot="arrivals-row"
+    data-arrivals-leftover=""
+    className={cn(
+      "flex items-center text-base text-muted-foreground",
+      TILE_CLASS,
+      showRule && ROW_RULE_CLASS
+    )}
+  >
+    <ArrivalsStatusSentence
+      chip={leftover.label}
+      sentence={leftover.sentence}
+    />
+  </li>
+)
+
 const PagedArrivalRows = ({
   rows,
   dashCount,
   showEndMessage,
+  leftover,
   mode,
   isLast,
   emptyLabel,
@@ -675,6 +702,7 @@ const PagedArrivalRows = ({
   rows: readonly ArrivalsPreparedRow[]
   dashCount: number
   showEndMessage: boolean
+  leftover?: ArrivalsPageLeftover
   mode: ArrivalsBoardMode
   isLast: boolean
   emptyLabel: string
@@ -685,17 +713,26 @@ const PagedArrivalRows = ({
   hoistRouteChip?: boolean
   ranks?: readonly number[]
 }) => {
-  const trailingCount = dashCount + (showEndMessage ? 1 : 0)
+  const leftoverCount = leftover ? 1 : 0
+  const endCount = showEndMessage ? 1 : 0
+  const afterRows = dashCount + leftoverCount + endCount
+  const leftoverOnly = Boolean(leftover) && rows.length === 0
+  const leftoverAfterRows = leftover && !leftoverOnly
 
   return (
     <>
-      {rows.length === 0 ? (
+      {leftoverOnly && leftover ? (
+        <LeftoverStatusTile
+          leftover={leftover}
+          showRule={!(isLast && afterRows === leftoverCount)}
+        />
+      ) : rows.length === 0 ? (
         <li
           data-slot="arrivals-row"
           className={cn(
             "flex items-center text-base text-muted-foreground",
             TILE_CLASS,
-            !(isLast && trailingCount === 0) && ROW_RULE_CLASS
+            !(isLast && afterRows === 0) && ROW_RULE_CLASS
           )}
           aria-label={emptyLabel}
         >
@@ -707,9 +744,7 @@ const PagedArrivalRows = ({
             key={row.key}
             row={row}
             mode={mode}
-            showRule={
-              !(isLast && index === rows.length - 1 && trailingCount === 0)
-            }
+            showRule={!(isLast && index === rows.length - 1 && afterRows === 0)}
             showLineChip={showLineChip}
             hoistPlatform={hoistPlatform}
             hoistRouteChip={hoistRouteChip}
@@ -720,9 +755,18 @@ const PagedArrivalRows = ({
       {Array.from({ length: dashCount }, (_, index) => (
         <QuietDashTile
           key={`dash-${index}`}
-          showRule={!(isLast && index === dashCount - 1 && !showEndMessage)}
+          showRule={
+            !(
+              isLast &&
+              index === dashCount - 1 &&
+              leftoverCount + endCount === 0
+            )
+          }
         />
       ))}
+      {leftoverAfterRows ? (
+        <LeftoverStatusTile leftover={leftover} showRule={!isLast} />
+      ) : null}
       {showEndMessage ? <ArrivalsEndMessageTile showRule={!isLast} /> : null}
     </>
   )
@@ -769,6 +813,7 @@ const ArrivalsPageTrack = ({
           rows={only?.rows ?? []}
           dashCount={only?.dashCount ?? 0}
           showEndMessage={only?.showEndMessage ?? false}
+          leftover={only?.leftover}
           mode={mode}
           isLast={isLast}
           emptyLabel={emptyLabel}
@@ -804,6 +849,7 @@ const ArrivalsPageTrack = ({
             rows={page.rows}
             dashCount={page.dashCount}
             showEndMessage={page.showEndMessage}
+            leftover={page.leftover}
             mode={mode}
             isLast={isLast}
             emptyLabel={emptyLabel}
@@ -1056,6 +1102,7 @@ export const ArrivalsBoundGroup = ({
   idleReturnMs = INTERACTIVE_IDLE_RETURN_MS,
   emptyCopy = ARRIVALS_LINE_EMPTY_COPY,
   statusChip,
+  leftoverStatus,
 }: {
   bound: ArrivalsPreparedBound
   mode: ArrivalsBoardMode
@@ -1071,6 +1118,7 @@ export const ArrivalsBoundGroup = ({
   idleReturnMs?: number
   emptyCopy?: string
   statusChip?: string | null
+  leftoverStatus?: ArrivalsLeftoverStatus | null
 }) => {
   const canPage = Boolean(bound.label) && pageSize > 0
   const unattended = behaviour === "unattended" && canPage
@@ -1079,6 +1127,15 @@ export const ArrivalsBoundGroup = ({
   const chunked = chunkBoundPages(bound.rows, canPage ? pageSize : 0, {
     lockHeight: canPage,
   })
+  const pages =
+    mode === "rail" && leftoverStatus
+      ? applyRailLeftoverStatus(
+          chunked.pages,
+          leftoverStatus,
+          leftoverStatus.canAddPage
+        )
+      : chunked.pages
+  const pageCount = pages.length
   const {
     containerRef,
     setSlideRef,
@@ -1086,8 +1143,8 @@ export const ArrivalsBoundGroup = ({
     goToPage,
     handlePrev,
     handleNext,
-  } = useArrivalsPageTrack(unattended ? 1 : chunked.pageCount)
-  const showPager = canPage && !unattended && chunked.pageCount > 1
+  } = useArrivalsPageTrack(unattended ? 1 : pageCount)
+  const showPager = canPage && !unattended && pageCount > 1
   const emptyScope = bound.label ? `${lineName} ${bound.label}` : lineName
   const emptyLabel = `${emptyScope}: ${emptyCopy}`
   const session = useUnattendedArrivalSession({
@@ -1138,7 +1195,7 @@ export const ArrivalsBoundGroup = ({
             <BoundPager
               label={bound.label}
               page={activePage}
-              pageCount={chunked.pageCount}
+              pageCount={pageCount}
               onPrev={handlePrev}
               onNext={handleNext}
             />
@@ -1159,7 +1216,7 @@ export const ArrivalsBoundGroup = ({
         />
       ) : (
         <ArrivalsPageTrack
-          pages={chunked.pages}
+          pages={pages}
           mode={mode}
           isLast={isLastBound}
           emptyLabel={emptyLabel}

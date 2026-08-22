@@ -3,6 +3,7 @@ import { describe, it } from "node:test"
 import type { RealtimePrediction } from "tfl-ts"
 import {
   ARRIVALS_EMPTY_COPY,
+  ARRIVALS_LEFTOVER_SENTENCE,
   NIGHT_TUBE_LINE_IDS,
   arrivalsLineEmptyCopy,
   formatLondonClockTime,
@@ -14,6 +15,7 @@ import {
   lineLikelyFinishedOvernight,
   overlappingValidityToDateMs,
   resolveArrivalsEmptyKind,
+  resolveArrivalsLeftoverStatus,
   resolveArrivalsStatusChip,
   resolveLineArrivalsEmptyKind,
   statusKindForcesArrivalsUnavailable,
@@ -158,6 +160,77 @@ const suspended = (id: string): ArrivalsStatusSignal => ({
       statusSeverity: 2,
       statusSeverityDescription: "Suspended",
       reason: "District Line: No service due to a signal failure.",
+      disruption: { category: "RealTime" },
+      validityPeriods: [{ isNow: true }],
+    },
+  ],
+})
+
+const severeDelays = (id: string): ArrivalsStatusSignal => ({
+  id,
+  lineStatuses: [
+    {
+      statusSeverity: 6,
+      statusSeverityDescription: "Severe Delays",
+      reason: "Central Line: Severe delays due to an earlier signal failure.",
+      disruption: { category: "RealTime" },
+      validityPeriods: [{ isNow: true }],
+    },
+  ],
+})
+
+/**
+ * Trimmed live Saturday W&C Planned Closure. `Information` + toDate 22:59Z
+ * is the notice end, not the next train.
+ */
+const waterlooCitySaturdayTimetable = (): ArrivalsStatusSignal => ({
+  id: "waterloo-city",
+  lineStatuses: [
+    {
+      statusSeverity: 4,
+      statusSeverityDescription: "Planned Closure",
+      reason:
+        "WATERLOO & CITY LINE: Saturday 22 August, no service. This line does not operate on Saturdays.",
+      disruption: {
+        category: "Information",
+        closureText: "plannedClosure",
+      },
+      validityPeriods: [
+        {
+          fromDate: "2026-08-22T03:15:00Z",
+          toDate: "2026-08-22T22:59:00Z",
+          isNow: false,
+        },
+      ],
+    },
+  ],
+})
+
+/**
+ * Trimmed live Windrush dual row. Part Suspended RealTime toDate is a
+ * sliding expiry, not a resume clock.
+ */
+const windrushPartSuspended = (): ArrivalsStatusSignal => ({
+  id: "windrush",
+  lineStatuses: [
+    {
+      statusSeverity: 3,
+      statusSeverityDescription: "Part Suspended",
+      reason:
+        "WINDRUSH LINE: No service between New Cross Gate and Crystal Palace / West Croydon.",
+      disruption: { category: "RealTime" },
+      validityPeriods: [
+        {
+          fromDate: "2026-08-22T06:12:00Z",
+          toDate: "2026-08-22T11:40:00Z",
+          isNow: true,
+        },
+      ],
+    },
+    {
+      statusSeverity: 9,
+      statusSeverityDescription: "Minor Delays",
+      reason: "WINDRUSH LINE: Minor delays due to an earlier signal failure.",
       disruption: { category: "RealTime" },
       validityPeriods: [{ isNow: true }],
     },
@@ -539,7 +612,7 @@ describe("current disruption windows", () => {
     )
   })
 
-  it("uses the earliest overlapping toDate when merge resume times differ", () => {
+  it("omits the clock when merge PlannedWork resume times differ", () => {
     const state = resolveLineArrivalsEmptyKind({
       lineIds: ["circle", "district"],
       rowCount: 0,
@@ -550,8 +623,62 @@ describe("current disruption windows", () => {
       ],
     })
     assert.equal(kindOf(state), "disrupted")
-    assert.equal(state?.resumeMs, Date.parse("2026-08-22T09:30:00Z"))
-    assert.equal(arrivalsLineEmptyCopy(state), "No service until 10:30.")
+    assert.equal(state?.resumeMs, undefined)
+    assert.equal(arrivalsLineEmptyCopy(state), ARRIVALS_EMPTY_COPY.disrupted)
+  })
+
+  it("notes W&C Information Planned Closure as No service, never 22:59", () => {
+    const lineStatus = [waterlooCitySaturdayTimetable()]
+    const state = resolveLineArrivalsEmptyKind({
+      lineIds: ["waterloo-city"],
+      rowCount: 0,
+      nowMs: SAT_0836,
+      lineStatus,
+    })
+    const copy = arrivalsLineEmptyCopy(state)
+    assert.equal(kindOf(state), "disrupted")
+    assert.equal(state?.resumeMs, undefined)
+    assert.equal(copy, ARRIVALS_EMPTY_COPY.disrupted)
+    assert.equal(copy.includes("22:59"), false)
+    assert.equal(copy.includes("23:59"), false)
+    assert.equal(
+      resolveArrivalsStatusChip({
+        lineIds: ["waterloo-city"],
+        hasTrains: false,
+        emptyKind: state?.kind,
+        lineStatus,
+        nowMs: SAT_0836,
+      }),
+      "Planned Closure"
+    )
+    assert.equal(copy.includes("does not operate"), false)
+  })
+
+  it("notes Windrush Part Suspended without the RealTime expiry clock", () => {
+    const lineStatus = [windrushPartSuspended()]
+    const state = resolveLineArrivalsEmptyKind({
+      lineIds: ["windrush"],
+      rowCount: 0,
+      nowMs: SAT_0836,
+      lineStatus,
+    })
+    const copy = arrivalsLineEmptyCopy(state)
+    assert.equal(kindOf(state), "disrupted")
+    assert.equal(state?.resumeMs, undefined)
+    assert.equal(copy, ARRIVALS_EMPTY_COPY.disrupted)
+    assert.equal(copy.includes("12:40"), false)
+    assert.equal(copy.includes("11:40"), false)
+    assert.equal(
+      resolveArrivalsStatusChip({
+        lineIds: ["windrush"],
+        hasTrains: false,
+        emptyKind: state?.kind,
+        lineStatus,
+        nowMs: SAT_0836,
+      }),
+      "Part Suspended"
+    )
+    assert.equal(copy.includes("Crystal Palace"), false)
   })
 
   it("keeps minor delays + empty as none, not disrupted", () => {
@@ -770,6 +897,28 @@ describe("arrivals status QuietChip", () => {
       }),
       "Minor Delays"
     )
+  })
+
+  it("lets leftover occupy a spare for Minor Delays but not add a page", () => {
+    const leftover = resolveArrivalsLeftoverStatus({
+      lineIds: ["district"],
+      lineStatus: [minorDelays("district")],
+      nowMs: SAT_0836,
+    })
+    assert.equal(leftover?.label, "Minor Delays")
+    assert.equal(leftover?.sentence, ARRIVALS_LEFTOVER_SENTENCE)
+    assert.equal(leftover?.canAddPage, false)
+  })
+
+  it("lets leftover add a page for Severe Delays", () => {
+    const leftover = resolveArrivalsLeftoverStatus({
+      lineIds: ["central"],
+      lineStatus: [severeDelays("central")],
+      nowMs: SAT_0836,
+    })
+    assert.equal(leftover?.label, "Severe Delays")
+    assert.equal(leftover?.sentence, ARRIVALS_LEFTOVER_SENTENCE)
+    assert.equal(leftover?.canAddPage, true)
   })
 
   it("hides Service Closed when trains are somehow present", () => {

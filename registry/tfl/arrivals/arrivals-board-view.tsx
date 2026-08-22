@@ -14,6 +14,7 @@ import {
   ARRIVALS_EMPTY_COPY,
   ARRIVALS_LINE_EMPTY_COPY,
   arrivalsLineEmptyCopy,
+  resolveArrivalsLeftoverStatus,
   resolveArrivalsStatusChip,
   resolveLineArrivalsEmptyKind,
   type ArrivalsEmptyKind,
@@ -268,6 +269,14 @@ const GroupBody = ({
           nowMs,
         })
       : null
+  const leftoverStatus =
+    mode === "rail" && group.hasInformation
+      ? resolveArrivalsLeftoverStatus({
+          lineIds: group.lineIds,
+          lineStatus,
+          nowMs,
+        })
+      : null
   // `grid-cols-1` (not block) so consumer `grid-cols-*` variants merge cleanly.
   const subgroupsClassName = cn(
     LIST_RESET_CLASS,
@@ -334,6 +343,7 @@ const GroupBody = ({
           startDelayMs={startDelayMs}
           emptyCopy={lineEmptyCopy}
           statusChip={emptyChip}
+          leftoverStatus={leftoverStatus}
         />
       ))}
     </ul>
@@ -398,7 +408,8 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
   now?: number
   /**
    * Optional current line status from the app (Board already fetched it).
-   * Classification signal only — never rendered.
+   * Classification signal; rail leftover tiles and empty-row chips may show
+   * the official description. Never pasted as reason text.
    */
   lineStatus?: readonly ArrivalsStatusSignal[]
   /**
@@ -588,16 +599,6 @@ export const ArrivalsBoardView = ({
                   group={group}
                   mode={mode}
                   headingLevel={headingLevel}
-                  statusChip={
-                    mode === "rail" && group.hasInformation
-                      ? resolveArrivalsStatusChip({
-                          lineIds: group.lineIds,
-                          hasTrains: true,
-                          lineStatus,
-                          nowMs: now,
-                        })
-                      : null
-                  }
                 />
                 <GroupBody
                   group={group}

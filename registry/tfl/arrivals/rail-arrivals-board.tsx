@@ -48,8 +48,9 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
    */
   now?: number
   /**
-   * Optional current line status from the app. Classification signal only —
-   * never rendered. Omit on docs/live boards that do not already have status.
+   * Optional current line status from the app. Classification signal; rail
+   * leftover tiles and empty-row chips may show the official description.
+   * Omit on docs/live boards that do not already have status.
    */
   lineStatus?: readonly ArrivalsStatusSignal[]
   /** Arrival order within each bound. Default `timeToStation`. */
@@ -71,9 +72,10 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
   maxRows?: number
   /**
    * Visible arrivals per bound — also the fixed subgroup height. Short pages
-   * fill with dashes and “No more arrivals”. Empty seeded groups do the
-   * same with “No arrivals right now.” (or overnight ended). Default 3.
-   * Overridden per line by `pageSizeByLine`.
+   * fill with dashes and “No more arrivals”, or a rail leftover status tile
+   * in that spare. Empty seeded groups do the same with “No arrivals right
+   * now.” (or overnight ended). Default 3. Overridden per line by
+   * `pageSizeByLine`.
    */
   pageSize?: number
   /**

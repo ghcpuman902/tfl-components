@@ -59,6 +59,39 @@ const railLines = [
   { lineId: "bakerloo", lineName: "Bakerloo", modeName: "tube" },
 ]
 
+const SAT_0836 = londonDayStartMs("2026-08-22") + 8 * 3_600_000 + 36 * 60_000
+
+const westboundTrains = (count: number): RealtimePrediction[] =>
+  Array.from({ length: count }, (_, index) =>
+    prediction({
+      id: `c-w-${index + 1}`,
+      lineId: "central",
+      lineName: "Central",
+      modeName: "tube",
+      platformName: "Westbound - Platform 1",
+      towards: `Train ${index + 1}`,
+      timeToStation: 60 * (index + 1),
+    })
+  )
+
+const centralStatus = (
+  description: "Severe Delays" | "Minor Delays",
+  severity: number
+) => [
+  {
+    id: "central",
+    lineStatuses: [
+      {
+        statusSeverity: severity,
+        statusSeverityDescription: description,
+        reason: `Central Line: ${description} due to an earlier signal failure.`,
+        disruption: { category: "RealTime" as const },
+        validityPeriods: [{ isNow: true }],
+      },
+    ],
+  },
+]
+
 const busData: RealtimePrediction[] = [
   prediction({
     id: "9-1",
@@ -357,7 +390,7 @@ describe("arrivals board layout API", () => {
     assert.equal(html.includes("No service."), false)
   })
 
-  it("shows Minor Delays on the group header when trains are listed", () => {
+  it("shows Minor Delays as a leftover tile when trains are listed", () => {
     const html = renderToStaticMarkup(
       createElement(RailArrivalsBoard, {
         data: [
@@ -373,6 +406,8 @@ describe("arrivals board layout API", () => {
         ],
         lines: [{ lineId: "central", lineName: "Central", modeName: "tube" }],
         stopName: "Oxford Circus",
+        now: londonDayStartMs("2026-08-22") + 8 * 3_600_000 + 36 * 60_000,
+        pageSize: 3,
         lineStatus: [
           {
             id: "central",
@@ -390,10 +425,202 @@ describe("arrivals board layout API", () => {
         ],
       })
     )
+    assert.ok(html.includes("data-arrivals-leftover"))
     assert.ok(html.includes("Minor Delays"))
+    assert.ok(html.includes("Expect longer waits."))
     assert.ok(html.includes("Ealing Broadway"))
+    assert.equal(html.includes("No more arrivals"), false)
     assert.equal(html.includes("No arrivals right now."), false)
     assert.equal(html.includes("signal failure"), false)
+    assert.equal(html.includes("Minor Delays. Expect longer waits."), false)
+  })
+
+  it("puts Severe Delays in the last spare of a 5-train pageSize 3 bound", () => {
+    const trains = westboundTrains(5)
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: trains,
+        lines: [{ lineId: "central", lineName: "Central", modeName: "tube" }],
+        stopName: "Oxford Circus",
+        now: SAT_0836,
+        pageSize: 3,
+        lineStatus: centralStatus("Severe Delays", 6),
+      })
+    )
+    assert.ok(html.includes("data-arrivals-leftover"))
+    assert.ok(html.includes("Severe Delays"))
+    assert.ok(html.includes("Expect longer waits."))
+    assert.equal(html.includes("No more arrivals"), false)
+    assert.ok(html.includes("1/2") || html.includes("Page 1 of 2"), html)
+    assert.equal(html.includes("1/3") || html.includes("Page 1 of 3"), false)
+    for (const row of trains) {
+      assert.ok(html.includes(row.towards ?? ""), row.towards)
+    }
+    assert.equal(html.includes("signal failure"), false)
+  })
+
+  it("adds a third leftover page for 6 trains and Severe Delays", () => {
+    const trains = westboundTrains(6)
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: trains,
+        lines: [{ lineId: "central", lineName: "Central", modeName: "tube" }],
+        stopName: "Oxford Circus",
+        now: SAT_0836,
+        pageSize: 3,
+        lineStatus: centralStatus("Severe Delays", 6),
+      })
+    )
+    assert.ok(html.includes("data-arrivals-leftover"))
+    assert.ok(html.includes("Severe Delays"))
+    assert.ok(html.includes("Expect longer waits."))
+    assert.ok(html.includes("1/3") || html.includes("Page 1 of 3"), html)
+    assert.equal(html.includes("No more arrivals"), false)
+    assert.equal(html.includes("No arrivals right now."), false)
+    for (const row of trains) {
+      assert.ok(html.includes(row.towards ?? ""), row.towards)
+    }
+  })
+
+  it("does not add a leftover page for 6 trains and Minor Delays", () => {
+    const trains = westboundTrains(6)
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: trains,
+        lines: [{ lineId: "central", lineName: "Central", modeName: "tube" }],
+        stopName: "Oxford Circus",
+        now: SAT_0836,
+        pageSize: 3,
+        lineStatus: centralStatus("Minor Delays", 9),
+      })
+    )
+    assert.equal(html.includes("data-arrivals-leftover"), false)
+    assert.equal(html.includes("Expect longer waits."), false)
+    assert.equal(html.includes("Minor Delays"), false)
+    assert.equal(html.includes("1/3") || html.includes("Page 1 of 3"), false)
+    assert.ok(html.includes("1/2") || html.includes("Page 1 of 2"), html)
+    for (const row of trains) {
+      assert.ok(html.includes(row.towards ?? ""), row.towards)
+    }
+  })
+
+  it("puts Minor Delays in the last spare of a 5-train pageSize 3 bound", () => {
+    const trains = westboundTrains(5)
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: trains,
+        lines: [{ lineId: "central", lineName: "Central", modeName: "tube" }],
+        stopName: "Oxford Circus",
+        now: SAT_0836,
+        pageSize: 3,
+        lineStatus: centralStatus("Minor Delays", 9),
+      })
+    )
+    assert.ok(html.includes("data-arrivals-leftover"))
+    assert.ok(html.includes("Minor Delays"))
+    assert.ok(html.includes("Expect longer waits."))
+    assert.equal(html.includes("No more arrivals"), false)
+    assert.ok(html.includes("1/2") || html.includes("Page 1 of 2"), html)
+    assert.equal(html.includes("1/3") || html.includes("Page 1 of 3"), false)
+    for (const row of trains) {
+      assert.ok(html.includes(row.towards ?? ""), row.towards)
+    }
+  })
+
+  it("notes W&C Information Planned Closure as No service without a clock", () => {
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: [],
+        lines: [
+          {
+            lineId: "waterloo-city",
+            lineName: "Waterloo & City",
+            modeName: "tube",
+          },
+        ],
+        stopName: "Bank",
+        now: londonDayStartMs("2026-08-22") + 8 * 3_600_000 + 36 * 60_000,
+        lineStatus: [
+          {
+            id: "waterloo-city",
+            lineStatuses: [
+              {
+                statusSeverity: 4,
+                statusSeverityDescription: "Planned Closure",
+                reason:
+                  "WATERLOO & CITY LINE: Saturday 22 August, no service. This line does not operate on Saturdays.",
+                disruption: {
+                  category: "Information",
+                  closureText: "plannedClosure",
+                },
+                validityPeriods: [
+                  {
+                    fromDate: "2026-08-22T03:15:00Z",
+                    toDate: "2026-08-22T22:59:00Z",
+                    isNow: false,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      })
+    )
+    assert.ok(html.includes("No service."))
+    assert.ok(html.includes("Planned Closure"))
+    assert.equal(html.includes("No service until"), false)
+    assert.equal(html.includes("22:59"), false)
+    assert.equal(html.includes("does not operate"), false)
+    assert.equal(html.includes("data-arrivals-leftover"), false)
+  })
+
+  it("notes Windrush Part Suspended without the RealTime expiry clock", () => {
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: [],
+        lines: [
+          { lineId: "windrush", lineName: "Windrush", modeName: "overground" },
+        ],
+        stopName: "New Cross Gate",
+        now: londonDayStartMs("2026-08-22") + 8 * 3_600_000 + 36 * 60_000,
+        lineStatus: [
+          {
+            id: "windrush",
+            lineStatuses: [
+              {
+                statusSeverity: 3,
+                statusSeverityDescription: "Part Suspended",
+                reason:
+                  "WINDRUSH LINE: No service between New Cross Gate and Crystal Palace / West Croydon.",
+                disruption: { category: "RealTime" },
+                validityPeriods: [
+                  {
+                    fromDate: "2026-08-22T06:12:00Z",
+                    toDate: "2026-08-22T11:40:00Z",
+                    isNow: true,
+                  },
+                ],
+              },
+              {
+                statusSeverity: 9,
+                statusSeverityDescription: "Minor Delays",
+                reason:
+                  "WINDRUSH LINE: Minor delays due to an earlier signal failure.",
+                disruption: { category: "RealTime" },
+                validityPeriods: [{ isNow: true }],
+              },
+            ],
+          },
+        ],
+      })
+    )
+    assert.ok(html.includes("Part Suspended"))
+    assert.ok(html.includes("No service."))
+    assert.equal(html.includes("No service until"), false)
+    assert.equal(html.includes("12:40"), false)
+    assert.equal(html.includes("Crystal Palace"), false)
+    assert.equal(html.includes("Minor Delays"), false)
+    assert.equal(html.includes("data-arrivals-leftover"), false)
   })
 
   it("uses a fixed 5ch box for mixed-line identity chips", () => {
