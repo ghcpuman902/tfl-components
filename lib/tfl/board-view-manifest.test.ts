@@ -47,10 +47,17 @@ describe("board view web app manifest", () => {
   it("stays on the board view path and never includes a key", () => {
     assert.equal(BOARD_VIEW_MANIFEST_PATH, `${BOARD_VIEW_PATH}/manifest.webmanifest`)
     assert.equal(BOARD_VIEW_MANIFEST.id, `${SITE_URL}${BOARD_VIEW_PATH}`)
-    const serialized = JSON.stringify(BOARD_VIEW_MANIFEST)
-    assert.doesNotMatch(serialized, /[?#]/)
-    assert.doesNotMatch(serialized, /key=/i)
-    assert.equal(BOARD_VIEW_MANIFEST.start_url.includes("key"), false)
+    const urlFields = [
+      BOARD_VIEW_MANIFEST.id,
+      BOARD_VIEW_MANIFEST.start_url,
+      BOARD_VIEW_MANIFEST.scope,
+      ...BOARD_VIEW_MANIFEST.icons.map((icon) => icon.src),
+    ]
+    for (const field of urlFields) {
+      assert.doesNotMatch(field, /[?#]/)
+      assert.doesNotMatch(field, /key=/i)
+    }
+    assert.doesNotMatch(JSON.stringify(BOARD_VIEW_MANIFEST), /key=/i)
     assert.equal(
       BOARD_VIEW_MANIFEST.description,
       ROUTE_PAGE_META.boardView.description
