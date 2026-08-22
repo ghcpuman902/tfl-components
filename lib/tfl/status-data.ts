@@ -28,6 +28,8 @@ export type CachedLineStatusesPayload = {
  * Prefer passing `data` and `now={fetchedAt}` into `TubeStatusBoard`.
  * With no `lineIds`, fetches TfL Tube & Rail modes (excludes Cable Car).
  * Soft-fails to `[]` on TfL errors so a quota/outage spike does not crash the page.
+ * `detail: true` so station arrivals can ignore part closures that do not
+ * include this stop (`affectedStops` / affected route naptans).
  */
 export async function getCachedLineStatuses(
   lineIds?: readonly string[]
@@ -42,9 +44,10 @@ export async function getCachedLineStatuses(
     const client = getTflClient()
     const lineStatuses = await client.line.getStatus(
       lineIds && lineIds.length > 0
-        ? { lineIds: [...lineIds] }
+        ? { lineIds: [...lineIds], detail: true }
         : {
             modes: [...CACHED_STATUS_MODES],
+            detail: true,
           }
     )
     return {

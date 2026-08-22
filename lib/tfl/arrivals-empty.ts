@@ -10,6 +10,7 @@ import {
   getStatusKind,
   getWorstCurrentStatus,
   normalizeLineId,
+  STATION_HUBS,
   type LineStatusLike,
   type StatusKind,
 } from "tfl-ts"
@@ -287,6 +288,101 @@ const isDelayOnlyStatus = (status: LineStatusLike): boolean =>
 const isServiceClosedStatus = (status: LineStatusLike | undefined): boolean =>
   Boolean(status && statusDescription(status) === "service closed")
 
+type AffectedStopLike = {
+  id?: string
+  naptanId?: string
+  stationNaptan?: string
+  stationNaptanId?: string
+}
+
+type AffectedRouteLike = {
+  isEntireRouteSection?: boolean
+  routeSectionNaptanEntrySequence?: Array<{ stopPoint?: AffectedStopLike }>
+  stops?: AffectedStopLike[]
+}
+
+type ArrivalsDisruptionLike = {
+  category?: string
+  affectedStops?: AffectedStopLike[]
+  affectedRoutes?: AffectedRouteLike[]
+}
+
+type ArrivalsLineStatus = LineStatusLike & {
+  disruption?: ArrivalsDisruptionLike
+}
+
+const stopIdentityIds = (stop: AffectedStopLike | undefined): string[] => {
+  if (!stop) return []
+  return [
+    ...new Set(
+      [stop.stationNaptan, stop.stationNaptanId, stop.naptanId, stop.id]
+        .map((id) => id?.trim())
+        .filter((id): id is string => Boolean(id))
+    ),
+  ]
+}
+
+const disruptionOf = (status: LineStatusLike): ArrivalsDisruptionLike =>
+  (status as ArrivalsLineStatus).disruption ?? {}
+
+/**
+ * Hub + member Naptans for a board stop. Empty when the board has no stop id
+ * — callers then keep line-wide status (docs fixtures, unscoped demos).
+ */
+export const stationIdentityIdsForStop = (
+  stopPointId: string | undefined
+): string[] => {
+  const id = stopPointId?.trim()
+  if (!id) return []
+  const ids = new Set<string>([id])
+  const hub = STATION_HUBS[id]
+  if (hub?.hubId) ids.add(hub.hubId)
+  for (const member of hub?.members ?? []) ids.add(member.id)
+  return [...ids]
+}
+
+const extractAffectedStopIds = (status: LineStatusLike): string[] => {
+  const disruption = disruptionOf(status)
+  const ids: string[] = []
+  for (const route of disruption.affectedRoutes ?? []) {
+    for (const entry of route.routeSectionNaptanEntrySequence ?? []) {
+      ids.push(...stopIdentityIds(entry.stopPoint))
+    }
+    for (const stop of route.stops ?? []) ids.push(...stopIdentityIds(stop))
+  }
+  for (const stop of disruption.affectedStops ?? []) {
+    ids.push(...stopIdentityIds(stop))
+  }
+  return [...new Set(ids)]
+}
+
+/**
+ * Whether a `getStatus({ detail: true })` row applies at this station.
+ * Entire-route rows and payloads with no geography stay relevant. Structured
+ * affected stops / route naptans win over line-wide leftover copy — never
+ * parse `reason`.
+ */
+export const statusAffectsStation = (
+  status: LineStatusLike,
+  stationIds: readonly string[] | undefined
+): boolean => {
+  if (!stationIds?.length) return true
+  const disruption = disruptionOf(status)
+  if (disruption.affectedRoutes?.some((route) => route.isEntireRouteSection)) {
+    return true
+  }
+  const affectedIds = extractAffectedStopIds(status)
+  if (affectedIds.length === 0) return true
+  const wanted = new Set(stationIds)
+  return affectedIds.some((id) => wanted.has(id))
+}
+
+const statusesAffectingStation = (
+  statuses: readonly LineStatusLike[] | undefined,
+  stationIds: readonly string[] | undefined
+): LineStatusLike[] =>
+  (statuses ?? []).filter((status) => statusAffectsStation(status, stationIds))
+
 /**
  * Current closure / suspension / planned work — not Good Service, info, or
  * delay-only rows. Uses `isCurrentAnnouncement` (clock overlap, not `isNow`).
@@ -360,7 +456,8 @@ export const statusKindForcesArrivalsUnavailable = (
 export const groupWorstCurrentStatus = (
   lineIds: readonly string[],
   lineStatus: readonly ArrivalsStatusSignal[] | undefined,
-  nowMs?: number
+  nowMs?: number,
+  stationIds?: readonly string[]
 ): LineStatusLike | undefined => {
   const ids = servingLineIds(lineIds)
   if (!ids.length || !lineStatus?.length) return undefined
@@ -368,9 +465,7 @@ export const groupWorstCurrentStatus = (
   const statuses: LineStatusLike[] = []
   for (const id of ids) {
     const line = byId[normalizeLineId(id)]
-    if (line?.lineStatuses?.length) {
-      statuses.push(...line.lineStatuses)
-    }
+    statuses.push(...statusesAffectingStation(line?.lineStatuses, stationIds))
   }
   if (!statuses.length) return undefined
   return getWorstCurrentStatus(
@@ -386,6 +481,8 @@ type ResolveArrivalsStatusChipOptions = {
   lineStatus?: readonly ArrivalsStatusSignal[]
   nowMs?: number
   hasError?: boolean
+  /** Board stop. Filters line status to geography that affects this station. */
+  stopPointId?: string
 }
 
 /**
@@ -399,9 +496,15 @@ export const resolveArrivalsStatusChip = ({
   lineStatus,
   nowMs,
   hasError = false,
+  stopPointId,
 }: ResolveArrivalsStatusChipOptions): string | null => {
   if (hasError || emptyKind === "offline") return null
-  const worst = groupWorstCurrentStatus(lineIds, lineStatus, nowMs)
+  const worst = groupWorstCurrentStatus(
+    lineIds,
+    lineStatus,
+    nowMs,
+    stationIdentityIdsForStop(stopPointId)
+  )
   const label = officialStatusDescription(worst)
   if (!label) return null
   const key = label.toLowerCase()
@@ -416,18 +519,21 @@ export const resolveArrivalsStatusChip = ({
 
 /**
  * Leftover rail tile when a group still has trains. Empty boards stay on the
- * empty-row path. Delay-only labels never add a page.
+ * empty-row path. Delay-only labels never add a page. Pass `stopPointId` so a
+ * part closure that does not include this station is not painted here.
  */
 export const resolveArrivalsLeftoverStatus = ({
   lineIds,
   lineStatus,
   nowMs,
   hasError = false,
+  stopPointId,
 }: {
   lineIds: readonly string[]
   lineStatus?: readonly ArrivalsStatusSignal[]
   nowMs?: number
   hasError?: boolean
+  stopPointId?: string
 }): ArrivalsLeftoverStatus | null => {
   const label = resolveArrivalsStatusChip({
     lineIds,
@@ -435,6 +541,7 @@ export const resolveArrivalsLeftoverStatus = ({
     lineStatus,
     nowMs,
     hasError,
+    stopPointId,
   })
   if (!label) return null
   return {
@@ -456,14 +563,18 @@ const plannedWorkResumeMs = (
 const resolveGroupDisruption = (
   lineIds: readonly string[],
   lineStatus: readonly ArrivalsStatusSignal[] | undefined,
-  nowMs: number
+  nowMs: number,
+  stationIds?: readonly string[]
 ): ArrivalsEmptyState | null => {
   if (!lineIds.length || !lineStatus?.length) return null
   const byId = indexStatusSignals(lineStatus)
   const resumes: number[] = []
   for (const id of lineIds) {
     const line = byId[normalizeLineId(id)]
-    const worst = getWorstCurrentStatus(line?.lineStatuses, { now: nowMs })
+    const worst = getWorstCurrentStatus(
+      statusesAffectingStation(line?.lineStatuses, stationIds),
+      { now: nowMs }
+    )
     statusKindForcesArrivalsUnavailable(
       worst ? getStatusKind(worst) : undefined
     )
@@ -487,10 +598,11 @@ const resolveGroupDisruption = (
 const classifySuccessfulRailEmpty = (
   lineIds: readonly string[] | undefined,
   nowMs: number,
-  lineStatus: readonly ArrivalsStatusSignal[] | undefined
+  lineStatus: readonly ArrivalsStatusSignal[] | undefined,
+  stationIds?: readonly string[]
 ): ArrivalsEmptyState => {
   const ids = servingLineIds(lineIds)
-  const disrupted = resolveGroupDisruption(ids, lineStatus, nowMs)
+  const disrupted = resolveGroupDisruption(ids, lineStatus, nowMs, stationIds)
   const overnight =
     ids.length === 0
       ? isLikelyRailServiceEnded(nowMs)
@@ -500,7 +612,9 @@ const classifySuccessfulRailEmpty = (
     if (
       overnight &&
       disrupted.resumeMs === undefined &&
-      isServiceClosedStatus(groupWorstCurrentStatus(ids, lineStatus, nowMs))
+      isServiceClosedStatus(
+        groupWorstCurrentStatus(ids, lineStatus, nowMs, stationIds)
+      )
     ) {
       return { kind: "ended" }
     }
@@ -528,6 +642,8 @@ type ResolveArrivalsEmptyKindOptions = {
   lineIds?: readonly string[]
   /** Optional current line status. Never makes a successful `[]` unavailable. */
   lineStatus?: readonly ArrivalsStatusSignal[]
+  /** Board stop. Filters disruption empty-copy to this station's geography. */
+  stopPointId?: string
 }
 
 /**
@@ -542,11 +658,17 @@ export const resolveArrivalsEmptyKind = ({
   nowMs,
   lineIds,
   lineStatus,
+  stopPointId,
 }: ResolveArrivalsEmptyKindOptions): ArrivalsEmptyState | null => {
   if (hasError || rowCount > 0) return null
   if (offline) return { kind: "offline" }
   if (domain !== "rail") return { kind: "empty" }
-  return classifySuccessfulRailEmpty(lineIds, nowMs, lineStatus)
+  return classifySuccessfulRailEmpty(
+    lineIds,
+    nowMs,
+    lineStatus,
+    stationIdentityIdsForStop(stopPointId)
+  )
 }
 
 type ResolveLineArrivalsEmptyKindOptions = {
@@ -557,6 +679,8 @@ type ResolveLineArrivalsEmptyKindOptions = {
   nowMs?: number
   /** Optional current line status. Closed / planned work may become `disrupted`. */
   lineStatus?: readonly ArrivalsStatusSignal[]
+  /** Board stop. Filters disruption empty-copy to this station's geography. */
+  stopPointId?: string
 }
 
 /**
@@ -570,8 +694,14 @@ export const resolveLineArrivalsEmptyKind = ({
   rowCount,
   nowMs,
   lineStatus,
+  stopPointId,
 }: ResolveLineArrivalsEmptyKindOptions): ArrivalsEmptyState | null => {
   if (rowCount > 0) return null
   if (nowMs === undefined) return { kind: "empty" }
-  return classifySuccessfulRailEmpty(lineIds, nowMs, lineStatus)
+  return classifySuccessfulRailEmpty(
+    lineIds,
+    nowMs,
+    lineStatus,
+    stationIdentityIdsForStop(stopPointId)
+  )
 }

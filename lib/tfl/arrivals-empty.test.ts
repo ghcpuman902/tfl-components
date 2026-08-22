@@ -18,6 +18,8 @@ import {
   resolveArrivalsLeftoverStatus,
   resolveArrivalsStatusChip,
   resolveLineArrivalsEmptyKind,
+  stationIdentityIdsForStop,
+  statusAffectsStation,
   statusKindForcesArrivalsUnavailable,
   type ArrivalsEmptyState,
   type ArrivalsStatusSignal,
@@ -51,6 +53,10 @@ const MON_MORNING = "2026-08-24"
 
 const SAT_0125 = londonMs(SAT_MORNING, 1, 25)
 const SAT_0836 = londonMs(SAT_MORNING, 8, 36)
+
+const KINGS_CROSS = "940GZZLUKSX"
+const HYDE_PARK_CORNER = "940GZZLUHPC"
+const ACTON_TOWN = "940GZZLUACT"
 
 const kindOf = (state: ArrivalsEmptyState | null): string | null =>
   state?.kind ?? null
@@ -174,6 +180,60 @@ const severeDelays = (id: string): ArrivalsStatusSignal => ({
       statusSeverityDescription: "Severe Delays",
       reason: "Central Line: Severe delays due to an earlier signal failure.",
       disruption: { category: "RealTime" },
+      validityPeriods: [{ isNow: true }],
+    },
+  ],
+})
+
+/** Live Saturday Piccadilly part closure: Hyde Park Corner–Acton Town only. */
+const piccadillyPartClosure = (): ArrivalsStatusSignal => ({
+  id: "piccadilly",
+  lineStatuses: [
+    {
+      statusSeverity: 5,
+      statusSeverityDescription: "Part Closure",
+      reason:
+        "PICCADILLY LINE: Saturday 22 August, between 0445 and 1400, no service between Hyde Park Corner and Acton Town. Replacement bus services operate.",
+      disruption: {
+        category: "PlannedWork",
+        closureText: "partClosure",
+        affectedStops: [
+          { naptanId: HYDE_PARK_CORNER },
+          { naptanId: ACTON_TOWN },
+        ],
+        affectedRoutes: [
+          {
+            isEntireRouteSection: false,
+            routeSectionNaptanEntrySequence: [
+              { stopPoint: { naptanId: HYDE_PARK_CORNER } },
+              { stopPoint: { naptanId: ACTON_TOWN } },
+            ],
+          },
+        ],
+      },
+      validityPeriods: [
+        {
+          fromDate: "2026-08-22T03:45:00Z",
+          toDate: "2026-08-22T13:00:00Z",
+          isNow: false,
+        },
+      ],
+    },
+  ],
+})
+
+const victoriaLineWideDelays = (): ArrivalsStatusSignal => ({
+  id: "victoria",
+  lineStatuses: [
+    {
+      statusSeverity: 9,
+      statusSeverityDescription: "Minor Delays",
+      reason: "Victoria Line: Minor delays due to train cancellations.",
+      disruption: {
+        category: "RealTime",
+        closureText: "minorDelays",
+        affectedRoutes: [{ isEntireRouteSection: true }],
+      },
       validityPeriods: [{ isNow: true }],
     },
   ],
@@ -990,5 +1050,124 @@ describe("arrivals status QuietChip", () => {
       }),
       "Service Closed"
     )
+  })
+})
+
+describe("station-relevant arrivals status", () => {
+  it("does not leftover a part closure that does not include this station", () => {
+    const leftover = resolveArrivalsLeftoverStatus({
+      lineIds: ["piccadilly"],
+      lineStatus: [piccadillyPartClosure()],
+      nowMs: SAT_0836,
+      stopPointId: KINGS_CROSS,
+    })
+    assert.equal(leftover, null)
+  })
+
+  it("leftovers a part closure that includes this station", () => {
+    const leftover = resolveArrivalsLeftoverStatus({
+      lineIds: ["piccadilly"],
+      lineStatus: [piccadillyPartClosure()],
+      nowMs: SAT_0836,
+      stopPointId: HYDE_PARK_CORNER,
+    })
+    assert.equal(leftover?.label, "Part Closure")
+    assert.equal(leftover?.sentence, ARRIVALS_LEFTOVER_SENTENCE)
+  })
+
+  it("keeps leftover when the board has no stop id", () => {
+    const leftover = resolveArrivalsLeftoverStatus({
+      lineIds: ["piccadilly"],
+      lineStatus: [piccadillyPartClosure()],
+      nowMs: SAT_0836,
+    })
+    assert.equal(leftover?.label, "Part Closure")
+  })
+
+  it("keeps leftover for line-wide delays marked entire-route", () => {
+    const leftover = resolveArrivalsLeftoverStatus({
+      lineIds: ["victoria"],
+      lineStatus: [victoriaLineWideDelays()],
+      nowMs: SAT_0836,
+      stopPointId: KINGS_CROSS,
+    })
+    assert.equal(leftover?.label, "Minor Delays")
+  })
+
+  it("does not call an unaffected station disrupted while trains are absent", () => {
+    const state = resolveLineArrivalsEmptyKind({
+      lineIds: ["piccadilly"],
+      rowCount: 0,
+      nowMs: SAT_0836,
+      lineStatus: [piccadillyPartClosure()],
+      stopPointId: KINGS_CROSS,
+    })
+    assert.equal(kindOf(state), "empty")
+    assert.equal(arrivalsLineEmptyCopy(state), ARRIVALS_EMPTY_COPY.empty)
+  })
+
+  it("notes No service until the clock at a station inside the part closure", () => {
+    const state = resolveLineArrivalsEmptyKind({
+      lineIds: ["piccadilly"],
+      rowCount: 0,
+      nowMs: SAT_0836,
+      lineStatus: [piccadillyPartClosure()],
+      stopPointId: HYDE_PARK_CORNER,
+    })
+    assert.equal(kindOf(state), "disrupted")
+    assert.equal(arrivalsLineEmptyCopy(state), "No service until 14:00.")
+    assert.equal(
+      resolveArrivalsStatusChip({
+        lineIds: ["piccadilly"],
+        hasTrains: false,
+        emptyKind: state?.kind,
+        lineStatus: [piccadillyPartClosure()],
+        nowMs: SAT_0836,
+        stopPointId: HYDE_PARK_CORNER,
+      }),
+      "Part Closure"
+    )
+  })
+
+  it("keeps a geography-less closure relevant when a stop id is present", () => {
+    const state = resolveLineArrivalsEmptyKind({
+      lineIds: ["circle"],
+      rowCount: 0,
+      nowMs: SAT_0836,
+      lineStatus: [circlePlannedClosure()],
+      stopPointId: KINGS_CROSS,
+    })
+    assert.equal(kindOf(state), "disrupted")
+    assert.equal(arrivalsLineEmptyCopy(state), "No service until 10:30.")
+  })
+
+  it("treats isEntireRouteSection as affecting every station on the line", () => {
+    const status = circlePlannedClosure().lineStatuses![0]!
+    const withEntire = {
+      ...status,
+      disruption: {
+        ...status.disruption,
+        affectedRoutes: [{ isEntireRouteSection: true }],
+      },
+    }
+    assert.equal(statusAffectsStation(withEntire, [KINGS_CROSS]), true)
+    assert.equal(
+      statusAffectsStation(piccadillyPartClosure().lineStatuses![0]!, [
+        KINGS_CROSS,
+      ]),
+      false
+    )
+    assert.equal(
+      statusAffectsStation(piccadillyPartClosure().lineStatuses![0]!, [
+        HYDE_PARK_CORNER,
+      ]),
+      true
+    )
+  })
+
+  it("expands King's Cross hub members from the tube naptan", () => {
+    const ids = stationIdentityIdsForStop(KINGS_CROSS)
+    assert.ok(ids.includes(KINGS_CROSS))
+    assert.ok(ids.length >= 1)
   })
 })

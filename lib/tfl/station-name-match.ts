@@ -17,19 +17,6 @@ const NON_ALNUM = /[^a-z0-9]+/g
 const POSSESSIVE_S = /[\u2018\u2019\u02BC']s\b/gi
 const SOFT_PUNCT = /[.\-()]/g
 
-/**
- * Visual diagram pairs, plus Saint (search / find only — never painted).
- * `St` in a catalogue name is always Saint; Street is never abbreviated.
- */
-const SEARCH_LONG_FORMS: readonly (readonly [string, string])[] = [
-  ["st", "saint"],
-  ...STATION_ABBREVIATION_ENTRIES.filter(
-    (entry) => entry.findCompletion && !entry.full.includes(" ")
-  ).map(
-    (entry) => [entry.short.toLowerCase(), entry.full.toLowerCase()] as const
-  ),
-]
-
 const replaceWholeToken = (folded: string, from: string, to: string): string =>
   folded.replace(new RegExp(`\\b${from}\\b`, "g"), to)
 
@@ -44,6 +31,21 @@ export const foldStationSearchText = (value: string): string =>
     .replace(NON_ALNUM, " ")
     .trim()
     .replace(/\s+/g, " ")
+
+/**
+ * Visual diagram pairs, plus Saint (search / find only — never painted).
+ * `St` in a catalogue name is always Saint; Street is never abbreviated.
+ * Shorts are folded so `w'y` / `King's X` match the apostrophe-stripped query.
+ */
+const SEARCH_LONG_FORMS: readonly (readonly [string, string])[] = [
+  ["st", "saint"],
+  ...STATION_ABBREVIATION_ENTRIES.flatMap((entry) => {
+    const from = foldStationSearchText(entry.short)
+    const to = foldStationSearchText(entry.full)
+    if (!from || !to || from === to || from.length >= to.length) return []
+    return [[from, to] as const]
+  }),
+]
 
 const expandLongerForms = (
   folded: string,

@@ -6,13 +6,13 @@ This starter uses **Tailwind CSS 4** and **shadcn/ui** (base-nova preset).
 
 Prefer semantic utilities over raw colors:
 
-| Use | Avoid |
-|-----|-------|
-| `bg-background` | `bg-[#fff]` |
-| `text-foreground` | `text-zinc-900` (unless intentional) |
-| `text-muted-foreground` | low-contrast arbitrary grays |
-| `border-border` | `border-gray-200` |
-| `bg-primary` / `text-primary-foreground` | brand hex without token |
+| Use                                      | Avoid                                |
+| ---------------------------------------- | ------------------------------------ |
+| `bg-background`                          | `bg-[#fff]`                          |
+| `text-foreground`                        | `text-zinc-900` (unless intentional) |
+| `text-muted-foreground`                  | low-contrast arbitrary grays         |
+| `border-border`                          | `border-gray-200`                    |
+| `bg-primary` / `text-primary-foreground` | brand hex without token              |
 
 Theme variables are defined in `app/globals.css`. Dark mode is class-based via `next-themes`.
 
@@ -39,13 +39,13 @@ Installable components read those inherited variables with the same safe fallbac
 
 Use `StationName` / `formatStationLabel` — never ad-hoc `<br>` or CSS wrapping for diagram names.
 
-| API | Role |
-|-----|------|
-| `StationName` | Client label with find/copy/aria; pass `lines` or `layout="auto"`. Any strip that renders it must be `"use client"` (Cache Components). |
-| `formatStationLabel` | Pure scorer: prefer 1 line → balanced 2-line word split → optional abbr → scale ≥ 0.75 |
-| `STATION_ABBREVIATIONS` | Conservative map (`Street`→`St`, `Road`→`Rd`, …) from `station-abbreviations` — only when allowed |
-| `/tools/typography` | A–Z lab to inspect every Tube / Elizabeth / DLR / Overground / Tram name |
-| `/docs/branch-strip-horizontal` / `/docs/branch-strip-vertical` | Separate horizontal and vertical `lane × pos` layouts |
+| API                                                             | Role                                                                                                                                          |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `StationName`                                                   | Client label with find/copy/aria; pass `lines` or `layout="auto"`. Any strip that renders it must be `"use client"` (Cache Components).       |
+| `formatStationLabel`                                            | Pure scorer: prefer 1 line → balanced 2-line word split → optional abbr → scale ≥ 0.75                                                        |
+| `STATION_ABBREVIATIONS`                                         | Conservative map (`Street`→`St`, `King's Cross`→`King's X`, `Station`→`Stn`, `Way`→`w'y`, …) from `station-abbreviations` — only when allowed |
+| `/tools/typography`                                             | A–Z lab to inspect every Tube / Elizabeth / DLR / Overground / Tram name                                                                      |
+| `/docs/branch-strip-horizontal` / `/docs/branch-strip-vertical` | Separate horizontal and vertical `lane × pos` layouts                                                                                         |
 
 Rules: break only between words; prefer the full name; never split a token; optional abbreviations only to fit; scale-down is last resort (`STATION_LABEL_MIN_SCALE = 0.75`).
 
@@ -60,10 +60,10 @@ Agent rule (globs the board + demos): [`.cursor/rules/arrivals-board-layout.mdc`
 
 **Baseline grid**
 
-| Token | Value | Role |
-|-------|--------|------|
-| `--arrivals-unit` | `0.5rem` | Smallest vertical step |
-| `--arrivals-row` | `6 × unit` (`3rem` / 48px) | One tile: stop title, line header, bound label, or arrival row |
+| Token             | Value                      | Role                                                           |
+| ----------------- | -------------------------- | -------------------------------------------------------------- |
+| `--arrivals-unit` | `0.5rem`                   | Smallest vertical step                                         |
+| `--arrivals-row`  | `6 × unit` (`3rem` / 48px) | One tile: stop title, line header, bound label, or arrival row |
 
 Every tile uses a locked box (`box-border`, fixed `min`/`max`/`height` = `--arrivals-row`, `overflow-clip`, `shrink-0`). Content may clip; it must **never** grow the tile. Do not put `overflow-hidden` on destination cells or row tiles — that creates a scroll container and steals swipe from the page track.
 
@@ -75,12 +75,12 @@ Every tile uses a locked box (`box-border`, fixed `min`/`max`/`height` = `--arri
 
 **Borders and bars (must not contribute extra height)**
 
-| Element | How | Why |
-|---------|-----|-----|
-| Row / bound hairlines | Absolute `after:` at the bottom of the tile | Separators stay out of flow |
-| Solid line/route brand bar | `border-b-4` + `box-border` on the line-header tile | Bar is painted **inside** the 48px box |
-| Striped Overground / Elizabeth | Absolute `LineColorBar` pinned to the tile bottom | Dual rails cannot be a single border |
-| Shared-track merged header | Foreground `LineName` + absolute equal-width stripes (one per line) | Not a single `--line-color` title; bar must not grow the tile |
+| Element                        | How                                                                 | Why                                                           |
+| ------------------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Row / bound hairlines          | Absolute `after:` at the bottom of the tile                         | Separators stay out of flow                                   |
+| Solid line/route brand bar     | `border-b-4` + `box-border` on the line-header tile                 | Bar is painted **inside** the 48px box                        |
+| Striped Overground / Elizabeth | Absolute `LineColorBar` pinned to the tile bottom                   | Dual rails cannot be a single border                          |
+| Shared-track merged header     | Foreground `LineName` + absolute equal-width stripes (one per line) | Not a single `--line-color` title; bar must not grow the tile |
 
 ```tsx
 // ✅ Solid brand bar inside the tile
@@ -109,7 +109,7 @@ Every tile uses a locked box (`box-border`, fixed `min`/`max`/`height` = `--arri
 
 Rail: a positive `pageSize` is a fixed subgroup height. Every bound occupies that many arrival tiles, including a short only page and an empty seeded group. Bus: the same lock applies once `pageCount > 1`; an unpaged short list keeps its natural height. `pageSize <= 0` is always natural height.
 
-A short page with arrivals uses the last spare tile for **No more arrivals** (narrow step: **No more**) and quiet dashes in tiles between. On rail, a current delay or suspension leftover may occupy that spare instead (QuietChip + **Expect longer waits.**). Severe Delays / Suspended / Part Suspended may add one following page when the last page is full; Minor Delays and other delay-only labels must not. Zero arrivals are **No arrivals right now.** (overnight **Service has ended for tonight.**, or a current closure **No service.** / **No service until 10:30.**) plus dashes — not an end-of-list state and not a leftover pager tile. **No service until {time}** only when PlannedWork and every empty member shares the same overlapping `toDate`; Information / RealTime / differing clocks stay **No service.** Exact multiples stay full. Do not add a page only for the end message.
+A short page with arrivals uses the last spare tile for **No more arrivals** (narrow step: **No more**) and quiet dashes in tiles between. On rail, a current delay or suspension leftover may occupy that spare instead (QuietChip + **Expect longer waits.**) when the status affects this stop — `getStatus({ detail: true })` `affectedStops` / affected route naptans, or an entire-route / geography-less row. A part closure elsewhere on the line is not a leftover here. Severe Delays / Suspended / Part Suspended may add one following page when the last page is full; Minor Delays and other delay-only labels must not. Zero arrivals are **No arrivals right now.** (overnight **Service has ended for tonight.**, or a current closure **No service.** / **No service until 10:30.**) plus dashes — not an end-of-list state and not a leftover pager tile. **No service until {time}** only when PlannedWork and every empty member shares the same overlapping `toDate`; Information / RealTime / differing clocks stay **No service.** Exact multiples stay full. Do not add a page only for the end message.
 
 Pager on a shared tile (rail bound label, grouped bus route header) hides until hover or focus-within. A dedicated flat-bus control tile stays visible. Hide the pager when `pageCount <= 1`. Arrow clicks set the track’s `scrollLeft` — never `scrollIntoView`, which also moves the document. The track is `overflow-x-auto overflow-y-clip` so live snap updates cannot become a vertical scrollport.
 
@@ -120,7 +120,6 @@ Share the same title height and row unit so the first line headers align. There 
 **Responsive arrangements (CSS-first)**
 
 Boards stay single-column by default. Consumers arrange generated levels with `className` (root) and `classNames` (`groups` / `group` / `subgroups` / `subgroup` / `rows`), each mapping to a stable `data-slot="arrivals-*"` element. The board root is a `@container` named `arrivals`; every line/route section is a `@container` named `arrivals-group`, so bound columns respond to their own line's width — never the whole board's. No JavaScript measuring, no layout enums, no extra wrappers; the tile rhythm above holds in every arrangement. Usage examples: [rail](/docs/tube-rail-arrivals#arrangements) and [bus](/docs/bus-arrivals#arrangements).
-
 
 ## Brand tooling
 
@@ -139,13 +138,13 @@ Reference crops: `public/brand/line-diagram/`.
 
 Strips share **one** responsive scale knob. Published geometry ratios (tick 0.66x, ring 3x, …) stay in `LINE_DIAGRAM` and are **not** theme tokens.
 
-| Token / API | Role |
-|-------------|------|
-| `--tfl-diagram-scale` (`DIAGRAM_SCALE_VAR`) | Unitless multiplier set on a shared ancestor |
-| `DIAGRAM_SCALE_CLASS` | Mobile / tablet / desktop values (`0.7` / `0.85` / `1`) |
+| Token / API                                 | Role                                                                                                        |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `--tfl-diagram-scale` (`DIAGRAM_SCALE_VAR`) | Unitless multiplier set on a shared ancestor                                                                |
+| `DIAGRAM_SCALE_CLASS`                       | Mobile / tablet / desktop values (`0.7` / `0.85` / `1`)                                                     |
 | `DIAGRAM_BASELINE.horizontal` / `.vertical` | Orientation px at scale `1` (`10` / `4` — horizontal = Victoria strip; vertical sized for laptop body text) |
-| `--tfl-diagram-x` | Resolved line thickness inside each strip root |
-| `x` prop | Absolute px override (skips the inherited scale) |
+| `--tfl-diagram-x`                           | Resolved line thickness inside each strip root                                                              |
+| `x` prop                                    | Absolute px override (skips the inherited scale)                                                            |
 
 Vertical / journey UI names use **§11** sizing (cap height ≈ ring Ø = 3×) so labels read taller than interchange rings. Mid-route map ticks protrude **right only**; terminals use a full crossbar. Journey A→B markers are **always circles**, never dashes.
 
@@ -164,7 +163,6 @@ import { LineStrip } from "@/components/tfl/diagram/line-strip";
 **Do not:** apply separate `text-xs sm:text-sm` / width utilities to ticks, rings, and labels. That desyncs TfL proportions.
 
 Pass `x={10}` (or any px) only when you need a fixed size that ignores the page scale.
-
 
 ## Components
 

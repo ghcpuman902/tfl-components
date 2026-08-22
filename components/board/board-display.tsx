@@ -458,6 +458,7 @@ export const BoardDisplay = ({
         nowMs: arrivals.fetchedAt,
         lineIds: servingLines?.map((line) => line.lineId),
         lineStatus: status.data,
+        stopPointId: stopId || undefined,
       }) ?? { kind: "empty" as const }
     )
   }, [
@@ -686,7 +687,7 @@ export const BoardDisplay = ({
     <div
       className={
         embedded
-          ? "board-embed box-border h-dvh w-full overflow-y-auto overscroll-y-contain p-4 [scrollbar-width:none] [touch-action:pan-y] [&::-webkit-scrollbar]:hidden md:p-6"
+          ? "board-embed box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain p-4 md:p-6 [&::-webkit-scrollbar]:hidden"
           : "box-border min-h-dvh w-full p-4 md:p-6"
       }
       style={ARRIVALS_RHYTHM_VARS}

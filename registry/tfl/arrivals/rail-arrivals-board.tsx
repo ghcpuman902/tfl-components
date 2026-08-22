@@ -49,8 +49,10 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
   now?: number
   /**
    * Optional current line status from the app. Classification signal; rail
-   * leftover tiles and empty-row chips may show the official description.
-   * Omit on docs/live boards that do not already have status.
+   * leftover tiles and empty-row chips may show the official description when
+   * that status affects this stop. Pass `stopPointId` and fetch
+   * `getStatus({ detail: true })` so part closures elsewhere on the line are
+   * not painted here. Omit on docs/live boards that do not already have status.
    */
   lineStatus?: readonly ArrivalsStatusSignal[]
   /** Arrival order within each bound. Default `timeToStation`. */

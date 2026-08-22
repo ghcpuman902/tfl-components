@@ -527,6 +527,121 @@ describe("arrivals board layout API", () => {
     }
   })
 
+  it("does not leftover a Piccadilly part closure at King's Cross", () => {
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: [
+          prediction({
+            id: "p-e-1",
+            lineId: "piccadilly",
+            lineName: "Piccadilly",
+            modeName: "tube",
+            platformName: "Eastbound - Platform 6",
+            towards: "Cockfosters",
+            timeToStation: 180,
+          }),
+        ],
+        lines: [
+          { lineId: "piccadilly", lineName: "Piccadilly", modeName: "tube" },
+        ],
+        stopName: "King's Cross St. Pancras",
+        stopPointId: "940GZZLUKSX",
+        now: SAT_0836,
+        pageSize: 3,
+        lineStatus: [
+          {
+            id: "piccadilly",
+            lineStatuses: [
+              {
+                statusSeverity: 5,
+                statusSeverityDescription: "Part Closure",
+                reason:
+                  "PICCADILLY LINE: Saturday 22 August, between 0445 and 1400, no service between Hyde Park Corner and Acton Town.",
+                disruption: {
+                  category: "PlannedWork",
+                  closureText: "partClosure",
+                  affectedStops: [
+                    { naptanId: "940GZZLUHPC" },
+                    { naptanId: "940GZZLUACT" },
+                  ],
+                },
+                validityPeriods: [
+                  {
+                    fromDate: "2026-08-22T03:45:00Z",
+                    toDate: "2026-08-22T13:00:00Z",
+                    isNow: false,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      })
+    )
+    assert.equal(html.includes("data-arrivals-leftover"), false)
+    assert.equal(html.includes("Part Closure"), false)
+    assert.equal(html.includes("Expect longer waits."), false)
+    assert.ok(html.includes("Cockfosters"))
+    assert.ok(html.includes("No more arrivals") || html.includes("No more"))
+  })
+
+  it("leftovers a Piccadilly part closure at Hyde Park Corner", () => {
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: [
+          prediction({
+            id: "p-e-1",
+            lineId: "piccadilly",
+            lineName: "Piccadilly",
+            modeName: "tube",
+            platformName: "Eastbound - Platform 3",
+            towards: "Cockfosters",
+            timeToStation: 180,
+          }),
+        ],
+        lines: [
+          { lineId: "piccadilly", lineName: "Piccadilly", modeName: "tube" },
+        ],
+        stopName: "Hyde Park Corner",
+        stopPointId: "940GZZLUHPC",
+        now: SAT_0836,
+        pageSize: 3,
+        lineStatus: [
+          {
+            id: "piccadilly",
+            lineStatuses: [
+              {
+                statusSeverity: 5,
+                statusSeverityDescription: "Part Closure",
+                reason:
+                  "PICCADILLY LINE: Saturday 22 August, between 0445 and 1400, no service between Hyde Park Corner and Acton Town.",
+                disruption: {
+                  category: "PlannedWork",
+                  closureText: "partClosure",
+                  affectedStops: [
+                    { naptanId: "940GZZLUHPC" },
+                    { naptanId: "940GZZLUACT" },
+                  ],
+                },
+                validityPeriods: [
+                  {
+                    fromDate: "2026-08-22T03:45:00Z",
+                    toDate: "2026-08-22T13:00:00Z",
+                    isNow: false,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      })
+    )
+    assert.ok(html.includes("data-arrivals-leftover"))
+    assert.ok(html.includes("Part Closure"))
+    assert.ok(html.includes("Expect longer waits."))
+    assert.equal(html.includes("Hyde Park Corner and Acton Town"), false)
+  })
+
   it("notes W&C Information Planned Closure as No service without a clock", () => {
     const html = renderToStaticMarkup(
       createElement(RailArrivalsBoard, {
@@ -863,7 +978,7 @@ describe("arrivals board layout API", () => {
     )
     assert.ok(html.includes("RB1 disruption: Pier Closed until 17:00"))
     assert.equal(html.includes("Route rb1 disruption"), false)
-    assert.ok(html.includes("w-auto"))
+    assert.ok(html.includes("flex h-full min-w-0 flex-1 items-center"))
   })
 
   it("marks unattended river rows with rank chips", () => {

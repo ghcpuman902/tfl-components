@@ -91,6 +91,19 @@ describe("stationNameMatchesQuery", () => {
     has("hackney ctrl", "Hackney Central")
   })
 
+  it("matches King's X, Stn, and w'y back to the full words", () => {
+    has("kings x", "King's Cross St. Pancras")
+    has("ampere w'y", "Ampere Way")
+    assert.equal(
+      stationNameMatchesQuery("King's Cross Station / York Way", "stn"),
+      true
+    )
+    assert.equal(
+      stationNameMatchesQuery("King's Cross Station / York Way", "w'y"),
+      true
+    )
+  })
+
   it("matches apostrophe, hyphen, ampersand, and parenthesis names", () => {
     has("earls court", "Earl's Court")
     has("queens park", "Queen's Park")

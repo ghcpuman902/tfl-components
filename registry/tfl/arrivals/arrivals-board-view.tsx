@@ -62,7 +62,9 @@ export type ArrivalsBoardChromeProps = {
    */
   stopName?: string
   /**
-   * @deprecated Dev/meta NaPTAN id — not shown in the board UI. Kept for call-site compat.
+   * NaPTAN / stop-point id. Not shown in the board UI. Rail leftover tiles
+   * and empty-row chips use it to ignore line status that does not affect
+   * this station (`getStatus({ detail: true })` geography).
    */
   stopPointId?: string
   /**
@@ -232,6 +234,7 @@ const GroupBody = ({
   idleReturnMs,
   nowMs,
   lineStatus,
+  stopPointId,
 }: {
   group: ArrivalsPreparedGroup
   mode: ArrivalsBoardMode
@@ -244,6 +247,7 @@ const GroupBody = ({
   idleReturnMs?: number
   nowMs?: number
   lineStatus?: readonly ArrivalsStatusSignal[]
+  stopPointId?: string
 }) => {
   const labeledBounds = group.bounds.filter((bound) => bound.label)
   const emptyState =
@@ -253,6 +257,7 @@ const GroupBody = ({
           rowCount: group.hasInformation ? 1 : 0,
           nowMs,
           lineStatus,
+          stopPointId,
         })
       : null
   const lineEmptyCopy =
@@ -267,6 +272,7 @@ const GroupBody = ({
           emptyKind: emptyState?.kind ?? "empty",
           lineStatus,
           nowMs,
+          stopPointId,
         })
       : null
   const leftoverStatus =
@@ -275,6 +281,7 @@ const GroupBody = ({
           lineIds: group.lineIds,
           lineStatus,
           nowMs,
+          stopPointId,
         })
       : null
   // `grid-cols-1` (not block) so consumer `grid-cols-*` variants merge cleanly.
@@ -409,7 +416,8 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
   /**
    * Optional current line status from the app (Board already fetched it).
    * Classification signal; rail leftover tiles and empty-row chips may show
-   * the official description. Never pasted as reason text.
+   * the official description when that status affects this stop
+   * (`getStatus({ detail: true })` geography). Never pasted as reason text.
    */
   lineStatus?: readonly ArrivalsStatusSignal[]
   /**
@@ -435,6 +443,7 @@ export const ArrivalsBoardView = ({
   mode,
   prepared,
   stopName,
+  stopPointId,
   resolvedStopLetter,
   disruptions = [],
   headingLevel = 1,
@@ -617,6 +626,7 @@ export const ArrivalsBoardView = ({
                   startDelayMs={startDelayMs}
                   nowMs={now}
                   lineStatus={lineStatus}
+                  stopPointId={stopPointId}
                 />
               </section>
             ))}
