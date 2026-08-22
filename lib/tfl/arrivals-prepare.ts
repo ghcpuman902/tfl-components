@@ -35,7 +35,7 @@ export type RailArrivalsLine = {
   modeName?: string
   /**
    * Station metadata: compass bounds this line serves at the stop.
-   * When set, those bound groups still render (with "No information") even if
+   * When set, those bound groups still render (empty arrivals copy) even if
    * no arrival currently carries that platform prefix. Arrival-only boards omit
    * missing bounds — that is intentional.
    */

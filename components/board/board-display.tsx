@@ -448,12 +448,20 @@ export const BoardDisplay = ({
     return (
       resolveArrivalsEmptyKind({
         rowCount: railData.length,
+        hasError: Boolean(arrivals.fetchError),
         domain: "rail",
         nowMs: arrivals.fetchedAt,
         lineIds: servingLines?.map((line) => line.lineId),
+        lineStatus: status.data,
       }) ?? "empty"
     )
-  }, [arrivals.fetchError, arrivals.fetchedAt, railData.length, servingLines])
+  }, [
+    arrivals.fetchError,
+    arrivals.fetchedAt,
+    railData.length,
+    servingLines,
+    status.data,
+  ])
 
   const busData = useMemo(() => {
     const routes = config.bus.routes
@@ -488,6 +496,7 @@ export const BoardDisplay = ({
           headingLevel={2}
           data={railData}
           now={arrivals.fetchedAt ?? undefined}
+          lineStatus={status.data}
           lines={arrivalsProps.lines}
           lineGroups={lineGroups}
           lineOrder={arrivalsProps.lineOrder}

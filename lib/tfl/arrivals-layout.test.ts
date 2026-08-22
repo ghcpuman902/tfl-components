@@ -121,9 +121,9 @@ describe("arrivals board layout API", () => {
     assert.equal(slotCount(html, "arrivals-rows"), 2)
     // Default pageSize 3: two 1-train bounds fill to 3 tiles each
     // (arrival + dash + end message); Bakerloo empty fills to 3
-    // (No information + two dashes).
+    // (No arrivals right now. + two dashes).
     assert.equal(slotCount(html, "arrivals-row"), 9)
-    assert.ok(html.includes("No information"))
+    assert.ok(html.includes("No arrivals right now."))
     assert.ok(html.includes("No more arrivals"))
   })
 
@@ -139,10 +139,10 @@ describe("arrivals board layout API", () => {
     )
     assert.ok(html.includes("Service has ended for tonight."))
     assert.ok(html.includes("Ealing Broadway"))
-    assert.equal(html.includes("No information"), false)
+    assert.equal(html.includes("No arrivals right now."), false)
   })
 
-  it("does not paint No information under a fetch error", () => {
+  it("does not paint empty-line copy under a fetch error", () => {
     const html = renderToStaticMarkup(
       createElement(RailArrivalsBoard, {
         data: [],
@@ -152,7 +152,8 @@ describe("arrivals board layout API", () => {
       })
     )
     assert.ok(html.includes("Couldn") && html.includes("load arrivals."))
-    assert.equal(html.includes("No information"), false)
+    assert.equal(html.includes("No arrivals right now."), false)
+    assert.equal(html.includes("Service has ended for tonight."), false)
     assert.equal(slotCount(html, "arrivals-group"), 0)
     assert.equal(slotCount(html, "arrivals-board"), 1)
   })
@@ -183,6 +184,66 @@ describe("arrivals board layout API", () => {
     assert.ok(html.includes("Edgware Road"))
     assert.ok(html.includes("Service has ended for tonight."))
     assert.equal(html.includes("No arrivals right now."), false)
+  })
+
+  it("does not render Service Closed reason text on a successful empty line", () => {
+    const now = londonDayStartMs("2026-08-22") + 1 * 3_600_000 + 25 * 60_000
+    const reason =
+      "District Line: Service will resume at 06:00. Planned engineering works."
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: [
+          prediction({
+            id: "cir-e",
+            lineId: "circle",
+            lineName: "Circle",
+            modeName: "tube",
+            platformName: "Eastbound - Platform 1",
+            towards: "Edgware Road (Circle)",
+            timeToStation: 180,
+          }),
+        ],
+        lines: [
+          { lineId: "circle", lineName: "Circle", modeName: "tube" },
+          { lineId: "district", lineName: "District", modeName: "tube" },
+        ],
+        lineGroups: [
+          { lines: ["circle", "district"], label: "Circle / District" },
+        ],
+        stopName: "Tower Hill",
+        now,
+        lineStatus: [
+          {
+            id: "circle",
+            lineStatuses: [
+              {
+                statusSeverity: 10,
+                statusSeverityDescription: "Good Service",
+                validityPeriods: [{ isNow: true }],
+              },
+            ],
+          },
+          {
+            id: "district",
+            lineStatuses: [
+              {
+                statusSeverity: 20,
+                statusSeverityDescription: "Service Closed",
+                reason,
+                disruption: { category: "RealTime" },
+                validityPeriods: [{ isNow: true }],
+              },
+            ],
+          },
+        ],
+      })
+    )
+    assert.ok(html.includes("Edgware Road"))
+    assert.equal(html.includes("Service Closed"), false)
+    assert.equal(html.includes("resume at 06:00"), false)
+    assert.equal(html.includes("Good Service"), false)
+    assert.equal(html.includes("Planned engineering"), false)
+    assert.equal(html.includes("Service has ended for tonight."), false)
   })
 
   it("uses a fixed 5ch box for mixed-line identity chips", () => {

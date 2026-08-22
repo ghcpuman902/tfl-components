@@ -15,6 +15,7 @@ import {
   arrivalsLineEmptyCopy,
   resolveLineArrivalsEmptyKind,
   type ArrivalsEmptyKind,
+  type ArrivalsStatusSignal,
 } from "@/lib/tfl/arrivals-empty"
 import type {
   ArrivalsPreparedBoard,
@@ -227,6 +228,7 @@ const GroupBody = ({
   startDelayMs,
   idleReturnMs,
   nowMs,
+  lineStatus,
 }: {
   group: ArrivalsPreparedGroup
   mode: ArrivalsBoardMode
@@ -238,15 +240,17 @@ const GroupBody = ({
   startDelayMs?: number
   idleReturnMs?: number
   nowMs?: number
+  lineStatus?: readonly ArrivalsStatusSignal[]
 }) => {
   const labeledBounds = group.bounds.filter((bound) => bound.label)
   const lineEmptyCopy =
-    mode === "rail" && !group.hasInformation
+    mode === "rail"
       ? arrivalsLineEmptyCopy(
           resolveLineArrivalsEmptyKind({
             lineIds: group.lineIds,
-            rowCount: 0,
+            rowCount: group.hasInformation ? 1 : 0,
             nowMs,
+            lineStatus,
           })
         )
       : ARRIVALS_LINE_EMPTY_COPY
@@ -372,10 +376,15 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
   /** Interactive: return to page 1 after this many idle milliseconds. */
   idleReturnMs?: number
   /**
-   * Fetch timestamp for overnight empty copy. Omit to keep “No information”
-   * on seeded empty lines (do not invent `ended` without a clock).
+   * Fetch timestamp for overnight empty copy. Omit to refuse `ended`.
+   * Successful empty paints “No arrivals right now.” (or ended).
    */
   now?: number
+  /**
+   * Optional current line status from the app (Board already fetched it).
+   * Classification signal only — never rendered.
+   */
+  lineStatus?: readonly ArrivalsStatusSignal[]
   /**
    * Root classes, merged over the board container (`data-slot="arrivals-board"`).
    * The root *is* the `arrivals` container, so container-query variants here
@@ -415,6 +424,7 @@ export const ArrivalsBoardView = ({
   startDelayMs,
   idleReturnMs,
   now,
+  lineStatus,
   className,
   classNames,
 }: ArrivalsBoardViewProps) => {
@@ -579,6 +589,7 @@ export const ArrivalsBoardView = ({
                   dwellMs={dwellMs}
                   startDelayMs={startDelayMs}
                   nowMs={now}
+                  lineStatus={lineStatus}
                 />
               </section>
             ))}

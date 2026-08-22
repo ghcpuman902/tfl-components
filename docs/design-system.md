@@ -109,7 +109,7 @@ Every tile uses a locked box (`box-border`, fixed `min`/`max`/`height` = `--arri
 
 Rail: a positive `pageSize` is a fixed subgroup height. Every bound occupies that many arrival tiles, including a short only page and an empty seeded group. Bus: the same lock applies once `pageCount > 1`; an unpaged short list keeps its natural height. `pageSize <= 0` is always natural height.
 
-A short page with arrivals uses the last spare tile for **No more arrivals** (narrow step: **No more**) and quiet dashes in tiles between. Zero arrivals are **No information** plus dashes — not an end-of-list state. Exact multiples stay full. Do not add a page only for the message.
+A short page with arrivals uses the last spare tile for **No more arrivals** (narrow step: **No more**) and quiet dashes in tiles between. Zero arrivals are **No arrivals right now.** (or overnight **Service has ended for tonight.**) plus dashes — not an end-of-list state. Exact multiples stay full. Do not add a page only for the message.
 
 Pager on a shared tile (rail bound label, grouped bus route header) hides until hover or focus-within. A dedicated flat-bus control tile stays visible. Hide the pager when `pageCount <= 1`. Arrow clicks set the track’s `scrollLeft` — never `scrollIntoView`, which also moves the document. The track is `overflow-x-auto overflow-y-clip` so live snap updates cannot become a vertical scrollport.
 

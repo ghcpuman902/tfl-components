@@ -1,13 +1,30 @@
 /**
  * Why an arrivals board has no rows. Callers resolve this from fetch result +
- * clock; the board only paints the copy.
+ * clock + optional line-status *signal*; the board only paints arrivals copy.
  *
- * This module answers “are there trains coming?”, not line status. Do not pass
- * severity, Service Closed, or disruption text through here.
+ * This module answers “are there trains coming?”, not line status. Status
+ * kinds/validity may classify an empty list. Never pass reason text, Service
+ * Closed labels, or engineering copy through to the UI.
  */
-import { normalizeLineId } from "tfl-ts"
-import { Lines } from "tfl-ts/dist/generated/meta/Line.js"
+import {
+  getStatusKind,
+  getWorstCurrentStatus,
+  normalizeLineId,
+  type StatusKind,
+} from "tfl-ts"
 import { LONDON_TIME_ZONE, londonWeekdayLong } from "@/lib/tfl/london-dates"
+import type { StatusLine } from "@/lib/tfl/status-types"
+
+/** Night Tube lines. Night Overground is not in this set. */
+export const NIGHT_TUBE_LINE_IDS = [
+  "central",
+  "jubilee",
+  "northern",
+  "piccadilly",
+  "victoria",
+] as const
+
+const NIGHT_TUBE_LINE_ID_SET = new Set<string>(NIGHT_TUBE_LINE_IDS)
 
 export type ArrivalsEmptyKind = "empty" | "ended" | "offline"
 
@@ -23,7 +40,7 @@ export const ARRIVALS_EMPTY_COPY: Record<ArrivalsEmptyKind, string> = {
  */
 export const RIVER_ARRIVALS_EMPTY_COPY = "No live departure times available."
 
-/** Per-line / per-route when predictions are missing but the line is still shown. */
+/** Per-route fallback when a bus/river group is empty. Rail uses {@link arrivalsLineEmptyCopy}. */
 export const ARRIVALS_LINE_EMPTY_COPY = "No information"
 
 /** Last spare tile on a short page that still has arrivals. */
@@ -38,17 +55,6 @@ export const ARRIVALS_END_COPY_SHORT = "No more"
  * reserved for true “no bound metadata” (bus lists, empty unseeded lines).
  */
 export const ARRIVALS_PLATFORM_UNKNOWN_HEADING = "Platform to be confirmed"
-
-/**
- * Lines whose static TfL catalogue lists a Night service type. That is a
- * capability flag, not “running tonight” — pair with
- * {@link isLondonNightServiceMorning}.
- */
-const NIGHT_SERVICE_LINE_IDS = new Set(
-  Lines.filter((line) =>
-    line.serviceTypes.some((service) => service.name === "Night")
-  ).map((line) => normalizeLineId(line.id))
-)
 
 const londonHourFormatter = new Intl.DateTimeFormat("en-GB", {
   timeZone: LONDON_TIME_ZONE,
@@ -73,43 +79,103 @@ export const isLikelyRailServiceEnded = (nowMs: number): boolean => {
   return hour >= 1 && hour < 5
 }
 
-/** Catalogue Night service type (Night Tube / Night Overground capability). */
-export const lineHasNightServiceType = (lineId: string): boolean =>
-  NIGHT_SERVICE_LINE_IDS.has(normalizeLineId(lineId))
+export const isNightTubeLine = (lineId: string): boolean =>
+  NIGHT_TUBE_LINE_ID_SET.has(normalizeLineId(lineId))
 
 /**
- * Friday-into-Saturday and Saturday-into-Sunday mornings, when Night Tube /
- * Night Overground actually run. Bank-holiday extras are not in the catalogue.
+ * Friday-into-Saturday and Saturday-into-Sunday mornings, when Night Tube
+ * runs. Bank-holiday extras are not modelled.
  */
-export const isLondonNightServiceMorning = (nowMs: number): boolean => {
+export const isLondonNightTubeMorning = (nowMs: number): boolean => {
   if (!isLikelyRailServiceEnded(nowMs)) return false
   const weekday = londonWeekdayLong(nowMs)
   return weekday === "Saturday" || weekday === "Sunday"
 }
 
 /**
- * True when this line is unlikely to still be producing arrivals in the
- * overnight window. Night-capable lines stay false on Fri/Sat nights.
+ * Overnight `ended` only for non-Night-Tube rail. Night Tube lines skip
+ * Fri→Sat and Sat→Sun mornings. Ordinary Mon–Thu 01:00–05:00 is fine.
  */
 export const lineLikelyFinishedOvernight = (
   lineId: string,
   nowMs: number
 ): boolean => {
   if (!isLikelyRailServiceEnded(nowMs)) return false
-  if (lineHasNightServiceType(lineId) && isLondonNightServiceMorning(nowMs)) {
-    return false
-  }
+  if (isNightTubeLine(lineId) && isLondonNightTubeMorning(nowMs)) return false
   return true
 }
 
+/** Successful empty: none → “No arrivals right now.” Optional overnight ended. */
 export const arrivalsLineEmptyCopy = (
   kind: ArrivalsEmptyKind | null
 ): string =>
-  kind === "ended" ? ARRIVALS_EMPTY_COPY.ended : ARRIVALS_LINE_EMPTY_COPY
+  kind === "ended" ? ARRIVALS_EMPTY_COPY.ended : ARRIVALS_EMPTY_COPY.empty
+
+/** Line status as a classification signal — id + current statuses only. */
+export type ArrivalsStatusSignal = Pick<StatusLine, "id" | "lineStatuses">
+
+/**
+ * Current tfl-ts status kind per line, using validity windows at `nowMs`.
+ * Reasons / descriptions are ignored.
+ */
+export const indexArrivalsStatusKinds = (
+  lines: readonly ArrivalsStatusSignal[] | undefined,
+  nowMs?: number
+): Readonly<Record<string, StatusKind>> => {
+  const out: Record<string, StatusKind> = {}
+  if (!lines?.length) return out
+  const statusNow = nowMs !== undefined ? { now: nowMs } : undefined
+  for (const line of lines) {
+    const id = normalizeLineId(line.id ?? "")
+    if (!id) continue
+    const worst = getWorstCurrentStatus(line.lineStatuses, statusNow)
+    out[id] = worst ? getStatusKind(worst) : "good"
+  }
+  return out
+}
+
+const groupFinishedOvernight = (
+  lineIds: readonly string[],
+  nowMs: number
+): boolean => {
+  const ids = lineIds.map((id) => id.trim()).filter(Boolean)
+  if (ids.length === 0) return true
+  return ids.every((id) => lineLikelyFinishedOvernight(id, nowMs))
+}
+
+const servingLineIds = (lineIds: readonly string[] | undefined): string[] =>
+  (lineIds ?? []).map((id) => id.trim()).filter(Boolean)
+
+/**
+ * Status kinds never upgrade a successful arrivals `[]` to unavailable.
+ * Closed / suspended / planned work stay on the empty/ended path.
+ */
+export const statusKindForcesArrivalsUnavailable = (
+  _kind: StatusKind | undefined
+): false => false
+
+/**
+ * Successful `[]` stays `empty`/`ended` for every status kind. Closed,
+ * suspended, planned work, and Good Service never become unavailable here
+ * and never contribute copy.
+ */
+const classifySuccessfulRailEmpty = (
+  lineIds: readonly string[] | undefined,
+  nowMs: number,
+  statusKinds: Readonly<Record<string, StatusKind>>
+): ArrivalsEmptyKind => {
+  const ids = servingLineIds(lineIds)
+  for (const id of ids) {
+    statusKindForcesArrivalsUnavailable(statusKinds[normalizeLineId(id)])
+  }
+  if (!isLikelyRailServiceEnded(nowMs)) return "empty"
+  if (ids.length === 0) return "ended"
+  return groupFinishedOvernight(ids, nowMs) ? "ended" : "empty"
+}
 
 type ResolveArrivalsEmptyKindOptions = {
   rowCount: number
-  /** Fetch/render failure — board uses `error` instead. */
+  /** Fetch/render failure — board uses `error` instead. Status cannot override. */
   hasError?: boolean
   offline?: boolean
   /** Rail uses the overnight `ended` heuristic; bus and river do not. */
@@ -121,6 +187,8 @@ type ResolveArrivalsEmptyKindOptions = {
    * behaviour (overnight → ended).
    */
   lineIds?: readonly string[]
+  /** Optional current line status. Never makes a successful `[]` unavailable. */
+  lineStatus?: readonly ArrivalsStatusSignal[]
 }
 
 /**
@@ -134,39 +202,39 @@ export const resolveArrivalsEmptyKind = ({
   domain = "rail",
   nowMs,
   lineIds,
+  lineStatus,
 }: ResolveArrivalsEmptyKindOptions): ArrivalsEmptyKind | null => {
   if (hasError || rowCount > 0) return null
   if (offline) return "offline"
-  if (domain !== "rail" || !isLikelyRailServiceEnded(nowMs)) return "empty"
-  if (!lineIds?.length) return "ended"
-  return lineIds.every((id) => lineLikelyFinishedOvernight(id, nowMs))
-    ? "ended"
-    : "empty"
+  if (domain !== "rail") return "empty"
+  const statusKinds = indexArrivalsStatusKinds(lineStatus, nowMs)
+  return classifySuccessfulRailEmpty(lineIds, nowMs, statusKinds)
 }
 
 type ResolveLineArrivalsEmptyKindOptions = {
-  /** Group members (one id, or District+Circle, etc.). */
+  /** Group members (one id, or a shared-track merge). */
   lineIds: readonly string[]
   rowCount: number
   /** Fetch timestamp. Omit to refuse the overnight `ended` claim. */
   nowMs?: number
+  /** Optional current line status. Closed / suspended stays `none`/`ended`. */
+  lineStatus?: readonly ArrivalsStatusSignal[]
 }
 
 /**
- * Per-line / per-group empty kind after a successful fetch. A line that still
- * has any prediction stays `null` — empty sibling bounds keep “No information”.
- * `ended` only when every member would be finished overnight.
+ * Per-group empty kind after a successful fetch. A group that still has any
+ * prediction stays `null` — empty sibling bounds stay local (`none`).
+ * `ended` only when every member would be finished overnight. Status kinds
+ * never supply copy and never turn a successful empty list into unavailable.
  */
 export const resolveLineArrivalsEmptyKind = ({
   lineIds,
   rowCount,
   nowMs,
+  lineStatus,
 }: ResolveLineArrivalsEmptyKindOptions): ArrivalsEmptyKind | null => {
   if (rowCount > 0) return null
-  if (nowMs === undefined || !isLikelyRailServiceEnded(nowMs)) return "empty"
-  const ids = lineIds.map((id) => id.trim()).filter(Boolean)
-  if (ids.length === 0) return "ended"
-  return ids.every((id) => lineLikelyFinishedOvernight(id, nowMs))
-    ? "ended"
-    : "empty"
+  if (nowMs === undefined) return "empty"
+  const statusKinds = indexArrivalsStatusKinds(lineStatus, nowMs)
+  return classifySuccessfulRailEmpty(lineIds, nowMs, statusKinds)
 }

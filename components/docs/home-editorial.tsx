@@ -85,9 +85,9 @@ async function HomeDeparturesPanel() {
   ])
 
   // Marketing dashboard, not the docs demo: quietly drop a line's stable
-  // "No information" placeholder here rather than showing it as a first
-  // impression. `RailArrivalsBoard`'s default (seed every declared line/
-  // bound so it never disappears) stays the library behaviour — see
+  // empty placeholder here rather than showing it as a first impression.
+  // `RailArrivalsBoard`'s default (seed every declared line/bound so it
+  // never disappears) stays the library behaviour — see
   // `RailArrivalsLine.bounds` in lib/tfl/arrivals-prepare.ts.
   const activeLineIds = new Set(
     payload.arrivals.map((arrival) => arrival.lineId).filter(Boolean)
