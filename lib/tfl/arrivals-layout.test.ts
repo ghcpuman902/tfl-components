@@ -246,6 +246,77 @@ describe("arrivals board layout API", () => {
     assert.equal(html.includes("Service has ended for tonight."), false)
   })
 
+  it("notes the Saturday engineering window as No service until 10:30", () => {
+    const now = londonDayStartMs("2026-08-22") + 8 * 3_600_000 + 36 * 60_000
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: [],
+        lines: [
+          { lineId: "circle", lineName: "Circle", modeName: "tube" },
+          { lineId: "district", lineName: "District", modeName: "tube" },
+        ],
+        lineGroups: [
+          { lines: ["circle", "district"], label: "Circle / District" },
+        ],
+        stopName: "Tower Hill",
+        now,
+        lineStatus: [
+          {
+            id: "circle",
+            lineStatuses: [
+              {
+                statusSeverity: 4,
+                statusSeverityDescription: "Planned Closure",
+                reason:
+                  "CIRCLE LINE: Saturday 22 August, until 1030, no service on the entire line.",
+                disruption: {
+                  category: "PlannedWork",
+                  closureText: "plannedClosure",
+                },
+                validityPeriods: [
+                  {
+                    fromDate: "2026-08-22T03:30:00Z",
+                    toDate: "2026-08-22T09:30:00Z",
+                    isNow: false,
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            id: "district",
+            lineStatuses: [
+              {
+                statusSeverity: 5,
+                statusSeverityDescription: "Part Closure",
+                reason:
+                  "DISTRICT LINE: Saturday 22 August, until 1030, no service. Replacement buses operate.",
+                disruption: {
+                  category: "PlannedWork",
+                  closureText: "partClosure",
+                },
+                validityPeriods: [
+                  {
+                    fromDate: "2026-08-22T03:30:00Z",
+                    toDate: "2026-08-22T09:30:00Z",
+                    isNow: false,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      })
+    )
+    assert.ok(html.includes("No service until 10:30."))
+    assert.equal(html.includes("No arrivals right now."), false)
+    assert.equal(html.includes("Service has ended for tonight."), false)
+    assert.equal(html.includes("Planned Closure"), false)
+    assert.equal(html.includes("until 1030"), false)
+    assert.equal(html.includes("Replacement buses"), false)
+    assert.equal(slotCount(html, "arrivals-group"), 1)
+  })
+
   it("uses a fixed 5ch box for mixed-line identity chips", () => {
     const html = renderToStaticMarkup(
       createElement(RailArrivalsBoard, {

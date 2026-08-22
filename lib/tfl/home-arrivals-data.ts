@@ -142,6 +142,6 @@ export const readHomeArrivalsBoardState = async (
           domain === "rail"
             ? HOME_RAIL_LINES.map((line) => line.lineId)
             : undefined,
-      }) ?? "empty",
+      })?.kind ?? "empty",
   }
 }

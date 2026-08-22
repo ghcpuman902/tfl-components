@@ -39,7 +39,10 @@ import {
   resolveArrivalsProps,
   resolveStatusProps,
 } from "@/lib/tfl/board-config-resolve"
-import { resolveArrivalsEmptyKind } from "@/lib/tfl/arrivals-empty"
+import {
+  arrivalsLineEmptyCopy,
+  resolveArrivalsEmptyKind,
+} from "@/lib/tfl/arrivals-empty"
 import {
   lookupBoardArrivalsStopIds,
   type BoardArrivalsStopIdsIndex,
@@ -443,8 +446,10 @@ export const BoardDisplay = ({
     config.arrivals.lineOrder,
   ])
 
-  const railEmptyKind = useMemo(() => {
-    if (!arrivals.fetchedAt || arrivals.fetchError) return "empty" as const
+  const railEmpty = useMemo(() => {
+    if (!arrivals.fetchedAt || arrivals.fetchError) {
+      return { kind: "empty" as const }
+    }
     return (
       resolveArrivalsEmptyKind({
         rowCount: railData.length,
@@ -453,7 +458,7 @@ export const BoardDisplay = ({
         nowMs: arrivals.fetchedAt,
         lineIds: servingLines?.map((line) => line.lineId),
         lineStatus: status.data,
-      }) ?? "empty"
+      }) ?? { kind: "empty" as const }
     )
   }, [
     arrivals.fetchError,
@@ -507,7 +512,8 @@ export const BoardDisplay = ({
           startDelayMs={unattended ? 0 : undefined}
           loading={!ready || arrivals.loading}
           error={arrivalsError}
-          emptyKind={railEmptyKind}
+          emptyKind={railEmpty.kind}
+          emptyMessage={arrivalsLineEmptyCopy(railEmpty)}
           classNames={BOUND_COLUMNS_CLASS_NAMES}
         />
       )

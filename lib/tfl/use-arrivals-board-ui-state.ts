@@ -77,6 +77,6 @@ export const useArrivalsBoardUiState = (
         domain,
         nowMs,
         lineIds,
-      }) ?? "empty",
+      })?.kind ?? "empty",
   }
 }

@@ -83,7 +83,7 @@ export type ArrivalsBoardChromeProps = {
   statusLabel?: string
   /**
    * Why the board has no rows when `error` is unset.
-   * Resolve in the app (`resolveArrivalsEmptyKind`) from clock / offline / domain.
+   * Resolve in the app (`resolveArrivalsEmptyKind`) from clock / status / domain.
    */
   emptyKind?: ArrivalsEmptyKind
   /** Override copy for `emptyKind`. Prefer setting `emptyKind` instead. */
@@ -376,8 +376,9 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
   /** Interactive: return to page 1 after this many idle milliseconds. */
   idleReturnMs?: number
   /**
-   * Fetch timestamp for overnight empty copy. Omit to refuse `ended`.
-   * Successful empty paints “No arrivals right now.” (or ended).
+   * Fetch timestamp for overnight empty copy and disruption windows.
+   * Omit to refuse `ended`. Successful empty paints “No arrivals right now.”
+   * (or ended / a short “No service.” note).
    */
   now?: number
   /**

@@ -10,9 +10,11 @@ import {
   getStatusKind,
   getWorstCurrentStatus,
   normalizeLineId,
+  type LineStatusLike,
   type StatusKind,
 } from "tfl-ts"
 import { LONDON_TIME_ZONE, londonWeekdayLong } from "@/lib/tfl/london-dates"
+import { isCurrentAnnouncement } from "@/lib/tfl/status-reason"
 import type { StatusLine } from "@/lib/tfl/status-types"
 
 /** Night Tube lines. Night Overground is not in this set. */
@@ -26,12 +28,19 @@ export const NIGHT_TUBE_LINE_IDS = [
 
 const NIGHT_TUBE_LINE_ID_SET = new Set<string>(NIGHT_TUBE_LINE_IDS)
 
-export type ArrivalsEmptyKind = "empty" | "ended" | "offline"
+export type ArrivalsEmptyKind = "empty" | "ended" | "offline" | "disrupted"
+
+export type ArrivalsEmptyState = {
+  kind: ArrivalsEmptyKind
+  /** Closure window end (`validityPeriods[].toDate`) when a period overlaps now. */
+  resumeMs?: number
+}
 
 export const ARRIVALS_EMPTY_COPY: Record<ArrivalsEmptyKind, string> = {
   empty: "No arrivals right now.",
   ended: "Service has ended for tonight.",
   offline: "You're offline. Arrivals will update when you're back.",
+  disrupted: "No service.",
 }
 
 /**
@@ -56,9 +65,24 @@ export const ARRIVALS_END_COPY_SHORT = "No more"
  */
 export const ARRIVALS_PLATFORM_UNKNOWN_HEADING = "Platform to be confirmed"
 
+const DELAY_ONLY_DESCRIPTIONS = new Set([
+  "minor delays",
+  "severe delays",
+  "reduced service",
+  "diverted",
+  "issues reported",
+])
+
 const londonHourFormatter = new Intl.DateTimeFormat("en-GB", {
   timeZone: LONDON_TIME_ZONE,
   hour: "2-digit",
+  hourCycle: "h23",
+})
+
+const londonClockPartsFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: LONDON_TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
   hourCycle: "h23",
 })
 
@@ -68,6 +92,14 @@ export const londonHour = (nowMs: number): number => {
     .formatToParts(new Date(nowMs))
     .find((part) => part.type === "hour")?.value
   return hour ? Number(hour) : 0
+}
+
+/** Europe/London clock for a known instant, e.g. `10:30`. */
+export const formatLondonClockTime = (ms: number): string => {
+  const parts = londonClockPartsFormatter.formatToParts(new Date(ms))
+  const hour = parts.find((part) => part.type === "hour")?.value ?? "00"
+  const minute = parts.find((part) => part.type === "minute")?.value ?? "00"
+  return `${hour}:${minute}`
 }
 
 /**
@@ -105,18 +137,102 @@ export const lineLikelyFinishedOvernight = (
   return true
 }
 
-/** Successful empty: none → “No arrivals right now.” Optional overnight ended. */
+export const arrivalsDisruptedCopy = (resumeMs?: number): string =>
+  resumeMs === undefined
+    ? ARRIVALS_EMPTY_COPY.disrupted
+    : `No service until ${formatLondonClockTime(resumeMs)}.`
+
+/** Successful empty: none, overnight ended, or a short disruption note. */
 export const arrivalsLineEmptyCopy = (
-  kind: ArrivalsEmptyKind | null
-): string =>
-  kind === "ended" ? ARRIVALS_EMPTY_COPY.ended : ARRIVALS_EMPTY_COPY.empty
+  state: ArrivalsEmptyState | ArrivalsEmptyKind | null
+): string => {
+  if (state == null) return ARRIVALS_EMPTY_COPY.empty
+  if (typeof state === "string") {
+    return state === "disrupted"
+      ? ARRIVALS_EMPTY_COPY.disrupted
+      : ARRIVALS_EMPTY_COPY[state]
+  }
+  if (state.kind === "disrupted") return arrivalsDisruptedCopy(state.resumeMs)
+  return ARRIVALS_EMPTY_COPY[state.kind]
+}
 
 /** Line status as a classification signal — id + current statuses only. */
 export type ArrivalsStatusSignal = Pick<StatusLine, "id" | "lineStatuses">
 
+type ValidityPeriodLike = {
+  from?: string
+  to?: string
+  fromDate?: string
+  toDate?: string
+  isNow?: boolean
+}
+
+const periodField = (
+  period: ValidityPeriodLike,
+  edge: "from" | "to"
+): string | undefined =>
+  edge === "from"
+    ? (period.from ?? period.fromDate)
+    : (period.to ?? period.toDate)
+
+const periodOverlapsNow = (
+  period: ValidityPeriodLike,
+  nowMs: number
+): boolean => {
+  const from = periodField(period, "from")
+  const to = periodField(period, "to")
+  if (!from && !to) return true
+  const fromMs = from ? Date.parse(from) : Number.NEGATIVE_INFINITY
+  const toMs = to ? Date.parse(to) : Number.POSITIVE_INFINITY
+  if (Number.isNaN(fromMs) || Number.isNaN(toMs)) return true
+  return nowMs >= fromMs && nowMs <= toMs
+}
+
+/**
+ * Earliest overlapping `toDate`/`to`. Ignores `isNow` and never reads `reason`.
+ */
+export const overlappingValidityToDateMs = (
+  status: LineStatusLike | undefined,
+  nowMs: number
+): number | undefined => {
+  let earliest: number | undefined
+  for (const period of status?.validityPeriods ?? []) {
+    if (!periodOverlapsNow(period, nowMs)) continue
+    const to = periodField(period, "to")
+    if (!to) continue
+    const toMs = Date.parse(to)
+    if (Number.isNaN(toMs)) continue
+    if (earliest === undefined || toMs < earliest) earliest = toMs
+  }
+  return earliest
+}
+
+const statusDescription = (status: LineStatusLike): string =>
+  (status.statusSeverityDescription ?? status.severityDescription ?? "")
+    .trim()
+    .toLowerCase()
+
+const isDelayOnlyStatus = (status: LineStatusLike): boolean =>
+  DELAY_ONLY_DESCRIPTIONS.has(statusDescription(status))
+
+/**
+ * Current closure / suspension / planned work — not Good Service, info, or
+ * delay-only rows. Uses `isCurrentAnnouncement` (clock overlap, not `isNow`).
+ */
+export const isCurrentArrivalsDisruption = (
+  status: LineStatusLike | undefined,
+  nowMs: number
+): boolean => {
+  if (!status || !isCurrentAnnouncement(status, nowMs)) return false
+  const kind = getStatusKind(status)
+  if (kind === "good" || kind === "info") return false
+  if (isDelayOnlyStatus(status)) return false
+  return kind === "plannedWork" || kind === "closed" || kind === "incident"
+}
+
 /**
  * Current tfl-ts status kind per line, using validity windows at `nowMs`.
- * Reasons / descriptions are ignored.
+ * Reasons / descriptions are ignored for copy.
  */
 export const indexArrivalsStatusKinds = (
   lines: readonly ArrivalsStatusSignal[] | undefined,
@@ -146,31 +262,66 @@ const groupFinishedOvernight = (
 const servingLineIds = (lineIds: readonly string[] | undefined): string[] =>
   (lineIds ?? []).map((id) => id.trim()).filter(Boolean)
 
+const indexStatusSignals = (
+  lines: readonly ArrivalsStatusSignal[] | undefined
+): Readonly<Record<string, ArrivalsStatusSignal>> => {
+  const out: Record<string, ArrivalsStatusSignal> = {}
+  for (const line of lines ?? []) {
+    const id = normalizeLineId(line.id ?? "")
+    if (id) out[id] = line
+  }
+  return out
+}
+
 /**
  * Status kinds never upgrade a successful arrivals `[]` to unavailable.
- * Closed / suspended / planned work stay on the empty/ended path.
  */
 export const statusKindForcesArrivalsUnavailable = (
   _kind: StatusKind | undefined
 ): false => false
 
+const resolveGroupDisruption = (
+  lineIds: readonly string[],
+  lineStatus: readonly ArrivalsStatusSignal[] | undefined,
+  nowMs: number
+): ArrivalsEmptyState | null => {
+  if (!lineIds.length || !lineStatus?.length) return null
+  const byId = indexStatusSignals(lineStatus)
+  let resumeMs: number | undefined
+  for (const id of lineIds) {
+    const line = byId[normalizeLineId(id)]
+    const worst = getWorstCurrentStatus(line?.lineStatuses, { now: nowMs })
+    statusKindForcesArrivalsUnavailable(
+      worst ? getStatusKind(worst) : undefined
+    )
+    if (!isCurrentArrivalsDisruption(worst, nowMs) || !worst) return null
+    const lineResumeMs = overlappingValidityToDateMs(worst, nowMs)
+    if (lineResumeMs !== undefined) {
+      resumeMs =
+        resumeMs === undefined ? lineResumeMs : Math.min(resumeMs, lineResumeMs)
+    }
+  }
+  return resumeMs === undefined
+    ? { kind: "disrupted" }
+    : { kind: "disrupted", resumeMs }
+}
+
 /**
- * Successful `[]` stays `empty`/`ended` for every status kind. Closed,
- * suspended, planned work, and Good Service never become unavailable here
- * and never contribute copy.
+ * Successful `[]`: current disruption (with optional resume clock) wins over
+ * overnight `ended`. Closed / planned work never become unavailable and never
+ * contribute reason text.
  */
 const classifySuccessfulRailEmpty = (
   lineIds: readonly string[] | undefined,
   nowMs: number,
-  statusKinds: Readonly<Record<string, StatusKind>>
-): ArrivalsEmptyKind => {
+  lineStatus: readonly ArrivalsStatusSignal[] | undefined
+): ArrivalsEmptyState => {
   const ids = servingLineIds(lineIds)
-  for (const id of ids) {
-    statusKindForcesArrivalsUnavailable(statusKinds[normalizeLineId(id)])
-  }
-  if (!isLikelyRailServiceEnded(nowMs)) return "empty"
-  if (ids.length === 0) return "ended"
-  return groupFinishedOvernight(ids, nowMs) ? "ended" : "empty"
+  const disrupted = resolveGroupDisruption(ids, lineStatus, nowMs)
+  if (disrupted) return disrupted
+  if (!isLikelyRailServiceEnded(nowMs)) return { kind: "empty" }
+  if (ids.length === 0) return { kind: "ended" }
+  return { kind: groupFinishedOvernight(ids, nowMs) ? "ended" : "empty" }
 }
 
 type ResolveArrivalsEmptyKindOptions = {
@@ -183,8 +334,9 @@ type ResolveArrivalsEmptyKindOptions = {
   nowMs: number
   /**
    * Serving / selected line ids for station-level aggregation. Ended only when
-   * every listed line would be finished. Omit to keep the unseeded network
-   * behaviour (overnight → ended).
+   * every listed line would be finished. Disruption only when every listed
+   * line is currently disrupted. Omit to keep the unseeded network behaviour
+   * (overnight → ended).
    */
   lineIds?: readonly string[]
   /** Optional current line status. Never makes a successful `[]` unavailable. */
@@ -192,7 +344,7 @@ type ResolveArrivalsEmptyKindOptions = {
 }
 
 /**
- * Pick an empty kind when there are no rows. Returns `null` when the board
+ * Pick an empty state when there are no rows. Returns `null` when the board
  * should show arrivals or an error instead.
  */
 export const resolveArrivalsEmptyKind = ({
@@ -203,12 +355,11 @@ export const resolveArrivalsEmptyKind = ({
   nowMs,
   lineIds,
   lineStatus,
-}: ResolveArrivalsEmptyKindOptions): ArrivalsEmptyKind | null => {
+}: ResolveArrivalsEmptyKindOptions): ArrivalsEmptyState | null => {
   if (hasError || rowCount > 0) return null
-  if (offline) return "offline"
-  if (domain !== "rail") return "empty"
-  const statusKinds = indexArrivalsStatusKinds(lineStatus, nowMs)
-  return classifySuccessfulRailEmpty(lineIds, nowMs, statusKinds)
+  if (offline) return { kind: "offline" }
+  if (domain !== "rail") return { kind: "empty" }
+  return classifySuccessfulRailEmpty(lineIds, nowMs, lineStatus)
 }
 
 type ResolveLineArrivalsEmptyKindOptions = {
@@ -217,24 +368,23 @@ type ResolveLineArrivalsEmptyKindOptions = {
   rowCount: number
   /** Fetch timestamp. Omit to refuse the overnight `ended` claim. */
   nowMs?: number
-  /** Optional current line status. Closed / suspended stays `none`/`ended`. */
+  /** Optional current line status. Closed / planned work may become `disrupted`. */
   lineStatus?: readonly ArrivalsStatusSignal[]
 }
 
 /**
- * Per-group empty kind after a successful fetch. A group that still has any
+ * Per-group empty state after a successful fetch. A group that still has any
  * prediction stays `null` — empty sibling bounds stay local (`none`).
- * `ended` only when every member would be finished overnight. Status kinds
- * never supply copy and never turn a successful empty list into unavailable.
+ * `disrupted` only when every member is currently disrupted. `ended` only when
+ * every member would be finished overnight and no current disruption applies.
  */
 export const resolveLineArrivalsEmptyKind = ({
   lineIds,
   rowCount,
   nowMs,
   lineStatus,
-}: ResolveLineArrivalsEmptyKindOptions): ArrivalsEmptyKind | null => {
+}: ResolveLineArrivalsEmptyKindOptions): ArrivalsEmptyState | null => {
   if (rowCount > 0) return null
-  if (nowMs === undefined) return "empty"
-  const statusKinds = indexArrivalsStatusKinds(lineStatus, nowMs)
-  return classifySuccessfulRailEmpty(lineIds, nowMs, statusKinds)
+  if (nowMs === undefined) return { kind: "empty" }
+  return classifySuccessfulRailEmpty(lineIds, nowMs, lineStatus)
 }
