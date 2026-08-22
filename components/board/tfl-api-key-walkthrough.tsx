@@ -1,5 +1,11 @@
 import { ArrowDownIcon } from "lucide-react"
-import { TFL_API_KEY_WALKTHROUGH } from "@/lib/tfl/api-key-walkthrough"
+import {
+  TFL_API_KEY_PHONE_SHOT,
+  TFL_API_KEY_WALKTHROUGH,
+  TFL_API_KEY_WIDE_SHOT,
+} from "@/lib/tfl/api-key-walkthrough"
+
+const MAX_SHOT_HEIGHT = "50svh"
 
 type ArrowProps = {
   x: number
@@ -37,40 +43,46 @@ const WalkthroughArrow = ({
 }
 
 export const TflApiKeyWalkthrough = () => (
-  <ol className="flex flex-col gap-y-12 sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:auto-rows-[50svh] sm:gap-x-8 sm:gap-y-10 max-w-xl mx-auto">
-    {TFL_API_KEY_WALKTHROUGH.map((step, index) => (
-      <li
-        key={step.id}
-        className="flex flex-col gap-10 sm:col-span-2 sm:grid sm:grid-cols-subgrid"
-      >
-        <figure className="relative mx-auto max-w-full overflow-hidden rounded-lg bg-muted sm:mx-0 sm:h-full sm:justify-self-end">
-          <img
-            src={step.src}
-            alt={step.alt}
-            className="mx-auto block h-auto max-h-[50svh] w-auto max-w-full object-contain sm:h-full sm:max-h-none sm:object-right"
-          />
-          <WalkthroughArrow
-            arrows={step.arrow}
-          />
-        </figure>
-        <p className="order-first text-pretty text-base text-foreground sm:order-none sm:justify-self-start sm:pt-0.5 sm:text-left sm:text-lg md:text-2xl">
-          <span className="tabular-nums">
-            {index + 1}.
-          </span>{" "}
-          {step.caption}{" "}
-          {step.href ? (
-            <a
-              href={step.href}
-              className="underline underline-offset-4"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open
-              <span className="sr-only"> (opens in a new tab)</span>
-            </a>
-          ) : null}
-        </p>
-      </li>
-    ))}
+  <ol className="mx-auto flex max-w-xl flex-col gap-y-12 sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-x-8 sm:gap-y-10">
+    {TFL_API_KEY_WALKTHROUGH.map((step, index) => {
+      const shot = step.wide ? TFL_API_KEY_WIDE_SHOT : TFL_API_KEY_PHONE_SHOT
+      return (
+        <li
+          key={step.id}
+          className="flex flex-col gap-10 sm:col-span-2 sm:grid sm:grid-cols-subgrid"
+        >
+          <figure
+            className="relative mx-auto max-w-full overflow-hidden rounded-lg bg-muted sm:mx-0 sm:justify-self-end"
+            style={{
+              aspectRatio: `${shot.width} / ${shot.height}`,
+              width: `min(100%, calc(${MAX_SHOT_HEIGHT} * ${shot.width} / ${shot.height}))`,
+            }}
+          >
+            <img
+              src={step.src}
+              alt={step.alt}
+              width={shot.width}
+              height={shot.height}
+              className="block size-full object-contain"
+            />
+            <WalkthroughArrow arrows={step.arrow} />
+          </figure>
+          <p className="order-first text-pretty text-base text-foreground sm:order-none sm:justify-self-start sm:pt-0.5 sm:text-left sm:text-lg md:text-2xl">
+            <span className="tabular-nums">{index + 1}.</span> {step.caption}{" "}
+            {step.href ? (
+              <a
+                href={step.href}
+                className="underline underline-offset-4"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            ) : null}
+          </p>
+        </li>
+      )
+    })}
   </ol>
 )

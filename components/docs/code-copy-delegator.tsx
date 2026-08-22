@@ -29,6 +29,7 @@ const setCopiedState = (
  * - `[data-copy-page]` — serialize nearest `<article>` to Markdown
  * - `[data-code-peek-toggle]` — expand/collapse a peek code panel
  * - `[data-open-feedback]` — open the site feedback dialog
+ *   (`data-feedback-screenshot="false"` skips the viewport capture)
  *
  * Keeps MDX / peek blocks free of client component boundaries (Cache Components).
  */
@@ -43,7 +44,10 @@ export const CodeCopyDelegator = () => {
       )
       if (openFeedback) {
         event.preventDefault()
-        openFeedbackDialog()
+        openFeedbackDialog({
+          screenshot:
+            openFeedback.getAttribute("data-feedback-screenshot") !== "false",
+        })
         return
       }
 

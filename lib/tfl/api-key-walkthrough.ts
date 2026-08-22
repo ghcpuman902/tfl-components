@@ -13,6 +13,23 @@ export type TflApiKeyWalkthroughArrow = {
   rotate?: number
 }
 
+export type TflApiKeyWalkthroughShot = {
+  width: number
+  height: number
+}
+
+/** Phone-frame portal shots. Arrows are percent-placed on this crop. */
+export const TFL_API_KEY_PHONE_SHOT: TflApiKeyWalkthroughShot = {
+  width: 1320,
+  height: 2868,
+}
+
+/** Email confirmation — landscape crop. */
+export const TFL_API_KEY_WIDE_SHOT: TflApiKeyWalkthroughShot = {
+  width: 1580,
+  height: 1362,
+}
+
 export type TflApiKeyWalkthroughStep = {
   id: string
   src: string

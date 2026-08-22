@@ -42,7 +42,7 @@ const AppChromeShell = ({
     const isLandingHero = pathname === "/temp/landing-hero"
     const isFullBleed = isHome || isLandingHero
     return (
-      <div className="flex min-h-svh flex-col overflow-x-clip">
+      <div className="flex min-h-svh flex-col">
         <SiteHeader pathname={pathname || "/"} />
         <main
           className={

@@ -44,6 +44,7 @@ import {
   IPAD_FRAME_ASPECT,
   IPAD_FRAME_WIDTH,
   PARALLAX_X,
+  PARALLAX_Y,
   PHOTO_OVERLAY_WIDTH,
   ROOM_VEIL_OPACITY,
 } from "./scene-constants"
@@ -57,6 +58,7 @@ const PHOTO_2_HEIGHT =
   PHOTO_OVERLAY_WIDTH * (PICTURE_FRAME_2.height / PICTURE_FRAME_2.width)
 
 const LAYER_SMOOTH = 0.16
+const POINTER_REST = { x: 0, y: 0 }
 
 type LandingSceneProps = {
   production?: boolean
@@ -83,7 +85,7 @@ const LandingStaticRoom = () => {
     <section
       id="landing-room"
       className="relative flex w-full flex-col overflow-hidden"
-      style={{ height: "calc(100svh - var(--site-header-height))" }}
+      style={{ height: "calc(100dvh - var(--site-header-height))" }}
     >
       <div className="landing-hero-paper absolute inset-0" />
       <div className="absolute inset-0">
@@ -198,6 +200,7 @@ export const LandingScene = ({
       {
         el: l0Ref.current,
         xAmount: PARALLAX_X.l0,
+        yAmount: PARALLAX_Y.l0,
         dollyX: DOLLY_PARALLAX.l0,
         dollyY: DOLLY_Y.l0,
         dollyScale: DOLLY_SCALE.l0,
@@ -208,6 +211,7 @@ export const LandingScene = ({
       {
         el: l1Ref.current,
         xAmount: PARALLAX_X.l1,
+        yAmount: PARALLAX_Y.l1,
         dollyX: DOLLY_PARALLAX.l1,
         dollyY: DOLLY_Y.l1,
         dollyScale: DOLLY_SCALE.l1,
@@ -218,6 +222,7 @@ export const LandingScene = ({
       {
         el: l2Ref.current,
         xAmount: PARALLAX_X.l2,
+        yAmount: PARALLAX_Y.l2,
         dollyX: DOLLY_PARALLAX.l2,
         dollyY: DOLLY_Y.l2,
         dollyScale: DOLLY_SCALE.l2,
@@ -228,6 +233,7 @@ export const LandingScene = ({
       {
         el: l3Ref.current,
         xAmount: PARALLAX_X.l3,
+        yAmount: PARALLAX_Y.l3,
         dollyX: DOLLY_PARALLAX.l3,
         dollyY: DOLLY_Y.l3,
         dollyScale: DOLLY_SCALE.l3,
@@ -250,11 +256,11 @@ export const LandingScene = ({
         frame = window.requestAnimationFrame(tick)
         return
       }
-      const pointer = roomComplete ? valueRef.current : 0
+      const pointer = roomComplete ? valueRef.current : POINTER_REST
       const dolly = Math.sin(progressRef.current * Math.PI)
       for (const layer of layers) {
-        const targetX = pointer * layer.xAmount + dolly * layer.dollyX
-        const targetY = dolly * layer.dollyY
+        const targetX = pointer.x * layer.xAmount + dolly * layer.dollyX
+        const targetY = pointer.y * layer.yAmount + dolly * layer.dollyY
         const targetScale = 1 + dolly * layer.dollyScale
         layer.x += (targetX - layer.x) * LAYER_SMOOTH
         layer.y += (targetY - layer.y) * LAYER_SMOOTH
@@ -322,14 +328,14 @@ export const LandingScene = ({
 
   const landingVars = {
     "--landing-ipad-width": IPAD_FRAME_WIDTH,
-    "--landing-ipad-top": `max(${HERO_TOP_INSET}, calc((100svh - var(--site-header-height) - (var(--landing-ipad-width) / ${IPAD_FRAME_ASPECT}) - ${HERO_COPY_GAP} - ${HERO_COPY_BAND}) / 2 - ${HERO_GROUP_BIAS}))`,
+    "--landing-ipad-top": `max(${HERO_TOP_INSET}, calc((100dvh - var(--site-header-height) - (var(--landing-ipad-width) / ${IPAD_FRAME_ASPECT}) - ${HERO_COPY_GAP} - ${HERO_COPY_BAND}) / 2 - ${HERO_GROUP_BIAS}))`,
     "--landing-copy-top": `calc(var(--landing-ipad-top) + var(--landing-ipad-width) / ${IPAD_FRAME_ASPECT} + ${HERO_COPY_GAP})`,
   } as CSSProperties
 
   if (reducedMotion) {
     return (
       <div className="landing-home w-full min-w-0" style={landingVars}>
-        <section className="mx-auto flex min-h-[calc(100svh-var(--site-header-height))] w-full flex-col justify-center px-4 pt-4 pb-10">
+        <section className="mx-auto flex min-h-[calc(100dvh-var(--site-header-height))] w-full flex-col justify-center px-4 pt-4 pb-10">
           <div
             className="relative mx-auto w-(--landing-ipad-width)"
             style={{ aspectRatio: IPAD_ASPECT }}
@@ -357,21 +363,21 @@ export const LandingScene = ({
 
   return (
     <div
-      className="landing-home relative w-full min-w-0 overflow-x-clip"
+      className="landing-home relative w-full min-w-0"
       style={landingVars}
     >
       <div
         ref={wrapperRef}
         className="relative w-full"
         style={{
-          height: "calc(200svh - var(--site-header-height))",
+          height: "calc(200dvh - var(--site-header-height))",
         }}
       >
         <div
           className="sticky z-10"
           style={{
             top: "var(--site-header-height)",
-            height: "calc(100svh - var(--site-header-height))",
+            height: "calc(100dvh - var(--site-header-height))",
           }}
         >
           <div
@@ -388,7 +394,7 @@ export const LandingScene = ({
             <div
               ref={compositionRef}
               className="absolute inset-x-0 top-0 overflow-hidden"
-              style={{ height: "calc(100svh - var(--site-header-height))" }}
+              style={{ height: "calc(100dvh - var(--site-header-height))" }}
             >
               <div
                 ref={cameraRef}

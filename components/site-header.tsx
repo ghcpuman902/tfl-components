@@ -76,12 +76,9 @@ const HeaderLink = ({
   )
 
   const linkClassName = cn(
-    "shrink-0",
-    compact ? "px-1 py-2" : "px-1.5 py-2",
+    "shrink-0 px-1.5 py-2",
     link.match === "board" &&
-      newMarkerParentClassName(
-        compact ? "pr-5 after:top-0.5" : "pr-6 after:top-0.5"
-      ),
+      newMarkerParentClassName("after:top-0.5 after:right-0"),
     active
       ? "font-medium text-foreground underline decoration-1 underline-offset-[6px]"
       : "text-muted-foreground hover:text-foreground",
@@ -118,31 +115,35 @@ const HeaderLink = ({
   )
 }
 
-const MoreMenu = () => {
+const MoreMenu = ({ includeSearch }: { includeSearch: boolean }) => {
   const [open, setOpen] = useState(false)
   const items = moreItemsForPlacement("mobile")
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
-        className="shrink-0 px-1 py-2 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="shrink-0 px-1.5 py-2 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
         aria-label={MORE_MENU_NAME}
       >
         {MORE_MENU_NAME}
       </SheetTrigger>
       <SheetContent
         side="top"
-        className="inset-x-0 top-(--site-header-height) h-auto max-h-[min(32rem,calc(100dvh-var(--site-header-height)))] w-full max-w-none gap-0 overflow-y-auto rounded-none px-4 py-4 sm:max-w-none"
+        className="inset-x-0 top-(--site-header-height) h-auto max-h-[min(32rem,calc(100dvh-var(--site-header-height)))] w-full max-w-none gap-0 overflow-y-auto rounded-none px-4 pt-4 pb-4 sm:max-w-none"
       >
         <SheetHeader className="p-0">
           <SheetTitle className="sr-only">{MORE_MENU_NAME}</SheetTitle>
-          <DocsSearch variant="mobile" onNavigate={() => setOpen(false)} />
         </SheetHeader>
-        <nav className="flex flex-col gap-1 pt-4" aria-label={MORE_MENU_NAME}>
+        <nav className="flex flex-col gap-1" aria-label={MORE_MENU_NAME}>
           {items.map((item) => (
             <MoreMenuItem key={`${item.label}-${item.href}`} item={item} />
           ))}
         </nav>
+        {includeSearch ? (
+          <div className="mt-4 border-t border-border pt-4">
+            <DocsSearch variant="mobile" onNavigate={() => setOpen(false)} />
+          </div>
+        ) : null}
       </SheetContent>
     </Sheet>
   )
@@ -204,64 +205,66 @@ export const SiteHeader = ({ pathname, docsNav = false }: SiteHeaderProps) => {
   const mobileLinks = primaryLinksForPlacement("mobile")
 
   return (
-    <header className="sticky top-0 z-30 box-border h-(--site-header-height) w-full overflow-x-clip border-b border-border bg-background/60 backdrop-blur backdrop-brightness-110 backdrop-saturate-150">
-      {/* pl-4 to the logo. pr-2.5 plus the 6px icon-sm inset matches that 16px visual edge gap. */}
-      <div className="flex h-full min-w-0 flex-nowrap items-center gap-1 overflow-x-clip pr-1 pl-4 md:gap-2">
-        {docsNav ? (
-          <SidebarTrigger
-            aria-label={DOCS_SIDEBAR_TRIGGER_LABEL}
-            className="relative z-10 size-11 min-h-11 min-w-11 shrink-0 md:hidden"
-          />
-        ) : null}
-        <Link
-          href="/"
-          className="flex min-w-0 shrink items-center gap-2 md:shrink-0"
-          aria-label="tfl-components home"
-        >
-          <HeaderRoundel className="size-5 shrink-0" />
-          <span
-            className={cn(
-              "truncate text-sm font-medium tracking-tight text-foreground",
-              docsNav && "max-md:hidden"
-            )}
-          >
-            tfl-components
-          </span>
-        </Link>
-
-        <nav
-          className="flex shrink-0 items-center text-sm md:hidden"
-          aria-label="Primary"
-        >
-          {mobileLinks.map((link) => (
-            <HeaderLink
-              key={link.href}
-              link={link}
-              pathname={pathname}
-              compact
+    <>
+      <header className="sticky top-0 z-30 box-border h-(--site-header-height) w-full overflow-x-clip border-b border-border bg-background/60 backdrop-blur backdrop-brightness-110 backdrop-saturate-150">
+        {/* pl-4 to the logo. pr-2.5 plus the 6px icon-sm inset matches that 16px visual edge gap. */}
+        <div className="flex h-full min-w-0 flex-nowrap items-center gap-1 overflow-x-clip pr-1 pl-4 md:gap-2">
+          {docsNav ? (
+            <SidebarTrigger
+              aria-label={DOCS_SIDEBAR_TRIGGER_LABEL}
+              className="relative z-10 -ml-1.5 size-7 shrink-0 md:hidden"
             />
-          ))}
-          <MoreMenu />
-        </nav>
+          ) : null}
+          <Link
+            href="/"
+            className="flex min-w-0 shrink items-center gap-2 md:shrink-0"
+            aria-label="tfl-components home"
+          >
+            <HeaderRoundel className="size-5 shrink-0" />
+            <span className="truncate text-sm font-medium tracking-tight text-foreground">
+              tfl-components
+            </span>
+          </Link>
 
-        <nav
-          className="hidden shrink-0 items-center text-sm md:flex"
-          aria-label="Primary"
-        >
-          {desktopLinks.map((link) => (
-            <HeaderLink key={link.href} link={link} pathname={pathname} />
-          ))}
-        </nav>
+          <nav
+            className="flex shrink-0 items-center text-sm md:hidden"
+            aria-label="Primary"
+          >
+            {mobileLinks.map((link) => (
+              <HeaderLink
+                key={link.href}
+                link={link}
+                pathname={pathname}
+                compact
+              />
+            ))}
+            <MoreMenu includeSearch={!docsNav} />
+          </nav>
 
-        <div className="ml-auto flex min-w-0 shrink items-center">
-          <DocsSearch
-            variant="header"
-            className="hidden w-44 max-w-56 min-w-28 shrink md:block lg:w-52"
-          />
-          <GitHubLink className="ml-1 hidden shrink-0 md:inline-flex" />
-          <ThemeToggle className="shrink-0" />
+          <nav
+            className="hidden shrink-0 items-center text-sm md:flex"
+            aria-label="Primary"
+          >
+            {desktopLinks.map((link) => (
+              <HeaderLink key={link.href} link={link} pathname={pathname} />
+            ))}
+          </nav>
+
+          <div className="ml-auto flex min-w-0 shrink items-center">
+            <DocsSearch
+              variant="header"
+              className="hidden w-44 max-w-56 min-w-28 shrink md:block lg:w-52"
+            />
+            <GitHubLink className="ml-1 hidden shrink-0 md:inline-flex" />
+            <ThemeToggle className="shrink-0" />
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+      {docsNav ? (
+        <div className="sticky top-(--site-header-height) z-20 border-b border-border bg-background/60 px-4 py-2 backdrop-blur backdrop-brightness-110 backdrop-saturate-150 md:hidden">
+          <DocsSearch variant="mobile" />
+        </div>
+      ) : null}
+    </>
   )
 }

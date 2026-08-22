@@ -1,6 +1,10 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { TFL_API_KEY_WALKTHROUGH } from "./api-key-walkthrough"
+import {
+  TFL_API_KEY_PHONE_SHOT,
+  TFL_API_KEY_WALKTHROUGH,
+  TFL_API_KEY_WIDE_SHOT,
+} from "./api-key-walkthrough"
 import { TFL_API_PORTAL_PRODUCT_URL } from "./api-portal"
 
 describe("TfL API key walkthrough", () => {
@@ -28,6 +32,15 @@ describe("TfL API key walkthrough", () => {
     assert.deepEqual(
       productSteps.map((step) => step.id),
       ["f-subscribe"]
+    )
+  })
+
+  it("uses the wide email crop only for the verify-email step", () => {
+    assert.equal(TFL_API_KEY_PHONE_SHOT.height / TFL_API_KEY_PHONE_SHOT.width > 2, true)
+    assert.equal(TFL_API_KEY_WIDE_SHOT.width > TFL_API_KEY_WIDE_SHOT.height, true)
+    assert.deepEqual(
+      TFL_API_KEY_WALKTHROUGH.filter((step) => step.wide).map((step) => step.id),
+      ["b-verify-email"]
     )
   })
 })

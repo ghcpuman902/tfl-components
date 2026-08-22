@@ -301,7 +301,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   },
   {
     slug: "observatory",
-    title: "TfL metadata",
+    title: "TfL metadata tracker",
     description:
       "Independent observation of TfL line, stop, and route metadata.",
     group: "start",

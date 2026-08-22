@@ -1,20 +1,18 @@
 "use client"
 
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { AnimatePresence, motion } from "motion/react"
 import { HeaderRoundel } from "@/components/site-header-roundel"
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
 import { cn } from "@/lib/utils"
 
-const TYPING_MS = 2000
 const TFL_TS_URL = "https://www.npmjs.com/package/tfl-ts"
 const BUBBLE_ROUND = 26
 const BUBBLE_TAIL = 3
 
 type ChatLine = {
   id: string
-  chars: number
   content: ReactNode
 }
 
@@ -51,28 +49,32 @@ const IntroBeat = () => (
       <NpmMark />
       tfl-ts
     </a>{" "}
-    because the TfL API is a pain to talk to.{" "}
+    because the TfL API is a pain to talk to. Then I made{" "}
     <Link href="/docs" className={mentionClassName}>
       <HeaderRoundel className={mentionIconClassName} />
       tfl-components
     </Link>{" "}
-    is how you put that on a board.
+    to display it beautifully.
   </>
 )
 
-const BEATS: ChatLine[] = [
-  { id: "intro", chars: 168, content: <IntroBeat /> },
-  {
-    id: "board",
-    chars: 108,
-    content:
-      "The iPad is running Board, the fastest way to get a live TfL board on a screen you already have.",
-  },
+const BoardBeat = ({ onBoardClick }: { onBoardClick?: () => void }) => (
+  <>
+    You could have something like this in your landing. I built{" "}
+    <Link href="/board" onClick={onBoardClick} className={mentionClassName}>
+      Board
+    </Link>
+    , the fastest way to get a live TfL board on an old iPad, or the screen you already have.
+  </>
+)
+
+const assistantBeats = (onBoardClick?: () => void): ChatLine[] => [
+  { id: "intro", content: <IntroBeat /> },
+  { id: "board", content: <BoardBeat onBoardClick={onBoardClick} /> },
   {
     id: "nearby",
-    chars: 124,
     content:
-      "It uses your location for the nearest station and the line status. Add buses, cycle hire, or a river pier if you want them.",
+      "It uses your location for the nearest station and the line status. You can add buses, cycle hire, or a river pier. If that's still not enough, use the components to build your own.",
   },
 ]
 
@@ -86,10 +88,23 @@ const followSpring = { type: "spring" as const, duration: 0.34, bounce: 0.04 }
 const radiusSpring = { type: "spring" as const, duration: 0.42, bounce: 0.06 }
 const pressSpring = { type: "spring" as const, duration: 0.32, bounce: 0.28 }
 
-const jitter = (min: number, span: number) => min + Math.random() * span
+const MESSAGE_STACK_CLASS =
+  "flex h-[min(18lh,50%)] w-full flex-col items-start justify-end gap-1 text-[clamp(0.9375rem,0.85rem+0.3vw,1rem)] leading-snug md:h-auto"
 
-const delayAfterMessageMs = (chars: number) =>
-  Math.round(150 + chars * 1.6 + jitter(40, 110))
+const BUBBLE_CLASS =
+  "max-w-[92%] bg-background/85 px-3.5 py-2.5 leading-snug text-foreground"
+
+const COMPOSE_MS = 2100
+const ASSISTANT_GAP_MS = 3400
+const CHOICE_GAP_MS = 900
+
+const STORY_MS = [
+  COMPOSE_MS,
+  ASSISTANT_GAP_MS,
+  ASSISTANT_GAP_MS,
+  CHOICE_GAP_MS,
+  CHOICE_GAP_MS,
+] as const
 
 const assistantRadius = (isLatest: boolean) =>
   isLatest
@@ -180,141 +195,126 @@ export const LandingRoomChat = ({
   const reducedMotion = usePrefersReducedMotion()
   const [shownCount, setShownCount] = useState(0)
   const [choiceCount, setChoiceCount] = useState(0)
-  const delaysRef = useRef<number[] | null>(null)
+  const beats = assistantBeats(onBoardClick)
 
   useEffect(() => {
     if (!active) return
-    if (!delaysRef.current) {
-      delaysRef.current = [
-        Math.round(TYPING_MS + jitter(-120, 280)),
-        ...BEATS.slice(1).map((beat) => delayAfterMessageMs(beat.chars)),
-        Math.round(260 + jitter(40, 140)),
-        Math.round(140 + jitter(30, 90)),
-      ]
-    }
 
-    const delays = delaysRef.current
     let timeout = 0
 
-    if (shownCount < BEATS.length) {
+    if (shownCount < beats.length) {
       timeout = window.setTimeout(() => {
         setShownCount((current) => current + 1)
-      }, delays[shownCount] ?? 200)
+      }, STORY_MS[shownCount])
     } else if (choiceCount < END_CHOICES.length) {
       timeout = window.setTimeout(() => {
         setChoiceCount((current) => current + 1)
-      }, delays[BEATS.length + choiceCount] ?? 180)
+      }, STORY_MS[beats.length + choiceCount])
     }
 
     return () => window.clearTimeout(timeout)
-  }, [active, shownCount, choiceCount])
+  }, [active, shownCount, choiceCount, beats.length])
 
   if (!active) return null
 
   const typing = shownCount === 0
-  const followUps = BEATS.slice(1, shownCount)
+  const followUps = beats.slice(1, shownCount)
   const visibleChoices = END_CHOICES.slice(0, choiceCount)
 
   return (
     <div
       className={cn(
-        "pointer-events-none absolute z-20 max-h-[70svh]",
-        "inset-x-4 bottom-4",
-        "md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:w-full md:max-w-sm md:translate-x-[-116.666%] md:-translate-y-1/2"
+        "pointer-events-none absolute z-20",
+        "inset-4",
+        "md:inset-auto md:left-1/2 md:top-1/2 md:w-full md:max-w-sm md:translate-x-[-116.666%] md:-translate-y-1/2"
       )}
     >
-      <div
+      <motion.div
         aria-label="Get started"
         aria-live="polite"
-        className="flex h-full flex-col justify-end"
+        className="flex h-full flex-col justify-between gap-2.5 md:h-auto"
+        layout
       >
-        <motion.div className="flex flex-col justify-end" layout>
-          <motion.div className="flex flex-col items-start gap-1" layout>
-            <motion.div
-              layout
-              className="max-w-[92%] bg-background/85 px-3.5 py-2.5 text-[clamp(0.9375rem,0.85rem+0.3vw,1rem)] leading-snug text-foreground"
-              initial={false}
-              animate={{
-                borderRadius: assistantRadius(shownCount <= 1),
-              }}
-              transition={{
-                layout: layoutSpring,
-                borderRadius: radiusSpring,
-              }}
-            >
-              <AnimatePresence mode="wait" initial={false}>
-                {typing ? (
-                  <motion.div
-                    key="typing"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
-                    transition={followSpring}
-                  >
-                    <TypingDots reducedMotion={reducedMotion} />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="intro"
-                    initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={layoutSpring}
-                  >
-                    {BEATS[0].content}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-            <AnimatePresence>
-              {followUps.map((line, index) => {
-                const isLatest = index === followUps.length - 1 && shownCount > 1
-                return (
-                  <motion.div
-                    key={line.id}
-                    layout
-                    initial={
-                      reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }
-                    }
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                      borderRadius: assistantRadius(isLatest),
-                    }}
-                    transition={{
-                      ...followSpring,
-                      layout: layoutSpring,
-                      borderRadius: radiusSpring,
-                    }}
-                    className="max-w-[92%] bg-background/85 px-3.5 py-2.5 text-[clamp(0.9375rem,0.85rem+0.3vw,1rem)] leading-snug text-foreground"
-                  >
-                    {line.content}
-                  </motion.div>
-                )
-              })}
+        <motion.div className={MESSAGE_STACK_CLASS} layout>
+          <motion.div
+            layout
+            className={BUBBLE_CLASS}
+            initial={false}
+            animate={{
+              borderRadius: assistantRadius(shownCount <= 1),
+            }}
+            transition={{
+              layout: layoutSpring,
+              borderRadius: radiusSpring,
+            }}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {typing ? (
+                <motion.div
+                  key="typing"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
+                  transition={followSpring}
+                >
+                  <TypingDots reducedMotion={reducedMotion} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="intro"
+                  initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={layoutSpring}
+                >
+                  {beats[0].content}
+                </motion.div>
+              )}
             </AnimatePresence>
           </motion.div>
-          {visibleChoices.length > 0 ? (
-            <motion.div
-              className="mt-2.5 flex flex-col items-end gap-1"
-              layout
-            >
-              {visibleChoices.map((choice, index) => (
-                <ChoiceBubble
-                  key={choice.id}
-                  reducedMotion={reducedMotion}
-                  href={choice.href}
-                  onClick={
-                    choice.href === "/board" ? onBoardClick : undefined
+          <AnimatePresence>
+            {followUps.map((line, index) => {
+              const isLatest = index === followUps.length - 1 && shownCount > 1
+              return (
+                <motion.div
+                  key={line.id}
+                  layout
+                  initial={
+                    reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }
                   }
-                  isLatest={index === visibleChoices.length - 1}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    borderRadius: assistantRadius(isLatest),
+                  }}
+                  transition={{
+                    ...followSpring,
+                    layout: layoutSpring,
+                    borderRadius: radiusSpring,
+                  }}
+                  className={BUBBLE_CLASS}
                 >
-                  {choice.label}
-                </ChoiceBubble>
-              ))}
-            </motion.div>
-          ) : null}
+                  {line.content}
+                </motion.div>
+              )
+            })}
+          </AnimatePresence>
         </motion.div>
-      </div>
+        {visibleChoices.length > 0 ? (
+          <motion.div className="flex flex-col items-end gap-1" layout>
+            {visibleChoices.map((choice, index) => (
+              <ChoiceBubble
+                key={choice.id}
+                reducedMotion={reducedMotion}
+                href={choice.href}
+                onClick={choice.href === "/board" ? onBoardClick : undefined}
+                isLatest={index === visibleChoices.length - 1}
+              >
+                {choice.label}
+              </ChoiceBubble>
+            ))}
+          </motion.div>
+        ) : null}
+      </motion.div>
     </div>
   )
 }

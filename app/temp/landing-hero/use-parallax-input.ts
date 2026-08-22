@@ -33,6 +33,11 @@ const subscribeCoarsePointer = (onChange: () => void) => {
 
 const getCoarsePointer = () => window.matchMedia(COARSE_QUERY).matches
 
+type ParallaxValue = {
+  x: number
+  y: number
+}
+
 type UseParallaxInputArgs = {
   stageRef: RefObject<HTMLElement | null>
   enabled: boolean
@@ -42,7 +47,7 @@ export const useParallaxInput = ({
   stageRef,
   enabled,
 }: UseParallaxInputArgs) => {
-  const valueRef = useRef(0)
+  const valueRef = useRef<ParallaxValue>({ x: 0, y: 0 })
   const pointerActiveRef = useRef(false)
   const [tiltEnabled, setTiltEnabled] = useState(false)
   const isCoarse = useSyncExternalStore(
@@ -68,7 +73,8 @@ export const useParallaxInput = ({
 
   useEffect(() => {
     if (!enabled) {
-      valueRef.current = 0
+      valueRef.current.x = 0
+      valueRef.current.y = 0
       pointerActiveRef.current = false
       return
     }
@@ -78,7 +84,7 @@ export const useParallaxInput = ({
       const stage = stageRef.current
       if (!stage) return
       const rect = stage.getBoundingClientRect()
-      if (rect.width <= 0) return
+      if (rect.width <= 0 || rect.height <= 0) return
       const inside =
         event.clientX >= rect.left &&
         event.clientX <= rect.right &&
@@ -86,18 +92,22 @@ export const useParallaxInput = ({
         event.clientY <= rect.bottom
       if (!inside) {
         pointerActiveRef.current = false
-        if (!tiltEnabled) valueRef.current = 0
+        valueRef.current.y = 0
+        if (!tiltEnabled) valueRef.current.x = 0
         return
       }
       pointerActiveRef.current = true
       const nx = ((event.clientX - rect.left) / rect.width) * 2 - 1
-      valueRef.current = clamp(nx, -1, 1)
+      const ny = ((event.clientY - rect.top) / rect.height) * 2 - 1
+      valueRef.current.x = clamp(nx, -1, 1)
+      valueRef.current.y = clamp(ny, -1, 1)
     }
 
     const handleOrientation = (event: DeviceOrientationEvent) => {
       if (!tiltEnabled || pointerActiveRef.current) return
       const gamma = event.gamma ?? 0
-      valueRef.current = clamp(gamma / 30, -1, 1)
+      valueRef.current.x = clamp(gamma / 30, -1, 1)
+      valueRef.current.y = 0
     }
 
     window.addEventListener("pointermove", handlePointerMove, { passive: true })

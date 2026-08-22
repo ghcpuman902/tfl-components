@@ -3,12 +3,10 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
-  type ClipboardEvent,
   type ReactNode,
 } from "react"
 import { BoardAdvancedConfig } from "@/components/board/board-config-form"
@@ -21,36 +19,13 @@ import { BoardPreview } from "@/components/board/board-preview"
 import { BoardPreviewModePills } from "@/components/board/board-preview-mode"
 import { BoardShareCard } from "@/components/board/board-share-card"
 import { BoardStationSearch } from "@/components/board/board-station-search"
+import { TflApiKeyField } from "@/components/tfl-api-key-field"
 import { Button } from "@/components/ui/button"
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
-import { TflApiKeyWalkthrough } from "@/components/board/tfl-api-key-walkthrough"
 import { TFL_API_PORTAL_PRODUCT_URL } from "@/components/user-tfl-api-key-copy"
 import { useIsMobile } from "@/hooks/use-mobile"
 import {
-  CheckIcon,
   ChevronDownIcon,
-  CircleXIcon,
-  CopyIcon,
   ExternalLinkIcon,
   LocateIcon,
 } from "lucide-react"
@@ -111,10 +86,6 @@ import {
   type BoardSlotsConfig,
 } from "@/lib/tfl/board-url-state"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
-import {
-  displayTflAppKey,
-  isPlausibleTflAppKey,
-} from "@/lib/tfl/user-credentials-storage"
 import { LINE_ORDER } from "tfl-ts"
 import { getLineNameTiers } from "@/lib/tfl/line-names"
 import { cn } from "@/lib/utils"
@@ -323,12 +294,8 @@ export const BoardStagedBuilder = ({
   const {
     hydrated,
     persistMode,
-    error,
     getAppKey,
     openDialog,
-    save,
-    clear,
-    status,
   } = useUserTflCredentials()
   const isMobile = useIsMobile()
   const [draft, setDraft] = useState<BoardSetupDraft>(createBoardSetupDraft)
@@ -339,13 +306,6 @@ export const BoardStagedBuilder = ({
   const [advancedConfig, setAdvancedConfig] = useState<Partial<BoardConfig>>(
     {}
   )
-  const [keyDraft, setKeyDraft] = useState("")
-  const [keyHelpOpen, setKeyHelpOpen] = useState(false)
-  const [keyCopied, setKeyCopied] = useState(false)
-  const [keyFormatError, setKeyFormatError] = useState(false)
-  const [keyFieldFocused, setKeyFieldFocused] = useState(false)
-  const lastKeyAttempt = useRef("")
-  const keyInputRef = useRef<HTMLInputElement | null>(null)
   const searchWrapRef = useRef<HTMLDivElement | null>(null)
   const lastAnnounce = useRef("")
   const nearbyFillKey = useRef<string | null>(null)
@@ -402,30 +362,6 @@ export const BoardStagedBuilder = ({
     if (!ready) return
     persistDraft(draft)
   }, [draft, ready])
-
-  useEffect(() => {
-    if (!hydrated) return
-    const stored = getAppKey()
-    const imported = advancedConfig.key?.trim()
-    if (stored) {
-      setKeyDraft((current) => current || stored)
-      return
-    }
-    if (imported) {
-      setKeyDraft((current) => current || imported)
-    }
-  }, [advancedConfig.key, getAppKey, hydrated])
-
-  const scrollKeyInputToEnd = () => {
-    const input = keyInputRef.current
-    if (!input) return
-    input.scrollLeft = input.scrollWidth
-  }
-
-  useLayoutEffect(() => {
-    if (!keyDraft || keyFieldFocused) return
-    scrollKeyInputToEnd()
-  }, [keyDraft, keyFieldFocused])
 
   const updateDraft = (
     next: BoardSetupDraft | ((current: BoardSetupDraft) => BoardSetupDraft)
@@ -663,73 +599,12 @@ export const BoardStagedBuilder = ({
     )
   }
 
-  const handleSaveKey = async (raw: string) => {
-    const trimmed = raw.trim()
-    if (!trimmed) return
-    if (lastKeyAttempt.current === trimmed && status === "ready") return
-    if (!isPlausibleTflAppKey(trimmed).ok) {
-      setKeyFormatError(true)
-      return
-    }
-    setKeyFormatError(false)
-    lastKeyAttempt.current = trimmed
-    const result = await save(trimmed, "local")
-    if (result.ok) {
-      updateDraft((current) => ({
-        ...startIfNeeded(current),
-        keyMode: "own",
-      }))
-      finishStage(4)
-    }
-  }
-
-  const handleKeyDraftChange = (next: string) => {
-    if (!next) {
-      lastKeyAttempt.current = ""
-      setKeyFormatError(false)
-      setKeyDraft("")
-      if (hasKey) clear()
-      return
-    }
-    if (/^[a-zA-Z0-9]+$/.test(next)) {
-      setKeyDraft(next)
-      setKeyFormatError(false)
-      if (isPlausibleTflAppKey(next).ok) void handleSaveKey(next)
-      return
-    }
-    if (next.length < keyDraft.length) {
-      const shortened = keyDraft.slice(0, next.length)
-      setKeyDraft(shortened)
-      setKeyFormatError(false)
-      if (!shortened && hasKey) clear()
-    }
-  }
-
-  const handleKeyPaste = (event: ClipboardEvent<HTMLInputElement>) => {
-    const pasted = event.clipboardData.getData("text").trim()
-    if (!pasted) return
-    event.preventDefault()
-    setKeyDraft(pasted)
-    void handleSaveKey(pasted)
-  }
-
-  const handleClearKey = () => {
-    lastKeyAttempt.current = ""
-    setKeyFormatError(false)
-    setKeyDraft("")
-    if (hasKey) clear()
-  }
-
-  const handleCopyKey = () => {
-    const value = getAppKey() ?? keyDraft
-    if (!value) return
-    void navigator.clipboard.writeText(value).then(
-      () => {
-        setKeyCopied(true)
-        window.setTimeout(() => setKeyCopied(false), 2000)
-      },
-      () => undefined
-    )
+  const handleKeySaved = () => {
+    updateDraft((current) => ({
+      ...startIfNeeded(current),
+      keyMode: "own",
+    }))
+    finishStage(4)
   }
 
   const locked = hydrated && !hasKey
@@ -783,98 +658,13 @@ export const BoardStagedBuilder = ({
               </a>{" "}
               and come back
             </h2>
-            <div className="flex items-center gap-1.5">
-              <InputGroup>
-                <InputGroupInput
-                  ref={keyInputRef}
-                  id="board-tfl-key"
-                  type="text"
-                  inputMode="text"
-                  autoComplete="off"
-                  spellCheck={false}
-                  value={displayTflAppKey(keyDraft)}
-                  onChange={(event) => {
-                    handleKeyDraftChange(event.target.value)
-                  }}
-                  onPaste={handleKeyPaste}
-                  onFocus={() => setKeyFieldFocused(true)}
-                  onBlur={() => {
-                    setKeyFieldFocused(false)
-                    window.requestAnimationFrame(scrollKeyInputToEnd)
-                  }}
-                  placeholder="Paste your key"
-                  aria-labelledby="board-key-heading"
-                  aria-invalid={keyFormatError || status === "invalid"}
-                  aria-describedby="board-tfl-key-status"
-                  className={cn(
-                    "font-mono",
-                    keyDraft && !keyFieldFocused && "text-right"
-                  )}
-                />
-                {keyDraft ? (
-                  <InputGroupAddon align="inline-end">
-                    <InputGroupButton
-                      size="icon-xs"
-                      aria-label="Clear key"
-                      onClick={handleClearKey}
-                    >
-                      <CircleXIcon />
-                    </InputGroupButton>
-                  </InputGroupAddon>
-                ) : null}
-              </InputGroup>
-              {keyDraft ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="shrink-0"
-                  onClick={handleCopyKey}
-                  aria-label={keyCopied ? "Key copied" : "Copy key"}
-                >
-                  {keyCopied ? <CheckIcon /> : <CopyIcon />}
-                </Button>
-              ) : null}
-            </div>
-            {keyFormatError ||
-            status === "invalid" ||
-            status === "validating" ||
-            (status === "ready" && hasKey) ? (
-              <p
-                id="board-tfl-key-status"
-                className={cn(
-                  "text-xs",
-                  keyFormatError || status === "invalid"
-                    ? "text-destructive"
-                    : status === "ready"
-                      ? "text-emerald-700 dark:text-emerald-400"
-                      : "text-muted-foreground"
-                )}
-                role={
-                  keyFormatError || status === "invalid" ? "alert" : "status"
-                }
-              >
-                {keyFormatError || status === "invalid" ? (
-                  "wrong format"
-                ) : status === "validating" ? (
-                  "Checking…"
-                ) : (
-                  <span className="inline-flex items-center gap-1">
-                    <CheckIcon className="size-3.5" aria-hidden />
-                    saved
-                  </span>
-                )}
-              </p>
-            ) : null}
-            {status === "ready" && hasKey ? null : (
-              <button
-                type="button"
-                className="mx-auto mt-4 block text-center text-sm text-muted-foreground underline underline-offset-4"
-                onClick={() => setKeyHelpOpen(true)}
-              >
-                Teach me how
-              </button>
-            )}
+            <TflApiKeyField
+              id="board-tfl-key"
+              labelledBy="board-key-heading"
+              seedKey={advancedConfig.key?.trim()}
+              onSaved={handleKeySaved}
+              centerHelp
+            />
           </section>
 
           <LockedRegion locked={locked} className="[grid-area:loc] md:[grid-area:auto]">
@@ -1102,41 +892,6 @@ export const BoardStagedBuilder = ({
           </div>
         </LockedRegion>
       </div>
-
-      {isMobile ? (
-        <Sheet open={keyHelpOpen} onOpenChange={setKeyHelpOpen}>
-          <SheetContent
-            side="bottom"
-            className="max-h-[85dvh] gap-0 overflow-y-auto"
-          >
-            <SheetHeader className="text-center">
-              <SheetTitle className="text-center">
-                How to get a key — step by step
-              </SheetTitle>
-              <SheetDescription className="sr-only">
-                Steps from sign up to copying a key.
-              </SheetDescription>
-            </SheetHeader>
-            <div className="space-y-5 px-4 pb-6">
-              <TflApiKeyWalkthrough />
-            </div>
-          </SheetContent>
-        </Sheet>
-      ) : (
-        <Dialog open={keyHelpOpen} onOpenChange={setKeyHelpOpen}>
-          <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-3xl">
-            <DialogHeader className="text-center">
-              <DialogTitle className="text-center">
-                How to get a key — step by step
-              </DialogTitle>
-              <DialogDescription className="sr-only">
-                Steps from sign up to copying a key.
-              </DialogDescription>
-            </DialogHeader>
-            <TflApiKeyWalkthrough />
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   )
 }

@@ -20,18 +20,18 @@ export const LandingFallback = () => (
   <>
     <style>{heroArtworkThemeStyleSheet()}</style>
     <div
-      className="landing-home relative w-full min-w-0 overflow-x-clip"
+      className="landing-home relative w-full min-w-0"
       aria-hidden
     >
       <div
         className="relative w-full"
-        style={{ height: "calc(200svh - var(--site-header-height))" }}
+        style={{ height: "calc(200dvh - var(--site-header-height))" }}
       >
         <div
           className="sticky"
           style={{
             top: "var(--site-header-height)",
-            height: "calc(100svh - var(--site-header-height))",
+            height: "calc(100dvh - var(--site-header-height))",
           }}
         >
           <div className="landing-hero-paper absolute inset-0" />

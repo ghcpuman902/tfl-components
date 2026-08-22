@@ -100,8 +100,9 @@ export const HEADER_OVERFLOW_POLICY = {
 /**
  * Conservative header-row budget for the mobile primary row:
  * wordmark + Docs + Board + More + theme toggle, no scrolling nav.
+ * Docs keeps the wordmark and a compact sidebar trigger.
  */
-export const DOCS_SIDEBAR_TRIGGER_PX = 44
+export const DOCS_SIDEBAR_TRIGGER_PX = 28
 
 export const estimateMobileHeaderRowWidth = (options?: {
   paddingInlineStartPx?: number
@@ -120,7 +121,7 @@ export const estimateMobileHeaderRowWidth = (options?: {
   const logoPx = options?.logoPx ?? 20
   const logoGapPx = options?.logoGapPx ?? 8
   const wordmarkPx = options?.wordmarkPx ?? 98
-  const itemPaddingX = options?.itemPaddingX ?? 8
+  const itemPaddingX = options?.itemPaddingX ?? 12
   const gapPx = options?.gapPx ?? 4
   const themeTogglePx = options?.themeTogglePx ?? 28
   const charPx = options?.charPx ?? 7
@@ -147,10 +148,9 @@ export const estimateMobileHeaderRowWidth = (options?: {
   )
 }
 
-/** Docs mobile header hides the wordmark so the 44px trigger stays on the logo row. */
+/** Docs mobile header keeps the wordmark and a compact sidebar trigger. */
 export const estimateDocsMobileHeaderRowWidth = (): number =>
   estimateMobileHeaderRowWidth({
-    wordmarkPx: 0,
     docsSidebarTriggerPx: DOCS_SIDEBAR_TRIGGER_PX,
   })
 

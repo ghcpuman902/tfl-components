@@ -3,14 +3,43 @@ import { DOCS_ENTRIES } from "@/lib/docs-catalog"
 export const BUG_DESCRIPTION_LABEL =
   "What happened, and what did you expect instead?"
 export const BUG_STEPS_LABEL = "Steps to reproduce"
-export const BUG_COMPONENT_LABEL = "Component or page affected"
+export const BUG_COMPONENT_LABEL = "What's this about?"
+
+/** Older freeform headings still stored in drafts. */
+const BUG_COMPONENT_LABEL_ALIASES = [
+  BUG_COMPONENT_LABEL,
+  "Component or page affected",
+  "Component or page",
+] as const
 
 const sectionHeading = (label: string): string => `::: ${label} :::`
 
-/** Catalog titles for the bug “component or page” autosuggest. */
-export const FEEDBACK_COMPONENT_OPTIONS: readonly string[] = [
+/**
+ * Site-wide topics first, then catalogue titles. The field is free text;
+ * this list is only autocomplete.
+ */
+export const FEEDBACK_ABOUT_TOPICS: readonly string[] = [
+  "This website",
+  "Homepage",
+  "Board",
+  "Explorer",
+  "Labs",
+  "Docs",
+  "tfl-ts",
+  "TfL API",
+  "Installation",
+]
+
+const catalogAboutTitles = [
   ...new Set(DOCS_ENTRIES.map((entry) => entry.title)),
-].sort((a, b) => a.localeCompare(b))
+]
+  .filter((title) => !FEEDBACK_ABOUT_TOPICS.includes(title))
+  .sort((a, b) => a.localeCompare(b))
+
+export const FEEDBACK_ABOUT_OPTIONS: readonly string[] = [
+  ...FEEDBACK_ABOUT_TOPICS,
+  ...catalogAboutTitles,
+]
 
 export const buildBugTemplate = (
   description: string,
@@ -49,7 +78,13 @@ const fieldForLabel = (
   const normalized = normalizeLabel(label)
   if (normalized === normalizeLabel(BUG_DESCRIPTION_LABEL)) return "description"
   if (normalized === normalizeLabel(BUG_STEPS_LABEL)) return "steps"
-  if (normalized === normalizeLabel(BUG_COMPONENT_LABEL)) return "component"
+  if (
+    BUG_COMPONENT_LABEL_ALIASES.some(
+      (alias) => normalized === normalizeLabel(alias)
+    )
+  ) {
+    return "component"
+  }
   return null
 }
 

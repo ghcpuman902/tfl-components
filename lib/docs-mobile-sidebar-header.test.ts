@@ -24,7 +24,7 @@ describe("docs mobile sidebar trigger position", () => {
     assert.match(header, /docsNav/)
     assert.match(header, /SidebarTrigger/)
     assert.match(header, /flex-nowrap/)
-    assert.match(header, /size-11 min-h-11 min-w-11/)
+    assert.match(header, /size-7 shrink-0 md:hidden/)
     assert.match(header, /md:hidden/)
     assert.match(header, /DOCS_SIDEBAR_TRIGGER_LABEL/)
     assert.equal(DOCS_SIDEBAR_TRIGGER_LABEL, "Open documentation navigation")
@@ -41,22 +41,22 @@ describe("docs mobile sidebar trigger position", () => {
     assert.ok(logoIndex > triggerIndex)
   })
 
-  it("keeps a 44px target on the same 320 and 390 header row as the logo", () => {
-    assert.equal(DOCS_SIDEBAR_TRIGGER_PX, 44)
-    assert.ok(
-      estimateDocsMobileHeaderRowWidth() <= SITE_NAV_BREAKPOINTS.mobileNarrow
-    )
+  it("keeps a compact trigger on the same header row as the wordmark", () => {
+    assert.equal(DOCS_SIDEBAR_TRIGGER_PX, 28)
     assert.ok(estimateDocsMobileHeaderRowWidth() <= SITE_NAV_BREAKPOINTS.mobile)
     assert.ok(
       estimateMobileHeaderRowWidth({
-        wordmarkPx: 0,
         docsSidebarTriggerPx: DOCS_SIDEBAR_TRIGGER_PX,
-      }) <= SITE_NAV_BREAKPOINTS.mobileNarrow
+      }) <= SITE_NAV_BREAKPOINTS.mobile
+    )
+    assert.doesNotMatch(
+      header,
+      /docsNav && "max-md:hidden"/
     )
   })
 
   it("does not render the trigger on tablet/desktop header widths", () => {
-    assert.match(header, /className="relative z-10 size-11[\s\S]*md:hidden"/)
+    assert.match(header, /className="relative z-10 -ml-1.5 size-7[\s\S]*md:hidden"/)
     assert.equal(SITE_NAV_BREAKPOINTS.tablet, 768)
   })
 

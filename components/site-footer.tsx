@@ -1,5 +1,6 @@
 import { Suspense, type ReactNode } from "react"
 import Link from "next/link"
+import { FeedbackTextLink } from "@/components/docs/feedback-text-link"
 import { GITHUB_REPO } from "@/lib/feedback/constants"
 import { getSiteStats } from "@/lib/site-stats"
 import { SITE_AUTHOR, SITE_INDEPENDENCE } from "@/lib/site"
@@ -78,7 +79,13 @@ export const SiteFooter = () => {
           >
             {SITE_AUTHOR.name}
           </a>
-          .
+          .{" "}
+          <FeedbackTextLink
+            screenshot={false}
+            className="text-foreground no-underline hover:underline"
+          >
+            Feedback?
+          </FeedbackTextLink>
         </p>
         <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
           {process.env.NODE_ENV === "development" ? (
@@ -91,23 +98,13 @@ export const SiteFooter = () => {
               <span aria-hidden>·</span>
             </>
           ) : null}
-          <FooterLink href="/labs">Labs</FooterLink>
-          <span aria-hidden>·</span>
-          <FooterLink href={GITHUB_REPO} external>
-            Source
-          </FooterLink>
-          <span aria-hidden>·</span>
           <FooterLink href="/licence">Licence</FooterLink>
           <span aria-hidden>·</span>
           <FooterLink href="/credits">Data and credits</FooterLink>
           <span aria-hidden>·</span>
-          <FooterLink href="/accessibility">Accessibility</FooterLink>
-          <span aria-hidden>·</span>
           <FooterLink href="/privacy">Privacy</FooterLink>
           <span aria-hidden>·</span>
-          <FooterLink href="/how-it-was-built">How it was built</FooterLink>
-          <span aria-hidden>·</span>
-          <FooterLink href="/observatory">TfL metadata</FooterLink>
+          <FooterLink href="/observatory">TfL metadata tracker</FooterLink>
           <span aria-hidden>·</span>
           <FooterLink
             href={`https://github.com/ghcpuman902/tfl-components/releases/tag/${APP_VERSION_LABEL}`}

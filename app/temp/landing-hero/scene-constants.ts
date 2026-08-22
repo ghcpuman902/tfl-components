@@ -9,7 +9,7 @@ export const HERO_TOP_INSET = "1rem"
 /** Gap between the iPad and the headline block. */
 export const HERO_COPY_GAP = "1.25rem"
 /** Headline + continue control in the first-fold group. */
-export const HERO_COPY_BAND = "6.5rem"
+export const HERO_COPY_BAND = "8.5rem"
 /** Nudge the iPad + copy group above geometric centre. */
 export const HERO_GROUP_BIAS = "1.25rem"
 
@@ -17,7 +17,7 @@ export const HERO_GROUP_BIAS = "1.25rem"
  * First-fold iPad: as large as the useful viewport allows, leaving the
  * copy band free. Same token at every width — height does the rest.
  */
-export const IPAD_FRAME_WIDTH = `min(${(1 - HERO_SIDE_INSET * 2) * 100}vw, calc((100svh - var(--site-header-height) - ${HERO_TOP_INSET} - ${HERO_COPY_GAP} - ${HERO_COPY_BAND}) * ${IPAD_FRAME_ASPECT}))`
+export const IPAD_FRAME_WIDTH = `min(${(1 - HERO_SIDE_INSET * 2) * 100}vw, calc((100dvh - var(--site-header-height) - ${HERO_TOP_INSET} - ${HERO_COPY_GAP} - ${HERO_COPY_BAND}) * ${IPAD_FRAME_ASPECT}))`
 
 /**
  * Sticky stage is one viewport. Extra height is the pull-back so the
@@ -28,6 +28,14 @@ export const PARALLAX_X = {
   l1: 18,
   l2: 8,
   l3: 2,
+} as const
+
+/** Desktop pointer follow on Y — same depth order as X, a little quieter. */
+export const PARALLAX_Y = {
+  l0: 24,
+  l1: 12,
+  l2: 5,
+  l3: 1,
 } as const
 
 /**

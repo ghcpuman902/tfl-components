@@ -46,6 +46,9 @@ type UserTflCredentialsContextValue = {
   closeDialog: () => void
   dialogOpen: boolean
   setDialogOpen: (open: boolean) => void
+  walkthroughOpen: boolean
+  setWalkthroughOpen: (open: boolean) => void
+  openWalkthrough: () => void
 }
 
 const UserTflCredentialsContext =
@@ -62,7 +65,9 @@ export const UserTflCredentialsProvider = ({
   const [persistMode, setPersistMode] = useState<UserTflPersistMode>("local")
   const [error, setError] = useState<TranslatedTflError | null>(null)
   const [shapeWarning, setShapeWarning] = useState<string | null>(null)
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [dialogOpen, setDialogOpenState] = useState(false)
+  const [walkthroughOpen, setWalkthroughOpenState] = useState(false)
+  const resumeDialogAfterWalkthrough = useRef(false)
   const appKeyRef = useRef<string | null>(null)
 
   const applyStored = useCallback(() => {
@@ -157,8 +162,36 @@ export const UserTflCredentialsProvider = ({
     setError(next)
   }, [])
 
-  const openDialog = useCallback(() => setDialogOpen(true), [])
-  const closeDialog = useCallback(() => setDialogOpen(false), [])
+  const setDialogOpen = useCallback((open: boolean) => {
+    if (open) {
+      resumeDialogAfterWalkthrough.current = false
+      setWalkthroughOpenState(false)
+    }
+    setDialogOpenState(open)
+  }, [])
+
+  const setWalkthroughOpen = useCallback((open: boolean) => {
+    if (open) {
+      setDialogOpenState((wasOpen) => {
+        resumeDialogAfterWalkthrough.current = wasOpen
+        return false
+      })
+      setWalkthroughOpenState(true)
+      return
+    }
+    setWalkthroughOpenState(false)
+    if (resumeDialogAfterWalkthrough.current) {
+      resumeDialogAfterWalkthrough.current = false
+      setDialogOpenState(true)
+    }
+  }, [])
+
+  const openDialog = useCallback(() => setDialogOpen(true), [setDialogOpen])
+  const closeDialog = useCallback(() => setDialogOpen(false), [setDialogOpen])
+  const openWalkthrough = useCallback(
+    () => setWalkthroughOpen(true),
+    [setWalkthroughOpen]
+  )
 
   const appKeyMasked = useMemo(
     () => (appKey ? maskUserTflAppKey(appKey) : null),
@@ -181,6 +214,9 @@ export const UserTflCredentialsProvider = ({
       closeDialog,
       dialogOpen,
       setDialogOpen,
+      walkthroughOpen,
+      setWalkthroughOpen,
+      openWalkthrough,
     }),
     [
       status,
@@ -196,6 +232,10 @@ export const UserTflCredentialsProvider = ({
       openDialog,
       closeDialog,
       dialogOpen,
+      setDialogOpen,
+      walkthroughOpen,
+      setWalkthroughOpen,
+      openWalkthrough,
     ]
   )
 

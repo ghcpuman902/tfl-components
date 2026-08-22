@@ -73,7 +73,7 @@ export const InstallCommand = ({
               </pre>
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon-sm"
                 className="absolute top-2 right-2"
                 aria-label={copied ? "Copied" : "Copy install command"}

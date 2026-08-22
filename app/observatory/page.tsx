@@ -9,7 +9,7 @@ import { loadObservatoryPageData } from "@/lib/tfl/observatory/load-page-data"
 import { pageMetadata } from "@/lib/site-metadata"
 
 export const metadata: Metadata = pageMetadata({
-  title: "TfL metadata",
+  title: "TfL metadata tracker",
   description:
     "Independent observation of TfL line, stop, and route metadata. Not line status.",
   path: "/observatory",

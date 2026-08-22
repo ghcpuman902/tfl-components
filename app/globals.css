@@ -227,6 +227,9 @@ html[data-tfl-type-profile="johnston-compatible"] {
     scrollbar-width: none;
     scrollbar-gutter: auto;
   }
+  html:has(.landing-home) {
+    overflow-x: clip;
+  }
   html:has(.landing-home)::-webkit-scrollbar,
   html:has(.landing-home) *::-webkit-scrollbar,
   html:has(.board-embed)::-webkit-scrollbar,

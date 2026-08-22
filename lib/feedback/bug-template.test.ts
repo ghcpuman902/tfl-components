@@ -2,6 +2,8 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
   buildBugTemplate,
+  FEEDBACK_ABOUT_OPTIONS,
+  FEEDBACK_ABOUT_TOPICS,
   parseBugTemplate,
   suggestComponentForPage,
 } from "./bug-template"
@@ -18,7 +20,7 @@ describe("buildBugTemplate / parseBugTemplate", () => {
       /^::: What happened, and what did you expect instead\? :::/m
     )
     assert.match(text, /^::: Steps to reproduce :::/m)
-    assert.match(text, /^::: Component or page affected :::/m)
+    assert.match(text, /^::: What's this about\? :::/m)
 
     const parsed = parseBugTemplate(text)
     assert.equal(parsed.matched, true)
@@ -43,7 +45,7 @@ describe("buildBugTemplate / parseBugTemplate", () => {
       "::: Steps to reproduce :::",
       "",
       "",
-      "::: Component or page affected :::",
+      "::: What's this about? :::",
       "Roundel",
     ].join("\n")
     const parsed = parseBugTemplate(text)
@@ -84,5 +86,36 @@ describe("suggestComponentForPage", () => {
       suggestComponentForPage("/unknown", "Custom page · tfl-components"),
       "Custom page"
     )
+  })
+})
+
+describe("FEEDBACK_ABOUT_OPTIONS", () => {
+  it("leads with site-wide topics, then catalogue titles", () => {
+    assert.deepEqual(
+      FEEDBACK_ABOUT_OPTIONS.slice(0, FEEDBACK_ABOUT_TOPICS.length),
+      [...FEEDBACK_ABOUT_TOPICS]
+    )
+    assert.ok(FEEDBACK_ABOUT_OPTIONS.includes("tfl-ts"))
+    assert.ok(FEEDBACK_ABOUT_OPTIONS.includes("TfL API"))
+    assert.ok(FEEDBACK_ABOUT_OPTIONS.includes("This website"))
+    assert.ok(FEEDBACK_ABOUT_OPTIONS.includes("Tube & Rail Arrivals"))
+  })
+})
+
+describe("parseBugTemplate aliases", () => {
+  it("still reads the old component-or-page heading", () => {
+    const text = [
+      "::: What happened, and what did you expect instead? :::",
+      "Broken layout",
+      "",
+      "::: Steps to reproduce :::",
+      "",
+      "",
+      "::: Component or page affected :::",
+      "Roundel",
+    ].join("\n")
+    const parsed = parseBugTemplate(text)
+    assert.equal(parsed.matched, true)
+    assert.equal(parsed.component, "Roundel")
   })
 })

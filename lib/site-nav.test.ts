@@ -81,6 +81,8 @@ describe("site navigation", () => {
     assert.doesNotMatch(header, /placement="desktop"/)
     assert.match(header, /<Sheet /)
     assert.match(header, /variant="mobile"/)
+    assert.match(header, /includeSearch=\{!docsNav\}/)
+    assert.match(header, /sticky top-\(--site-header-height\)[\s\S]*md:hidden/)
     assert.match(header, /w-full max-w-none/)
     assert.doesNotMatch(header, /DropdownMenu/)
   })

@@ -2,6 +2,10 @@ import type { Metadata } from "next"
 import { Suspense } from "react"
 import Link from "next/link"
 import { ArrowRightIcon } from "lucide-react"
+import {
+  TflApiKeyField,
+  TflApiKeyHelpLink,
+} from "@/components/tfl-api-key-field"
 import { BrowserWindow } from "@/components/docs/browser-window"
 import { DocsVisitBeacon } from "@/components/docs/docs-visit-beacon"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
@@ -24,7 +28,8 @@ import {
   readHomeArrivalsBoardState,
 } from "@/lib/tfl/home-arrivals-data"
 
-const TFL_KEY_SNIPPET = `TFL_APP_KEY=your-primary-or-secondary-key`
+const TFL_KEY_SNIPPET = `# .env.local or .env.development.local
+TFL_APP_KEY=your-primary-or-secondary-key`
 
 const ARRIVALS_REACT_SNIPPET = `import { useEffect, useState } from "react"
 import TflClient, { type RealtimePrediction } from "tfl-ts"
@@ -231,8 +236,7 @@ export default function DocsIntroductionPage() {
         />
 
         <p className="max-w-prose">
-          Want a hosted display instead?{" "}
-          <StartAction href="/board">Make a live Board</StartAction>
+          <StartAction href="/docs/components">View all components</StartAction>
         </p>
 
         <section className="space-y-4" aria-labelledby="try-it">
@@ -242,60 +246,6 @@ export default function DocsIntroductionPage() {
           <Suspense fallback={<IntroArrivalsFallback />}>
             <IntroArrivalsPreview />
           </Suspense>
-          <p className="max-w-prose">
-            Configuring a Board by URL?{" "}
-            <StartAction href="/docs/board-url">
-              Read the Board URL specification
-            </StartAction>
-          </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <StartAction href="/docs/components">Browse components</StartAction>
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Install an arrivals board into a Next.js app with shadcn already
-              set up:
-            </p>
-            <InstallCommand registryUrl={arrivalsEntry.registryUrl!} />
-          </div>
-        </section>
-
-        <section className="space-y-3" aria-labelledby="choose-a-path">
-          <h2 id="choose-a-path" className="text-lg font-semibold">
-            Choose a path
-          </h2>
-          <ul className="max-w-prose space-y-2 text-muted-foreground">
-            <li>
-              <Link
-                href="/board"
-                className="text-foreground underline underline-offset-4"
-              >
-                I want a station display
-              </Link>
-              {" — "}
-              configure a hosted Board. No install.
-            </li>
-            <li>
-              <Link
-                href="/docs/components"
-                className="text-foreground underline underline-offset-4"
-              >
-                I want React components
-              </Link>
-              {" — "}
-              browse the catalogue, then follow the install example above.
-            </li>
-            <li>
-              <Link
-                href="/docs/explorer"
-                className="text-foreground underline underline-offset-4"
-              >
-                I need to understand TfL data
-              </Link>
-              {" — "}
-              inspect stations, stops, docks, and lines.
-            </li>
-          </ul>
         </section>
 
         <section className="space-y-3">
@@ -305,16 +255,27 @@ export default function DocsIntroductionPage() {
               TfL API portal
             </ExternalTextLink>
           </h2>
-          <p className="max-w-prose text-muted-foreground">
-            Subscribe to 500 Requests per min, then copy Primary or Secondary
-            from Profile into <code className="text-xs">.env.local</code>.{" "}
-            <code className="text-xs">app_id</code> has been unused since Jan
-            2021.
-          </p>
+          <TflApiKeyHelpLink />
           <SyntaxHighlightedCode
             code={TFL_KEY_SNIPPET}
             language="bash"
             wrapperClassName="mt-0 mb-0"
+          />
+          <p className="max-w-prose text-muted-foreground">
+            Optional. Paste a key here if you want{" "}
+            <Link
+              href="/docs/explorer"
+              className="text-foreground underline underline-offset-4"
+            >
+              Explorer
+            </Link>{" "}
+            or live examples in these docs. Your browser calls TfL with it. It
+            stays in this browser and is never sent to our server.
+          </p>
+          <TflApiKeyField
+            id="docs-tfl-key"
+            className="max-w-md"
+            showHelp={false}
           />
         </section>
 

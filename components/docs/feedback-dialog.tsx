@@ -35,9 +35,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import {
   buildBugTemplate,
-  FEEDBACK_COMPONENT_OPTIONS,
+  BUG_COMPONENT_LABEL,
+  FEEDBACK_ABOUT_OPTIONS,
   parseBugTemplate,
-  suggestComponentForPage,
 } from "@/lib/feedback/bug-template"
 import {
   DRAFT_STORAGE_KEY,
@@ -49,7 +49,11 @@ import {
 } from "@/lib/feedback/constants"
 import { buildGitHubIssueUrl, buildGitHubPrUrl } from "@/lib/feedback/github"
 import { isAllowedScreenshotType } from "@/lib/feedback/schema"
-import { OPEN_FEEDBACK_EVENT, openFeedbackDialog } from "@/lib/feedback/open"
+import {
+  OPEN_FEEDBACK_EVENT,
+  openFeedbackDialog,
+  type OpenFeedbackDetail,
+} from "@/lib/feedback/open"
 import { APP_VERSION_LABEL } from "@/lib/version"
 
 /** Square attach slot — matches Send button height so the row never shifts. */
@@ -239,10 +243,52 @@ const FormField = ({
   </div>
 )
 
+const AboutField = ({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (next: string) => void
+}) => {
+  const handleChange = (next: string) => onChange(next.slice(0, 200))
+
+  return (
+    <FormField label={BUG_COMPONENT_LABEL} htmlFor="feedback-about" optional>
+      <Combobox
+        items={[...FEEDBACK_ABOUT_OPTIONS]}
+        inputValue={value}
+        onInputValueChange={(next) => handleChange(String(next))}
+        onValueChange={(next) => {
+          if (typeof next === "string") handleChange(next)
+        }}
+        openOnInputClick
+        modal={false}
+      >
+        <ComboboxInput
+          id="feedback-about"
+          placeholder="Board, tfl-ts, this website…"
+          className="w-full"
+          showClear={value.length > 0}
+        />
+        <ComboboxContent className="z-[200]">
+          <ComboboxEmpty>Keep what you typed</ComboboxEmpty>
+          <ComboboxList>
+            {(item) => (
+              <ComboboxItem key={item} value={item}>
+                {item}
+              </ComboboxItem>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+    </FormField>
+  )
+}
+
 export const FeedbackTrigger = () => (
   <button
     type="button"
-    onClick={openFeedbackDialog}
+    onClick={() => openFeedbackDialog()}
     className="inline-flex h-8 w-full items-center gap-1.5 rounded-md px-2 text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
     aria-haspopup="dialog"
     aria-label="Send feedback"
@@ -325,26 +371,28 @@ export const FeedbackDialog = () => {
   }, [])
 
   const handleOpenChange = useCallback(
-    (nextOpen: boolean) => {
+    (nextOpen: boolean, options?: OpenFeedbackDetail) => {
       if (!nextOpen) {
         setOpen(false)
         resetState()
         return
       }
 
+      const captureScreenshot = options?.screenshot !== false
+
       void (async () => {
-        setCapturing(true)
+        if (captureScreenshot) setCapturing(true)
         const title = document.title
-        const path = window.location.pathname
         setPageMeta({
           url: window.location.href,
           title,
         })
-        setBugComponent(suggestComponentForPage(path, title))
         setLoadedAt(Date.now())
-        const shot = await captureViewport()
-        setScreenshot(shot)
-        setCapturing(false)
+        if (captureScreenshot) {
+          const shot = await captureViewport()
+          setScreenshot(shot)
+          setCapturing(false)
+        }
         setStep("form")
         setKind("bug")
 
@@ -375,8 +423,12 @@ export const FeedbackDialog = () => {
   )
 
   useEffect(() => {
-    const handleOpenFeedback = () => {
-      handleOpenChange(true)
+    const handleOpenFeedback = (event: Event) => {
+      const detail =
+        event instanceof CustomEvent
+          ? (event as CustomEvent<OpenFeedbackDetail>).detail
+          : undefined
+      handleOpenChange(true, { screenshot: detail?.screenshot !== false })
     }
     window.addEventListener(OPEN_FEEDBACK_EVENT, handleOpenFeedback)
     return () => {
@@ -436,12 +488,15 @@ export const FeedbackDialog = () => {
     event.preventDefault()
     if (submitting) return
 
+    const about = bugComponent.trim()
     const message =
       kind === "bug"
         ? freeform
           ? bugFreeformText.trim()
           : buildBugTemplate(bugDescription, bugSteps, bugComponent).trim()
-        : suggestionText.trim()
+        : about
+          ? `About: ${about}\n\n${suggestionText.trim()}`
+          : suggestionText.trim()
 
     const requiredMissing =
       kind === "bug"
@@ -520,11 +575,11 @@ export const FeedbackDialog = () => {
   const prUrl = buildGitHubPrUrl()
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={(nextOpen) => handleOpenChange(nextOpen)}>
       <DialogContent
         data-feedback-dialog=""
         showCloseButton={false}
-        className="max-h-[min(90svh,42rem)] scrollbar-gutter-stable gap-0 overflow-y-auto p-0 sm:max-w-md"
+        className="max-h-[min(90svh,48rem)] scrollbar-gutter-stable gap-0 overflow-y-auto p-0 sm:max-w-lg"
         aria-labelledby={titleId}
       >
         <DialogClose
@@ -652,8 +707,8 @@ export const FeedbackDialog = () => {
                         >
                           <Textarea
                             id="feedback-bug-description"
-                            rows={3}
-                            placeholder="e.g. the arrivals board clips on narrow screens; I expected it to wrap."
+                            rows={4}
+                            placeholder="e.g. the arrivals board clips on a phone; I expected it to wrap."
                             value={bugDescription}
                             onChange={(event) =>
                               setBugDescription(event.target.value)
@@ -680,46 +735,6 @@ export const FeedbackDialog = () => {
                             maxLength={2000}
                           />
                         </FormField>
-
-                        <FormField
-                          label="Component or page"
-                          htmlFor="feedback-bug-component"
-                          optional
-                        >
-                          <Combobox
-                            items={[...FEEDBACK_COMPONENT_OPTIONS]}
-                            inputValue={bugComponent}
-                            onInputValueChange={(value) => {
-                              setBugComponent(String(value).slice(0, 200))
-                            }}
-                            onValueChange={(value) => {
-                              if (typeof value === "string") {
-                                setBugComponent(value.slice(0, 200))
-                              }
-                            }}
-                            openOnInputClick
-                            modal={false}
-                          >
-                            <ComboboxInput
-                              id="feedback-bug-component"
-                              placeholder="Start typing or pick a page…"
-                              className="w-full"
-                              showClear={bugComponent.length > 0}
-                            />
-                            <ComboboxContent className="z-[200]">
-                              <ComboboxEmpty>
-                                No match — keep your text
-                              </ComboboxEmpty>
-                              <ComboboxList>
-                                {(item) => (
-                                  <ComboboxItem key={item} value={item}>
-                                    {item}
-                                  </ComboboxItem>
-                                )}
-                              </ComboboxList>
-                            </ComboboxContent>
-                          </Combobox>
-                        </FormField>
                       </>
                     )}
                   </TabsContent>
@@ -736,7 +751,7 @@ export const FeedbackDialog = () => {
                         id="feedback-suggestion"
                         rows={10}
                         className="min-h-40"
-                        placeholder="What worked well, what was frustrating, or the one change that would help most."
+                        placeholder="What's stuck, or what you'd change."
                         value={suggestionText}
                         onChange={(event) =>
                           setSuggestionText(event.target.value)
@@ -746,6 +761,13 @@ export const FeedbackDialog = () => {
                     </FormField>
                   </TabsContent>
                 </Tabs>
+
+                {kind === "suggestion" || !freeform ? (
+                  <AboutField
+                    value={bugComponent}
+                    onChange={setBugComponent}
+                  />
+                ) : null}
 
                 <FormField
                   label="Can we follow up?"

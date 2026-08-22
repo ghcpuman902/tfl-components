@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { CheckIcon, CopyIcon, ExternalLinkIcon, QrCodeIcon } from "lucide-react"
 import { encode } from "uqr"
+import { FeedbackTextLink } from "@/components/docs/feedback-text-link"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -138,6 +139,12 @@ export const BoardShareCard = ({
           Show QR code
         </Button>
       </div>
+      <p className="text-xs text-muted-foreground">
+        Having trouble?{" "}
+        <FeedbackTextLink className="text-muted-foreground no-underline hover:text-foreground hover:underline">
+          Feedback
+        </FeedbackTextLink>
+      </p>
 
       <Dialog open={qrOpen} onOpenChange={handleQrOpenChange}>
         <DialogContent className="w-[min(40rem,calc(100vw-1.5rem))] max-w-none p-6 sm:max-w-none">

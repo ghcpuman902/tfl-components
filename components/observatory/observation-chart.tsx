@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   CHART_ROWS,
   dayMark,
@@ -123,6 +123,7 @@ export const ObservationChart = ({
   events: readonly ObservatoryHistoryEvent[]
 }) => {
   const [now, setNow] = useState<number | null>(null)
+  const scrollerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setNow(Date.now())
@@ -137,6 +138,12 @@ export const ObservationChart = ({
       months: monthLabelsForGrid(weeks),
     }
   }, [now])
+
+  useEffect(() => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    scroller.scrollLeft = scroller.scrollWidth
+  }, [grid])
 
   if (grid == null) {
     return (
@@ -153,6 +160,7 @@ export const ObservationChart = ({
 
   return (
     <div
+      ref={scrollerRef}
       className="overflow-x-auto rounded-md border border-border bg-background p-3"
       role="img"
       aria-label="Observations over the last year"

@@ -152,7 +152,7 @@ export const SyntaxHighlightedCode = ({
           data-copied="false"
           aria-label="Copy code"
           className={cn(
-            "group/button absolute top-2 right-2 z-10 inline-flex size-7 shrink-0 items-center justify-center rounded-[min(var(--radius-md),12px)] border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none",
+            "group/button absolute top-2 right-2 z-10 inline-flex size-7 shrink-0 items-center justify-center rounded-[min(var(--radius-md),12px)] border border-border bg-background bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none",
             "hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px dark:hover:bg-muted/50",
             "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
           )}

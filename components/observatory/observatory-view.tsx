@@ -235,7 +235,9 @@ export const ObservatoryFallback = () => (
     <article className="space-y-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="tfl-title text-3xl text-foreground">TfL metadata</h1>
+          <h1 className="tfl-title text-3xl text-foreground">
+            TfL metadata tracker
+          </h1>
           <p className="mt-2 max-w-prose text-lg text-muted-foreground">
             Independent observation of TfL line, stop, and route metadata.
           </p>
@@ -257,7 +259,9 @@ export const ObservatoryView = ({ data }: { data: ObservatoryPageData }) => {
       <article className="space-y-8 text-sm text-muted-foreground">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
           <div className="min-w-0">
-            <h1 className="tfl-title text-3xl text-foreground">TfL metadata</h1>
+            <h1 className="tfl-title text-3xl text-foreground">
+            TfL metadata tracker
+          </h1>
             <p className="mt-2 max-w-prose text-lg text-muted-foreground">
               Independent observation of TfL line, stop, and route metadata.
             </p>
