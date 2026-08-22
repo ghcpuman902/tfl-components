@@ -43,7 +43,8 @@ const getServerClockSnapshot = () => NOON_SENTINEL_MS
 export const useArrivalsBoardUiState = (
   rowCount: number,
   fetchError: string | null,
-  domain: "rail" | "bus" | "river" = "rail"
+  domain: "rail" | "bus" | "river" = "rail",
+  lineIds?: readonly string[]
 ): ArrivalsBoardUiState => {
   const [offline, setOffline] = useState(false)
   const nowMs = useSyncExternalStore(
@@ -75,6 +76,7 @@ export const useArrivalsBoardUiState = (
         offline: offline && rowCount === 0,
         domain,
         nowMs,
+        lineIds,
       }) ?? "empty",
   }
 }

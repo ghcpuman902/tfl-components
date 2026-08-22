@@ -12,6 +12,8 @@ import type { BusStopDisruption } from "@/lib/tfl/prepare-bus-stop-disruptions"
 import {
   ARRIVALS_EMPTY_COPY,
   ARRIVALS_LINE_EMPTY_COPY,
+  arrivalsLineEmptyCopy,
+  resolveLineArrivalsEmptyKind,
   type ArrivalsEmptyKind,
 } from "@/lib/tfl/arrivals-empty"
 import type {
@@ -146,7 +148,7 @@ export const ArrivalsBoardSkeleton = ({
 }) => (
   <div
     data-slot="arrivals-board"
-    className={cn("@container/arrivals min-w-0 w-full", className)}
+    className={cn("@container/arrivals w-full min-w-0", className)}
     style={ARRIVALS_RHYTHM_VARS}
     aria-busy
     aria-label="Loading arrivals"
@@ -224,6 +226,7 @@ const GroupBody = ({
   dwellMs,
   startDelayMs,
   idleReturnMs,
+  nowMs,
 }: {
   group: ArrivalsPreparedGroup
   mode: ArrivalsBoardMode
@@ -234,12 +237,23 @@ const GroupBody = ({
   dwellMs?: number
   startDelayMs?: number
   idleReturnMs?: number
+  nowMs?: number
 }) => {
   const labeledBounds = group.bounds.filter((bound) => bound.label)
+  const lineEmptyCopy =
+    mode === "rail" && !group.hasInformation
+      ? arrivalsLineEmptyCopy(
+          resolveLineArrivalsEmptyKind({
+            lineIds: group.lineIds,
+            rowCount: 0,
+            nowMs,
+          })
+        )
+      : ARRIVALS_LINE_EMPTY_COPY
   // `grid-cols-1` (not block) so consumer `grid-cols-*` variants merge cleanly.
   const subgroupsClassName = cn(
     LIST_RESET_CLASS,
-    "min-w-0 grid grid-cols-1",
+    "grid min-w-0 grid-cols-1",
     classNames?.subgroups
   )
 
@@ -258,9 +272,9 @@ const GroupBody = ({
             "flex items-center text-base text-muted-foreground",
             ARRIVALS_TILE_CLASS
           )}
-          aria-label={`${group.lineName}: ${ARRIVALS_LINE_EMPTY_COPY}`}
+          aria-label={`${group.lineName}: ${lineEmptyCopy}`}
         >
-          {ARRIVALS_LINE_EMPTY_COPY}
+          {lineEmptyCopy}
         </li>
         {Array.from({ length: dashCount }, (_, index) => (
           <li
@@ -300,6 +314,7 @@ const GroupBody = ({
           idleReturnMs={idleReturnMs}
           dwellMs={dwellMs}
           startDelayMs={startDelayMs}
+          emptyCopy={lineEmptyCopy}
         />
       ))}
     </ul>
@@ -357,6 +372,11 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
   /** Interactive: return to page 1 after this many idle milliseconds. */
   idleReturnMs?: number
   /**
+   * Fetch timestamp for overnight empty copy. Omit to keep “No information”
+   * on seeded empty lines (do not invent `ended` without a clock).
+   */
+  now?: number
+  /**
    * Root classes, merged over the board container (`data-slot="arrivals-board"`).
    * The root *is* the `arrivals` container, so container-query variants here
    * query an outer context — put board-width arrangements on `classNames.groups`
@@ -394,6 +414,7 @@ export const ArrivalsBoardView = ({
   dwellMs,
   startDelayMs,
   idleReturnMs,
+  now,
   className,
   classNames,
 }: ArrivalsBoardViewProps) => {
@@ -410,7 +431,7 @@ export const ArrivalsBoardView = ({
   return (
     <div
       data-slot="arrivals-board"
-      className={cn("@container/arrivals min-w-0 w-full", className)}
+      className={cn("@container/arrivals w-full min-w-0", className)}
       style={ARRIVALS_RHYTHM_VARS}
     >
       <BusStopDisruptionBoundary
@@ -474,9 +495,7 @@ export const ArrivalsBoardView = ({
           >
             {error}
           </p>
-        ) : null}
-
-        {showEmpty ? (
+        ) : showEmpty ? (
           <p
             className={cn(
               "flex items-center text-base text-muted-foreground",
@@ -486,9 +505,7 @@ export const ArrivalsBoardView = ({
           >
             {emptyCopy}
           </p>
-        ) : null}
-
-        {prepared.layout === "flat" ? (
+        ) : prepared.layout === "flat" ? (
           <ArrivalsPagedList
             rows={prepared.rows}
             mode={mode}
@@ -561,6 +578,7 @@ export const ArrivalsBoardView = ({
                   idleReturnMs={idleReturnMs}
                   dwellMs={dwellMs}
                   startDelayMs={startDelayMs}
+                  nowMs={now}
                 />
               </section>
             ))}

@@ -179,6 +179,7 @@ export const RailArrivalsBoard = ({
       dwellMs={dwellMs}
       startDelayMs={startDelayMs}
       idleReturnMs={idleReturnMs}
+      now={now}
       className={className}
       classNames={classNames}
       {...chrome}

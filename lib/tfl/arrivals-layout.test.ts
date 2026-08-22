@@ -7,6 +7,7 @@ import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
 import { RiverBusArrivalsBoard } from "@/components/tfl/arrivals/river-bus-arrivals-board"
 import { resolveArrivalsHeading } from "@/components/tfl/arrivals/arrivals-board-view"
+import { londonDayStartMs } from "@/lib/tfl/london-dates"
 
 /**
  * Structural tests for the arrivals layout API: stable `data-slot` hooks,
@@ -124,6 +125,64 @@ describe("arrivals board layout API", () => {
     assert.equal(slotCount(html, "arrivals-row"), 9)
     assert.ok(html.includes("No information"))
     assert.ok(html.includes("No more arrivals"))
+  })
+
+  it("uses ended copy on a finished line after last Friday service", () => {
+    const now = londonDayStartMs("2026-08-22") + 1 * 3_600_000 + 25 * 60_000
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: railData,
+        lines: railLines,
+        stopName: "Oxford Circus",
+        now,
+      })
+    )
+    assert.ok(html.includes("Service has ended for tonight."))
+    assert.ok(html.includes("Ealing Broadway"))
+    assert.equal(html.includes("No information"), false)
+  })
+
+  it("does not paint No information under a fetch error", () => {
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: [],
+        lines: railLines,
+        stopName: "Oxford Circus",
+        error: "Couldn't load arrivals.",
+      })
+    )
+    assert.ok(html.includes("Couldn") && html.includes("load arrivals."))
+    assert.equal(html.includes("No information"), false)
+    assert.equal(slotCount(html, "arrivals-group"), 0)
+    assert.equal(slotCount(html, "arrivals-board"), 1)
+  })
+
+  it("keeps a live line visible when its partner has finished overnight", () => {
+    const now = londonDayStartMs("2026-08-22") + 1 * 3_600_000 + 25 * 60_000
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: [
+          prediction({
+            id: "cir-e",
+            lineId: "circle",
+            lineName: "Circle",
+            modeName: "tube",
+            platformName: "Eastbound - Platform 1",
+            towards: "Edgware Road (Circle)",
+            timeToStation: 180,
+          }),
+        ],
+        lines: [
+          { lineId: "circle", lineName: "Circle", modeName: "tube" },
+          { lineId: "district", lineName: "District", modeName: "tube" },
+        ],
+        stopName: "Tower Hill",
+        now,
+      })
+    )
+    assert.ok(html.includes("Edgware Road"))
+    assert.ok(html.includes("Service has ended for tonight."))
+    assert.equal(html.includes("No arrivals right now."), false)
   })
 
   it("uses a fixed 5ch box for mixed-line identity chips", () => {

@@ -39,6 +39,7 @@ import {
   resolveArrivalsProps,
   resolveStatusProps,
 } from "@/lib/tfl/board-config-resolve"
+import { resolveArrivalsEmptyKind } from "@/lib/tfl/arrivals-empty"
 import {
   lookupBoardArrivalsStopIds,
   type BoardArrivalsStopIdsIndex,
@@ -442,6 +443,18 @@ export const BoardDisplay = ({
     config.arrivals.lineOrder,
   ])
 
+  const railEmptyKind = useMemo(() => {
+    if (!arrivals.fetchedAt || arrivals.fetchError) return "empty" as const
+    return (
+      resolveArrivalsEmptyKind({
+        rowCount: railData.length,
+        domain: "rail",
+        nowMs: arrivals.fetchedAt,
+        lineIds: servingLines?.map((line) => line.lineId),
+      }) ?? "empty"
+    )
+  }, [arrivals.fetchError, arrivals.fetchedAt, railData.length, servingLines])
+
   const busData = useMemo(() => {
     const routes = config.bus.routes
     if (!routes?.length) return busArrivals.data
@@ -485,6 +498,7 @@ export const BoardDisplay = ({
           startDelayMs={unattended ? 0 : undefined}
           loading={!ready || arrivals.loading}
           error={arrivalsError}
+          emptyKind={railEmptyKind}
           classNames={BOUND_COLUMNS_CLASS_NAMES}
         />
       )

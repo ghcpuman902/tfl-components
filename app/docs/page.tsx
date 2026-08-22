@@ -209,6 +209,7 @@ const IntroArrivalsPreview = async () => {
     <BrowserWindow previewLimit fullExampleHref={DOCS_FULL_EXAMPLE_HREF}>
       <RailArrivalsBoard
         data={payload.arrivals}
+        now={payload.fetchedAt}
         lines={HOME_RAIL_LINES}
         stopName={payload.stopName}
         headingLevel={2}

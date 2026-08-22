@@ -661,6 +661,7 @@ const PagedArrivalRows = ({
   mode,
   isLast,
   emptyLabel,
+  emptyCopy = ARRIVALS_LINE_EMPTY_COPY,
   showLineChip = false,
   hoistPlatform = false,
   hoistRouteChip = false,
@@ -672,6 +673,7 @@ const PagedArrivalRows = ({
   mode: ArrivalsBoardMode
   isLast: boolean
   emptyLabel: string
+  emptyCopy?: string
   showLineChip?: boolean
   hoistPlatform?: boolean
   hoistRouteChip?: boolean
@@ -691,7 +693,7 @@ const PagedArrivalRows = ({
           )}
           aria-label={emptyLabel}
         >
-          {ARRIVALS_LINE_EMPTY_COPY}
+          {emptyCopy}
         </li>
       ) : (
         rows.map((row, index) => (
@@ -725,6 +727,7 @@ const ArrivalsPageTrack = ({
   mode,
   isLast,
   emptyLabel,
+  emptyCopy,
   containerRef,
   setSlideRef,
   className,
@@ -737,6 +740,7 @@ const ArrivalsPageTrack = ({
   mode: ArrivalsBoardMode
   isLast: boolean
   emptyLabel: string
+  emptyCopy?: string
   containerRef: RefObject<HTMLDivElement | null>
   setSlideRef: (index: number) => (element: HTMLElement | null) => void
   className?: string
@@ -760,6 +764,7 @@ const ArrivalsPageTrack = ({
           mode={mode}
           isLast={isLast}
           emptyLabel={emptyLabel}
+          emptyCopy={emptyCopy}
           showLineChip={showLineChip}
           hoistPlatform={hoistPlatform}
           hoistRouteChip={hoistRouteChip}
@@ -793,6 +798,7 @@ const ArrivalsPageTrack = ({
             mode={mode}
             isLast={isLast}
             emptyLabel={emptyLabel}
+            emptyCopy={emptyCopy}
             showLineChip={showLineChip}
             hoistPlatform={hoistPlatform}
             hoistRouteChip={hoistRouteChip}
@@ -899,6 +905,7 @@ const UnattendedArrivalFrames = ({
   mode,
   isLast,
   emptyLabel,
+  emptyCopy,
   className,
   showLineChip = false,
   hoistPlatform = false,
@@ -908,6 +915,7 @@ const UnattendedArrivalFrames = ({
   mode: ArrivalsBoardMode
   isLast: boolean
   emptyLabel: string
+  emptyCopy?: string
   className?: string
   showLineChip?: boolean
   hoistPlatform?: boolean
@@ -927,6 +935,7 @@ const UnattendedArrivalFrames = ({
         mode={mode}
         isLast={isLast}
         emptyLabel={emptyLabel}
+        emptyCopy={emptyCopy}
         showLineChip={showLineChip}
         hoistPlatform={hoistPlatform}
         hoistRouteChip={hoistRouteChip}
@@ -1032,6 +1041,7 @@ export const ArrivalsBoundGroup = ({
   dwellMs,
   startDelayMs,
   idleReturnMs = INTERACTIVE_IDLE_RETURN_MS,
+  emptyCopy = ARRIVALS_LINE_EMPTY_COPY,
 }: {
   bound: ArrivalsPreparedBound
   mode: ArrivalsBoardMode
@@ -1045,6 +1055,7 @@ export const ArrivalsBoundGroup = ({
   dwellMs?: number
   startDelayMs?: number
   idleReturnMs?: number
+  emptyCopy?: string
 }) => {
   const canPage = Boolean(bound.label) && pageSize > 0
   const unattended = behaviour === "unattended" && canPage
@@ -1063,7 +1074,7 @@ export const ArrivalsBoundGroup = ({
   } = useArrivalsPageTrack(unattended ? 1 : chunked.pageCount)
   const showPager = canPage && !unattended && chunked.pageCount > 1
   const emptyScope = bound.label ? `${lineName} ${bound.label}` : lineName
-  const emptyLabel = `${emptyScope}: ${ARRIVALS_LINE_EMPTY_COPY}`
+  const emptyLabel = `${emptyScope}: ${emptyCopy}`
   const session = useUnattendedArrivalSession({
     rows: bound.rows,
     pageSize,
@@ -1125,6 +1136,7 @@ export const ArrivalsBoundGroup = ({
           mode={mode}
           isLast={isLastBound}
           emptyLabel={emptyLabel}
+          emptyCopy={emptyCopy}
           className={classNames?.rows}
           showLineChip={showLineChip}
           hoistPlatform={bound.platformUniform}
@@ -1135,6 +1147,7 @@ export const ArrivalsBoundGroup = ({
           mode={mode}
           isLast={isLastBound}
           emptyLabel={emptyLabel}
+          emptyCopy={emptyCopy}
           containerRef={containerRef}
           setSlideRef={setSlideRef}
           className={classNames?.rows}
