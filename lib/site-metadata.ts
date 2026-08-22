@@ -1,6 +1,10 @@
 import type { Metadata } from "next"
 import { getDocsEntry } from "@/lib/docs-catalog"
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site"
+import {
+  BOARD_VIEW_APPLE_WEB_APP,
+  BOARD_VIEW_MANIFEST_PATH,
+} from "@/lib/tfl/board-view-manifest"
 
 export type PageMetaInput = {
   title: string
@@ -146,3 +150,13 @@ export const ROUTE_PAGE_META = {
     path: "/how-it-was-built",
   },
 } as const satisfies Record<string, PageMetaInput>
+
+/** Board display: chromeless page plus home-screen fullscreen install. */
+export const boardViewPageMetadata = (): Metadata => ({
+  ...pageMetadata(ROUTE_PAGE_META.boardView),
+  manifest: BOARD_VIEW_MANIFEST_PATH,
+  appleWebApp: BOARD_VIEW_APPLE_WEB_APP,
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
+})

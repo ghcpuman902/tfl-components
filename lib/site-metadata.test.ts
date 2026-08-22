@@ -1,7 +1,13 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "./site"
-import { docsEntryMetadata, pageMetadata, ROUTE_PAGE_META } from "./site-metadata"
+import {
+  boardViewPageMetadata,
+  docsEntryMetadata,
+  pageMetadata,
+  ROUTE_PAGE_META,
+} from "./site-metadata"
+import { BOARD_VIEW_MANIFEST_PATH } from "./tfl/board-view-manifest"
 
 const REQUIRED_ROUTES = [
   "home",
@@ -61,6 +67,16 @@ describe("route metadata", () => {
     assert.doesNotMatch(canonical, /[?#]/)
     assert.doesNotMatch(canonical, /key=/)
     assert.doesNotMatch(JSON.stringify(meta), /key=/)
+  })
+
+  it("points the Board display at the fullscreen home-screen manifest", () => {
+    const meta = boardViewPageMetadata()
+    const apple =
+      typeof meta.appleWebApp === "object" ? meta.appleWebApp : undefined
+    assert.equal(meta.manifest, BOARD_VIEW_MANIFEST_PATH)
+    assert.equal(apple?.capable, true)
+    assert.equal(apple?.statusBarStyle, "black-translucent")
+    assert.equal(meta.other?.["mobile-web-app-capable"], "yes")
   })
 
   it("does not reuse the site name as every page's Open Graph title", () => {

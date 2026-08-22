@@ -1,11 +1,13 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { BoardDisplay } from "@/components/board/board-display"
 import { getBoardArrivalsStopIdsIndex } from "@/lib/tfl/board-arrivals-stop-ids"
 import { getBoardStationLinesIndex } from "@/lib/tfl/board-station-lines"
 import { getBoardStationNamesIndex } from "@/lib/tfl/board-station-names"
-import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
+import { boardViewPageMetadata } from "@/lib/site-metadata"
+import { BOARD_VIEW_VIEWPORT } from "@/lib/tfl/board-view-manifest"
 
-export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.boardView)
+export const metadata: Metadata = boardViewPageMetadata()
+export const viewport: Viewport = BOARD_VIEW_VIEWPORT
 
 export default function BoardViewPage() {
   const stationLines = getBoardStationLinesIndex()
