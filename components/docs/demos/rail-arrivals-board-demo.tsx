@@ -20,7 +20,12 @@ export default function RailArrivalsBoardDemo() {
       pollMs: POLL_MS,
     }
   )
-  const boardState = useArrivalsBoardUiState(data.length, fetchError, "rail")
+  const boardState = useArrivalsBoardUiState(
+    data.length,
+    fetchError,
+    "rail",
+    HOME_RAIL_LINES.map((line) => line.lineId)
+  )
 
   return (
     <div className="space-y-4">

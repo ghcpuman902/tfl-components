@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react"
 import { normalizeLineId, type RealtimePrediction } from "tfl-ts"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
+import { ArrivalsStatusSentence } from "@/components/tfl/arrivals/quiet-chip"
 import type { RoundelPreset } from "@/lib/tfl/roundel-presets"
 import { StationNameTitle } from "@/components/tfl/station-name"
 import {
@@ -12,7 +13,12 @@ import type { BusStopDisruption } from "@/lib/tfl/prepare-bus-stop-disruptions"
 import {
   ARRIVALS_EMPTY_COPY,
   ARRIVALS_LINE_EMPTY_COPY,
+  arrivalsLineEmptyCopy,
+  resolveArrivalsLeftoverStatus,
+  resolveArrivalsStatusChip,
+  resolveLineArrivalsEmptyKind,
   type ArrivalsEmptyKind,
+  type ArrivalsStatusSignal,
 } from "@/lib/tfl/arrivals-empty"
 import type {
   ArrivalsPreparedBoard,
@@ -56,7 +62,9 @@ export type ArrivalsBoardChromeProps = {
    */
   stopName?: string
   /**
-   * @deprecated Dev/meta NaPTAN id — not shown in the board UI. Kept for call-site compat.
+   * NaPTAN / stop-point id. Not shown in the board UI. Rail leftover tiles
+   * and empty-row chips use it to ignore line status that does not affect
+   * this station (`getStatus({ detail: true })` geography).
    */
   stopPointId?: string
   /**
@@ -80,7 +88,7 @@ export type ArrivalsBoardChromeProps = {
   statusLabel?: string
   /**
    * Why the board has no rows when `error` is unset.
-   * Resolve in the app (`resolveArrivalsEmptyKind`) from clock / offline / domain.
+   * Resolve in the app (`resolveArrivalsEmptyKind`) from clock / status / domain.
    */
   emptyKind?: ArrivalsEmptyKind
   /** Override copy for `emptyKind`. Prefer setting `emptyKind` instead. */
@@ -146,7 +154,7 @@ export const ArrivalsBoardSkeleton = ({
 }) => (
   <div
     data-slot="arrivals-board"
-    className={cn("@container/arrivals min-w-0 w-full", className)}
+    className={cn("@container/arrivals w-full min-w-0", className)}
     style={ARRIVALS_RHYTHM_VARS}
     aria-busy
     aria-label="Loading arrivals"
@@ -224,6 +232,9 @@ const GroupBody = ({
   dwellMs,
   startDelayMs,
   idleReturnMs,
+  nowMs,
+  lineStatus,
+  stopPointId,
 }: {
   group: ArrivalsPreparedGroup
   mode: ArrivalsBoardMode
@@ -234,12 +245,49 @@ const GroupBody = ({
   dwellMs?: number
   startDelayMs?: number
   idleReturnMs?: number
+  nowMs?: number
+  lineStatus?: readonly ArrivalsStatusSignal[]
+  stopPointId?: string
 }) => {
   const labeledBounds = group.bounds.filter((bound) => bound.label)
+  const emptyState =
+    mode === "rail"
+      ? resolveLineArrivalsEmptyKind({
+          lineIds: group.lineIds,
+          rowCount: group.hasInformation ? 1 : 0,
+          nowMs,
+          lineStatus,
+          stopPointId,
+        })
+      : null
+  const lineEmptyCopy =
+    mode === "rail"
+      ? arrivalsLineEmptyCopy(emptyState)
+      : ARRIVALS_LINE_EMPTY_COPY
+  const emptyChip =
+    mode === "rail" && !group.hasInformation
+      ? resolveArrivalsStatusChip({
+          lineIds: group.lineIds,
+          hasTrains: false,
+          emptyKind: emptyState?.kind ?? "empty",
+          lineStatus,
+          nowMs,
+          stopPointId,
+        })
+      : null
+  const leftoverStatus =
+    mode === "rail" && group.hasInformation
+      ? resolveArrivalsLeftoverStatus({
+          lineIds: group.lineIds,
+          lineStatus,
+          nowMs,
+          stopPointId,
+        })
+      : null
   // `grid-cols-1` (not block) so consumer `grid-cols-*` variants merge cleanly.
   const subgroupsClassName = cn(
     LIST_RESET_CLASS,
-    "min-w-0 grid grid-cols-1",
+    "grid min-w-0 grid-cols-1",
     classNames?.subgroups
   )
 
@@ -258,9 +306,9 @@ const GroupBody = ({
             "flex items-center text-base text-muted-foreground",
             ARRIVALS_TILE_CLASS
           )}
-          aria-label={`${group.lineName}: ${ARRIVALS_LINE_EMPTY_COPY}`}
+          aria-label={`${group.lineName}: ${lineEmptyCopy}`}
         >
-          {ARRIVALS_LINE_EMPTY_COPY}
+          <ArrivalsStatusSentence chip={emptyChip} sentence={lineEmptyCopy} />
         </li>
         {Array.from({ length: dashCount }, (_, index) => (
           <li
@@ -300,6 +348,9 @@ const GroupBody = ({
           idleReturnMs={idleReturnMs}
           dwellMs={dwellMs}
           startDelayMs={startDelayMs}
+          emptyCopy={lineEmptyCopy}
+          statusChip={emptyChip}
+          leftoverStatus={leftoverStatus}
         />
       ))}
     </ul>
@@ -357,6 +408,19 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
   /** Interactive: return to page 1 after this many idle milliseconds. */
   idleReturnMs?: number
   /**
+   * Fetch timestamp for overnight empty copy and disruption windows.
+   * Omit to refuse `ended`. Successful empty paints “No arrivals right now.”
+   * (or ended / a short “No service.” note).
+   */
+  now?: number
+  /**
+   * Optional current line status from the app (Board already fetched it).
+   * Classification signal; rail leftover tiles and empty-row chips may show
+   * the official description when that status affects this stop
+   * (`getStatus({ detail: true })` geography). Never pasted as reason text.
+   */
+  lineStatus?: readonly ArrivalsStatusSignal[]
+  /**
    * Root classes, merged over the board container (`data-slot="arrivals-board"`).
    * The root *is* the `arrivals` container, so container-query variants here
    * query an outer context — put board-width arrangements on `classNames.groups`
@@ -379,6 +443,7 @@ export const ArrivalsBoardView = ({
   mode,
   prepared,
   stopName,
+  stopPointId,
   resolvedStopLetter,
   disruptions = [],
   headingLevel = 1,
@@ -394,6 +459,8 @@ export const ArrivalsBoardView = ({
   dwellMs,
   startDelayMs,
   idleReturnMs,
+  now,
+  lineStatus,
   className,
   classNames,
 }: ArrivalsBoardViewProps) => {
@@ -410,7 +477,7 @@ export const ArrivalsBoardView = ({
   return (
     <div
       data-slot="arrivals-board"
-      className={cn("@container/arrivals min-w-0 w-full", className)}
+      className={cn("@container/arrivals w-full min-w-0", className)}
       style={ARRIVALS_RHYTHM_VARS}
     >
       <BusStopDisruptionBoundary
@@ -474,9 +541,7 @@ export const ArrivalsBoardView = ({
           >
             {error}
           </p>
-        ) : null}
-
-        {showEmpty ? (
+        ) : showEmpty ? (
           <p
             className={cn(
               "flex items-center text-base text-muted-foreground",
@@ -484,11 +549,9 @@ export const ArrivalsBoardView = ({
             )}
             role="status"
           >
-            {emptyCopy}
+            <ArrivalsStatusSentence sentence={emptyCopy} />
           </p>
-        ) : null}
-
-        {prepared.layout === "flat" ? (
+        ) : prepared.layout === "flat" ? (
           <ArrivalsPagedList
             rows={prepared.rows}
             mode={mode}
@@ -561,6 +624,9 @@ export const ArrivalsBoardView = ({
                   idleReturnMs={idleReturnMs}
                   dwellMs={dwellMs}
                   startDelayMs={startDelayMs}
+                  nowMs={now}
+                  lineStatus={lineStatus}
+                  stopPointId={stopPointId}
                 />
               </section>
             ))}

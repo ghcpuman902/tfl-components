@@ -61,6 +61,11 @@ export type StationNameProps = {
    */
   accessibleName?: string
   /**
+   * Keep each chosen line on one row (default). Set false so a line may CSS-wrap
+   * inside the box — used by board titles when even abbr + scale still overflow.
+   */
+  nowrap?: boolean
+  /**
    * @deprecated No longer required — find/copy/aria always use the canonical name.
    */
   abbreviatedVisual?: boolean
@@ -85,6 +90,18 @@ const FONT_EPSILON = 0.05
 const FALLBACK_FONT = "Hammersmith One, system-ui, sans-serif"
 /** Unitless so wrapped lines stay clustered when `scale` shrinks font-size. */
 const MULTILINE_LINE_HEIGHT = 1.15
+/** Board titles are `text-3xl` in a 48px tile — shrink further than diagram labels. */
+const TITLE_MIN_SCALE = 0.55
+
+/** Skip `display: contents` parents — they have no box, so clientWidth is 0. */
+const laidOutAncestor = (el: HTMLElement): HTMLElement => {
+  let node: HTMLElement | null = el.parentElement
+  while (node) {
+    if (getComputedStyle(node).display !== "contents") return node
+    node = node.parentElement
+  }
+  return el
+}
 
 /**
  * Invisible inline completion (e.g. St + "reet" → Street) for engines that
@@ -157,6 +174,7 @@ export const StationName = ({
   forcedLines,
   accessibleName: accessibleNameProp,
   align = "left",
+  nowrap = true,
   onFormat,
 }: StationNameProps) => {
   const ref = useRef<HTMLSpanElement>(null)
@@ -179,16 +197,16 @@ export const StationName = ({
     if (!el) return
 
     let cancelled = false
-    const container = el.parentElement
+    const container = laidOutAncestor(el)
 
     const readMetrics = () => {
       if (cancelled) return
 
-      const width =
-        maxWidthProp ??
-        (container && container.clientWidth > 0
-          ? container.clientWidth
-          : el.clientWidth)
+      // Prefer this element's used width (flex leftover). A `display: contents`
+      // parent reports 0, which used to freeze the unmeasured full-size paint.
+      const measuredWidth =
+        el.clientWidth > 4 ? el.clientWidth : container.clientWidth
+      const width = maxWidthProp ?? measuredWidth
 
       const measuredFont =
         fontSizeProp ?? (Number.parseFloat(getComputedStyle(el).fontSize) || 16)
@@ -224,8 +242,8 @@ export const StationName = ({
     void waitFonts()
 
     const observer = new ResizeObserver(() => readMetrics())
-    if (container) observer.observe(container)
-    else observer.observe(el)
+    observer.observe(el)
+    if (container !== el) observer.observe(container)
 
     return () => {
       cancelled = true
@@ -319,7 +337,7 @@ export const StationName = ({
       coveredPhrases={coveredPhrases}
       paintMatchesText={!paintDiffersFromCopy}
       className={cn(
-        "relative inline-flex h-full min-h-0 w-full min-w-0 flex-col justify-center",
+        "relative inline-flex h-full min-h-0 w-full max-w-full min-w-0 flex-col justify-center",
         useAuto && maxWidthProp == null && "flex-1",
         !multiline && "leading-none",
         align === "center" && "items-center",
@@ -357,7 +375,7 @@ export const StationName = ({
                 <br />
               </>
             ) : null}
-            <span className="whitespace-nowrap">
+            <span className={nowrap ? "whitespace-nowrap" : undefined}>
               {renderFindableLine(line)}
             </span>
           </Fragment>
@@ -386,7 +404,7 @@ export const STATION_NAME_TITLE_SLOT_CLASS =
 const STATION_NAME_TITLE_CLASS =
   "justify-center leading-none [text-box:trim-both_cap_alphabetic]"
 
-/** One-line auto-fit name for board identity rows. Visual only — set `aria-label` on the heading. */
+/** Auto-fit name for board identity rows. Visual only — set `aria-label` on the heading. */
 export const StationNameTitle = ({
   name,
   className,
@@ -411,10 +429,9 @@ export const StationNameTitle = ({
         maxLines={1}
         allowAbbreviation
         allowScaleDown
-        className={cn(
-          STATION_NAME_TITLE_CLASS,
-          end != null && "w-auto flex-none"
-        )}
+        minScale={TITLE_MIN_SCALE}
+        nowrap={false}
+        className={STATION_NAME_TITLE_CLASS}
       />
     </span>
     {end}

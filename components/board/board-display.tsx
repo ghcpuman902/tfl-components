@@ -40,6 +40,10 @@ import {
   resolveStatusProps,
 } from "@/lib/tfl/board-config-resolve"
 import {
+  arrivalsLineEmptyCopy,
+  resolveArrivalsEmptyKind,
+} from "@/lib/tfl/arrivals-empty"
+import {
   lookupBoardArrivalsStopIds,
   type BoardArrivalsStopIdsIndex,
 } from "@/lib/tfl/board-arrivals-stop-ids"
@@ -369,7 +373,14 @@ export const BoardDisplay = ({
     () => resolveArrivalsProps(config, servingLines, dataLineIds, lineGroups),
     [config, servingLines, dataLineIds, lineGroups]
   )
-  const statusProps = useMemo(() => resolveStatusProps(config), [config])
+  const statusProps = useMemo(
+    () =>
+      resolveStatusProps(
+        config,
+        servingLines?.map((line) => line.lineId)
+      ),
+    [config, servingLines]
+  )
   const unattended = config.behaviour === "unattended"
   const pageSizeByLine = useMemo(() => {
     // A scalar `a.rows` broadcasts to every section — do not keep the
@@ -435,6 +446,29 @@ export const BoardDisplay = ({
     config.arrivals.lineOrder,
   ])
 
+  const railEmpty = useMemo(() => {
+    if (!arrivals.fetchedAt || arrivals.fetchError) {
+      return { kind: "empty" as const }
+    }
+    return (
+      resolveArrivalsEmptyKind({
+        rowCount: railData.length,
+        hasError: Boolean(arrivals.fetchError),
+        domain: "rail",
+        nowMs: arrivals.fetchedAt,
+        lineIds: servingLines?.map((line) => line.lineId),
+        lineStatus: status.data,
+        stopPointId: stopId || undefined,
+      }) ?? { kind: "empty" as const }
+    )
+  }, [
+    arrivals.fetchError,
+    arrivals.fetchedAt,
+    railData.length,
+    servingLines,
+    status.data,
+  ])
+
   const busData = useMemo(() => {
     const routes = config.bus.routes
     if (!routes?.length) return busArrivals.data
@@ -468,6 +502,7 @@ export const BoardDisplay = ({
           headingLevel={2}
           data={railData}
           now={arrivals.fetchedAt ?? undefined}
+          lineStatus={status.data}
           lines={arrivalsProps.lines}
           lineGroups={lineGroups}
           lineOrder={arrivalsProps.lineOrder}
@@ -478,6 +513,8 @@ export const BoardDisplay = ({
           startDelayMs={unattended ? 0 : undefined}
           loading={!ready || arrivals.loading}
           error={arrivalsError}
+          emptyKind={railEmpty.kind}
+          emptyMessage={arrivalsLineEmptyCopy(railEmpty)}
           classNames={BOUND_COLUMNS_CLASS_NAMES}
         />
       )
@@ -650,7 +687,7 @@ export const BoardDisplay = ({
     <div
       className={
         embedded
-          ? "board-embed box-border h-dvh w-full overflow-y-auto overscroll-y-contain p-4 [scrollbar-width:none] [touch-action:pan-y] [&::-webkit-scrollbar]:hidden md:p-6"
+          ? "board-embed box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain p-4 md:p-6 [&::-webkit-scrollbar]:hidden"
           : "box-border min-h-dvh w-full p-4 md:p-6"
       }
       style={ARRIVALS_RHYTHM_VARS}

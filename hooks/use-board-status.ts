@@ -110,6 +110,7 @@ export const useBoardStatus = ({
         const rows = sortLinesBySeverityAndOrder(
           await client.line.getStatus({
             modes: [...STATUS_MODES],
+            detail: true,
           }),
           { now: stamp }
         )

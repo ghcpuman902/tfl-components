@@ -3,6 +3,7 @@ import { describe, it } from "node:test"
 import type { RealtimePrediction } from "tfl-ts"
 import { ARRIVALS_PLATFORM_UNKNOWN_HEADING } from "@/lib/tfl/arrivals-empty"
 import {
+  applyRailLeftoverStatus,
   arrivalIdentityKey,
   chunkBoundPages,
   isExpiredArrivalPrediction,
@@ -1341,5 +1342,84 @@ describe("chunkBoundPages", () => {
     assert.equal(chunked.pageCount, 2)
     assert.ok(chunked.pages.every((page) => page.showEndMessage === false))
     assert.ok(chunked.pages.every((page) => page.dashCount === 0))
+  })
+})
+
+describe("applyRailLeftoverStatus", () => {
+  const leftover = {
+    label: "Severe Delays",
+    sentence: "Expect longer waits.",
+  }
+  const minor = {
+    label: "Minor Delays",
+    sentence: "Expect longer waits.",
+  }
+  const fiveRows = [0, 1, 2, 3, 4].map((index) => ({
+    key: `r-${index}`,
+    arrival: { id: `r-${index}` } as RealtimePrediction,
+    sourceIndex: index,
+  }))
+  const sixRows = [0, 1, 2, 3, 4, 5].map((index) => ({
+    key: `r-${index}`,
+    arrival: { id: `r-${index}` } as RealtimePrediction,
+    sourceIndex: index,
+  }))
+
+  it("puts leftover in the last spare instead of the end message", () => {
+    const chunked = chunkBoundPages(fiveRows, 3, { lockHeight: true })
+    const pages = applyRailLeftoverStatus(chunked.pages, leftover, true)
+    assert.equal(pages.length, 2)
+    assert.equal(pages[1]?.showEndMessage, false)
+    assert.deepEqual(pages[1]?.leftover, leftover)
+    assert.deepEqual(
+      pages.flatMap((page) => page.rows.map((row) => row.key)),
+      ["r-0", "r-1", "r-2", "r-3", "r-4"]
+    )
+  })
+
+  it("adds a following leftover page when the last page is full and high-signal", () => {
+    const chunked = chunkBoundPages(sixRows, 3, { lockHeight: true })
+    const pages = applyRailLeftoverStatus(chunked.pages, leftover, true)
+    assert.equal(pages.length, 3)
+    assert.equal(pages[2]?.rows.length, 0)
+    assert.equal(pages[2]?.dashCount, 2)
+    assert.equal(pages[2]?.showEndMessage, false)
+    assert.deepEqual(pages[2]?.leftover, leftover)
+    assert.deepEqual(
+      pages.flatMap((page) => page.rows.map((row) => row.key)),
+      ["r-0", "r-1", "r-2", "r-3", "r-4", "r-5"]
+    )
+  })
+
+  it("does not add a page for delay-only leftover when the last page is full", () => {
+    const chunked = chunkBoundPages(sixRows, 3, { lockHeight: true })
+    const pages = applyRailLeftoverStatus(chunked.pages, minor, false)
+    assert.equal(pages.length, 2)
+    assert.ok(pages.every((page) => page.leftover === undefined))
+    assert.deepEqual(
+      pages.flatMap((page) => page.rows.map((row) => row.key)),
+      ["r-0", "r-1", "r-2", "r-3", "r-4", "r-5"]
+    )
+  })
+
+  it("puts delay-only leftover in an already-spare last slot", () => {
+    const chunked = chunkBoundPages(fiveRows, 3, { lockHeight: true })
+    const pages = applyRailLeftoverStatus(chunked.pages, minor, false)
+    assert.equal(pages.length, 2)
+    assert.equal(pages[1]?.showEndMessage, false)
+    assert.deepEqual(pages[1]?.leftover, minor)
+    assert.deepEqual(
+      pages.flatMap((page) => page.rows.map((row) => row.key)),
+      ["r-0", "r-1", "r-2", "r-3", "r-4"]
+    )
+  })
+
+  it("does not apply leftover to an empty board", () => {
+    const chunked = chunkBoundPages([], 3, { lockHeight: true })
+    const pages = applyRailLeftoverStatus(chunked.pages, leftover, true)
+    assert.equal(pages.length, 1)
+    assert.equal(pages[0]?.leftover, undefined)
+    assert.equal(pages[0]?.rows.length, 0)
+    assert.equal(pages[0]?.showEndMessage, false)
   })
 })

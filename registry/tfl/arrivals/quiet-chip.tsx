@@ -28,6 +28,25 @@ export const QuietChip = ({
 )
 
 /**
+ * Chip then arrivals-owned sentence as siblings. Never stitch the label
+ * into the sentence string.
+ */
+export const ArrivalsStatusSentence = ({
+  chip,
+  sentence,
+}: {
+  chip?: string | null
+  sentence: string
+}) => (
+  <>
+    {chip ? (
+      <QuietChip className="mr-[0.35em] shrink-0">{chip}</QuietChip>
+    ) : null}
+    {sentence}
+  </>
+)
+
+/**
  * Unattended list position. Fixed `3ch`. Suffix uses OpenType `ordn` when
  * the face has it, with a raised fallback so `st`/`nd`/`rd`/`th` still sit
  * as superscripts.

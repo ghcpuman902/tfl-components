@@ -270,4 +270,17 @@ describe("splitByPriority", () => {
     assert.deepEqual(ids(split.priority), ["metropolitan"])
     assert.deepEqual(ids(split.other), ["jubilee", "waterloo-city"])
   })
+
+  it("puts other disruptions in other when priority ids are all good", () => {
+    const sections = partitionStatusBoardLines([jubilee, victoria], {
+      now: SATURDAY,
+    })
+    const split = splitByPriority(sections.disruptions, [
+      "central",
+      "victoria",
+      "bakerloo",
+    ])
+    assert.deepEqual(ids(split.priority), [])
+    assert.deepEqual(ids(split.other), ["jubilee"])
+  })
 })

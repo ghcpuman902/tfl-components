@@ -1,5 +1,6 @@
 import type { RealtimePrediction } from "tfl-ts"
 import { RAIL_ARRIVALS_DEFAULT_PAGE_SIZE } from "@/lib/tfl/arrivals-defaults"
+import type { ArrivalsStatusSignal } from "@/lib/tfl/arrivals-empty"
 import {
   ArrivalsBoardSkeleton,
   ArrivalsBoardView,
@@ -27,9 +28,9 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
   data?: readonly RealtimePrediction[]
   /**
    * Optional serving lines for this stop. Lines with no predictions still
-   * render (empty "No information" row) in canonical `LINE_ORDER`.
-   * Order in this array is ignored unless `lineSortBy="source"` — use
-   * `lineOrder` for an explicit section order.
+   * render an empty row in canonical `LINE_ORDER` (“No arrivals right now.”
+   * or overnight ended). Order in this array is ignored unless
+   * `lineSortBy="source"` — use `lineOrder` for an explicit section order.
    */
   lines?: readonly RailArrivalsLine[]
   /**
@@ -46,6 +47,14 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
    * alongside `data` at fetch time. Omit to skip this filter.
    */
   now?: number
+  /**
+   * Optional current line status from the app. Classification signal; rail
+   * leftover tiles and empty-row chips may show the official description when
+   * that status affects this stop. Pass `stopPointId` and fetch
+   * `getStatus({ detail: true })` so part closures elsewhere on the line are
+   * not painted here. Omit on docs/live boards that do not already have status.
+   */
+  lineStatus?: readonly ArrivalsStatusSignal[]
   /** Arrival order within each bound. Default `timeToStation`. */
   sortBy?: RailArrivalsSortBy
   /** Line section order. Default `canonical` (`LINE_ORDER`). */
@@ -65,8 +74,9 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
   maxRows?: number
   /**
    * Visible arrivals per bound — also the fixed subgroup height. Short pages
-   * fill with dashes and “No more arrivals”. Empty seeded groups do
-   * the same with “No information”. Default 3. Overridden per line by
+   * fill with dashes and “No more arrivals”, or a rail leftover status tile
+   * in that spare. Empty seeded groups do the same with “No arrivals right
+   * now.” (or overnight ended). Default 3. Overridden per line by
    * `pageSizeByLine`.
    */
   pageSize?: number
@@ -128,6 +138,7 @@ export const RailArrivalsBoard = ({
   lines,
   lineGroups,
   now,
+  lineStatus,
   sortBy = "timeToStation",
   lineSortBy = "canonical",
   lineOrder,
@@ -179,6 +190,8 @@ export const RailArrivalsBoard = ({
       dwellMs={dwellMs}
       startDelayMs={startDelayMs}
       idleReturnMs={idleReturnMs}
+      now={now}
+      lineStatus={lineStatus}
       className={className}
       classNames={classNames}
       {...chrome}

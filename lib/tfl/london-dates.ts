@@ -58,6 +58,10 @@ const partsMap = (date: Date): Record<string, string> => {
 export const londonDateKey = (instant: Date = new Date()): string =>
   londonDateFormatter.format(instant)
 
+/** Weekday name in Europe/London, e.g. "Saturday". Pass an explicit instant. */
+export const londonWeekdayLong = (nowMs: number): string =>
+  londonWeekdayFormatter.format(new Date(nowMs))
+
 /**
  * UTC ms of Europe/London midnight for `dateKey` (YYYY-MM-DD).
  * Iteratively corrects for DST so day length is never assumed to be 24h.

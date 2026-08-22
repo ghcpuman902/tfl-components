@@ -45,11 +45,10 @@ const matchesFull = (full: string, name: string): boolean => {
 }
 
 const rows = [
-  // Multi-word entries (e.g. "Check Front of Train") are TfL instruction
-  // phrases shown on arrivals rows, not station names — they'd only ever
-  // score a 0-count row here.
+  // "Check Front of Train" is a TfL instruction on arrivals rows, not a
+  // station name — it'd only ever score a 0-count row here.
   ...STATION_ABBREVIATION_ENTRIES.filter(
-    (entry) => !entry.full.includes(" ")
+    (entry) => entry.full !== "Check Front of Train"
   ).map((entry) => ({
     full: entry.full,
     short: entry.short,

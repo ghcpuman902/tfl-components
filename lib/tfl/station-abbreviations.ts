@@ -16,10 +16,14 @@ export type StationAbbreviationEntry = {
 }
 
 /**
- * Conservative abbreviations used on diagrams.
+ * Conservative abbreviations used on diagrams and arrivals boards.
  * Prefer official short forms already common on TfL maps.
- * Do not abbreviate proper-name tokens (Market, Green, Hill, Cross, …).
+ * Do not abbreviate proper-name tokens (Market, Green, Hill, Cross, …) except
+ * the curated phrase King's Cross → King's X.
  * Saint / `St.` is search-only — see `station-name-match.ts`.
+ *
+ * Phrase / non-prefix shorts (`King's X`, `Stn`, `w'y`, `Check Front`) leave
+ * `findCompletion` empty — FindableText still exposes the full name.
  */
 export const STATION_ABBREVIATION_ENTRIES: readonly StationAbbreviationEntry[] =
   [
@@ -32,6 +36,9 @@ export const STATION_ABBREVIATION_ENTRIES: readonly StationAbbreviationEntry[] =
     { full: "Junction", short: "Jct", findCompletion: "unction" },
     { full: "Bridge", short: "Br", findCompletion: "idge" },
     { full: "Central", short: "Ctrl", findCompletion: "entral" },
+    { full: "King's Cross", short: "King's X", findCompletion: "" },
+    { full: "Station", short: "Stn", findCompletion: "" },
+    { full: "Way", short: "w'y", findCompletion: "" },
     /**
      * Not a station name — TfL's generic Circle-loop instruction, shown as an
      * arrivals row destination via `StationName` (see arrivals-bound-group's
@@ -125,6 +132,24 @@ export const STATION_ABBREVIATION_TABLE: readonly StationAbbreviationTableRow[] 
       examples: ["Acton Central", "Finchley Central", "Hackney Central"],
     },
     {
+      full: "King's Cross",
+      short: "King's X",
+      count: 1,
+      examples: ["King's Cross St. Pancras"],
+    },
+    {
+      full: "Station",
+      short: "Stn",
+      count: 0,
+      examples: ["King's Cross Station / York Way"],
+    },
+    {
+      full: "Way",
+      short: "w'y",
+      count: 1,
+      examples: ["Ampere Way"],
+    },
+    {
       full: "and",
       short: "&",
       count: 8,
@@ -136,10 +161,20 @@ export const STATION_ABBREVIATION_TABLE: readonly StationAbbreviationTableRow[] 
     },
   ] as const
 
+const abbreviationPattern = (full: string): string =>
+  full
+    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    // ASCII or curly apostrophe, and the no-apostrophe form (`Kings Cross`).
+    .replace(/'/g, "['’]?")
+
 /** RegExp pairs for applying abbreviations to a full name. */
 export const STATION_ABBREVIATIONS: ReadonlyArray<readonly [RegExp, string]> = [
   ...STATION_ABBREVIATION_ENTRIES.map(
-    (entry) => [new RegExp(`\\b${entry.full}\\b`, "gi"), entry.short] as const
+    (entry) =>
+      [
+        new RegExp(`\\b${abbreviationPattern(entry.full)}\\b`, "gi"),
+        entry.short,
+      ] as const
   ),
   [/\band\b/gi, "&"] as const,
 ]

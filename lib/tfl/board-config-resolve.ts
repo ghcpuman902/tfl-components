@@ -349,19 +349,28 @@ export const resolveArrivalsProps = (
   return result
 }
 
+/**
+ * `s.lines` is the expand-priority set. When that is empty, station serving
+ * ids fill the same slot so default boards expand only those lines. Status-only
+ * boards with no stop keep `detailLineIds` unset (every disruption expands).
+ */
 export const resolveStatusProps = (
-  config: BoardConfig
+  config: BoardConfig,
+  servingLineIds?: readonly string[]
 ): ResolvedStatusProps => {
   const tiles = config.status.tiles ?? 0
   const dwellMs =
     config.status.dwell !== undefined ? config.status.dwell * 1000 : undefined
+  const explicit = config.status.lines
   return {
     surface: config.status.surface ?? "display",
     tiles,
     detailScope: config.status.overview ?? "network",
-    detailLineIds: config.status.lines?.length
-      ? config.status.lines
-      : undefined,
+    detailLineIds: explicit?.length
+      ? explicit
+      : servingLineIds?.length
+        ? servingLineIds
+        : undefined,
     dwellMs,
   }
 }

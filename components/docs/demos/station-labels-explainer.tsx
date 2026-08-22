@@ -16,8 +16,9 @@ const WIDTH_STEPS = [320, 220, 160, 120, 88] as const
 
 const ABBREVIATION_SAMPLES = [
   { name: "London Liverpool Street", due: "2 min" },
-  { name: "Tottenham Court Road", due: "4 min" },
-  { name: "Highbury & Islington", due: "Due" },
+  { name: "King's Cross Station / York Way", due: "4 min" },
+  { name: "Tottenham Court Road", due: "Due" },
+  { name: "Highbury & Islington", due: "6 min" },
   { name: "Clapham Junction", due: "7 min" },
 ] as const
 
