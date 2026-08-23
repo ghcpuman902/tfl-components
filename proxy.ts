@@ -16,52 +16,30 @@ import {
   legacyExplorerRedirectHref,
 } from "@/lib/tfl/explorer-url-state"
 
-const HTML_UPSTREAM_HEADER = "x-tfl-components-html-upstream"
-
-const fetchHtmlResponse = async (
-  request: NextRequest,
-  includeHomepageDiscovery = false
-) => {
-  const requestHeaders = new Headers(request.headers)
-  requestHeaders.set("Accept", "text/html")
-  requestHeaders.set(HTML_UPSTREAM_HEADER, "1")
-  requestHeaders.delete("Accept-Encoding")
-
-  const upstream = await fetch(request.url, {
-    method: request.method,
-    headers: requestHeaders,
-    redirect: "manual",
-  })
-  const responseHeaders = new Headers(upstream.headers)
-  responseHeaders.set("Vary", mergeVary(responseHeaders.get("Vary"), "Accept"))
+const continueAsHtml = (includeHomepageDiscovery = false) => {
+  const response = NextResponse.next()
+  response.headers.set(
+    "Vary",
+    mergeVary(response.headers.get("Vary"), "Accept")
+  )
   if (includeHomepageDiscovery) {
-    const upstreamLinks = responseHeaders.get("Link")
-    responseHeaders.set(
+    const existing = response.headers.get("Link")
+    response.headers.set(
       "Link",
-      upstreamLinks
-        ? `${HOMEPAGE_DISCOVERY_LINK}, ${upstreamLinks}`
+      existing
+        ? `${HOMEPAGE_DISCOVERY_LINK}, ${existing}`
         : HOMEPAGE_DISCOVERY_LINK
     )
   }
-  responseHeaders.delete("Content-Length")
-
-  return new NextResponse(request.method === "HEAD" ? null : upstream.body, {
-    status: upstream.status,
-    statusText: upstream.statusText,
-    headers: responseHeaders,
-  })
+  return response
 }
 
 /**
  * Intercept static registry JSON so we can count installs while keeping
  * public URLs at `/r/<name>.json` (shadcn CLI + docs install commands).
  */
-export async function proxy(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-
-  if (request.headers.get(HTML_UPSTREAM_HEADER) === "1") {
-    return NextResponse.next()
-  }
 
   if (pathname === "/") {
     if (
@@ -93,7 +71,7 @@ export async function proxy(request: NextRequest) {
         }
       )
     }
-    return fetchHtmlResponse(request, true)
+    return continueAsHtml(true)
   }
 
   if (hasUnknownTopLevelPath(pathname)) {
@@ -114,7 +92,7 @@ export async function proxy(request: NextRequest) {
       })
     }
     if (negotiated === "html") {
-      return fetchHtmlResponse(request)
+      return continueAsHtml()
     }
   }
 
