@@ -285,10 +285,9 @@ export default function DocsIntroductionPage() {
             2. Set up a typeface (optional)
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Components use your app&apos;s font by default. The official
-            Johnston font requires a licence from{" "}
+            Components inherit your app&apos;s font. Johnston needs a{" "}
             <ExternalTextLink href={TFL_BRAND_LINKS.fontRequests}>
-              TfL
+              licence from TfL
             </ExternalTextLink>{" "}
             (see{" "}
             <Link
@@ -297,22 +296,15 @@ export default function DocsIntroductionPage() {
             >
               Licensing and brand use
             </Link>
-            ). This site uses the free TfL-inspired{" "}
-            <Link
-              href="/docs/typography"
-              className="text-foreground underline underline-offset-4"
-            >
-              Hammersmith One
-            </Link>
-            . If you have an Adobe subscription, P22 Underground is a closer
-            match. See{" "}
+            ). This site uses P22 Underground. Hammersmith One is the free
+            alternative. See{" "}
             <Link
               href="/docs/typography"
               className="text-foreground underline underline-offset-4"
             >
               Typography
-            </Link>{" "}
-            for details.
+            </Link>
+            .
           </p>
         </section>
 

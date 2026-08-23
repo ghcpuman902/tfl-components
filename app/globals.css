@@ -342,3 +342,27 @@ html[data-tfl-type-profile="johnston-compatible"] {
     opacity: 0;
   }
 }
+
+@keyframes landing-chat-dot {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+.landing-chat-dot {
+  animation: landing-chat-dot 0.85s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-chat-dot {
+    animation: none;
+    opacity: 0.55;
+    transform: none;
+  }
+}

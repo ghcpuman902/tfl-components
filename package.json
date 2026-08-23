@@ -17,7 +17,7 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test 'lib/tfl/**/*.test.ts' 'lib/feedback/**/*.test.ts' 'lib/analytics/**/*.test.ts' 'lib/landing/**/*.test.ts' 'lib/temp/**/*.test.ts' 'lib/brand/**/*.test.ts' 'lib/site-nav.test.ts' 'lib/site-metadata.test.ts' 'lib/docs-demo-crop.test.ts' 'lib/docs-mobile-sidebar-header.test.ts' && tsx scripts/check-no-server-appkey.ts && tsx scripts/check-registry-urls.ts && tsx scripts/verify-track-graph.ts",
+    "test": "tsx --test 'lib/tfl/**/*.test.ts' 'lib/feedback/**/*.test.ts' 'lib/analytics/**/*.test.ts' 'lib/landing/**/*.test.ts' 'lib/temp/**/*.test.ts' 'lib/brand/**/*.test.ts' 'lib/site-font.test.ts' 'lib/site-nav.test.ts' 'lib/site-metadata.test.ts' 'lib/docs-demo-crop.test.ts' 'lib/docs-mobile-sidebar-header.test.ts' && tsx scripts/check-no-server-appkey.ts && tsx scripts/check-registry-urls.ts && tsx scripts/verify-track-graph.ts",
     "roundel-spin:sprite": "tsx scripts/compose-placeholder-roundel-sprite.ts",
     "roundel-spin:build": "tsx scripts/build-placeholder-roundel-sprite.ts",
     "geography:unique-track": "tsx scripts/snapshot-unique-track-geometry.ts",

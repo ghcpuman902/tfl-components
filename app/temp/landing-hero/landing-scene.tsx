@@ -14,6 +14,12 @@ import { LandingExampleObserver } from "@/components/landing/landing-example-obs
 import { LandingFoldCopy } from "@/components/landing/landing-fold-copy"
 import { LandingRoomChat } from "@/components/landing/landing-room-chat"
 import {
+  hasLandingSpaceHash,
+  landingRoomScrollTop,
+  landingUrlWithoutHash,
+  landingUrlWithSpaceHash,
+} from "@/lib/landing/space-hash"
+import {
   IpadDeviceSvg,
   IPAD_ASPECT,
   ipadCaseRounding,
@@ -142,6 +148,57 @@ export const LandingScene = ({
 
   const [roomComplete, setRoomComplete] = useState(false)
   const [sceneReady, setSceneReady] = useState(false)
+  const [skipIntro, setSkipIntro] = useState(false)
+  const [holdChat, setHoldChat] = useState(false)
+  const [chatKey, setChatKey] = useState(0)
+
+  const scrollToRoom = useCallback((behavior: ScrollBehavior) => {
+    const wrapper = wrapperRef.current
+    if (!wrapper) return
+    const top = landingRoomScrollTop({
+      wrapperTop: wrapper.getBoundingClientRect().top,
+      wrapperHeight: wrapper.offsetHeight,
+      scrollY: window.scrollY,
+      viewportHeight: window.innerHeight,
+    })
+    window.scrollTo({ top, behavior })
+  }, [])
+
+  const writeSpaceHash = useCallback((present: boolean) => {
+    const next = present
+      ? landingUrlWithSpaceHash(window.location.pathname, window.location.search)
+      : landingUrlWithoutHash(window.location.pathname, window.location.search)
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`
+    if (current === next) return
+    window.history.replaceState(null, "", next)
+  }, [])
+
+  useLayoutEffect(() => {
+    const previousRestoration = window.history.scrollRestoration
+    window.history.scrollRestoration = "manual"
+    const hashed = hasLandingSpaceHash(window.location.hash)
+    setSkipIntro(hashed)
+    if (hashed) {
+      scrollToRoom("auto")
+    } else {
+      window.scrollTo(0, 0)
+    }
+    return () => {
+      window.history.scrollRestoration = previousRestoration
+    }
+  }, [scrollToRoom])
+
+  useLayoutEffect(() => {
+    if (!skipIntro || !sceneReady) return
+    const snap = () => scrollToRoom("auto")
+    snap()
+    const frame = window.requestAnimationFrame(snap)
+    const later = window.setTimeout(snap, 120)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(later)
+    }
+  }, [sceneReady, scrollToRoom, skipIntro])
 
   const handleRoomCompleteChange = useCallback((complete: boolean) => {
     setRoomComplete((current) => {
@@ -160,15 +217,28 @@ export const LandingScene = ({
       })
       return
     }
-    const wrapper = wrapperRef.current
-    if (!wrapper) return
-    const top =
-      window.scrollY +
-      wrapper.getBoundingClientRect().top +
-      wrapper.offsetHeight -
-      window.innerHeight
-    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" })
-  }, [onHeroInteraction, reducedMotion])
+    scrollToRoom("smooth")
+  }, [onHeroInteraction, reducedMotion, scrollToRoom])
+
+  const handleStoryComplete = useCallback(() => {
+    writeSpaceHash(true)
+  }, [writeSpaceHash])
+
+  const handleRestartIntro = useCallback(() => {
+    setSkipIntro(false)
+    setHoldChat(true)
+    setChatKey((current) => current + 1)
+    writeSpaceHash(false)
+    window.scrollTo({
+      top: 0,
+      behavior: reducedMotion ? "auto" : "smooth",
+    })
+  }, [reducedMotion, writeSpaceHash])
+
+  useEffect(() => {
+    if (roomComplete) return
+    setHoldChat(false)
+  }, [roomComplete])
 
   const { valueRef, requestTilt, showMotionUnlock } = useParallaxInput({
     stageRef,
@@ -374,6 +444,14 @@ export const LandingScene = ({
         }}
       >
         <div
+          id="space"
+          aria-hidden
+          className="pointer-events-none absolute left-0 h-px w-px"
+          style={{
+            top: "calc(100dvh - var(--site-header-height) + var(--site-hash-scroll-margin))",
+          }}
+        />
+        <div
           className="sticky z-10"
           style={{
             top: "var(--site-header-height)",
@@ -499,8 +577,12 @@ export const LandingScene = ({
               ) : null}
 
               <LandingRoomChat
-                active={roomComplete}
+                key={chatKey}
+                active={roomComplete && !holdChat}
+                skipIntro={skipIntro}
                 onBoardClick={onCtaClick}
+                onStoryComplete={handleStoryComplete}
+                onRestart={handleRestartIntro}
               />
 
               {showMotionUnlock ? (

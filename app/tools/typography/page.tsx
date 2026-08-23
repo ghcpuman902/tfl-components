@@ -11,7 +11,7 @@ import { pageMetadata } from "@/lib/site-metadata"
 export const metadata: Metadata = pageMetadata({
   title: "Station typography",
   description:
-    "A–Z destination labels with deterministic two-line word breaks, measured in Hammersmith One.",
+    "A–Z destination labels with two-line word breaks.",
   path: "/tools/typography",
   robots: { index: false, follow: false },
 })

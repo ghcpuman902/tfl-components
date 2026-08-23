@@ -233,7 +233,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "typography",
     title: "Typography",
     description:
-      "TfL uses licensed Johnston. Compare Hammersmith One and P22 Underground for web interfaces.",
+      "Johnston needs a TfL licence. This site uses P22 Underground. Hammersmith One is the free alternative.",
     group: "foundations",
     kind: "page",
     href: "/docs/typography",

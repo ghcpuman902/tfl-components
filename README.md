@@ -93,7 +93,7 @@ Mode presets and Wikimedia paths are exported as `ROUNDEL_PRESETS`, `ROUNDEL_LOG
 
 Brand helpers live in `@/lib/tfl/brand`. Cropped line-diagram references are in `public/brand/line-diagram/`; source PDF in `reference/brand/`.
 
-**Fonts:** the demo site may use Hammersmith One or Adobe Fonts P22 Underground as Johnston stand-ins. Do **not** download Johnston without a licence. Prefer your own product typeface in shipping apps.
+**Fonts:** this site uses Adobe Fonts P22 Underground by default. Hammersmith One is the free, self-hosted fallback. Neither is Johnston. Do not download Johnston without a licence. Prefer your own product typeface in shipping apps.
 
 ## Rules
 

@@ -59,7 +59,7 @@ export const isRoundelAboveMinSize = (widthPx: number): boolean =>
 
 /**
  * Johnston is licensed by TfL. Prefer your own typeface, or a lookalike:
- * Hammersmith One (Google) or P22 Underground (Adobe Fonts).
+ * P22 Underground (Adobe Fonts) or Hammersmith One (Google).
  * Apply for Johnston only via TfL font requests.
  */
 export const ROUNDEL_FONT_POLICY = {
@@ -67,21 +67,21 @@ export const ROUNDEL_FONT_POLICY = {
   johnston: "Do not download or redistribute Johnston without a TfL licence.",
   alternatives: [
     {
-      name: "Hammersmith One",
-      provider: "Google Fonts",
-      note: "Free geometric sans used in this repo as a Johnston-like stand-in.",
-    },
-    {
       name: "P22 Underground",
       provider: "Adobe Fonts",
-      note: "Closer commercial match; requires an Adobe Fonts subscription.",
+      note: "This site's default. Closer match to Johnston. Needs an Adobe Fonts subscription.",
+    },
+    {
+      name: "Hammersmith One",
+      provider: "Google Fonts",
+      note: "Free geometric sans. Fallback and opt-out on this site.",
     },
   ],
 } as const
 
 /**
  * CSS font stack for roundel bar text in this library.
- * Maps to `--font-sans` (Hammersmith One in this app).
+ * Maps to `--font-sans` (P22 Underground on this app when the Adobe kit is set).
  */
 export const ROUNDEL_FONT_FAMILY =
   "var(--font-sans), 'Hammersmith One', system-ui, sans-serif"

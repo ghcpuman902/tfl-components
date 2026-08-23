@@ -65,8 +65,9 @@ export default function FoundationsLicensingPage() {
                 Licensed TfL typefaces
               </dt>
               <dd className="text-muted-foreground">
-                Johnston / TfL Go require a font licence. Demos use Hammersmith
-                One. See{" "}
+                Johnston / TfL Go require a font licence. This site uses P22
+                Underground, not Johnston. Hammersmith One is the free
+                alternative. See{" "}
                 <Link
                   href="/docs/typography"
                   className="text-primary underline-offset-4 hover:underline"

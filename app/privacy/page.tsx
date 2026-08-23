@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { SiteProsePage } from "@/components/site-prose-page"
 import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 import { VISITOR_COOKIE } from "@/lib/site-stats"
@@ -9,7 +10,7 @@ export default function PrivacyPage() {
   return (
     <SiteProsePage
       title="Privacy"
-      description="This site stores a few things in your browser so demos and personal boards can work."
+      description="This site stores a few things in your browser so boards can work, and loads P22 Underground from Adobe Fonts."
     >
       <section className="space-y-2">
         <h2 id="keys" className="text-lg font-semibold text-foreground">
@@ -48,6 +49,24 @@ export default function PrivacyPage() {
           <code className="text-xs">{VISITOR_COOKIE}</code> deduplicates the
           footer visitor count. It is a random id, not a login. Clearing site
           data removes it.
+        </p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 id="fonts" className="text-lg font-semibold text-foreground">
+          Fonts
+        </h2>
+        <p>
+          This site loads P22 Underground from Adobe Fonts (
+          <code className="text-xs">use.typekit.net</code>). Switch to
+          Hammersmith One on{" "}
+          <Link
+            href="/docs/typography"
+            className="underline underline-offset-4"
+          >
+            Typography
+          </Link>{" "}
+          to stop that request. Hammersmith One ships with the page.
         </p>
       </section>
 

@@ -18,13 +18,13 @@ Theme variables are defined in `app/globals.css`. Dark mode is class-based via `
 
 ## Typography
 
-- Default body text uses **Hammersmith One** (Google Fonts) via `next/font` — a Johnston-like stand-in for demos. It is **not** Johnston.
-- **Do not** download or redistribute TfL’s Johnston typeface. Prefer your own product font. To licence Johnston, use [TfL font requests](https://tfl.gov.uk/info-for/business-and-advertisers/font-requests?intcmp=5840). Alternatives: [Hammersmith One](https://fonts.google.com/specimen/Hammersmith+One) or [P22 Underground](https://fonts.adobe.com/fonts/p22-underground) (Adobe Fonts).
+- Default body text uses **P22 Underground** (Adobe Fonts) when `NEXT_PUBLIC_ADOBE_FONTS_KIT_ID` is set. **Hammersmith One** (Google Fonts, via `next/font`) is the self-hosted fallback and the opt-out. Neither is Johnston.
+- **Do not** download or redistribute TfL’s Johnston typeface. Prefer your own product font. To licence Johnston, use [TfL font requests](https://tfl.gov.uk/info-for/business-and-advertisers/font-requests?intcmp=5840). Alternatives: [P22 Underground](https://fonts.adobe.com/fonts/p22-underground) (Adobe Fonts) or [Hammersmith One](https://fonts.google.com/specimen/Hammersmith+One).
 - Use `text-sm` / `text-xs` for secondary metadata, not as the default for main content.
 
 ### Title profiles
 
-Hammersmith One has only a 400 cut. It is the public default, so titles default to weight `400`, normal tracking, and no synthetic bold. Licensed Johnston and tested Johnston-compatible faces can opt into weight `600` and `-0.025em` tracking.
+Hammersmith One has only a 400 cut. Installable components therefore default titles to weight `400`, normal tracking, and no synthetic bold. This site opts into weight `600` and `-0.025em` tracking with P22 Underground (`data-tfl-type-profile="johnston-compatible"`). Hosts with licensed Johnston or another tested Johnston-compatible face can set the same variables.
 
 Use the semantic title metrics instead of pairing `font-bold` with `tracking-tight`:
 
@@ -33,7 +33,7 @@ Use the semantic title metrics instead of pairing `font-bold` with `tracking-tig
 --tfl-title-tracking: 0;
 ```
 
-Installable components read those inherited variables with the same safe fallbacks. They do not load a font or infer which font the host uses. A host that supplies compatible font metrics can override both variables on any wrapper; P22 Underground is an alternative, not an authentic TfL typeface.
+Installable components read those inherited variables with the same safe fallbacks. They do not load a font or infer which font the host uses. A host that supplies compatible font metrics can override both variables on any wrapper. P22 Underground is not Johnston.
 
 ### Station label breaks (for agents and consumers)
 

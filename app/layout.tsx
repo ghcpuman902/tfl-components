@@ -14,14 +14,16 @@ import { Geist_Mono, Hammersmith_One } from "next/font/google"
 import Script from "next/script"
 import type { Metadata, Viewport } from "next"
 import { SITE_AUTHOR, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site"
+import { fontPreferenceBootScript } from "@/lib/site-font"
 import { cn } from "@/lib/utils"
 
 import "./globals.css"
 
 // next/font must own `--font-sans` on the <html> class — Tailwind's
 // `@theme inline { --font-sans: var(--font-sans) }` only works when a real
-// value is set that way. The P22 switch overrides the same variable under
-// `html[data-font="p22"]` (see globals.css).
+// value is set that way. P22 Underground overrides the same variable under
+// `html[data-font="p22"]` (see globals.css). Hammersmith One stays the
+// self-hosted fallback and the opt-out face.
 const hammersmith = Hammersmith_One({
   weight: "400",
   subsets: ["latin"],
@@ -29,17 +31,15 @@ const hammersmith = Hammersmith_One({
 })
 
 /**
- * Adobe Fonts (Typekit) kit id for P22 Underground — a closer commercial
- * match to TfL's Johnston than the open Hammersmith One default. Requires
- * your own Adobe Fonts subscription; never hardcoded, see .env.example.
+ * Adobe Fonts (Typekit) kit id for P22 Underground, the site default when
+ * this is set. Requires your own Adobe Fonts subscription; never hardcoded,
+ * see .env.example. Without it, the site stays on Hammersmith One.
  */
 const adobeFontsKitId = process.env.NEXT_PUBLIC_ADOBE_FONTS_KIT_ID
 
-/** Apply stored font preference before paint to avoid a Hammersmith → P22 flash.
- * Typekit is injected only when P22 is selected — never render-blocking for the
- * default Hammersmith path (Lighthouse / first-fold). */
+/** Apply P22 before paint. Skip Typekit when the visitor chose Hammersmith. */
 const fontPreferenceScript = adobeFontsKitId
-  ? `(function(){try{if(localStorage.getItem("tfl-font-pref")!=="p22")return;document.documentElement.setAttribute("data-font","p22");document.documentElement.setAttribute("data-tfl-type-profile","johnston-compatible");var l=document.createElement("link");l.rel="stylesheet";l.href=${JSON.stringify(`https://use.typekit.net/${adobeFontsKitId}.css`)};l.media="print";l.onload=function(){this.media="all"};document.head.appendChild(l);}catch(e){}})();`
+  ? fontPreferenceBootScript(adobeFontsKitId)
   : null
 
 const fontMono = Geist_Mono({
@@ -103,6 +103,16 @@ export default function RootLayout({
       )}
     >
       <body>
+        {adobeFontsKitId ? (
+          <>
+            <link rel="preconnect" href="https://use.typekit.net" />
+            <link
+              rel="preconnect"
+              href="https://p.typekit.net"
+              crossOrigin="anonymous"
+            />
+          </>
+        ) : null}
         {fontPreferenceScript ? (
           <Script
             id="tfl-font-preference"

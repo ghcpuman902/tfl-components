@@ -140,7 +140,7 @@ export const ROUTE_PAGE_META = {
   privacy: {
     title: "Privacy",
     description:
-      "What this site stores in the browser, including TfL keys and a visitor cookie, and how page analytics are collected.",
+      "TfL keys and a visitor cookie stay in this browser. P22 Underground loads from Adobe Fonts. Analytics omit keys and Board URLs.",
     path: "/privacy",
   },
   howItWasBuilt: {

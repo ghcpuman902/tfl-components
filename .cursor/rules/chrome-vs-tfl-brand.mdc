@@ -65,11 +65,11 @@ For docs chrome and app shell:
 - Cards are for **interaction or docs grouping**, not decorative wrappers around every paragraph  
 - Domain components ship without outer card chrome (border / radius / padding); see “No card chrome by default” above
 
-Do **not** default the product to dark mode + Geist because the shadcn/Vercel skill suggests it for dashboards. This site is content- and brand-led; respect existing theme (`next-themes`, Hammersmith One for body demos).
+Do **not** default the product to dark mode + Geist because the shadcn/Vercel skill suggests it for dashboards. This site is content- and brand-led; respect existing theme (`next-themes`, P22 Underground as the site default when the Adobe kit is configured).
 
 ## TfL domain rules
 
-- **Do not** download or redistribute Johnston. Hammersmith One is a Johnston-*like* demo stand-in only.  
+- **Do not** download or redistribute Johnston. P22 Underground (Adobe Fonts) is this site’s Johnston-like default. Hammersmith One is the free fallback. Neither is Johnston.  
 - Line / mode colours come from `@/lib/tfl/brand` (Issue 4 tokens), not ad-hoc hex in JSX unless matching a documented token.  
 - Roundel and trademark behaviour: follow Foundations constants (`ROUNDEL_*`, licensing copy on Foundations pages).  
 - Site favicon / apple-icon: grey filled placeholder roundel — not line-colour bars, not the trademarked mark. See [site-favicon.mdc](site-favicon.mdc).

@@ -73,11 +73,6 @@ export default function FoundationsTypographyPage() {
             <h2 id="profiles" className="text-lg font-semibold">
               Choose a font profile
             </h2>
-            <p className="max-w-prose text-muted-foreground">
-              The official TfL typeface is Johnston, which requires permission
-              to use. This site compares two practical alternatives so you can
-              see how each one changes the same interface.
-            </p>
           </div>
 
           <FontPreferenceSwitch />
@@ -99,10 +94,51 @@ export default function FoundationsTypographyPage() {
             <article className="space-y-5">
               <div className="space-y-1">
                 <h3 className="text-xl font-medium text-foreground">
+                  P22 Underground
+                </h3>
+                <p className="max-w-prose text-muted-foreground">
+                  This site uses P22 Underground from Adobe Fonts. Add the
+                  family to a web project kit, then set title metrics after the
+                  kit has loaded. Body stays 400. Titles use 600.
+                </p>
+              </div>
+
+              <SyntaxHighlightedCode
+                code={ADOBE_FONTS_SNIPPET}
+                language="tsx"
+                wrapperClassName="mt-0 mb-0"
+              />
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-foreground">
+                  Title settings for P22 Underground
+                </h4>
+                <p className="max-w-prose text-sm text-muted-foreground">
+                  Confirm that the kit has loaded before using 600 and tighter
+                  tracking. A fallback font with these metrics will look wrong.
+                </p>
+                <SyntaxHighlightedCode
+                  code={P22_METRICS_SNIPPET}
+                  language="css"
+                  wrapperClassName="mt-0 mb-0"
+                />
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                <ExternalTextLink href={TFL_BRAND_LINKS.p22UndergroundAdobe}>
+                  Open P22 Underground on Adobe Fonts
+                </ExternalTextLink>{" "}
+                and follow the web project instructions for your account.
+              </p>
+            </article>
+
+            <article className="space-y-5">
+              <div className="space-y-1">
+                <h3 className="text-xl font-medium text-foreground">
                   Hammersmith One
                 </h3>
                 <p className="max-w-prose text-muted-foreground">
-                  Use it when you need a free default. Next.js can self-host it
+                  Use it when you need a free font. Next.js can self-host it
                   from Google Fonts. Do not synthesize a heavier title weight or
                   tighten sentence-case titles.
                 </p>
@@ -137,48 +173,6 @@ export default function FoundationsTypographyPage() {
                   Hammersmith One on Google Fonts
                 </ExternalTextLink>
                 .
-              </p>
-            </article>
-
-            <article className="space-y-5">
-              <div className="space-y-1">
-                <h3 className="text-xl font-medium text-foreground">
-                  P22 Underground
-                </h3>
-                <p className="max-w-prose text-muted-foreground">
-                  Use it when you already have an Adobe Fonts subscription and
-                  want a closer match to Johnston. This repo uses 400 for body
-                  text and 600 for titles.
-                </p>
-              </div>
-
-              <SyntaxHighlightedCode
-                code={ADOBE_FONTS_SNIPPET}
-                language="tsx"
-                wrapperClassName="mt-0 mb-0"
-              />
-
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-foreground">
-                  Title settings for P22 Underground
-                </h4>
-                <p className="max-w-prose text-sm text-muted-foreground">
-                  Confirm that the kit has loaded before opting into 600 and
-                  tighter tracking. A fallback font with these metrics will look
-                  wrong.
-                </p>
-                <SyntaxHighlightedCode
-                  code={P22_METRICS_SNIPPET}
-                  language="css"
-                  wrapperClassName="mt-0 mb-0"
-                />
-              </div>
-
-              <p className="text-sm text-muted-foreground">
-                <ExternalTextLink href={TFL_BRAND_LINKS.p22UndergroundAdobe}>
-                  Open P22 Underground on Adobe Fonts
-                </ExternalTextLink>{" "}
-                and follow the web project instructions for your account.
               </p>
             </article>
 

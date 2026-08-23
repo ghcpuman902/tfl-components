@@ -24,8 +24,8 @@ const letterOf = (name: string): string => {
 }
 
 /**
- * Interactive A–Z typography lab: measure Hammersmith One, balance two-line
- * station names, and inspect abbreviation / scale fallbacks.
+ * Interactive A–Z typography lab: measure the live site font, balance
+ * two-line station names, and inspect abbreviation / scale fallbacks.
  */
 export const StationTypographyLab = ({
   stations,

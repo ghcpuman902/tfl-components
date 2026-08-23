@@ -20,23 +20,10 @@ type FontProfile = {
 
 const FONT_PROFILES: readonly FontProfile[] = [
   {
-    id: "default",
-    name: "Hammersmith One",
-    description:
-      "Free to use and the default for this site. Google Fonts has one real 400, so titles stay regular and track normally.",
-    specimenClassName:
-      "font-['Hammersmith_One',sans-serif] font-normal tracking-normal",
-    fontFamily:
-      '"Hammersmith One", "Hammersmith One Fallback", system-ui, sans-serif',
-    titleSettings: "400 / normal",
-    titleWeight: 400,
-    titleTracking: "0",
-  },
-  {
     id: "p22",
     name: "P22 Underground",
     description:
-      "A closer Adobe Fonts alternative to Johnston. This repo uses 400 for reading text and 600 for prominent titles.",
+      "This site's default. Closer to Johnston than Hammersmith One. Body stays 400. Titles use 600 and tighter tracking. Needs an Adobe Fonts kit.",
     specimenClassName:
       "font-['p22-underground','Hammersmith_One',sans-serif] font-semibold tracking-tight",
     fontFamily:
@@ -44,6 +31,19 @@ const FONT_PROFILES: readonly FontProfile[] = [
     titleSettings: "600 / -0.025em",
     titleWeight: 600,
     titleTracking: "-0.025em",
+  },
+  {
+    id: "hammersmith",
+    name: "Hammersmith One",
+    description:
+      "Free Google Font with a single 400 cut. Titles stay regular, with normal tracking.",
+    specimenClassName:
+      "font-['Hammersmith_One',sans-serif] font-normal tracking-normal",
+    fontFamily:
+      '"Hammersmith One", "Hammersmith One Fallback", system-ui, sans-serif',
+    titleSettings: "400 / normal",
+    titleWeight: 400,
+    titleTracking: "0",
   },
 ]
 
