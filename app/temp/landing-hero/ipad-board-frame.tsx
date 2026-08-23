@@ -12,10 +12,10 @@ type IpadBoardFrameProps = {
 }
 
 /** Default hosted Board — interactive Oxford Circus, rail + status. */
-const BOARD_IFRAME_SRC = buildBoardHref({ stop: HOME_RAIL_STOP.id }).replace(
-  BOARD_VIEW_PATH,
-  `${BOARD_VIEW_PATH}?embed=1`
-)
+const BOARD_IFRAME_SRC = buildBoardHref({
+  stop: HOME_RAIL_STOP.id,
+  stopName: HOME_RAIL_STOP.name,
+}).replace(BOARD_VIEW_PATH, `${BOARD_VIEW_PATH}?embed=1`)
 
 export const IpadBoardFrame = ({ interactive }: IpadBoardFrameProps) => (
   <div

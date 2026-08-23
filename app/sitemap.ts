@@ -14,6 +14,8 @@ const STATIC_PATHS = [
   "/licence",
   "/credits",
   "/accessibility",
+  "/about",
+  "/contact",
   "/privacy",
   "/how-it-was-built",
   "/observatory",

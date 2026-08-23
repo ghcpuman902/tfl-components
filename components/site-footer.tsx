@@ -98,6 +98,10 @@ export const SiteFooter = () => {
               <span aria-hidden>·</span>
             </>
           ) : null}
+          <FooterLink href="/about">About</FooterLink>
+          <span aria-hidden>·</span>
+          <FooterLink href="/contact">Contact</FooterLink>
+          <span aria-hidden>·</span>
           <FooterLink href="/licence">Licence</FooterLink>
           <span aria-hidden>·</span>
           <FooterLink href="/credits">Data and credits</FooterLink>

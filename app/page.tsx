@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
+import { AgentReadableHome } from "@/components/landing/agent-readable-home"
 import { LandingFallback, LandingPage } from "@/components/landing/landing-page"
 import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 
@@ -10,8 +11,11 @@ export const metadata: Metadata = pageMetadata({
 
 export default function HomePage() {
   return (
-    <Suspense fallback={<LandingFallback />}>
-      <LandingPage />
-    </Suspense>
+    <>
+      <Suspense fallback={<LandingFallback />}>
+        <LandingPage />
+      </Suspense>
+      <AgentReadableHome />
+    </>
   )
 }

@@ -35,7 +35,12 @@ export const pageMetadata = ({
   return {
     title: documentTitle,
     description,
-    alternates: { canonical: url },
+    alternates: {
+      canonical: url,
+      ...(path === "/"
+        ? { types: { "text/markdown": `${SITE_URL}/index.md` } }
+        : {}),
+    },
     robots,
     openGraph: {
       type: "website",
@@ -102,8 +107,7 @@ export const ROUTE_PAGE_META = {
   },
   board: {
     title: "Board",
-    description:
-      "Arrivals and line status for a stop you choose.",
+    description: "Arrivals and line status for a stop you choose.",
     path: "/board",
   },
   boardView: {

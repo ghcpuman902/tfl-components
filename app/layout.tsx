@@ -13,6 +13,10 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { Geist_Mono, Hammersmith_One } from "next/font/google"
 import Script from "next/script"
 import type { Metadata, Viewport } from "next"
+import {
+  serialiseStructuredData,
+  SITE_STRUCTURED_DATA,
+} from "@/lib/agent/structured-data"
 import { SITE_AUTHOR, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site"
 import { fontPreferenceBootScript } from "@/lib/site-font"
 import { cn } from "@/lib/utils"
@@ -103,6 +107,12 @@ export default function RootLayout({
       )}
     >
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: serialiseStructuredData(SITE_STRUCTURED_DATA),
+          }}
+        />
         {adobeFontsKitId ? (
           <>
             <link rel="preconnect" href="https://use.typekit.net" />

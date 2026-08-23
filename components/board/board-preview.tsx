@@ -28,6 +28,12 @@ const SLOT_UNRESOLVED = cn(
 /** Coalesce rapid slot/config edits so the iframe does not reload twice. */
 const PREVIEW_HREF_DEBOUNCE_MS = 280
 
+const withEmbedQuery = (href: string) => {
+  const url = new URL(href, "https://tfl.manglekuo.com")
+  url.searchParams.set("embed", "1")
+  return `${url.pathname}${url.search}${url.hash}`
+}
+
 const sameBoardDocument = (current: Location, next: URL) =>
   current.pathname === next.pathname && current.search === next.search
 
@@ -65,17 +71,18 @@ type BoardPreviewFrameProps = {
 }
 
 const BoardPreviewFrame = ({ href }: BoardPreviewFrameProps) => {
+  const embedHref = withEmbedQuery(href)
   const iframeRef = useRef<HTMLIFrameElement>(null)
-  const hrefRef = useRef(href)
-  const initialSrc = useRef(href)
-  const assignedHref = useRef(href)
-  hrefRef.current = href
+  const hrefRef = useRef(embedHref)
+  const initialSrc = useRef(embedHref)
+  const assignedHref = useRef(embedHref)
+  hrefRef.current = embedHref
 
   useEffect(() => {
     const iframe = iframeRef.current
     if (!iframe) return
-    applyBoardPreviewHref(iframe, href, assignedHref)
-  }, [href])
+    applyBoardPreviewHref(iframe, embedHref, assignedHref)
+  }, [embedHref])
 
   const handleLoad = () => {
     const iframe = iframeRef.current

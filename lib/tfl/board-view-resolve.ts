@@ -7,14 +7,31 @@
 import { resolveBoardSlots } from "@/lib/tfl/board-panels"
 import {
   BOARD_VIEW_PATH,
+  DEFAULT_BOARD_CONFIG,
   parseBoardConfig,
   type BoardConfig,
 } from "@/lib/tfl/board-url-state"
+import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
 
 export type BoardReadiness = {
   usableConfig: boolean
   hasKey: boolean
   ready: boolean
+}
+
+export type ResolveBoardReadinessOptions = {
+  /**
+   * Landing / preview iframes can poll allowlisted demo stops via the site
+   * key. The hosted `/board/view` page still needs a visitor key.
+   */
+  allowSiteDemo?: boolean
+}
+
+/** Oxford Circus rail + status — default preview when the hash is empty. */
+export const DEMO_BOARD_CONFIG: BoardConfig = {
+  ...DEFAULT_BOARD_CONFIG,
+  stop: HOME_RAIL_STOP.id,
+  stopName: HOME_RAIL_STOP.name,
 }
 
 export type BoardViewLinkParseResult =
@@ -48,17 +65,24 @@ export const isUsableBoardConfig = (config: BoardConfig): boolean => {
 
 export const resolveBoardReadiness = (
   config: BoardConfig,
-  storedKey: string | null
+  storedKey: string | null,
+  options?: ResolveBoardReadinessOptions
 ): BoardReadiness => {
   const usableConfig = isUsableBoardConfig(config)
   const hasKey = Boolean(config.key?.trim() || storedKey?.trim())
-  return { usableConfig, hasKey, ready: usableConfig && hasKey }
+  const ready = usableConfig && (hasKey || Boolean(options?.allowSiteDemo))
+  return { usableConfig, hasKey, ready }
 }
 
 export const isBoardReady = (
   config: BoardConfig,
-  storedKey: string | null
-): boolean => resolveBoardReadiness(config, storedKey).ready
+  storedKey: string | null,
+  options?: ResolveBoardReadinessOptions
+): boolean => resolveBoardReadiness(config, storedKey, options).ready
+
+/** Previews with no usable hash still show the Oxford Circus demo board. */
+export const withDemoBoardFallback = (config: BoardConfig): BoardConfig =>
+  isUsableBoardConfig(config) ? config : DEMO_BOARD_CONFIG
 
 const boardViewPathname = (pathname: string): boolean => {
   if (pathname === BOARD_VIEW_PATH) return true

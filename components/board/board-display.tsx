@@ -82,7 +82,11 @@ import {
   shouldOfferBoardHomeScreenInstall,
   writeHomeScreenOfferDismissed,
 } from "@/lib/tfl/board-home-screen"
-import { isBoardReady, isUsableBoardConfig } from "@/lib/tfl/board-view-resolve"
+import {
+  isBoardReady,
+  isUsableBoardConfig,
+  withDemoBoardFallback,
+} from "@/lib/tfl/board-view-resolve"
 import {
   BOARD_PATH,
   BOARD_VIEW_PATH,
@@ -265,12 +269,15 @@ export const BoardDisplay = ({
         key: hashConfig.key ?? installedConfig.key,
       }
     }
+    if (embedded) return withDemoBoardFallback(hashConfig)
     return hashConfig
-  }, [fromHomeScreen, hashConfig, installedConfig])
+  }, [embedded, fromHomeScreen, hashConfig, installedConfig])
 
   const appKey = config.key ?? storedKey
   const surfaceReady = ready && hydrated
-  const boardReady = surfaceReady && isBoardReady(config, storedKey)
+  const boardReady =
+    surfaceReady &&
+    isBoardReady(config, storedKey, { allowSiteDemo: embedded })
   const fullscreen = useBoardFullscreen(boardRootRef, {
     enabled: boardReady && !fromHomeScreen && !embedded,
   })
@@ -500,6 +507,7 @@ export const BoardDisplay = ({
 
   const statusHint =
     boardReady &&
+    !embedded &&
     !appKey &&
     (status.source === "site" || cyclePoints.source === "site")
       ? DEGRADED_HINT

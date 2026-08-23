@@ -2,10 +2,12 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { DEFAULT_BOARD_CONFIG } from "./board-url-state"
 import {
+  DEMO_BOARD_CONFIG,
   isBoardReady,
   isUsableBoardConfig,
   parseBoardViewLink,
   resolveBoardReadiness,
+  withDemoBoardFallback,
 } from "./board-view-resolve"
 
 const SAMPLE_KEY = "abcdef0123456789abcdef0123456789"
@@ -114,6 +116,29 @@ describe("isBoardReady", () => {
       hasKey: true,
       ready: false,
     })
+  })
+
+  it("lets previews render a usable layout without a visitor key", () => {
+    const withStop = { ...DEFAULT_BOARD_CONFIG, stop: "940GZZLUOXC" }
+    assert.equal(isBoardReady(withStop, null, { allowSiteDemo: true }), true)
+    assert.equal(
+      isBoardReady(DEFAULT_BOARD_CONFIG, null, { allowSiteDemo: true }),
+      false
+    )
+  })
+})
+
+describe("withDemoBoardFallback", () => {
+  it("keeps a usable layout", () => {
+    const withStop = { ...DEFAULT_BOARD_CONFIG, stop: "940GZZLUOXC" }
+    assert.equal(withDemoBoardFallback(withStop), withStop)
+  })
+
+  it("fills an empty hash with Oxford Circus", () => {
+    const fallback = withDemoBoardFallback(DEFAULT_BOARD_CONFIG)
+    assert.equal(fallback.stop, DEMO_BOARD_CONFIG.stop)
+    assert.equal(fallback.stopName, "Oxford Circus")
+    assert.equal(isUsableBoardConfig(fallback), true)
   })
 })
 
