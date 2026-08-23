@@ -4,7 +4,7 @@
   "title": "Cycle Hire Docks",
   "description": "Show Santander Cycles availability in a map, detail list, or fixed-height display.",
   "dependencies": [
-    "tfl-ts@^2.10.0",
+    "tfl-ts@^2.11.0",
     "lucide-react",
     "maplibre-gl@5.24.0"
   ],

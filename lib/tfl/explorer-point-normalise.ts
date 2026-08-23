@@ -3,11 +3,8 @@
  * Domain-specific optional fields are explicit — no `any`.
  */
 
-import {
-  readStopLetter as readPaintedStopLetter,
-  usableTflText,
-} from "@/lib/tfl/bus-stop-letter"
-import { readBearingDegrees } from "@/lib/tfl/bus-stop-shape"
+import { isSmsCodeQuery, normalizeStopPoint } from "tfl-ts"
+import { readStopLetter as readPaintedStopLetter } from "@/lib/tfl/bus-stop-letter"
 
 export type ExplorerPointKind = "stopPoint" | "bikePoint"
 
@@ -30,8 +27,15 @@ export type ExplorerPoint = {
   smsCode?: string
   towards?: string
   distanceMeters?: number
-  /** Degrees clockwise from north — bus stop compass / `->W` indicator. */
-  bearingDegrees?: number
+  /** CompassPoint additional property (`N`, `NE`, …). */
+  compassPoint?: string
+  /** Degrees clockwise from north — tfl-ts `compassBearingDegrees`. */
+  compassBearingDegrees?: number
+  additionalProperties?: Array<{
+    key?: string
+    value?: string
+    category?: string
+  }>
   bikes?: number
   eBikes?: number
   spaces?: number
@@ -44,9 +48,7 @@ export type ExplorerPoint = {
   arrivalsStopIds?: string[]
 }
 
-/** Five-digit SMS code for London bus stops. */
-export const isSmsCodeQuery = (query: string): boolean =>
-  /^\d{5}$/.test(query.trim())
+export { isSmsCodeQuery }
 
 type StopLike = {
   id?: string
@@ -61,18 +63,15 @@ type StopLike = {
   indicator?: string
   platformName?: string
   towards?: string
+  smsCode?: string
   distance?: number
-  additionalProperties?: Array<{ key?: string; value?: string }>
-}
-
-const readProp = (
-  properties: StopLike["additionalProperties"],
-  key: string
-): string | undefined => {
-  const value = properties?.find(
-    (prop) => prop.key?.toLowerCase() === key.toLowerCase()
-  )?.value
-  return value?.trim() || undefined
+  compassPoint?: string
+  compassBearingDegrees?: number
+  additionalProperties?: Array<{
+    key?: string
+    value?: string
+    category?: string
+  }>
 }
 
 const readStopLetter = (stop: StopLike): string | undefined =>
@@ -90,6 +89,8 @@ export const normaliseStopPoint = (stop: StopLike): ExplorerPoint | null => {
     ?.map((line) => line.id ?? line.name)
     .filter((value): value is string => Boolean(value))
 
+  const lifted = normalizeStopPoint(stop)
+
   return {
     id,
     name,
@@ -99,17 +100,13 @@ export const normaliseStopPoint = (stop: StopLike): ExplorerPoint | null => {
     modes: stop.modes,
     lineIds,
     stopLetter: readStopLetter(stop),
-    smsCode: readProp(stop.additionalProperties, "SmsCode"),
-    towards:
-      usableTflText(stop.towards) ||
-      usableTflText(readProp(stop.additionalProperties, "Towards")),
+    smsCode: lifted.smsCode,
+    towards: lifted.towards,
     distanceMeters:
       typeof stop.distance === "number" ? stop.distance : undefined,
-    bearingDegrees: readBearingDegrees(
-      stop.additionalProperties,
-      stop.indicator,
-      stop.stopLetter
-    ),
+    compassPoint: lifted.compassPoint,
+    compassBearingDegrees: lifted.compassBearingDegrees,
+    additionalProperties: stop.additionalProperties,
   }
 }
 

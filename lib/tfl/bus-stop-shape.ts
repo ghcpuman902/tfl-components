@@ -1,11 +1,30 @@
 /**
- * Shared bus-stop normalisation — used by Server Actions and Explorer loaders.
- * Plain module (not `"use server"`).
+ * Site adapters over tfl-ts bus-stop helpers.
+ * Direction / SMS lifts and name-search expansion live in tfl-ts 2.11+.
  */
 
-import { readStopLetter, usableTflText } from "@/lib/tfl/bus-stop-letter"
+import {
+  isBoardableBusStopId,
+  normalizeStopPoint,
+  parseCompassPoint,
+} from "tfl-ts"
+import { readStopLetter } from "@/lib/tfl/bus-stop-letter"
 
-export type AdditionalProperty = { key?: string; value?: string }
+export type AdditionalProperty = {
+  key?: string
+  value?: string
+  category?: string
+}
+
+export {
+  busSearchNameMatches,
+  isBoardableBusStopId,
+  parseBusStopSearchQuery,
+  pickNamedExpandableMatches,
+  preferStopsMatchingSearch,
+  rankStopsBySearchLetter,
+  resolveBusNameSearchHits,
+} from "tfl-ts"
 export { readStopLetter } from "@/lib/tfl/bus-stop-letter"
 
 export type NearbyBusStop = {
@@ -19,66 +38,17 @@ export type NearbyBusStop = {
   lat?: number
   lon?: number
   smsCode?: string
-  /** Degrees clockwise from north, when TfL exposes a compass / bearing. */
-  bearingDegrees?: number
+  compassPoint?: string
+  compassBearingDegrees?: number
+  additionalProperties?: AdditionalProperty[]
 }
 
-export const readTowards = (
-  properties?: AdditionalProperty[]
-): string | undefined => {
-  const value = properties?.find(
-    (prop) => prop.key?.toLowerCase() === "towards"
-  )?.value
-  return usableTflText(value)
-}
+/** NaPTAN stop-area / cluster (`490G…`). Arrivals are on child `490`+digit ids. */
+export const isBusStopAreaId = (id: string): boolean => /^490G/i.test(id)
 
-export const readSmsCode = (
-  properties?: AdditionalProperty[]
-): string | undefined => {
-  const value = properties?.find(
-    (prop) => prop.key?.toLowerCase() === "smscode"
-  )?.value
-  const trimmed = value?.trim()
-  return trimmed || undefined
-}
-
-const COMPASS_DEGREES: Record<string, number> = {
-  N: 0,
-  NNE: 22.5,
-  NE: 45,
-  ENE: 67.5,
-  E: 90,
-  ESE: 112.5,
-  SE: 135,
-  SSE: 157.5,
-  S: 180,
-  SSW: 202.5,
-  SW: 225,
-  WSW: 247.5,
-  W: 270,
-  WNW: 292.5,
-  NW: 315,
-  NNW: 337.5,
-}
-
-const COMPASS_RE =
-  /^(?:->)?(N|NNE|NE|ENE|E|ESE|SE|SSE|S|SSW|SW|WSW|W|WNW|NW|NNW)$/i
-
-/** `W`, `->NE`, or a 0–359 bearing string → degrees clockwise from north. */
-export const compassPointToDegrees = (
-  raw?: string | null
-): number | undefined => {
-  const trimmed = usableTflText(raw)
-  if (!trimmed) return undefined
-  if (/^\d+(\.\d+)?$/.test(trimmed)) {
-    const numeric = Number(trimmed)
-    if (numeric >= 0 && numeric < 360) return numeric
-    return undefined
-  }
-  const match = trimmed.replace(/\s+/g, "").match(COMPASS_RE)
-  if (!match?.[1]) return undefined
-  return COMPASS_DEGREES[match[1].toUpperCase()]
-}
+/** tfl-ts keeps this helper internal; same check as `modes?.includes("bus")`. */
+export const isBusStop = (modes?: string[]): boolean =>
+  modes?.includes("bus") ?? false
 
 const readPropValue = (
   properties: AdditionalProperty[] | undefined,
@@ -86,108 +56,25 @@ const readPropValue = (
 ): string | undefined =>
   properties?.find((prop) => prop.key?.toLowerCase() === key)?.value
 
-export const readBearingDegrees = (
+/** Compass from a leftover additionalProperties bag (pre-normalise payload). */
+export const readCompassPoint = (
+  properties?: AdditionalProperty[]
+): string | undefined =>
+  parseCompassPoint(readPropValue(properties, "compasspoint"))?.compassPoint
+
+/** Arrow indicators only — a painted letter `W` is Stop W, not west. */
+const compassFromArrow = (raw?: string | null) =>
+  raw?.replace(/\s+/g, "").startsWith("->") ? parseCompassPoint(raw) : undefined
+
+export const readCompassBearingDegrees = (
   properties?: AdditionalProperty[],
   indicator?: string | null,
   stopLetter?: string | null
 ): number | undefined =>
-  compassPointToDegrees(readPropValue(properties, "compasspoint")) ??
-  compassPointToDegrees(readPropValue(properties, "bearing")) ??
-  compassPointToDegrees(indicator) ??
-  compassPointToDegrees(stopLetter)
-
-/** London bus stop points that support live arrivals (not hubs / station parents). */
-export const isBoardableBusStopId = (id: string): boolean => /^490\d/i.test(id)
-
-/**
- * Street suffixes that match too many StopPoint names to be useful on their
- * own. Keep distinctive tokens like "silverthorne".
- */
-const GENERIC_BUS_SEARCH_WORDS = new Set([
-  "and",
-  "avenue",
-  "bridge",
-  "circus",
-  "close",
-  "common",
-  "green",
-  "grove",
-  "hill",
-  "lane",
-  "park",
-  "place",
-  "road",
-  "row",
-  "square",
-  "st",
-  "station",
-  "stop",
-  "street",
-  "the",
-  "way",
-])
-
-export const normaliseBusSearchText = (value: string): string =>
-  value.trim().toLowerCase().replace(/['’]/g, "")
-
-/** True when a stop / hub name is a real hit for the typed query. */
-export const busSearchNameMatches = (name: string, query: string): boolean => {
-  const needle = normaliseBusSearchText(query)
-  if (needle.length < 2) return false
-  const haystack = normaliseBusSearchText(name)
-  if (haystack.includes(needle)) return true
-  const tokens = needle
-    .split(/[^a-z0-9]+/)
-    .filter(
-      (token) => token.length >= 4 && !GENERIC_BUS_SEARCH_WORDS.has(token)
-    )
-  return tokens.some((token) => haystack.includes(token))
-}
-
-/** Hubs with coordinates, preferring names that match the query. */
-export const pickNamedExpandableMatches = <
-  T extends { name?: string; stationName?: string; lat?: number; lon?: number },
->(
-  matches: readonly T[],
-  query: string,
-  limit = 3
-): T[] => {
-  const withCoords = matches.filter(
-    (match) => typeof match.lat === "number" && typeof match.lon === "number"
-  )
-  const named = withCoords.filter((match) =>
-    busSearchNameMatches(match.name ?? match.stationName ?? "", query)
-  )
-  const chosen = named.length > 0 ? named : withCoords
-  return chosen.slice(0, limit)
-}
-
-export const mergeStopsById = <T extends { id: string }>(
-  groups: readonly (readonly T[])[]
-): T[] => {
-  const seen = new Set<string>()
-  const merged: T[] = []
-  for (const group of groups) {
-    for (const stop of group) {
-      if (seen.has(stop.id)) continue
-      seen.add(stop.id)
-      merged.push(stop)
-    }
-  }
-  return merged
-}
-
-/** Keep name matches when any exist so a street search is not a nearby dump. */
-export const preferStopsMatchingSearch = <T extends { name: string }>(
-  stops: readonly T[],
-  query: string
-): T[] => {
-  const matched = stops.filter((stop) => busSearchNameMatches(stop.name, query))
-  return matched.length > 0 ? matched : [...stops]
-}
-
-export const isBusStop = (modes?: string[]): boolean =>
-  modes?.includes("bus") ?? false
+  parseCompassPoint(readPropValue(properties, "compasspoint"))
+    ?.compassBearingDegrees ??
+  compassFromArrow(indicator)?.compassBearingDegrees ??
+  compassFromArrow(stopLetter)?.compassBearingDegrees
 
 export const mapStopPoint = (stop: {
   id?: string
@@ -196,33 +83,36 @@ export const mapStopPoint = (stop: {
   indicator?: string
   stopLetter?: string
   towards?: string
+  smsCode?: string
   distance?: number
   lat?: number
   lon?: number
-  lines?: Array<{ name?: string; id?: string }>
+  lines?: Array<{ name?: string; id?: string } | string>
   additionalProperties?: AdditionalProperty[]
+  compassPoint?: string
+  compassBearingDegrees?: number
 }): NearbyBusStop | null => {
   if (!stop.id) return null
+  const lifted = normalizeStopPoint(stop)
 
   return {
     id: stop.id,
     name: (stop.commonName ?? stop.name)?.trim() || "Unknown stop",
     indicator: stop.indicator,
     stopLetter: readStopLetter(stop.stopLetter, stop.indicator),
-    towards:
-      usableTflText(stop.towards) || readTowards(stop.additionalProperties),
+    towards: lifted.towards,
     distance: stop.distance,
     lines: stop.lines
-      ?.map((line) => line.name ?? line.id)
+      ?.map((line) =>
+        typeof line === "string" ? line : (line.name ?? line.id)
+      )
       .filter((value): value is string => Boolean(value)),
     lat: typeof stop.lat === "number" ? stop.lat : undefined,
     lon: typeof stop.lon === "number" ? stop.lon : undefined,
-    smsCode: readSmsCode(stop.additionalProperties),
-    bearingDegrees: readBearingDegrees(
-      stop.additionalProperties,
-      stop.indicator,
-      stop.stopLetter
-    ),
+    smsCode: lifted.smsCode,
+    compassPoint: lifted.compassPoint,
+    compassBearingDegrees: lifted.compassBearingDegrees,
+    additionalProperties: stop.additionalProperties,
   }
 }
 
@@ -232,12 +122,16 @@ export const mapStopsFromGeoResponse = (
     commonName?: string
     indicator?: string
     stopLetter?: string
+    towards?: string
+    smsCode?: string
     distance?: number
     lat?: number
     lon?: number
     modes?: string[]
     lines?: Array<{ name?: string; id?: string }>
     additionalProperties?: AdditionalProperty[]
+    compassPoint?: string
+    compassBearingDegrees?: number
   }>,
   limit: number
 ): NearbyBusStop[] =>

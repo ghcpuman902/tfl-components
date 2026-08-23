@@ -7,13 +7,8 @@ import {
 } from "@/lib/tfl/cached-stop-arrivals"
 import { isValidLatLon, truncateLatLon } from "@/lib/tfl/geo"
 import {
-  isBoardableBusStopId,
-  isBusStop,
   mapStopPoint,
   mapStopsFromGeoResponse,
-  mergeStopsById,
-  pickNamedExpandableMatches,
-  preferStopsMatchingSearch,
   type NearbyBusStop,
 } from "@/lib/tfl/bus-stop-shape"
 
@@ -68,42 +63,6 @@ const fetchBusStopsNear = async (
   return mapStopsFromGeoResponse(response.stopPoints ?? [], limit)
 }
 
-/** Enrich search hits with stop letter / towards from full stop details. */
-const enrichStops = async (
-  stops: NearbyBusStop[]
-): Promise<NearbyBusStop[]> => {
-  if (stops.length === 0) return stops
-
-  try {
-    const client = getTflClient()
-    const details = await client.stopPoint.get(stops.map((stop) => stop.id))
-    const detailList = Array.isArray(details) ? details : [details]
-    const byId = new Map(
-      detailList
-        .map((detail) => mapStopPoint(detail))
-        .filter((stop): stop is NearbyBusStop => stop !== null)
-        .map((stop) => [stop.id, stop] as const)
-    )
-
-    return stops.map((stop) => {
-      const detail = byId.get(stop.id)
-      if (!detail) return stop
-      return {
-        ...stop,
-        stopLetter: stop.stopLetter ?? detail.stopLetter,
-        towards: stop.towards ?? detail.towards,
-        lines: stop.lines?.length ? stop.lines : detail.lines,
-        name: stop.name || detail.name,
-        smsCode: stop.smsCode ?? detail.smsCode,
-        lat: stop.lat ?? detail.lat,
-        lon: stop.lon ?? detail.lon,
-      }
-    })
-  } catch {
-    return stops
-  }
-}
-
 export async function getNearbyBusStops(
   lat: number,
   lon: number
@@ -152,57 +111,17 @@ export async function searchBusStops(
 
   try {
     const client = getTflClient()
-    const response = await client.stopPoint.search({
+    const hits = await client.stopPoint.searchBusStops({
       query: trimmed,
-      modes: ["bus"],
       maxResults: MAX_SEARCH_STOPS,
     })
-
-    const matches = (response.matches ?? []).filter(
-      (match) => match.id && isBusStop(match.modes)
-    )
-
-    // Prefer real boarding points (490…). Hubs like HUBLBG have no bus arrivals.
-    const boardable = matches
-      .filter((match) => match.id && isBoardableBusStopId(match.id))
-      .map((match) =>
-        mapStopPoint({
-          id: match.id,
-          commonName: match.name ?? match.stationName,
-          indicator: match.platformName,
-          lines: match.lines,
-          lat: match.lat,
-          lon: match.lon,
-        })
-      )
+    const stops = hits
+      .map((stop) => mapStopPoint(stop))
       .filter((stop): stop is NearbyBusStop => stop !== null)
-
-    if (boardable.length > 0) {
-      const enriched = await enrichStops(boardable.slice(0, MAX_SEARCH_STOPS))
-      return { ok: true, stops: enriched }
+    if (stops.length === 0) {
+      return { ok: false, error: "No bus stops matched that search." }
     }
-
-    const hubs = pickNamedExpandableMatches(matches, trimmed).filter(
-      (hub) =>
-        hub.lat != null &&
-        hub.lon != null &&
-        isValidLatLon(hub.lat, hub.lon)
-    )
-
-    if (hubs.length > 0) {
-      const nearbyGroups = await Promise.all(
-        hubs.map((hub) => fetchBusStopsNear(hub.lat!, hub.lon!, 25))
-      )
-      const nearby = preferStopsMatchingSearch(
-        mergeStopsById(nearbyGroups),
-        trimmed
-      ).slice(0, MAX_SEARCH_STOPS)
-      if (nearby.length > 0) {
-        return { ok: true, stops: nearby }
-      }
-    }
-
-    return { ok: false, error: "No bus stops matched that search." }
+    return { ok: true, stops }
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to search stops."

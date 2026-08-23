@@ -4,7 +4,7 @@
   "title": "Line Strip",
   "description": "TfL strip components — StraightStrip, branched strips, LineStrip molecule, full route, and journey A→B.",
   "dependencies": [
-    "tfl-ts@^2.10.0"
+    "tfl-ts@^2.11.0"
   ],
   "registryDependencies": [
     "https://tfl.manglekuo.com/r/tfl-colours.json",

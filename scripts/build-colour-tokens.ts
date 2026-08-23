@@ -456,7 +456,7 @@ const upsertRegistryItem = (artefacts: ColourTokensArtefacts): void => {
     title: "TfL colours",
     description:
       "Installable TfL line/mode OKLCH colour tokens with data-line role bindings, a11y adaptations, and an importable line→colour map for static Tailwind classes.",
-    dependencies: ["tfl-ts@^2.10.0"],
+    dependencies: ["tfl-ts@^2.11.0"],
     cssVars: artefacts.cssVars,
     css: artefacts.css,
     files: [

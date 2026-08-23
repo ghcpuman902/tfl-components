@@ -53,10 +53,13 @@ const MON_MORNING = "2026-08-24"
 
 const SAT_0125 = londonMs(SAT_MORNING, 1, 25)
 const SAT_0836 = londonMs(SAT_MORNING, 8, 36)
+const SAT_2200 = londonMs(SAT_MORNING, 22)
+const SUN_2222 = londonMs(SUN_MORNING, 22, 22)
 
 const KINGS_CROSS = "940GZZLUKSX"
 const HYDE_PARK_CORNER = "940GZZLUHPC"
 const ACTON_TOWN = "940GZZLUACT"
+const PARSONS_GREEN = "940GZZLUPSG"
 
 const kindOf = (state: ArrivalsEmptyState | null): string | null =>
   state?.kind ?? null
@@ -215,6 +218,64 @@ const piccadillyPartClosure = (): ArrivalsStatusSignal => ({
         {
           fromDate: "2026-08-22T03:45:00Z",
           toDate: "2026-08-22T13:00:00Z",
+          isNow: false,
+        },
+      ],
+    },
+  ],
+})
+
+/**
+ * Live Sunday District Wimbledon branch: one union window Sat 14:00 → Mon 01:29.
+ * 01:29 is the traffic-day end, not the next train.
+ */
+const districtWeekendWimbledonUnion = (): ArrivalsStatusSignal => ({
+  id: "district",
+  lineStatuses: [
+    {
+      statusSeverity: 5,
+      statusSeverityDescription: "Part Closure",
+      reason:
+        "DISTRICT LINE: Saturday 22 August, from 1400, and all day Sunday 23 August, no service between Fulham Broadway and Wimbledon.",
+      disruption: {
+        category: "PlannedWork",
+        closureText: "partClosure",
+        affectedStops: [{ naptanId: PARSONS_GREEN }],
+      },
+      validityPeriods: [
+        {
+          fromDate: "2026-08-22T13:00:00Z",
+          toDate: "2026-08-24T00:29:00Z",
+          isNow: false,
+        },
+      ],
+    },
+  ],
+})
+
+/** Same possession split across the overnight gap — do not resume at Sunday 01:29. */
+const districtWeekendWimbledonSplit = (): ArrivalsStatusSignal => ({
+  id: "district",
+  lineStatuses: [
+    {
+      statusSeverity: 5,
+      statusSeverityDescription: "Part Closure",
+      reason:
+        "DISTRICT LINE: Saturday 22 August, from 1400, and all day Sunday 23 August, no service between Fulham Broadway and Wimbledon.",
+      disruption: {
+        category: "PlannedWork",
+        closureText: "partClosure",
+        affectedStops: [{ naptanId: PARSONS_GREEN }],
+      },
+      validityPeriods: [
+        {
+          fromDate: "2026-08-22T13:00:00Z",
+          toDate: "2026-08-23T00:29:00Z",
+          isNow: false,
+        },
+        {
+          fromDate: "2026-08-23T04:30:00Z",
+          toDate: "2026-08-24T00:29:00Z",
           isNow: false,
         },
       ],
@@ -670,6 +731,103 @@ describe("current disruption windows", () => {
       ),
       Date.parse("2026-08-22T09:30:00Z")
     )
+  })
+
+  it("accumulates overnight-split slices instead of resuming at Sunday 01:29", () => {
+    const status = districtWeekendWimbledonSplit().lineStatuses?.[0]
+    assert.equal(
+      overlappingValidityToDateMs(status, SAT_2200),
+      Date.parse("2026-08-24T00:29:00Z")
+    )
+    assert.equal(
+      overlappingValidityToDateMs(status, SAT_2200) ===
+        Date.parse("2026-08-23T00:29:00Z"),
+      false
+    )
+  })
+
+  it("notes No service, not until 01:29, for a Sat–Sun possession on Saturday night", () => {
+    const lineStatus = [districtWeekendWimbledonSplit()]
+    const state = resolveLineArrivalsEmptyKind({
+      lineIds: ["district"],
+      rowCount: 0,
+      nowMs: SAT_2200,
+      lineStatus,
+      stopPointId: PARSONS_GREEN,
+    })
+    const copy = arrivalsLineEmptyCopy(state)
+    assert.equal(kindOf(state), "disrupted")
+    assert.equal(state?.resumeMs, undefined)
+    assert.equal(copy, ARRIVALS_EMPTY_COPY.disrupted)
+    assert.equal(copy.includes("01:29"), false)
+    assert.equal(
+      resolveArrivalsStatusChip({
+        lineIds: ["district"],
+        hasTrains: false,
+        emptyKind: state?.kind,
+        lineStatus,
+        nowMs: SAT_2200,
+        stopPointId: PARSONS_GREEN,
+      }),
+      "Part Closure"
+    )
+  })
+
+  it("notes No service, not until 01:29, for the live union window on Sunday night", () => {
+    const lineStatus = [districtWeekendWimbledonUnion()]
+    const state = resolveLineArrivalsEmptyKind({
+      lineIds: ["district"],
+      rowCount: 0,
+      nowMs: SUN_2222,
+      lineStatus,
+      stopPointId: PARSONS_GREEN,
+    })
+    const copy = arrivalsLineEmptyCopy(state)
+    assert.equal(kindOf(state), "disrupted")
+    assert.equal(state?.resumeMs, undefined)
+    assert.equal(copy, ARRIVALS_EMPTY_COPY.disrupted)
+    assert.equal(copy.includes("01:29"), false)
+    assert.equal(
+      formatLondonClockTime(Date.parse("2026-08-24T00:29:00Z")),
+      "01:29"
+    )
+    assert.equal(
+      overlappingValidityToDateMs(
+        districtWeekendWimbledonUnion().lineStatuses?.[0],
+        SUN_2222
+      ),
+      Date.parse("2026-08-24T00:29:00Z")
+    )
+  })
+
+  it("keeps today's 10:30 resume when a later weekend sits on the same row", () => {
+    const lineStatus: ArrivalsStatusSignal[] = [
+      {
+        id: "circle",
+        lineStatuses: [
+          {
+            ...circlePlannedClosure().lineStatuses![0]!,
+            validityPeriods: [
+              saturdayEngineeringWindow,
+              {
+                fromDate: "2026-08-29T03:30:00Z",
+                toDate: "2026-08-29T09:30:00Z",
+                isNow: false,
+              },
+            ],
+          },
+        ],
+      },
+    ]
+    const state = resolveLineArrivalsEmptyKind({
+      lineIds: ["circle"],
+      rowCount: 0,
+      nowMs: SAT_0836,
+      lineStatus,
+    })
+    assert.equal(kindOf(state), "disrupted")
+    assert.equal(state?.resumeMs, Date.parse("2026-08-22T09:30:00Z"))
+    assert.equal(arrivalsLineEmptyCopy(state), "No service until 10:30.")
   })
 
   it("omits the clock when merge PlannedWork resume times differ", () => {

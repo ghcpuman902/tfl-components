@@ -105,6 +105,18 @@ export const getLineColourToken = (
 ): LineColourToken | undefined => BY_ID.get(lineId.toLowerCase())
 
 /**
+ * Stroke / fill that follows `data-line` → `--line-color` (dark Northern
+ * included). Pass a baked hex only as fallback for unknown ids.
+ */
+export const lineCssPaint = (
+  lineId: string | undefined,
+  fallback?: string
+): string =>
+  lineId && getLineColourToken(lineId)
+    ? "var(--line-color)"
+    : (fallback ?? "var(--foreground)")
+
+/**
  * Predefined `bg-tfl-*` class for a line id, or `undefined` if unknown.
  * Safe to pass into `className` — never interpolate the id into a template.
  */

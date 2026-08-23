@@ -91,7 +91,7 @@ const LandingIpadHomeButton = ({
     title={hint}
     aria-label={hint}
     onClick={onClick}
-    className="absolute z-10 rounded-full bg-transparent focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+    className="absolute z-10 rounded-full bg-transparent pointer-events-auto focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
     style={{
       left: `${ipadHomeInset.left * 100}%`,
       top: `${ipadHomeInset.top * 100}%`,
@@ -489,7 +489,7 @@ export const LandingScene = ({
             >
               <IpadBoardFrame
                 key={landingJourney.id}
-                interactive={false}
+                interactive
                 board={board}
                 previewConfig={landingJourney.config}
               />
@@ -629,10 +629,10 @@ export const LandingScene = ({
                   aspectRatio: IPAD_FRAME_ASPECT,
                   translate: "-50% 0",
                   borderRadius: ipadCaseRounding,
-                  pointerEvents: roomComplete ? "auto" : "none",
+                  pointerEvents: "auto",
                 }}
                 onPointerDown={() => {
-                  if (!roomComplete || exampleInteracted.current) return
+                  if (exampleInteracted.current) return
                   exampleInteracted.current = true
                   onExampleInteraction?.()
                 }}
@@ -650,7 +650,7 @@ export const LandingScene = ({
                 >
                   <IpadBoardFrame
                     key={landingJourney.id}
-                    interactive={roomComplete}
+                    interactive
                     board={board}
                     previewConfig={landingJourney.config}
                   />

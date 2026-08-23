@@ -19,7 +19,7 @@ type IpadBoardFrameProps = {
 }
 
 export const IpadBoardFrame = ({
-  interactive,
+  interactive = true,
   board,
   previewConfig = LANDING_BOARD_DEFAULT.config,
 }: IpadBoardFrameProps) => {

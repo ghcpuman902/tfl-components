@@ -4,7 +4,7 @@
   "title": "Tube Status Strip",
   "description": "Horizontal unattended Tube and rail status strip over the shared prepared status model.",
   "dependencies": [
-    "tfl-ts@^2.10.0"
+    "tfl-ts@^2.11.0"
   ],
   "registryDependencies": [
     "https://tfl.manglekuo.com/r/tfl-colours.json",

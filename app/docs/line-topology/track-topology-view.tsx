@@ -14,6 +14,7 @@ import type {
   TransitMode,
 } from "@/lib/tfl/geography-types"
 import { LineBadge } from "@/components/tfl/brand/line-badge"
+import { lineCssPaint } from "@/lib/tfl/line-colour-map"
 import {
   type ContractedNode,
   type ContractedTopology,
@@ -430,6 +431,7 @@ const TopologyPlot = ({
   dual = false,
   empty,
 }: TopologyPlotProps) => {
+  const linePaint = lineCssPaint(lineId, color)
   const svgRef = useRef<SVGSVGElement | null>(null)
   const dragRef = useRef<DragState | null>(null)
   const [zoom, setZoom] = useState<ZoomState>(DEFAULT_ZOOM)
@@ -603,6 +605,8 @@ const TopologyPlot = ({
             <svg
               ref={svgRef}
               viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
+              data-line={lineId}
+              data-tfl-diagram={lineId === "cable-car" ? "" : undefined}
               className="h-[min(60vh,36rem)] w-full cursor-grab touch-none select-none active:cursor-grabbing"
               role="img"
               aria-label={`${lineName} ${title}. Scroll to zoom and drag to pan.`}
@@ -647,7 +651,7 @@ const TopologyPlot = ({
                       y1={line.y1}
                       x2={line.x2}
                       y2={line.y2}
-                      stroke={occasional ? "var(--muted-foreground)" : color}
+                      stroke={occasional ? "var(--muted-foreground)" : linePaint}
                       strokeWidth={dual || skip ? 2.2 : 3}
                       strokeDasharray={
                         occasional ? "2 5" : fast ? "7 5" : undefined
@@ -691,7 +695,7 @@ const TopologyPlot = ({
                       <path
                         d={curve}
                         fill="none"
-                        stroke={color}
+                        stroke={linePaint}
                         strokeWidth={dual ? 1.8 : 2.2}
                         strokeLinecap="round"
                         vectorEffect="non-scaling-stroke"
@@ -714,7 +718,7 @@ const TopologyPlot = ({
                             : 4 * symbolScale
                       }
                       fill={
-                        node.kind === "junction" ? color : "var(--background)"
+                        node.kind === "junction" ? linePaint : "var(--background)"
                       }
                       stroke={
                         node.kind === "junction"
@@ -888,7 +892,6 @@ export const TrackTopologyView = ({
                 <LineBadge
                   lineId={option.lineId}
                   name={option.lineName}
-                  color={option.color}
                   diagram={option.lineId === "cable-car"}
                 />
               </button>
@@ -992,7 +995,6 @@ export const TrackTopologyView = ({
           <RoutePatternInspector
             lineId={selected.lineId}
             lineName={selected.lineName}
-            color={selected.color}
             variantsBundle={variantsBundle}
             stopsFile={
               selected.mode ? OSM_STOPS_BY_MODE[selected.mode] : undefined

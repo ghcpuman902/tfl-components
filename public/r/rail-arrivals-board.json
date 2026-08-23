@@ -4,7 +4,7 @@
   "title": "Rail Arrivals Board",
   "description": "Per-station Tube and rail departures grouped by line and compass bound — pass RealtimePrediction[] as data.",
   "dependencies": [
-    "tfl-ts@^2.10.0",
+    "tfl-ts@^2.11.0",
     "lucide-react"
   ],
   "registryDependencies": [

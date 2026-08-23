@@ -4,7 +4,7 @@
   "title": "Line Badge",
   "description": "Official TfL line colour badge via data-line tokens (OKLCH, adaptive a11y).",
   "dependencies": [
-    "tfl-ts@^2.10.0"
+    "tfl-ts@^2.11.0"
   ],
   "registryDependencies": [
     "https://tfl.manglekuo.com/r/tfl-colours.json",

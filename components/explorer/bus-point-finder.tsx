@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { TfLPointPicker } from "@/components/explorer/tfl-point-picker"
 import { ExplorerPointMapLazy } from "@/components/explorer/explorer-point-map-lazy"
 import { readExplorerQueryParam } from "@/components/explorer/use-explorer-chrome"
@@ -8,19 +8,10 @@ import {
   getGeolocation,
   useExplorerKeyedQuery,
 } from "@/hooks/use-explorer-keyed-query"
+import { type ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
 import {
-  isSmsCodeQuery,
-  normaliseStopPoint,
-  type ExplorerPoint,
-} from "@/lib/tfl/explorer-point-normalise"
-import {
-  isBoardableBusStopId,
-  isBusStop,
   mapStopPoint,
   mapStopsFromGeoResponse,
-  mergeStopsById,
-  pickNamedExpandableMatches,
-  preferStopsMatchingSearch,
 } from "@/lib/tfl/bus-stop-shape"
 import type { ExplorerView } from "@/lib/tfl/explorer-url-state"
 import { MAP_SEARCH_RADIUS_METERS, truncateLatLon } from "@/lib/tfl/geo"
@@ -53,7 +44,9 @@ const toExplorerPoint = (
     smsCode: stop.smsCode,
     towards: stop.towards,
     distanceMeters: stop.distance,
-    bearingDegrees: stop.bearingDegrees,
+    compassPoint: stop.compassPoint,
+    compassBearingDegrees: stop.compassBearingDegrees,
+    additionalProperties: stop.additionalProperties,
   }
 }
 
@@ -82,7 +75,11 @@ const enrichBoardableStops = async (
         smsCode: stop.smsCode ?? detail.smsCode,
         lat: stop.lat ?? detail.lat,
         lon: stop.lon ?? detail.lon,
-        bearingDegrees: stop.bearingDegrees ?? detail.bearingDegrees,
+        compassPoint: stop.compassPoint ?? detail.compassPoint,
+        compassBearingDegrees:
+          stop.compassBearingDegrees ?? detail.compassBearingDegrees,
+        additionalProperties:
+          detail.additionalProperties ?? stop.additionalProperties,
       }
     })
   } catch {
@@ -99,7 +96,8 @@ export const BusPointFinder = ({
   initialPoints = [],
   emptyMessage = "No matching stops.",
 }: BusPointFinderProps) => {
-  const { loading, error, setError, runKeyed } = useExplorerKeyedQuery()
+  const { loading, error, setError, runKeyed, ready, hydrated } =
+    useExplorerKeyedQuery()
   const [livePoints, setLivePoints] = useState<ExplorerPoint[] | null>(null)
   const [query, setQuery] = useState(
     () => initialQuery || readExplorerQueryParam()
@@ -109,8 +107,29 @@ export const BusPointFinder = ({
     lat: number
     lon: number
   } | null>(null)
+  const restoredRef = useRef(false)
 
   const points = livePoints ?? initialPoints
+
+  const hydratePointById = async (id: string) => {
+    const result = await runKeyed(async (client) => {
+      const details = await client.stopPoint.get({ stopPointIds: [id] })
+      const stop = Array.isArray(details) ? details[0] : details
+      if (!stop) return null
+      // Keep the requested id when TfL remaps a 490G cluster onto a HUB*.
+      return toExplorerPoint(mapStopPoint({ ...stop, id }))
+    })
+    if (!result.ok || !result.data) return false
+    const hydrated = result.data
+    setLivePoints((current) => {
+      const rest = (current ?? initialPoints).filter(
+        (point) => point.id !== hydrated.id
+      )
+      return [hydrated, ...rest]
+    })
+    onSelect(hydrated)
+    return true
+  }
 
   const handleSearchValueChange = (next: string) => {
     setQuery(next)
@@ -127,73 +146,14 @@ export const BusPointFinder = ({
     }
 
     const result = await runKeyed(async (client) => {
-      if (isSmsCodeQuery(trimmed)) {
-        const smsResult = await client.stopPoint.getBySms({ id: trimmed })
-        const mapped = normaliseStopPoint({
-          ...(smsResult as Record<string, unknown>),
-          id:
-            (smsResult as { id?: string }).id ??
-            (smsResult as { naptanId?: string }).naptanId,
-          commonName:
-            (smsResult as { commonName?: string }).commonName ??
-            (smsResult as { name?: string }).name,
-        })
-        return mapped ? [mapped] : []
-      }
-
-      const response = await client.stopPoint.search({
+      const stops = await client.stopPoint.searchBusStops({
         query: trimmed,
-        modes: ["bus"],
         maxResults: 12,
       })
-
-      const matches = (response.matches ?? []).filter(
-        (match) => match.id && isBusStop(match.modes)
-      )
-
-      const boardable = matches
-        .filter((match) => match.id && isBoardableBusStopId(match.id))
-        .map((match) =>
-          toExplorerPoint(
-            mapStopPoint({
-              id: match.id,
-              commonName: match.name ?? match.stationName,
-              indicator: match.platformName,
-              towards: match.towards,
-              lines: match.lines,
-              lat: match.lat,
-              lon: match.lon,
-            })
-          )
-        )
+      const mapped = stops
+        .map((stop) => toExplorerPoint(mapStopPoint(stop)))
         .filter((point): point is ExplorerPoint => point !== null)
-
-      if (boardable.length > 0) {
-        return enrichBoardableStops(client, boardable.slice(0, 12))
-      }
-
-      const hubs = pickNamedExpandableMatches(matches, trimmed)
-      if (hubs.length === 0) return []
-
-      const nearbyGroups = await Promise.all(
-        hubs.map(async (hub) => {
-          const nearby = await client.stopPoint.getByGeoPoint({
-            lat: hub.lat!,
-            lon: hub.lon!,
-            radius: MAP_SEARCH_RADIUS_METERS,
-            modes: ["bus"],
-            returnLines: true,
-          })
-          return mapStopsFromGeoResponse(nearby.stopPoints ?? [], 25)
-            .map(toExplorerPoint)
-            .filter((point): point is ExplorerPoint => point !== null)
-        })
-      )
-
-      return preferStopsMatchingSearch(
-        mergeStopsById(nearbyGroups),
-        trimmed
-      ).slice(0, 12)
+      return enrichBoardableStops(client, mapped)
     })
 
     if (!result.ok) return false
@@ -211,12 +171,19 @@ export const BusPointFinder = ({
   }
 
   useEffect(() => {
+    if (restoredRef.current || !hydrated || !ready) return
+    restoredRef.current = true
     const q = (initialQuery || readExplorerQueryParam()).trim()
-    if (q.length < 2) return
-    void handleSearchSubmit(q, selectedId)
-    // Restore API results after a remount / shared URL.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
-  }, [])
+    if (q.length >= 2) {
+      void handleSearchSubmit(q, selectedId)
+      return
+    }
+    if (selectedId && !initialPoints.some((point) => point.id === selectedId)) {
+      void hydratePointById(selectedId)
+    }
+    // Restore search hits / deep-linked ids after remount. Wait for the key.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per ready key
+  }, [hydrated, ready])
 
   const handleLocate = async () => {
     try {

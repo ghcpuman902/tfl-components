@@ -14,7 +14,11 @@ import {
   type LineStatusLike,
   type StatusKind,
 } from "tfl-ts"
-import { LONDON_TIME_ZONE, londonWeekdayLong } from "@/lib/tfl/london-dates"
+import {
+  LONDON_TIME_ZONE,
+  londonDateKey,
+  londonWeekdayLong,
+} from "@/lib/tfl/london-dates"
 import { isCurrentAnnouncement } from "@/lib/tfl/status-reason"
 import type { StatusLine } from "@/lib/tfl/status-types"
 
@@ -33,7 +37,10 @@ export type ArrivalsEmptyKind = "empty" | "ended" | "offline" | "disrupted"
 
 export type ArrivalsEmptyState = {
   kind: ArrivalsEmptyKind
-  /** Closure window end (`validityPeriods[].toDate`) when a period overlaps now. */
+  /**
+   * Later-today run end, when PlannedWork actually resumes during this
+   * operating day. Overnight traffic-day ends and later calendar days omit it.
+   */
   resumeMs?: number
 }
 
@@ -246,23 +253,88 @@ const periodOverlapsNow = (
   return nowMs >= fromMs && nowMs <= toMs
 }
 
+type ParsedValidityPeriod = {
+  fromMs: number
+  toMs: number | undefined
+}
+
+const parseValidityPeriod = (
+  period: ValidityPeriodLike
+): ParsedValidityPeriod | undefined => {
+  const from = periodField(period, "from")
+  const to = periodField(period, "to")
+  const fromMs = from ? Date.parse(from) : Number.NEGATIVE_INFINITY
+  const toMs = to ? Date.parse(to) : undefined
+  if (Number.isNaN(fromMs)) return undefined
+  if (toMs !== undefined && Number.isNaN(toMs)) return undefined
+  return { fromMs, toMs }
+}
+
+/** TfL splits "Sat from 1400, all day Sunday" across the overnight gap. */
+const OVERNIGHT_CONTINUATION_MS = 8 * 3_600_000
+
+const isOvernightContinuation = (
+  endMs: number,
+  nextFromMs: number
+): boolean => {
+  if (nextFromMs <= endMs) return true
+  if (nextFromMs - endMs > OVERNIGHT_CONTINUATION_MS) return false
+  return londonHour(endMs) < 5
+}
+
+const continuesRun = (
+  endMs: number,
+  period: ParsedValidityPeriod
+): boolean =>
+  period.fromMs <= endMs || isOvernightContinuation(endMs, period.fromMs)
+
 /**
- * Earliest overlapping `toDate`/`to`. Ignores `isNow` and never reads `reason`.
+ * End of the current PlannedWork run: overlapping `toDate`/`to`, then later
+ * overnight-split slices on the same row. Ignores `isNow` and never reads
+ * `reason`. Open-ended current or continued slices return `undefined`.
  */
 export const overlappingValidityToDateMs = (
   status: LineStatusLike | undefined,
   nowMs: number
 ): number | undefined => {
-  let earliest: number | undefined
-  for (const period of status?.validityPeriods ?? []) {
-    if (!periodOverlapsNow(period, nowMs)) continue
+  const raw = status?.validityPeriods ?? []
+  const overlapping = raw.filter((period) => periodOverlapsNow(period, nowMs))
+  if (overlapping.length === 0) return undefined
+
+  const overlappingEnds: number[] = []
+  for (const period of overlapping) {
     const to = periodField(period, "to")
-    if (!to) continue
+    if (!to) return undefined
     const toMs = Date.parse(to)
     if (Number.isNaN(toMs)) continue
-    if (earliest === undefined || toMs < earliest) earliest = toMs
+    overlappingEnds.push(toMs)
   }
-  return earliest
+  if (overlappingEnds.length === 0) return undefined
+
+  let endMs = Math.max(...overlappingEnds)
+  const parsed = raw
+    .map(parseValidityPeriod)
+    .filter((period): period is ParsedValidityPeriod => period !== undefined)
+
+  let grew = true
+  while (grew) {
+    grew = false
+    for (const period of parsed) {
+      if (!continuesRun(endMs, period)) continue
+      if (period.toMs === undefined) return undefined
+      if (period.toMs > endMs) {
+        endMs = period.toMs
+        grew = true
+      }
+    }
+  }
+  return endMs
+}
+
+/** Clock copy is only honest for a same-calendar-day, in-service resume. */
+const isLaterTodayResumeClock = (resumeMs: number, nowMs: number): boolean => {
+  if (isLikelyRailServiceEnded(resumeMs)) return false
+  return londonDateKey(new Date(resumeMs)) === londonDateKey(new Date(nowMs))
 }
 
 const statusDescription = (status: LineStatusLike): string =>
@@ -557,7 +629,9 @@ const plannedWorkResumeMs = (
 ): number | undefined => {
   if (status.disruption?.category !== "PlannedWork") return undefined
   if (isDelayOnlyStatus(status)) return undefined
-  return overlappingValidityToDateMs(status, nowMs)
+  const resumeMs = overlappingValidityToDateMs(status, nowMs)
+  if (resumeMs === undefined) return undefined
+  return isLaterTodayResumeClock(resumeMs, nowMs) ? resumeMs : undefined
 }
 
 const resolveGroupDisruption = (

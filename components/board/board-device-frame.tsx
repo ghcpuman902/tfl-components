@@ -83,7 +83,7 @@ export const IpadDeviceSvg = ({
 } = {}) => (
   <svg
     viewBox={`0 0 ${IPAD.vb.w} ${IPAD.vb.h}`}
-    className="absolute inset-0 size-full"
+    className="pointer-events-none absolute inset-0 size-full"
     aria-hidden
   >
     <rect

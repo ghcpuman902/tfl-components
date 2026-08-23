@@ -368,8 +368,8 @@ const toExplorerGeojson = (
         marker: bus ? "bus" : cycle ? "cycle" : "station",
         stopLetter: bus ? (point.stopLetter ?? "") : "",
       }
-      if (bus && point.bearingDegrees !== undefined) {
-        properties.bearing = point.bearingDegrees
+      if (bus && point.compassBearingDegrees !== undefined) {
+        properties.bearing = point.compassBearingDegrees
       }
       return {
         type: "Feature" as const,
@@ -404,7 +404,7 @@ const createBusStopMarkerElement = (
       .join(", ")
   )
 
-  if (point.bearingDegrees !== undefined) {
+  if (point.compassBearingDegrees !== undefined) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
     svg.setAttribute("viewBox", "0 0 24 24")
     svg.setAttribute("aria-hidden", "true")
@@ -412,7 +412,7 @@ const createBusStopMarkerElement = (
       "class",
       "pointer-events-none absolute inset-0 overflow-visible"
     )
-    svg.style.transform = `rotate(${point.bearingDegrees}deg)`
+    svg.style.transform = `rotate(${point.compassBearingDegrees}deg)`
     svg.innerHTML = `
       <g transform="translate(12,12) rotate(-45) scale(1.45) translate(-10,-14)" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <g stroke="#ffffff" stroke-width="3.25">${LUCIDE_MARS_ARROW_PATHS}</g>

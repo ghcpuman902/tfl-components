@@ -849,8 +849,8 @@ export const getCatalogueEntries = (): DocsEntry[] =>
     (entry) => entry.sidebarSection === "components" && !entry.comingSoon
   ).sort((a, b) => a.sidebarOrder - b.sidebarOrder)
 
-/** Matches DocsSidebar: get-started top → components → Troubleshoot / licensing tail → primitives. */
-export const GET_STARTED_BOTTOM_FROM = 190
+/** Matches DocsSidebar: get-started top → components → Board URL / Troubleshoot / licensing tail → primitives. */
+export const GET_STARTED_BOTTOM_FROM = 185
 
 /** Tools and Drafts — footer / search in development only (J8). */
 export const isInternalDocsEntry = (entry: DocsEntry): boolean =>

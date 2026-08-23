@@ -4,6 +4,7 @@ import {
   getLineColourBgClass,
   getLineColourToken,
   LINE_COLOUR_TOKENS,
+  lineCssPaint,
 } from "./line-colour-map"
 
 describe("line colour map", () => {
@@ -24,5 +25,13 @@ describe("line colour map", () => {
     assert.equal(a.cssVar, "tfl-mode-elizabeth")
     assert.equal(getLineColourToken("rb1")?.id, "river")
     assert.equal(getLineColourToken("woolwich-ferry")?.id, "river")
+  })
+
+  it("uses --line-color for published ids so dark tokens can apply", () => {
+    assert.equal(lineCssPaint("northern", "#000000"), "var(--line-color)")
+    assert.equal(lineCssPaint("elizabeth-line"), "var(--line-color)")
+    assert.equal(lineCssPaint("not-a-line", "#abcabc"), "#abcabc")
+    assert.equal(lineCssPaint(undefined, "#abcabc"), "#abcabc")
+    assert.equal(lineCssPaint(undefined), "var(--foreground)")
   })
 })

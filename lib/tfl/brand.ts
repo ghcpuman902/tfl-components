@@ -38,6 +38,7 @@ export {
   getLineColourBgClass,
   getLineColourTextClass,
   getLineColourToken,
+  lineCssPaint,
   type LineColourKind,
   type LineColourToken,
 } from "@/lib/tfl/line-colour-map"

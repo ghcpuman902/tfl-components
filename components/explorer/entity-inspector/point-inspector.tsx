@@ -7,14 +7,24 @@ import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { RiverBusArrivalsBoard } from "@/components/tfl/arrivals/river-bus-arrivals-board"
 import { TubeStatusBoard } from "@/components/tfl/status/tube-status-board"
 import { resolveBusStopLetter } from "@/lib/tfl/bus-stop-letter"
+import {
+  isBoardableBusStopId,
+  isBusStopAreaId,
+  mapStopsFromGeoResponse,
+  readCompassBearingDegrees,
+  readCompassPoint,
+} from "@/lib/tfl/bus-stop-shape"
+import { MAP_SEARCH_RADIUS_METERS } from "@/lib/tfl/geo"
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
 import { CycleHireDocksDetail } from "@/components/tfl/cycle-hire/cycle-hire-docks"
 import { Button } from "@/components/ui/button"
 import {
+  AdditionalPropertiesDisclosure,
   CodeSnippet,
   CopyableField,
   EntityInspectorShell,
   InspectorJson,
+  type StopAdditionalProperty,
 } from "@/components/explorer/entity-inspector/entity-inspector"
 import { useExplorerKeyedQuery } from "@/hooks/use-explorer-keyed-query"
 import { getCachedLineStatusesAction } from "@/lib/tfl/cached-status-action"
@@ -32,6 +42,7 @@ import {
   type ExplorerCachedArrivals,
 } from "@/lib/tfl/explorer/selection"
 import { buildExplorerHref } from "@/lib/tfl/explorer-url-state"
+import type { ExplorerDomain } from "@/lib/tfl/explorer-url-state"
 import { getLineNameTiers, railLineModeName } from "@/lib/tfl/line-names"
 import {
   filterRiverBusLineIds,
@@ -56,6 +67,107 @@ type PointInspectorDeferredProps = Omit<
   /** Local selection has not caught up to the URL yet — skip a stale promise. */
   detailsPending?: boolean
 }
+
+type LiveStopChild = {
+  id: string
+  name: string
+  stopLetter?: string
+  stopType?: string
+  modes?: string[]
+}
+
+type LiveStopMeta = {
+  requestedId: string
+  id?: string
+  stopType?: string
+  stationNaptan?: string
+  hubNaptanCode?: string
+  compassPoint?: string
+  compassBearingDegrees?: number
+  children: LiveStopChild[]
+}
+
+const explorerDomainForChild = (child: LiveStopChild): ExplorerDomain => {
+  if (child.modes?.includes("cycle-hire") || /^BikePoints_/i.test(child.id)) {
+    return "cycle"
+  }
+  if (child.modes?.includes("river-bus") || /^930/i.test(child.id)) {
+    return "river"
+  }
+  if (child.modes?.includes("bus") || /^490/i.test(child.id)) {
+    return "bus"
+  }
+  return "tube-rail"
+}
+
+const readLiveStopChildren = (
+  children:
+    | Array<{
+        id?: string
+        commonName?: string
+        name?: string
+        stopLetter?: string
+        stopType?: string
+        modes?: string[]
+      }>
+    | undefined
+): LiveStopChild[] => {
+  const list: LiveStopChild[] = []
+  for (const child of children ?? []) {
+    const id = child.id?.trim()
+    if (!id) continue
+    list.push({
+      id,
+      name: (child.commonName ?? child.name)?.trim() || id,
+      stopLetter: child.stopLetter,
+      stopType: child.stopType,
+      modes: child.modes,
+    })
+  }
+  return list
+}
+
+const mergeLiveStopChildren = (
+  ...lists: LiveStopChild[][]
+): LiveStopChild[] => {
+  const seen = new Set<string>()
+  const merged: LiveStopChild[] = []
+  for (const child of lists.flat()) {
+    if (seen.has(child.id)) continue
+    seen.add(child.id)
+    merged.push(child)
+  }
+  return merged
+}
+
+const readLiveStopMeta = (
+  requestedId: string,
+  stop: {
+    id?: string
+    stopType?: string
+    stationNaptan?: string
+    hubNaptanCode?: string
+    children?: Array<{
+      id?: string
+      commonName?: string
+      name?: string
+      stopLetter?: string
+      stopType?: string
+      modes?: string[]
+    }>
+    compassPoint?: string
+    compassBearingDegrees?: number
+  }
+): LiveStopMeta => ({
+  requestedId,
+  id: stop.id,
+  stopType: stop.stopType,
+  stationNaptan: stop.stationNaptan,
+  hubNaptanCode: stop.hubNaptanCode,
+  compassPoint: stop.compassPoint,
+  compassBearingDegrees: stop.compassBearingDegrees,
+  children: readLiveStopChildren(stop.children),
+})
 
 const PointInspectorFromPromise = ({
   cachedArrivalsPromise,
@@ -124,6 +236,11 @@ const PointInspectorLive = ({
     cycleDock ?? null
   )
   const [dockFetchedAt, setDockFetchedAt] = useState<number | null>(null)
+  const [stopProperties, setStopProperties] = useState<
+    StopAdditionalProperty[] | null
+  >(null)
+  const [liveStop, setLiveStop] = useState<LiveStopMeta | null>(null)
+  const [arrivalsPointId, setArrivalsPointId] = useState<string | null>(null)
 
   const isRiver = pointHasRiverBusLine(point.lineIds)
   const riverLineIds = isRiver ? filterRiverBusLineIds(point.lineIds) : []
@@ -131,7 +248,9 @@ const PointInspectorLive = ({
   const isBus =
     !isRiver &&
     point.kind === "stopPoint" &&
-    (point.modes?.includes("bus") || Boolean(point.stopLetter || point.smsCode))
+    (isBusStopAreaId(point.id) ||
+      point.modes?.includes("bus") ||
+      Boolean(point.stopLetter || point.smsCode))
   const isBike = point.kind === "bikePoint"
   const seedArrivals = cachedArrivalsForPoint(cachedArrivals, point)
   const pollStopIds = point.arrivalsStopIds?.length
@@ -139,7 +258,13 @@ const PointInspectorLive = ({
     : [point.id]
   const pollStopKey = pollStopIds.join(",")
   const isHub = (point.hubMembers?.length ?? 0) > 1
-  const displayArrivals = arrivals ?? seedArrivals?.arrivals ?? null
+  const isBusArea = isBusStopAreaId(point.id)
+  const skipArrivalsPreview = isBusArea
+  const displayArrivals =
+    (arrivalsPointId === point.id ? arrivals : null) ??
+    seedArrivals?.arrivals ??
+    null
+  const activeLiveStop = liveStop?.requestedId === point.id ? liveStop : null
   const resolvedStopLetter = isBus
     ? resolveBusStopLetter(point.stopLetter, displayArrivals ?? [])
     : (point.stopLetter ?? null)
@@ -154,33 +279,94 @@ const PointInspectorLive = ({
     const load = async () => {
       if (isBike) {
         const result = await runKeyed(async (client) =>
-          client.bikePoint.getById(pointId)
+          client.bikePoint.getById(pointId, { keepTflTypes: true })
         )
         if (cancelled || !result.ok) return
         setLiveDock(result.data)
+        setStopProperties(result.data.additionalProperties ?? [])
         setDockFetchedAt(Date.now())
         return
       }
 
+      if (skipArrivalsPreview) {
+        const result = await runKeyed(async (client) => {
+          const stopDetail = await client.stopPoint.get({
+            stopPointIds: [pointId],
+          })
+          const stop = Array.isArray(stopDetail) ? stopDetail[0] : stopDetail
+          const meta = stop
+            ? readLiveStopMeta(pointId, stop)
+            : { requestedId: pointId, children: [] }
+          const hasBoardable = meta.children.some(
+            (child) => child.id !== pointId && isBoardableBusStopId(child.id)
+          )
+          const lat =
+            stop && typeof stop.lat === "number" ? stop.lat : undefined
+          const lon =
+            stop && typeof stop.lon === "number" ? stop.lon : undefined
+          if (hasBoardable || lat === undefined || lon === undefined) {
+            return { stop, meta }
+          }
+          const nearby = await client.stopPoint.getByGeoPoint({
+            lat,
+            lon,
+            radius: MAP_SEARCH_RADIUS_METERS,
+            modes: ["bus"],
+            returnLines: true,
+          })
+          const boarding = mapStopsFromGeoResponse(
+            nearby.stopPoints ?? [],
+            25
+          ).map((child) => ({
+            id: child.id,
+            name: child.name,
+            stopLetter: child.stopLetter,
+            modes: ["bus"],
+          }))
+          return {
+            stop,
+            meta: {
+              ...meta,
+              children: mergeLiveStopChildren(boarding, meta.children),
+            },
+          }
+        })
+        if (cancelled || !result.ok) return
+        setStopProperties(result.data.stop?.additionalProperties ?? [])
+        setLiveStop(result.data.meta)
+        return
+      }
+
       const result = await runKeyed(async (client) => {
-        const [predictions, stopDisruptions, lineStatuses] = await Promise.all([
-          client.stopPoint.getArrivals({
-            stopPointIds,
-            sortBy: "timeToStation",
-          }),
-          isBus || isRiver
-            ? client.stopPoint.getDisruption({ stopPointIds })
-            : [],
-          isRiver && riverLineIds.length > 0
-            ? client.line.getStatus({ lineIds: riverLineIds })
-            : [],
-        ])
-        return { predictions, stopDisruptions, lineStatuses }
+        const [predictions, stopDisruptions, lineStatuses, stopDetail] =
+          await Promise.all([
+            client.stopPoint.getArrivals({
+              stopPointIds,
+              sortBy: "timeToStation",
+            }),
+            isBus || isRiver
+              ? client.stopPoint.getDisruption({ stopPointIds })
+              : [],
+            isRiver && riverLineIds.length > 0
+              ? client.line.getStatus({ lineIds: riverLineIds })
+              : [],
+            client.stopPoint.get({ stopPointIds: [pointId] }),
+          ])
+        return { predictions, stopDisruptions, lineStatuses, stopDetail }
       })
       if (cancelled || !result.ok) return
       setArrivals(result.data.predictions)
+      setArrivalsPointId(pointId)
       setDisruptions(result.data.stopDisruptions)
       setArrivalsFetchedAt(Date.now())
+      const stopDetail = result.data.stopDetail
+      const stop = Array.isArray(stopDetail) ? stopDetail[0] : stopDetail
+      setStopProperties(stop?.additionalProperties ?? [])
+      setLiveStop(
+        stop
+          ? readLiveStopMeta(pointId, stop)
+          : { requestedId: pointId, children: [] }
+      )
       if (isRiver) {
         setRiverStatuses(result.data.lineStatuses)
         setStatusFetchedAt(Date.now())
@@ -196,6 +382,7 @@ const PointInspectorLive = ({
     ready,
     point.id,
     pollStopKey,
+    skipArrivalsPreview,
     isBike,
     isBus,
     isRiver,
@@ -238,6 +425,7 @@ const PointInspectorLive = ({
     })
     if (result.ok) {
       setArrivals(result.data.predictions)
+      setArrivalsPointId(point.id)
       setDisruptions(result.data.stopDisruptions)
       setArrivalsFetchedAt(Date.now())
       if (isRiver) {
@@ -249,13 +437,43 @@ const PointInspectorLive = ({
 
   const handleRefreshDock = async () => {
     const result = await runKeyed(async (client) =>
-      client.bikePoint.getById(point.id)
+      client.bikePoint.getById(point.id, { keepTflTypes: true })
     )
     if (result.ok) {
       setLiveDock(result.data)
+      setStopProperties(result.data.additionalProperties ?? [])
       setDockFetchedAt(Date.now())
     }
   }
+
+  const propertyBag =
+    isBike || activeLiveStop != null
+      ? (stopProperties ?? point.additionalProperties)
+      : point.additionalProperties
+  const areaChildren = skipArrivalsPreview
+    ? (activeLiveStop?.children.filter((child) => child.id !== point.id) ?? [])
+    : []
+  const boardingChildren = areaChildren.filter((child) =>
+    isBoardableBusStopId(child.id)
+  )
+  const otherChildren = areaChildren.filter(
+    (child) => !isBoardableBusStopId(child.id)
+  )
+  const liveCompassPoint =
+    point.compassPoint ??
+    activeLiveStop?.compassPoint ??
+    readCompassPoint(propertyBag)
+  const liveBearingDegrees =
+    point.compassBearingDegrees ??
+    activeLiveStop?.compassBearingDegrees ??
+    readCompassBearingDegrees(propertyBag)
+  const compassValue =
+    liveCompassPoint && liveBearingDegrees !== undefined
+      ? `${liveCompassPoint} (${liveBearingDegrees}°)`
+      : (liveCompassPoint ??
+        (liveBearingDegrees !== undefined
+          ? `${liveBearingDegrees}°`
+          : undefined))
 
   const identity = (
     <div>
@@ -283,6 +501,20 @@ const PointInspectorLive = ({
       {point.towards ? (
         <CopyableField label="Towards" value={point.towards} />
       ) : null}
+      {compassValue ? (
+        <CopyableField label="Compass" value={compassValue} />
+      ) : null}
+      {activeLiveStop?.stopType ? (
+        <CopyableField label="Stop type" value={activeLiveStop.stopType} />
+      ) : null}
+      {activeLiveStop?.id && activeLiveStop.id !== point.id ? (
+        <CopyableField label="Returned as" value={activeLiveStop.id} />
+      ) : null}
+      {activeLiveStop?.hubNaptanCode &&
+      activeLiveStop.hubNaptanCode !== point.hubId &&
+      activeLiveStop.hubNaptanCode !== activeLiveStop.id ? (
+        <CopyableField label="Hub" value={activeLiveStop.hubNaptanCode} />
+      ) : null}
       {isHub ? (
         <div className="pt-3">
           <p className="text-xs text-muted-foreground">
@@ -295,6 +527,56 @@ const PointInspectorLive = ({
               value={member.id}
             />
           ))}
+        </div>
+      ) : null}
+      {boardingChildren.length > 0 ? (
+        <div className="pt-3">
+          <p className="text-xs text-muted-foreground">
+            Boarding stops. Arrivals are on these ids, not this area.
+          </p>
+          {boardingChildren.map((child) => (
+            <CopyableField
+              key={child.id}
+              label={
+                child.stopLetter
+                  ? `${child.name} (${child.stopLetter})`
+                  : child.name
+              }
+              value={child.id}
+              href={buildExplorerHref({
+                kind: "points",
+                domain: explorerDomainForChild(child),
+                id: child.id,
+              })}
+            />
+          ))}
+        </div>
+      ) : null}
+      {otherChildren.length > 0 ? (
+        <div className="pt-3">
+          <p className="text-xs text-muted-foreground">
+            Other StopPoints in this interchange.
+          </p>
+          {otherChildren.map((child) => (
+            <CopyableField
+              key={child.id}
+              label={child.name}
+              value={child.id}
+              href={buildExplorerHref({
+                kind: "points",
+                domain: explorerDomainForChild(child),
+                id: child.id,
+              })}
+            />
+          ))}
+        </div>
+      ) : null}
+      {propertyBag ? (
+        <div className="pt-3">
+          <AdditionalPropertiesDisclosure
+            key={point.id}
+            properties={propertyBag}
+          />
         </div>
       ) : null}
     </div>
@@ -412,6 +694,21 @@ const PointInspectorLive = ({
   ) : null
 
   const stopPreview = () => {
+    if (skipArrivalsPreview) {
+      return (
+        <div className="space-y-3">
+          {error ? (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <p className="text-sm text-muted-foreground">
+            This id is a stop area, not a boarding flag. TfL returns no arrivals
+            here — open a child stand instead.
+          </p>
+        </div>
+      )
+    }
     if (ready) {
       return (
         <div className="space-y-3">
@@ -525,7 +822,7 @@ const PointInspectorLive = ({
             : `await client.stopPoint.get("${point.id}")`
         }
       />
-      {!isBike ? (
+      {!isBike && !skipArrivalsPreview ? (
         <CodeSnippet
           title="stopPoint.getArrivals"
           code={`await client.stopPoint.getArrivals({\n  stopPointIds: ${JSON.stringify(pollStopIds)},\n  sortBy: "timeToStation",\n})`}
@@ -552,11 +849,13 @@ const PointInspectorLive = ({
       subtitle={
         point.kind === "bikePoint"
           ? "BikePoint"
-          : isHub
+          : isHub || activeLiveStop?.stopType === "TransportInterchange"
             ? "Station hub"
-            : isRiver
-              ? "Pier"
-              : "StopPoint"
+            : isBusArea
+              ? "Bus stop area"
+              : isRiver
+                ? "Pier"
+                : "StopPoint"
       }
       identity={identity}
       preview={preview}
@@ -582,6 +881,8 @@ const PointInspectorLive = ({
                   stopLetter: resolvedStopLetter ?? point.stopLetter,
                   smsCode: point.smsCode,
                   towards: point.towards,
+                  compassPoint: liveCompassPoint,
+                  compassBearingDegrees: liveBearingDegrees,
                   bikes: displayDock?.bikes ?? point.bikes,
                   spaces: displayDock?.spaces ?? point.spaces,
                 }

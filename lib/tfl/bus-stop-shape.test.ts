@@ -2,18 +2,19 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
   busSearchNameMatches,
-  compassPointToDegrees,
   isBoardableBusStopId,
   isBusStop,
+  isBusStopAreaId,
   mapStopPoint,
   mapStopsFromGeoResponse,
-  mergeStopsById,
+  parseBusStopSearchQuery,
   pickNamedExpandableMatches,
   preferStopsMatchingSearch,
-  readBearingDegrees,
-  readSmsCode,
+  rankStopsBySearchLetter,
+  readCompassBearingDegrees,
+  readCompassPoint,
   readStopLetter,
-  readTowards,
+  resolveBusNameSearchHits,
 } from "./bus-stop-shape"
 
 describe("readStopLetter", () => {
@@ -34,57 +35,45 @@ describe("readStopLetter", () => {
   })
 })
 
-describe("readTowards", () => {
-  it("reads towards property case-insensitively", () => {
-    assert.equal(
-      readTowards([{ key: "Towards", value: " Oxford Circus " }]),
-      "Oxford Circus"
-    )
-  })
-
-  it("drops a literal null towards", () => {
-    assert.equal(readTowards([{ key: "Towards", value: "null" }]), undefined)
+describe("readCompassPoint", () => {
+  it("reads CompassPoint from a leftover bag", () => {
+    assert.equal(readCompassPoint([{ key: "CompassPoint", value: "NE" }]), "NE")
   })
 })
 
-describe("compassPointToDegrees", () => {
-  it("maps compass points and arrows", () => {
-    assert.equal(compassPointToDegrees("N"), 0)
-    assert.equal(compassPointToDegrees("NE"), 45)
-    assert.equal(compassPointToDegrees("->W"), 270)
-    assert.equal(compassPointToDegrees("90"), 90)
-  })
-
-  it("ignores painted stop letters", () => {
-    assert.equal(compassPointToDegrees("Stop G"), undefined)
-    assert.equal(compassPointToDegrees("RG"), undefined)
-  })
-})
-
-describe("readBearingDegrees", () => {
+describe("readCompassBearingDegrees", () => {
   it("prefers CompassPoint over an arrow indicator", () => {
     assert.equal(
-      readBearingDegrees([{ key: "CompassPoint", value: "S" }], "->W", "->W"),
+      readCompassBearingDegrees(
+        [{ key: "CompassPoint", value: "S" }],
+        "->W",
+        "->W"
+      ),
       180
     )
   })
 
   it("falls back to a compass indicator", () => {
-    assert.equal(readBearingDegrees(undefined, "->E"), 90)
+    assert.equal(readCompassBearingDegrees(undefined, "->E"), 90)
   })
-})
 
-describe("readSmsCode", () => {
-  it("reads SmsCode property", () => {
-    assert.equal(readSmsCode([{ key: "SmsCode", value: "53240" }]), "53240")
+  it("does not treat a painted stop letter as compass", () => {
+    assert.equal(readCompassBearingDegrees(undefined, "W", "W"), undefined)
   })
 })
 
 describe("isBoardableBusStopId", () => {
-  it("accepts 490… ids", () => {
+  it("accepts 490… boarding ids, not 490G hubs", () => {
     assert.equal(isBoardableBusStopId("490000091G"), true)
     assert.equal(isBoardableBusStopId("HUBLBG"), false)
     assert.equal(isBoardableBusStopId("490G00014016"), false)
+  })
+})
+
+describe("isBusStopAreaId", () => {
+  it("matches NaPTAN stop-area ids", () => {
+    assert.equal(isBusStopAreaId("490G000803"), true)
+    assert.equal(isBusStopAreaId("490013766E"), false)
   })
 })
 
@@ -94,7 +83,10 @@ describe("busSearchNameMatches", () => {
       busSearchNameMatches("Silverthorne Road", "Silverthorne Road"),
       true
     )
-    assert.equal(busSearchNameMatches("Prairie Street", "Silverthorne Road"), false)
+    assert.equal(
+      busSearchNameMatches("Prairie Street", "Silverthorne Road"),
+      false
+    )
   })
 
   it("does not treat circus as a distinctive token", () => {
@@ -104,6 +96,17 @@ describe("busSearchNameMatches", () => {
     )
     assert.equal(
       busSearchNameMatches("St George's Circus", "St George's Circus"),
+      true
+    )
+  })
+
+  it("matches Trafalgar Square for the abbreviation Sq", () => {
+    assert.equal(busSearchNameMatches("Trafalgar Square", "Trafalgar Sq"), true)
+    assert.equal(
+      busSearchNameMatches(
+        "Charing Cross Stn / Trafalgar Square",
+        "Trafalgar Sq"
+      ),
       true
     )
   })
@@ -122,6 +125,48 @@ describe("pickNamedExpandableMatches", () => {
     assert.equal(picked.length, 2)
     assert.equal(picked[0]?.lon, -0.148)
     assert.equal(picked[1]?.lon, -0.145)
+  })
+
+  it("skips boardable 490 stops so mixed TfL hits still expand hubs", () => {
+    const picked = pickNamedExpandableMatches(
+      [
+        {
+          id: "490013766E",
+          name: "Charing Cross Stn / Trafalgar Square",
+          lat: 51.508,
+          lon: -0.126,
+        },
+        {
+          id: "490013766F",
+          name: "Charing Cross Stn / Trafalgar Square",
+          lat: 51.508,
+          lon: -0.126,
+        },
+        {
+          id: "490G000803",
+          name: "Trafalgar Square / Charing Cross Stn",
+          lat: 51.509,
+          lon: -0.126,
+        },
+        {
+          id: "490G000804",
+          name: "Northumberland Avenue / Trafalgar Square",
+          lat: 51.508,
+          lon: -0.13,
+        },
+        {
+          id: "490G000832",
+          name: "Whitehall / Trafalgar Square",
+          lat: 51.506,
+          lon: -0.127,
+        },
+      ],
+      "Trafalgar Sq"
+    )
+    assert.deepEqual(
+      picked.map((match) => match.id),
+      ["490G000803", "490G000804", "490G000832"]
+    )
   })
 })
 
@@ -142,15 +187,92 @@ describe("preferStopsMatchingSearch", () => {
   })
 })
 
-describe("mergeStopsById", () => {
-  it("dedupes across hub expansions", () => {
-    const merged = mergeStopsById([
-      [{ id: "a" }, { id: "b" }],
-      [{ id: "b" }, { id: "c" }],
-    ])
+describe("parseBusStopSearchQuery", () => {
+  it("strips a Google (Stop Y) suffix and keeps the letter", () => {
+    assert.deepEqual(parseBusStopSearchQuery("Rookery Road (Stop Y)"), {
+      query: "Rookery Road",
+      stopLetter: "Y",
+    })
+    assert.deepEqual(parseBusStopSearchQuery("Rookery Road (Y)"), {
+      query: "Rookery Road",
+      stopLetter: "Y",
+    })
+    assert.deepEqual(parseBusStopSearchQuery("Rookery Road Stop Y"), {
+      query: "Rookery Road",
+      stopLetter: "Y",
+    })
+  })
+
+  it("leaves a plain street query unchanged", () => {
+    assert.deepEqual(parseBusStopSearchQuery("Silverthorne Road"), {
+      query: "Silverthorne Road",
+    })
+  })
+})
+
+describe("rankStopsBySearchLetter", () => {
+  it("pins the matching letter first and keeps the other stops", () => {
+    const ranked = rankStopsBySearchLetter(
+      [
+        { id: "n", stopLetter: "N" },
+        { id: "y", stopLetter: "Y" },
+      ],
+      "Y"
+    )
     assert.deepEqual(
-      merged.map((stop) => stop.id),
-      ["a", "b", "c"]
+      ranked.map((stop) => stop.id),
+      ["y", "n"]
+    )
+  })
+})
+
+describe("resolveBusNameSearchHits", () => {
+  it("unions featured Trafalgar stops with hub expansion, not only two boarding hits", () => {
+    const result = resolveBusNameSearchHits(
+      [
+        {
+          id: "490013766E",
+          name: "Charing Cross Stn / Trafalgar Square",
+          stopLetter: "E",
+        },
+        {
+          id: "490013766F",
+          name: "Charing Cross Stn / Trafalgar Square",
+          stopLetter: "F",
+        },
+      ],
+      [
+        [
+          {
+            id: "490000091A",
+            name: "Whitehall / Trafalgar Square",
+            stopLetter: "A",
+          },
+          {
+            id: "490000091G",
+            name: "Trafalgar Square",
+            stopLetter: "G",
+          },
+        ],
+      ],
+      "Trafalgar Sq",
+      undefined,
+      [
+        {
+          id: "490013767C",
+          name: "Trafalgar Sq / Charing Cross Stn",
+          stopLetter: "C",
+        },
+        {
+          id: "490013766E",
+          name: "Charing Cross Stn / Trafalgar Square",
+          stopLetter: "E",
+        },
+      ]
+    )
+    assert.deepEqual(
+      result.map((stop) => stop.id),
+      ["490013767C", "490013766E", "490013766F", "490000091A", "490000091G"]
     )
   })
 })
@@ -190,7 +312,13 @@ describe("mapStopPoint", () => {
       lat: 51.508,
       lon: -0.128,
       smsCode: "53240",
-      bearingDegrees: 45,
+      compassPoint: "NE",
+      compassBearingDegrees: 45,
+      additionalProperties: [
+        { key: "Towards", value: "Marble Arch" },
+        { key: "SmsCode", value: "53240" },
+        { key: "CompassPoint", value: "NE" },
+      ],
     })
   })
 
@@ -211,7 +339,7 @@ describe("mapStopPoint", () => {
       indicator: "->W",
     })
     assert.equal(mapped?.stopLetter, undefined)
-    assert.equal(mapped?.bearingDegrees, 270)
+    assert.equal(mapped?.compassBearingDegrees, 270)
   })
 
   it("returns null without id", () => {

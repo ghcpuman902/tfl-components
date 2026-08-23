@@ -3,6 +3,7 @@ import { getLineAriaLabel } from "tfl-ts"
 import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text"
 import { LineName } from "@/components/tfl/brand/line-name"
 import { TFL_BLUE } from "@/lib/tfl/brand-colours"
+import { getLineColourToken } from "@/lib/tfl/line-colour-map"
 import { getLineNameTiers, joinLineNames } from "@/lib/tfl/line-names"
 import {
   resolveRouteTrackStyle,
@@ -41,9 +42,17 @@ type LineBadgeProps = {
   fit?: "clip" | "shrink"
 }
 
-/** Optional `--line-raw` override for lines outside the token palette. */
-const lineRawStyle = (color?: string): CSSProperties | undefined =>
-  color ? ({ "--line-raw": color } as CSSProperties) : undefined
+/**
+ * `--line-raw` override for ids outside the token palette.
+ * Known ids must keep the CSS binding so `.dark` can swap Northern.
+ */
+const lineRawStyle = (
+  lineId: string | undefined,
+  color?: string
+): CSSProperties | undefined =>
+  color && !(lineId && getLineColourToken(lineId))
+    ? ({ "--line-raw": color } as CSSProperties)
+    : undefined
 
 /** Skeleton for a line badge chip — use in `loading.tsx` or Suspense. */
 export const LineBadgeSkeleton = ({ className }: { className?: string }) => (
@@ -90,7 +99,7 @@ export const LineBadge = ({
     lineStatuses && lineStatuses.length > 0
       ? getLineAriaLabel(label, lineStatuses)
       : `${label} line`
-  const style = lineRawStyle(color)
+  const style = lineRawStyle(lineId, color)
   const namePaint =
     fit === "shrink" ? (
       <LineName lineId={lineId} name={name ?? label} wrap />
@@ -361,7 +370,7 @@ export const LineColorBar = ({
   diagram?: boolean
 }) => {
   const rails = routeTrackRailCount(resolveColorBarTrackStyle(lineId, modeName))
-  const style = lineRawStyle(color)
+  const style = lineRawStyle(lineId, color)
   const dataLine = lineId || undefined
   const bands: { key: string; fill: boolean }[] = []
   for (let i = 0; i < rails; i += 1) {

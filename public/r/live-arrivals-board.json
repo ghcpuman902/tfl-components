@@ -4,7 +4,7 @@
   "title": "Live Arrivals Board",
   "description": "Polling helper that feeds RailArrivalsBoard with stop arrivals data.",
   "dependencies": [
-    "tfl-ts@^2.10.0",
+    "tfl-ts@^2.11.0",
     "lucide-react"
   ],
   "registryDependencies": [

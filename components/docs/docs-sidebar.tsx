@@ -3,7 +3,7 @@
 import { useEffect, useRef, type ReactNode, type Ref } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Search } from "lucide-react"
+import { Telescope } from "lucide-react"
 import {
   GET_STARTED_BOTTOM_FROM,
   getSidebarEntries,
@@ -76,7 +76,7 @@ const revealInScrollContainer = (container: HTMLElement, item: HTMLElement) => {
 const GetStartedAdornment = ({ slug }: { slug: string }) => {
   if (slug === "explore-index") {
     return (
-      <Search
+      <Telescope
         className="size-[1em]! text-sidebar-foreground opacity-40"
         strokeWidth={2}
         strokeLinecap="round"

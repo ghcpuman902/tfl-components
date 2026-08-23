@@ -4,7 +4,7 @@
   "title": "Bus Arrivals Board",
   "description": "Bus stop departures as a flat time-ordered list, with optional route grouping — pass RealtimePrediction[] as data.",
   "dependencies": [
-    "tfl-ts@^2.10.0",
+    "tfl-ts@^2.11.0",
     "lucide-react"
   ],
   "registryDependencies": [

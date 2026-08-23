@@ -78,7 +78,7 @@
       "title": "TfL colours",
       "description": "Installable TfL line/mode OKLCH colour tokens with data-line role bindings, a11y adaptations, and an importable line→colour map for static Tailwind classes.",
       "dependencies": [
-        "tfl-ts@^2.10.0"
+        "tfl-ts@^2.11.0"
       ],
       "cssVars": {
         "theme": {
@@ -387,7 +387,7 @@
       "title": "Line Badge",
       "description": "Official TfL line colour badge via data-line tokens (OKLCH, adaptive a11y).",
       "dependencies": [
-        "tfl-ts@^2.10.0"
+        "tfl-ts@^2.11.0"
       ],
       "registryDependencies": [
         "https://tfl.manglekuo.com/r/tfl-colours.json",
@@ -437,7 +437,7 @@
       "title": "Tube Status Board",
       "description": "Tube/rail status board — pass normalised tfl-ts line status rows as data.",
       "dependencies": [
-        "tfl-ts@^2.10.0",
+        "tfl-ts@^2.11.0",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -489,7 +489,7 @@
       "title": "Tube Status Display",
       "description": "Fixed-height unattended Tube and rail status tiles over the shared prepared status model.",
       "dependencies": [
-        "tfl-ts@^2.10.0"
+        "tfl-ts@^2.11.0"
       ],
       "registryDependencies": [
         "https://tfl.manglekuo.com/r/tfl-colours.json",
@@ -559,7 +559,7 @@
       "title": "Tube Status Strip",
       "description": "Horizontal unattended Tube and rail status strip over the shared prepared status model.",
       "dependencies": [
-        "tfl-ts@^2.10.0"
+        "tfl-ts@^2.11.0"
       ],
       "registryDependencies": [
         "https://tfl.manglekuo.com/r/tfl-colours.json",
@@ -614,7 +614,7 @@
       "title": "Cycle Hire Docks",
       "description": "Show Santander Cycles availability in a map, detail list, or fixed-height display.",
       "dependencies": [
-        "tfl-ts@^2.10.0",
+        "tfl-ts@^2.11.0",
         "lucide-react",
         "maplibre-gl@5.24.0"
       ],
@@ -815,7 +815,7 @@
       "title": "Rail Arrivals Board",
       "description": "Per-station Tube and rail departures grouped by line and compass bound — pass RealtimePrediction[] as data.",
       "dependencies": [
-        "tfl-ts@^2.10.0",
+        "tfl-ts@^2.11.0",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -960,7 +960,7 @@
       "title": "Bus Arrivals Board",
       "description": "Bus stop departures as a flat time-ordered list, with optional route grouping — pass RealtimePrediction[] as data.",
       "dependencies": [
-        "tfl-ts@^2.10.0",
+        "tfl-ts@^2.11.0",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -1106,7 +1106,7 @@
       "title": "River Bus Arrivals Board",
       "description": "River bus pier departures as a flat time-ordered list, with optional route grouping — pass RealtimePrediction[] as data.",
       "dependencies": [
-        "tfl-ts@^2.10.0",
+        "tfl-ts@^2.11.0",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -1262,7 +1262,7 @@
       "title": "Arrivals Board",
       "description": "Deprecated adapter. Install rail-arrivals-board or bus-arrivals-board instead.",
       "dependencies": [
-        "tfl-ts@^2.10.0",
+        "tfl-ts@^2.11.0",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -1284,7 +1284,7 @@
       "title": "Live Arrivals Board",
       "description": "Polling helper that feeds RailArrivalsBoard with stop arrivals data.",
       "dependencies": [
-        "tfl-ts@^2.10.0",
+        "tfl-ts@^2.11.0",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -1421,7 +1421,7 @@
       "title": "Line Strip",
       "description": "TfL strip components — StraightStrip, branched strips, LineStrip molecule, full route, and journey A→B.",
       "dependencies": [
-        "tfl-ts@^2.10.0"
+        "tfl-ts@^2.11.0"
       ],
       "registryDependencies": [
         "https://tfl.manglekuo.com/r/tfl-colours.json",

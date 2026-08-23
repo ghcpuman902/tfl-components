@@ -171,13 +171,14 @@ const reciprocalPairStats = (variants: readonly OsmVariantSummary[]) => {
 
 const RelationMiniMap = ({
   variant,
-  color,
+  lineId,
 }: {
   variant: OsmVariantSummary
-  color: string
+  lineId: string
 }) => (
   <svg
     viewBox={`0 0 ${MINI_MAP_WIDTH} ${MINI_MAP_HEIGHT}`}
+    data-line={lineId}
     className="h-24 w-36 rounded border border-border bg-muted/20"
     role="img"
     aria-label={`${variant.from} to ${variant.to} route geometry`}
@@ -187,7 +188,7 @@ const RelationMiniMap = ({
         key={variant.featureIds[index] ?? index}
         d={miniPath(path)}
         fill="none"
-        stroke={color}
+        stroke="var(--line-color)"
         strokeWidth="1.6"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -248,10 +249,10 @@ const tflPatternRows = (
 
 const StopSequence = ({
   patterns,
-  color,
+  lineId,
 }: {
   patterns: readonly ServicePatternEvidence[]
-  color: string
+  lineId: string
 }) => {
   const primary = patterns[0]
   if (!primary) return null
@@ -279,6 +280,7 @@ const StopSequence = ({
       <div className="overflow-x-auto pb-1">
         <svg
           viewBox={`0 0 ${width} ${height}`}
+          data-line={lineId}
           style={{ minWidth: width }}
           className={laneCount === 1 ? "h-[18px]" : "h-7"}
           role="img"
@@ -293,7 +295,7 @@ const StopSequence = ({
                   y1={y}
                   x2={width - 6}
                   y2={y}
-                  stroke={color}
+                  stroke="var(--line-color)"
                   strokeWidth="2.4"
                   strokeLinecap="round"
                 />
@@ -313,7 +315,7 @@ const StopSequence = ({
                       cy={y}
                       r="2.7"
                       fill="var(--background)"
-                      stroke={color}
+                      stroke="var(--line-color)"
                       strokeWidth="1.5"
                     >
                       <title>{pattern.stationNames[index]}</title>
@@ -339,7 +341,6 @@ const stateClass = (state: "present" | "partial" | "missing") =>
 export const RoutePatternInspector = ({
   lineId,
   lineName,
-  color,
   variantsBundle,
   stopsFile,
   dataset,
@@ -347,7 +348,6 @@ export const RoutePatternInspector = ({
 }: {
   lineId: string
   lineName: string
-  color: string
   variantsBundle: TransitGeometryBundle | undefined
   stopsFile: OsmRouteStopsFile | undefined
   dataset: ServicePatternDataset | null
@@ -498,7 +498,7 @@ export const RoutePatternInspector = ({
                             : ""}
                         </p>
                       </div>
-                      <StopSequence patterns={[evidence]} color={color} />
+                      <StopSequence patterns={[evidence]} lineId={lineId} />
                       <span className="text-[11px] text-muted-foreground group-open:hidden">
                         raw
                       </span>
@@ -558,7 +558,7 @@ export const RoutePatternInspector = ({
                         {patterns[0]!.stationIds.length} calls
                       </p>
                     </div>
-                    <StopSequence patterns={patterns} color={color} />
+                    <StopSequence patterns={patterns} lineId={lineId} />
                     <span className="text-[11px] text-muted-foreground group-open:hidden">
                       raw
                     </span>
@@ -607,7 +607,7 @@ export const RoutePatternInspector = ({
                 return (
                   <tr key={variant.relationId} className="align-middle">
                     <td className="px-3 py-2">
-                      <RelationMiniMap variant={variant} color={color} />
+                      <RelationMiniMap variant={variant} lineId={lineId} />
                     </td>
                     <td className="px-3 py-2 font-mono">
                       <a

@@ -61,6 +61,7 @@ import {
 } from "@/components/ui/input-group"
 import { cn } from "@/lib/utils"
 import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
+import { isBusStopAreaId } from "@/lib/tfl/bus-stop-shape"
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
 import type { ExplorerView } from "@/lib/tfl/explorer-url-state"
 
@@ -82,9 +83,7 @@ export type TfLPointPickerProps = {
    * Return `false` when the query was not actually sent (no key, validation)
    * so Search stays enabled for a retry.
    */
-  onSearchSubmit?: (
-    query: string
-  ) => void | boolean | Promise<void | boolean>
+  onSearchSubmit?: (query: string) => void | boolean | Promise<void | boolean>
   /** Omit to hide the locate button entirely. */
   onLocate?: () => void
   loading?: boolean
@@ -110,10 +109,7 @@ export type TfLPointPickerProps = {
  * Scroll only the results list — never the page — when the selected
  * point is off-screen. `scrollIntoView` would also move `html`.
  */
-const scrollSelectedIntoPane = (
-  container: HTMLElement,
-  item: HTMLElement
-) => {
+const scrollSelectedIntoPane = (container: HTMLElement, item: HTMLElement) => {
   if (container.clientHeight === 0) return
 
   const itemRect = item.getBoundingClientRect()
@@ -158,8 +154,10 @@ const PointResultOption = ({
   optionRef,
 }: PointResultOptionProps) => {
   const isBus = point.modes?.includes("bus") ?? false
-  const stopLetter = isBus ? point.stopLetter : undefined
+  const isStopArea = isBusStopAreaId(point.id)
+  const stopLetter = isBus && !isStopArea ? point.stopLetter : undefined
   const meta = [
+    isStopArea ? "Stop area" : null,
     point.hubMembers && point.hubMembers.length > 1
       ? `${point.hubMembers.length} StopPoints`
       : null,
@@ -182,6 +180,7 @@ const PointResultOption = ({
       aria-label={[
         addable ? (added ? "Added" : "Add") : null,
         point.name,
+        isStopArea ? "stop area" : null,
         stopLetter ? `stop ${stopLetter}` : null,
         point.towards ? `towards ${point.towards}` : null,
       ]
@@ -209,10 +208,7 @@ const PointResultOption = ({
         </code>
         {addable ? (
           added ? (
-            <Check
-              className="size-4 shrink-0 text-primary"
-              aria-hidden
-            />
+            <Check className="size-4 shrink-0 text-primary" aria-hidden />
           ) : (
             <CirclePlus
               className="size-4 shrink-0 text-primary opacity-0 transition-opacity group-hover/result:opacity-100 group-focus-visible/result:opacity-100"
@@ -252,10 +248,7 @@ export const TfLPointPicker = ({
   className,
 }: TfLPointPickerProps) => {
   const listId = useId()
-  const added = useMemo(
-    () => new Set(addedIds ?? []),
-    [addedIds]
-  )
+  const added = useMemo(() => new Set(addedIds ?? []), [addedIds])
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
   const selectedOptionRef = useRef<HTMLButtonElement>(null)
