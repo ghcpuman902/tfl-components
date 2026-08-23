@@ -1,11 +1,18 @@
 "use client"
 
-import { useEffect, useSyncExternalStore } from "react"
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react"
 import {
   detectHomeScreenDisplayMode,
+  detectHomeScreenPlatform,
   isHomeScreenLaunch,
+  isJsFullscreenActive,
   type HomeScreenDisplayMode,
+  type HomeScreenPromptPlatform,
 } from "@/lib/tfl/board-home-screen"
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>
+}
 
 const DISPLAY_MODE_QUERIES = [
   "(display-mode: fullscreen)",
@@ -13,16 +20,32 @@ const DISPLAY_MODE_QUERIES = [
   "(display-mode: minimal-ui)",
 ] as const
 
+const FULLSCREEN_EVENTS = ["fullscreenchange", "webkitfullscreenchange"] as const
+
 const subscribeDisplayMode = (onStoreChange: () => void) => {
   const queries = DISPLAY_MODE_QUERIES.map((query) => window.matchMedia(query))
   for (const media of queries) {
     media.addEventListener("change", onStoreChange)
   }
+  for (const event of FULLSCREEN_EVENTS) {
+    document.addEventListener(event, onStoreChange)
+  }
   return () => {
     for (const media of queries) {
       media.removeEventListener("change", onStoreChange)
     }
+    for (const event of FULLSCREEN_EVENTS) {
+      document.removeEventListener(event, onStoreChange)
+    }
   }
+}
+
+const readJsFullscreen = (): boolean => {
+  const doc = document as Document & { webkitFullscreenElement?: Element | null }
+  return isJsFullscreenActive({
+    fullscreenElement: document.fullscreenElement,
+    webkitFullscreenElement: doc.webkitFullscreenElement ?? null,
+  })
 }
 
 const readDisplayMode = (): HomeScreenDisplayMode =>
@@ -38,6 +61,19 @@ const readDisplayMode = (): HomeScreenDisplayMode =>
 
 const getServerDisplayMode = (): HomeScreenDisplayMode => "browser"
 
+const subscribeJsFullscreen = (onStoreChange: () => void) => {
+  for (const event of FULLSCREEN_EVENTS) {
+    document.addEventListener(event, onStoreChange)
+  }
+  return () => {
+    for (const event of FULLSCREEN_EVENTS) {
+      document.removeEventListener(event, onStoreChange)
+    }
+  }
+}
+
+const getServerJsFullscreen = (): boolean => false
+
 const HOME_SCREEN_PADDING = {
   paddingTop: "max(1rem, env(safe-area-inset-top))",
   paddingRight: "max(1rem, env(safe-area-inset-right))",
@@ -46,9 +82,8 @@ const HOME_SCREEN_PADDING = {
 } as const
 
 /**
- * Home-screen launch detection plus a kiosk-safe install-prompt guard.
- * Chromium's native banner is always captured and never shown — unattended
- * boards cannot dismiss it. A custom offer stays off until review.
+ * Home-screen launch detection. Chromium's native banner is captured;
+ * call `promptNativeInstall` only from an explicit user action.
  */
 export const useBoardHomeScreen = () => {
   const displayMode = useSyncExternalStore(
@@ -56,11 +91,29 @@ export const useBoardHomeScreen = () => {
     readDisplayMode,
     getServerDisplayMode
   )
-  const fromHomeScreen = isHomeScreenLaunch(displayMode)
+  const jsFullscreenActive = useSyncExternalStore(
+    subscribeJsFullscreen,
+    readJsFullscreen,
+    getServerJsFullscreen
+  )
+  const fromHomeScreen = isHomeScreenLaunch(displayMode, jsFullscreenActive)
+  const [nativePrompt, setNativePrompt] =
+    useState<BeforeInstallPromptEvent | null>(null)
+  const [platform, setPlatform] = useState<HomeScreenPromptPlatform>("other")
+
+  useEffect(() => {
+    setPlatform(
+      detectHomeScreenPlatform({
+        userAgent: navigator.userAgent,
+        maxTouchPoints: navigator.maxTouchPoints,
+      })
+    )
+  }, [])
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault()
+      setNativePrompt(event as BeforeInstallPromptEvent)
     }
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
     return () => {
@@ -68,9 +121,19 @@ export const useBoardHomeScreen = () => {
     }
   }, [])
 
+  const promptNativeInstall = useCallback(() => {
+    const event = nativePrompt
+    if (!event) return
+    void event.prompt()
+  }, [nativePrompt])
+
   return {
     displayMode,
     fromHomeScreen,
+    jsFullscreenActive,
+    platform,
+    nativePromptAvailable: Boolean(nativePrompt),
+    promptNativeInstall,
     homeScreenPadding: fromHomeScreen ? HOME_SCREEN_PADDING : undefined,
   }
 }

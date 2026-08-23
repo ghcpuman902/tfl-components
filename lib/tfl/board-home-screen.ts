@@ -1,12 +1,9 @@
 /**
- * Home-screen install policy for the rendered Board.
+ * Home-screen install policy and launch detection for `/board/view`.
  *
- * Where: only `/board/view` (the page we will write up for Add to Home Screen).
- * Whether: never when unattended (nobody can dismiss a prompt on a kiosk),
- * never when already launched from the home screen, never in an embed.
- *
- * A prompt UI is not mounted yet — review the copy and dismiss path first.
- * Chromium's native banner is captured and suppressed until then.
+ * `display-mode: fullscreen` can mean an installed app or a JavaScript
+ * Fullscreen API session. Check the active fullscreen element before
+ * treating fullscreen as a Home Screen launch.
  */
 
 import type { BoardBehaviour } from "@/lib/tfl/board-settings"
@@ -27,13 +24,29 @@ export type HomeScreenPromptInput = {
   displayMode: HomeScreenDisplayMode
   platform: HomeScreenPromptPlatform
   nativePromptAvailable: boolean
+  fullscreenApiAvailable: boolean
+  jsFullscreenActive?: boolean
 }
+
+export const BOARD_HOME_SCREEN_DISMISS_KEY = "tfl-board-aths-dismissed.v1"
 
 export const isBoardViewPath = (path: string): boolean =>
   path === BOARD_VIEW_PATH || path.startsWith(`${BOARD_VIEW_PATH}/`)
 
-export const isHomeScreenLaunch = (mode: HomeScreenDisplayMode): boolean =>
-  mode === "fullscreen" || mode === "standalone"
+export const isJsFullscreenActive = (input: {
+  fullscreenElement: Element | null
+  webkitFullscreenElement?: Element | null
+}): boolean =>
+  Boolean(input.fullscreenElement || input.webkitFullscreenElement)
+
+export const isHomeScreenLaunch = (
+  mode: HomeScreenDisplayMode,
+  jsFullscreenActive = false
+): boolean => {
+  if (mode === "standalone") return true
+  if (mode === "fullscreen") return !jsFullscreenActive
+  return false
+}
 
 export const detectHomeScreenDisplayMode = (input: {
   fullscreen: boolean
@@ -62,15 +75,50 @@ export const detectHomeScreenPlatform = (input: {
   return "other"
 }
 
-/** True only if a future prompt may be shown. Never used to auto-open UI today. */
+export const canElementRequestFullscreen = (
+  element: {
+    requestFullscreen?: unknown
+    webkitRequestFullscreen?: unknown
+  } | null,
+  documentAllowsFullscreen: boolean
+): boolean => {
+  if (!element || !documentAllowsFullscreen) return false
+  return (
+    typeof element.requestFullscreen === "function" ||
+    typeof element.webkitRequestFullscreen === "function"
+  )
+}
+
+/** iOS instruction sheet or Chromium explicit install action. */
 export const shouldOfferBoardHomeScreenInstall = (
   input: HomeScreenPromptInput
 ): boolean => {
   if (!isBoardViewPath(input.path)) return false
   if (input.embedded) return false
   if (input.behaviour === "unattended") return false
-  if (isHomeScreenLaunch(input.displayMode)) return false
+  if (isHomeScreenLaunch(input.displayMode, input.jsFullscreenActive)) {
+    return false
+  }
+  if (input.fullscreenApiAvailable) return false
   if (input.platform === "other") return false
   if (input.platform === "chromium") return input.nativePromptAvailable
   return true
+}
+
+export const readHomeScreenOfferDismissed = (): boolean => {
+  if (typeof window === "undefined") return false
+  try {
+    return window.sessionStorage.getItem(BOARD_HOME_SCREEN_DISMISS_KEY) === "1"
+  } catch {
+    return false
+  }
+}
+
+export const writeHomeScreenOfferDismissed = (): void => {
+  if (typeof window === "undefined") return
+  try {
+    window.sessionStorage.setItem(BOARD_HOME_SCREEN_DISMISS_KEY, "1")
+  } catch {
+    // ignore
+  }
 }

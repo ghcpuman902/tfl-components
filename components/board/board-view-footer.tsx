@@ -37,6 +37,11 @@ type BoardViewFooterProps = {
   onRefresh?: () => void
   refreshing?: boolean
   editHref?: string
+  fullscreenLabel?: "Full screen" | "Exit full screen"
+  onFullscreen?: () => void
+  fullscreenError?: string | null
+  onAddToHomeScreen?: () => void
+  onChromiumInstall?: () => void
 }
 
 const formatUpdatedClock = (fetchedAt: number) =>
@@ -73,6 +78,11 @@ export const BoardViewFooter = ({
   onRefresh,
   refreshing = false,
   editHref,
+  fullscreenLabel,
+  onFullscreen,
+  fullscreenError,
+  onAddToHomeScreen,
+  onChromiumInstall,
 }: BoardViewFooterProps) => {
   const [now, setNow] = useState<number | null>(null)
   const fetchedAt = latestFetchedAt(sources)
@@ -120,7 +130,39 @@ export const BoardViewFooter = ({
             Edit board
           </Link>
         ) : null}
+        {onFullscreen && fullscreenLabel ? (
+          <button
+            type="button"
+            onClick={onFullscreen}
+            className="underline-offset-4 hover:text-foreground hover:underline"
+          >
+            {fullscreenLabel}
+          </button>
+        ) : null}
+        {onAddToHomeScreen ? (
+          <button
+            type="button"
+            onClick={onAddToHomeScreen}
+            className="underline-offset-4 hover:text-foreground hover:underline"
+          >
+            Add to Home Screen
+          </button>
+        ) : null}
+        {onChromiumInstall ? (
+          <button
+            type="button"
+            onClick={onChromiumInstall}
+            className="underline-offset-4 hover:text-foreground hover:underline"
+          >
+            Install
+          </button>
+        ) : null}
       </p>
+      {fullscreenError ? (
+        <p className="mt-1" role="alert">
+          {fullscreenError}
+        </p>
+      ) : null}
       <p>
         Powered by{" "}
         <FooterLink href={TFL_OPEN_DATA_URL}>TfL Open Data</FooterLink>. Contains

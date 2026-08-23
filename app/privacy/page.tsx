@@ -38,6 +38,12 @@ export default function PrivacyPage() {
           Keys are not sent to logs, analytics, or unrelated services from this
           app. Validation talks to api.tfl.gov.uk from the browser.
         </p>
+        <p>
+          A Home Screen Board stores its layout in this browser under{" "}
+          <code className="text-xs">tfl-board-installed.v1</code> and keeps the
+          TfL key in the same credential store. Neither the layout nor the key
+          is sent to this site&apos;s server.
+        </p>
       </section>
 
       <section className="space-y-2">

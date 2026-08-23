@@ -1,10 +1,20 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react"
 import dynamic from "next/dynamic"
 import { normalizeLineId } from "tfl-ts"
 import { ARRIVALS_RHYTHM_VARS } from "@/components/tfl/arrivals/arrivals-board-view"
 import { BoardViewFooter } from "@/components/board/board-view-footer"
+import { BoardViewHomeScreenOffer } from "@/components/board/board-view-home-screen-offer"
+import { BoardViewRecovery } from "@/components/board/board-view-recovery"
+import { BoardViewSetupPrompt } from "@/components/board/board-view-setup-prompt"
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
 import { RiverBusArrivalsBoard } from "@/components/tfl/arrivals/river-bus-arrivals-board"
@@ -60,10 +70,23 @@ import {
   type BoardStationNamesIndex,
 } from "@/lib/tfl/board-station-names"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
+import { useBoardFullscreen } from "@/hooks/use-board-fullscreen"
 import { useBoardHomeScreen } from "@/hooks/use-board-home-screen"
 import { BOARD_SETTINGS } from "@/lib/tfl/board-settings"
 import {
+  readInstalledBoardConfig,
+  writeInstalledBoardConfig,
+} from "@/lib/tfl/board-installed-storage"
+import {
+  readHomeScreenOfferDismissed,
+  shouldOfferBoardHomeScreenInstall,
+  writeHomeScreenOfferDismissed,
+} from "@/lib/tfl/board-home-screen"
+import { isBoardReady, isUsableBoardConfig } from "@/lib/tfl/board-view-resolve"
+import {
   BOARD_PATH,
+  BOARD_VIEW_PATH,
+  boardHashFromConfig,
   normalizeBoardHash,
   parseBoardConfig,
   type BoardConfig,
@@ -131,7 +154,7 @@ const getServerEmbedded = () => false
 
 const useBoardConfigFromHash = (
   stationNames: BoardStationNamesIndex
-): { config: BoardConfig; ready: boolean; configEpoch: string } => {
+): { config: BoardConfig; ready: boolean } => {
   const hash = useSyncExternalStore(
     subscribeToBoardHash,
     getBoardHash,
@@ -160,7 +183,7 @@ const useBoardConfigFromHash = (
     replaceHashIfNeeded(normalizeBoardHash(liveHash, { stopName }))
   }, [hash, stationNames])
 
-  return { config, ready, configEpoch: hash }
+  return { config, ready }
 }
 
 const DEGRADED_HINT =
@@ -184,22 +207,92 @@ type BoardDisplayProps = {
   arrivalsStopIds: BoardArrivalsStopIdsIndex
 }
 
+const applyStopName = (
+  parsed: BoardConfig,
+  stationNames: BoardStationNamesIndex
+): BoardConfig => {
+  const autoName = lookupBoardStationName(stationNames, parsed.stop)
+  const stopName = resolveBoardStopNameOverride(parsed.stopName, autoName)
+  return { ...parsed, stopName }
+}
+
 export const BoardDisplay = ({
   stationLines,
   stationNames,
   arrivalsStopIds,
 }: BoardDisplayProps) => {
-  const { config, ready, configEpoch } = useBoardConfigFromHash(stationNames)
-  const { hydrated, getAppKey } = useUserTflCredentials()
+  const { config: hashConfig, ready } = useBoardConfigFromHash(stationNames)
+  const { hydrated, getAppKey, save } = useUserTflCredentials()
   const storedKey = hydrated ? getAppKey() : null
-  const appKey = config.key ?? storedKey
   const embedded = useSyncExternalStore(
     subscribeNoop,
     getEmbedded,
     getServerEmbedded
   )
-  const { fromHomeScreen, homeScreenPadding } = useBoardHomeScreen()
-  const fillScreen = embedded || fromHomeScreen
+  const {
+    displayMode,
+    fromHomeScreen,
+    homeScreenPadding,
+    jsFullscreenActive,
+    platform,
+    nativePromptAvailable,
+    promptNativeInstall,
+  } = useBoardHomeScreen()
+  const [installedConfig, setInstalledConfig] = useState<BoardConfig | null>(
+    null
+  )
+  const [homeScreenOfferOpen, setHomeScreenOfferOpen] = useState(false)
+  const boardRootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!fromHomeScreen) {
+      setInstalledConfig(null)
+      return
+    }
+    const stored = readInstalledBoardConfig()
+    setInstalledConfig(stored ? applyStopName(stored, stationNames) : null)
+  }, [fromHomeScreen, hashConfig, stationNames])
+
+  const config = useMemo(() => {
+    if (isUsableBoardConfig(hashConfig)) return hashConfig
+    if (
+      fromHomeScreen &&
+      installedConfig &&
+      isUsableBoardConfig(installedConfig)
+    ) {
+      return {
+        ...installedConfig,
+        key: hashConfig.key ?? installedConfig.key,
+      }
+    }
+    return hashConfig
+  }, [fromHomeScreen, hashConfig, installedConfig])
+
+  const appKey = config.key ?? storedKey
+  const surfaceReady = ready && hydrated
+  const boardReady = surfaceReady && isBoardReady(config, storedKey)
+  const fullscreen = useBoardFullscreen(boardRootRef, {
+    enabled: boardReady && !fromHomeScreen && !embedded,
+  })
+  const fillScreen = embedded || fromHomeScreen || fullscreen.active
+
+  useEffect(() => {
+    if (!fromHomeScreen || !ready || !hydrated) return
+    if (!isUsableBoardConfig(hashConfig) || !hashConfig.key) return
+    writeInstalledBoardConfig(hashConfig, Date.now())
+    void save(hashConfig.key, "local")
+    setInstalledConfig(applyStopName({ ...hashConfig, key: undefined }, stationNames))
+  }, [fromHomeScreen, hashConfig, hydrated, ready, save, stationNames])
+
+  const handleRecoveredBoard = useCallback(
+    (next: BoardConfig, key: string) => {
+      writeInstalledBoardConfig(next, Date.now())
+      void save(key, "local")
+      replaceHashIfNeeded(boardHashFromConfig({ ...next, key }))
+      setInstalledConfig(applyStopName({ ...next, key: undefined }, stationNames))
+    },
+    [save, stationNames]
+  )
 
   useEffect(() => {
     if (!fillScreen) return
@@ -233,7 +326,7 @@ export const BoardDisplay = ({
 
   const status = useBoardStatus({
     appKey,
-    enabled: ready && showStatus,
+    enabled: boardReady && showStatus,
   })
   const pollStopIds = useMemo(
     () => lookupBoardArrivalsStopIds(arrivalsStopIds, stopId),
@@ -248,11 +341,12 @@ export const BoardDisplay = ({
     [stopId]
   )
   const arrivals = useDualPathArrivals({
-    stopPointId: ready && showRail ? stopId : "",
-    stopPointIds: ready && showRail ? pollStopIds : [],
-    appKeyOverride: ready ? appKey : null,
-    sharedTrackLineIds: ready && showRail ? sharedTrackLineIds : undefined,
-    sharedTrackFamilies: ready && showRail ? sharedTrackFamilies : undefined,
+    stopPointId: boardReady && showRail ? stopId : "",
+    stopPointIds: boardReady && showRail ? pollStopIds : [],
+    appKeyOverride: boardReady ? appKey : null,
+    sharedTrackLineIds: boardReady && showRail ? sharedTrackLineIds : undefined,
+    sharedTrackFamilies:
+      boardReady && showRail ? sharedTrackFamilies : undefined,
   })
 
   const busStopId = config.bus.stop ?? ""
@@ -260,17 +354,17 @@ export const BoardDisplay = ({
   const cycleDockIds = config.cycle.docks ?? []
 
   const busArrivals = useDualPathArrivals({
-    stopPointId: ready && showBus ? busStopId : "",
-    appKeyOverride: ready ? appKey : null,
+    stopPointId: boardReady && showBus ? busStopId : "",
+    appKeyOverride: boardReady ? appKey : null,
   })
   const riverArrivals = useDualPathArrivals({
-    stopPointId: ready && showRiver ? riverStopId : "",
-    appKeyOverride: ready ? appKey : null,
+    stopPointId: boardReady && showRiver ? riverStopId : "",
+    appKeyOverride: boardReady ? appKey : null,
   })
   const cyclePoints = useDualPathBikePoints({
     dockIds: cycleDockIds,
-    appKeyOverride: ready ? appKey : null,
-    enabled: ready && showCycle,
+    appKeyOverride: boardReady ? appKey : null,
+    enabled: boardReady && showCycle,
   })
 
   const handleRefresh = useCallback(() => {
@@ -297,35 +391,35 @@ export const BoardDisplay = ({
       {
         fetchedAt: arrivals.fetchedAt,
         pollMs: ARRIVALS_POLL_MS,
-        enabled: ready && showRail,
+        enabled: boardReady && showRail,
       },
       {
         fetchedAt: busArrivals.fetchedAt,
         pollMs: ARRIVALS_POLL_MS,
-        enabled: ready && showBus,
+        enabled: boardReady && showBus,
       },
       {
         fetchedAt: riverArrivals.fetchedAt,
         pollMs: ARRIVALS_POLL_MS,
-        enabled: ready && showRiver,
+        enabled: boardReady && showRiver,
       },
       {
         fetchedAt: cyclePoints.fetchedAt,
         pollMs: BIKE_POLL_MS,
-        enabled: ready && showCycle,
+        enabled: boardReady && showCycle,
       },
       {
         fetchedAt: status.fetchedAt,
         pollMs: STATUS_POLL_MS,
-        enabled: ready && showStatus,
+        enabled: boardReady && showStatus,
         polls: status.source === "user",
       },
     ],
     [
       arrivals.fetchedAt,
       busArrivals.fetchedAt,
+      boardReady,
       cyclePoints.fetchedAt,
-      ready,
       riverArrivals.fetchedAt,
       showBus,
       showCycle,
@@ -405,31 +499,58 @@ export const BoardDisplay = ({
   ])
 
   const statusHint =
-    ready &&
+    boardReady &&
     !appKey &&
     (status.source === "site" || cyclePoints.source === "site")
       ? DEGRADED_HINT
       : null
-  const arrivalsError = !ready
+  const arrivalsError = !boardReady
     ? null
     : !stopId
       ? NO_STOP_HINT
       : arrivals.fetchError
-  const busError = !ready
+  const busError = !boardReady
     ? null
     : !busStopId
       ? NO_BUS_HINT
       : busArrivals.fetchError
-  const riverError = !ready
+  const riverError = !boardReady
     ? null
     : !riverStopId
       ? NO_RIVER_HINT
       : riverArrivals.fetchError
-  const cycleError = !ready
+  const cycleError = !boardReady
     ? null
     : cycleDockIds.length === 0
       ? NO_CYCLE_HINT
       : cyclePoints.fetchError
+
+  const offerInstall = shouldOfferBoardHomeScreenInstall({
+    path: BOARD_VIEW_PATH,
+    behaviour: config.behaviour,
+    embedded,
+    displayMode,
+    platform,
+    nativePromptAvailable,
+    fullscreenApiAvailable: fullscreen.available,
+    jsFullscreenActive,
+  })
+
+  useEffect(() => {
+    if (!boardReady || !offerInstall || platform !== "ios") return
+    if (readHomeScreenOfferDismissed()) return
+    setHomeScreenOfferOpen(true)
+  }, [boardReady, offerInstall, platform])
+
+  const handleDismissHomeScreenOffer = useCallback(() => {
+    writeHomeScreenOfferDismissed()
+    setHomeScreenOfferOpen(false)
+  }, [])
+
+  const editHref = `${BOARD_PATH}${boardHashFromConfig({
+    ...config,
+    key: appKey ?? undefined,
+  })}`
 
   const railData = useMemo(() => {
     if (!config.arrivals.lineOrder?.length) return arrivals.data
@@ -514,7 +635,7 @@ export const BoardDisplay = ({
           behaviour={config.behaviour}
           pinFirst={arrivalsProps.pinFirst}
           startDelayMs={unattended ? 0 : undefined}
-          loading={!ready || arrivals.loading}
+          loading={arrivals.loading}
           error={arrivalsError}
           emptyKind={railEmpty.kind}
           emptyMessage={arrivalsLineEmptyCopy(railEmpty)}
@@ -535,7 +656,7 @@ export const BoardDisplay = ({
           behaviour={config.behaviour}
           pinFirst={arrivalsProps.pinFirst}
           startDelayMs={unattended ? 400 : undefined}
-          loading={!ready || busArrivals.loading}
+          loading={busArrivals.loading}
           error={busError}
         />
       )
@@ -553,7 +674,7 @@ export const BoardDisplay = ({
           behaviour={config.behaviour}
           pinFirst={arrivalsProps.pinFirst}
           startDelayMs={unattended ? 800 : undefined}
-          loading={!ready || riverArrivals.loading}
+          loading={riverArrivals.loading}
           error={riverError}
         />
       )
@@ -564,8 +685,7 @@ export const BoardDisplay = ({
       const cycleSurface =
         config.cycle.surface ?? BOARD_SETTINGS.cycleSurface.defaultValue
       const cycleLoading =
-        !ready ||
-        (cyclePoints.loading && cyclePoints.data.length === 0 && !cycleError)
+        cyclePoints.loading && cyclePoints.data.length === 0 && !cycleError
 
       if (cycleSurface === "display") {
         if (cycleLoading) {
@@ -608,10 +728,7 @@ export const BoardDisplay = ({
       )
     }
 
-    if (
-      !ready ||
-      (status.loading && status.data.length === 0 && !status.error)
-    ) {
+    if (status.loading && status.data.length === 0 && !status.error) {
       return unattended ? (
         <TubeStatusDisplaySkeleton tiles={statusProps.tiles || 4} />
       ) : (
@@ -686,13 +803,37 @@ export const BoardDisplay = ({
     )
   }
 
+  const shellClass = fillScreen
+    ? "board-embed box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain p-4 md:p-6 [&::-webkit-scrollbar]:hidden"
+    : "box-border min-h-dvh w-full p-4 md:p-6"
+
+  if (!surfaceReady) {
+    return (
+      <div className={shellClass} style={ARRIVALS_RHYTHM_VARS}>
+        <h1 className="sr-only">Live board</h1>
+      </div>
+    )
+  }
+
+  if (!boardReady) {
+    return (
+      <div className={shellClass} style={ARRIVALS_RHYTHM_VARS}>
+        {fromHomeScreen ? (
+          <>
+            <h1 className="sr-only">Live board</h1>
+            <BoardViewRecovery onLoad={handleRecoveredBoard} />
+          </>
+        ) : (
+          <BoardViewSetupPrompt />
+        )}
+      </div>
+    )
+  }
+
   return (
     <div
-      className={
-        fillScreen
-          ? "board-embed box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain p-4 md:p-6 [&::-webkit-scrollbar]:hidden"
-          : "box-border min-h-dvh w-full p-4 md:p-6"
-      }
+      ref={boardRootRef}
+      className={shellClass}
       style={{ ...ARRIVALS_RHYTHM_VARS, ...homeScreenPadding }}
     >
       <h1 className="sr-only">Live board</h1>
@@ -716,8 +857,37 @@ export const BoardDisplay = ({
         sources={pollSources}
         onRefresh={handleRefresh}
         refreshing={refreshing}
-        editHref={`${BOARD_PATH}${configEpoch}`}
+        editHref={editHref}
+        fullscreenLabel={
+          fullscreen.available && !fromHomeScreen && !embedded
+            ? fullscreen.active
+              ? "Exit full screen"
+              : "Full screen"
+            : undefined
+        }
+        onFullscreen={
+          fullscreen.available && !fromHomeScreen && !embedded
+            ? fullscreen.toggle
+            : undefined
+        }
+        fullscreenError={fullscreen.error}
+        onAddToHomeScreen={
+          offerInstall && platform === "ios"
+            ? () => setHomeScreenOfferOpen(true)
+            : undefined
+        }
+        onChromiumInstall={
+          offerInstall && platform === "chromium"
+            ? promptNativeInstall
+            : undefined
+        }
       />
+      {offerInstall && platform === "ios" ? (
+        <BoardViewHomeScreenOffer
+          open={homeScreenOfferOpen}
+          onDismiss={handleDismissHomeScreenOffer}
+        />
+      ) : null}
     </div>
   )
 }

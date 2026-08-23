@@ -2,10 +2,12 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { BOARD_VIEW_PATH } from "@/lib/tfl/board-url-state"
 import {
+  canElementRequestFullscreen,
   detectHomeScreenDisplayMode,
   detectHomeScreenPlatform,
   isBoardViewPath,
   isHomeScreenLaunch,
+  isJsFullscreenActive,
   shouldOfferBoardHomeScreenInstall,
   type HomeScreenPromptInput,
 } from "./board-home-screen"
@@ -20,6 +22,7 @@ const offer = (
     displayMode: "browser",
     platform: "ios",
     nativePromptAvailable: false,
+    fullscreenApiAvailable: false,
     ...overrides,
   })
 
@@ -52,8 +55,54 @@ describe("board home-screen install policy", () => {
     assert.equal(offer({ displayMode: "standalone" }), false)
   })
 
+  it("does not treat a JavaScript fullscreen session as an installed app", () => {
+    assert.equal(isHomeScreenLaunch("fullscreen", true), false)
+    assert.equal(isHomeScreenLaunch("standalone", true), true)
+    assert.equal(
+      isJsFullscreenActive({
+        fullscreenElement: {} as Element,
+        webkitFullscreenElement: null,
+      }),
+      true
+    )
+    assert.equal(
+      isJsFullscreenActive({
+        fullscreenElement: null,
+        webkitFullscreenElement: {} as Element,
+      }),
+      true
+    )
+    assert.equal(
+      isJsFullscreenActive({
+        fullscreenElement: null,
+        webkitFullscreenElement: null,
+      }),
+      false
+    )
+    assert.equal(
+      offer({ displayMode: "fullscreen", jsFullscreenActive: true }),
+      true
+    )
+    assert.equal(
+      offer({ displayMode: "standalone", jsFullscreenActive: true }),
+      false
+    )
+  })
+
   it("never offers a prompt inside an embed", () => {
     assert.equal(offer({ embedded: true }), false)
+  })
+
+  it("suppresses installation when the Fullscreen API is available", () => {
+    assert.equal(offer({ fullscreenApiAvailable: true }), false)
+    assert.equal(
+      offer({
+        platform: "chromium",
+        nativePromptAvailable: true,
+        fullscreenApiAvailable: true,
+      }),
+      false
+    )
   })
 
   it("may offer later on interactive iOS or Chromium with a native prompt", () => {
@@ -112,5 +161,24 @@ describe("board home-screen install policy", () => {
       }),
       "standalone"
     )
+  })
+
+  it("requires the Board root to support requestFullscreen", () => {
+    assert.equal(
+      canElementRequestFullscreen({ requestFullscreen: () => undefined }, true),
+      true
+    )
+    assert.equal(
+      canElementRequestFullscreen(
+        { webkitRequestFullscreen: () => undefined },
+        true
+      ),
+      true
+    )
+    assert.equal(
+      canElementRequestFullscreen({ requestFullscreen: () => undefined }, false),
+      false
+    )
+    assert.equal(canElementRequestFullscreen(null, true), false)
   })
 })
