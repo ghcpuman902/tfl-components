@@ -52,3 +52,12 @@ export const firstOrMatchingPoint = <T extends Identified>(
   }
   return items[0]
 }
+
+/** The requested id if it is in the list — never a silent substitute. */
+export const findPointById = <T extends Identified>(
+  items: readonly T[],
+  requested?: string
+): T | undefined => {
+  if (!requested) return undefined
+  return items.find((item) => pointMatchesId(item, requested))
+}

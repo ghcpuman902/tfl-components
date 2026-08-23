@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { TfLPointPicker } from "@/components/explorer/tfl-point-picker"
 import { ExplorerPointMapLazy } from "@/components/explorer/explorer-point-map-lazy"
+import { readExplorerQueryParam } from "@/components/explorer/use-explorer-chrome"
 import {
   getGeolocation,
   useExplorerKeyedQuery,
@@ -16,7 +17,7 @@ import { MAP_SEARCH_RADIUS_METERS, truncateLatLon } from "@/lib/tfl/geo"
 
 type CyclePointFinderProps = {
   selectedId?: string | null
-  onSelect: (point: ExplorerPoint) => void
+  onSelect: (point: ExplorerPoint, query?: string) => void
   view: ExplorerView
   onViewChange: (view: ExplorerView) => void
   initialQuery?: string
@@ -46,18 +47,23 @@ export const CyclePointFinder = ({
   const [points, setPoints] = useState<ExplorerPoint[]>(() => [
     ...initialPoints,
   ])
-  const [query, setQuery] = useState(initialQuery)
+  const [query, setQuery] = useState(
+    () => initialQuery || readExplorerQueryParam()
+  )
   const [fitSearchKey, setFitSearchKey] = useState(0)
   const [searchOrigin, setSearchOrigin] = useState<{
     lat: number
     lon: number
   } | null>(null)
 
-  const handleSearchSubmit = async (nextQuery: string) => {
+  const handleSearchSubmit = async (
+    nextQuery: string,
+    preferId?: string | null
+  ) => {
     const trimmed = nextQuery.trim()
     if (trimmed.length < 2) {
       setError("Enter at least 2 characters to search.")
-      return
+      return false
     }
 
     const result = await runKeyed(async (client) => {
@@ -68,11 +74,24 @@ export const CyclePointFinder = ({
         .slice(0, 25)
     })
 
-    if (result.ok) {
-      setPoints(result.data)
-      if (autoSelectFirst && result.data[0]) onSelect(result.data[0])
-    }
+    if (!result.ok) return false
+
+    setPoints(result.data)
+    const match = preferId
+      ? result.data.find((point) => point.id === preferId)
+      : undefined
+    const next = match ?? result.data[0]
+    if (autoSelectFirst && next) onSelect(next, trimmed)
+    return true
   }
+
+  useEffect(() => {
+    const q = (initialQuery || readExplorerQueryParam()).trim()
+    if (q.length < 2) return
+    void handleSearchSubmit(q, selectedId)
+    // Restore API results after a remount / shared URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
+  }, [])
 
   const handleLocate = async () => {
     try {
@@ -92,7 +111,7 @@ export const CyclePointFinder = ({
 
       if (result.ok) {
         setPoints(result.data)
-        if (autoSelectFirst && result.data[0]) onSelect(result.data[0])
+        if (autoSelectFirst && result.data[0]) onSelect(result.data[0], query)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not read location.")
@@ -117,7 +136,7 @@ export const CyclePointFinder = ({
     setPoints(result.data)
     setSearchOrigin({ lat, lon })
     setFitSearchKey((key) => key + 1)
-    if (autoSelectFirst && result.data[0]) onSelect(result.data[0])
+    if (autoSelectFirst && result.data[0]) onSelect(result.data[0], query)
     else if (!result.data[0]) setError("No docks in this area.")
   }
 

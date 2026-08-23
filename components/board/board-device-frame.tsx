@@ -49,6 +49,15 @@ export const ipadScreenInset = {
   radius: IPAD.screen.rx / IPAD.vb.w,
 } as const
 
+/** Invisible hit target over the bezel home circle. Larger than paint, same look. */
+const IPAD_HOME_HIT_R = IPAD.camera.r * 1.75
+export const ipadHomeInset = {
+  left: (IPAD.camera.cx - IPAD_HOME_HIT_R) / IPAD.vb.w,
+  top: (IPAD.camera.cy - IPAD_HOME_HIT_R) / IPAD.vb.h,
+  width: (IPAD_HOME_HIT_R * 2) / IPAD.vb.w,
+  height: (IPAD_HOME_HIT_R * 2) / IPAD.vb.h,
+} as const
+
 export const iphoneScreenInset = {
   left: IPHONE.screen.x / IPHONE.vb.w,
   top: IPHONE.screen.y / IPHONE.vb.h,

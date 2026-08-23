@@ -1,11 +1,15 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
+  busSearchNameMatches,
   compassPointToDegrees,
   isBoardableBusStopId,
   isBusStop,
   mapStopPoint,
   mapStopsFromGeoResponse,
+  mergeStopsById,
+  pickNamedExpandableMatches,
+  preferStopsMatchingSearch,
   readBearingDegrees,
   readSmsCode,
   readStopLetter,
@@ -81,6 +85,73 @@ describe("isBoardableBusStopId", () => {
     assert.equal(isBoardableBusStopId("490000091G"), true)
     assert.equal(isBoardableBusStopId("HUBLBG"), false)
     assert.equal(isBoardableBusStopId("490G00014016"), false)
+  })
+})
+
+describe("busSearchNameMatches", () => {
+  it("matches a distinctive street token, not the word road", () => {
+    assert.equal(
+      busSearchNameMatches("Silverthorne Road", "Silverthorne Road"),
+      true
+    )
+    assert.equal(busSearchNameMatches("Prairie Street", "Silverthorne Road"), false)
+  })
+
+  it("does not treat circus as a distinctive token", () => {
+    assert.equal(
+      busSearchNameMatches("St George's Circus", "Silverthorne Road"),
+      false
+    )
+    assert.equal(
+      busSearchNameMatches("St George's Circus", "St George's Circus"),
+      true
+    )
+  })
+})
+
+describe("pickNamedExpandableMatches", () => {
+  it("keeps every name-matching hub, not only the first", () => {
+    const picked = pickNamedExpandableMatches(
+      [
+        { name: "Silverthorne Road", lat: 51.47, lon: -0.148 },
+        { name: "Silverthorne Road", lat: 51.46, lon: -0.145 },
+        { name: "Prairie Street", lat: 51.47, lon: -0.147 },
+      ],
+      "Silverthorne Road"
+    )
+    assert.equal(picked.length, 2)
+    assert.equal(picked[0]?.lon, -0.148)
+    assert.equal(picked[1]?.lon, -0.145)
+  })
+})
+
+describe("preferStopsMatchingSearch", () => {
+  it("drops nearby streets when any stop name matches", () => {
+    const preferred = preferStopsMatchingSearch(
+      [
+        { id: "a", name: "Silverthorne Road" },
+        { id: "b", name: "Prairie Street" },
+        { id: "c", name: "Silverthorne Road" },
+      ],
+      "Silverthorne Road"
+    )
+    assert.deepEqual(
+      preferred.map((stop) => stop.id),
+      ["a", "c"]
+    )
+  })
+})
+
+describe("mergeStopsById", () => {
+  it("dedupes across hub expansions", () => {
+    const merged = mergeStopsById([
+      [{ id: "a" }, { id: "b" }],
+      [{ id: "b" }, { id: "c" }],
+    ])
+    assert.deepEqual(
+      merged.map((stop) => stop.id),
+      ["a", "b", "c"]
+    )
   })
 })
 

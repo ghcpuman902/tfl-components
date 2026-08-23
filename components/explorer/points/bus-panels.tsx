@@ -15,7 +15,10 @@ import {
   type ExplorerState,
 } from "@/lib/tfl/explorer-url-state"
 import type { ExplorerBusPoint } from "@/lib/tfl/explorer/common"
-import type { ExplorerCachedArrivals } from "@/lib/tfl/explorer/selection"
+import {
+  pointMatchesId,
+  type ExplorerCachedArrivals,
+} from "@/lib/tfl/explorer/selection"
 
 const toPoint = (stop: ExplorerBusPoint): ExplorerPoint => ({
   id: stop.id,
@@ -49,6 +52,9 @@ export const PointsBusFind = ({
     initialPoints,
     state
   )
+  const selectedInSeed =
+    selected != null &&
+    initialPoints.some((point) => pointMatchesId(point, selected.id))
 
   return (
     <ExplorerSplit
@@ -68,8 +74,10 @@ export const PointsBusFind = ({
         selected ? (
           <PointInspectorDeferred
             point={selected}
-            cachedArrivalsPromise={cachedArrivalsPromise}
-            detailsPending={detailsPending}
+            cachedArrivalsPromise={
+              selectedInSeed ? cachedArrivalsPromise : undefined
+            }
+            detailsPending={detailsPending || !selectedInSeed}
           />
         ) : null
       }

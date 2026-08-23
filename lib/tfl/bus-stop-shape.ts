@@ -99,6 +99,93 @@ export const readBearingDegrees = (
 /** London bus stop points that support live arrivals (not hubs / station parents). */
 export const isBoardableBusStopId = (id: string): boolean => /^490\d/i.test(id)
 
+/**
+ * Street suffixes that match too many StopPoint names to be useful on their
+ * own. Keep distinctive tokens like "silverthorne".
+ */
+const GENERIC_BUS_SEARCH_WORDS = new Set([
+  "and",
+  "avenue",
+  "bridge",
+  "circus",
+  "close",
+  "common",
+  "green",
+  "grove",
+  "hill",
+  "lane",
+  "park",
+  "place",
+  "road",
+  "row",
+  "square",
+  "st",
+  "station",
+  "stop",
+  "street",
+  "the",
+  "way",
+])
+
+export const normaliseBusSearchText = (value: string): string =>
+  value.trim().toLowerCase().replace(/['’]/g, "")
+
+/** True when a stop / hub name is a real hit for the typed query. */
+export const busSearchNameMatches = (name: string, query: string): boolean => {
+  const needle = normaliseBusSearchText(query)
+  if (needle.length < 2) return false
+  const haystack = normaliseBusSearchText(name)
+  if (haystack.includes(needle)) return true
+  const tokens = needle
+    .split(/[^a-z0-9]+/)
+    .filter(
+      (token) => token.length >= 4 && !GENERIC_BUS_SEARCH_WORDS.has(token)
+    )
+  return tokens.some((token) => haystack.includes(token))
+}
+
+/** Hubs with coordinates, preferring names that match the query. */
+export const pickNamedExpandableMatches = <
+  T extends { name?: string; stationName?: string; lat?: number; lon?: number },
+>(
+  matches: readonly T[],
+  query: string,
+  limit = 3
+): T[] => {
+  const withCoords = matches.filter(
+    (match) => typeof match.lat === "number" && typeof match.lon === "number"
+  )
+  const named = withCoords.filter((match) =>
+    busSearchNameMatches(match.name ?? match.stationName ?? "", query)
+  )
+  const chosen = named.length > 0 ? named : withCoords
+  return chosen.slice(0, limit)
+}
+
+export const mergeStopsById = <T extends { id: string }>(
+  groups: readonly (readonly T[])[]
+): T[] => {
+  const seen = new Set<string>()
+  const merged: T[] = []
+  for (const group of groups) {
+    for (const stop of group) {
+      if (seen.has(stop.id)) continue
+      seen.add(stop.id)
+      merged.push(stop)
+    }
+  }
+  return merged
+}
+
+/** Keep name matches when any exist so a street search is not a nearby dump. */
+export const preferStopsMatchingSearch = <T extends { name: string }>(
+  stops: readonly T[],
+  query: string
+): T[] => {
+  const matched = stops.filter((stop) => busSearchNameMatches(stop.name, query))
+  return matched.length > 0 ? matched : [...stops]
+}
+
 export const isBusStop = (modes?: string[]): boolean =>
   modes?.includes("bus") ?? false
 

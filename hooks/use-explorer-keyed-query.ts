@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { useRequireUserTflKey } from "@/hooks/use-require-user-tfl-key"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
 import { createBrowserTflClient } from "@/lib/tfl/browser-tfl-client"
@@ -11,7 +11,8 @@ const KEY_REQUIRED_MESSAGE =
   "Add a TfL API key to run this live query against your own quota. It stays in this browser and is never sent to our server."
 
 type KeyedQueryResult<T> =
-  { ok: true; data: T } | { ok: false; error: string; gated?: boolean }
+  | { ok: true; data: T }
+  | { ok: false; error: string; gated?: boolean; stale?: boolean }
 
 /**
  * Shared keyed browser→TfL helper for Explorer Find adapters.
@@ -22,6 +23,7 @@ export const useExplorerKeyedQuery = () => {
   const { getAppKey, markInvalid } = useUserTflCredentials()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const requestSeq = useRef(0)
 
   const runKeyed = useCallback(
     async <T>(
@@ -44,15 +46,22 @@ export const useExplorerKeyedQuery = () => {
         return { ok: false, error: KEY_REQUIRED_MESSAGE, gated: true }
       }
 
+      const seq = ++requestSeq.current
       setLoading(true)
       setError(null)
 
       try {
         const client = await createBrowserTflClient(appKey)
         const data = await operation(client)
+        if (seq !== requestSeq.current) {
+          return { ok: false, error: "", stale: true }
+        }
         setLoading(false)
         return { ok: true, data }
       } catch (err) {
+        if (seq !== requestSeq.current) {
+          return { ok: false, error: "", stale: true }
+        }
         const translated = translateTflClientError(err, [appKey])
         if (
           translated.kind === "invalid-key" ||

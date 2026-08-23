@@ -40,7 +40,7 @@ export const MirrorPhotoLoop = ({
         width={slide.width}
         height={slide.height}
         aria-hidden
-        className="size-full object-cover"
+        className="size-full -scale-x-100 object-cover"
         style={{ width: "100%", height: "100%", objectFit: "cover" }}
       />
     </div>

@@ -11,6 +11,9 @@ import {
   isBusStop,
   mapStopPoint,
   mapStopsFromGeoResponse,
+  mergeStopsById,
+  pickNamedExpandableMatches,
+  preferStopsMatchingSearch,
   type NearbyBusStop,
 } from "@/lib/tfl/bus-stop-shape"
 
@@ -179,20 +182,21 @@ export async function searchBusStops(
       return { ok: true, stops: enriched }
     }
 
-    // Expand the first hub/station hit to nearby bus stops via its coordinates.
-    const expandable = matches.find(
-      (match) =>
-        typeof match.lat === "number" &&
-        typeof match.lon === "number" &&
-        isValidLatLon(match.lat, match.lon)
+    const hubs = pickNamedExpandableMatches(matches, trimmed).filter(
+      (hub) =>
+        hub.lat != null &&
+        hub.lon != null &&
+        isValidLatLon(hub.lat, hub.lon)
     )
 
-    if (expandable?.lat != null && expandable.lon != null) {
-      const nearby = await fetchBusStopsNear(
-        expandable.lat,
-        expandable.lon,
-        MAX_SEARCH_STOPS
+    if (hubs.length > 0) {
+      const nearbyGroups = await Promise.all(
+        hubs.map((hub) => fetchBusStopsNear(hub.lat!, hub.lon!, 25))
       )
+      const nearby = preferStopsMatchingSearch(
+        mergeStopsById(nearbyGroups),
+        trimmed
+      ).slice(0, MAX_SEARCH_STOPS)
       if (nearby.length > 0) {
         return { ok: true, stops: nearby }
       }

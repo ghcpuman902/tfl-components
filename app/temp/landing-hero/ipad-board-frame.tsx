@@ -2,8 +2,11 @@
 
 import { useEffect, useRef, useState } from "react"
 import { BoardDisplay } from "@/components/board/board-display"
-import { DEMO_BOARD_CONFIG } from "@/lib/tfl/board-view-resolve"
-import type { LandingBoardIndexes } from "@/lib/tfl/landing-board"
+import type { BoardConfig } from "@/lib/tfl/board-url-state"
+import {
+  LANDING_BOARD_DEFAULT,
+  type LandingBoardIndexes,
+} from "@/lib/tfl/landing-board"
 import {
   BOARD_IFRAME_HEIGHT,
   BOARD_IFRAME_WIDTH,
@@ -12,11 +15,13 @@ import {
 type IpadBoardFrameProps = {
   interactive: boolean
   board: LandingBoardIndexes
+  previewConfig?: BoardConfig
 }
 
 export const IpadBoardFrame = ({
   interactive,
   board,
+  previewConfig = LANDING_BOARD_DEFAULT.config,
 }: IpadBoardFrameProps) => {
   const screenRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
@@ -57,7 +62,7 @@ export const IpadBoardFrame = ({
           stationLines={board.stationLines}
           stationNames={board.stationNames}
           arrivalsStopIds={board.arrivalsStopIds}
-          previewConfig={DEMO_BOARD_CONFIG}
+          previewConfig={previewConfig}
         />
       </div>
     </div>

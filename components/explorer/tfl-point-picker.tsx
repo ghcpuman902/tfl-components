@@ -28,12 +28,14 @@
 
 import {
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type FormEvent,
   type KeyboardEvent,
   type ReactNode,
+  type Ref,
 } from "react"
 import {
   Check,
@@ -72,12 +74,17 @@ export type TfLPointPickerMapRenderProps = {
 export type TfLPointPickerProps = {
   points: readonly ExplorerPoint[]
   selectedId?: string | null
-  onSelect: (point: ExplorerPoint) => void
+  /** Second arg is the live search box value so navigation can keep `q`. */
+  onSelect: (point: ExplorerPoint, query?: string) => void
   /**
    * Fires only on Search click or Enter. Omit when typing already filters
    * a complete local catalogue — Enter then does nothing.
+   * Return `false` when the query was not actually sent (no key, validation)
+   * so Search stays enabled for a retry.
    */
-  onSearchSubmit?: (query: string) => void
+  onSearchSubmit?: (
+    query: string
+  ) => void | boolean | Promise<void | boolean>
   /** Omit to hide the locate button entirely. */
   onLocate?: () => void
   loading?: boolean
@@ -99,6 +106,27 @@ export type TfLPointPickerProps = {
   className?: string
 }
 
+/**
+ * Scroll only the results list — never the page — when the selected
+ * point is off-screen. `scrollIntoView` would also move `html`.
+ */
+const scrollSelectedIntoPane = (
+  container: HTMLElement,
+  item: HTMLElement
+) => {
+  if (container.clientHeight === 0) return
+
+  const itemRect = item.getBoundingClientRect()
+  const paneRect = container.getBoundingClientRect()
+  const fullyVisible =
+    itemRect.top >= paneRect.top && itemRect.bottom <= paneRect.bottom
+  if (fullyVisible) return
+
+  const offset = itemRect.top - paneRect.top + container.scrollTop
+  const top = offset - (container.clientHeight - item.offsetHeight) / 2
+  container.scrollTo({ top: Math.max(0, top) })
+}
+
 const formatDistance = (meters?: number): string => {
   if (meters === undefined) return ""
   if (meters < 1000) return `${Math.round(meters)}m`
@@ -116,6 +144,7 @@ type PointResultOptionProps = {
   active: boolean
   onSelect: (point: ExplorerPoint) => void
   showDistance: boolean
+  optionRef?: Ref<HTMLButtonElement>
 }
 
 const PointResultOption = ({
@@ -126,6 +155,7 @@ const PointResultOption = ({
   active,
   onSelect,
   showDistance,
+  optionRef,
 }: PointResultOptionProps) => {
   const isBus = point.modes?.includes("bus") ?? false
   const stopLetter = isBus ? point.stopLetter : undefined
@@ -143,6 +173,7 @@ const PointResultOption = ({
 
   return (
     <button
+      ref={optionRef}
       type="button"
       role="option"
       aria-selected={marked}
@@ -159,6 +190,7 @@ const PointResultOption = ({
       className={cn(
         "group/result flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors",
         "[contain-intrinsic-size:auto_3.25rem] [content-visibility:auto]",
+        selected && "[content-visibility:visible]",
         explorerPaneItemClassName,
         "hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset",
         marked && "bg-muted ring-1 ring-primary ring-inset",
@@ -225,10 +257,15 @@ export const TfLPointPicker = ({
     [addedIds]
   )
   const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
+  const selectedOptionRef = useRef<HTMLButtonElement>(null)
   const [internalQuery, setInternalQuery] = useState("")
 
   const query = searchValue ?? internalQuery
   const setQuery = onSearchValueChange ?? setInternalQuery
+  const handleSelect = (point: ExplorerPoint) => {
+    onSelect(point, query)
+  }
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null)
   const trimmedQuery = query.trim()
   const canSearch =
@@ -248,11 +285,12 @@ export const TfLPointPicker = ({
       ? selectedIndex
       : Math.min(activeIndex, Math.max(points.length - 1, 0))
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     if (!onSearchSubmit || !canSearch) return
+    const sent = await onSearchSubmit(query)
+    if (sent === false) return
     setSubmittedQuery(trimmedQuery)
-    onSearchSubmit(query)
   }
 
   const handleListKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
@@ -277,9 +315,23 @@ export const TfLPointPicker = ({
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault()
       const point = points[resolvedActiveIndex]
-      if (point) onSelect(point)
+      if (point) handleSelect(point)
     }
   }
+
+  useLayoutEffect(() => {
+    const pane = listRef.current
+    const item = selectedOptionRef.current
+    if (!pane || !item || !selectedId) return
+
+    scrollSelectedIntoPane(pane, item)
+    if (pane.clientHeight > 0) return
+
+    const frame = requestAnimationFrame(() => {
+      scrollSelectedIntoPane(pane, item)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [selectedId])
 
   const showMap = view === "map" && renderMap
 
@@ -402,7 +454,7 @@ export const TfLPointPicker = ({
         renderMap({
           points,
           selectedId,
-          onSelect,
+          onSelect: handleSelect,
           className: paneClassName,
         })
       ) : points.length === 0 && !loading ? (
@@ -415,6 +467,7 @@ export const TfLPointPicker = ({
         </div>
       ) : (
         <ul
+          ref={listRef}
           id={listId}
           role="listbox"
           aria-label="Point results"
@@ -434,8 +487,11 @@ export const TfLPointPicker = ({
               added={added.has(point.id)}
               addable={addable}
               active={index === resolvedActiveIndex}
-              onSelect={onSelect}
+              onSelect={handleSelect}
               showDistance={showDistance}
+              optionRef={
+                point.id === selectedId ? selectedOptionRef : undefined
+              }
             />
           ))}
         </ul>

@@ -237,6 +237,17 @@ describe("buildExplorerHref", () => {
     )
   })
 
+  it("writes q onto a point selection so search survives remount", () => {
+    const href = buildExplorerHref(
+      { id: "940GZZLUCPC", q: "clapham" },
+      DEFAULT_EXPLORER_STATE
+    )
+    assert.equal(
+      href,
+      `${EXPLORER_PATH}/points/tube-rail/940GZZLUCPC?q=clapham`
+    )
+  })
+
   it("clamps cycle when switching to lines", () => {
     const href = buildExplorerHref(
       { kind: "lines" },

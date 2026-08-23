@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
   cachedArrivalsForPoint,
+  findPointById,
   firstOrMatching,
   firstOrMatchingPoint,
   pointMatchesId,
@@ -55,6 +56,21 @@ describe("firstOrMatchingPoint", () => {
 
   it("falls back to the first station", () => {
     assert.equal(firstOrMatchingPoint(stations)?.id, "940GZZLUOXC")
+  })
+})
+
+describe("findPointById", () => {
+  const stations = [
+    { id: "940GZZLUOXC", aliasIds: ["HUBOXC"], name: "Oxford Circus" },
+    { id: "940GZZLUVIC", aliasIds: [], name: "Victoria" },
+  ]
+
+  it("returns undefined when the id is missing from the list", () => {
+    assert.equal(findPointById(stations, "490013767C"), undefined)
+  })
+
+  it("matches alias ids", () => {
+    assert.equal(findPointById(stations, "HUBOXC")?.id, "940GZZLUOXC")
   })
 })
 

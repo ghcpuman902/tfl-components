@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { TfLPointPicker } from "@/components/explorer/tfl-point-picker"
 import { ExplorerPointMapLazy } from "@/components/explorer/explorer-point-map-lazy"
+import { readExplorerQueryParam } from "@/components/explorer/use-explorer-chrome"
 import {
   getGeolocation,
   useExplorerKeyedQuery,
@@ -17,6 +18,9 @@ import {
   isBusStop,
   mapStopPoint,
   mapStopsFromGeoResponse,
+  mergeStopsById,
+  pickNamedExpandableMatches,
+  preferStopsMatchingSearch,
 } from "@/lib/tfl/bus-stop-shape"
 import type { ExplorerView } from "@/lib/tfl/explorer-url-state"
 import { MAP_SEARCH_RADIUS_METERS, truncateLatLon } from "@/lib/tfl/geo"
@@ -24,7 +28,7 @@ import type TflClient from "tfl-ts"
 
 type BusPointFinderProps = {
   selectedId?: string | null
-  onSelect: (point: ExplorerPoint) => void
+  onSelect: (point: ExplorerPoint, query?: string) => void
   view: ExplorerView
   onViewChange: (view: ExplorerView) => void
   initialQuery?: string
@@ -97,7 +101,9 @@ export const BusPointFinder = ({
 }: BusPointFinderProps) => {
   const { loading, error, setError, runKeyed } = useExplorerKeyedQuery()
   const [livePoints, setLivePoints] = useState<ExplorerPoint[] | null>(null)
-  const [query, setQuery] = useState(initialQuery)
+  const [query, setQuery] = useState(
+    () => initialQuery || readExplorerQueryParam()
+  )
   const [fitSearchKey, setFitSearchKey] = useState(0)
   const [searchOrigin, setSearchOrigin] = useState<{
     lat: number
@@ -110,11 +116,14 @@ export const BusPointFinder = ({
     setQuery(next)
   }
 
-  const handleSearchSubmit = async (nextQuery: string) => {
+  const handleSearchSubmit = async (
+    nextQuery: string,
+    preferId?: string | null
+  ) => {
     const trimmed = nextQuery.trim()
     if (trimmed.length < 2) {
       setError("Enter at least 2 characters, or a 5-digit SMS code.")
-      return
+      return false
     }
 
     const result = await runKeyed(async (client) => {
@@ -163,34 +172,51 @@ export const BusPointFinder = ({
         return enrichBoardableStops(client, boardable.slice(0, 12))
       }
 
-      const expandable = matches.find(
-        (match) =>
-          typeof match.lat === "number" && typeof match.lon === "number"
-      )
-      if (expandable?.lat != null && expandable.lon != null) {
-        const nearby = await client.stopPoint.getByGeoPoint({
-          lat: expandable.lat,
-          lon: expandable.lon,
-          radius: MAP_SEARCH_RADIUS_METERS,
-          modes: ["bus"],
-          returnLines: true,
-        })
-        return mapStopsFromGeoResponse(nearby.stopPoints ?? [], 12)
-          .map(toExplorerPoint)
-          .filter((point): point is ExplorerPoint => point !== null)
-      }
+      const hubs = pickNamedExpandableMatches(matches, trimmed)
+      if (hubs.length === 0) return []
 
-      return []
+      const nearbyGroups = await Promise.all(
+        hubs.map(async (hub) => {
+          const nearby = await client.stopPoint.getByGeoPoint({
+            lat: hub.lat!,
+            lon: hub.lon!,
+            radius: MAP_SEARCH_RADIUS_METERS,
+            modes: ["bus"],
+            returnLines: true,
+          })
+          return mapStopsFromGeoResponse(nearby.stopPoints ?? [], 25)
+            .map(toExplorerPoint)
+            .filter((point): point is ExplorerPoint => point !== null)
+        })
+      )
+
+      return preferStopsMatchingSearch(
+        mergeStopsById(nearbyGroups),
+        trimmed
+      ).slice(0, 12)
     })
 
-    if (result.ok) {
-      setLivePoints(result.data)
-      if (result.data[0]) onSelect(result.data[0])
-      else if (result.data.length === 0) {
-        setError("No bus stops matched that search.")
-      }
+    if (!result.ok) return false
+
+    setLivePoints(result.data)
+    const match = preferId
+      ? result.data.find((point) => point.id === preferId)
+      : undefined
+    const next = match ?? result.data[0]
+    if (next) onSelect(next, trimmed)
+    else if (result.data.length === 0) {
+      setError("No bus stops matched that search.")
     }
+    return true
   }
+
+  useEffect(() => {
+    const q = (initialQuery || readExplorerQueryParam()).trim()
+    if (q.length < 2) return
+    void handleSearchSubmit(q, selectedId)
+    // Restore API results after a remount / shared URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
+  }, [])
 
   const handleLocate = async () => {
     try {
@@ -211,7 +237,7 @@ export const BusPointFinder = ({
 
       if (result.ok) {
         setLivePoints(result.data)
-        if (result.data[0]) onSelect(result.data[0])
+        if (result.data[0]) onSelect(result.data[0], query)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not read location.")
@@ -237,7 +263,7 @@ export const BusPointFinder = ({
     setLivePoints(result.data)
     setSearchOrigin({ lat, lon })
     setFitSearchKey((key) => key + 1)
-    if (result.data[0]) onSelect(result.data[0])
+    if (result.data[0]) onSelect(result.data[0], query)
     else setError("No bus stops in this area.")
   }
 

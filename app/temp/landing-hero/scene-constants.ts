@@ -20,47 +20,50 @@ export const HERO_GROUP_BIAS = "1.25rem"
 export const IPAD_FRAME_WIDTH = `min(${(1 - HERO_SIDE_INSET * 2) * 100}vw, calc((100dvh - var(--site-header-height) - ${HERO_TOP_INSET} - ${HERO_COPY_GAP} - ${HERO_COPY_BAND}) * ${IPAD_FRAME_ASPECT}))`
 
 /**
- * Sticky stage is one viewport. Extra height is the pull-back so the
- * iPad can settle onto the table.
+ * Pointer follow. L2 (iPad + mirror frame, 5 m) is the lock plane.
+ * Shift ∝ 1/z − 1/5 from camera depths: sofa 1.5 m, front wall 4 m,
+ * lamp 4.5 m (corridor centre), reflected wall 10 m.
  */
 export const PARALLAX_X = {
   l0: 36,
-  l1: 18,
-  l2: 8,
-  l3: 2,
+  l1: 4,
+  lamp: 2,
+  l2: 0,
+  l3: -8,
 } as const
 
-/** Desktop pointer follow on Y — same depth order as X, a little quieter. */
+/** Desktop pointer follow on Y — same depth ratios as X, a little quieter. */
 export const PARALLAX_Y = {
   l0: 24,
-  l1: 12,
-  l2: 5,
-  l3: 1,
+  l1: 3,
+  lamp: 1,
+  l2: 0,
+  l3: -5,
 } as const
 
-/**
- * Extra layer motion while the camera dollies out. Near layers (sofa, wall)
- * recede more; L3 (ceiling / glass in the mirror) lags so it reads farther.
- */
+/** Dolly uses the same inverse-depth ratios, with L2 locked. */
 export const DOLLY_PARALLAX = {
   l0: 26,
-  l1: 14,
+  l1: 3,
+  lamp: 1,
   l2: 0,
-  l3: -10,
+  l3: -6,
 } as const
 
 export const DOLLY_Y = {
   l0: 14,
-  l1: 7,
+  l1: 2,
+  lamp: 1,
   l2: 0,
-  l3: -22,
+  l3: -3,
 } as const
 
 export const DOLLY_SCALE = {
   l0: 0.14,
-  l1: 0.07,
+  l1: 0.015,
+  lamp: 0.007,
   l2: 0,
-  l3: -0.1,
+  l3: -0.03,
 } as const
 
 export const PHOTO_OVERLAY_WIDTH = 640

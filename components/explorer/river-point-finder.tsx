@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { TfLPointPicker } from "@/components/explorer/tfl-point-picker"
 import { ExplorerPointMapLazy } from "@/components/explorer/explorer-point-map-lazy"
+import { readExplorerQueryParam } from "@/components/explorer/use-explorer-chrome"
 import { getGeolocation } from "@/hooks/use-explorer-keyed-query"
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
 import type { ExplorerView } from "@/lib/tfl/explorer-url-state"
@@ -31,7 +32,9 @@ export const RiverPointFinder = ({
   initialPoints = [],
   emptyMessage = "No matching piers.",
 }: RiverPointFinderProps) => {
-  const [query, setQuery] = useState(initialQuery)
+  const [query, setQuery] = useState(
+    () => initialQuery || readExplorerQueryParam()
+  )
   const [nearbyPoints, setNearbyPoints] = useState<ExplorerPoint[] | null>(null)
   const [locating, setLocating] = useState(false)
   const [error, setError] = useState<string | null>(null)

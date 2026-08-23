@@ -3,6 +3,7 @@
 import { formatBikePointId } from "@/lib/tfl/board-panels"
 import { getCachedBikePoints } from "@/lib/tfl/cycle-hire-data"
 import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types"
+import { LANDING_DEMO_DOCK_IDS } from "@/lib/tfl/landing-board"
 
 export type GetBikePointsResult =
   { ok: true; docks: CycleHireDock[] } | { ok: false; error: string }
@@ -11,6 +12,7 @@ const DEMO_DOCKS = new Set([
   "BikePoints_237",
   "BikePoints_490",
   "BikePoints_46",
+  ...LANDING_DEMO_DOCK_IDS,
 ])
 
 /**

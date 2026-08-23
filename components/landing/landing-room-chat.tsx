@@ -118,16 +118,8 @@ const RESTART_CLASS =
   "pointer-events-auto self-end text-[clamp(0.8125rem,0.75rem+0.2vw,0.875rem)] text-muted-foreground underline underline-offset-4 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
 
 const COMPOSE_MS = 2100
-const ASSISTANT_GAP_MS = 3400
+const FOLLOW_UP_PAUSE_MS = 1300
 const CHOICE_GAP_MS = 900
-
-const STORY_MS = [
-  COMPOSE_MS,
-  ASSISTANT_GAP_MS,
-  ASSISTANT_GAP_MS,
-  CHOICE_GAP_MS,
-  CHOICE_GAP_MS,
-] as const
 
 const TypingDots = () => (
   <div className="flex items-center gap-1" aria-label="Typing">
@@ -184,6 +176,7 @@ export const LandingRoomChat = ({
   const [choiceCount, setChoiceCount] = useState(
     skipIntro ? END_CHOICES.length : 0
   )
+  const [isTyping, setIsTyping] = useState(!skipIntro)
   const completedRef = useRef(skipIntro)
 
   useEffect(() => {
@@ -191,6 +184,7 @@ export const LandingRoomChat = ({
     completedRef.current = false
     setShownCount(0)
     setChoiceCount(0)
+    setIsTyping(true)
   }, [active])
 
   useEffect(() => {
@@ -198,6 +192,7 @@ export const LandingRoomChat = ({
     completedRef.current = true
     setShownCount(beats.length)
     setChoiceCount(END_CHOICES.length)
+    setIsTyping(false)
   }, [beats.length, skipIntro])
 
   useEffect(() => {
@@ -206,17 +201,24 @@ export const LandingRoomChat = ({
     let timeout = 0
 
     if (shownCount < beats.length) {
-      timeout = window.setTimeout(() => {
-        setShownCount((current) => current + 1)
-      }, STORY_MS[shownCount])
+      if (isTyping) {
+        timeout = window.setTimeout(() => {
+          setShownCount((current) => current + 1)
+          setIsTyping(false)
+        }, COMPOSE_MS)
+      } else {
+        timeout = window.setTimeout(() => {
+          setIsTyping(true)
+        }, FOLLOW_UP_PAUSE_MS)
+      }
     } else if (choiceCount < END_CHOICES.length) {
       timeout = window.setTimeout(() => {
         setChoiceCount((current) => current + 1)
-      }, STORY_MS[beats.length + choiceCount])
+      }, CHOICE_GAP_MS)
     }
 
     return () => window.clearTimeout(timeout)
-  }, [active, beats.length, choiceCount, shownCount, skipIntro])
+  }, [active, beats.length, choiceCount, isTyping, shownCount, skipIntro])
 
   useEffect(() => {
     if (!active || skipIntro) return
@@ -229,11 +231,13 @@ export const LandingRoomChat = ({
 
   if (!active) return null
 
-  const typing = shownCount === 0
+  const typingFirst = shownCount === 0 && isTyping
+  const typingFollowUp = isTyping && shownCount > 0 && shownCount < beats.length
   const followUps = beats.slice(1, shownCount)
   const visibleChoices = END_CHOICES.slice(0, choiceCount)
   const storyDone =
     shownCount >= beats.length && choiceCount >= END_CHOICES.length
+  const firstHasTail = shownCount <= 1 && !typingFollowUp
 
   return (
     <div
@@ -253,13 +257,13 @@ export const LandingRoomChat = ({
             className={cn(
               BUBBLE_CLASS,
               RADIUS_TRANSITION_CLASS,
-              shownCount <= 1
+              firstHasTail
                 ? "rounded-[26px_26px_26px_3px]"
                 : "rounded-[26px]",
               skipIntro ? undefined : ENTER_CLASS
             )}
           >
-            {typing ? (
+            {typingFirst ? (
               <TypingDots />
             ) : (
               <div className={skipIntro ? undefined : ENTER_CLASS}>
@@ -268,7 +272,8 @@ export const LandingRoomChat = ({
             )}
           </div>
           {followUps.map((line, index) => {
-            const isLatest = index === followUps.length - 1 && shownCount > 1
+            const isLatest =
+              index === followUps.length - 1 && shownCount > 1 && !typingFollowUp
             return (
               <div
                 key={line.id}
@@ -281,10 +286,25 @@ export const LandingRoomChat = ({
                     : "rounded-[26px]"
                 )}
               >
-                {line.content}
+                <div className={skipIntro ? undefined : ENTER_CLASS}>
+                  {line.content}
+                </div>
               </div>
             )
           })}
+          {typingFollowUp && beats[shownCount] ? (
+            <div
+              key={beats[shownCount].id}
+              className={cn(
+                BUBBLE_CLASS,
+                RADIUS_TRANSITION_CLASS,
+                "rounded-[26px_26px_26px_3px]",
+                ENTER_CLASS
+              )}
+            >
+              <TypingDots />
+            </div>
+          ) : null}
         </div>
         {visibleChoices.length > 0 || (storyDone && onRestart) ? (
           <div className="flex flex-col items-end gap-1">

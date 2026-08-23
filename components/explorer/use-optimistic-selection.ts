@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { pushExplorerHref } from "@/components/explorer/use-explorer-chrome"
 import {
   buildExplorerHref,
   type ExplorerDirection,
@@ -11,6 +12,7 @@ import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
 import type { ExplorerLineSummary } from "@/lib/tfl/explorer/common"
 import {
   explorerIdsEqual,
+  findPointById,
   firstOrMatching,
   pointMatchesId,
 } from "@/lib/tfl/explorer/selection"
@@ -84,20 +86,16 @@ export const useOptimisticPoint = (
   ) => ExplorerPoint | undefined = firstOrMatching
 ) => {
   const router = useRouter()
-  const [selected, setSelected] = useState<ExplorerPoint | null>(
-    () => resolveFromList(points, state.id) ?? null
-  )
+  const [selected, setSelected] = useState<ExplorerPoint | null>(() => {
+    if (state.id) return findPointById(points, state.id) ?? null
+    return resolveFromList(points) ?? null
+  })
   const [seenUrlId, setSeenUrlId] = useState(state.id)
 
   if (state.id !== seenUrlId) {
     setSeenUrlId(state.id)
-    const match = state.id ? resolveFromList(points, state.id) : undefined
-    if (
-      match &&
-      state.id &&
-      pointMatchesId(match, state.id) &&
-      selected?.id !== match.id
-    ) {
+    const match = findPointById(points, state.id)
+    if (match && selected?.id !== match.id) {
       setSelected(match)
     }
   }
@@ -106,11 +104,21 @@ export const useOptimisticPoint = (
   const detailsPending =
     selected != null && urlId != null && !pointMatchesId(selected, urlId)
 
-  const handleSelectPoint = (point: ExplorerPoint) => {
+  const handleSelectPoint = (point: ExplorerPoint, q?: string) => {
     setSelected(point)
-    router.push(buildExplorerHref({ id: point.id, view: state.view }, state), {
-      scroll: false,
-    })
+    const nextQ = (q ?? state.q)?.trim() || undefined
+    const href = buildExplorerHref(
+      { id: point.id, view: state.view, q: nextQ },
+      state
+    )
+    const inSeed = points.some((item) => pointMatchesId(item, point.id))
+    if (inSeed) {
+      router.push(href, { scroll: false })
+      return
+    }
+    // Search / locate hits are not in the featured seed. `router.push`
+    // remounts the finder onto Trafalgar Square; keep results via pushState.
+    pushExplorerHref(href)
   }
 
   return { selected, detailsPending, handleSelectPoint }

@@ -35,6 +35,13 @@ export const PICTURE_FRAME_2 = {
   width: 45.0292,
   height: 31.9087,
 } as const
+/** Inner glass of the L2 wall cutout — used to clip mirror photo overlays. */
+export const MIRROR_GLASS = {
+  x: 882.064,
+  y: 291.9985,
+  width: 207.9823,
+  height: 262.0714,
+} as const
 
 export const BOARD_IFRAME_WIDTH = 1280
 export const BOARD_IFRAME_HEIGHT =
@@ -51,6 +58,7 @@ type LandingArtworkProps = {
   svgRef: Ref<SVGSVGElement | null>
   l0Ref: Ref<SVGGElement | null>
   l1Ref: Ref<SVGGElement | null>
+  lampRef: Ref<SVGGElement | null>
   l2Ref: Ref<SVGGElement | null>
   l3Ref: Ref<SVGGElement | null>
   iPadRef: Ref<SVGGElement | null>
@@ -59,6 +67,7 @@ type LandingArtworkProps = {
   iPadScreenRef: Ref<SVGRectElement | null>
   pictureMat1Ref: Ref<SVGRectElement | null>
   pictureMat2Ref: Ref<SVGRectElement | null>
+  mirrorGlassRef?: Ref<SVGRectElement | null>
   onIpadClick?: () => void
   onIpadKeyDown?: (event: KeyboardEvent<SVGRectElement>) => void
   ipadAriaLabel?: string
@@ -70,6 +79,7 @@ export const LandingArtwork = ({
   svgRef,
   l0Ref,
   l1Ref,
+  lampRef,
   l2Ref,
   l3Ref,
   iPadRef,
@@ -78,6 +88,7 @@ export const LandingArtwork = ({
   iPadScreenRef,
   pictureMat1Ref,
   pictureMat2Ref,
+  mirrorGlassRef,
   onIpadClick,
   onIpadKeyDown,
   ipadAriaLabel,
@@ -250,7 +261,7 @@ export const LandingArtwork = ({
       <g
         ref={l2Ref}
         id="landing-l2"
-        data-name="L2 - floor, back wall, table, hanging light, plant, ipad, mirror frame"
+        data-name="L2 - floor, back wall, table, plant, ipad, mirror frame"
       >
         <g id="wall-and-carpet">
           <path
@@ -821,6 +832,22 @@ export const LandingArtwork = ({
             </g>
           </g>
         </g>
+        <rect
+          ref={mirrorGlassRef}
+          id="landing-mirror-glass"
+          x={MIRROR_GLASS.x}
+          y={MIRROR_GLASS.y}
+          width={MIRROR_GLASS.width}
+          height={MIRROR_GLASS.height}
+          fill="transparent"
+          pointerEvents="none"
+        />
+      </g>
+      <g
+        ref={lampRef}
+        id="landing-lamp"
+        data-name="Lamp - corridor centre, between the walls"
+      >
         <g id="hanging-light">
           <g>
             <path

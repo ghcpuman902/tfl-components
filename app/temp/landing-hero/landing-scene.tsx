@@ -24,10 +24,16 @@ import {
   IpadDeviceSvg,
   IPAD_ASPECT,
   ipadCaseRounding,
+  ipadHomeInset,
   ipadScreenInset,
   ipadScreenRounding,
 } from "@/components/board/board-device-frame"
-import type { LandingBoardIndexes } from "@/lib/tfl/landing-board"
+import {
+  LANDING_BOARD_PRESETS,
+  landingBoardPresetAt,
+  nextLandingBoardHint,
+  type LandingBoardIndexes,
+} from "@/lib/tfl/landing-board"
 import {
   BOARD_CASE_HEIGHT,
   BOARD_CASE_WIDTH,
@@ -55,7 +61,7 @@ import {
   PHOTO_OVERLAY_WIDTH,
   ROOM_VEIL_OPACITY,
 } from "./scene-constants"
-import { syncOverlayToSvg } from "./sync-overlay"
+import { syncBoxToSvg, syncOverlayToSvg } from "./sync-overlay"
 import { useIpadZoom } from "./use-ipad-zoom"
 import { useParallaxInput } from "./use-parallax-input"
 
@@ -70,6 +76,29 @@ const IpadBoardFrame = dynamic(
     ssr: true,
     loading: () => <div className="size-full bg-background" aria-hidden />,
   }
+)
+
+const LandingIpadHomeButton = ({
+  hint,
+  onClick,
+}: {
+  hint: string
+  onClick: () => void
+}) => (
+  <button
+    type="button"
+    data-landing-chrome
+    title={hint}
+    aria-label={hint}
+    onClick={onClick}
+    className="absolute z-10 rounded-full bg-transparent focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+    style={{
+      left: `${ipadHomeInset.left * 100}%`,
+      top: `${ipadHomeInset.top * 100}%`,
+      width: `${ipadHomeInset.width * 100}%`,
+      height: `${ipadHomeInset.height * 100}%`,
+    }}
+  />
 )
 
 const LAYER_SMOOTH = 0.16
@@ -89,6 +118,7 @@ const LandingStaticRoom = () => {
   const svgRef = useRef<SVGSVGElement>(null)
   const l0Ref = useRef<SVGGElement>(null)
   const l1Ref = useRef<SVGGElement>(null)
+  const lampRef = useRef<SVGGElement>(null)
   const l2Ref = useRef<SVGGElement>(null)
   const l3Ref = useRef<SVGGElement>(null)
   const iPadRef = useRef<SVGGElement>(null)
@@ -109,6 +139,7 @@ const LandingStaticRoom = () => {
           svgRef={svgRef}
           l0Ref={l0Ref}
           l1Ref={l1Ref}
+          lampRef={lampRef}
           l2Ref={l2Ref}
           l3Ref={l3Ref}
           iPadRef={iPadRef}
@@ -145,6 +176,7 @@ export const LandingScene = ({
   const svgRef = useRef<SVGSVGElement>(null)
   const l0Ref = useRef<SVGGElement>(null)
   const l1Ref = useRef<SVGGElement>(null)
+  const lampRef = useRef<SVGGElement>(null)
   const l2Ref = useRef<SVGGElement>(null)
   const l3Ref = useRef<SVGGElement>(null)
   const iPadRef = useRef<SVGGElement>(null)
@@ -153,7 +185,9 @@ export const LandingScene = ({
   const iPadScreenRef = useRef<SVGRectElement>(null)
   const pictureMat1Ref = useRef<SVGRectElement>(null)
   const pictureMat2Ref = useRef<SVGRectElement>(null)
+  const mirrorGlassRef = useRef<SVGRectElement>(null)
   const ipadOverlayRef = useRef<HTMLDivElement>(null)
+  const mirrorClipRef = useRef<HTMLDivElement>(null)
   const photo1OverlayRef = useRef<HTMLDivElement>(null)
   const photo2OverlayRef = useRef<HTMLDivElement>(null)
 
@@ -162,6 +196,7 @@ export const LandingScene = ({
   const [skipIntro, setSkipIntro] = useState(false)
   const [holdChat, setHoldChat] = useState(false)
   const [chatKey, setChatKey] = useState(0)
+  const [journeyIndex, setJourneyIndex] = useState(0)
 
   const scrollToRoom = useCallback((behavior: ScrollBehavior) => {
     const wrapper = wrapperRef.current
@@ -301,6 +336,17 @@ export const LandingScene = ({
         scale: 1,
       },
       {
+        el: lampRef.current,
+        xAmount: PARALLAX_X.lamp,
+        yAmount: PARALLAX_Y.lamp,
+        dollyX: DOLLY_PARALLAX.lamp,
+        dollyY: DOLLY_Y.lamp,
+        dollyScale: DOLLY_SCALE.lamp,
+        x: 0,
+        y: 0,
+        scale: 1,
+      },
+      {
         el: l2Ref.current,
         xAmount: PARALLAX_X.l2,
         yAmount: PARALLAX_Y.l2,
@@ -352,20 +398,24 @@ export const LandingScene = ({
 
       const host = compositionRef.current
       if (host && sceneReady) {
-        syncOverlayToSvg(
-          photo1OverlayRef.current,
-          pictureMat1Ref.current,
-          host,
-          PHOTO_OVERLAY_WIDTH,
-          PHOTO_1_HEIGHT
-        )
-        syncOverlayToSvg(
-          photo2OverlayRef.current,
-          pictureMat2Ref.current,
-          host,
-          PHOTO_OVERLAY_WIDTH,
-          PHOTO_2_HEIGHT
-        )
+        const clip = mirrorClipRef.current
+        syncBoxToSvg(clip, mirrorGlassRef.current, host)
+        if (clip) {
+          syncOverlayToSvg(
+            photo1OverlayRef.current,
+            pictureMat1Ref.current,
+            clip,
+            PHOTO_OVERLAY_WIDTH,
+            PHOTO_1_HEIGHT
+          )
+          syncOverlayToSvg(
+            photo2OverlayRef.current,
+            pictureMat2Ref.current,
+            clip,
+            PHOTO_OVERLAY_WIDTH,
+            PHOTO_2_HEIGHT
+          )
+        }
         syncOverlayToSvg(
           ipadOverlayRef.current,
           iPadCaseRef.current,
@@ -402,6 +452,11 @@ export const LandingScene = ({
   }, [sceneReady])
 
   const exampleInteracted = useRef(false)
+  const landingJourney = landingBoardPresetAt(journeyIndex)
+  const landingJourneyHint = nextLandingBoardHint(journeyIndex)
+  const handleNextLandingJourney = () => {
+    setJourneyIndex((index) => (index + 1) % LANDING_BOARD_PRESETS.length)
+  }
 
   const heroCopy = (
     <LandingFoldCopy copyRef={copyRef} onContinue={handleSeeSpace} />
@@ -432,8 +487,17 @@ export const LandingScene = ({
                 borderRadius: ipadScreenRounding,
               }}
             >
-              <IpadBoardFrame interactive={false} board={board} />
+              <IpadBoardFrame
+                key={landingJourney.id}
+                interactive={false}
+                board={board}
+                previewConfig={landingJourney.config}
+              />
             </div>
+            <LandingIpadHomeButton
+              hint={landingJourneyHint}
+              onClick={handleNextLandingJourney}
+            />
           </div>
           <div className="mt-5">{heroCopy}</div>
         </section>
@@ -495,6 +559,7 @@ export const LandingScene = ({
                     svgRef={svgRef}
                     l0Ref={l0Ref}
                     l1Ref={l1Ref}
+                    lampRef={lampRef}
                     l2Ref={l2Ref}
                     l3Ref={l3Ref}
                     iPadRef={iPadRef}
@@ -503,34 +568,40 @@ export const LandingScene = ({
                     iPadScreenRef={iPadScreenRef}
                     pictureMat1Ref={pictureMat1Ref}
                     pictureMat2Ref={pictureMat2Ref}
+                    mirrorGlassRef={mirrorGlassRef}
                     hideIpadSilhouette
                   />
                 </div>
               </div>
 
               <div
-                ref={photo1OverlayRef}
+                ref={mirrorClipRef}
                 aria-hidden
-                className="pointer-events-none absolute top-0 left-0 overflow-hidden"
+                className="pointer-events-none absolute overflow-hidden"
                 style={{ visibility: "hidden" }}
               >
-                <MirrorPhotoLoop
-                  slides={HOME_HERO_PORTRAIT_SLIDES}
-                  frozen={!pageVisible}
-                  intervalMs={4200}
-                />
-              </div>
-              <div
-                ref={photo2OverlayRef}
-                aria-hidden
-                className="pointer-events-none absolute top-0 left-0 overflow-hidden"
-                style={{ visibility: "hidden" }}
-              >
-                <MirrorPhotoLoop
-                  slides={HOME_HERO_LANDSCAPE_SLIDES}
-                  frozen={!pageVisible}
-                  intervalMs={5400}
-                />
+                <div
+                  ref={photo1OverlayRef}
+                  className="absolute top-0 left-0 overflow-hidden"
+                  style={{ visibility: "hidden" }}
+                >
+                  <MirrorPhotoLoop
+                    slides={HOME_HERO_PORTRAIT_SLIDES}
+                    frozen={!pageVisible}
+                    intervalMs={4200}
+                  />
+                </div>
+                <div
+                  ref={photo2OverlayRef}
+                  className="absolute top-0 left-0 overflow-hidden"
+                  style={{ visibility: "hidden" }}
+                >
+                  <MirrorPhotoLoop
+                    slides={HOME_HERO_LANDSCAPE_SLIDES}
+                    frozen={!pageVisible}
+                    intervalMs={5400}
+                  />
+                </div>
               </div>
               <div
                 ref={veilRef}
@@ -577,8 +648,17 @@ export const LandingScene = ({
                     borderRadius: ipadScreenRounding,
                   }}
                 >
-                  <IpadBoardFrame interactive={roomComplete} board={board} />
+                  <IpadBoardFrame
+                    key={landingJourney.id}
+                    interactive={roomComplete}
+                    board={board}
+                    previewConfig={landingJourney.config}
+                  />
                 </div>
+                <LandingIpadHomeButton
+                  hint={landingJourneyHint}
+                  onClick={handleNextLandingJourney}
+                />
               </div>
               {production && roomComplete ? (
                 <LandingExampleObserver

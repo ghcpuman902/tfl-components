@@ -5,10 +5,7 @@ import { ExternalLink, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text"
 import { LineColorBar } from "@/components/tfl/brand/line-badge"
-import {
-  DISRUPTION_LEADING_CLASS,
-  StatusDisruptionBlock,
-} from "@/components/tfl/status/status-disruption-copy"
+import { StatusDisruptionBlock } from "@/components/tfl/status/status-disruption-copy"
 import { LineName } from "@/components/tfl/brand/line-name"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
 import { StationNameTitle } from "@/components/tfl/station-name"
@@ -382,7 +379,6 @@ export const TubeStatusBoard = ({
     now,
   })
   const disruptionSplit = splitByPriority(disruptions, priorityLineIds)
-  const goodSplit = splitByPriority(goodService, priorityLineIds)
 
   return (
     <div className={BOARD_ROOT_CLASS} style={BOARD_RHYTHM_VARS}>
@@ -456,7 +452,7 @@ export const TubeStatusBoard = ({
             }
           />
           <div className={goodServiceGridClass(compact)}>
-            {goodSplit.priority.map(({ line, announcements }) => {
+            {goodService.map(({ line, announcements }) => {
               const infoLabel =
                 announcements[0]?.statusSeverityDescription?.trim()
               return (
@@ -476,16 +472,6 @@ export const TubeStatusBoard = ({
               )
             })}
           </div>
-          {goodSplit.other.length > 0 ? (
-            <p
-              className={cn(
-                "m-0 text-sm text-muted-foreground",
-                DISRUPTION_LEADING_CLASS
-              )}
-            >
-              Good service on all other lines
-            </p>
-          ) : null}
         </div>
       )}
 
