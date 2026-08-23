@@ -11,6 +11,30 @@ Tags `v0.1.0`–`v0.4.0` predate the split and mixed both tracks. From `web-v0.5
 
 ## Web app
 
+### [web-v0.8.0] - 2026-08-23
+
+The docs homepage is titled **Get started** everywhere a visitor lands, and the room landing no longer waits on a second Board document. Installable registry work from this range ships as **[0.7.0](#070---2026-08-23)** on the components track.
+
+#### Added
+
+- Board view can open as a fullscreen home-screen app
+- Public GEO / agent surfaces (structured errors, OpenAPI, llms.txt)
+
+#### Changed
+
+- `/docs` title, header tooltip, Troubleshoot links, and metadata all say Get started (the header label stays Docs)
+- Get started install copy covers Vite (React tab) and Next.js (server tabs)
+- Landing iPad board renders in-page instead of an iframe
+- Empty `/board/view` recovers in place instead of mounting a broken default board
+- Site default typeface is P22 Underground when the Adobe kit is configured, with Hammersmith One as the fallback
+
+#### Fixed
+
+- Arrivals leftovers only paint status that affects this stop
+- Long board titles abbreviate and wrap inside the tile
+
+---
+
 ### [web-v0.7.0] - 2026-08-21
 
 Room landing, staged Board onboarding, and a performance pass that keeps first paint stable without changing the loaded UI. Installable registry work from this range ships as **[0.6.0](#060---2026-08-21)** on the components track.
@@ -88,6 +112,29 @@ These registry items already exist on `main` but are **not** part of `web-v0.5.0
 ---
 
 ## Components
+
+### [0.7.0] - 2026-08-23
+
+A fresh shadcn install of the Get started board now typechecks in both Next.js and Vite. Registry installs pin `tfl-ts@^2.11.0`.
+
+#### Added
+
+- Rail leftover tiles and empty-row chips for stop-relevant status
+- Successful empty arrivals resolve to ended / no service instead of “no information”
+
+#### Changed
+
+- Registry payloads include the helpers boards actually import (`find-coverage`, `london-dates`, idle-return, river-bus, map hop files, …)
+- `tfl-ts` dependency is `tfl-ts@^2.11.0`
+- Roundel env reads work without `@types/node`, so Vite typecheck does not require Node types
+- Tube status header links are plain `<a>` tags — the board no longer imports `next/link`
+
+#### Fixed
+
+- `rail-arrivals-board` install no longer missed `river-route-chip` and idle-return files
+- `pnpm test` now fails if a registry item imports a local file it does not ship
+
+---
 
 ### [0.6.0] - 2026-08-21
 

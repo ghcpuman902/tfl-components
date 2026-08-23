@@ -32,7 +32,7 @@ This folder is MIT. Keep [LICENSE](./LICENSE) with copied source. TfL marks and 
 
 ## Releases
 
-Component / registry changes ship on GitHub tags named `vX.Y.Z` (for example `v0.4.0`).
+Component / registry changes ship on GitHub tags named `vX.Y.Z` (for example `v0.7.0`). Registry installs pin `tfl-ts@^2.11.0`.
 
 The docs and demo **web app** uses a different track: `web-vX.Y.Z`. Ignore those tags if you only care about installable source.
 

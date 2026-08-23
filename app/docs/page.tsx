@@ -220,7 +220,7 @@ const IntroArrivalsPreview = async () => {
   )
 }
 
-export default function DocsIntroductionPage() {
+export default function DocsGetStartedPage() {
   const entry = getDocsEntry("introduction")!
   const arrivalsEntry = getDocsEntry("tube-rail-arrivals")!
 
@@ -230,11 +230,7 @@ export default function DocsIntroductionPage() {
         <DocsVisitFromLanding />
       </Suspense>
       <article className="space-y-12">
-        <DocsPageHeader
-          entry={entry}
-          title="React component documentation"
-          description="Build TfL interfaces using installable React components and normalised tfl-ts data."
-        />
+        <DocsPageHeader entry={entry} />
 
         <p className="max-w-prose">
           <StartAction href="/docs/components">View all components</StartAction>
@@ -313,15 +309,16 @@ export default function DocsIntroductionPage() {
             3. Install and render
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Start from a Next.js app with{" "}
-            <ExternalTextLink href="https://ui.shadcn.com/docs/installation/next">
+            Start from a React app with{" "}
+            <ExternalTextLink href="https://ui.shadcn.com/docs">
               shadcn already initialised
             </ExternalTextLink>
             . The command copies the board source into your repo and installs{" "}
             <ExternalTextLink href="https://www.npmjs.com/package/tfl-ts">
               tfl-ts
             </ExternalTextLink>
-            .
+            . Use the React tab in Vite. Use a Next.js tab if you want the key
+            to stay on the server.
           </p>
           <InstallCommand registryUrl={arrivalsEntry.registryUrl!} />
           <Tabs defaultValue="react" className="gap-2">

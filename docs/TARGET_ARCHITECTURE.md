@@ -49,7 +49,7 @@ Orient before picking a surface:
 - Typography
 - Colours
 - Roundel
-- Troubleshoot (`/docs/troubleshoot`) — below the Components list; setup, common problems, and FAQ. Install lives on Introduction. Old `/docs/installation` redirects here.
+- Troubleshoot (`/docs/troubleshoot`) — below the Components list; setup, common problems, and FAQ. Install lives on Get started. Old `/docs/installation` redirects here.
 - Data model (`/docs/data-model`) — below Troubleshoot; network records the four maps actually draw, with provenance (J18, J20).
 - Line topology (`/docs/line-topology`) — below Data model; inspect how TfL station order and OSM track assemble a passenger line (J19, J20). Junction windows are a child route, not a sidebar entry.
 - TfL brand licensing (and Skills for AI when present)

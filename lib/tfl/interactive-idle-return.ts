@@ -24,12 +24,12 @@ export const registerIdleActivity = (nowMs: number): IdleReturnState => ({
 })
 
 export const suspendIdleReturn = (state: IdleReturnState): IdleReturnState => ({
-  ...state,
+  lastActivityMs: state.lastActivityMs,
   suspended: true,
 })
 
 export const resumeIdleReturn = (
-  state: IdleReturnState,
+  _state: IdleReturnState,
   nowMs: number
 ): IdleReturnState => ({
   lastActivityMs: nowMs,

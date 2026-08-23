@@ -1,5 +1,4 @@
 import { type CSSProperties, type ReactNode } from "react"
-import Link from "next/link"
 import { LINE_ORDER } from "tfl-ts"
 import { ExternalLink, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -276,7 +275,7 @@ export const TubeStatusBoardHeader = () => (
       </div>
     </div>
     <div className="flex flex-wrap items-center gap-2">
-      <Link
+      <a
         href="https://www.npmjs.com/package/tfl-ts"
         className="flex items-center gap-1 text-blue-500 hover:underline"
         target="_blank"
@@ -285,8 +284,8 @@ export const TubeStatusBoardHeader = () => (
         <Package className="size-4" aria-hidden />
         npm package
         <ExternalLink className="size-4" aria-hidden />
-      </Link>
-      <Link
+      </a>
+      <a
         href="https://github.com/ghcpuman902/tfl-ts"
         className="flex items-center gap-1 text-blue-500 hover:underline"
         target="_blank"
@@ -294,7 +293,7 @@ export const TubeStatusBoardHeader = () => (
       >
         GitHub
         <ExternalLink className="size-4" aria-hidden />
-      </Link>
+      </a>
     </div>
   </div>
 )

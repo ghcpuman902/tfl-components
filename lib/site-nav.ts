@@ -27,9 +27,9 @@ export type SiteMoreItem = {
   mobileOnly?: boolean
 }
 
-export const DOCS_NAV_TOOLTIP = "React component documentation"
-export const DOCS_NAV_ARIA_LABEL = "Docs: React component library"
-export const DOCS_NAV_MOBILE_SUBTEXT = "Documentation for the component library"
+export const DOCS_NAV_TOOLTIP = "Get started"
+export const DOCS_NAV_ARIA_LABEL = "Docs: Get started"
+export const DOCS_NAV_MOBILE_SUBTEXT = "Get started with the component library"
 export const DOCS_SIDEBAR_TRIGGER_LABEL = "Open documentation navigation"
 
 /**

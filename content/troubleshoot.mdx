@@ -2,21 +2,21 @@ import { FeedbackTextLink } from "@/components/docs/feedback-text-link"
 
 ## Set up a project
 
-You need a React app with [shadcn](https://ui.shadcn.com/docs) already initialised. Then go back to [Introduction](/docs) for the TfL key and the board install.
+You need a React app with [shadcn](https://ui.shadcn.com/docs) already initialised. Then go back to [Get started](/docs) for the TfL key and the board install.
 
 ### Next.js
 
 1. [Create a Next.js app](https://nextjs.org/docs/app/getting-started/installation).
 2. [Add shadcn](https://ui.shadcn.com/docs/installation/next).
 3. Put `TFL_APP_KEY` in `.env.local` and restart the dev server.
-4. Follow [Introduction](/docs). Use the Server Action tab if you want the key to stay on the server.
+4. Follow [Get started](/docs). Use the Server Action tab if you want the key to stay on the server.
 
 ### Vite and React
 
 1. [Scaffold Vite](https://vite.dev/guide/#scaffolding-your-first-vite-project) (`pnpm create vite`).
 2. [Add shadcn](https://ui.shadcn.com/docs/installation/vite).
 3. Put the key in `.env` as `VITE_TFL_APP_KEY`. Vite only exposes names that start with `VITE_`.
-4. Follow the React tab on [Introduction](/docs). That calls TfL from the browser. Do not publish the site with the key in the client.
+4. Follow the React tab on [Get started](/docs). That calls TfL from the browser. Do not publish the site with the key in the client.
 
 ## Hosted Board by URL
 
@@ -67,7 +67,7 @@ Register the URL once in `components.json`:
 }
 ```
 
-Then `pnpm dlx shadcn@latest add @tfl/rail-arrivals-board`. The full URL on Introduction still works.
+Then `pnpm dlx shadcn@latest add @tfl/rail-arrivals-board`. The full URL on Get started still works.
 
 ## FAQ
 

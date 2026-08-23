@@ -83,7 +83,7 @@ export const HOME_PAGE_META = {
 export const ROUTE_PAGE_META = {
   home: HOME_PAGE_META,
   docs: {
-    title: "React component documentation",
+    title: "Get started",
     description:
       "Build TfL interfaces using installable React components and normalised tfl-ts data.",
     path: "/docs",

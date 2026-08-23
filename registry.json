@@ -378,6 +378,11 @@
           "path": "lib/tfl/bw-line-styles.ts",
           "type": "registry:lib",
           "target": "lib/tfl/bw-line-styles.ts"
+        },
+        {
+          "path": "lib/tfl/river-bus.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/river-bus.ts"
         }
       ]
     },
@@ -428,6 +433,21 @@
           "path": "components/tfl/findable-text.tsx",
           "type": "registry:component",
           "target": "components/tfl/findable-text.tsx"
+        },
+        {
+          "path": "registry/tfl/arrivals/chip-text.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/arrivals/chip-text.ts"
+        },
+        {
+          "path": "hooks/use-find-query.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-find-query.ts"
+        },
+        {
+          "path": "lib/tfl/find-coverage.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/find-coverage.ts"
         }
       ]
     },
@@ -480,6 +500,46 @@
           "path": "registry/tfl/arrivals/quiet-chip.tsx",
           "type": "registry:component",
           "target": "components/tfl/arrivals/quiet-chip.tsx"
+        },
+        {
+          "path": "components/tfl/station-name.tsx",
+          "type": "registry:component",
+          "target": "components/tfl/station-name.tsx"
+        },
+        {
+          "path": "lib/tfl/station-typography.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-typography.ts"
+        },
+        {
+          "path": "lib/tfl/diagram-station.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/diagram-station.ts"
+        },
+        {
+          "path": "lib/tfl/station-label-find.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-label-find.ts"
+        },
+        {
+          "path": "hooks/use-find-query.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-find-query.ts"
+        },
+        {
+          "path": "lib/tfl/find-coverage.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/find-coverage.ts"
+        },
+        {
+          "path": "lib/tfl/station-name-match.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-name-match.ts"
+        },
+        {
+          "path": "lib/tfl/station-abbreviations.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-abbreviations.ts"
         }
       ]
     },
@@ -737,6 +797,21 @@
           "path": "lib/tfl/station-abbreviations.ts",
           "type": "registry:lib",
           "target": "lib/tfl/station-abbreviations.ts"
+        },
+        {
+          "path": "hooks/use-find-query.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-find-query.ts"
+        },
+        {
+          "path": "lib/tfl/find-coverage.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/find-coverage.ts"
+        },
+        {
+          "path": "lib/tfl/station-name-match.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-name-match.ts"
         }
       ]
     },
@@ -824,7 +899,8 @@
         "https://tfl.manglekuo.com/r/platform-chip.json",
         "https://tfl.manglekuo.com/r/bus-number-chip.json",
         "https://tfl.manglekuo.com/r/tfl-roundel.json",
-        "skeleton"
+        "skeleton",
+        "https://tfl.manglekuo.com/r/river-route-chip.json"
       ],
       "files": [
         {
@@ -951,6 +1027,51 @@
           "path": "hooks/use-unattended-sequence.ts",
           "type": "registry:hook",
           "target": "hooks/use-unattended-sequence.ts"
+        },
+        {
+          "path": "hooks/use-interactive-idle-return.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-interactive-idle-return.ts"
+        },
+        {
+          "path": "lib/tfl/interactive-idle-return.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/interactive-idle-return.ts"
+        },
+        {
+          "path": "lib/tfl/london-dates.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/london-dates.ts"
+        },
+        {
+          "path": "lib/tfl/status-reason.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-reason.ts"
+        },
+        {
+          "path": "lib/tfl/status-types.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-types.ts"
+        },
+        {
+          "path": "hooks/use-find-query.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-find-query.ts"
+        },
+        {
+          "path": "lib/tfl/find-coverage.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/find-coverage.ts"
+        },
+        {
+          "path": "lib/tfl/station-name-match.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-name-match.ts"
+        },
+        {
+          "path": "lib/tfl/river-bus.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/river-bus.ts"
         }
       ]
     },
@@ -1097,6 +1218,46 @@
           "path": "hooks/use-unattended-sequence.ts",
           "type": "registry:hook",
           "target": "hooks/use-unattended-sequence.ts"
+        },
+        {
+          "path": "hooks/use-interactive-idle-return.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-interactive-idle-return.ts"
+        },
+        {
+          "path": "lib/tfl/interactive-idle-return.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/interactive-idle-return.ts"
+        },
+        {
+          "path": "lib/tfl/london-dates.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/london-dates.ts"
+        },
+        {
+          "path": "lib/tfl/status-reason.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-reason.ts"
+        },
+        {
+          "path": "lib/tfl/status-types.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-types.ts"
+        },
+        {
+          "path": "hooks/use-find-query.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-find-query.ts"
+        },
+        {
+          "path": "lib/tfl/find-coverage.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/find-coverage.ts"
+        },
+        {
+          "path": "lib/tfl/station-name-match.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-name-match.ts"
         }
       ]
     },
@@ -1253,6 +1414,46 @@
           "path": "hooks/use-unattended-sequence.ts",
           "type": "registry:hook",
           "target": "hooks/use-unattended-sequence.ts"
+        },
+        {
+          "path": "hooks/use-interactive-idle-return.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-interactive-idle-return.ts"
+        },
+        {
+          "path": "lib/tfl/interactive-idle-return.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/interactive-idle-return.ts"
+        },
+        {
+          "path": "lib/tfl/london-dates.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/london-dates.ts"
+        },
+        {
+          "path": "lib/tfl/status-reason.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-reason.ts"
+        },
+        {
+          "path": "lib/tfl/status-types.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-types.ts"
+        },
+        {
+          "path": "hooks/use-find-query.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-find-query.ts"
+        },
+        {
+          "path": "lib/tfl/find-coverage.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/find-coverage.ts"
+        },
+        {
+          "path": "lib/tfl/station-name-match.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-name-match.ts"
         }
       ]
     },
@@ -1332,6 +1533,21 @@
           "path": "lib/tfl/client.ts",
           "type": "registry:lib",
           "target": "lib/tfl/client.ts"
+        },
+        {
+          "path": "lib/tfl/london-dates.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/london-dates.ts"
+        },
+        {
+          "path": "lib/tfl/status-reason.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-reason.ts"
+        },
+        {
+          "path": "lib/tfl/status-types.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-types.ts"
         }
       ]
     },
@@ -1372,6 +1588,66 @@
           "path": "lib/tfl/map-vehicles.ts",
           "type": "registry:lib",
           "target": "lib/tfl/map-vehicles.ts"
+        },
+        {
+          "path": "lib/tfl/dark-line-colours.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/dark-line-colours.ts"
+        },
+        {
+          "path": "components/tfl/geography/sync-vehicle-source.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/geography/sync-vehicle-source.ts"
+        },
+        {
+          "path": "lib/tfl/vehicle-progress.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/vehicle-progress.ts"
+        },
+        {
+          "path": "lib/tfl/vehicle-hop-graph.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/vehicle-hop-graph.ts"
+        },
+        {
+          "path": "lib/tfl/colour-formats.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/colour-formats.ts"
+        },
+        {
+          "path": "lib/tfl/vehicle-hop-engine.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/vehicle-hop-engine.ts"
+        },
+        {
+          "path": "lib/tfl/vehicle-viscosity.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/vehicle-viscosity.ts"
+        },
+        {
+          "path": "lib/tfl/geometry/line-hop-times.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/geometry/line-hop-times.ts"
+        },
+        {
+          "path": "lib/tfl/line-topology.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/line-topology.ts"
+        },
+        {
+          "path": "lib/tfl/diagram-station.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/diagram-station.ts"
+        },
+        {
+          "path": "lib/tfl/week-ahead-status.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/week-ahead-status.ts"
+        },
+        {
+          "path": "lib/tfl/london-dates.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/london-dates.ts"
         }
       ]
     },
@@ -1412,6 +1688,71 @@
           "path": "lib/tfl/map-vehicles.ts",
           "type": "registry:lib",
           "target": "lib/tfl/map-vehicles.ts"
+        },
+        {
+          "path": "lib/tfl/dark-line-colours.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/dark-line-colours.ts"
+        },
+        {
+          "path": "components/tfl/geography/sync-vehicle-source.ts",
+          "type": "registry:lib",
+          "target": "components/tfl/geography/sync-vehicle-source.ts"
+        },
+        {
+          "path": "lib/tfl/vehicle-progress.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/vehicle-progress.ts"
+        },
+        {
+          "path": "lib/tfl/vehicle-hop-graph.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/vehicle-hop-graph.ts"
+        },
+        {
+          "path": "lib/tfl/geography-types.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/geography-types.ts"
+        },
+        {
+          "path": "lib/tfl/colour-formats.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/colour-formats.ts"
+        },
+        {
+          "path": "lib/tfl/vehicle-hop-engine.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/vehicle-hop-engine.ts"
+        },
+        {
+          "path": "lib/tfl/vehicle-viscosity.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/vehicle-viscosity.ts"
+        },
+        {
+          "path": "lib/tfl/geometry/line-hop-times.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/geometry/line-hop-times.ts"
+        },
+        {
+          "path": "lib/tfl/line-topology.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/line-topology.ts"
+        },
+        {
+          "path": "lib/tfl/diagram-station.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/diagram-station.ts"
+        },
+        {
+          "path": "lib/tfl/week-ahead-status.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/week-ahead-status.ts"
+        },
+        {
+          "path": "lib/tfl/london-dates.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/london-dates.ts"
         }
       ]
     },
@@ -1587,6 +1928,21 @@
           "path": "lib/tfl/station-abbreviations.ts",
           "type": "registry:lib",
           "target": "lib/tfl/station-abbreviations.ts"
+        },
+        {
+          "path": "hooks/use-find-query.ts",
+          "type": "registry:hook",
+          "target": "hooks/use-find-query.ts"
+        },
+        {
+          "path": "lib/tfl/find-coverage.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/find-coverage.ts"
+        },
+        {
+          "path": "lib/tfl/station-name-match.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/station-name-match.ts"
         }
       ]
     }

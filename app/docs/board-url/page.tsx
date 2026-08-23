@@ -219,7 +219,7 @@ export default function BoardUrlSpecPage() {
             href="/docs"
             className="text-foreground underline underline-offset-4"
           >
-            React component documentation
+            Get started
           </Link>
           .
         </p>

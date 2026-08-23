@@ -36,7 +36,7 @@ The tfl-ts npm package installs the \`tfl\` CLI. After \`pnpm add tfl-ts\`, run 
 ## Best starting points
 
 - [Hosted Board](${SITE_URL}/board): Configure a full-screen arrivals and status display for an iPad or another browser.
-- [React component documentation](${SITE_URL}/docs): Installation and data-to-UI examples.
+- [Get started](${SITE_URL}/docs): Installation and data-to-UI examples.
 - [Component catalogue](${SITE_URL}/docs/components): Boards, maps, line strips, labels, chips, and foundations.
 - [tfl-ts npm package](https://www.npmjs.com/package/tfl-ts): Typed SDK plus the published CLI and MCP server.
 - [tfl-ts agent reference](https://github.com/ghcpuman902/tfl-ts/blob/main/docs/agent.md): Detailed integration guidance and TfL API gotchas.

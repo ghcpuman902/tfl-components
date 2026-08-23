@@ -119,17 +119,25 @@ export type TfLRoundelProps = Omit<
   className?: string
 }
 
+const readProcessEnv = (name: string): string | undefined => {
+  const proc = (
+    globalThis as {
+      process?: { env?: Record<string, string | undefined> }
+    }
+  ).process
+  return proc?.env?.[name]
+}
+
 const isRoundelAllowed = (): boolean => {
-  if (typeof process === "undefined") return false
   // Only public/prefixed vars — plain ALLOW_TFL_ROUNDEL is server-only in
   // Next.js and causes a span (SSR) vs button (client) hydration mismatch.
   return (
-    process.env.NEXT_PUBLIC_ALLOW_TFL_ROUNDEL === "true" ||
-    process.env.VITE_ALLOW_TFL_ROUNDEL === "true"
+    readProcessEnv("NEXT_PUBLIC_ALLOW_TFL_ROUNDEL") === "true" ||
+    readProcessEnv("VITE_ALLOW_TFL_ROUNDEL") === "true"
   )
 }
 
-const isDevelopment = (): boolean => process.env.NODE_ENV === "development"
+const isDevelopment = (): boolean => readProcessEnv("NODE_ENV") === "development"
 
 /**
  * Target visual capital height as a fraction of bar height.

@@ -165,7 +165,7 @@ describe("site navigation", () => {
     assert.doesNotMatch(header, /asChild>\{linkEl\}/)
   })
 
-  it("keeps the Docs label and describes the component-library path", () => {
+  it("keeps the Docs label and points it at Get started", () => {
     const docs = DESKTOP_PRIMARY_LINKS.find((link) => link.match === "docs")
     assert.equal(docs?.label, "Docs")
     assert.equal(docs?.tooltip, DOCS_NAV_TOOLTIP)

@@ -485,6 +485,11 @@ const upsertRegistryItem = (artefacts: ColourTokensArtefacts): void => {
         type: "registry:lib",
         target: "lib/tfl/bw-line-styles.ts",
       },
+      {
+        path: "lib/tfl/river-bus.ts",
+        type: "registry:lib",
+        target: "lib/tfl/river-bus.ts",
+      },
     ],
   }
 
