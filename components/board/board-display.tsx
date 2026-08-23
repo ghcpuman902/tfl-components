@@ -157,7 +157,8 @@ const getEmbedded = () =>
 const getServerEmbedded = () => false
 
 const useBoardConfigFromHash = (
-  stationNames: BoardStationNamesIndex
+  stationNames: BoardStationNamesIndex,
+  enabled: boolean
 ): { config: BoardConfig; ready: boolean } => {
   const hash = useSyncExternalStore(
     subscribeToBoardHash,
@@ -178,6 +179,7 @@ const useBoardConfigFromHash = (
   }, [hash, stationNames])
 
   useEffect(() => {
+    if (!enabled) return
     // Hydration uses getServerBoardHash (""). Always rewrite from the live
     // fragment — using the render snapshot would strip #stop=…&key=….
     const liveHash = window.location.hash
@@ -185,7 +187,7 @@ const useBoardConfigFromHash = (
     const autoName = lookupBoardStationName(stationNames, parsed.stop)
     const stopName = resolveBoardStopNameOverride(parsed.stopName, autoName)
     replaceHashIfNeeded(normalizeBoardHash(liveHash, { stopName }))
-  }, [hash, stationNames])
+  }, [enabled, hash, stationNames])
 
   return { config, ready }
 }
@@ -209,6 +211,11 @@ type BoardDisplayProps = {
   stationNames: BoardStationNamesIndex
   /** Server-built stop → hub sibling ids to poll for arrivals. */
   arrivalsStopIds: BoardArrivalsStopIdsIndex
+  /**
+   * Inline preview (landing iPad). Ignores the page hash, fills the parent
+   * box, and uses site demo data. Must not lock `document` scroll.
+   */
+  previewConfig?: BoardConfig
 }
 
 const applyStopName = (
@@ -224,15 +231,21 @@ export const BoardDisplay = ({
   stationLines,
   stationNames,
   arrivalsStopIds,
+  previewConfig,
 }: BoardDisplayProps) => {
-  const { config: hashConfig, ready } = useBoardConfigFromHash(stationNames)
+  const isPreview = previewConfig !== undefined
+  const { config: hashConfig, ready } = useBoardConfigFromHash(
+    stationNames,
+    !isPreview
+  )
   const { hydrated, getAppKey, save } = useUserTflCredentials()
   const storedKey = hydrated ? getAppKey() : null
-  const embedded = useSyncExternalStore(
+  const frameEmbedded = useSyncExternalStore(
     subscribeNoop,
     getEmbedded,
     getServerEmbedded
   )
+  const embedded = isPreview || frameEmbedded
   const {
     displayMode,
     fromHomeScreen,
@@ -258,6 +271,7 @@ export const BoardDisplay = ({
   }, [fromHomeScreen, hashConfig, stationNames])
 
   const config = useMemo(() => {
+    if (previewConfig) return applyStopName(previewConfig, stationNames)
     if (isUsableBoardConfig(hashConfig)) return hashConfig
     if (
       fromHomeScreen &&
@@ -271,7 +285,14 @@ export const BoardDisplay = ({
     }
     if (embedded) return withDemoBoardFallback(hashConfig)
     return hashConfig
-  }, [embedded, fromHomeScreen, hashConfig, installedConfig])
+  }, [
+    embedded,
+    fromHomeScreen,
+    hashConfig,
+    installedConfig,
+    previewConfig,
+    stationNames,
+  ])
 
   const appKey = config.key ?? storedKey
   const surfaceReady = ready && hydrated
@@ -281,7 +302,8 @@ export const BoardDisplay = ({
   const fullscreen = useBoardFullscreen(boardRootRef, {
     enabled: boardReady && !fromHomeScreen && !embedded,
   })
-  const fillScreen = embedded || fromHomeScreen || fullscreen.active
+  const fillScreen =
+    !isPreview && (frameEmbedded || fromHomeScreen || fullscreen.active)
 
   useEffect(() => {
     if (!fromHomeScreen || !ready || !hydrated) return
@@ -533,16 +555,18 @@ export const BoardDisplay = ({
       ? NO_CYCLE_HINT
       : cyclePoints.fetchError
 
-  const offerInstall = shouldOfferBoardHomeScreenInstall({
-    path: BOARD_VIEW_PATH,
-    behaviour: config.behaviour,
-    embedded,
-    displayMode,
-    platform,
-    nativePromptAvailable,
-    fullscreenApiAvailable: fullscreen.available,
-    jsFullscreenActive,
-  })
+  const offerInstall =
+    !isPreview &&
+    shouldOfferBoardHomeScreenInstall({
+      path: BOARD_VIEW_PATH,
+      behaviour: config.behaviour,
+      embedded,
+      displayMode,
+      platform,
+      nativePromptAvailable,
+      fullscreenApiAvailable: fullscreen.available,
+      jsFullscreenActive,
+    })
 
   useEffect(() => {
     if (!boardReady || !offerInstall || platform !== "ios") return
@@ -811,14 +835,18 @@ export const BoardDisplay = ({
     )
   }
 
-  const shellClass = fillScreen
-    ? "board-embed box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain p-4 md:p-6 [&::-webkit-scrollbar]:hidden"
-    : "box-border min-h-dvh w-full p-4 md:p-6"
+  const shellClass = isPreview
+    ? "board-embed box-border h-full w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain p-4 md:p-6 [&::-webkit-scrollbar]:hidden"
+    : fillScreen
+      ? "board-embed box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain p-4 md:p-6 [&::-webkit-scrollbar]:hidden"
+      : "box-border min-h-dvh w-full p-4 md:p-6"
 
   if (!surfaceReady) {
     return (
       <div className={shellClass} style={ARRIVALS_RHYTHM_VARS}>
-        <h1 className="sr-only">Live board</h1>
+        {isPreview ? null : (
+          <h1 className="sr-only">Live board</h1>
+        )}
       </div>
     )
   }
@@ -828,7 +856,7 @@ export const BoardDisplay = ({
       <div className={shellClass} style={ARRIVALS_RHYTHM_VARS}>
         {fromHomeScreen ? (
           <>
-            <h1 className="sr-only">Live board</h1>
+            {isPreview ? null : <h1 className="sr-only">Live board</h1>}
             <BoardViewRecovery onLoad={handleRecoveredBoard} />
           </>
         ) : (
@@ -844,7 +872,7 @@ export const BoardDisplay = ({
       className={shellClass}
       style={{ ...ARRIVALS_RHYTHM_VARS, ...homeScreenPadding }}
     >
-      <h1 className="sr-only">Live board</h1>
+      {isPreview ? null : <h1 className="sr-only">Live board</h1>}
       <div
         className={
           twoColumns
@@ -861,35 +889,37 @@ export const BoardDisplay = ({
       {statusHint ? (
         <p className="mt-3 text-sm text-muted-foreground">{statusHint}</p>
       ) : null}
-      <BoardViewFooter
-        sources={pollSources}
-        onRefresh={handleRefresh}
-        refreshing={refreshing}
-        editHref={editHref}
-        fullscreenLabel={
-          fullscreen.available && !fromHomeScreen && !embedded
-            ? fullscreen.active
-              ? "Exit full screen"
-              : "Full screen"
-            : undefined
-        }
-        onFullscreen={
-          fullscreen.available && !fromHomeScreen && !embedded
-            ? fullscreen.toggle
-            : undefined
-        }
-        fullscreenError={fullscreen.error}
-        onAddToHomeScreen={
-          offerInstall && platform === "ios"
-            ? () => setHomeScreenOfferOpen(true)
-            : undefined
-        }
-        onChromiumInstall={
-          offerInstall && platform === "chromium"
-            ? promptNativeInstall
-            : undefined
-        }
-      />
+      {isPreview ? null : (
+        <BoardViewFooter
+          sources={pollSources}
+          onRefresh={handleRefresh}
+          refreshing={refreshing}
+          editHref={editHref}
+          fullscreenLabel={
+            fullscreen.available && !fromHomeScreen && !embedded
+              ? fullscreen.active
+                ? "Exit full screen"
+                : "Full screen"
+              : undefined
+          }
+          onFullscreen={
+            fullscreen.available && !fromHomeScreen && !embedded
+              ? fullscreen.toggle
+              : undefined
+          }
+          fullscreenError={fullscreen.error}
+          onAddToHomeScreen={
+            offerInstall && platform === "ios"
+              ? () => setHomeScreenOfferOpen(true)
+              : undefined
+          }
+          onChromiumInstall={
+            offerInstall && platform === "chromium"
+              ? promptNativeInstall
+              : undefined
+          }
+        />
+      )}
       {offerInstall && platform === "ios" ? (
         <BoardViewHomeScreenOffer
           open={homeScreenOfferOpen}

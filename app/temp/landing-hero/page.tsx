@@ -3,6 +3,7 @@ import { Suspense } from "react"
 import { heroArtworkThemeStyleSheet } from "@/app/temp/landing-palette/palette"
 import { LandingScene } from "./landing-scene"
 import { PostHeroPlaceholder } from "./post-hero-placeholder"
+import { getLandingBoardIndexes } from "@/lib/tfl/landing-board"
 
 export const metadata: Metadata = {
   title: "Landing hero (temp)",
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 }
 
 export default function LandingHeroTempPage() {
+  const board = getLandingBoardIndexes()
   return (
     <div className="w-full min-w-0">
       <style>{heroArtworkThemeStyleSheet()}</style>
@@ -19,7 +21,7 @@ export default function LandingHeroTempPage() {
       <Suspense
         fallback={<div className="landing-hero-paper h-svh" aria-hidden />}
       >
-        <LandingScene />
+        <LandingScene board={board} />
       </Suspense>
       <PostHeroPlaceholder />
     </div>

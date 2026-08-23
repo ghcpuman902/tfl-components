@@ -1,7 +1,9 @@
 "use client"
 
-import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
-import { BOARD_VIEW_PATH, buildBoardHref } from "@/lib/tfl/board-url-state"
+import { useEffect, useRef, useState } from "react"
+import { BoardDisplay } from "@/components/board/board-display"
+import { DEMO_BOARD_CONFIG } from "@/lib/tfl/board-view-resolve"
+import type { LandingBoardIndexes } from "@/lib/tfl/landing-board"
 import {
   BOARD_IFRAME_HEIGHT,
   BOARD_IFRAME_WIDTH,
@@ -9,27 +11,55 @@ import {
 
 type IpadBoardFrameProps = {
   interactive: boolean
+  board: LandingBoardIndexes
 }
 
-/** Default hosted Board — interactive Oxford Circus, rail + status. */
-const BOARD_IFRAME_SRC = buildBoardHref({
-  stop: HOME_RAIL_STOP.id,
-  stopName: HOME_RAIL_STOP.name,
-}).replace(BOARD_VIEW_PATH, `${BOARD_VIEW_PATH}?embed=1`)
+export const IpadBoardFrame = ({
+  interactive,
+  board,
+}: IpadBoardFrameProps) => {
+  const screenRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
 
-export const IpadBoardFrame = ({ interactive }: IpadBoardFrameProps) => (
-  <div
-    className="size-full overflow-hidden"
-    style={{ pointerEvents: interactive ? "auto" : "none" }}
-  >
-    <iframe
-      title="Oxford Circus station display"
-      src={BOARD_IFRAME_SRC}
-      width={BOARD_IFRAME_WIDTH}
-      height={BOARD_IFRAME_HEIGHT}
-      tabIndex={interactive ? 0 : -1}
-      className="size-full border-0 bg-background"
+  useEffect(() => {
+    const element = screenRef.current
+    if (!element) return
+    const update = () => {
+      const width = element.clientWidth
+      const height = element.clientHeight
+      if (width <= 0 || height <= 0) return
+      setScale(
+        Math.min(width / BOARD_IFRAME_WIDTH, height / BOARD_IFRAME_HEIGHT)
+      )
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div
+      ref={screenRef}
+      className="relative size-full overflow-hidden bg-background"
       style={{ pointerEvents: interactive ? "auto" : "none" }}
-    />
-  </div>
-)
+    >
+      <div
+        className="absolute top-0 left-0 origin-top-left"
+        style={{
+          width: BOARD_IFRAME_WIDTH,
+          height: BOARD_IFRAME_HEIGHT,
+          transform: `scale(${scale})`,
+          pointerEvents: interactive ? "auto" : "none",
+        }}
+      >
+        <BoardDisplay
+          stationLines={board.stationLines}
+          stationNames={board.stationNames}
+          arrivalsStopIds={board.arrivalsStopIds}
+          previewConfig={DEMO_BOARD_CONFIG}
+        />
+      </div>
+    </div>
+  )
+}

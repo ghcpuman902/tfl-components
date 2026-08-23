@@ -8,6 +8,7 @@ import {
   useState,
   type CSSProperties,
 } from "react"
+import dynamic from "next/dynamic"
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
 import { useDocumentVisible } from "@/hooks/use-document-visible"
 import { LandingExampleObserver } from "@/components/landing/landing-example-observer"
@@ -26,7 +27,7 @@ import {
   ipadScreenInset,
   ipadScreenRounding,
 } from "@/components/board/board-device-frame"
-import { IpadBoardFrame } from "./ipad-board-frame"
+import type { LandingBoardIndexes } from "@/lib/tfl/landing-board"
 import {
   BOARD_CASE_HEIGHT,
   BOARD_CASE_WIDTH,
@@ -63,11 +64,20 @@ const PHOTO_1_HEIGHT =
 const PHOTO_2_HEIGHT =
   PHOTO_OVERLAY_WIDTH * (PICTURE_FRAME_2.height / PICTURE_FRAME_2.width)
 
+const IpadBoardFrame = dynamic(
+  () => import("./ipad-board-frame").then((mod) => mod.IpadBoardFrame),
+  {
+    ssr: true,
+    loading: () => <div className="size-full bg-background" aria-hidden />,
+  }
+)
+
 const LAYER_SMOOTH = 0.16
 const POINTER_REST = { x: 0, y: 0 }
 
 type LandingSceneProps = {
   production?: boolean
+  board: LandingBoardIndexes
   onCtaClick?: () => void
   onZoomComplete?: () => void
   onHeroInteraction?: () => void
@@ -114,12 +124,13 @@ const LandingStaticRoom = () => {
 
 export const LandingScene = ({
   production = false,
+  board,
   onCtaClick,
   onZoomComplete,
   onHeroInteraction,
   onExampleSeen,
   onExampleInteraction,
-}: LandingSceneProps = {}) => {
+}: LandingSceneProps) => {
   const reducedMotion = usePrefersReducedMotion()
   const pageVisible = useDocumentVisible()
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -421,7 +432,7 @@ export const LandingScene = ({
                 borderRadius: ipadScreenRounding,
               }}
             >
-              <IpadBoardFrame interactive={false} />
+              <IpadBoardFrame interactive={false} board={board} />
             </div>
           </div>
           <div className="mt-5">{heroCopy}</div>
@@ -566,7 +577,7 @@ export const LandingScene = ({
                     borderRadius: ipadScreenRounding,
                   }}
                 >
-                  <IpadBoardFrame interactive={roomComplete} />
+                  <IpadBoardFrame interactive={roomComplete} board={board} />
                 </div>
               </div>
               {production && roomComplete ? (
