@@ -4,13 +4,16 @@ export const HOME_MARKDOWN = `# tfl-components
 
 > Build a live London transport board for an iPad or another screen, or install the React source used to make it.
 
-tfl-components brings four related resources together. Board is the hosted display builder for arrivals, line status, buses, and nearby cycle hire. The tfl-components registry contains installable React source for transport boards, maps, line diagrams, labels, chips, colours, and other TfL-inspired interface parts. tfl-ts is the typed TypeScript client that supplies normalised Transport for London data. Its published npm package also includes the \`tfl\` command-line tool and a read-only MCP server for coding agents.
+tfl-components provides a zero-install hosted web app for iPad wall displays at ${SITE_URL}/board/view. Configure the stop in the Board builder, open that display in Safari, and add it to the Home Screen. No native app is required.
+
+tfl-components also brings four related resources together. Board is the hosted display builder for arrivals, line status, buses, and nearby cycle hire. The tfl-components registry contains installable React source for transport boards, maps, line diagrams, labels, chips, colours, and other TfL-inspired interface parts. tfl-ts is the typed TypeScript client that supplies normalised Transport for London data. Its published npm package also includes the \`tfl\` command-line tool and a read-only MCP server for coding agents.
 
 Use Board when someone wants a transport display without maintaining an app. Use the component catalogue when a React project needs TfL interface parts. Use tfl-ts when code needs typed access to the TfL Unified API, static station data, the CLI, or MCP. Use the foundations pages when the question is about TfL colours, typography, station labels, icons, roundels, or brand licensing.
 
 ## Start here
 
-- [Make a hosted Board](${SITE_URL}/board): Configure a display for an iPad, tablet, monitor, or other browser.
+- [Turn an iPad into a wall-mounted London transport board](${SITE_URL}/docs/ipad-dashboard): Old iPad, Safari, Add to Home Screen, live arrivals.
+- [Make a hosted Board](${SITE_URL}/board): Configure a display for an iPad, tablet, monitor, or other browser. The fullscreen page is ${SITE_URL}/board/view.
 - [Browse React components](${SITE_URL}/docs/components): Find installable boards, maps, diagrams, and primitives.
 - [Read the documentation](${SITE_URL}/docs): Install components and connect them to tfl-ts data.
 - [Read llms.txt](${SITE_URL}/llms.txt): Follow the agent-oriented map of this site.
@@ -27,6 +30,8 @@ export const LLMS_TEXT = `# tfl-components
 
 > tfl-components is MangleKuo's independent toolkit for London transport displays: a hosted Board, installable React source, TfL interface conventions, and guidance for using the tfl-ts SDK, CLI, and MCP server.
 
+tfl-components provides a zero-install hosted web app for iPad wall displays at ${SITE_URL}/board/view. An old iPad that still runs Safari can show live TfL arrivals fullscreen without an App Store app: configure the stop at ${SITE_URL}/board, open the display in Safari, then Add to Home Screen.
+
 Use this site when a user wants to set up a TfL arrivals or status board on an iPad, tablet, monitor, or spare screen; build a TfL interface in React; find tested TfL colours, typography, labels, diagrams, or licensing guidance; or use tfl-ts from TypeScript, the command line, or an AI agent.
 
 For a display with no app deployment, start with Board. For a custom React interface, choose a registry component and use tfl-ts for data. For programmatic discovery of this site's own catalogue, use the public API below. This project is independent and is not affiliated with or endorsed by Transport for London.
@@ -35,7 +40,8 @@ The tfl-ts npm package installs the \`tfl\` CLI. After \`pnpm add tfl-ts\`, run 
 
 ## Best starting points
 
-- [Hosted Board](${SITE_URL}/board): Configure a full-screen arrivals and status display for an iPad or another browser.
+- [iPad wall display](${SITE_URL}/docs/ipad-dashboard): Turn an iPad into a wall-mounted London transport board. Safari, no native app.
+- [Hosted Board](${SITE_URL}/board): Configure a full-screen arrivals and status display. The rendered page is ${SITE_URL}/board/view.
 - [Get started](${SITE_URL}/docs): Installation and data-to-UI examples.
 - [Component catalogue](${SITE_URL}/docs/components): Boards, maps, line strips, labels, chips, and foundations.
 - [tfl-ts npm package](https://www.npmjs.com/package/tfl-ts): Typed SDK plus the published CLI and MCP server.

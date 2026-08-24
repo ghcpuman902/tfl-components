@@ -169,6 +169,7 @@ const SLUG_ALIASES: Record<string, string> = {
   colors: "colours",
   installation: "troubleshoot",
   "branch-strip": "branch-strip-horizontal",
+  "wall-display": "ipad-dashboard",
 }
 
 /**
@@ -198,6 +199,17 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 10,
   },
   {
+    slug: "ipad-dashboard",
+    title: "iPad wall display",
+    description:
+      "Run live TfL arrivals fullscreen in Safari on an old iPad. Nothing to install.",
+    group: "start",
+    kind: "page",
+    href: "/docs/ipad-dashboard",
+    sidebarSection: "get-started",
+    sidebarOrder: 185,
+  },
+  {
     slug: "board-url",
     title: "Board URL",
     description:
@@ -206,7 +218,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     kind: "page",
     href: "/docs/board-url",
     sidebarSection: "get-started",
-    sidebarOrder: 185,
+    sidebarOrder: 186,
   },
   {
     slug: "components-index",
@@ -849,7 +861,7 @@ export const getCatalogueEntries = (): DocsEntry[] =>
     (entry) => entry.sidebarSection === "components" && !entry.comingSoon
   ).sort((a, b) => a.sidebarOrder - b.sidebarOrder)
 
-/** Matches DocsSidebar: get-started top → components → Board URL / Troubleshoot / licensing tail → primitives. */
+/** Matches DocsSidebar: get-started top → components → iPad wall display / Board URL / Troubleshoot / licensing tail → primitives. */
 export const GET_STARTED_BOTTOM_FROM = 185
 
 /** Tools and Drafts — footer / search in development only (J8). */

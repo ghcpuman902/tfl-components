@@ -23,6 +23,7 @@ import {
 import { OPENAPI_DOCUMENT } from "@/lib/agent/openapi"
 import { getPublicCatalog } from "@/lib/agent/site-catalog"
 import {
+  IPAD_DASHBOARD_STRUCTURED_DATA,
   serialiseStructuredData,
   SITE_STRUCTURED_DATA,
 } from "@/lib/agent/structured-data"
@@ -88,6 +89,9 @@ test("homepage and llms.txt contain substantial, task-oriented Markdown", () => 
   assert.ok(HOME_MARKDOWN.length >= 500)
   assert.match(HOME_MARKDOWN, /^# tfl-components\n\n>/)
   assert.match(HOME_MARKDOWN, /iPad/)
+  assert.match(HOME_MARKDOWN, /\/board\/view/)
+  assert.match(HOME_MARKDOWN, /zero-install hosted web app/)
+  assert.match(HOME_MARKDOWN, /\/docs\/ipad-dashboard/)
   assert.match(HOME_MARKDOWN, /tfl-ts/)
   assert.match(HOME_MARKDOWN, /command-line tool/)
 
@@ -97,6 +101,9 @@ test("homepage and llms.txt contain substantial, task-oriented Markdown", () => 
   assert.match(LLMS_TEXT, /## Machine-readable resources/)
   assert.match(LLMS_TEXT, /npx -y tfl-ts@latest mcp/)
   assert.match(LLMS_TEXT, /\/openapi\.json/)
+  assert.match(LLMS_TEXT, /zero-install hosted web app/)
+  assert.match(LLMS_TEXT, /\/board\/view/)
+  assert.match(LLMS_TEXT, /\/docs\/ipad-dashboard/)
 })
 
 test("public catalogue describes the existing product routes", () => {
@@ -187,9 +194,33 @@ test("structured data identifies the real project without a fabricated organisat
   assert.ok(types.includes("SoftwareSourceCode"))
   assert.ok(types.includes("Person"))
   assert.ok(!types.includes("Organization"))
+  assert.match(
+    SITE_STRUCTURED_DATA["@graph"].find(
+      (node) => node["@type"] === "SoftwareApplication"
+    )?.description ?? "",
+    /\/board\/view/
+  )
   assert.doesNotThrow(() =>
     JSON.parse(serialiseStructuredData(SITE_STRUCTURED_DATA))
   )
+})
+
+test("iPad wall-display page structured data answers the search questions", () => {
+  const types = IPAD_DASHBOARD_STRUCTURED_DATA["@graph"].map(
+    (node) => node["@type"]
+  )
+  assert.ok(types.includes("WebPage"))
+  assert.ok(types.includes("FAQPage"))
+  assert.ok(types.includes("HowTo"))
+  const serialised = serialiseStructuredData(IPAD_DASHBOARD_STRUCTURED_DATA)
+  assert.match(serialised, /Can I use an old iPad as a TfL departure board\?/)
+  assert.match(
+    serialised,
+    /How to run TfL live departures fullscreen on iOS Safari without an app/
+  )
+  assert.match(serialised, /zero-install hosted web app/)
+  assert.match(serialised, /\/board\/view/)
+  assert.doesNotThrow(() => JSON.parse(serialised))
 })
 
 test("public static assets skip proxy negotiation, registry JSON does not", () => {
@@ -218,6 +249,7 @@ test("sitemap and robots expose trust pages and public APIs", () => {
   assert.ok(urls.some((url) => url.endsWith("/about")))
   assert.ok(urls.some((url) => url.endsWith("/contact")))
   assert.ok(urls.some((url) => url.endsWith("/privacy")))
+  assert.ok(urls.some((url) => url.endsWith("/docs/ipad-dashboard")))
 
   const rules = robots().rules
   assert.ok(!Array.isArray(rules))

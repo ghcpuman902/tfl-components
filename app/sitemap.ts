@@ -10,6 +10,7 @@ const STATIC_PATHS = [
   "/labs",
   "/labs/week-ahead",
   "/board",
+  "/docs/ipad-dashboard",
   "/docs/explorer",
   "/licence",
   "/credits",

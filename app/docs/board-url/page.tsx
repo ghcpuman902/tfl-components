@@ -50,7 +50,14 @@ export default function BoardUrlSpecPage() {
             A hosted Board is a full-screen display at{" "}
             <code className="text-xs">{BOARD_URL_PATH}</code>. The fragment
             lists the stop, services, and optional TfL key. The query string is
-            not read for configuration.
+            not read for configuration. For an iPad on a stand, see{" "}
+            <Link
+              href="/docs/ipad-dashboard"
+              className="text-foreground underline underline-offset-4"
+            >
+              iPad wall display
+            </Link>
+            .
           </p>
         </section>
 

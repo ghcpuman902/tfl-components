@@ -15,9 +15,9 @@ export const getPublicCatalog = () => ({
         kind: "hosted-board",
         url: `${SITE_URL}/board`,
         description:
-          "A hosted full-screen London transport display for an iPad, tablet, monitor, or other browser.",
+          `A zero-install hosted web app for iPad wall displays at ${SITE_URL}/board/view. Live arrivals and line status in any modern browser.`,
         whenToUse:
-          "Use when someone wants a live arrivals and status display without deploying an app.",
+          `Use when someone wants a live arrivals and status display on an iPad or other screen without deploying an app. The rendered page is ${SITE_URL}/board/view.`,
       },
       {
         id: "tfl-components",
@@ -64,6 +64,8 @@ export const getPublicCatalog = () => ({
     })),
     resources: {
       documentation: `${SITE_URL}/docs`,
+      ipadDashboard: `${SITE_URL}/docs/ipad-dashboard`,
+      boardView: `${SITE_URL}/board/view`,
       llms: `${SITE_URL}/llms.txt`,
       openapi: `${SITE_URL}/openapi.json`,
       registry: `${REGISTRY_BASE}/registry.json`,

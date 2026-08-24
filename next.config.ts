@@ -305,6 +305,11 @@ const nextConfig: NextConfig = {
         destination: "/docs/line-title",
         permanent: true,
       },
+      {
+        source: "/docs/wall-display",
+        destination: "/docs/ipad-dashboard",
+        permanent: true,
+      },
       // `/docs/components/<slug>` guesses — every component page actually lives
       // one level up, at `/docs/<slug>`.
       {
