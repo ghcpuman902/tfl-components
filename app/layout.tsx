@@ -99,8 +99,9 @@ export default function RootLayout({
       lang="en-GB"
       suppressHydrationWarning
       className={cn(
-        /* Page-level scroll + Baseline scrollbar-gutter:stable (needs overflow ≠ visible). */
-        "scrollbar-gutter-stable overflow-y-auto antialiased",
+        /* Page-level scroll. Gutter lives in globals.css so landing :has()
+           can actually override it (a Tailwind gutter class wins @layer base). */
+        "overflow-y-auto antialiased",
         fontMono.variable,
         "font-sans",
         hammersmith.variable

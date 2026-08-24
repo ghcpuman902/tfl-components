@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import {
   hasUnknownTopLevelPath,
   isHomepageRepresentationRequest,
+  isPublicStaticAsset,
   mergeVary,
   negotiateHomepageContent,
 } from "@/lib/agent/content-negotiation"
@@ -40,6 +41,10 @@ const continueAsHtml = (includeHomepageDiscovery = false) => {
  */
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  if (isPublicStaticAsset(pathname)) {
+    return NextResponse.next()
+  }
 
   if (pathname === "/") {
     if (
@@ -115,5 +120,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|google[^/]+\\.html).*)",
+  ],
 }

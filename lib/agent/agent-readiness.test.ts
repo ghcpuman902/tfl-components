@@ -6,12 +6,15 @@ import { GET as getOpenApi } from "@/app/openapi.json/route"
 import robots from "@/app/robots"
 import sitemap from "@/app/sitemap"
 import { apiErrorBody, methodNotAllowed } from "@/lib/agent/api-response"
+import { NextRequest } from "next/server"
 import {
   hasUnknownTopLevelPath,
   isHomepageRepresentationRequest,
+  isPublicStaticAsset,
   mergeVary,
   negotiateHomepageContent,
 } from "@/lib/agent/content-negotiation"
+import { proxy } from "@/proxy"
 import {
   HOME_MARKDOWN,
   LLMS_TEXT,
@@ -72,6 +75,8 @@ test("Markdown 404 routing is conservative and recoverable", () => {
   assert.equal(hasUnknownTopLevelPath("/api/catalog"), false)
   assert.equal(hasUnknownTopLevelPath("/about"), false)
   assert.equal(hasUnknownTopLevelPath("/privacy"), false)
+  assert.equal(hasUnknownTopLevelPath("/google3280ccf112e8b472.html"), false)
+  assert.equal(hasUnknownTopLevelPath("/images/home/thames-foreshore.jpg"), false)
   const body = markdownNotFound("/missing-page")
   assert.match(body, /^# 404: Page not found/m)
   assert.match(body, /\/llms\.txt/)
@@ -184,6 +189,27 @@ test("structured data identifies the real project without a fabricated organisat
   assert.ok(!types.includes("Organization"))
   assert.doesNotThrow(() =>
     JSON.parse(serialiseStructuredData(SITE_STRUCTURED_DATA))
+  )
+})
+
+test("public static assets skip proxy negotiation, registry JSON does not", () => {
+  assert.equal(isPublicStaticAsset("/google3280ccf112e8b472.html"), true)
+  assert.equal(isPublicStaticAsset("/images/home/thames-foreshore.jpg"), true)
+  assert.equal(isPublicStaticAsset("/r/line-badge.json"), false)
+  assert.equal(isPublicStaticAsset("/missing-page"), false)
+
+  const verification = proxy(
+    new NextRequest("http://localhost/google3280ccf112e8b472.html", {
+      headers: { accept: "text/markdown" },
+    })
+  )
+  assert.equal(verification.status, 200)
+  assert.equal(verification.headers.get("x-middleware-next"), "1")
+
+  const registry = proxy(new NextRequest("http://localhost/r/line-badge.json"))
+  assert.match(
+    registry.headers.get("x-middleware-rewrite") ?? "",
+    /\/api\/registry\/line-badge$/
   )
 })
 

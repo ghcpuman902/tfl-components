@@ -144,8 +144,19 @@ const KNOWN_TOP_LEVEL_PATHS = new Set([
   "tools",
 ])
 
+const STATIC_FILE_SUFFIX = /\.[a-z0-9]+$/i
+const REGISTRY_JSON_PATH = /^\/r\/[a-z0-9]+(?:-[a-z0-9]+)*\.json$/i
+
+/**
+ * Public files such as Google site-verification HTML. False for `/r/*.json`,
+ * which the proxy rewrites to the registry API.
+ */
+export const isPublicStaticAsset = (pathname: string): boolean =>
+  STATIC_FILE_SUFFIX.test(pathname) && !REGISTRY_JSON_PATH.test(pathname)
+
 /** A conservative check used only to give Markdown clients a useful 404. */
 export const hasUnknownTopLevelPath = (pathname: string): boolean => {
+  if (STATIC_FILE_SUFFIX.test(pathname)) return false
   const firstSegment = pathname.split("/").filter(Boolean)[0]
   return Boolean(firstSegment && !KNOWN_TOP_LEVEL_PATHS.has(firstSegment))
 }

@@ -102,7 +102,7 @@ export const LandingArtwork = ({
       viewBox="0 0 1559.3951 1011.3564"
       ref={svgRef}
       className="landing-artwork block size-full"
-      preserveAspectRatio="xMidYMid meet"
+      preserveAspectRatio="xMidYMid slice"
     >
       <g ref={l3Ref} id="landing-l3" data-name="L3 - inside the mirror">
         <g id="bg">

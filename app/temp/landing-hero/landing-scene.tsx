@@ -554,7 +554,7 @@ export const LandingScene = ({
                 className="relative size-full"
                 style={{ visibility: sceneReady ? "visible" : "hidden" }}
               >
-                <div ref={canvasRef} className="absolute top-0 left-0">
+                <div ref={canvasRef} className="absolute top-0 left-0 size-full">
                   <LandingArtwork
                     svgRef={svgRef}
                     l0Ref={l0Ref}

@@ -41,7 +41,7 @@ let body = src
 
 body = body.replace(
   /<svg([^>]*)>/,
-  `<svg$1 ref={svgRef} className="landing-artwork block size-full" preserveAspectRatio="xMidYMid meet">`,
+  `<svg$1 ref={svgRef} className="landing-artwork block size-full" preserveAspectRatio="xMidYMid slice">`,
 )
 
 for (const [id, refName] of Object.entries({ ...LAYER_REFS, ...TRACKING_REFS })) {

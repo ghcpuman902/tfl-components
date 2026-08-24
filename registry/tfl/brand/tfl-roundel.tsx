@@ -137,7 +137,13 @@ const isRoundelAllowed = (): boolean => {
   )
 }
 
-const isDevelopment = (): boolean => readProcessEnv("NODE_ENV") === "development"
+/**
+ * Direct `process.env.NODE_ENV` so Next inlines the same literal on server and
+ * client. `readProcessEnv("NODE_ENV")` is an indirect lookup: Node SSR sees
+ * "development", the client bundle often sees undefined, and the trademark
+ * tooltip wrapper hydrates as a plain span.
+ */
+const IS_DEV = process.env.NODE_ENV === "development"
 
 /**
  * Target visual capital height as a fraction of bar height.
@@ -637,7 +643,12 @@ export const TfLRoundel = ({
     return <OfficialRoundelSvg {...shared} />
   }
 
-  if (isDevelopment()) {
+  const decorative =
+    props["aria-hidden"] === true || props["aria-hidden"] === "true"
+
+  // Skip the tooltip wrapper on decorative marks (sidebar icons live inside
+  // another TooltipTrigger). Nested triggers also mismatch on hydrate.
+  if (IS_DEV && !decorative) {
     return (
       <RoundelTrademarkModal className={className}>
         <PlaceholderRoundelSvg

@@ -174,10 +174,12 @@ html[data-tfl-type-profile="johnston-compatible"] {
     @apply font-sans;
     /* Clear sticky header for in-page hash links (TOC, heading anchors, deep links). */
     scroll-padding-top: var(--site-hash-scroll-margin);
-    /* Thin page scrollbar; gutter + overflow set on <html> className (layout). */
+    /* Thin page scrollbar. Overflow-y is on <html> className (layout). */
     scrollbar-width: thin;
     scrollbar-color: color-mix(in oklch, var(--foreground) 28%, transparent)
       transparent;
+    /* Same layer as html:has(.landing-home) so that rule can drop the gutter. */
+    scrollbar-gutter: stable;
   }
 
   /* Thin, low-contrast scrollbar — transparent track, soft thumb. */

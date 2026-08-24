@@ -314,15 +314,29 @@ export const useIpadZoom = ({
       ScrollTrigger.refresh()
     }, wrapper)
 
+    let resizeFrame = 0
     const handleResize = () => {
-      getLandingGsap().ScrollTrigger.refresh()
+      if (resizeFrame) return
+      resizeFrame = window.requestAnimationFrame(() => {
+        resizeFrame = 0
+        getLandingGsap().ScrollTrigger.refresh()
+      })
     }
     window.addEventListener("resize", handleResize)
     window.addEventListener("orientationchange", handleResize)
+    const viewport = window.visualViewport
+    viewport?.addEventListener("resize", handleResize)
+    // Gutter / :has() / overlay-scrollbar changes resize the stage without a
+    // window resize — that is the “extra edge padding” flash on landing.
+    const stageObserver = new ResizeObserver(handleResize)
+    stageObserver.observe(composition)
 
     return () => {
       window.removeEventListener("resize", handleResize)
       window.removeEventListener("orientationchange", handleResize)
+      viewport?.removeEventListener("resize", handleResize)
+      stageObserver.disconnect()
+      if (resizeFrame) window.cancelAnimationFrame(resizeFrame)
       timelineRef.current = null
       triggerRef.current = null
       ctx.revert()
