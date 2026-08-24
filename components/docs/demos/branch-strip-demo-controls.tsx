@@ -77,7 +77,7 @@ export const BranchLineStripPicker = ({
           <select
             id={`branch-line-strip-picker-${orientation}`}
             name="branch-line"
-            className="min-h-10 rounded-md border border-border bg-background px-3 py-2"
+            className="min-h-10 rounded-md border border-border bg-background px-3 py-2 text-base"
             value={lineId}
             onChange={handleLineChange}
             aria-label="Select branched line"

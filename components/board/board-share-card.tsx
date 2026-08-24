@@ -107,7 +107,7 @@ export const BoardShareCard = ({
         readOnly
         value={url}
         aria-label="Board URL"
-        className="w-full font-mono text-xs"
+        className="w-full font-mono text-base"
         onFocus={(event) => event.currentTarget.select()}
       />
       <div className="grid grid-cols-2 gap-2">

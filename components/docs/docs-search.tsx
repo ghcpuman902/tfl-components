@@ -201,7 +201,7 @@ export const DocsSearch = ({
           onKeyDown={handleKeyDown}
           aria-keyshortcuts="Meta+K Control+K"
           className={cn(
-            "h-8 min-w-0 bg-background pr-2 pl-8 text-sm",
+            "h-8 min-w-0 bg-background pr-2 pl-8",
             showShortcutHint && "pr-14"
           )}
           autoComplete="off"

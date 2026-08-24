@@ -150,7 +150,7 @@ const NativeSelect = ({
 }) => (
   <select
     id={id}
-    className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
+    className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-base"
     value={value}
     onChange={(event) => onChange(event.target.value)}
   >

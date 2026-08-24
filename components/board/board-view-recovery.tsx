@@ -77,7 +77,7 @@ const RecoveryFields = ({
       rows={4}
       aria-invalid={error ? true : undefined}
       aria-describedby={error ? "board-recovery-error" : undefined}
-      className="min-h-24 font-mono text-xs"
+      className="min-h-24 font-mono text-base"
     />
     {error ? (
       <p

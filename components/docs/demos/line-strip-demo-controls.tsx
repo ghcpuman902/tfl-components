@@ -52,7 +52,7 @@ export const LiveLineStripPicker = ({
           <select
             id="live-line-strip-picker"
             name="live-line"
-            className="min-h-10 rounded-md border border-border bg-background px-3 py-2"
+            className="min-h-10 rounded-md border border-border bg-background px-3 py-2 text-base"
             value={route.lineId}
             onChange={handleLineChange}
             aria-label="Select live line"

@@ -676,7 +676,7 @@ export const JunctionCasesView = ({
           <select
             value={selected.id}
             onChange={handleCaseChange}
-            className="block rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+            className="block rounded-md border border-border bg-background px-2 py-1.5 text-base"
           >
             {JUNCTION_CASES.map((entry) => (
               <option key={entry.id} value={entry.id}>
