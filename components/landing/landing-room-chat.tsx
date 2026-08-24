@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { HeaderRoundel } from "@/components/site-header-roundel"
 import { useLondonGreeting } from "@/hooks/use-london-greeting"
+import { TEXT_LINK_CLASS, TEXT_LINK_ICON_CLASS } from "@/lib/text-link"
 import { cn } from "@/lib/utils"
 
 const TFL_TS_URL = "https://www.npmjs.com/package/tfl-ts"
@@ -21,7 +22,7 @@ type LandingRoomChatProps = {
   onRestart?: () => void
 }
 
-const mentionIconClassName = "mr-1 inline-block size-[1em] align-[-0.15em]"
+const mentionIconClassName = cn(TEXT_LINK_ICON_CLASS, "mr-1")
 
 const NpmMark = () => (
   <svg
@@ -34,8 +35,10 @@ const NpmMark = () => (
   </svg>
 )
 
-const mentionClassName =
-  "pointer-events-auto inline-flex items-center whitespace-nowrap underline underline-offset-4 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+const mentionClassName = cn(
+  TEXT_LINK_CLASS,
+  "pointer-events-auto whitespace-nowrap hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+)
 
 const IntroBeat = ({ greeting }: { greeting: string }) => (
   <>
@@ -114,8 +117,10 @@ const RADIUS_TRANSITION_CLASS =
 const CHOICE_PILL_CLASS =
   "pointer-events-auto inline-flex min-h-11 origin-bottom-right cursor-pointer items-center bg-foreground px-4 py-2.5 text-[clamp(0.9375rem,0.85rem+0.3vw,1rem)] font-medium text-background shadow-[0_3px_0_0_color-mix(in_oklch,var(--foreground)_28%,transparent)] select-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none motion-safe:transition-[border-radius,transform] motion-safe:duration-150 motion-safe:ease-[cubic-bezier(0.25,0.46,0.45,0.94)] motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.97] motion-safe:active:translate-y-px"
 
-const RESTART_CLASS =
-  "pointer-events-auto self-end text-[clamp(0.8125rem,0.75rem+0.2vw,0.875rem)] text-muted-foreground underline underline-offset-4 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+const RESTART_CLASS = cn(
+  TEXT_LINK_CLASS,
+  "pointer-events-auto self-end text-[clamp(0.8125rem,0.75rem+0.2vw,0.875rem)] text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+)
 
 const COMPOSE_MS = 2100
 const FOLLOW_UP_PAUSE_MS = 1300

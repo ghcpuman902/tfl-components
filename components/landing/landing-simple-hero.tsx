@@ -5,6 +5,8 @@ import { ArrowDownIcon, ArrowRightIcon } from "lucide-react"
 import { useLandingTrack } from "@/components/landing/landing-analytics"
 import type { AnalyticsContext } from "@/lib/analytics/context"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
+import { TEXT_LINK_CLASS, TEXT_LINK_ICON_CLASS } from "@/lib/text-link"
+import { cn } from "@/lib/utils"
 
 type LandingSimpleHeroProps = {
   context: AnalyticsContext
@@ -21,10 +23,10 @@ export const LandingSimpleHero = ({ context }: LandingSimpleHeroProps) => {
           <Link
             href="/board"
             onClick={() => track("landing_cta_click")}
-            className="inline-flex items-center gap-1.5 underline underline-offset-4"
+            className={TEXT_LINK_CLASS}
           >
             It’s easy
-            <ArrowRightIcon className="size-[1em] shrink-0" aria-hidden />
+            <ArrowRightIcon className={cn(TEXT_LINK_ICON_CLASS, "ml-1.5")} aria-hidden />
           </Link>
         </p>
         <a

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { TEXT_LINK_CLASS } from "@/lib/text-link"
 import { cn } from "@/lib/utils"
 
 type FeedbackTextLinkProps = {
@@ -20,7 +21,8 @@ export const FeedbackTextLink = ({
     data-feedback-screenshot={screenshot ? undefined : "false"}
     aria-haspopup="dialog"
     className={cn(
-      "inline cursor-pointer appearance-none border-0 bg-transparent p-0 align-baseline font-[inherit] text-[length:inherit] leading-[inherit] text-foreground underline underline-offset-4",
+      TEXT_LINK_CLASS,
+      "cursor-pointer appearance-none border-0 bg-transparent p-0 font-[inherit] text-[length:inherit] leading-[inherit] text-foreground",
       className
     )}
   >

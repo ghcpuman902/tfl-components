@@ -1,5 +1,7 @@
 import Link from "next/link"
 import { ArrowRightIcon } from "lucide-react"
+import { TEXT_LINK_CLASS, TEXT_LINK_ICON_CLASS } from "@/lib/text-link"
+import { cn } from "@/lib/utils"
 
 type LandingFinalCtaProps = {
   onCtaClick?: () => void
@@ -19,10 +21,10 @@ export const LandingFinalCta = ({ onCtaClick }: LandingFinalCtaProps) => (
     <Link
       href="/board"
       onClick={onCtaClick}
-      className="mt-4 inline-flex items-center gap-1.5 text-lg text-foreground underline underline-offset-4"
+      className={cn(TEXT_LINK_CLASS, "mt-4 text-lg text-foreground")}
     >
       Set up a board
-      <ArrowRightIcon className="size-[1em] shrink-0" aria-hidden />
+      <ArrowRightIcon className={cn(TEXT_LINK_ICON_CLASS, "ml-1.5")} aria-hidden />
     </Link>
   </section>
 )

@@ -13,6 +13,8 @@ import { SITE_INDEPENDENCE } from "@/lib/site"
 import { pageMetadata } from "@/lib/site-metadata"
 import { TFL_API_PORTAL_PRODUCT_URL } from "@/lib/tfl/api-portal"
 import { BOARD_VIEW_PATH } from "@/lib/tfl/board-url-state"
+import { TEXT_LINK_CLASS, TEXT_LINK_ICON_CLASS } from "@/lib/text-link"
+import { cn } from "@/lib/utils"
 
 const PAGE_TITLE = "Turn an iPad into a wall-mounted London transport board"
 const PAGE_DESCRIPTION =
@@ -31,7 +33,7 @@ const TextLink = ({
   href: string
   children: ReactNode
 }) => (
-  <Link href={href} className="text-foreground underline underline-offset-4">
+  <Link href={href} className={cn(TEXT_LINK_CLASS, "text-foreground")}>
     {children}
   </Link>
 )
@@ -45,7 +47,7 @@ const ExternalTextLink = ({
 }) => (
   <a
     href={href}
-    className="text-foreground underline underline-offset-4"
+    className={cn(TEXT_LINK_CLASS, "text-foreground")}
     target="_blank"
     rel="noopener noreferrer"
   >
@@ -80,10 +82,10 @@ export default function IpadDashboardPage() {
         <p>
           <Link
             href="/board"
-            className="inline-flex items-baseline gap-1.5 font-medium text-primary underline underline-offset-4"
+            className={cn(TEXT_LINK_CLASS, "font-medium text-primary")}
           >
             Open the Board builder
-            <ArrowRightIcon className="size-4 shrink-0" aria-hidden />
+            <ArrowRightIcon className={cn(TEXT_LINK_ICON_CLASS, "ml-1.5")} aria-hidden />
           </Link>
         </p>
 

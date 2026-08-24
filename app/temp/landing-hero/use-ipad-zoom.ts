@@ -42,6 +42,8 @@ const layoutCoverCanvas = (
   const width = composition.clientWidth
   const height = composition.clientHeight
   const viewBox = svg.viewBox.baseVal
+  // eslint-disable-next-line no-console
+  console.log("[DEBUG layoutCoverCanvas]", { width, height, viewBox: { w: viewBox.width, h: viewBox.height, x: viewBox.x, y: viewBox.y } })
   const coverScale =
     Math.max(width / viewBox.width, height / viewBox.height) * CROP_SCALE
   const canvasW = viewBox.width * coverScale
@@ -89,6 +91,8 @@ const framedIpadCamera = (
   const targetScale = desiredWidth / iPadWidth
   const iPadCenterX = iPadLeft + iPadWidth / 2
   const iPadCenterY = iPadTop + iPadHeight / 2
+  // eslint-disable-next-line no-console
+  console.log("[DEBUG framedIpadCamera]", { coverScale, desiredWidth, desiredTop, iPadWidth, iPadHeight, targetScale })
 
   return {
     targetScale,
@@ -179,6 +183,15 @@ export const useIpadZoom = ({
   const timelineRef = useRef<gsap.core.Timeline | null>(null)
   const triggerRef = useRef<ScrollTrigger | null>(null)
   const progressRef = useRef(0)
+  /**
+   * Captured just before a resize-driven `ScrollTrigger.refresh()`. The
+   * trigger's start/end are page-pixel positions derived from `dvh`, so a
+   * viewport resize changes the scroll distance under a fixed `scrollY` —
+   * naively refreshing would read a different, distorted progress. Snap
+   * exactly to 0/1 at rest so top and end match a fresh load; otherwise
+   * replay the same fractional progress under the new geometry.
+   */
+  const resizeProgressRef = useRef<number | null>(null)
   const onRoomCompleteChangeRef = useRef(onRoomCompleteChange)
   onRoomCompleteChangeRef.current = onRoomCompleteChange
   const onSceneReadyRef = useRef(onSceneReady)
@@ -299,10 +312,21 @@ export const useIpadZoom = ({
         pin: false,
         invalidateOnRefresh: true,
         onRefresh: (self) => {
+          // eslint-disable-next-line no-console
+          console.log("[DEBUG onRefresh] start", { progress: self.progress, start: self.start, end: self.end })
           startCamera()
           endCamera()
           timeline.invalidate()
-          applyProgress(self.progress)
+          const preserved = resizeProgressRef.current
+          resizeProgressRef.current = null
+          const target = preserved ?? self.progress
+          applyProgress(target)
+          if (preserved != null && self.end > self.start) {
+            const targetScrollY = self.start + target * (self.end - self.start)
+            if (Math.abs(window.scrollY - targetScrollY) > 0.5) {
+              window.scrollTo({ top: targetScrollY, behavior: "auto" })
+            }
+          }
         },
         onUpdate: (self) => {
           applyProgress(self.progress)
@@ -316,6 +340,9 @@ export const useIpadZoom = ({
 
     let resizeFrame = 0
     const handleResize = () => {
+      const current = progressRef.current
+      resizeProgressRef.current =
+        current >= ROOM_COMPLETE_AT ? 1 : current <= 0 ? 0 : current
       if (resizeFrame) return
       resizeFrame = window.requestAnimationFrame(() => {
         resizeFrame = 0

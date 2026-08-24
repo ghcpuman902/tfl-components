@@ -1,4 +1,6 @@
 import Link from "next/link"
+import { TEXT_LINK_CLASS } from "@/lib/text-link"
+import { cn } from "@/lib/utils"
 
 const STEPS = [
   {
@@ -61,7 +63,7 @@ export const LandingSetupSteps = () => (
     </ol>
     <Link
       href="/board"
-      className="mt-8 inline-flex items-center gap-1.5 text-lg text-foreground underline underline-offset-4"
+      className={cn(TEXT_LINK_CLASS, "mt-8 text-lg text-foreground")}
     >
       Make my board →
     </Link>

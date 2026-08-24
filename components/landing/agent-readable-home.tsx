@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { TEXT_LINK_CLASS } from "@/lib/text-link"
 
 const SURFACES = [
   {
@@ -27,14 +28,14 @@ const SurfaceLink = ({ href, title }: { href: string; title: string }) =>
   href.startsWith("http") ? (
     <a
       href={href}
-      className="underline underline-offset-4"
+      className={TEXT_LINK_CLASS}
       target="_blank"
       rel="noreferrer"
     >
       {title}
     </a>
   ) : (
-    <Link href={href} className="underline underline-offset-4">
+    <Link href={href} className={TEXT_LINK_CLASS}>
       {title}
     </Link>
   )

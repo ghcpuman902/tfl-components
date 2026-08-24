@@ -149,7 +149,7 @@ export const HeaderRoundel = ({ className }: HeaderRoundelProps) => {
 
   return (
     <span
-      className={cn("inline-flex shrink-0", className)}
+      className={cn("inline-block shrink-0", className)}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
       aria-hidden

@@ -1,4 +1,6 @@
 import Link from "next/link"
+import { TEXT_LINK_CLASS } from "@/lib/text-link"
+import { cn } from "@/lib/utils"
 
 const LINKS = [
   { href: "/docs/components", label: "Browse components →" },
@@ -25,7 +27,7 @@ export const LandingDeveloperPath = () => (
         <li key={link.href}>
           <Link
             href={link.href}
-            className="inline-flex items-center gap-1.5 text-foreground underline underline-offset-4"
+            className={cn(TEXT_LINK_CLASS, "text-foreground")}
           >
             {link.label}
           </Link>

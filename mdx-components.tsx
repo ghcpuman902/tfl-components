@@ -2,6 +2,8 @@ import type { MDXComponents } from "mdx/types"
 import { MdxSyntaxPre } from "@/components/docs/syntax-highlighted-code"
 import { compactMdxChildren } from "@/lib/mdx-children"
 import { getHeadingText, slugifyHeading } from "@/lib/heading-slug"
+import { TEXT_LINK_CLASS } from "@/lib/text-link"
+import { cn } from "@/lib/utils"
 
 const headingLinkClass = "no-underline hover:underline"
 
@@ -95,7 +97,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     a: ({ href, children }) => (
       <a
         href={href}
-        className="font-medium text-primary underline underline-offset-4"
+        className={cn(TEXT_LINK_CLASS, "font-medium text-primary")}
       >
         {children}
       </a>

@@ -19,6 +19,7 @@ import {
   displayTflAppKey,
   isPlausibleTflAppKey,
 } from "@/lib/tfl/user-credentials-storage"
+import { TEXT_LINK_CLASS } from "@/lib/text-link"
 import { cn } from "@/lib/utils"
 
 type TflApiKeyHelpLinkProps = {
@@ -35,7 +36,8 @@ export const TflApiKeyHelpLink = ({ className }: TflApiKeyHelpLinkProps) => {
     <button
       type="button"
       className={cn(
-        "text-sm text-muted-foreground underline underline-offset-4",
+        TEXT_LINK_CLASS,
+        "text-sm text-muted-foreground",
         className
       )}
       onClick={handleOpenHelp}

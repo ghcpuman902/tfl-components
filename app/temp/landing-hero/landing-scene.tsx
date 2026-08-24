@@ -61,6 +61,8 @@ import {
   PHOTO_OVERLAY_WIDTH,
   ROOM_VEIL_OPACITY,
 } from "./scene-constants"
+import { TEXT_LINK_CLASS } from "@/lib/text-link"
+import { cn } from "@/lib/utils"
 import { syncBoxToSvg, syncOverlayToSvg } from "./sync-overlay"
 import { useIpadZoom } from "./use-ipad-zoom"
 import { useParallaxInput } from "./use-parallax-input"
@@ -285,6 +287,17 @@ export const LandingScene = ({
     if (roomComplete) return
     setHoldChat(false)
   }, [roomComplete])
+
+  /**
+   * Mirror the visual "end of scroll" state in the URL as soon as it's
+   * reached — not only once the chat has finished typing. A refresh right
+   * after scrolling to the end must land back at the end, the same as a
+   * resize does; waiting for the story to finish left a window where the
+   * two diverged.
+   */
+  useEffect(() => {
+    writeSpaceHash(roomComplete)
+  }, [roomComplete, writeSpaceHash])
 
   const { valueRef, requestTilt, showMotionUnlock } = useParallaxInput({
     stageRef,
@@ -684,7 +697,10 @@ export const LandingScene = ({
                     onHeroInteraction?.()
                     void requestTilt()
                   }}
-                  className="pointer-events-auto absolute right-4 bottom-4 z-20 inline-flex items-center text-[clamp(0.9375rem,0.85rem+0.3vw,1rem)] text-foreground underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+                  className={cn(
+                    TEXT_LINK_CLASS,
+                    "pointer-events-auto absolute right-4 bottom-4 z-20 text-[clamp(0.9375rem,0.85rem+0.3vw,1rem)] text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+                  )}
                 >
                   Unlock motion
                 </button>

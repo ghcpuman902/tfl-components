@@ -20,6 +20,8 @@ import {
 import { getDocsEntry } from "@/lib/docs-catalog"
 import { readAttributionContext } from "@/lib/landing/assignment"
 import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
+import { TEXT_LINK_CLASS, TEXT_LINK_ICON_CLASS } from "@/lib/text-link"
+import { cn } from "@/lib/utils"
 import { TFL_API_PORTAL_PRODUCT_URL } from "@/components/user-tfl-api-key-copy"
 import { TFL_BRAND_LINKS } from "@/lib/tfl/brand"
 import {
@@ -169,10 +171,10 @@ const StartAction = ({
 }) => (
   <Link
     href={href}
-    className="inline-flex items-baseline gap-1.5 font-medium text-primary underline underline-offset-4"
+    className={cn(TEXT_LINK_CLASS, "font-medium text-primary")}
   >
     {children}
-    <ArrowRightIcon className="size-4 shrink-0" aria-hidden />
+    <ArrowRightIcon className={cn(TEXT_LINK_ICON_CLASS, "ml-1.5")} aria-hidden />
   </Link>
 )
 
@@ -185,7 +187,7 @@ const ExternalTextLink = ({
 }) => (
   <a
     href={href}
-    className="text-foreground underline underline-offset-4"
+    className={cn(TEXT_LINK_CLASS, "text-foreground")}
     target="_blank"
     rel="noopener noreferrer"
   >
@@ -262,7 +264,7 @@ export default function DocsGetStartedPage() {
             Optional. Paste a key here if you want{" "}
             <Link
               href="/docs/explorer"
-              className="text-foreground underline underline-offset-4"
+              className={cn(TEXT_LINK_CLASS, "text-foreground")}
             >
               Explorer
             </Link>{" "}
@@ -288,7 +290,7 @@ export default function DocsGetStartedPage() {
             (see{" "}
             <Link
               href="/docs/tfl-licensing"
-              className="text-foreground underline underline-offset-4"
+              className={cn(TEXT_LINK_CLASS, "text-foreground")}
             >
               Licensing and brand use
             </Link>
@@ -296,7 +298,7 @@ export default function DocsGetStartedPage() {
             alternative. See{" "}
             <Link
               href="/docs/typography"
-              className="text-foreground underline underline-offset-4"
+              className={cn(TEXT_LINK_CLASS, "text-foreground")}
             >
               Typography
             </Link>
@@ -343,7 +345,7 @@ export default function DocsGetStartedPage() {
                 (Recommended) Use Next.js&apos;s{" "}
                 <Link
                   href="https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions"
-                  className="text-foreground underline underline-offset-4"
+                  className={cn(TEXT_LINK_CLASS, "text-foreground")}
                 >
                   Server Actions
                 </Link>{" "}
@@ -399,7 +401,7 @@ export default function DocsGetStartedPage() {
             Still having trouble? See{" "}
             <Link
               href="/docs/troubleshoot"
-              className="text-foreground underline underline-offset-4"
+              className={cn(TEXT_LINK_CLASS, "text-foreground")}
             >
               Troubleshoot
             </Link>

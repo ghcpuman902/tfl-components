@@ -1,0 +1,32 @@
+---
+description: Keep in-sentence links on the surrounding alphabetic baseline (no inline-flex)
+globs: components/landing/**/*.tsx,app/docs/**/*.tsx,mdx-components.tsx,components/docs/**/*.tsx,components/board/**/*.tsx,components/user-tfl-credentials-dialog.tsx
+alwaysApply: false
+---
+
+# Inline text links
+
+In running text, links stay on the surrounding alphabetic baseline.
+
+Canonical classes: [`lib/text-link.ts`](../../lib/text-link.ts) (`TEXT_LINK_CLASS`, `TEXT_LINK_ICON_CLASS`).
+
+```tsx
+// ✅ GOOD — inline link; icon uses vertical-align
+<a href={href} className={TEXT_LINK_CLASS}>
+  <Icon className={cn(TEXT_LINK_ICON_CLASS, "mr-1")} />
+  tfl-ts
+</a>
+```
+
+```tsx
+// ❌ BAD — flex synthesises a box baseline from the SVG bottom and lifts the text
+<a href={href} className="inline-flex items-center underline">
+  <Icon className="size-4" />
+  tfl-ts
+</a>
+```
+
+- Do **not** use `inline-flex items-center` (or `items-baseline` with an icon-first child) on links inside sentences or headings.
+- `vertical-align` / `align-[-0.15em]` does nothing on flex children — that is why the icon class is `inline-block`.
+- `inline-flex items-center` is for chrome (header, buttons, chips), not prose.
+- Do not put `text-box: trim-both cap alphabetic` on prose links; that trim is for chip optical centering.

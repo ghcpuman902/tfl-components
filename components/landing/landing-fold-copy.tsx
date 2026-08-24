@@ -1,5 +1,6 @@
 import type { Ref } from "react"
 import { ChevronDownIcon } from "lucide-react"
+import { TEXT_LINK_CLASS, TEXT_LINK_ICON_CLASS } from "@/lib/text-link"
 import { cn } from "@/lib/utils"
 
 type LandingFoldCopyProps = {
@@ -33,11 +34,12 @@ export const LandingFoldCopy = ({
         onClick={onContinue}
         className={cn(
           foldCopyClassName,
-          "pointer-events-auto inline-flex items-center gap-1 underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+          TEXT_LINK_CLASS,
+          "pointer-events-auto focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
         )}
       >
         See it in the space
-        <ChevronDownIcon className="size-5" aria-hidden />
+        <ChevronDownIcon className={cn(TEXT_LINK_ICON_CLASS, "ml-1")} aria-hidden />
       </button>
     ) : null}
   </div>

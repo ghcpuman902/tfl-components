@@ -88,6 +88,7 @@ import {
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
 import { LINE_ORDER } from "tfl-ts"
 import { getLineNameTiers } from "@/lib/tfl/line-names"
+import { TEXT_LINK_CLASS, TEXT_LINK_ICON_CLASS } from "@/lib/text-link"
 import { cn } from "@/lib/utils"
 
 const subscribe = () => () => undefined
@@ -648,12 +649,15 @@ export const BoardStagedBuilder = ({
               Get a free TfL API key from{" "}
               <a
                 href={TFL_API_PORTAL_PRODUCT_URL}
-                className="inline-flex items-center gap-1 underline underline-offset-4"
+                className={TEXT_LINK_CLASS}
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 api-portal.tfl.gov.uk
-                <ExternalLinkIcon className="size-3.5" aria-hidden />
+                <ExternalLinkIcon
+                  className={cn(TEXT_LINK_ICON_CLASS, "ml-1")}
+                  aria-hidden
+                />
                 <span className="sr-only">(opens in a new tab)</span>
               </a>{" "}
               and come back
