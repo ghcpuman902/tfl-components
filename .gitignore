@@ -46,6 +46,7 @@ LOCAL_NOTES.md
 PUSH_NOTES.md
 VERCEL_PRIVATE_NOTES.md
 scratch/
+tmp/x-thread/
 .env*
 
 # large source feeds kept until a derived snapshot exists

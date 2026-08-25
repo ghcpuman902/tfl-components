@@ -25,13 +25,24 @@ import {
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value))
 
-const readCssLength = (raw: string, fallback: number) => {
+/** Live recasts while the user drags; one accurate pass after they stop. */
+const RESIZE_THROTTLE_MS = 80
+const RESIZE_SETTLE_MS = 140
+
+type ReadCssLength = (raw: string, fallback: number) => number
+
+const createCssLengthProbe = () => {
   const probe = document.createElement("div")
-  probe.style.cssText = `position:absolute;visibility:hidden;width:${raw}`
+  probe.setAttribute("aria-hidden", "true")
+  probe.style.cssText =
+    "position:absolute;visibility:hidden;pointer-events:none;inset:0 auto auto 0"
   document.body.append(probe)
-  const width = probe.getBoundingClientRect().width
-  probe.remove()
-  return width > 0 ? width : fallback
+  const readCssLength: ReadCssLength = (raw, fallback) => {
+    probe.style.width = raw
+    const width = probe.getBoundingClientRect().width
+    return width > 0 ? width : fallback
+  }
+  return { readCssLength, dispose: () => probe.remove() }
 }
 
 const layoutCoverCanvas = (
@@ -42,8 +53,6 @@ const layoutCoverCanvas = (
   const width = composition.clientWidth
   const height = composition.clientHeight
   const viewBox = svg.viewBox.baseVal
-  // eslint-disable-next-line no-console
-  console.log("[DEBUG layoutCoverCanvas]", { width, height, viewBox: { w: viewBox.width, h: viewBox.height, x: viewBox.x, y: viewBox.y } })
   const coverScale =
     Math.max(width / viewBox.width, height / viewBox.height) * CROP_SCALE
   const canvasW = viewBox.width * coverScale
@@ -61,7 +70,8 @@ const layoutCoverCanvas = (
 const framedIpadCamera = (
   svg: SVGSVGElement,
   composition: HTMLElement,
-  canvas: HTMLElement
+  canvas: HTMLElement,
+  readCssLength: ReadCssLength
 ) => {
   const { coverScale, panX, panY, viewBox } = layoutCoverCanvas(
     svg,
@@ -91,8 +101,6 @@ const framedIpadCamera = (
   const targetScale = desiredWidth / iPadWidth
   const iPadCenterX = iPadLeft + iPadWidth / 2
   const iPadCenterY = iPadTop + iPadHeight / 2
-  // eslint-disable-next-line no-console
-  console.log("[DEBUG framedIpadCamera]", { coverScale, desiredWidth, desiredTop, iPadWidth, iPadHeight, targetScale })
 
   return {
     targetScale,
@@ -197,10 +205,22 @@ export const useIpadZoom = ({
   const onSceneReadyRef = useRef(onSceneReady)
   onSceneReadyRef.current = onSceneReady
 
-  const applyProgress = useCallback((progress: number) => {
+  const applyProgress = useCallback((progress: number, force = false) => {
     const clamped = clamp(progress, 0, 1)
     progressRef.current = clamped
-    timelineRef.current?.progress(clamped)
+    const timeline = timelineRef.current
+    if (timeline) {
+      if (force) {
+        // `.progress(x)` is a no-op when `x` already equals the timeline's
+        // cached time — invalidate() (after a resize) never gets rendered,
+        // so the camera keeps its pre-resize transform under a freshly
+        // resized canvas. `.render(..., force: true)` re-runs the dynamic
+        // x/y/scale getters unconditionally.
+        timeline.render(clamped * timeline.duration(), false, true)
+      } else {
+        timeline.progress(clamped)
+      }
+    }
     onRoomCompleteChangeRef.current(clamped >= ROOM_COMPLETE_AT)
   }, [])
 
@@ -218,9 +238,15 @@ export const useIpadZoom = ({
     const copySlot = copySlotRef.current
     if (!wrapper || !composition || !camera || !canvas || !svg || !iPad) return
 
+    const cssProbe = createCssLengthProbe()
     const ctx = gsap.context(() => {
       const startCamera = () => {
-        const next = framedIpadCamera(svg, composition, canvas)
+        const next = framedIpadCamera(
+          svg,
+          composition,
+          canvas,
+          cssProbe.readCssLength
+        )
         if (copySlot) {
           copySlot.style.top = `${next.copyTop}px`
           copySlot.style.bottom = "auto"
@@ -235,8 +261,8 @@ export const useIpadZoom = ({
         }
         return next
       }
-      const start = startCamera()
-      endCamera()
+      let start = startCamera()
+      let end = endCamera()
       gsap.set(camera, {
         x: start.targetX,
         y: start.targetY,
@@ -255,15 +281,15 @@ export const useIpadZoom = ({
       timeline.fromTo(
         camera,
         {
-          x: () => startCamera().targetX,
-          y: () => startCamera().targetY,
-          scale: () => startCamera().targetScale,
+          x: () => start.targetX,
+          y: () => start.targetY,
+          scale: () => start.targetScale,
           transformOrigin: "0 0",
         },
         {
-          x: () => endCamera().targetX,
-          y: () => endCamera().targetY,
-          scale: () => endCamera().targetScale,
+          x: () => end.targetX,
+          y: () => end.targetY,
+          scale: () => end.targetScale,
           duration: 1,
         },
         0
@@ -312,15 +338,13 @@ export const useIpadZoom = ({
         pin: false,
         invalidateOnRefresh: true,
         onRefresh: (self) => {
-          // eslint-disable-next-line no-console
-          console.log("[DEBUG onRefresh] start", { progress: self.progress, start: self.start, end: self.end })
-          startCamera()
-          endCamera()
+          start = startCamera()
+          end = endCamera()
           timeline.invalidate()
           const preserved = resizeProgressRef.current
           resizeProgressRef.current = null
           const target = preserved ?? self.progress
-          applyProgress(target)
+          applyProgress(target, true)
           if (preserved != null && self.end > self.start) {
             const targetScrollY = self.start + target * (self.end - self.start)
             if (Math.abs(window.scrollY - targetScrollY) > 0.5) {
@@ -338,15 +362,50 @@ export const useIpadZoom = ({
       ScrollTrigger.refresh()
     }, wrapper)
 
+    if (reducedMotion) {
+      return () => {
+        cssProbe.dispose()
+        timelineRef.current = null
+        triggerRef.current = null
+        ctx.revert()
+      }
+    }
+
     let resizeFrame = 0
-    const handleResize = () => {
+    let settleTimer = 0
+    let lastRefreshAt = 0
+    let lastSizeW = -1
+    let lastSizeH = -1
+
+    const captureResizeProgress = () => {
       const current = progressRef.current
       resizeProgressRef.current =
         current >= ROOM_COMPLETE_AT ? 1 : current <= 0 ? 0 : current
+    }
+
+    const refreshScene = (force: boolean) => {
+      const width = composition.clientWidth
+      const height = composition.clientHeight
+      if (!force && width === lastSizeW && height === lastSizeH) return
+      lastSizeW = width
+      lastSizeH = height
+      lastRefreshAt = performance.now()
+      getLandingGsap().ScrollTrigger.refresh()
+    }
+
+    const handleResize = () => {
+      captureResizeProgress()
+      if (settleTimer) window.clearTimeout(settleTimer)
+      settleTimer = window.setTimeout(() => {
+        settleTimer = 0
+        captureResizeProgress()
+        refreshScene(true)
+      }, RESIZE_SETTLE_MS)
+      if (performance.now() - lastRefreshAt < RESIZE_THROTTLE_MS) return
       if (resizeFrame) return
       resizeFrame = window.requestAnimationFrame(() => {
         resizeFrame = 0
-        getLandingGsap().ScrollTrigger.refresh()
+        refreshScene(false)
       })
     }
     window.addEventListener("resize", handleResize)
@@ -364,6 +423,8 @@ export const useIpadZoom = ({
       viewport?.removeEventListener("resize", handleResize)
       stageObserver.disconnect()
       if (resizeFrame) window.cancelAnimationFrame(resizeFrame)
+      if (settleTimer) window.clearTimeout(settleTimer)
+      cssProbe.dispose()
       timelineRef.current = null
       triggerRef.current = null
       ctx.revert()

@@ -148,11 +148,13 @@ const tierClasses = (options: {
 
   if (bucket === "long") {
     if (hasMiddle) {
+      // Full "Hammersmith & City" at board `text-xl` / 20px P22 is ~12.4rem.
+      // 11rem still paints the full name and the status tile overflow-clips it.
       return {
-        fullOneLine: "hidden whitespace-nowrap @min-[11rem]/line-name:block",
+        fullOneLine: "hidden whitespace-nowrap @min-[13rem]/line-name:block",
         fullTwoLine: null,
         middle:
-          "hidden whitespace-nowrap @min-[4.5rem]/line-name:block @min-[11rem]/line-name:hidden",
+          "hidden whitespace-nowrap @min-[4.5rem]/line-name:block @min-[13rem]/line-name:hidden",
         short: "block whitespace-nowrap @min-[4.5rem]/line-name:hidden",
       }
     }

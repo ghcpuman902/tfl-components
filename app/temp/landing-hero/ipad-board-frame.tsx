@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 import { BoardDisplay } from "@/components/board/board-display"
 import type { BoardConfig } from "@/lib/tfl/board-url-state"
 import {
@@ -24,23 +24,40 @@ export const IpadBoardFrame = ({
   previewConfig = LANDING_BOARD_DEFAULT.config,
 }: IpadBoardFrameProps) => {
   const screenRef = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(1)
+  const innerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const element = screenRef.current
-    if (!element) return
+    const inner = innerRef.current
+    if (!element || !inner) return
+    let frame = 0
+    let lastScale = -1
     const update = () => {
       const width = element.clientWidth
       const height = element.clientHeight
       if (width <= 0 || height <= 0) return
-      setScale(
-        Math.min(width / BOARD_IFRAME_WIDTH, height / BOARD_IFRAME_HEIGHT)
+      const next = Math.min(
+        width / BOARD_IFRAME_WIDTH,
+        height / BOARD_IFRAME_HEIGHT
       )
+      if (Math.abs(next - lastScale) < 0.0001) return
+      lastScale = next
+      inner.style.transform = `scale(${next})`
+    }
+    const schedule = () => {
+      if (frame) return
+      frame = window.requestAnimationFrame(() => {
+        frame = 0
+        update()
+      })
     }
     update()
-    const observer = new ResizeObserver(update)
+    const observer = new ResizeObserver(schedule)
     observer.observe(element)
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      if (frame) window.cancelAnimationFrame(frame)
+    }
   }, [])
 
   return (
@@ -50,11 +67,12 @@ export const IpadBoardFrame = ({
       style={{ pointerEvents: interactive ? "auto" : "none" }}
     >
       <div
+        ref={innerRef}
         className="absolute top-0 left-0 origin-top-left"
         style={{
           width: BOARD_IFRAME_WIDTH,
           height: BOARD_IFRAME_HEIGHT,
-          transform: `scale(${scale})`,
+          transform: "scale(1)",
           pointerEvents: interactive ? "auto" : "none",
         }}
       >

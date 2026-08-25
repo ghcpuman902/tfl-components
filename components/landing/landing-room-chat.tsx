@@ -1,6 +1,12 @@
 "use client"
 
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react"
 import Link from "next/link"
 import { HeaderRoundel } from "@/components/site-header-roundel"
 import { useLondonGreeting } from "@/hooks/use-london-greeting"
@@ -100,19 +106,19 @@ const ENTER_EASE = "ease-[cubic-bezier(0.19,1,0.22,1)]"
 const ENTER_CLASS = cn(
   "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2",
   "motion-reduce:animate-in motion-reduce:fade-in",
-  "duration-300 fill-mode-both",
+  "duration-200 fill-mode-both",
   ENTER_EASE
 )
 
 const CHOICE_ENTER_CLASS = cn(
   "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:slide-in-from-right-2",
   "motion-reduce:animate-in motion-reduce:fade-in",
-  "duration-300 fill-mode-both",
+  "duration-200 fill-mode-both",
   ENTER_EASE
 )
 
 const RADIUS_TRANSITION_CLASS =
-  "transition-[border-radius] duration-300 ease-[cubic-bezier(0.19,1,0.22,1)]"
+  "transition-[border-radius] duration-200 ease-[cubic-bezier(0.19,1,0.22,1)]"
 
 const CHOICE_PILL_CLASS =
   "pointer-events-auto inline-flex min-h-11 origin-bottom-right cursor-pointer items-center bg-foreground px-4 py-2.5 text-[clamp(0.9375rem,0.85rem+0.3vw,1rem)] font-medium text-background shadow-[0_3px_0_0_color-mix(in_oklch,var(--foreground)_28%,transparent)] select-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none motion-safe:transition-[border-radius,transform] motion-safe:duration-150 motion-safe:ease-[cubic-bezier(0.25,0.46,0.45,0.94)] motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.97] motion-safe:active:translate-y-px"
@@ -122,9 +128,13 @@ const RESTART_CLASS = cn(
   "pointer-events-auto self-end text-[clamp(0.8125rem,0.75rem+0.2vw,0.875rem)] text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
 )
 
-const COMPOSE_MS = 2100
-const FOLLOW_UP_PAUSE_MS = 1300
-const CHOICE_GAP_MS = 900
+const COMPOSE_MS = 900
+const FOLLOW_UP_PAUSE_MS = 480
+const CHOICE_GAP_MS = 280
+const SKIP_CLICKS = 2
+const SKIP_WINDOW_MS = 500
+const SKIP_CLICK_GUARD =
+  "[data-landing-chat] a, [data-landing-chat] button, [data-landing-chrome]"
 
 const TypingDots = () => (
   <div className="flex items-center gap-1" aria-label="Typing">
@@ -132,7 +142,7 @@ const TypingDots = () => (
       <span
         key={index}
         className="landing-chat-dot size-1.5 rounded-full bg-foreground/40"
-        style={{ animationDelay: `${index * 160}ms` }}
+        style={{ animationDelay: `${index * 120}ms` }}
       />
     ))}
   </div>
@@ -177,12 +187,19 @@ export const LandingRoomChat = ({
 }: LandingRoomChatProps) => {
   const greeting = useLondonGreeting()
   const beats = assistantBeats(greeting, onBoardClick)
+  const overlayRef = useRef<HTMLDivElement>(null)
   const [shownCount, setShownCount] = useState(skipIntro ? beats.length : 0)
   const [choiceCount, setChoiceCount] = useState(
     skipIntro ? END_CHOICES.length : 0
   )
   const [isTyping, setIsTyping] = useState(!skipIntro)
   const completedRef = useRef(skipIntro)
+
+  const revealAll = useCallback(() => {
+    setShownCount(beats.length)
+    setChoiceCount(END_CHOICES.length)
+    setIsTyping(false)
+  }, [beats.length])
 
   useEffect(() => {
     if (active) return
@@ -195,10 +212,8 @@ export const LandingRoomChat = ({
   useEffect(() => {
     if (!skipIntro) return
     completedRef.current = true
-    setShownCount(beats.length)
-    setChoiceCount(END_CHOICES.length)
-    setIsTyping(false)
-  }, [beats.length, skipIntro])
+    revealAll()
+  }, [revealAll, skipIntro])
 
   useEffect(() => {
     if (!active || skipIntro) return
@@ -227,6 +242,43 @@ export const LandingRoomChat = ({
 
   useEffect(() => {
     if (!active || skipIntro) return
+
+    let taps = 0
+    let windowStartedAt = 0
+
+    const handleClick = (event: MouseEvent) => {
+      if (completedRef.current) return
+      const target = event.target
+      if (!(target instanceof Element)) return
+      if (target.closest(SKIP_CLICK_GUARD)) return
+      const host = overlayRef.current?.parentElement
+      if (!host) return
+      const bounds = host.getBoundingClientRect()
+      if (
+        event.clientX < bounds.left ||
+        event.clientX > bounds.right ||
+        event.clientY < bounds.top ||
+        event.clientY > bounds.bottom
+      ) {
+        return
+      }
+
+      const now = event.timeStamp
+      if (now - windowStartedAt > SKIP_WINDOW_MS) {
+        taps = 1
+        windowStartedAt = now
+        return
+      }
+      taps += 1
+      if (taps >= SKIP_CLICKS) revealAll()
+    }
+
+    document.addEventListener("click", handleClick, true)
+    return () => document.removeEventListener("click", handleClick, true)
+  }, [active, revealAll, skipIntro])
+
+  useEffect(() => {
+    if (!active || skipIntro) return
     if (shownCount < beats.length) return
     if (choiceCount < END_CHOICES.length) return
     if (completedRef.current) return
@@ -246,6 +298,8 @@ export const LandingRoomChat = ({
 
   return (
     <div
+      ref={overlayRef}
+      data-landing-chat
       className={cn(
         "pointer-events-none absolute z-20",
         "inset-4",
