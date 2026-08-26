@@ -1,6 +1,6 @@
 ## Width steps
 
-Width steps need an `@container/arrivals` ancestor, as on [`RailArrivalsBoard`](/docs/tube-rail-arrivals). Visible form: `Platform N` → `Plat N` → `PN` → `N`. Casing stays title-style. `aria-label` stays `Platform N`.
+Width steps need an `@container/arrivals` ancestor, as on [`RailArrivalsBoard`](/docs/tube-rail-arrivals). Visible form: `Platform N` → `Plat N` → `PN` → `N`. Casing stays title-style. `aria-label` stays `Platform N`. On a row, `compact` paints `P{n}` in a fixed `3ch` box so `P1` and `P2` occupy the same width. That box is for tabular digits, not the wider `5ch` letter box used by line codes.
 
 ```tsx
 import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
@@ -19,7 +19,7 @@ export default function Row() {
 | Prop | Type | Description |
 |------|------|-------------|
 | `number` | `string` | Platform number or letter after “Platform”. |
-| `compact` | `boolean` | Always paint `P{n}`. Use on a row when the subgroup heading is not the platform. |
+| `compact` | `boolean` | Always paint `P{n}` in a fixed `3ch` box. Use on a row when the subgroup heading is not the platform. |
 | `className` | `string` | Optional class merge. |
 
 Solid `bg-muted-foreground` fill, square corners, no border. Optical centre via `[text-box:trim-both_cap_alphabetic]`.

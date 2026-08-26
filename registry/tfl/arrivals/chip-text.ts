@@ -9,10 +9,20 @@ export const CHIP_CAP_TEXT_BOX_CLASS =
   "leading-none [text-box:trim-both_cap_alphabetic]"
 
 /**
- * Shared identity-chip width. Bus routes are ≤4 characters; line codes are
- * 3 letters. One extra `ch` keeps MET / H&C / N253 from clipping.
+ * Shared identity-chip width for line codes and route numbers. Line codes are
+ * 3 letters; bus routes are ≤4 characters. One extra `ch` keeps MET / H&C /
+ * N253 from clipping. Compact platform chips are narrower — see
+ * `ARRIVALS_PLATFORM_CHIP_WIDTH_CLASS`.
  */
 export const ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS = "w-[5ch]"
+
+/**
+ * Compact `P{n}` chip. Digits are `1ch`; `P1`/`P2` and a rare `P22` share
+ * this box so rows align. Not the 5ch letter box — three letters are wider
+ * than a letter plus two tabular digits, and the platform chip should not
+ * carry that side padding.
+ */
+export const ARRIVALS_PLATFORM_CHIP_WIDTH_CLASS = "w-[3ch]"
 
 /** Unattended rank chip — digit + ordinal suffix (`1st`). */
 export const ARRIVALS_RANK_CHIP_WIDTH_CLASS = "w-[3ch]"

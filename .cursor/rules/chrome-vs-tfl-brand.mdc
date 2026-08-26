@@ -52,7 +52,7 @@ Badges and chips also default to **square corners** (`rounded-none` / no `rounde
 </div>
 ```
 
-Bus route chips (`BusNumberChip`): TfL bus red (`TFL_MODAL_COLOURS.buses`), fixed `w-[5ch]`, no horizontal padding, `text-box: trim-both cap alphabetic` for optical center (route codes ≤ 4 characters). Mixed-line arrivals row chips (`LineBadge` 3-letter / `LineBadgeGroup variant="codes"`) use the same `w-[5ch]` box. Platform chips share the same cap text-box trim — casing stays as written, not forced uppercase.
+Bus route chips (`BusNumberChip`): TfL bus red (`TFL_MODAL_COLOURS.buses`), fixed `w-[5ch]`, no horizontal padding, `text-box: trim-both cap alphabetic` for optical center (route codes ≤ 4 characters). Mixed-line arrivals row chips (`LineBadge` 3-letter / `LineBadgeGroup variant="codes"`) use the same `w-[5ch]` box. Compact platform chips (`P{n}`) use a tighter `w-[3ch]` box — digits, not three letters. Platform chips share the same cap text-box trim — casing stays as written, not forced uppercase.
 
 ## Beautiful defaults (chrome only)
 

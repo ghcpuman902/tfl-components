@@ -777,6 +777,38 @@ describe("arrivals board layout API", () => {
     assert.ok(html.includes("CIR"), html)
   })
 
+  it("uses a fixed 3ch box for compact platform chips", () => {
+    const html = renderToStaticMarkup(
+      createElement(RailArrivalsBoard, {
+        data: [
+          prediction({
+            id: "d-w-1",
+            lineId: "district",
+            lineName: "District",
+            modeName: "tube",
+            platformName: "Westbound - Platform 1",
+            towards: "Ealing Broadway",
+            timeToStation: 120,
+          }),
+          prediction({
+            id: "d-w-2",
+            lineId: "district",
+            lineName: "District",
+            modeName: "tube",
+            platformName: "Westbound - Platform 2",
+            towards: "Richmond",
+            timeToStation: 180,
+          }),
+        ],
+        stopName: "Tower Hill",
+      })
+    )
+    assert.ok(html.includes("P1"), html)
+    assert.ok(html.includes("P2"), html)
+    assert.ok(html.includes('aria-label="Platform 1"'), html)
+    assert.ok(html.includes("w-[3ch]"), html)
+  })
+
   it("keeps the default vertical arrangement classes", () => {
     const html = renderToStaticMarkup(
       createElement(RailArrivalsBoard, {
@@ -837,6 +869,7 @@ describe("arrivals board layout API", () => {
     assert.equal(slotCount(html, "arrivals-rows"), 1)
     assert.equal(slotCount(html, "arrivals-row"), 3)
     assert.equal(html.includes("No more arrivals"), false)
+    assert.ok(html.includes("w-[5ch]"), html)
     // Flat order is global time order, routes interleaved.
     const order = [...html.matchAll(/aria-label="Route (\d+),/g)].map(
       (match) => match[1]

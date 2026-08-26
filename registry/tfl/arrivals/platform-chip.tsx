@@ -1,4 +1,7 @@
-import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text"
+import {
+  ARRIVALS_PLATFORM_CHIP_WIDTH_CLASS,
+  CHIP_CAP_TEXT_BOX_CLASS,
+} from "@/components/tfl/arrivals/chip-text"
 import { cn } from "@/lib/utils"
 
 export type PlatformChipProps = {
@@ -6,8 +9,9 @@ export type PlatformChipProps = {
   number: string
   className?: string
   /**
-   * Always paint `P{n}`. Use on a row when the subgroup heading is not the
-   * platform (platforms vary inside the bound). Default is the width ladder.
+   * Always paint `P{n}` in a fixed `3ch` box. Use on a row when the
+   * subgroup heading is not the platform (platforms vary inside the bound).
+   * Default is the width ladder.
    */
   compact?: boolean
 }
@@ -35,7 +39,8 @@ export const PlatformChip = ({
 }: PlatformChipProps) => (
   <span
     className={cn(
-      "inline-flex h-5 shrink-0 items-center justify-center bg-muted-foreground px-1.5 text-xs font-semibold text-background tabular-nums",
+      "inline-flex h-5 shrink-0 items-center justify-center bg-muted-foreground text-center text-xs font-semibold text-background tabular-nums",
+      compact ? ARRIVALS_PLATFORM_CHIP_WIDTH_CLASS : "px-1.5",
       className
     )}
     aria-label={`Platform ${number}`}
