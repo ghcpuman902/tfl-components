@@ -234,7 +234,8 @@ export const placeBranchStripLabels = (
   const laneMid = (layout.minLane + layout.maxLane) / 2
   const textH = nameFont * labelLineHeight * estimatedLines
 
-  return layout.points.map((point) => {
+  return layout.points.flatMap((point): BranchStripLabelPlacement[] => {
+    if (point.kind === "virtual") return []
     if (isHorizontal) {
       const labelAbove = point.lane <= laneMid
       const w = labelMaxWidth
@@ -243,41 +244,47 @@ export const placeBranchStripLabels = (
       const y = labelAbove
         ? point.y - labelClearance - h
         : point.y + labelClearance
-      return {
-        id: point.id,
-        side: labelAbove ? "above" : "below",
-        box: { x, y, w, h },
-      }
+      return [
+        {
+          id: point.id,
+          side: labelAbove ? "above" : "below",
+          box: { x, y, w, h },
+        },
+      ]
     }
 
     // Vertical: spur tips with dominant cross-axis track → above.
     if (point.trackAxis === "x") {
       const w = verticalLabelWidth
       const h = textH
-      return {
-        id: point.id,
-        side: "stub-above",
-        box: {
-          x: point.x - w / 2,
-          y: point.y - labelClearance - h,
-          w,
-          h,
+      return [
+        {
+          id: point.id,
+          side: "stub-above",
+          box: {
+            x: point.x - w / 2,
+            y: point.y - labelClearance - h,
+            w,
+            h,
+          },
         },
-      }
+      ]
     }
 
     const onLeft = verticalLabelOnLeft(point, layout)
     const w = verticalLabelWidth
     const h = textH
-    return {
-      id: point.id,
-      side: onLeft ? "left" : "right",
-      box: {
-        x: onLeft ? point.x - labelGap - w : point.x + labelGap,
-        y: point.y - h / 2,
-        w,
-        h,
+    return [
+      {
+        id: point.id,
+        side: onLeft ? "left" : "right",
+        box: {
+          x: onLeft ? point.x - labelGap - w : point.x + labelGap,
+          y: point.y - h / 2,
+          w,
+          h,
+        },
       },
-    }
+    ]
   })
 }

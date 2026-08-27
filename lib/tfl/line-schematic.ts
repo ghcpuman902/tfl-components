@@ -8,7 +8,13 @@
  * branch instruction, not inferred topology.
  */
 
-export type SchematicNodeKind = "stop" | "interchange" | "terminus"
+/**
+ * `"virtual"` is a dummy join inserted by the join-split pass
+ * (`lib/tfl/geometry/branch-strip-joins.ts`) so a high-degree station can
+ * stay a Y. It carries no label and no marker — see `BranchStripMarker` /
+ * `placeBranchStripLabels`.
+ */
+export type SchematicNodeKind = "stop" | "interchange" | "terminus" | "virtual"
 
 export type SchematicOrientationHint = "horizontal" | "vertical"
 

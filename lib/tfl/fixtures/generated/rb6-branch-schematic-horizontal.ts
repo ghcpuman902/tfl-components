@@ -285,6 +285,20 @@ export const RB6_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
       branchIds: ["segment-32"],
       stationKey: "putney-pier",
     },
+    {
+      id: "blackfriars-pier--join-1",
+      name: "",
+      lane: 0,
+      pos: 10.5,
+      kind: "virtual",
+    },
+    {
+      id: "blackfriars-pier--join-2",
+      name: "",
+      lane: 0,
+      pos: 11.5,
+      kind: "virtual",
+    },
   ],
   edges: [
     {
@@ -339,11 +353,21 @@ export const RB6_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     },
     {
       from: "bankside-pier",
+      to: "blackfriars-pier--join-1",
+      branchId: "segment-12",
+    },
+    {
+      from: "blackfriars-pier--join-1",
       to: "blackfriars-pier",
       branchId: "segment-12",
     },
     {
       from: "blackfriars-pier",
+      to: "blackfriars-pier--join-2",
+      branchId: "segment-29",
+    },
+    {
+      from: "blackfriars-pier--join-2",
       to: "embankment-pier",
       branchId: "segment-29",
     },
@@ -394,11 +418,11 @@ export const RB6_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     },
     {
       from: "london-bridge-city-pier",
-      to: "blackfriars-pier",
+      to: "blackfriars-pier--join-1",
       branchId: "segment-9",
     },
     {
-      from: "blackfriars-pier",
+      from: "blackfriars-pier--join-2",
       to: "battersea-power-station-pier-2",
       branchId: "segment-0",
     },

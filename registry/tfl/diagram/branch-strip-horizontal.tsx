@@ -48,42 +48,44 @@ export const BranchStripHorizontal = (props: BranchStripHorizontalProps) => {
       >
         <BranchStripTrack view={view} />
 
-        {layout.points.map((point) => {
-          const nodeX = point.x + svgOffsetX
-          const nodeY = point.y + svgOffsetY
-          const labelLines = nodeLabelLines?.[point.id]
-          const placement = placementById.get(point.id)
-          const labelAbove = (placement?.side ?? "above") === "above"
+        {layout.points
+          .filter((point) => point.kind !== "virtual")
+          .map((point) => {
+            const nodeX = point.x + svgOffsetX
+            const nodeY = point.y + svgOffsetY
+            const labelLines = nodeLabelLines?.[point.id]
+            const placement = placementById.get(point.id)
+            const labelAbove = (placement?.side ?? "above") === "above"
 
-          return (
-            <div
-              key={`label-${point.id}`}
-              className="pointer-events-auto absolute z-10"
-              style={{
-                left: nodeX,
-                top: labelAbove
-                  ? nodeY - labelClearance
-                  : nodeY + labelClearance,
-                width: labelMaxWidth,
-                transform: labelAbove
-                  ? "translate(-50%, -100%)"
-                  : "translate(-50%, 0)",
-              }}
-            >
-              <StationName
-                name={point.name}
-                lines={labelLines}
-                layout={labelLines?.length ? "fixed" : "auto"}
-                maxWidth={labelMaxWidth}
-                maxLines={2}
-                allowScaleDown={false}
-                align="center"
-                className="font-medium text-foreground"
-                style={labelStyle}
-              />
-            </div>
-          )
-        })}
+            return (
+              <div
+                key={`label-${point.id}`}
+                className="pointer-events-auto absolute z-10"
+                style={{
+                  left: nodeX,
+                  top: labelAbove
+                    ? nodeY - labelClearance
+                    : nodeY + labelClearance,
+                  width: labelMaxWidth,
+                  transform: labelAbove
+                    ? "translate(-50%, -100%)"
+                    : "translate(-50%, 0)",
+                }}
+              >
+                <StationName
+                  name={point.name}
+                  lines={labelLines}
+                  layout={labelLines?.length ? "fixed" : "auto"}
+                  maxWidth={labelMaxWidth}
+                  maxLines={2}
+                  allowScaleDown={false}
+                  align="center"
+                  className="font-medium text-foreground"
+                  style={labelStyle}
+                />
+              </div>
+            )
+          })}
       </div>
     </div>
   )

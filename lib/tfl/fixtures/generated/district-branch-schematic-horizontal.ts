@@ -578,6 +578,27 @@ export const DISTRICT_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
       branchIds: ["segment-2"],
       stationKey: "kensington-olympia",
     },
+    {
+      id: "earls-court--join-1",
+      name: "",
+      lane: 0,
+      pos: 9.333333333333334,
+      kind: "virtual",
+    },
+    {
+      id: "earls-court--join-2",
+      name: "",
+      lane: 0,
+      pos: 9.666666666666666,
+      kind: "virtual",
+    },
+    {
+      id: "earls-court--join-3",
+      name: "",
+      lane: 0,
+      pos: 10.5,
+      kind: "virtual",
+    },
   ],
   edges: [
     {
@@ -737,11 +758,21 @@ export const DISTRICT_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     },
     {
       from: "gloucester-road",
-      to: "earls-court",
+      to: "earls-court--join-3",
       branchId: "segment-1",
     },
     {
       from: "earls-court",
+      to: "earls-court--join-2",
+      branchId: "segment-3",
+    },
+    {
+      from: "earls-court--join-2",
+      to: "earls-court--join-1",
+      branchId: "segment-3",
+    },
+    {
+      from: "earls-court--join-1",
       to: "west-kensington",
       branchId: "segment-3",
     },
@@ -791,7 +822,7 @@ export const DISTRICT_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
       branchId: "segment-6",
     },
     {
-      from: "earls-court",
+      from: "earls-court--join-2",
       to: "west-brompton",
       branchId: "segment-4",
     },
@@ -852,6 +883,11 @@ export const DISTRICT_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     },
     {
       from: "high-street-kensington",
+      to: "earls-court--join-3",
+      branchId: "segment-0",
+    },
+    {
+      from: "earls-court--join-3",
       to: "earls-court",
       branchId: "segment-0",
     },
@@ -871,7 +907,7 @@ export const DISTRICT_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
       branchId: "segment-5",
     },
     {
-      from: "earls-court",
+      from: "earls-court--join-1",
       to: "kensington-olympia",
       branchId: "segment-2",
     },

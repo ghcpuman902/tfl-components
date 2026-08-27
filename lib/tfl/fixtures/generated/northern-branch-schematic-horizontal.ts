@@ -240,12 +240,21 @@ export const NORTHERN_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
       stationKey: "elephant-castle",
     },
     {
-      id: "kennington",
+      id: "kennington~a",
       name: "Kennington",
-      lane: 0,
+      lane: -0.5,
       pos: 20,
       kind: "interchange",
-      branchIds: ["segment-8", "segment-5"],
+      branchIds: ["segment-6", "segment-8"],
+      stationKey: "kennington",
+    },
+    {
+      id: "kennington~b",
+      name: "Kennington",
+      lane: 0.5,
+      pos: 20,
+      kind: "interchange",
+      branchIds: ["segment-7", "segment-5"],
       stationKey: "kennington",
     },
     {
@@ -626,11 +635,11 @@ export const NORTHERN_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     },
     {
       from: "elephant-castle",
-      to: "kennington",
+      to: "kennington~a",
       branchId: "segment-6",
     },
     {
-      from: "kennington",
+      from: "kennington~a",
       to: "oval",
       branchId: "segment-8",
     },
@@ -776,11 +785,11 @@ export const NORTHERN_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     },
     {
       from: "waterloo",
-      to: "kennington",
+      to: "kennington~b",
       branchId: "segment-5",
     },
     {
-      from: "kennington",
+      from: "kennington~b",
       to: "nine-elms",
       branchId: "segment-7",
     },

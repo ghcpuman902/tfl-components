@@ -104,7 +104,8 @@ export const BranchLineStripPicker = ({
           Mono
         </button>
         <p className="text-sm text-muted-foreground">
-          {schematic.nodes.length} stops
+          {schematic.nodes.filter((node) => node.kind !== "virtual").length}{" "}
+          stops
         </p>
       </div>
 
