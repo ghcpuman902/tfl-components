@@ -187,25 +187,46 @@ describe("computeBranchSchematicLayout", () => {
     )
   })
 
-  it("keeps one Poplar and one Stratford on DLR (they join, they are not Euston)", () => {
+  it("keeps one Stratford on DLR (it joins, it is not Euston)", () => {
     const schematic = buildBranchSchematic("dlr", "horizontal")
     assert.ok(schematic)
-    const poplar = schematic.nodes.filter(
-      (node) => stationKeyOf(node.stationKey ?? node.name) === "poplar"
-    )
     const stratford = schematic.nodes.filter(
       (node) => stationKeyOf(node.stationKey ?? node.name) === "stratford"
-    )
-    assert.equal(
-      poplar.length,
-      1,
-      `Poplar nodes: ${poplar.map((n) => `${n.id}@${n.lane}`).join(",")}`
     )
     assert.equal(
       stratford.length,
       1,
       `Stratford nodes: ${stratford.map((n) => `${n.id}@${n.lane}`).join(",")}`
     )
+  })
+
+  it("splits Poplar into two blobs — Blackwall↔Westferry never through-runs to All Saints↔West India Quay", () => {
+    const schematic = buildBranchSchematic("dlr", "horizontal")
+    assert.ok(schematic)
+    const poplar = schematic.nodes.filter(
+      (node) => stationKeyOf(node.stationKey ?? node.name) === "poplar"
+    )
+    // Real DLR ordered routes confirm two independent through-pairs at
+    // Poplar with no confirmed movement between them — the join-split pass
+    // (`lib/tfl/geometry/branch-strip-joins.ts`) reads that the same way it
+    // already reads Northern Euston: two blobs, same `stationKey`.
+    assert.equal(
+      poplar.length,
+      2,
+      `Poplar nodes: ${poplar.map((n) => `${n.id}@${n.lane}`).join(",")}`
+    )
+    assert.ok(poplar.every((node) => node.stationKey === "poplar"))
+    const degree = new Map<string, number>()
+    for (const edge of schematic.edges) {
+      degree.set(edge.from, (degree.get(edge.from) ?? 0) + 1)
+      degree.set(edge.to, (degree.get(edge.to) ?? 0) + 1)
+    }
+    for (const node of poplar) {
+      assert.ok(
+        (degree.get(node.id) ?? 0) <= 3,
+        `${node.id} degree ${degree.get(node.id)} should be ≤ 3`
+      )
+    }
   })
 
   it("draws Circle as a racetrack with a Hammersmith spur, not an unrolled sausage", () => {

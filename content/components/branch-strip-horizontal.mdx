@@ -16,6 +16,6 @@ Takes a horizontal `LineSchematic`: lane and position nodes authored for this or
 
 Corridor joins use a 45° S when space allows, otherwise 90° R. A true spur is a single 45° diagonal with one R3x fillet. The terminus bar sits perpendicular to that diagonal.
 
-Shared stations that diverge and converge stay one node. Parallel corridors that share a name, Euston, use duplicate nodes with a shared `stationKey`. A loop that is most of the line, Circle, is two parallel arcs plus the Hammersmith spur — not an unrolled sausage.
+A station keeps at most a Y — two-in-one-out or one-in-two-out. Once a real junction collects more incident tracks than that (District Earl's Court, DLR Poplar), the extra arms peel onto unlabelled joins staggered along the trunk instead of piling into one ring, matching how official in-carriage diagrams stagger a "direct joined branch". A confirmed real diamond, every incident track a genuine through-move (Northern Camden Town), stays a 2-in-2-out. Parallel corridors that share a name but never join, Euston, use duplicate nodes with a shared `stationKey`; the same split happens when the strongest matching turns up two independent through-pairs instead of one (Kennington, Poplar). A loop that is most of the line, Circle, is two parallel arcs plus the Hammersmith spur — not an unrolled sausage.
 
 Pass `mono` to paint B&W Tube-map stroke motifs. Mono scales through `x`, not `--tfl-diagram-scale`.

@@ -195,20 +195,22 @@ export const BranchStripTrack = ({ view }: { view: BranchStripView }) => {
           )
         })}
 
-        {layout.points.map((point) => (
-          <BranchStripMarker
-            key={`m-${point.id}`}
-            point={point}
-            lineColor={markerColor}
-            strokeWidth={strokeWidth}
-            tickProtrude={tickProtrude}
-            ringOuter={ringOuter}
-            ringStroke={ringStroke}
-            routeAlongMain={point.trackAxis === "x"}
-            trackAngle={point.trackAngle}
-            mono={mono}
-          />
-        ))}
+        {layout.points
+          .filter((point) => point.kind !== "virtual")
+          .map((point) => (
+            <BranchStripMarker
+              key={`m-${point.id}`}
+              point={point}
+              lineColor={markerColor}
+              strokeWidth={strokeWidth}
+              tickProtrude={tickProtrude}
+              ringOuter={ringOuter}
+              ringStroke={ringStroke}
+              routeAlongMain={point.trackAxis === "x"}
+              trackAngle={point.trackAngle}
+              mono={mono}
+            />
+          ))}
       </g>
     </svg>
   )
