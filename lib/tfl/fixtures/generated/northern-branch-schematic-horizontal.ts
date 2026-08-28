@@ -242,7 +242,7 @@ export const NORTHERN_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     {
       id: "kennington~a",
       name: "Kennington",
-      lane: -0.5,
+      lane: 0,
       pos: 20,
       kind: "interchange",
       branchIds: ["segment-6", "segment-8"],
@@ -251,7 +251,7 @@ export const NORTHERN_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     {
       id: "kennington~b",
       name: "Kennington",
-      lane: 0.5,
+      lane: -1,
       pos: 20,
       kind: "interchange",
       branchIds: ["segment-7", "segment-5"],

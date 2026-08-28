@@ -39,6 +39,17 @@ const PITCH_EM = {
   },
 } as const
 
+/**
+ * `lanePitch / mainPitch` for the horizontal strip — scale-invariant (both
+ * pitches are `nameFont` multiples), so a 1-lane change needs at least this
+ * much `Δpos` before `octilinearLanePath` can draw a 45° S instead of
+ * falling back to a 90° R. `lib/tfl/geometry/branch-strip-joins.ts` uses
+ * this to size the gutter a peeled arm needs, with its own safety margin —
+ * see that file's `requiredGutterPos`.
+ */
+export const HORIZONTAL_LANE_TO_MAIN_POS_RATIO =
+  PITCH_EM.horizontal.lane / PITCH_EM.horizontal.main
+
 export type BranchStripMetrics = {
   x: number
   orientation: SchematicOrientation
