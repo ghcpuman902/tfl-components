@@ -1,6 +1,9 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { buildBranchSchematic } from "./branch-schematic-layout.ts"
+import {
+  buildBranchSchematic,
+  TOPOLOGY_CLIP_LINE_IDS as TOPOLOGY_CLIP_LINE_IDS_FOR_TEST,
+} from "./branch-schematic-layout.ts"
 import { NORTHERN_LINE_SCHEMATIC_HORIZONTAL } from "./fixtures/northern-line-schematic-horizontal.ts"
 import { NORTHERN_LINE_SCHEMATIC_VERTICAL } from "./fixtures/northern-line-schematic-vertical.ts"
 import { requiredGutterPos } from "./geometry/branch-strip-joins.ts"
@@ -135,31 +138,12 @@ describe("buildLineTopologyFromStaticBranches", () => {
 })
 
 describe("computeBranchSchematicLayout", () => {
-  it("matches the hand-authored Northern horizontal schematic at ≥ 78%", () => {
-    const generated = buildBranchSchematic("northern", "horizontal")
-    assert.ok(generated)
-    assert.equal(generated.orientation, "horizontal")
-    const match = structuralMatchScore(
-      generated,
-      NORTHERN_LINE_SCHEMATIC_HORIZONTAL
-    )
-    // Was ≥ 80%. Kennington's two blobs now sit on the ACTUAL lane their
-    // own pair occupies (bank ↔ morden on one lane, charing-cross ↔
-    // battersea on the other — see `branch-strip-joins.ts`'s "no parallel
-    // S-hump" fix) instead of an arbitrary ±0.5 offset from `via.lane`.
-    // That is more correct, but it now surfaces a PRE-EXISTING mismatch
-    // between the generated corridor placement and the hand-drawn diagram
-    // for which side of the trunk the Charing Cross branch sits on
-    // (`edgware` / `waterloo` / `embankment` already disagreed before this
-    // change) — Kennington's Charing Cross blob inherits that same sign,
-    // where its old synthetic offset happened not to. Not a regression in
-    // the join-split logic; the corridor sign heuristic is unrelated to
-    // this file and out of scope here.
-    assert.ok(
-      match.score >= 0.78,
-      `Northern horizontal structural match ${((match.score ?? 0) * 100).toFixed(1)}% (side ${match.sideOk}/${match.shared}, order pairs ${match.orderOk})`
-    )
-  })
+  // Northern's horizontal strip no longer comes from this trunk-and-offshoot
+  // walk at all — see `TOPOLOGY_CLIP_LINE_IDS` — so comparing it against the
+  // hand-authored fixture (still drawn with a "longest Regular route is the
+  // trunk" assumption) no longer means what it used to. The equivalent
+  // invariant checks for the topology pipeline live in
+  // `branch-strip-from-topology.test.ts`.
 
   it("builds a distinct vertical Northern map (not a rotated horizontal)", () => {
     const horizontal = buildBranchSchematic("northern", "horizontal")
@@ -196,6 +180,16 @@ describe("computeBranchSchematicLayout", () => {
           `${lineId} ${orientation}: ${issues.map((i) => i.message).join("; ")}`
         )
         if (lineId === "circle") continue
+        // Northern / District / Metropolitan horizontal strips come from
+        // the topology clip instead: lane 0 is whichever RUN sits closest
+        // to the energy layout's own main axis, not necessarily the
+        // longest branch — see `branch-strip-from-topology.ts`.
+        if (
+          orientation === "horizontal" &&
+          TOPOLOGY_CLIP_LINE_IDS_FOR_TEST.has(lineId)
+        ) {
+          continue
+        }
         const lane0 = schematic.nodes.filter((node) => node.lane === 0)
         const byLane = new Map<number, number>()
         for (const node of schematic.nodes) {
