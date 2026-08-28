@@ -23,6 +23,8 @@ type LineBadgeProps = {
   name?: string
   lineStatuses?: LineStatusLike[]
   className?: string
+  /** Merge after token `--line-raw` / `--line-border` (diagram flag size). */
+  style?: CSSProperties
   /** Show a filled colour chip (default) or text-only with brand colour. */
   variant?: "chip" | "text"
   /**
@@ -89,6 +91,7 @@ export const LineBadge = ({
   name,
   lineStatuses,
   className,
+  style,
   variant = "chip",
   color,
   diagram,
@@ -99,7 +102,7 @@ export const LineBadge = ({
     lineStatuses && lineStatuses.length > 0
       ? getLineAriaLabel(label, lineStatuses)
       : `${label} line`
-  const style = lineRawStyle(lineId, color)
+  const tokenStyle = lineRawStyle(lineId, color)
   const namePaint =
     fit === "shrink" ? (
       <LineName lineId={lineId} name={name ?? label} wrap />
@@ -117,7 +120,7 @@ export const LineBadge = ({
           fit === "shrink" && "inline-block w-full min-w-0",
           className
         )}
-        style={style}
+        style={{ ...tokenStyle, ...style }}
         aria-label={ariaLabel}
       >
         {namePaint}
@@ -130,11 +133,15 @@ export const LineBadge = ({
       data-line={lineId}
       data-tfl-diagram={diagram ? "" : undefined}
       className={cn(
-        "inline-flex h-5 items-center bg-[var(--line-color)] px-2 text-xs font-bold text-[var(--line-ink)] tabular-nums",
+        "box-border inline-flex h-5 items-center justify-center overflow-hidden bg-[var(--line-color)] px-2 text-xs font-bold text-[var(--line-ink)] tabular-nums",
         fit === "shrink" && "w-full max-w-full min-w-0",
         className
       )}
-      style={{ border: "var(--line-border, none)", ...style }}
+      style={{
+        border: "var(--line-border, none)",
+        ...tokenStyle,
+        ...style,
+      }}
       aria-label={ariaLabel}
       role="img"
     >
@@ -151,6 +158,13 @@ export const LineBadge = ({
     </span>
   )
 }
+
+/**
+ * §9 interchange flag on a strip. Pass diagram metrics as `style`
+ * (`height`, `minWidth`, `fontSize`) so the chip tracks `--tfl-diagram-x`.
+ */
+export const LINE_CHIP_DIAGRAM_CLASS =
+  "h-auto justify-center px-1.5 font-medium whitespace-nowrap"
 
 export type LineBadgeGroupAlign = "left" | "right" | "center"
 /** `auto` = shrink-wrap label (side fill). `under` = full-width floating label. */

@@ -72,7 +72,15 @@ describe("colour tokens generator", () => {
     )
     assert.match(
       cssText,
-      /\[data-line='liberty'\] \{\n    --line-raw: var\(--tfl-line-liberty\);\n    --line-stroke-style: parallel;/
+      /\[data-line='circle'\] \{\n    --line-raw: var\(--tfl-line-circle\);\n    --line-ink: oklch\(34\.902% 0\.2167 264\.19\);/
+    )
+    assert.match(
+      cssText,
+      /\[data-line='hammersmith-city'\] \{\n    --line-raw: var\(--tfl-line-hammersmith-city\);\n    --line-ink: oklch\(34\.902% 0\.2167 264\.19\);/
+    )
+    assert.match(
+      cssText,
+      /\[data-line='waterloo-city'\] \{\n    --line-raw: var\(--tfl-line-waterloo-city\);\n    --line-ink: oklch\(34\.902% 0\.2167 264\.19\);/
     )
     assert.match(
       cssText,

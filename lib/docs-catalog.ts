@@ -115,7 +115,7 @@ export const DOCS_GROUPS: readonly DocsGroup[] = [
     id: "blocks",
     title: "Labs",
     description:
-      "Experimental displays and composed examples built from the component library. These may change or break before version 1.0.",
+      "Experiments with line diagrams, service data, language, and network shape.",
   },
   {
     id: "board",
@@ -735,7 +735,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "blocks-index",
     title: "Labs",
     description:
-      "Experimental displays and composed examples built from the component library. These may change or break before version 1.0.",
+      "Experiments with line diagrams, service data, language, and network shape.",
     group: "blocks",
     kind: "page",
     href: "/labs",
@@ -745,8 +745,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "week-ahead",
     title: "Week ahead",
-    description:
-      "Lab composing status interpretation with schematic line strips.",
+    description: "Seven days of service status drawn onto line diagrams.",
     group: "blocks",
     kind: "block",
     href: "/labs/week-ahead",
@@ -759,6 +758,47 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
       "station-name-labels",
       "line-chip",
     ],
+    usesFoundations: ["colours"],
+  },
+  {
+    slug: "branch-atlas",
+    title: "Branch atlas",
+    description:
+      "Compare horizontal and vertical diagrams for lines that split, join, and loop.",
+    group: "blocks",
+    kind: "block",
+    href: "/labs/branch-atlas",
+    sidebarSection: "hidden",
+    sidebarOrder: 0,
+    builtWith: [
+      "branch-strip-horizontal",
+      "branch-strip-vertical",
+      "station-name-labels",
+    ],
+    usesFoundations: ["colours"],
+  },
+  {
+    slug: "line-languages",
+    title: "Line languages",
+    description: "Compare a Victoria line diagram in English and Japanese.",
+    group: "blocks",
+    kind: "block",
+    href: "/labs/line-languages",
+    sidebarSection: "hidden",
+    sidebarOrder: 0,
+    builtWith: ["line-strip", "station-name-labels"],
+    usesFoundations: ["colours"],
+  },
+  {
+    slug: "network-rings",
+    title: "Network rings",
+    description:
+      "Turn station counts and line colours into a concentric portrait of the network.",
+    group: "blocks",
+    kind: "block",
+    href: "/labs/network-rings",
+    sidebarSection: "hidden",
+    sidebarOrder: 0,
     usesFoundations: ["colours"],
   },
   {

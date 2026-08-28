@@ -164,7 +164,8 @@ export const UNDERGROUND_LINE_COLOURS = {
     "PMS 116",
     "C0 M18 Y100 K0",
     "255 200 10",
-    "NCS S 0580-Y10R"
+    "NCS S 0580-Y10R",
+    TFL_BLUE
   ),
   district: colour(
     "District",
@@ -178,7 +179,8 @@ export const UNDERGROUND_LINE_COLOURS = {
     "PMS 197",
     "C3 M48 Y15 K0",
     "245 137 166",
-    "NCS S 0550-R10B"
+    "NCS S 0550-R10B",
+    TFL_BLUE
   ),
   jubilee: colour(
     "Jubilee",
@@ -220,7 +222,8 @@ export const UNDERGROUND_LINE_COLOURS = {
     "PMS 338",
     "C55 M0 Y39 K0",
     "118 208 189",
-    "NCS S 1040-B80G"
+    "NCS S 1040-B80G",
+    TFL_BLUE
   ),
 } as const satisfies Record<string, BrandColourSpec>
 

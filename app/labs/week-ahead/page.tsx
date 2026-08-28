@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
-import Link from "next/link"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { WipNotice } from "@/components/docs/wip-notice"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
@@ -24,62 +23,10 @@ export default function WeekAheadLabPage() {
             entry={entry}
             notice={
               <WipNotice className="mt-3">
-                Labs is experimental. More examples will follow.
+                This view is experimental and may change before version 1.0.
               </WipNotice>
             }
           />
-          <RelationshipBadges
-            builtWith={entry.builtWith}
-            usesFoundations={entry.usesFoundations}
-          />
-          <div className="space-y-4 text-sm text-muted-foreground">
-            <p>
-              A <strong className="font-medium text-foreground">Lab</strong> —
-              not a single registry component. Composition boundary:
-            </p>
-            <ul className="list-inside list-disc space-y-1">
-              <li>This Lab owns the week and day-selection experience.</li>
-              <li>
-                Data-aware status interpretation consumes normalised service
-                information (same family as{" "}
-                <Link
-                  href="/docs/tube-rail-status"
-                  className="text-primary underline-offset-4 hover:underline"
-                >
-                  Status board
-                </Link>
-                ).
-              </li>
-              <li>
-                <Link
-                  href="/docs/line-strip"
-                  className="text-primary underline-offset-4 hover:underline"
-                >
-                  Line strip
-                </Link>{" "}
-                and{" "}
-                <Link
-                  href="/docs/branch-strip-horizontal"
-                  className="text-primary underline-offset-4 hover:underline"
-                >
-                  Branch strip — horizontal
-                </Link>
-                {" / "}
-                <Link
-                  href="/docs/branch-strip-vertical"
-                  className="text-primary underline-offset-4 hover:underline"
-                >
-                  vertical
-                </Link>{" "}
-                render schematic routes.
-              </li>
-              <li>
-                Disabled stations and segment states remain reusable rendering
-                capabilities on the strip primitives — install those
-                independently if you only need diagrams.
-              </li>
-            </ul>
-          </div>
         </article>
       </DocsReadableWidth>
 
@@ -89,6 +36,25 @@ export default function WeekAheadLabPage() {
         </Suspense>
         <DataSourceLabel source="cached" className="mt-3 px-4" />
       </div>
+
+      <DocsReadableWidth>
+        <div className="space-y-6 border-t border-border pt-8">
+          <section className="space-y-2" aria-labelledby="week-ahead-reading">
+            <h2 id="week-ahead-reading" className="tfl-title text-xl">
+              Reading the week
+            </h2>
+            <p className="max-w-prose text-muted-foreground">
+              Disrupted stations and route sections are marked against each
+              line&apos;s usual shape. This keeps the service change tied to the
+              part of the route it affects.
+            </p>
+          </section>
+          <RelationshipBadges
+            builtWith={entry.builtWith}
+            usesFoundations={entry.usesFoundations}
+          />
+        </div>
+      </DocsReadableWidth>
     </div>
   )
 }

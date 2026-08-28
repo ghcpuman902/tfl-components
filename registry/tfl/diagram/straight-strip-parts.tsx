@@ -4,6 +4,10 @@ import { formatStationName } from "@/lib/tfl/diagram-station"
 import { StationName } from "@/components/tfl/station-name"
 import { NationalRailPictogram } from "@/components/tfl/national-rail-pictogram"
 import {
+  LineBadge,
+  LINE_CHIP_DIAGRAM_CLASS,
+} from "@/components/tfl/brand/line-badge"
+import {
   monoLineHeightUnits,
   resolveMonoLineStyle,
   scaleMonoLayers,
@@ -383,19 +387,19 @@ export const StraightStripStationColumn = ({
         aria-label={`Connections: ${connections.map((c) => c.name).join(", ")}`}
       >
         {connections.map((c) => (
-          <span
+          <LineBadge
             key={`${station.id}-${c.id}`}
-            className="flex w-full items-center justify-center px-1.5 leading-none font-medium whitespace-nowrap"
+            lineId={c.id}
+            name={c.name}
+            color={c.color}
+            diagram
+            className={cn(LINE_CHIP_DIAGRAM_CLASS, "w-full")}
             style={{
-              backgroundColor: c.color ?? "#64748b",
-              color: c.darkText ? "#0019A8" : "#fff",
               height: m.flagHeight,
               minWidth: m.flagMinWidth,
               fontSize: m.flagFont,
             }}
-          >
-            {c.name}
-          </span>
+          />
         ))}
       </div>
     ) : (

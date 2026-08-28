@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react"
 import { ColourTokenPins } from "@/components/docs/demos/colour-token-pins"
 import { DocsResizeFrame } from "@/components/docs/docs-resize-frame"
 import { LineChipWall } from "@/components/docs/demos/line-chip-wall"
@@ -5,6 +6,7 @@ import {
   LineBadge,
   LineBadgeGroup,
   LineColorBar,
+  LINE_CHIP_DIAGRAM_CLASS,
 } from "@/components/tfl/brand/line-badge"
 import {
   getLineColourBarMode,
@@ -57,6 +59,37 @@ export default function LineBadgeDemo() {
           <code className="text-xs">diagram</code>.
         </p>
         <LineChipWall />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">Diagram scale</h2>
+        <p className="max-w-prose text-sm text-muted-foreground">
+          Strip interchange flags use the same chip at diagram flag size.
+        </p>
+        <div
+          className="flex flex-wrap items-start gap-px"
+          style={{ "--tfl-diagram-x": "8px" } as CSSProperties}
+        >
+          {[
+            "northern",
+            "circle",
+            "hammersmith-city",
+            "piccadilly",
+            "central",
+            "jubilee",
+          ].map((id) => (
+            <LineBadge
+              key={id}
+              lineId={id}
+              className={LINE_CHIP_DIAGRAM_CLASS}
+              style={{
+                height: "calc(var(--tfl-diagram-x) * 1.4)",
+                minWidth: "calc(var(--tfl-diagram-x) * 8)",
+                fontSize: "calc(var(--tfl-diagram-x) * 1)",
+              }}
+            />
+          ))}
+        </div>
       </section>
 
       <section className="space-y-3">

@@ -75,7 +75,9 @@ Opt a single-line chip into the name ladder with `fit="shrink"`. Board header ti
 | `name` | `string` | Display label. Defaults to the curated full name for `lineId`. |
 | `variant` | `"chip" \| "text"` | Filled chip (default) or coloured text. |
 | `fit` | `"clip" \| "shrink"` | `clip` paints the full name (default). `shrink` steps via `LineName`. |
-| `color` | `string` | Optional `--line-raw` override (e.g. Cable Car map red). |
+| `color` | `string` | Optional `--line-raw` override when `lineId` is outside the token set. |
+| `className` | `string` | Merge classes. Diagram flags use `LINE_CHIP_DIAGRAM_CLASS`. |
+| `style` | `CSSProperties` | Size overrides (`height`, `fontSize`, `minWidth`) for strip flag metrics. |
 | `lineStatuses` | `array` | Optional statuses for a richer ARIA label. |
 
 ### `LineBadgeGroup`

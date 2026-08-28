@@ -204,13 +204,15 @@
             "--line-raw": "var(--tfl-line-central)"
           },
           "[data-line='circle']": {
-            "--line-raw": "var(--tfl-line-circle)"
+            "--line-raw": "var(--tfl-line-circle)",
+            "--line-ink": "oklch(34.902% 0.2167 264.19)"
           },
           "[data-line='district']": {
             "--line-raw": "var(--tfl-line-district)"
           },
           "[data-line='hammersmith-city']": {
-            "--line-raw": "var(--tfl-line-hammersmith-city)"
+            "--line-raw": "var(--tfl-line-hammersmith-city)",
+            "--line-ink": "oklch(34.902% 0.2167 264.19)"
           },
           "[data-line='jubilee']": {
             "--line-raw": "var(--tfl-line-jubilee)"
@@ -228,7 +230,8 @@
             "--line-raw": "var(--tfl-line-victoria)"
           },
           "[data-line='waterloo-city']": {
-            "--line-raw": "var(--tfl-line-waterloo-city)"
+            "--line-raw": "var(--tfl-line-waterloo-city)",
+            "--line-ink": "oklch(34.902% 0.2167 264.19)"
           },
           "[data-line='liberty']": {
             "--line-raw": "var(--tfl-line-liberty)",
@@ -1766,6 +1769,7 @@
       ],
       "registryDependencies": [
         "https://tfl.manglekuo.com/r/tfl-colours.json",
+        "https://tfl.manglekuo.com/r/line-badge.json",
         "button"
       ],
       "files": [

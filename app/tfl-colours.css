@@ -134,12 +134,14 @@
   }
   [data-line='circle'] {
     --line-raw: var(--tfl-line-circle);
+    --line-ink: oklch(34.902% 0.2167 264.19);
   }
   [data-line='district'] {
     --line-raw: var(--tfl-line-district);
   }
   [data-line='hammersmith-city'] {
     --line-raw: var(--tfl-line-hammersmith-city);
+    --line-ink: oklch(34.902% 0.2167 264.19);
   }
   [data-line='jubilee'] {
     --line-raw: var(--tfl-line-jubilee);
@@ -158,6 +160,7 @@
   }
   [data-line='waterloo-city'] {
     --line-raw: var(--tfl-line-waterloo-city);
+    --line-ink: oklch(34.902% 0.2167 264.19);
   }
   [data-line='liberty'] {
     --line-raw: var(--tfl-line-liberty);

@@ -1,9 +1,10 @@
 /**
  * Chip labels keep normal casing (e.g. “Platform 4”, “Plat 4”).
  * Put this on the painted text node, not the flex chrome — then `items-center`
- * on the chip centres the cap-height box (uppercase X), not the em-square.
- * Chips never show descenders (g/y/p/q), so cap→alphabetic is the optical
- * vertical centre. Do not use x-height (`ex`) trim.
+ * on the chip centres the cap-height box (uppercase X → alphabetic baseline),
+ * not the em-square. Line names almost never have descenders; clip
+ * Piccadilly / City `y` rather than shifting the optical centre. Do not use
+ * x-height (`ex`) trim.
  */
 export const CHIP_CAP_TEXT_BOX_CLASS =
   "leading-none [text-box:trim-both_cap_alphabetic]"

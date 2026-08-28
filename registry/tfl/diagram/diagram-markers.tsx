@@ -1,6 +1,10 @@
 import type { CSSProperties } from "react"
 import { cn } from "@/lib/utils"
 import { ux, verticalDiagramMetrics } from "@/lib/tfl/line-diagram"
+import {
+  LineBadge,
+  LINE_CHIP_DIAGRAM_CLASS,
+} from "@/components/tfl/brand/line-badge"
 
 export type DiagramMarkerKind = "tick-right" | "tick-both" | "ring"
 
@@ -104,19 +108,19 @@ export const DiagramConnectionFlags = ({
       aria-label={`Connections: ${connections.map((c) => c.name).join(", ")}`}
     >
       {connections.map((c) => (
-        <span
+        <LineBadge
           key={`${stationId}-${c.id}`}
-          className="flex w-full items-center justify-center px-1.5 leading-none font-medium whitespace-nowrap"
+          lineId={c.id}
+          name={c.name}
+          color={c.color}
+          diagram
+          className={cn(LINE_CHIP_DIAGRAM_CLASS, "w-full")}
           style={{
-            backgroundColor: c.color ?? "#64748b",
-            color: c.darkText ? "#0019A8" : "#fff",
             height: m.flagHeight,
             minWidth: m.flagMinWidth,
             fontSize: m.flagFont,
           }}
-        >
-          {c.name}
-        </span>
+        />
       ))}
     </div>
   )

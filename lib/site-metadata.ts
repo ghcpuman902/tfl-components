@@ -120,7 +120,7 @@ export const ROUTE_PAGE_META = {
   labs: {
     title: "Labs",
     description:
-      "Experimental displays and composed examples built from the component library. These may change or break before version 1.0.",
+      "Experiments with line diagrams, service data, language, and network shape.",
     path: "/labs",
   },
   licence: {

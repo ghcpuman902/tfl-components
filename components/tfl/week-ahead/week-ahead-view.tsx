@@ -69,27 +69,14 @@ export const WeekAheadShell = ({ days, children }: ShellProps) => {
     <WeekAheadContext.Provider value={value}>
       <section
         className="w-full max-w-full min-w-0 space-y-8"
-        aria-labelledby="week-ahead-heading"
+        aria-label="Week ahead service diagrams"
       >
-        <div className="space-y-3">
-          <h1
-            id="week-ahead-heading"
-            className="tfl-title text-3xl text-foreground sm:text-4xl"
-          >
-            This week ahead
-          </h1>
-          <p className="max-w-prose text-sm text-muted-foreground">
-            Planned and live service for Tube, Elizabeth line, DLR, Overground,
-            and Tram routes. Routes load first; live status overlays when ready.
-          </p>
-        </div>
-
         <DayControls />
 
         {status?.statusError ? (
           <p role="status" className="text-sm text-muted-foreground">
             Live status is unavailable right now. Routes still show in official
-            colours — not as good service.
+            colours; that does not mean good service.
           </p>
         ) : null}
 
