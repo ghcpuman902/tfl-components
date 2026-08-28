@@ -1,13 +1,44 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { buildBranchSchematic } from "./branch-schematic-layout.ts"
+import {
+  buildBranchSchematic,
+  TOPOLOGY_CLIP_LINE_IDS as TOPOLOGY_CLIP_LINE_IDS_FOR_TEST,
+} from "./branch-schematic-layout.ts"
 import { NORTHERN_LINE_SCHEMATIC_HORIZONTAL } from "./fixtures/northern-line-schematic-horizontal.ts"
 import { NORTHERN_LINE_SCHEMATIC_VERTICAL } from "./fixtures/northern-line-schematic-vertical.ts"
+import { requiredGutterPos } from "./geometry/branch-strip-joins.ts"
 import { validateSchematic, type LineSchematic } from "./line-schematic.ts"
 import {
   buildLineTopologyFromStaticBranches,
   listBranchedLineIds,
 } from "./line-topology.ts"
+
+/**
+ * Every edge touching a `"virtual"` join must clear `requiredGutterPos` on
+ * the lane it changes — otherwise `octilinearLanePath` falls back to a 90°
+ * stair instead of a 45° S (the exact bug the join-split pass exists to
+ * avoid). Returns violation descriptions (empty = all clear).
+ */
+const virtualJoinClearanceViolations = (schematic: LineSchematic): string[] => {
+  const byId = new Map(schematic.nodes.map((node) => [node.id, node]))
+  const violations: string[] = []
+  for (const edge of schematic.edges) {
+    const from = byId.get(edge.from)
+    const to = byId.get(edge.to)
+    if (!from || !to) continue
+    if (from.kind !== "virtual" && to.kind !== "virtual") continue
+    if (from.lane === to.lane) continue
+    const deltaPos = Math.abs(from.pos - to.pos)
+    const deltaLane = Math.abs(from.lane - to.lane)
+    const required = requiredGutterPos(deltaLane)
+    if (deltaPos + 1e-6 < required) {
+      violations.push(
+        `${edge.from}→${edge.to}: Δpos=${deltaPos.toFixed(3)} < required ${required.toFixed(3)} for Δlane=${deltaLane}`
+      )
+    }
+  }
+  return violations
+}
 
 /**
  * Structural match vs a hand-authored schematic.
@@ -107,19 +138,12 @@ describe("buildLineTopologyFromStaticBranches", () => {
 })
 
 describe("computeBranchSchematicLayout", () => {
-  it("matches the hand-authored Northern horizontal schematic at ≥ 80%", () => {
-    const generated = buildBranchSchematic("northern", "horizontal")
-    assert.ok(generated)
-    assert.equal(generated.orientation, "horizontal")
-    const match = structuralMatchScore(
-      generated,
-      NORTHERN_LINE_SCHEMATIC_HORIZONTAL
-    )
-    assert.ok(
-      match.score >= 0.8,
-      `Northern horizontal structural match ${((match.score ?? 0) * 100).toFixed(1)}% (side ${match.sideOk}/${match.shared}, order pairs ${match.orderOk})`
-    )
-  })
+  // Northern's horizontal strip no longer comes from this trunk-and-offshoot
+  // walk at all — see `TOPOLOGY_CLIP_LINE_IDS` — so comparing it against the
+  // hand-authored fixture (still drawn with a "longest Regular route is the
+  // trunk" assumption) no longer means what it used to. The equivalent
+  // invariant checks for the topology pipeline live in
+  // `branch-strip-from-topology.test.ts`.
 
   it("builds a distinct vertical Northern map (not a rotated horizontal)", () => {
     const horizontal = buildBranchSchematic("northern", "horizontal")
@@ -156,6 +180,16 @@ describe("computeBranchSchematicLayout", () => {
           `${lineId} ${orientation}: ${issues.map((i) => i.message).join("; ")}`
         )
         if (lineId === "circle") continue
+        // Northern / District / Metropolitan horizontal strips come from
+        // the topology clip instead: lane 0 is whichever RUN sits closest
+        // to the energy layout's own main axis, not necessarily the
+        // longest branch — see `branch-strip-from-topology.ts`.
+        if (
+          orientation === "horizontal" &&
+          TOPOLOGY_CLIP_LINE_IDS_FOR_TEST.has(lineId)
+        ) {
+          continue
+        }
         const lane0 = schematic.nodes.filter((node) => node.lane === 0)
         const byLane = new Map<number, number>()
         for (const node of schematic.nodes) {
@@ -168,6 +202,19 @@ describe("computeBranchSchematicLayout", () => {
         )
       }
     }
+  })
+
+  it("gives every virtual join enough Δpos for a 45° S, never a 90° stair", () => {
+    for (const lineId of listBranchedLineIds()) {
+      const schematic = buildBranchSchematic(lineId, "horizontal")
+      assert.ok(schematic, `expected a horizontal schematic for ${lineId}`)
+      const violations = virtualJoinClearanceViolations(schematic)
+      assert.deepEqual(violations, [], `${lineId}: ${violations.join("; ")}`)
+    }
+    const northernViolations = virtualJoinClearanceViolations(
+      NORTHERN_LINE_SCHEMATIC_HORIZONTAL
+    )
+    assert.deepEqual(northernViolations, [], northernViolations.join("; "))
   })
 
   it("keeps DLR Star Lane on a lane next to Canning Town", () => {
@@ -187,25 +234,46 @@ describe("computeBranchSchematicLayout", () => {
     )
   })
 
-  it("keeps one Poplar and one Stratford on DLR (they join, they are not Euston)", () => {
+  it("keeps one Stratford on DLR (it joins, it is not Euston)", () => {
     const schematic = buildBranchSchematic("dlr", "horizontal")
     assert.ok(schematic)
-    const poplar = schematic.nodes.filter(
-      (node) => stationKeyOf(node.stationKey ?? node.name) === "poplar"
-    )
     const stratford = schematic.nodes.filter(
       (node) => stationKeyOf(node.stationKey ?? node.name) === "stratford"
-    )
-    assert.equal(
-      poplar.length,
-      1,
-      `Poplar nodes: ${poplar.map((n) => `${n.id}@${n.lane}`).join(",")}`
     )
     assert.equal(
       stratford.length,
       1,
       `Stratford nodes: ${stratford.map((n) => `${n.id}@${n.lane}`).join(",")}`
     )
+  })
+
+  it("splits Poplar into two blobs — Blackwall↔Westferry never through-runs to All Saints↔West India Quay", () => {
+    const schematic = buildBranchSchematic("dlr", "horizontal")
+    assert.ok(schematic)
+    const poplar = schematic.nodes.filter(
+      (node) => stationKeyOf(node.stationKey ?? node.name) === "poplar"
+    )
+    // Real DLR ordered routes confirm two independent through-pairs at
+    // Poplar with no confirmed movement between them — the join-split pass
+    // (`lib/tfl/geometry/branch-strip-joins.ts`) reads that the same way it
+    // already reads Northern Euston: two blobs, same `stationKey`.
+    assert.equal(
+      poplar.length,
+      2,
+      `Poplar nodes: ${poplar.map((n) => `${n.id}@${n.lane}`).join(",")}`
+    )
+    assert.ok(poplar.every((node) => node.stationKey === "poplar"))
+    const degree = new Map<string, number>()
+    for (const edge of schematic.edges) {
+      degree.set(edge.from, (degree.get(edge.from) ?? 0) + 1)
+      degree.set(edge.to, (degree.get(edge.to) ?? 0) + 1)
+    }
+    for (const node of poplar) {
+      assert.ok(
+        (degree.get(node.id) ?? 0) <= 3,
+        `${node.id} degree ${degree.get(node.id)} should be ≤ 3`
+      )
+    }
   })
 
   it("draws Circle as a racetrack with a Hammersmith spur, not an unrolled sausage", () => {
