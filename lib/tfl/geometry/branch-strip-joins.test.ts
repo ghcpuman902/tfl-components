@@ -1,6 +1,9 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { decomposeBranchStripJunctions } from "./branch-strip-joins.ts"
+import {
+  decomposeBranchStripJunctions,
+  requiredGutterPos,
+} from "./branch-strip-joins.ts"
 import { validateSchematic, type LineSchematic } from "../line-schematic.ts"
 
 const baseSchematic = (
@@ -25,6 +28,33 @@ const nonVirtualDegrees = (schematic: LineSchematic): Map<string, number> => {
     map.set(node.id, degreeOf(schematic, node.id))
   }
   return map
+}
+
+/**
+ * Every edge touching a virtual join must clear `requiredGutterPos` on the
+ * lane it changes — otherwise `octilinearLanePath` falls back to a 90°
+ * stair instead of a 45° S. Returns violations (empty = all clear).
+ */
+const virtualJoinClearanceViolations = (schematic: LineSchematic): string[] => {
+  const byId = new Map(schematic.nodes.map((node) => [node.id, node]))
+  const violations: string[] = []
+  for (const edge of schematic.edges) {
+    const from = byId.get(edge.from)
+    const to = byId.get(edge.to)
+    if (!from || !to) continue
+    if (from.kind !== "virtual" && to.kind !== "virtual") continue
+    if (from.lane === to.lane) continue
+    const deltaPos = Math.abs(from.pos - to.pos)
+    const deltaLane = Math.abs(from.lane - to.lane)
+    const required = requiredGutterPos(deltaLane)
+    if (deltaPos + 1e-6 < required) {
+      violations.push(
+        `${edge.from}(${from.lane},${from.pos})→${edge.to}(${to.lane},${to.pos}): ` +
+          `Δpos=${deltaPos.toFixed(3)} < required ${required.toFixed(3)} for Δlane=${deltaLane}`
+      )
+    }
+  }
+  return violations
 }
 
 describe("decomposeBranchStripJunctions", () => {
@@ -260,6 +290,90 @@ describe("decomposeBranchStripJunctions", () => {
     assert.ok(
       result.nodes.every((node) => node.id !== "kennington"),
       "the single high-degree Kennington vertex should not survive"
+    )
+
+    // Hard ban: two blobs must NOT travel as a parallel pair of bends. Each
+    // blob stays on its own pair's existing lane, at the station's own
+    // `pos` — never a synthetic shared vertical detour (no twin S-hump).
+    const bank = result.nodes.find((n) => n.id === "kennington~a")!
+    const charingCross = result.nodes.find((n) => n.id === "kennington~b")!
+    const elephantCastle = result.nodes.find((n) => n.id === "elephant-castle")!
+    const oval = result.nodes.find((n) => n.id === "oval")!
+    const waterloo = result.nodes.find((n) => n.id === "waterloo")!
+    const nineElms = result.nodes.find((n) => n.id === "nine-elms")!
+    assert.equal(bank.pos, 21, "blob keeps the original station's pos")
+    assert.equal(charingCross.pos, 21, "blob keeps the original station's pos")
+    assert.equal(bank.lane, elephantCastle.lane)
+    assert.equal(bank.lane, oval.lane)
+    assert.equal(charingCross.lane, waterloo.lane)
+    assert.equal(charingCross.lane, nineElms.lane)
+    assert.deepEqual(virtualJoinClearanceViolations(result), [])
+  })
+
+  it("clears the 45° gutter for every peeled arm (no 90° stair)", () => {
+    // Same 5-arm junction as above, but with tight integer spacing on both
+    // sides so a naive placement would land a virtual join too close to
+    // its target for `octilinearLanePath` to draw a 45° S.
+    const schematic = baseSchematic(
+      [
+        { id: "west1", name: "West1", lane: 0, pos: 9, kind: "stop" },
+        { id: "hub", name: "Hub", lane: 0, pos: 10, kind: "interchange" },
+        { id: "east1", name: "East1", lane: 0, pos: 11, kind: "stop" },
+        { id: "arm-a", name: "ArmA", lane: 1, pos: 9, kind: "terminus" },
+        { id: "arm-b", name: "ArmB", lane: -1, pos: 9, kind: "terminus" },
+        { id: "arm-c", name: "ArmC", lane: -1, pos: 11, kind: "terminus" },
+      ],
+      [
+        { from: "west1", to: "hub" },
+        { from: "hub", to: "east1" },
+        { from: "hub", to: "arm-a" },
+        { from: "hub", to: "arm-b" },
+        { from: "hub", to: "arm-c" },
+      ]
+    )
+    const result = decomposeBranchStripJunctions(schematic)
+    assert.deepEqual(validateSchematic(result), [])
+    assert.deepEqual(virtualJoinClearanceViolations(result), [])
+  })
+
+  it("stretches the strip so a peel is never crammed against the previous stop", () => {
+    // Two peels crowd the same lane-0↔lane-0 gutter that a single unit of
+    // `pos` cannot hold — the pass must push `anchor` (and everything
+    // beyond it) further out rather than compress the virtual joins.
+    const schematic = baseSchematic(
+      [
+        { id: "anchor", name: "Anchor", lane: 0, pos: 9, kind: "stop" },
+        { id: "via", name: "Via", lane: 0, pos: 10, kind: "interchange" },
+        { id: "east1", name: "East1", lane: 0, pos: 11, kind: "stop" },
+        { id: "peel-a", name: "PeelA", lane: 1, pos: 9, kind: "terminus" },
+        { id: "peel-b", name: "PeelB", lane: -1, pos: 9, kind: "terminus" },
+        { id: "beyond", name: "Beyond", lane: 0, pos: 8, kind: "stop" },
+      ],
+      [
+        { from: "anchor", to: "via" },
+        { from: "via", to: "east1" },
+        { from: "via", to: "peel-a" },
+        { from: "via", to: "peel-b" },
+        { from: "beyond", to: "anchor" },
+      ]
+    )
+    const result = decomposeBranchStripJunctions(schematic)
+    assert.deepEqual(validateSchematic(result), [])
+    assert.deepEqual(virtualJoinClearanceViolations(result), [])
+
+    const anchor = result.nodes.find((n) => n.id === "anchor")!
+    const beyond = result.nodes.find((n) => n.id === "beyond")!
+    const viaNode = result.nodes.find((n) => n.id === "via")!
+    // The trunk stretched — anchor moved further from `via` than its
+    // original single `pos` unit, and `beyond` moved by the same amount so
+    // the whole west side stays internally consistent.
+    assert.ok(
+      viaNode.pos - anchor.pos > 1,
+      `expected anchor to move further from via (Δ=${viaNode.pos - anchor.pos})`
+    )
+    assert.ok(
+      Math.abs(anchor.pos - beyond.pos - 1) < 1e-6,
+      "beyond should keep its original 1-unit spacing from anchor after the shared shift"
     )
   })
 })

@@ -173,7 +173,7 @@ export const DLR_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     {
       id: "poplar~a",
       name: "Poplar",
-      lane: -0.5,
+      lane: 0,
       pos: 7,
       kind: "interchange",
       branchIds: ["segment-5", "segment-3"],
@@ -182,7 +182,7 @@ export const DLR_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     {
       id: "poplar~b",
       name: "Poplar",
-      lane: 0.5,
+      lane: -1.999,
       pos: 7,
       kind: "interchange",
       branchIds: ["segment-8", "segment-6"],
@@ -344,7 +344,7 @@ export const DLR_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     {
       id: "canning-town~a",
       name: "Canning Town",
-      lane: -1.5,
+      lane: -1,
       pos: 11,
       kind: "interchange",
       branchIds: ["segment-8", "segment-1"],
@@ -353,7 +353,7 @@ export const DLR_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     {
       id: "canning-town~b",
       name: "Canning Town",
-      lane: -0.5,
+      lane: -2,
       pos: 11,
       kind: "interchange",
       branchIds: ["segment-7", "segment-0"],
