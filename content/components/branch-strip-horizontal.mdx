@@ -12,7 +12,9 @@ It ships with the line-strip registry item. No `tfl-ts` fetch inside this atom.
 
 ## Geometry
 
-Takes a horizontal `LineSchematic`: lane and position nodes authored for this orientation. Do not rotate a [vertical](/docs/branch-strip-vertical) graph. Branches sit by real station coordinates — north and west above the trunk, south and east below. The strip reads north-to-south or west-to-east.
+Takes a horizontal `LineSchematic`: lane and position nodes authored for this orientation. Do not rotate a [vertical](/docs/branch-strip-vertical) graph. The strip reads north-to-south or west-to-east.
+
+Northern, District, and Metropolitan build that `LineSchematic` from the same passenger topology and lowest-energy layout the [line topology](/docs/line-topology) page uses — permitted movements decide which pair is the through-move, then the relaxed layout is projected onto this lane × position grid (one lane per real branch, evenly spaced positions). Every other branched line still walks `LINE_STATION_SEQUENCES`, placing the longest inbound route as the trunk with branches north/west above it and south/east below.
 
 Corridor joins use a 45° S when space allows, otherwise 90° R. A true spur is a single 45° diagonal with one R3x fillet. The terminus bar sits perpendicular to that diagonal.
 
