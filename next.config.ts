@@ -1,5 +1,10 @@
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 import type { NextConfig } from "next"
 import createMDX from "@next/mdx"
+
+const dir = path.dirname(fileURLToPath(import.meta.url))
+const nodeModuleShim = path.join(dir, "lib/shims/node-module.ts")
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
@@ -8,6 +13,24 @@ const nextConfig: NextConfig = {
     mdxRs: {
       mdxType: "gfm",
     },
+  },
+  // tfl-ts 2.13 ESM imports `createRequire` from `node:module`. Client chunks
+  // must not treat that as an external — Turbopack panics (see lib/shims).
+  turbopack: {
+    resolveAlias: {
+      "node:module": {
+        browser: "./lib/shims/node-module.ts",
+      },
+    },
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "node:module": nodeModuleShim,
+      }
+    }
+    return config
   },
   async headers() {
     return [

@@ -2,6 +2,7 @@ import { OUT_OF_USE_LINE_COLOR } from "@/components/tfl/diagram/straight-strip-p
 import { resolveMonoLineStyle, scaleMonoLayers } from "@/lib/tfl/bw-line-styles"
 import {
   branchStripMetrics,
+  bondedStationGroups,
   placeBranchStripLabels,
   type BranchStripLabelPlacement,
   type BranchStripMetrics,
@@ -139,6 +140,10 @@ export const BranchStripTrack = ({ view }: { view: BranchStripView }) => {
     svgOffsetY,
   } = view
   const { strokeWidth, tickProtrude, ringOuter, ringStroke } = metrics
+  const bondedGroups = bondedStationGroups(layout.points)
+  const bondedIds = new Set(
+    bondedGroups.flatMap((group) => group.map((point) => point.id))
+  )
 
   return (
     <svg
@@ -195,6 +200,22 @@ export const BranchStripTrack = ({ view }: { view: BranchStripView }) => {
           )
         })}
 
+        {bondedGroups.map((group) => {
+          const sorted = [...group].sort((a, b) => a.lane - b.lane)
+          const from = sorted[0]!
+          const to = sorted[sorted.length - 1]!
+          return (
+            <BondedStationBridge
+              key={`bond:${from.stationKey}:${from.pos}`}
+              from={from}
+              to={to}
+              neckWidth={metrics.bondNeckWidth}
+              gap={metrics.bondGap}
+              mono={mono}
+            />
+          )
+        })}
+
         {layout.points
           .filter((point) => point.kind !== "virtual")
           .map((point) => (
@@ -209,10 +230,90 @@ export const BranchStripTrack = ({ view }: { view: BranchStripView }) => {
               routeAlongMain={point.trackAxis === "x"}
               trackAngle={point.trackAngle}
               mono={mono}
+              asInterchange={bondedIds.has(point.id)}
             />
           ))}
       </g>
     </svg>
+  )
+}
+
+type BondedStationBridgeProps = {
+  from: SchematicLayoutPoint
+  to: SchematicLayoutPoint
+  neckWidth: number
+  gap: number
+  mono: boolean
+}
+
+/**
+ * TfL dumbbell neck: black walls, white core — same paint as the rings,
+ * thicker than the route stroke. Circles paint on top and cover the ends.
+ */
+const BondedStationBridge = ({
+  from,
+  to,
+  neckWidth,
+  gap,
+  mono,
+}: BondedStationBridgeProps) => {
+  const wallClass = mono ? undefined : "fill-black dark:fill-white"
+  const coreClass = mono ? undefined : "fill-white dark:fill-black"
+  const wallFill = mono ? "var(--tfl-mono-ink)" : undefined
+  const coreFill = mono ? "var(--tfl-mono-paper)" : undefined
+  const overlap = 1
+  const vertical = Math.abs(to.y - from.y) >= Math.abs(to.x - from.x)
+
+  if (vertical) {
+    const cx = (from.x + to.x) / 2
+    const y1 = Math.min(from.y, to.y)
+    const y2 = Math.max(from.y, to.y)
+    const height = y2 - y1
+    return (
+      <g>
+        <rect
+          x={cx - neckWidth / 2}
+          y={y1}
+          width={neckWidth}
+          height={height}
+          className={wallClass}
+          fill={wallFill}
+        />
+        <rect
+          x={cx - gap / 2}
+          y={y1 - overlap}
+          width={gap}
+          height={height + overlap * 2}
+          className={coreClass}
+          fill={coreFill}
+        />
+      </g>
+    )
+  }
+
+  const cy = (from.y + to.y) / 2
+  const x1 = Math.min(from.x, to.x)
+  const x2 = Math.max(from.x, to.x)
+  const width = x2 - x1
+  return (
+    <g>
+      <rect
+        x={x1}
+        y={cy - neckWidth / 2}
+        width={width}
+        height={neckWidth}
+        className={wallClass}
+        fill={wallFill}
+      />
+      <rect
+        x={x1 - overlap}
+        y={cy - gap / 2}
+        width={width + overlap * 2}
+        height={gap}
+        className={coreClass}
+        fill={coreFill}
+      />
+    </g>
   )
 }
 
@@ -226,6 +327,7 @@ type BranchStripMarkerProps = {
   routeAlongMain: boolean
   trackAngle?: number
   mono?: boolean
+  asInterchange?: boolean
 }
 
 /**
@@ -244,8 +346,9 @@ export const BranchStripMarker = ({
   routeAlongMain,
   trackAngle = 0,
   mono = false,
+  asInterchange = false,
 }: BranchStripMarkerProps) => {
-  if (point.kind === "interchange") {
+  if (point.kind === "interchange" || asInterchange) {
     return (
       <circle
         cx={point.x}

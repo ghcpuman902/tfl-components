@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState, type ChangeEvent } from "react"
+import { FitToView } from "@/components/docs/fit-to-view"
 import { LineStrip } from "@/components/tfl/diagram/line-strip"
 import {
   BRANCH_SCHEMATICS_HORIZONTAL,
@@ -35,6 +36,7 @@ export const BranchAtlas = () => {
   const [lineId, setLineId] = useState("northern")
   const [orientation, setOrientation] = useState<AtlasOrientation>("vertical")
   const [mono, setMono] = useState(false)
+  const [fit, setFit] = useState(false)
 
   const schematics =
     orientation === "horizontal"
@@ -68,7 +70,7 @@ export const BranchAtlas = () => {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-[minmax(12rem,1fr)_auto_auto] md:items-end">
+      <div className="grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-[minmax(12rem,1fr)_auto_auto_auto] md:items-end">
         <label className="grid gap-1.5 text-sm">
           <span className="text-muted-foreground">Line</span>
           <select
@@ -109,9 +111,21 @@ export const BranchAtlas = () => {
         >
           Black and white
         </button>
+
+        <button
+          type="button"
+          aria-pressed={fit}
+          aria-label="Fit into view"
+          onClick={() => setFit((current) => !current)}
+          className={controlClassName(fit)}
+        >
+          Fit
+        </button>
       </div>
 
-      <div
+      <FitToView
+        fit={fit}
+        mode={orientation === "vertical" ? "box" : "width"}
         className={cn(
           "rounded-xl border border-border bg-background",
           orientation === "vertical"
@@ -124,9 +138,9 @@ export const BranchAtlas = () => {
           schematic={schematic}
           lineColor={lineColor}
           mono={mono}
-          className="p-4"
+          className={cn("p-4", fit && "w-max overflow-hidden")}
         />
-      </div>
+      </FitToView>
 
       <div className="grid grid-cols-3 gap-3" aria-label="Diagram summary">
         <div className="rounded-lg bg-muted/45 p-3">

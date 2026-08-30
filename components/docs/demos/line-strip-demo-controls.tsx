@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState, type ChangeEvent } from "react"
+import { useDocsStripQuery } from "@/hooks/use-docs-strip-query"
 import { LineStrip } from "@/components/tfl/diagram/line-strip"
 import type { StripLabelPlacement } from "@/lib/tfl/strip-model"
 import type { DiagramSegment, DiagramStation } from "@/lib/tfl/diagram-station"
@@ -23,14 +24,18 @@ export const LiveLineStripPicker = ({
   routes,
   defaultLineId = "victoria",
 }: LiveProps) => {
-  const initial =
-    routes.find((r) => r.lineId === defaultLineId)?.lineId ??
+  const lineIds = useMemo(() => routes.map((route) => route.lineId), [routes])
+  const fallbackLineId =
+    routes.find((route) => route.lineId === defaultLineId)?.lineId ??
     routes[0]?.lineId ??
     defaultLineId
-  const [lineId, setLineId] = useState(initial)
+  const { lineId, setLineId } = useDocsStripQuery({
+    validLineIds: lineIds,
+    defaultLineId: fallbackLineId,
+  })
 
   const route = useMemo(
-    () => routes.find((r) => r.lineId === lineId) ?? routes[0],
+    () => routes.find((entry) => entry.lineId === lineId) ?? routes[0],
     [lineId, routes]
   )
 

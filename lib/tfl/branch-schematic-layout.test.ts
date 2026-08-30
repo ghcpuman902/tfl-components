@@ -232,6 +232,10 @@ describe("computeBranchSchematicLayout", () => {
       Math.abs(star.lane - canning.lane) <= 1,
       `Star Lane lane ${star.lane} should sit next to Canning Town lane ${canning.lane}`
     )
+    assert.ok(
+      Math.abs(star.pos - canning.pos) <= 2,
+      `Star Lane pos ${star.pos} should sit next to Canning Town pos ${canning.pos}`
+    )
   })
 
   it("keeps one Stratford on DLR (it joins, it is not Euston)", () => {
@@ -313,5 +317,202 @@ describe("computeBranchSchematicLayout", () => {
     assert.equal(eustons.length, 2)
     const lanes = new Set(eustons.map((node) => node.lane))
     assert.equal(lanes.size, 2)
+  })
+
+  it("Elizabeth collapses London Paddington and London Liverpool Street into one station each", () => {
+    const schematic = buildBranchSchematic("elizabeth", "horizontal")
+    assert.ok(schematic)
+    const paddingtons = schematic.nodes.filter((node) =>
+      /paddington/i.test(node.name)
+    )
+    const liverpools = schematic.nodes.filter((node) =>
+      /liverpool/i.test(node.name)
+    )
+    assert.equal(
+      paddingtons.length,
+      1,
+      `Paddington nodes: ${paddingtons.map((node) => `${node.name}@${node.lane}`).join(", ")}`
+    )
+    assert.equal(
+      liverpools.length,
+      1,
+      `Liverpool Street nodes: ${liverpools.map((node) => `${node.name}@${node.lane}`).join(", ")}`
+    )
+    assert.equal(paddingtons[0]?.name, "Paddington")
+    assert.equal(liverpools[0]?.name, "Liverpool Street")
+  })
+
+  it("keeps the Central Hainault loop on one side of the Epping trunk", () => {
+    const schematic = buildBranchSchematic("central", "horizontal")
+    assert.ok(schematic)
+    const byKey = (key: string) =>
+      schematic.nodes.find(
+        (node) => stationKeyOf(node.stationKey ?? node.name) === key
+      )
+    const epping = byKey("epping")
+    const leytonstone = byKey("leytonstone")
+    const woodford = byKey("woodford")
+    const wanstead = byKey("wanstead")
+    const hainault = byKey("hainault")
+    const roding = byKey("roding-valley")
+    assert.ok(epping && leytonstone && woodford && wanstead && hainault && roding)
+    assert.equal(epping.lane, 0)
+    assert.equal(leytonstone.lane, 0)
+    assert.equal(woodford.lane, 0)
+    assert.notEqual(wanstead.lane, 0)
+    assert.notEqual(hainault.lane, 0)
+    assert.notEqual(roding.lane, 0)
+    assert.equal(Math.sign(wanstead.lane), Math.sign(roding.lane))
+    assert.equal(Math.sign(hainault.lane), Math.sign(wanstead.lane))
+    assert.ok(
+      wanstead.pos >= leytonstone.pos,
+      "Hainault via Wanstead peels east of Leytonstone, not back toward Stratford"
+    )
+    assert.ok(
+      roding.pos >= woodford.pos,
+      "Roding Valley sits east of Woodford on the loop, not back toward Leytonstone"
+    )
+    assert.equal(
+      schematic.nodes.filter(
+        (node) => stationKeyOf(node.stationKey ?? node.name) === "hainault"
+      ).length,
+      1
+    )
+  })
+
+  it("RB6 keeps one Battersea Power Station Pier (short-working is not a second spur)", () => {
+    const schematic = buildBranchSchematic("rb6", "horizontal")
+    assert.ok(schematic)
+    const batterseas = schematic.nodes.filter((node) =>
+      /battersea power station/i.test(node.name)
+    )
+    assert.equal(
+      batterseas.length,
+      1,
+      `Battersea nodes: ${batterseas.map((node) => `${node.id}@${node.lane},${node.pos}`).join(", ")}`
+    )
+  })
+
+  it("Windrush Crystal Palace peels beside Sydenham without crossing Clapham", () => {
+    const schematic = buildBranchSchematic("windrush", "horizontal")
+    assert.ok(schematic)
+    const byKey = (key: string) =>
+      schematic.nodes.find(
+        (node) => stationKeyOf(node.stationKey ?? node.name) === key
+      )
+    const sydenham = byKey("sydenham")
+    const crystal = byKey("crystal-palace")
+    const wandsworth = byKey("wandsworth-road")
+    const newCross = schematic.nodes.find((node) =>
+      stationKeyOf(node.stationKey ?? node.name).startsWith("new-cross")
+    )
+    assert.ok(sydenham && crystal && wandsworth && newCross)
+    assert.equal(
+      Math.abs(crystal.lane - sydenham.lane),
+      1,
+      `Crystal Palace should be one lane from Sydenham, not a 90° jump (L${crystal.lane} vs L${sydenham.lane})`
+    )
+    assert.equal(
+      Math.sign(crystal.lane - sydenham.lane),
+      Math.sign(newCross.lane - sydenham.lane) || Math.sign(crystal.lane),
+      "Crystal Palace sits on the New Cross side, not through the Clapham corridor"
+    )
+    const lo = Math.min(sydenham.lane, crystal.lane)
+    const hi = Math.max(sydenham.lane, crystal.lane)
+    assert.ok(
+      wandsworth.lane <= lo || wandsworth.lane >= hi,
+      `Crystal Palace L${crystal.lane}→Sydenham L${sydenham.lane} must not cross Wandsworth Road L${wandsworth.lane}`
+    )
+  })
+
+  it("keeps DLR Stratford High Street next to Stratford, not in the Westferry column", () => {
+    const schematic = buildBranchSchematic("dlr", "horizontal")
+    assert.ok(schematic)
+    const byKey = (key: string) =>
+      schematic.nodes.find(
+        (node) => stationKeyOf(node.stationKey ?? node.name) === key
+      )
+    const shs = byKey("stratford-high-street")
+    const abbey = byKey("abbey-road")
+    const stratford = byKey("stratford")
+    const westferry = byKey("westferry")
+    assert.ok(shs && abbey && stratford && westferry)
+    assert.notEqual(
+      shs.pos,
+      westferry.pos,
+      "Stratford High Street must not sit in the Westferry / Poplar column"
+    )
+    assert.ok(
+      Math.abs(shs.pos - stratford.pos) < Math.abs(shs.pos - westferry.pos),
+      `SHS pos ${shs.pos} should sit nearer Stratford ${stratford.pos} than Westferry ${westferry.pos}`
+    )
+    assert.equal(
+      shs.lane,
+      abbey.lane,
+      "Stratford High Street and Abbey Road stay on one corridor"
+    )
+  })
+
+  it("keeps the DLR Poplar–Westferry bond to one lane", () => {
+    const schematic = buildBranchSchematic("dlr", "horizontal")
+    assert.ok(schematic)
+    const westferry = schematic.nodes.find(
+      (node) => stationKeyOf(node.stationKey ?? node.name) === "westferry"
+    )
+    assert.ok(westferry)
+    const neighborIds = new Set<string>()
+    for (const edge of schematic.edges) {
+      if (edge.from === westferry.id) neighborIds.add(edge.to)
+      if (edge.to === westferry.id) neighborIds.add(edge.from)
+    }
+    const poplar = schematic.nodes.filter(
+      (node) =>
+        neighborIds.has(node.id) &&
+        stationKeyOf(node.stationKey ?? node.name) === "poplar"
+    )
+    assert.equal(poplar.length, 1, "Westferry should touch exactly one Poplar blob")
+    assert.ok(
+      Math.abs(poplar[0]!.lane - westferry.lane) <= 1,
+      `Poplar L${poplar[0]!.lane} → Westferry L${westferry.lane} should be a one-lane bond, not a trunk-spanning vertical`
+    )
+  })
+
+  it("DLR puts Canary Wharf → Westferry → Limehouse under All Saints", () => {
+    const schematic = buildBranchSchematic("dlr", "horizontal")
+    assert.ok(schematic)
+    const byKey = (key: string) =>
+      schematic.nodes.find(
+        (node) => stationKeyOf(node.stationKey ?? node.name) === key
+      )
+    const allSaints = byKey("all-saints")
+    const westferry = byKey("westferry")
+    const limehouse = byKey("limehouse")
+    const wiq = byKey("west-india-quay")
+    const canary = byKey("canary-wharf")
+    assert.ok(allSaints && westferry && limehouse && wiq && canary)
+    assert.ok(
+      westferry.lane > allSaints.lane,
+      `Westferry L${westferry.lane} should sit below All Saints L${allSaints.lane}`
+    )
+    assert.equal(westferry.lane, limehouse.lane)
+    assert.ok(
+      canary.lane >= allSaints.lane,
+      `Canary Wharf L${canary.lane} should not sit above All Saints L${allSaints.lane}`
+    )
+    assert.ok(
+      wiq.lane >= allSaints.lane,
+      `West India Quay L${wiq.lane} should not sit above All Saints L${allSaints.lane}`
+    )
+    const bank = byKey("bank")
+    const tower = byKey("tower-gateway")
+    assert.ok(bank && tower)
+    assert.ok(
+      bank.lane >= westferry.lane,
+      `Bank L${bank.lane} should peel down from Westferry L${westferry.lane}`
+    )
+    assert.ok(
+      tower.lane >= westferry.lane,
+      `Tower Gateway L${tower.lane} should peel down from Westferry L${westferry.lane}`
+    )
   })
 })

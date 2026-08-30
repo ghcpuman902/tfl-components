@@ -17,13 +17,15 @@
  *    here, from real data, not from which route happens to be longest.
  * 3. `clipToHorizontalGrid` (this file) — the part that is genuinely new:
  *    project the relaxed (x, y) onto its principal axis (`pos`) and the
- *    perpendicular axis (`lane`), rank-and-space `pos` so every hop reads as
- *    "one more stop" (not the energy layout's uneven real distances), and
- *    assign `lane` per topological RUN (the path between two junctions/
- *    termini) rather than per node, so a branch that drifts gradually away
- *    from the trunk in real geography still reads as one lane, not several.
- *    This is a clip/stack step, not a second solve — no positions are
- *    re-optimised here.
+ *    perpendicular axis (`lane`). `pos` is packed ALONG each topological
+ *    run (one hop = one unit on that corridor), not ranked across every
+ *    station on the line — otherwise parallel branches (High Barnet /
+ *    Edgware) interleave, consecutive stops on one branch skip ranks, and
+ *    `freeLane` invents S-bends to dodge the collision. `lane` is still
+ *    one discrete value per run; sequential through-runs at a Y share a
+ *    lane so the trunk stays straight and only the spur peels. This is a
+ *    clip/stack step, not a second solve — no positions are re-optimised
+ *    here.
  * 4. `decomposeBranchStripJunctions` — unchanged from the lane×pos world:
  *    still needed for junctions the bonded-pair split doesn't cover (a
  *    5-neighbour station like District Earl's Court), still the thing that
@@ -272,18 +274,23 @@ const median = (values: readonly number[]): number => {
  * fixed physical distance that would put a slowly-diverging branch on many
  * lanes as it travels.
  */
+const meanCrossOfRun = (
+  run: Run,
+  byId: ReadonlyMap<string, LaidOutPassengerNode>,
+  axis: { main: Point; cross: Point }
+): number => {
+  const internal = run.path.slice(1, -1)
+  const sample = internal.length > 0 ? internal : run.path
+  const values = sample.map((id) => project(byId.get(id)!, axis).cross)
+  return values.reduce((sum, v) => sum + v, 0) / values.length
+}
+
 const laneByRun = (
   runs: readonly Run[],
   byId: ReadonlyMap<string, LaidOutPassengerNode>,
   axis: { main: Point; cross: Point }
 ): Map<Run, number> => {
-  const meanCross = (run: Run): number => {
-    const internal = run.path.slice(1, -1)
-    const sample = internal.length > 0 ? internal : run.path
-    const values = sample.map((id) => project(byId.get(id)!, axis).cross)
-    return values.reduce((sum, v) => sum + v, 0) / values.length
-  }
-  const means = runs.map(meanCross)
+  const means = runs.map((run) => meanCrossOfRun(run, byId, axis))
   const magnitudes = means.map(Math.abs).filter((v) => v > 1e-6)
   const laneUnit = magnitudes.length > 0 ? median(magnitudes) : 1
   const lanes = new Map<Run, number>()
@@ -291,6 +298,343 @@ const laneByRun = (
     lanes.set(run, laneUnit > 1e-6 ? Math.round(means[index]! / laneUnit) : 0)
   })
   return lanes
+}
+
+const groupKeyOf = (
+  id: string,
+  byId: ReadonlyMap<string, LaidOutPassengerNode>
+): string => byId.get(id)?.splitFrom ?? id
+
+/**
+ * Pack `pos` along topological runs, not across the whole station cloud.
+ *
+ * Junctions become a graph whose edge weight is hop-count (max, when two
+ * runs share the same endpoint pair — Bank vs a shorter CX leftover). A
+ * spanning tree from the westmost junction places every run's internals at
+ * `westPos + i`, so High Barnet and Edgware both originate at Camden's pos
+ * and pack Δpos=1 along their own corridor. Bonded halves (`splitFrom`)
+ * share one pos so Kennington stays two blobs at one column.
+ */
+const assignPosAlongRuns = (
+  runs: readonly Run[],
+  byId: ReadonlyMap<string, LaidOutPassengerNode>,
+  axis: { main: Point; cross: Point }
+): Map<string, number> => {
+  const mainOf = (id: string): number => {
+    const node = byId.get(id)
+    if (!node) return 0
+    return project(node, axis).main
+  }
+
+  const membersByGroup = new Map<string, string[]>()
+  for (const id of byId.keys()) {
+    const key = groupKeyOf(id, byId)
+    const list = membersByGroup.get(key) ?? []
+    list.push(id)
+    membersByGroup.set(key, list)
+  }
+  const mainOfGroup = (key: string): number => {
+    const members = membersByGroup.get(key) ?? [key]
+    return members.reduce((sum, id) => sum + mainOf(id), 0) / members.length
+  }
+
+  const oriented = runs.map((run) => {
+    const start = run.path[0]!
+    const end = run.path[run.path.length - 1]!
+    return mainOf(start) <= mainOf(end) ? run.path : [...run.path].reverse()
+  })
+
+  type JunctionLink = { west: string; east: string; hops: number }
+  const linkByPair = new Map<string, JunctionLink>()
+  for (const path of oriented) {
+    const west = groupKeyOf(path[0]!, byId)
+    const east = groupKeyOf(path[path.length - 1]!, byId)
+    if (west === east) continue
+    const key = undirectedKey(west, east)
+    const hops = path.length - 1
+    const existing = linkByPair.get(key)
+    if (!existing || hops > existing.hops) {
+      linkByPair.set(key, { west, east, hops })
+    }
+  }
+  const links = [...linkByPair.values()]
+  const adjacency = new Map<string, JunctionLink[]>()
+  const addLink = (key: string, link: JunctionLink) => {
+    const list = adjacency.get(key) ?? []
+    list.push(link)
+    adjacency.set(key, list)
+  }
+  const junctions = new Set<string>()
+  for (const link of links) {
+    junctions.add(link.west)
+    junctions.add(link.east)
+    addLink(link.west, link)
+    addLink(link.east, link)
+  }
+
+  const posByJunction = new Map<string, number>()
+  const unvisited = new Set(junctions)
+  while (unvisited.size > 0) {
+    const start = [...unvisited].sort(
+      (a, b) => mainOfGroup(a) - mainOfGroup(b)
+    )[0]!
+    posByJunction.set(start, 0)
+    unvisited.delete(start)
+    const queue = [start]
+    while (queue.length > 0) {
+      const current = queue.shift()!
+      for (const link of adjacency.get(current) ?? []) {
+        const other = link.west === current ? link.east : link.west
+        if (!unvisited.has(other)) continue
+        const delta = current === link.west ? link.hops : -link.hops
+        posByJunction.set(other, posByJunction.get(current)! + delta)
+        unvisited.delete(other)
+        queue.push(other)
+      }
+    }
+  }
+
+  const posById = new Map<string, number>()
+  for (const path of oriented) {
+    const westId = path[0]!
+    const eastId = path[path.length - 1]!
+    const westPos = posByJunction.get(groupKeyOf(westId, byId)) ?? 0
+    const eastPos =
+      posByJunction.get(groupKeyOf(eastId, byId)) ?? westPos + path.length - 1
+    posById.set(westId, westPos)
+    posById.set(eastId, eastPos)
+    for (let i = 1; i < path.length - 1; i += 1) {
+      posById.set(path[i]!, westPos + i)
+    }
+  }
+
+  for (const id of byId.keys()) {
+    if (posById.has(id)) continue
+    posById.set(id, posByJunction.get(groupKeyOf(id, byId)) ?? 0)
+  }
+
+  shareBondedColumns(oriented, posById, membersByGroup, byId)
+
+  const values = [...posById.values()]
+  const min = values.length > 0 ? Math.min(...values) : 0
+  if (min !== 0) {
+    for (const [id, pos] of posById) posById.set(id, pos - min)
+  }
+  return posById
+}
+
+/**
+ * At a Y (or a diamond), the longest west-side run and the longest
+ * east-side run are ONE corridor — they keep the incoming (west) lane so
+ * the trunk stays straight. The leftover spur peels. Without this, High
+ * Barnet / Finchley–Camden / Bank / Morden each quantise independently and
+ * the clip draws S-bends along a single branch.
+ */
+const unifyAlignedRunLanes = (
+  runs: readonly Run[],
+  runLane: ReadonlyMap<Run, number>,
+  posById: ReadonlyMap<string, number>
+): Map<Run, number> => {
+  const result = new Map(runLane)
+
+  const endpointIds = new Set<string>()
+  for (const run of runs) {
+    endpointIds.add(run.path[0]!)
+    endpointIds.add(run.path[run.path.length - 1]!)
+  }
+  const junctions = [...endpointIds].sort(
+    (a, b) => (posById.get(a) ?? 0) - (posById.get(b) ?? 0)
+  )
+
+  const neighbourToward = (jid: string, run: Run): string | null => {
+    const start = run.path[0]!
+    const end = run.path[run.path.length - 1]!
+    if (start === jid) return run.path[1] ?? null
+    if (end === jid) return run.path[run.path.length - 2] ?? null
+    return null
+  }
+
+  const runsAt = (jid: string): Run[] =>
+    runs.filter(
+      (run) => run.path[0] === jid || run.path[run.path.length - 1] === jid
+    )
+
+  for (const jid of junctions) {
+    const incident = runsAt(jid)
+    if (incident.length < 3) continue
+    const jpos = posById.get(jid) ?? 0
+    const west: Run[] = []
+    const east: Run[] = []
+    for (const run of incident) {
+      const neighbor = neighbourToward(jid, run)
+      if (!neighbor) continue
+      const neighborPos = posById.get(neighbor) ?? jpos
+      if (neighborPos < jpos - 1e-9) west.push(run)
+      else if (neighborPos > jpos + 1e-9) east.push(run)
+      else {
+        const other =
+          run.path[0] === jid ? run.path[run.path.length - 1]! : run.path[0]!
+        const otherPos = posById.get(other) ?? jpos
+        if (otherPos <= jpos) west.push(run)
+        else east.push(run)
+      }
+    }
+
+    const unusedWest = [...west].sort((a, b) => b.path.length - a.path.length)
+    const unusedEast = [...east].sort((a, b) => b.path.length - a.path.length)
+    while (unusedWest.length > 0 && unusedEast.length > 0) {
+      const westRun = unusedWest.shift()!
+      const eastRun = unusedEast.shift()!
+      const incoming = result.get(westRun) ?? 0
+      result.set(eastRun, incoming)
+    }
+  }
+  return result
+}
+
+const separateOverlappingRunLanes = (
+  runs: readonly Run[],
+  lanes: ReadonlyMap<Run, number>,
+  posById: ReadonlyMap<string, number>
+): Map<Run, number> => {
+  const result = new Map(lanes)
+  const rangeOf = (run: Run): [number, number] | null => {
+    const internals = run.path.slice(1, -1)
+    if (internals.length === 0) return null
+    const positions = internals.map((id) => posById.get(id) ?? 0)
+    return [Math.min(...positions), Math.max(...positions)]
+  }
+  const overlaps = (a: [number, number], b: [number, number]): boolean =>
+    !(a[1] < b[0] || b[1] < a[0])
+
+  for (let guard = 0; guard < 20; guard += 1) {
+    let changed = false
+    for (let i = 0; i < runs.length; i += 1) {
+      for (let j = i + 1; j < runs.length; j += 1) {
+        const left = runs[i]!
+        const right = runs[j]!
+        if (result.get(left) !== result.get(right)) continue
+        const rangeLeft = rangeOf(left)
+        const rangeRight = rangeOf(right)
+        if (!rangeLeft || !rangeRight || !overlaps(rangeLeft, rangeRight)) {
+          continue
+        }
+        const current = result.get(right) ?? 0
+        const dir = current >= 0 ? 1 : -1
+        const next = current + dir
+        result.set(right, next === 0 ? dir * 2 : next)
+        changed = true
+      }
+    }
+    if (!changed) break
+  }
+  return result
+}
+
+/**
+ * Flying-junction halves (Euston, Kennington) share one column — the later
+ * blob's pos, so Bank Euston slides right under CX Euston. Then every later
+ * stop on the same run is pushed so hops stay ≥ 1. Repeats until Kennington
+ * (and any other bonded pair) re-aligns after those pushes.
+ */
+const shareBondedColumns = (
+  oriented: readonly string[][],
+  posById: Map<string, number>,
+  membersByGroup: ReadonlyMap<string, string[]>,
+  byId: ReadonlyMap<string, LaidOutPassengerNode>
+): void => {
+  for (let guard = 0; guard < 40; guard += 1) {
+    let changed = false
+    for (const members of membersByGroup.values()) {
+      if (members.length < 2) continue
+      const target = Math.max(...members.map((id) => posById.get(id) ?? 0))
+      for (const id of members) {
+        if ((posById.get(id) ?? 0) + 1e-9 < target) {
+          posById.set(id, target)
+          changed = true
+        }
+      }
+    }
+    for (const path of oriented) {
+      for (let i = 1; i < path.length; i += 1) {
+        const prevId = path[i - 1]!
+        const currentId = path[i]!
+        if (groupKeyOf(currentId, byId) === groupKeyOf(prevId, byId)) continue
+        const prev = posById.get(prevId) ?? 0
+        const current = posById.get(currentId) ?? 0
+        if (current + 1e-9 < prev + 1) {
+          posById.set(currentId, prev + 1)
+          changed = true
+        }
+      }
+    }
+    if (!changed) break
+  }
+}
+
+const runPosRange = (
+  run: Run,
+  posById: ReadonlyMap<string, number>
+): [number, number] => {
+  const positions = run.path.map((id) => posById.get(id) ?? 0)
+  return [Math.min(...positions), Math.max(...positions)]
+}
+
+const rangesOverlap = (
+  a: readonly [number, number],
+  b: readonly [number, number]
+): boolean => !(a[1] < b[0] || b[1] < a[0])
+
+/**
+ * A short terminus spur that landed in the gap between two parallel
+ * corridors (Mill Hill East between High Barnet and Edgware) flips to the
+ * outside of its parent trunk — above High Barnet, not down the middle.
+ */
+const flipSpursOutward = (
+  runs: readonly Run[],
+  lanes: ReadonlyMap<Run, number>,
+  posById: ReadonlyMap<string, number>
+): Map<Run, number> => {
+  const result = new Map(lanes)
+  for (const run of runs) {
+    if (run.path.length !== 2) continue
+    const range = runPosRange(run, posById)
+    const lane = result.get(run)
+    if (lane == null) continue
+    const overlapping = runs.filter((other) => {
+      if (other === run) return false
+      return rangesOverlap(range, runPosRange(other, posById))
+    })
+    if (overlapping.length === 0) continue
+    const otherLanes = overlapping.map((other) => result.get(other) ?? 0)
+    const minLane = Math.min(...otherLanes)
+    const maxLane = Math.max(...otherLanes)
+    if (!(lane > minLane && lane < maxLane)) continue
+    const parent = overlapping.find(
+      (other) =>
+        other.path[0] === run.path[0] ||
+        other.path[0] === run.path[run.path.length - 1] ||
+        other.path[other.path.length - 1] === run.path[0] ||
+        other.path[other.path.length - 1] === run.path[run.path.length - 1]
+    )
+    const parentLane = parent ? (result.get(parent) ?? lane) : minLane
+    const away = otherLanes.some((other) => other > parentLane) ? -1 : 1
+    result.set(run, parentLane + away)
+  }
+  return result
+}
+
+/** Remap used lanes onto consecutive integers so parallel corridors sit one apart. */
+const compressRunLanes = (
+  lanes: ReadonlyMap<Run, number>
+): Map<Run, number> => {
+  const used = [...new Set(lanes.values())].sort((a, b) => a - b)
+  const result = new Map<Run, number>()
+  const origin = used[0] ?? 0
+  for (const [run, lane] of lanes) {
+    result.set(run, origin + used.indexOf(lane))
+  }
+  return result
 }
 
 const isKnownInterchange = (
@@ -306,10 +650,16 @@ const isKnownInterchange = (
 const nodeKind = (
   degree: number,
   stationId: string | undefined,
-  lineId: string
+  lineId: string,
+  bonded: boolean
 ): SchematicNodeKind => {
   if (degree <= 1) return "terminus"
-  if (degree >= 3 || isKnownInterchange(stationId, lineId)) return "interchange"
+  // Bonded halves are one physical interchange (Kennington is Northern-only,
+  // so `isKnownInterchange` misses it; after the split the Bank half is
+  // degree 2 and would otherwise paint as a tick with a dangling bar).
+  if (bonded || degree >= 3 || isKnownInterchange(stationId, lineId)) {
+    return "interchange"
+  }
   return "stop"
 }
 
@@ -420,40 +770,25 @@ export const buildBranchStripFromTopology = (
   const byId = new Map(laid.nodes.map((node) => [node.id, node]))
   const axis = principalAxis(laid.nodes)
 
-  // `pos` — rank along the main axis, bonded halves sharing one rank so
-  // "roughly equal hop spacing" holds and a blob split stays at one `pos`.
-  const groupKey = (node: LaidOutPassengerNode): string =>
-    node.splitFrom ?? node.id
-  const groupMembers = new Map<string, LaidOutPassengerNode[]>()
-  for (const node of laid.nodes) {
-    const key = groupKey(node)
-    const list = groupMembers.get(key) ?? []
-    list.push(node)
-    groupMembers.set(key, list)
-  }
-  const groupMain = new Map<string, number>()
-  for (const [key, members] of groupMembers) {
-    const mean =
-      members.reduce((sum, node) => sum + project(node, axis).main, 0) /
-      members.length
-    groupMain.set(key, mean)
-  }
-  const orderedGroupKeys = [...groupMembers.keys()].sort(
-    (a, b) => groupMain.get(a)! - groupMain.get(b)!
-  )
-  const posByGroup = new Map(orderedGroupKeys.map((key, index) => [key, index]))
-
-  // `lane` — one discrete value per topological run (see `laneByRun`), then
-  // each junction node takes whichever LONGEST incident run's lane (ties
-  // broken by whichever sits closest to 0). A short "fork" connector run
-  // between two already-adjacent halves of a bonded pair (Kennington's
-  // leftover Charing Cross ↔ Morden movement) sits geographically close to
-  // both ends, so its own mean cross-axis offset is small almost by
-  // construction — without the length preference, that near-zero offset
-  // would win "closest to 0" and give the junction a lane that doesn't
-  // match its own real trunk run (the actual bug this preference fixes).
   const runs = findRuns(nodeIds, trackEdges)
-  const runLane = laneByRun(runs, byId, axis)
+  const posById = assignPosAlongRuns(runs, byId, axis)
+  const runLane = compressRunLanes(
+    flipSpursOutward(
+      runs,
+      separateOverlappingRunLanes(
+        runs,
+        unifyAlignedRunLanes(runs, laneByRun(runs, byId, axis), posById),
+        posById
+      ),
+      posById
+    )
+  )
+
+  // `lane` — internals stay on their run. Junctions take the longest
+  // incident run (ties: closest to 0). A short "fork" connector between
+  // bonded halves (Kennington's leftover Charing Cross ↔ Morden movement)
+  // must not win that tie — without the length preference it would, and
+  // the junction would leave its own trunk.
   const nodeLaneCandidates = new Map<
     string,
     { lane: number; length: number }[]
@@ -480,12 +815,20 @@ export const buildBranchStripFromTopology = (
     }).lane
   }
 
-  // Collision-avoid (lane, pos) — a nudge net, same idea as the join-split
-  // pass; two distinct stations landing on the same cell is a clip
-  // resolution issue, not a real ambiguity.
+  // Collision-avoid (lane, pos) is a last-resort nudge for labelled
+  // junctions that still land on the same cell. Internals must NOT be
+  // nudged — that was inventing S-bends along a straight branch.
   const occupied = new Set<string>()
   const cellKey = (lane: number, pos: number) => `${lane}:${pos}`
-  const freeLane = (pos: number, lane: number): number => {
+  const occupyLane = (
+    pos: number,
+    lane: number,
+    allowNudge: boolean
+  ): number => {
+    if (!allowNudge || !occupied.has(cellKey(lane, pos))) {
+      occupied.add(cellKey(lane, pos))
+      return lane
+    }
     let candidate = lane
     let step = 1
     while (occupied.has(cellKey(candidate, pos))) {
@@ -519,9 +862,17 @@ export const buildBranchStripFromTopology = (
 
   const schematicIdByContractedId = new Map<string, string>()
   const nodes: SchematicNode[] = []
-  for (const contracted of compiled.topology.nodes) {
-    const pos = posByGroup.get(contracted.splitFrom ?? contracted.id) ?? 0
-    const lane = freeLane(pos, laneOf(contracted.id))
+  const orderedContracted = [...compiled.topology.nodes].sort((a, b) => {
+    const degreeA = degree.get(a.id) ?? 0
+    const degreeB = degree.get(b.id) ?? 0
+    if (degreeA === 2 && degreeB !== 2) return -1
+    if (degreeA !== 2 && degreeB === 2) return 1
+    return 0
+  })
+  for (const contracted of orderedContracted) {
+    const pos = posById.get(contracted.id) ?? 0
+    const isInternal = (degree.get(contracted.id) ?? 0) === 2
+    const lane = occupyLane(pos, laneOf(contracted.id), !isInternal)
     const suffix = bondedSuffix(contracted.id)
     const base = slugifyStation(contracted.stationName ?? contracted.id)
     const schematicId = takeId(suffix ? `${base}~${suffix}` : base)
@@ -534,9 +885,10 @@ export const buildBranchStripFromTopology = (
       kind: nodeKind(
         degree.get(contracted.id) ?? 0,
         contracted.stationId,
-        lineId
+        lineId,
+        Boolean(suffix)
       ),
-      stationKey: suffix ? base : undefined,
+      stationKey: base,
     })
   }
 

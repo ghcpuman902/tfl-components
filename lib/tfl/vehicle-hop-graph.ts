@@ -52,6 +52,29 @@ export const stationHubAliasGroups = (): string[][] => {
   return groups
 }
 
+let hubCanonicalCache: Map<string, string> | null = null
+
+/** Same hub collapse line topology uses: Paddington ≡ London Paddington. */
+export const stationHubCanonical = (id: string): string => {
+  if (!hubCanonicalCache) {
+    hubCanonicalCache = buildAliasCanonical(stationHubAliasGroups())
+  }
+  return hubCanonicalCache.get(id) ?? id
+}
+
+/** Map a sequence through hub aliases and drop consecutive duplicates. */
+export const collapseHubAliasIds = (
+  ids: readonly string[]
+): string[] => {
+  const out: string[] = []
+  for (const id of ids) {
+    const canonical = stationHubCanonical(id)
+    if (!canonical || out[out.length - 1] === canonical) continue
+    out.push(canonical)
+  }
+  return out
+}
+
 const graphFromEdges = (
   edges: readonly {
     fromStationId: string

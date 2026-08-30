@@ -37,6 +37,11 @@ type RenderComponentDocsOptions = {
   getDataExample?: string
   /** Optional WIP / caveat under the one-sentence intro. */
   notice?: ReactNode
+  /**
+   * `inset` lets the live preview fill the docs column next to the sidebar
+   * instead of the readable `max-w-5xl` column. Horizontal diagrams need the width.
+   */
+  previewBleed?: "readable" | "inset"
 }
 
 const PREVIEW_SNIPPETS: Record<string, string> = {
@@ -206,6 +211,7 @@ export const renderComponentDocs = ({
   relatedLinks = [],
   getDataExample,
   notice,
+  previewBleed = "readable",
 }: RenderComponentDocsOptions) => {
   const entry = getDocsEntry(slug)
   if (!entry || entry.kind !== "component") notFound()
@@ -214,85 +220,123 @@ export const renderComponentDocs = ({
   const snippet =
     getDataExample ?? PREVIEW_SNIPPETS[contentSlug] ?? PREVIEW_SNIPPETS[slug]
   const usedBy = getUsedBySlugs(entry.slug)
+  const insetPreview = previewBleed === "inset"
+
+  const header = (
+    <>
+      <DocsPageHeader entry={entry as DocsEntry} notice={notice} />
+      <RelationshipBadges
+        builtWith={entry.builtWith}
+        usesFoundations={entry.usesFoundations}
+        usedBy={usedBy}
+      />
+    </>
+  )
+
+  const previewDemo = (
+    <div className="space-y-3">
+      <h2 id="preview-heading" className="text-lg font-semibold">
+        Preview
+      </h2>
+      <Suspense fallback={<DocsPreviewFallback slug={contentSlug} />}>
+        <DocsDemoSlot slug={contentSlug} />
+      </Suspense>
+    </div>
+  )
+
+  const usage = (
+    <>
+      {snippet ? (
+        <div className="space-y-2">
+          <h2 id="usage-heading" className="text-lg font-semibold">
+            Usage
+          </h2>
+          <SyntaxHighlightedCode
+            code={snippet}
+            language="tsx"
+            peekLines={3}
+          />
+        </div>
+      ) : null}
+
+      {entry.registryUrl ? (
+        <CompactInstallButton registryUrl={entry.registryUrl} />
+      ) : null}
+    </>
+  )
+
+  const tail = (
+    <>
+      {entry.registryUrl ? (
+        <section className="space-y-2" aria-labelledby="install-heading">
+          <h2 id="install-heading" className="text-lg font-semibold">
+            Installation
+          </h2>
+          <InstallCommand registryUrl={entry.registryUrl} />
+        </section>
+      ) : null}
+
+      <Suspense fallback={null}>
+        {/*
+          MDX compiles to a fragment. Without a wrapper those nodes become
+          direct `article` children and pick up `space-y-14` between every
+          heading and paragraph. Keep major chrome spaced; MDX owns its own.
+        */}
+        <div className="docs-mdx [&_h2+p]:mt-3 [&_h3+p]:mt-2 [&_h4+p]:mt-2 [&_p+p]:mt-4">
+          <DocsMdxSlot slug={contentSlug} />
+        </div>
+      </Suspense>
+
+      {relatedLinks.length > 0 ? (
+        <section className="max-w-prose space-y-2 border-t border-border pt-8">
+          <h2 id="in-code" className="text-lg font-semibold">
+            In code
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {relatedLinks.map((link, index) => (
+              <span key={link.href}>
+                {index > 0 ? " · " : null}
+                <a
+                  href={link.href}
+                  className="text-foreground underline-offset-4 hover:underline"
+                >
+                  {link.label}
+                </a>
+              </span>
+            ))}
+          </p>
+        </section>
+      ) : null}
+    </>
+  )
+
+  if (insetPreview) {
+    return (
+      <article className="w-full min-w-0 space-y-14">
+        <div className="w-full max-w-5xl space-y-14">{header}</div>
+        <section
+          className="w-full min-w-0 space-y-6"
+          aria-labelledby="preview-heading"
+        >
+          {previewDemo}
+        </section>
+        <div className="w-full max-w-5xl space-y-14">
+          <div className="space-y-6">{usage}</div>
+          {tail}
+        </div>
+      </article>
+    )
+  }
 
   return (
     <DocsReadableWidth>
       <article className="space-y-14">
-        <DocsPageHeader entry={entry as DocsEntry} notice={notice} />
-        <RelationshipBadges
-          builtWith={entry.builtWith}
-          usesFoundations={entry.usesFoundations}
-          usedBy={usedBy}
-        />
-
+        {header}
         <section className="space-y-6" aria-labelledby="preview-heading">
-          <div className="space-y-3">
-            <h2 id="preview-heading" className="text-lg font-semibold">
-              Preview
-            </h2>
-            <Suspense fallback={<DocsPreviewFallback slug={contentSlug} />}>
-              <DocsDemoSlot slug={contentSlug} />
-            </Suspense>
-          </div>
-
-          {snippet ? (
-            <div className="space-y-2">
-              <h2 id="usage-heading" className="text-lg font-semibold">
-                Usage
-              </h2>
-              <SyntaxHighlightedCode
-                code={snippet}
-                language="tsx"
-                peekLines={3}
-              />
-            </div>
-          ) : null}
-
-          {entry.registryUrl ? (
-            <CompactInstallButton registryUrl={entry.registryUrl} />
-          ) : null}
+          {previewDemo}
+          {usage}
         </section>
-
-        {entry.registryUrl ? (
-          <section className="space-y-2" aria-labelledby="install-heading">
-            <h2 id="install-heading" className="text-lg font-semibold">
-              Installation
-            </h2>
-            <InstallCommand registryUrl={entry.registryUrl} />
-          </section>
-        ) : null}
-
-        <Suspense fallback={null}>
-          {/*
-            MDX compiles to a fragment. Without a wrapper those nodes become
-            direct `article` children and pick up `space-y-14` between every
-            heading and paragraph. Keep major chrome spaced; MDX owns its own.
-          */}
-          <div className="docs-mdx [&_h2+p]:mt-3 [&_h3+p]:mt-2 [&_h4+p]:mt-2 [&_p+p]:mt-4">
-            <DocsMdxSlot slug={contentSlug} />
-          </div>
-        </Suspense>
-
-        {relatedLinks.length > 0 ? (
-          <section className="max-w-prose space-y-2 border-t border-border pt-8">
-            <h2 id="in-code" className="text-lg font-semibold">
-              In code
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {relatedLinks.map((link, index) => (
-                <span key={link.href}>
-                  {index > 0 ? " · " : null}
-                  <a
-                    href={link.href}
-                    className="text-foreground underline-offset-4 hover:underline"
-                  >
-                    {link.label}
-                  </a>
-                </span>
-              ))}
-            </p>
-          </section>
-        ) : null}
+        {tail}
       </article>
     </DocsReadableWidth>
   )

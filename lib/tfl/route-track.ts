@@ -4,7 +4,7 @@
  * 0.33× rails with 0.33× white gaps. Cable car is three rails + two gaps.
  */
 
-import { getLineColor } from "tfl-ts"
+import { getLineColor } from "tfl-ts/ui"
 import {
   CABLE_CAR_MAP_COLOUR,
   OVERGROUND_LINE_COLOURS,

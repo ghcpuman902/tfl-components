@@ -11,6 +11,7 @@ export const generateMetadata = (): Promise<Metadata> =>
 export default function BranchStripHorizontalDocsPage() {
   return renderComponentDocs({
     slug: "branch-strip-horizontal",
+    previewBleed: "inset",
     relatedLinks: [
       { href: "/docs/branch-strip-vertical", label: "Branch strip — vertical" },
       { href: "/docs/line-strip", label: "Simple line strip" },

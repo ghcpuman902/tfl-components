@@ -115,7 +115,7 @@ ${generatedImports.join("\n")}
 /**
  * Demo / docs registries.
  *
- * Northern, District, and Metropolitan's HORIZONTAL strips come from the
+ * Northern, District, Metropolitan, and Elizabeth's HORIZONTAL strips come from the
  * topology \u2192 energy \u2192 clip-to-grid path
  * (lib/tfl/geometry/branch-strip-from-topology.ts) \u2014 see
  * branch-schematic-layout.ts's TOPOLOGY_CLIP_LINE_IDS. Northern's VERTICAL
@@ -140,10 +140,13 @@ export const BRANCH_SCHEMATIC_LINE_IDS = Object.keys(BRANCH_SCHEMATICS_HORIZONTA
 
 const main = (): void => {
   mkdirSync(OUT_DIR, { recursive: true })
+  const requested = process.argv.slice(2).filter((arg) => !arg.startsWith("-"))
+  const wanted = new Set(requested)
   const generated: string[] = []
   const written = new Set<string>()
 
   for (const lineId of listBranchedLineIds()) {
+    if (wanted.size > 0 && !wanted.has(lineId)) continue
     let wroteAny = false
     for (const orientation of ORIENTATIONS) {
       try {
@@ -164,6 +167,11 @@ const main = (): void => {
       }
     }
     if (wroteAny) generated.push(lineId)
+  }
+
+  if (wanted.size > 0) {
+    console.log(`wrote ${generated.length} requested line(s)`)
+    return
   }
 
   for (const existing of readdirSync(OUT_DIR)) {

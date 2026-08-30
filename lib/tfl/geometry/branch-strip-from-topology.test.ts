@@ -29,13 +29,6 @@ const gutterViolations = (schematic: LineSchematic): string[] => {
   return violations
 }
 
-const nonVirtualPosValues = (schematic: LineSchematic): number[] =>
-  [
-    ...new Set(
-      schematic.nodes.filter((n) => n.kind !== "virtual").map((n) => n.pos)
-    ),
-  ].sort((a, b) => a - b)
-
 describe("buildBranchStripFromTopology", () => {
   for (const lineId of LINES) {
     it(`${lineId}: produces a schema-valid horizontal schematic with no lane-change stair`, () => {
@@ -46,27 +39,29 @@ describe("buildBranchStripFromTopology", () => {
       assert.deepEqual(gutterViolations(schematic), [])
     })
 
-    it(`${lineId}: keeps roughly even pos spacing (Ys get room, nothing is crammed)`, () => {
+    it(`${lineId}: packs hops along a branch (not across interleaved parallel branches)`, () => {
       const schematic = buildBranchStripFromTopology(lineId)!
-      const positions = nonVirtualPosValues(schematic)
-      const gaps = positions
-        .slice(1)
-        .map((pos, index) => pos - positions[index]!)
-      assert.ok(
-        gaps.every((gap) => gap > 0),
-        "pos must stay strictly increasing"
-      )
-      const sortedGaps = [...gaps].sort((a, b) => a - b)
-      const median = sortedGaps[Math.floor(sortedGaps.length / 2)]!
+      const byId = new Map(schematic.nodes.map((node) => [node.id, node]))
+      const sameLaneHops = schematic.edges
+        .map((edge) => {
+          const from = byId.get(edge.from)
+          const to = byId.get(edge.to)
+          if (!from || !to || from.lane !== to.lane) return null
+          if (from.kind === "virtual" || to.kind === "virtual") return null
+          return Math.abs(to.pos - from.pos)
+        })
+        .filter((gap): gap is number => gap != null)
+      assert.ok(sameLaneHops.length > 0, "expected same-lane hops")
+      const sorted = [...sameLaneHops].sort((a, b) => a - b)
+      const median = sorted[Math.floor(sorted.length / 2)]!
       assert.ok(
         Math.abs(median - 1) < 1e-6,
-        `expected the typical hop to be one pos unit, got median ${median}`
+        `expected the typical same-lane hop to be one pos unit, got median ${median}`
       )
-      // Stretched gaps (room for a Y) should stay the exception, not the rule.
-      const stretched = gaps.filter((gap) => gap > 1.5)
+      const stretched = sameLaneHops.filter((gap) => gap > 1.5)
       assert.ok(
-        stretched.length / gaps.length < 0.2,
-        `too many stretched gaps: ${stretched.length}/${gaps.length}`
+        stretched.length / sameLaneHops.length < 0.2,
+        `too many stretched same-lane hops: ${stretched.length}/${sameLaneHops.length}`
       )
     })
 
@@ -119,6 +114,16 @@ describe("buildBranchStripFromTopology", () => {
       )
     })
 
+    it("both blobs are interchange rings so the bond has a dot at each end", () => {
+      for (const blob of blobs) {
+        assert.equal(
+          blob.kind,
+          "interchange",
+          `${blob.id} should be an interchange, got ${blob.kind}`
+        )
+      }
+    })
+
     it("both blobs sit at the SAME pos (no parallel pair of bends)", () => {
       const positions = new Set(blobs.map((blob) => blob.pos))
       assert.equal(
@@ -149,6 +154,104 @@ describe("buildBranchStripFromTopology", () => {
         )
       }
     })
+  })
+
+  it("Northern High Barnet and Edgware pack along their own corridors, not interleaved", () => {
+    const schematic = buildBranchStripFromTopology("northern")!
+    const byName = (name: string) =>
+      schematic.nodes.find((node) => node.name === name)
+    const highBarnet = [
+      "High Barnet",
+      "Totteridge & Whetstone",
+      "Woodside Park",
+      "West Finchley",
+      "Finchley Central",
+    ].map((name) => {
+      const node = byName(name)
+      assert.ok(node, name)
+      return node!
+    })
+    const edgware = ["Edgware", "Burnt Oak", "Colindale", "Hendon Central"].map(
+      (name) => {
+        const node = byName(name)
+        assert.ok(node, name)
+        return node!
+      }
+    )
+    for (let i = 1; i < highBarnet.length; i += 1) {
+      const from = highBarnet[i - 1]!
+      const to = highBarnet[i]!
+      assert.equal(
+        from.lane,
+        to.lane,
+        `${from.name} → ${to.name} should stay on one lane (got ${from.lane} → ${to.lane})`
+      )
+      assert.ok(
+        Math.abs(to.pos - from.pos) < 1.5,
+        `${from.name} → ${to.name} Δpos=${Math.abs(to.pos - from.pos)} should be ~1`
+      )
+    }
+    for (let i = 1; i < edgware.length; i += 1) {
+      const from = edgware[i - 1]!
+      const to = edgware[i]!
+      assert.equal(
+        from.lane,
+        to.lane,
+        `${from.name} → ${to.name} should stay on one lane`
+      )
+      assert.ok(
+        Math.abs(to.pos - from.pos) < 1.5,
+        `${from.name} → ${to.name} Δpos=${Math.abs(to.pos - from.pos)} should be ~1`
+      )
+    }
+    const oval = byName("Oval")
+    const stockwell = byName("Stockwell")
+    assert.ok(oval && stockwell)
+    assert.equal(
+      oval.lane,
+      stockwell.lane,
+      `Oval → Stockwell should continue the southbound trunk (got ${oval.lane} → ${stockwell.lane})`
+    )
+  })
+
+  it("Northern Euston blobs share a column, adjacent lanes, with Mill Hill above the trunk", () => {
+    const schematic = buildBranchStripFromTopology("northern")!
+    const eustons = schematic.nodes.filter(
+      (node) => node.stationKey === "euston"
+    )
+    assert.equal(eustons.length, 2, "expected two Euston blobs")
+    const positions = new Set(eustons.map((node) => node.pos))
+    assert.equal(
+      positions.size,
+      1,
+      `Euston blobs should share one pos, got ${[...positions]}`
+    )
+    const lanes = eustons.map((node) => node.lane).sort((a, b) => a - b)
+    assert.equal(
+      lanes[1]! - lanes[0]!,
+      1,
+      `Euston lanes should be adjacent, got ${lanes}`
+    )
+    const millHill = schematic.nodes.find(
+      (node) => node.name === "Mill Hill East"
+    )
+    const finchley = schematic.nodes.find(
+      (node) => node.name === "Finchley Central"
+    )
+    const highBarnet = schematic.nodes.find(
+      (node) => node.name === "High Barnet"
+    )
+    const edgware = schematic.nodes.find((node) => node.name === "Edgware")
+    assert.ok(millHill && finchley && highBarnet && edgware)
+    assert.ok(
+      millHill.lane < highBarnet.lane,
+      `Mill Hill should sit above High Barnet (got Mill Hill ${millHill.lane}, High Barnet ${highBarnet.lane})`
+    )
+    assert.equal(
+      Math.abs(edgware.lane - highBarnet.lane),
+      1,
+      `High Barnet and Edgware should be adjacent lanes, got ${highBarnet.lane} vs ${edgware.lane}`
+    )
   })
 
   it("Northern Camden Town stays a real 2-in-2-out diamond (every leg a confirmed through-move)", () => {

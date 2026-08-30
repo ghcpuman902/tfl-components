@@ -73,6 +73,10 @@ export type BranchStripMetrics = {
   tickProtrude: number
   ringOuter: number
   ringStroke: number
+  /** Black walls of a bonded-interchange dumbbell. */
+  bondNeckWidth: number
+  /** White core of a bonded-interchange dumbbell. */
+  bondGap: number
 }
 
 /**
@@ -100,6 +104,8 @@ export const branchStripMetrics = (
   const tickProtrude = scale(x, LINE_DIAGRAM.stationTick)
   const ringOuter = scale(x, LINE_DIAGRAM.interchange.outerDiameter / 2)
   const ringStroke = scale(x, LINE_DIAGRAM.interchange.stroke)
+  const bondNeckWidth = scale(x, LINE_DIAGRAM.interchange.neckWidth)
+  const bondGap = scale(x, LINE_DIAGRAM.interchange.bridgeWhite)
   const labelClearance = ringOuter + scale(x, 1.1)
 
   const verticalLabelWidth = Math.round(
@@ -155,6 +161,8 @@ export const branchStripMetrics = (
     tickProtrude,
     ringOuter,
     ringStroke,
+    bondNeckWidth,
+    bondGap,
   }
 }
 
@@ -166,6 +174,54 @@ export type BranchStripLabelPlacement = {
   side: BranchStripLabelSide
   /** Estimated content box in layout coordinates (before SVG/label padding). */
   box: { x: number; y: number; w: number; h: number }
+}
+
+const BONDED_POS_EPS = 0.05
+
+/**
+ * Same physical station on two (or more) lanes at one column — Euston on
+ * Bank and CX, Kennington's bonded halves. Typography already folds those
+ * names (`mergeHomonyms`); the strip should too: one label, one bridge.
+ */
+export const bondedStationGroups = (
+  points: readonly SchematicLayoutPoint[]
+): SchematicLayoutPoint[][] => {
+  const byKey = new Map<string, SchematicLayoutPoint[]>()
+  for (const point of points) {
+    if (point.kind === "virtual") continue
+    const list = byKey.get(point.stationKey) ?? []
+    list.push(point)
+    byKey.set(point.stationKey, list)
+  }
+  const groups: SchematicLayoutPoint[][] = []
+  for (const members of byKey.values()) {
+    if (members.length < 2) continue
+    const remaining = [...members]
+    while (remaining.length > 0) {
+      const seed = remaining.shift()!
+      const cluster = [seed]
+      for (let index = remaining.length - 1; index >= 0; index -= 1) {
+        const candidate = remaining[index]!
+        if (Math.abs(candidate.pos - seed.pos) > BONDED_POS_EPS) continue
+        cluster.push(candidate)
+        remaining.splice(index, 1)
+      }
+      const lanes = new Set(cluster.map((point) => point.lane))
+      if (cluster.length >= 2 && lanes.size >= 2) groups.push(cluster)
+    }
+  }
+  return groups
+}
+
+const secondaryBondedIds = (
+  points: readonly SchematicLayoutPoint[]
+): Set<string> => {
+  const skip = new Set<string>()
+  for (const group of bondedStationGroups(points)) {
+    const sorted = [...group].sort((a, b) => a.lane - b.lane)
+    for (const point of sorted.slice(1)) skip.add(point.id)
+  }
+  return skip
 }
 
 export type BranchStripLabelOptions = {
@@ -244,9 +300,11 @@ export const placeBranchStripLabels = (
   const isHorizontal = orientation === "horizontal"
   const laneMid = (layout.minLane + layout.maxLane) / 2
   const textH = nameFont * labelLineHeight * estimatedLines
+  const skip = secondaryBondedIds(layout.points)
 
   return layout.points.flatMap((point): BranchStripLabelPlacement[] => {
     if (point.kind === "virtual") return []
+    if (skip.has(point.id)) return []
     if (isHorizontal) {
       const labelAbove = point.lane <= laneMid
       const w = labelMaxWidth

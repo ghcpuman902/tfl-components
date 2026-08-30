@@ -28,6 +28,10 @@ import {
   type StaticBranchSegment,
 } from "@/lib/tfl/line-topology"
 import {
+  collapseHubAliasIds,
+  stationHubCanonical,
+} from "@/lib/tfl/vehicle-hop-graph"
+import {
   meanCoord,
   stationCoord,
   type StationLatLon,
@@ -260,6 +264,69 @@ const firstLast = (offshoot: Offshoot): { first: string; last: string } => ({
   first: offshoot.stationIds[0]!,
   last: offshoot.stationIds[offshoot.stationIds.length - 1]!,
 })
+
+type TrunkAttachment = { trunkId: string; farId: string }
+
+const trunkAttachmentOf = (
+  offshoot: Offshoot,
+  trunkSet: ReadonlySet<string>
+): TrunkAttachment | null => {
+  const { first, last } = firstLast(offshoot)
+  const firstOn = trunkSet.has(first)
+  const lastOn = trunkSet.has(last)
+  if (firstOn && !lastOn) return { trunkId: first, farId: last }
+  if (lastOn && !firstOn) return { trunkId: last, farId: first }
+  return null
+}
+
+/** Walk the spur out from the trunk so +pos is the peel, not back along it. */
+const orientFromTrunk = (
+  offshoot: Offshoot,
+  trunkSet: ReadonlySet<string>
+): Offshoot => {
+  const { first, last } = firstLast(offshoot)
+  if (trunkSet.has(last) && !trunkSet.has(first)) {
+    return {
+      stationIds: [...offshoot.stationIds].reverse(),
+      edgeBranchIds: [...offshoot.edgeBranchIds].reverse(),
+    }
+  }
+  return offshoot
+}
+
+/**
+ * Two spurs that leave the trunk at different stations and meet off-trunk
+ * are one side-loop (Central Hainault via Wanstead and via Roding Valley),
+ * not two compass-opposite fans. Geographic pull of Wanstead (south) vs
+ * Roding Valley (north) would otherwise sandwich the Epping continuation.
+ */
+const findSideLoops = (
+  offshoots: readonly Offshoot[],
+  trunkIds: readonly string[]
+): { west: Offshoot; east: Offshoot }[] => {
+  const trunkSet = new Set(trunkIds)
+  const byFar = new Map<string, Offshoot[]>()
+  for (const offshoot of offshoots) {
+    const attachment = trunkAttachmentOf(offshoot, trunkSet)
+    if (!attachment) continue
+    const list = byFar.get(attachment.farId) ?? []
+    list.push(offshoot)
+    byFar.set(attachment.farId, list)
+  }
+  const pairs: { west: Offshoot; east: Offshoot }[] = []
+  for (const list of byFar.values()) {
+    if (list.length !== 2) continue
+    const a = list[0]!
+    const b = list[1]!
+    const attA = trunkAttachmentOf(a, trunkSet)!
+    const attB = trunkAttachmentOf(b, trunkSet)!
+    if (attA.trunkId === attB.trunkId) continue
+    const posA = trunkIds.indexOf(attA.trunkId)
+    const posB = trunkIds.indexOf(attB.trunkId)
+    pairs.push(posA <= posB ? { west: a, east: b } : { west: b, east: a })
+  }
+  return pairs
+}
 
 /**
  * Merge offshoots that meet at a junction with opposite sides of the trunk
@@ -526,6 +593,40 @@ const trunkEdgeBranchId = (
 
 const LOOP_COVERAGE = 0.55
 
+/** Collapse Paddington / London Paddington (etc.) the way line topology does. */
+const canonicalizeLineTopology = (topology: LineTopology): LineTopology => {
+  const names: Record<string, string> = {}
+  for (const [id, name] of Object.entries(topology.stationNames ?? {})) {
+    const root = stationHubCanonical(id)
+    const current = names[root]
+    if (!current || name.length < current.length) names[root] = name
+  }
+  const seenNodes = new Set<string>()
+  const nodes = topology.nodes.flatMap((node) => {
+    const stationId = stationHubCanonical(node.stationId)
+    if (seenNodes.has(stationId)) return []
+    seenNodes.add(stationId)
+    return [{ ...node, stationId }]
+  })
+  const edges = topology.edges.flatMap((edge) => {
+    const fromStationId = stationHubCanonical(edge.fromStationId)
+    const toStationId = stationHubCanonical(edge.toStationId)
+    if (!fromStationId || !toStationId || fromStationId === toStationId) {
+      return []
+    }
+    return [{ ...edge, fromStationId, toStationId }]
+  })
+  return {
+    ...topology,
+    nodes,
+    edges,
+    stationNames: names,
+    trunkStationIds: topology.trunkStationIds
+      ? collapseHubAliasIds(topology.trunkStationIds)
+      : topology.trunkStationIds,
+  }
+}
+
 const uniqueLoopCycle = (
   segments: readonly StaticBranchSegment[],
   loopBranchIds: readonly string[]
@@ -729,9 +830,17 @@ export const computeBranchSchematicLayout = (
   meta: BranchSchematicMeta,
   orientation: SchematicOrientationHint = "horizontal"
 ): LineSchematic => {
+  const isLoopLine = Boolean(topology.loopBranchIds?.length)
+  topology = isLoopLine ? topology : canonicalizeLineTopology(topology)
   const names = topology.stationNames ?? {}
   const nameOf = (id: string): string => names[id] ?? id
-  const segments = staticBranchSegments(meta.lineId)
+  const rawSegments = staticBranchSegments(meta.lineId)
+  const segments = isLoopLine
+    ? rawSegments
+    : rawSegments.map((segment) => ({
+        ...segment,
+        stationIds: collapseHubAliasIds(segment.stationIds),
+      }))
   const cycle = uniqueLoopCycle(segments, topology.loopBranchIds ?? [])
   if (
     cycle &&
@@ -849,8 +958,25 @@ export const computeBranchSchematicLayout = (
   const isShortGroup = (group: readonly Offshoot[]): boolean =>
     corridorLength(group, trunkSet) <= 2
 
-  const longCorridors = corridors.filter((group) => !isShortGroup(group))
-  const shortCorridors = corridors.filter((group) => isShortGroup(group))
+  const sideLoops = findSideLoops(offshoots, trunk)
+  const sideLoopOffshoots = new Set(
+    sideLoops.flatMap((pair) => [pair.west, pair.east])
+  )
+  const isSideLoopGroup = (group: readonly Offshoot[]): boolean =>
+    group.some((offshoot) => sideLoopOffshoots.has(offshoot))
+
+  const longCorridors = corridors.filter(
+    (group) =>
+      !isShortGroup(group) &&
+      !isSideLoopGroup(group) &&
+      corridorLength(group, trunkSet) > 0
+  )
+  const shortCorridors = corridors.filter(
+    (group) =>
+      isShortGroup(group) &&
+      !isSideLoopGroup(group) &&
+      corridorLength(group, trunkSet) > 0
+  )
 
   const laneOf = new Map<Offshoot, number>()
 
@@ -881,6 +1007,37 @@ export const computeBranchSchematicLayout = (
       if (!occupied.has(cellKey(lane, pos))) return lane
     }
     return signLane(16, orientation)
+  }
+
+  const laneOccupiedBetween = (
+    lane: number,
+    posA: number,
+    posB: number
+  ): boolean => {
+    const lo = Math.min(posA, posB)
+    const hi = Math.max(posA, posB)
+    for (const list of placedByStation.values()) {
+      for (const placed of list) {
+        if (placed.lane !== lane) continue
+        if (placed.pos >= lo - 1e-6 && placed.pos <= hi + 1e-6) return true
+      }
+    }
+    return false
+  }
+
+  /** A peel must not draw through another corridor (Windrush Crystal Palace). */
+  const peelWouldCross = (
+    fromLane: number,
+    fromPos: number,
+    toLane: number,
+    toPos: number
+  ): boolean => {
+    if (fromLane === toLane) return false
+    const step = Math.sign(toLane - fromLane) as -1 | 1
+    for (let lane = fromLane + step; lane !== toLane; lane += step) {
+      if (laneOccupiedBetween(lane, fromPos, toPos)) return true
+    }
+    return false
   }
 
   const pullOf = (group: readonly Offshoot[]): CompassPull => {
@@ -933,7 +1090,11 @@ export const computeBranchSchematicLayout = (
     )
   }
 
-  const placeOffshoot = (offshoot: Offshoot, lane: number) => {
+  const placeOffshoot = (
+    offshoot: Offshoot,
+    lane: number,
+    reuseEnds = false
+  ) => {
     const ids = offshoot.stationIds
     const first = ids[0]!
     const last = ids[ids.length - 1]!
@@ -957,20 +1118,23 @@ export const computeBranchSchematicLayout = (
       const branchId = offshoot.edgeBranchIds[Math.max(0, i - 1)]!
       const already = existingAt(stationId)
       const isEnd = i === 0 || i === ids.length - 1
-      const preferReuse = Boolean(already && (isEnd || already.lane === lane))
+      const preferReuse = Boolean(
+        already && (isEnd || already.lane === lane || reuseEnds)
+      )
 
-      if (
-        already &&
-        preferReuse &&
-        !shouldDuplicate(stationId, branchId, already, segments)
-      ) {
+      const duplicate =
+        Boolean(already) &&
+        !(reuseEnds && isEnd) &&
+        shouldDuplicate(stationId, branchId, already!, segments)
+
+      if (already && preferReuse && !duplicate) {
         already.branchIds.add(branchId)
         nodeByWalk.set(`${lane}:${i}:${stationId}`, already)
         cursorPos = already.pos
         continue
       }
 
-      if (already && !shouldDuplicate(stationId, branchId, already, segments)) {
+      if (already && !duplicate) {
         already.branchIds.add(branchId)
         nodeByWalk.set(`${lane}:${i}:${stationId}`, already)
         cursorPos = already.pos
@@ -999,6 +1163,8 @@ export const computeBranchSchematicLayout = (
     for (const offshoot of ordered) placeOffshoot(offshoot, lane)
   }
 
+  const sideLoopGroups: Offshoot[][] = []
+
   const trunkAttached = longCorridors.filter((group) => attachesToTrunk(group))
   const laterLong = longCorridors.filter((group) => !attachesToTrunk(group))
   let fanIndex = 0
@@ -1022,11 +1188,31 @@ export const computeBranchSchematicLayout = (
       orientation === "horizontal"
         ? pullOf(group)
         : { sign: 0 as const, strength: 0 }
-    const lane = attachment
+    let lane = attachment
       ? pull.sign !== 0
         ? nearestLaneWithSign(attachment.lane, attachment.pos, pull.sign)
         : nearestLaneTo(attachment.lane, attachment.pos)
       : nearestFreeLane(0)
+    if (
+      attachment &&
+      peelWouldCross(attachment.lane, attachment.pos, lane, attachment.pos + 1)
+    ) {
+      const flipped = nearestLaneWithSign(
+        attachment.lane,
+        attachment.pos,
+        (Math.sign(lane - attachment.lane) || 1) === 1 ? -1 : 1
+      )
+      if (
+        !peelWouldCross(
+          attachment.lane,
+          attachment.pos,
+          flipped,
+          attachment.pos + 1
+        )
+      ) {
+        lane = flipped
+      }
+    }
     for (const offshoot of group) laneOf.set(offshoot, lane)
     placeGroup(group, lane)
   }
@@ -1038,6 +1224,128 @@ export const computeBranchSchematicLayout = (
     }
     for (const list of placedByStation.values()) {
       for (const placed of list) placed.pos = maxPos - placed.pos
+    }
+    occupied.clear()
+    for (const list of placedByStation.values()) {
+      for (const placed of list) occupied.add(cellKey(placed.lane, placed.pos))
+    }
+  }
+
+  for (const pair of sideLoops) {
+    const longer =
+      uniqueLength(pair.west, trunkSet) >= uniqueLength(pair.east, trunkSet)
+        ? pair.west
+        : pair.east
+    const shorter = longer === pair.west ? pair.east : pair.west
+    const pull =
+      orientation === "horizontal"
+        ? pullOf([longer])
+        : { sign: 0 as const, strength: 0 }
+    const sign: -1 | 1 = pull.sign !== 0 ? pull.sign : 1
+    const inner = orientFromTrunk(longer, trunkSet)
+    const innerAtt = trunkAttachmentOf(inner, trunkSet)!
+    const innerNode = existingAt(innerAtt.trunkId)
+    const innerLane = nearestLaneWithSign(
+      innerNode?.lane ?? 0,
+      innerNode?.pos ?? 0,
+      sign
+    )
+    placeOffshoot(inner, innerLane, true)
+    laneOf.set(inner, innerLane)
+    const outer = orientFromTrunk(shorter, trunkSet)
+    const outerAtt = trunkAttachmentOf(outer, trunkSet)!
+    const outerNode = existingAt(outerAtt.trunkId)
+    const outerLane = nearestLaneWithSign(
+      outerNode?.lane ?? innerNode?.lane ?? 0,
+      outerNode?.pos ?? innerNode?.pos ?? 0,
+      sign
+    )
+    placeOffshoot(outer, outerLane, true)
+    laneOf.set(outer, outerLane)
+    sideLoopGroups.push([inner], [outer])
+  }
+
+  // DLR: Bank / Tower Gateway / Limehouse / Westferry compass-pull west
+  // (above the Lewisham↔Stratford trunk). Flip that corridor below All
+  // Saints so the two western termini have room to peel downward.
+  //
+  // Stratford High Street is packed from Canning Town on the Blackwall
+  // lane and lands in the Westferry / Poplar column — labels sit on the
+  // long vertical. Grow that corridor from Stratford on the lane between
+  // the trunk and Blackwall instead.
+  if (meta.lineId === "dlr" && orientation === "horizontal") {
+    const flipBelow = new Set([
+      "Westferry",
+      "Limehouse",
+      "Shadwell",
+      "Bank",
+      "Tower Gateway",
+    ])
+    for (const list of placedByStation.values()) {
+      for (const placed of list) {
+        if (!flipBelow.has(nameOf(placed.stationId))) continue
+        if (placed.lane >= 0) continue
+        placed.lane = -placed.lane
+      }
+    }
+
+    occupied.clear()
+    for (const list of placedByStation.values()) {
+      for (const placed of list) occupied.add(cellKey(placed.lane, placed.pos))
+    }
+
+    const placedNamed = (name: string): PlacedNode | undefined => {
+      for (const list of placedByStation.values()) {
+        const hit = list.find((placed) => nameOf(placed.stationId) === name)
+        if (hit) return hit
+      }
+      return undefined
+    }
+    const stratford = placedNamed("Stratford")
+    const canningTown = placedNamed("Canning Town")
+    const westferry = placedNamed("Westferry")
+    const highStreetChain = [
+      "Stratford High Street",
+      "Abbey Road",
+      "West Ham",
+      "Star Lane",
+    ]
+      .map(placedNamed)
+      .filter((node): node is PlacedNode => node != null)
+    if (stratford && canningTown && highStreetChain.length === 4) {
+      const targetLane = stratford.lane - 1
+      for (const node of highStreetChain) {
+        occupied.delete(cellKey(node.lane, node.pos))
+      }
+      const lo = Math.min(stratford.pos, canningTown.pos)
+      const hi = Math.max(stratford.pos, canningTown.pos)
+      const slots: number[] = []
+      for (let pos = lo + 1; pos < hi; pos += 1) {
+        if (westferry && pos === westferry.pos) continue
+        if (occupied.has(cellKey(targetLane, pos))) continue
+        slots.push(pos)
+      }
+      const fromStratford =
+        stratford.pos <= canningTown.pos ? slots : [...slots].reverse()
+      const chosen =
+        fromStratford.length >= highStreetChain.length
+          ? highStreetChain.map((_, index) => {
+              const slotIndex = Math.round(
+                (index * (fromStratford.length - 1)) /
+                  (highStreetChain.length - 1)
+              )
+              return fromStratford[slotIndex]!
+            })
+          : null
+      let pos = stratford.pos
+      for (let i = 0; i < highStreetChain.length; i += 1) {
+        const node = highStreetChain[i]!
+        pos = chosen?.[i] ?? pos + 1
+        node.lane = targetLane
+        node.pos = freePos(targetLane, pos)
+        occupied.add(cellKey(node.lane, node.pos))
+        pos = node.pos
+      }
     }
   }
 
@@ -1069,7 +1377,7 @@ export const computeBranchSchematicLayout = (
     pushEdge(from.nodeId, to.nodeId, branchId)
   }
 
-  for (const group of [...longCorridors, ...shortCorridors]) {
+  for (const group of [...longCorridors, ...shortCorridors, ...sideLoopGroups]) {
     const lane = laneOf.get(group[0]!) ?? 1
     for (const offshoot of group) {
       for (let i = 0; i < offshoot.stationIds.length - 1; i += 1) {
@@ -1130,17 +1438,16 @@ export const computeBranchSchematicLayout = (
 /**
  * Lines whose horizontal strip comes from the topology → energy →
  * clip-to-grid path (`branch-strip-from-topology.ts`) instead of the
- * `LINE_STATION_SEQUENCES` trunk-and-offshoot walk below. Verified working
- * cleanly for every branched line we tried (including Central and
- * Piccadilly), but deliberately scoped to the lines this pass targets —
- * see `docs/branch-strip-horizontal`'s "Where the horizontal strip comes
- * from" for how to extend the list. Loop lines (Circle) stay on the walk
+ * `LINE_STATION_SEQUENCES` trunk-and-offshoot walk below. Elizabeth is
+ * here so Paddington / Liverpool Street collapse the same way line
+ * topology does (hub aliases). Loop lines (Circle) stay on the walk
  * below; `buildBranchStripFromTopology` already declines them.
  */
 export const TOPOLOGY_CLIP_LINE_IDS = new Set([
   "northern",
   "district",
   "metropolitan",
+  "elizabeth",
 ])
 
 export const buildBranchSchematic = (

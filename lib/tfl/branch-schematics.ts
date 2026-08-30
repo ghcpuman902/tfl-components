@@ -31,8 +31,8 @@ import { WINDRUSH_BRANCH_SCHEMATIC_VERTICAL } from "@/lib/tfl/fixtures/generated
 /**
  * Demo / docs registries.
  *
- * Northern, District, and Metropolitan's HORIZONTAL strips come from the
- * topology → energy → clip-to-grid path
+ * Northern, District, Metropolitan, and Elizabeth's HORIZONTAL strips come
+ * from the topology → energy → clip-to-grid path
  * (lib/tfl/geometry/branch-strip-from-topology.ts) — see
  * branch-schematic-layout.ts's TOPOLOGY_CLIP_LINE_IDS. Northern's VERTICAL
  * map is still the hand-authored fixture (vertical is out of scope for that

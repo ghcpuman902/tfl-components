@@ -1,6 +1,8 @@
 "use client"
 
-import { useMemo, useState, type ChangeEvent } from "react"
+import { useMemo, type ChangeEvent } from "react"
+import { FitToView } from "@/components/docs/fit-to-view"
+import { useDocsStripQuery } from "@/hooks/use-docs-strip-query"
 import { LineStrip } from "@/components/tfl/diagram/line-strip"
 import {
   BRANCH_SCHEMATICS_HORIZONTAL,
@@ -41,8 +43,12 @@ export const BranchLineStripPicker = ({
 }) => {
   const schematics = schematicsFor(orientation)
   const options = useMemo(() => lineOptions(schematics), [schematics])
-  const [lineId, setLineId] = useState("northern")
-  const [mono, setMono] = useState(false)
+  const lineIds = useMemo(() => options.map((option) => option.lineId), [options])
+  const { lineId, setLineId, mono, setMono, fit, setFit } = useDocsStripQuery({
+    validLineIds: lineIds,
+    defaultLineId: "northern",
+    persistFlags: true,
+  })
   const schematic = schematics[lineId] ?? schematics.northern
   const lineColor =
     resolveDiagramLineCssColor(lineId) ?? resolveDiagramLineColor(lineId)
@@ -65,7 +71,10 @@ export const BranchLineStripPicker = ({
       schematic={schematic}
       lineColor={lineColor}
       mono={mono}
-      className={orientation === "vertical" ? "p-4" : undefined}
+      className={cn(
+        orientation === "vertical" && "p-4",
+        fit && "w-max overflow-hidden"
+      )}
     />
   )
 
@@ -103,19 +112,38 @@ export const BranchLineStripPicker = ({
         >
           Mono
         </button>
+        <button
+          type="button"
+          aria-pressed={fit}
+          aria-label="Fit into view"
+          onClick={() => setFit((current) => !current)}
+          className={cn(
+            "min-h-10 rounded-md px-3 py-2 text-sm transition-colors",
+            "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            fit
+              ? "bg-foreground text-background"
+              : "bg-muted/60 text-foreground hover:bg-muted"
+          )}
+        >
+          Fit
+        </button>
         <p className="text-sm text-muted-foreground">
           {schematic.nodes.filter((node) => node.kind !== "virtual").length}{" "}
           stops
         </p>
       </div>
 
-      {orientation === "vertical" ? (
-        <div className="max-h-[70vh] overflow-auto rounded-lg border border-border">
-          {strip}
-        </div>
-      ) : (
-        strip
-      )}
+      <FitToView
+        fit={fit}
+        mode={orientation === "vertical" ? "box" : "width"}
+        className={
+          orientation === "vertical"
+            ? "max-h-[70vh] overflow-auto rounded-lg border border-border"
+            : "overflow-x-auto"
+        }
+      >
+        {strip}
+      </FitToView>
     </div>
   )
 }

@@ -472,8 +472,16 @@ export const decomposeBranchStripJunctions = (
         // Stay on the pair's own lane — same `pos` as the original station —
         // so two blobs never travel as a matching pair of bends. If the
         // pair's two legs don't already share a lane, keep the labelled
-        // node's own lane when either leg used it; otherwise take the
-        // lower of the two (deterministic, still a real single-sided bend).
+        // node's own lane when either leg used it. Otherwise sit next to
+        // the neighbour that already shares `pos` (a same-column bond is a
+        // one-tick nudge, not a multi-lane vertical through the trunk).
+        // Last resort: the lower of the two (deterministic).
+        const samePosLane =
+          aNode && Math.abs(aNode.pos - node.pos) < 1e-6
+            ? aNode.lane
+            : bNode && Math.abs(bNode.pos - node.pos) < 1e-6
+              ? bNode.lane
+              : undefined
         const lane =
           aNode && bNode && aNode.lane === bNode.lane
             ? aNode.lane
@@ -481,7 +489,8 @@ export const decomposeBranchStripJunctions = (
               ? node.lane
               : bNode?.lane === node.lane
                 ? node.lane
-                : Math.min(aNode?.lane ?? node.lane, bNode?.lane ?? node.lane)
+                : (samePosLane ??
+                  Math.min(aNode?.lane ?? node.lane, bNode?.lane ?? node.lane))
         const branchIds = [
           ...new Set(
             [edges[a.edgeIndex]?.branchId, edges[b.edgeIndex]?.branchId].filter(

@@ -304,5 +304,28 @@ describe("Northern BranchStrip labels", () => {
         `overlapping labels: ${overlaps.map((p) => p.join("×")).join(", ")}`
       )
     })
+
+    it(`${orientation}: bonded Euston blobs share one label`, () => {
+      const layout = layoutNorthern(orientation)
+      const m = branchStripMetrics(orientation)
+      const placements = placeBranchStripLabels(layout, {
+        orientation,
+        nameFont: m.nameFont,
+        labelMaxWidth: m.labelMaxWidth,
+        verticalLabelWidth: m.verticalLabelWidth,
+        labelClearance: m.labelClearance,
+        labelGap: m.labelGap,
+        labelLineHeight: m.labelLineHeight,
+        estimatedLines: 2,
+      })
+      const eustons = layout.points.filter(
+        (point) => point.stationKey === "euston"
+      )
+      assert.ok(eustons.length >= 2)
+      const labelled = placements.filter((placement) =>
+        eustons.some((point) => point.id === placement.id)
+      )
+      assert.equal(labelled.length, 1)
+    })
   }
 })

@@ -4,7 +4,7 @@
   "title": "River Bus Arrivals Board",
   "description": "River bus pier departures as a flat time-ordered list, with optional route grouping — pass RealtimePrediction[] as data.",
   "dependencies": [
-    "tfl-ts@^2.11.0",
+    "tfl-ts@^2.13.1",
     "lucide-react"
   ],
   "registryDependencies": [

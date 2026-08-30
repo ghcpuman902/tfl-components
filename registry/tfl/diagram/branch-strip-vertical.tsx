@@ -57,12 +57,13 @@ export const BranchStripVertical = (props: BranchStripVerticalProps) => {
         <BranchStripTrack view={view} />
 
         {layout.points.map((point) => {
+          const placement = placementById.get(point.id)
+          if (!placement) return null
           const nodeX = point.x + svgOffsetX
           const nodeY = point.y + svgOffsetY
           const labelLines = nodeLabelLines?.[point.id]
-          const placement = placementById.get(point.id)
 
-          if (placement?.side === "stub-above") {
+          if (placement.side === "stub-above") {
             return (
               <div
                 key={`label-${point.id}`}
@@ -91,8 +92,8 @@ export const BranchStripVertical = (props: BranchStripVerticalProps) => {
           }
 
           const labelOnLeft =
-            placement?.side === "left" ||
-            (placement?.side !== "right" && verticalLabelOnLeft(point, layout))
+            placement.side === "left" ||
+            (placement.side !== "right" && verticalLabelOnLeft(point, layout))
 
           return (
             <div

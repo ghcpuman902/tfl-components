@@ -50,6 +50,7 @@ export const BranchStripHorizontal = (props: BranchStripHorizontalProps) => {
 
         {layout.points
           .filter((point) => point.kind !== "virtual")
+          .filter((point) => placementById.has(point.id))
           .map((point) => {
             const nodeX = point.x + svgOffsetX
             const nodeY = point.y + svgOffsetY

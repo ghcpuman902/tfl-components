@@ -123,8 +123,8 @@ importers:
         specifier: ^3.6.0
         version: 3.6.0
       tfl-ts:
-        specifier: ^2.11.0
-        version: 2.11.0(typescript@5.9.3)
+        specifier: ^2.13.1
+        version: 2.13.1(typescript@5.9.3)
       three:
         specifier: ^0.185.1
         version: 0.185.1
@@ -4283,8 +4283,8 @@ packages:
     resolution: {integrity: sha512-uxc/zpqFg6x7C8vOE7lh6Lbda8eEL9zmVm/PLeTPBRhh1xCgdWaQ+J1CUieGpIfm2HdtsUpRv+HshiasBMcc6A==}
     engines: {node: '>=6'}
 
-  tfl-ts@2.11.0:
-    resolution: {integrity: sha512-PKOIlroJ+En5/PUp3/4NfRUQZvp7Dw8YL47WgsIMCwigagTLsZOWAZT6FtYA/ftJ/ETpFYQoqJf4QwWoFdDlxw==}
+  tfl-ts@2.13.1:
+    resolution: {integrity: sha512-g8hEO74Ui2Ck2BWA1hM6Ob2iQKEL4CXDQOxw45GSwZqv8A8P9nsSeR7V0oH4lXal6FIbhaxfCmndqtE+Os3/mg==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     peerDependencies:
@@ -9058,7 +9058,7 @@ snapshots:
 
   tapable@2.3.3: {}
 
-  tfl-ts@2.11.0(typescript@5.9.3):
+  tfl-ts@2.13.1(typescript@5.9.3):
     dependencies:
       typescript: 5.9.3
 
