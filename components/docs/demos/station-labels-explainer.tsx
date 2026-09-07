@@ -3,12 +3,19 @@
 import { useState, type ClipboardEvent, type CSSProperties } from "react"
 import { DocsResizeFrame } from "@/components/docs/docs-resize-frame"
 import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
-import { StationName } from "@/components/tfl/station-name"
+import {
+  StationName,
+  STATION_NAME_BOX_COLOR_VAR,
+} from "@/components/tfl/station-name"
 import { TFL_BLUE } from "@/lib/tfl/brand"
 import { STATION_ABBREVIATION_TABLE } from "@/lib/tfl/station-abbreviations"
 import { cn } from "@/lib/utils"
 
 const WIDTH_DEMO_NAME = "London Liverpool Street"
+const QUALIFIER_DEMO_NAMES = [
+  "Cutty Sark (for Maritime Greenwich)",
+  "Custom House (for ExCel)",
+] as const
 const COPY_NAME = "London Liverpool Street"
 const LABEL_FONT_SIZE = 16
 
@@ -56,6 +63,36 @@ export const StationWidthDemo = () => (
         </div>
         <span className="text-xs text-muted-foreground tabular-nums">
           {width}px
+        </span>
+      </li>
+    ))}
+    {QUALIFIER_DEMO_NAMES.map((name) => (
+      <li key={name} className="flex items-start gap-3">
+        <div className="pb-5">
+          <div
+            className="relative shrink-0 text-white"
+            style={{
+              width: 160,
+              backgroundColor: TFL_BLUE,
+              [STATION_NAME_BOX_COLOR_VAR]: TFL_BLUE,
+            }}
+          >
+            <StationName
+              name={name}
+              layout="auto"
+              maxWidth={160}
+              fontSize={LABEL_FONT_SIZE}
+              maxLines={2}
+              allowAbbreviation
+              allowScaleDown
+              align="center"
+              placeQualifier
+              className="h-auto py-2.5 font-medium text-white"
+            />
+          </div>
+        </div>
+        <span className="pt-2.5 text-xs text-muted-foreground tabular-nums">
+          160px
         </span>
       </li>
     ))}

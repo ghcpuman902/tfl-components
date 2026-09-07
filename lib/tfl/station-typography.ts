@@ -1,4 +1,7 @@
-import { formatStationName } from "@/lib/tfl/diagram-station"
+import {
+  formatStationName,
+  splitStationPlaceQualifier,
+} from "@/lib/tfl/diagram-station"
 import { applyStationAbbreviations } from "@/lib/tfl/station-abbreviations"
 
 export {
@@ -27,6 +30,11 @@ export type StationLabelFormatOptions = {
    * Skips auto word-break selection when provided.
    */
   forcedLines?: readonly string[]
+  /**
+   * Fit only the core name; detach a trailing `(for …)` pointer so it can
+   * be painted outside the box. Default false (arrivals keep the full string).
+   */
+  detachPlaceQualifier?: boolean
 }
 
 export type StationLabelFormatResult = {
@@ -40,6 +48,8 @@ export type StationLabelFormatResult = {
   fits: boolean
   /** Normalised full name before line breaks. */
   displayName: string
+  /** Detached `(for …)` pointer when `detachPlaceQualifier` is on. */
+  qualifier?: string
 }
 
 /**
@@ -146,6 +156,11 @@ export const formatStationLabel = (
   const allowScaleDown = options.allowScaleDown ?? true
   const minScale = options.minScale ?? STATION_LABEL_MIN_SCALE
   const displayName = formatStationName(rawName)
+  const { core, qualifier } = options.detachPlaceQualifier
+    ? splitStationPlaceQualifier(rawName)
+    : { core: displayName, qualifier: undefined }
+  const fitName = options.detachPlaceQualifier ? core : displayName
+  const detached = options.detachPlaceQualifier ? qualifier : undefined
   const maxWidth = Math.max(1, options.maxWidth)
   const fontSize = Math.max(1, options.fontSize)
 
@@ -163,6 +178,7 @@ export const formatStationLabel = (
       // Always the canonical single-line name — not the joined (possibly
       // abbreviated) visual lines. Copy / aria use this via formatStationName.
       displayName,
+      qualifier: detached,
     }
   }
 
@@ -185,17 +201,18 @@ export const formatStationLabel = (
       abbreviated,
       fits,
       displayName: name,
+      qualifier: detached,
     }
   }
 
   // 1. Full name at full size
-  let result = tryName(displayName, false, 1)
+  let result = tryName(fitName, false, 1)
   if (result.fits) return result
 
   // 2. Abbreviations at full size
   if (allowAbbreviation) {
-    const abbreviatedName = applyAbbreviations(displayName)
-    if (abbreviatedName !== displayName) {
+    const abbreviatedName = applyAbbreviations(fitName)
+    if (abbreviatedName !== fitName) {
       result = tryName(abbreviatedName, true, 1)
       if (result.fits) return result
     }
@@ -207,13 +224,13 @@ export const formatStationLabel = (
     const steps = 8
     for (let i = 1; i <= steps; i += 1) {
       const scale = Math.max(minScale, 1 - (i / steps) * (1 - minScale))
-      const full = tryName(displayName, false, scale)
+      const full = tryName(fitName, false, scale)
       if (full.fits) return full
       if (full.scale < smallest.scale) smallest = full
 
       if (allowAbbreviation) {
-        const abbreviatedName = applyAbbreviations(displayName)
-        if (abbreviatedName !== displayName) {
+        const abbreviatedName = applyAbbreviations(fitName)
+        if (abbreviatedName !== fitName) {
           const abbr = tryName(abbreviatedName, true, scale)
           if (abbr.fits) return abbr
           // Prefer the shorter visual when both overflow at the same scale.

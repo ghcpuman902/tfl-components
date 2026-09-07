@@ -91,8 +91,12 @@ export {
 export {
   formatStationName,
   isLikelyInterchange,
+  splitStationPlaceQualifier,
+  stationQualifierSide,
   type DiagramConnection,
   type DiagramStation,
+  type StationNameLineAnchor,
+  type StationPlaceQualifier,
 } from "@/lib/tfl/diagram-station"
 
 export {

@@ -18,7 +18,12 @@ import {
   resolveSansFontFamily,
   type StationLabelFormatResult,
 } from "@/lib/tfl/station-typography"
-import { formatStationName } from "@/lib/tfl/diagram-station"
+import {
+  formatStationName,
+  splitStationPlaceQualifier,
+  stationQualifierSide,
+  type StationNameLineAnchor,
+} from "@/lib/tfl/diagram-station"
 import {
   findCompletionForToken,
   stationCopyName,
@@ -73,6 +78,16 @@ export type StationNameProps = {
   align?: "left" | "center" | "right"
   /** Expose format diagnostics to a parent (typography lab). */
   onFormat?: (result: StationLabelFormatResult) => void
+  /**
+   * Detach a trailing `(for …)` pointer from the box and paint it outside
+   * at half size. Line strips and boxed station-name labels opt in.
+   */
+  placeQualifier?: boolean
+  /**
+   * Where the route line sits relative to this label. The qualifier paints
+   * on the opposite side. Unknown / omitted defaults to below.
+   */
+  lineAnchor?: StationNameLineAnchor
 }
 
 /** @deprecated Use `StationNameProps`. */
@@ -92,6 +107,14 @@ const FALLBACK_FONT = "Hammersmith One, system-ui, sans-serif"
 const MULTILINE_LINE_HEIGHT = 1.15
 /** Board titles are `text-3xl` in a 48px tile — shrink further than diagram labels. */
 const TITLE_MIN_SCALE = 0.55
+/** Set on a coloured name box so the detached `(for …)` pointer can match it. */
+export const STATION_NAME_BOX_COLOR_VAR = "--station-name-box"
+/**
+ * Gap between the box and a detached qualifier.
+ * The qualifier is 50% type, so `1em` here is half the box size — enough
+ * to read as a gap, not a second line of the name.
+ */
+const QUALIFIER_GAP = "1em"
 
 /** Skip `display: contents` parents — they have no box, so clientWidth is 0. */
 const laidOutAncestor = (el: HTMLElement): HTMLElement => {
@@ -130,9 +153,12 @@ const renderFindableLine = (line: string): ReactNode[] =>
 
 const fixedResult = (
   name: string,
-  lines?: readonly string[]
+  lines?: readonly string[],
+  placeQualifier = false
 ): StationLabelFormatResult => {
   const displayName = formatStationName(name)
+  const { core, qualifier } = splitStationPlaceQualifier(name)
+  const detached = placeQualifier ? qualifier : undefined
   if (lines && lines.length > 0) {
     return {
       lines: [...lines],
@@ -140,15 +166,44 @@ const fixedResult = (
       abbreviated: lines.join(" ") !== displayName,
       fits: true,
       displayName,
+      qualifier: detached,
     }
   }
   return {
-    lines: [displayName],
+    lines: [placeQualifier && qualifier ? core : displayName],
     scale: 1,
     abbreviated: false,
     fits: true,
     displayName,
+    qualifier: detached,
   }
+}
+
+const qualifierOffsetStyle = (
+  side: StationNameLineAnchor,
+  align: "left" | "center" | "right"
+): CSSProperties => {
+  if (side === "left") {
+    return {
+      right: `calc(100% + ${QUALIFIER_GAP})`,
+      top: "50%",
+      transform: "translateY(-50%)",
+    }
+  }
+  if (side === "right") {
+    return {
+      left: `calc(100% + ${QUALIFIER_GAP})`,
+      top: "50%",
+      transform: "translateY(-50%)",
+    }
+  }
+  const edge =
+    side === "above"
+      ? { bottom: `calc(100% + ${QUALIFIER_GAP})` }
+      : { top: `calc(100% + ${QUALIFIER_GAP})` }
+  if (align === "right") return { ...edge, right: 0 }
+  if (align === "left") return { ...edge, left: 0 }
+  return { ...edge, left: "50%", transform: "translateX(-50%)" }
 }
 
 /**
@@ -176,6 +231,8 @@ export const StationName = ({
   align = "left",
   nowrap = true,
   onFormat,
+  placeQualifier = false,
+  lineAnchor,
 }: StationNameProps) => {
   const ref = useRef<HTMLSpanElement>(null)
   const visualLines = linesProp ?? forcedLines
@@ -265,6 +322,7 @@ export const StationName = ({
       allowScaleDown,
       minScale,
       forcedLines: visualLines,
+      detachPlaceQualifier: placeQualifier,
     }),
     [
       allowAbbreviation,
@@ -272,20 +330,21 @@ export const StationName = ({
       visualLines,
       maxLines,
       minScale,
+      placeQualifier,
       size.fontSize,
       size.width,
     ]
   )
 
   const result = useMemo(() => {
-    if (!useAuto) return fixedResult(name, visualLines)
+    if (!useAuto) return fixedResult(name, visualLines, placeQualifier)
 
     // Unmeasured (or a ~0px slot) stays at full size. Pretending the box is
     // 1px wide forced minScale on every first paint, then a shrink-wrapped
     // parent ratcheted that small size even when the heading had room.
     // Tiles clip overflow; scale down only after a real slot width exists.
     if (!hasFixedMetrics && (!size.measured || size.width <= 4)) {
-      return fixedResult(name, visualLines)
+      return fixedResult(name, visualLines, placeQualifier)
     }
     return formatStationLabel(name, measure, formatOptions)
   }, [
@@ -297,6 +356,7 @@ export const StationName = ({
     size.width,
     useAuto,
     visualLines,
+    placeQualifier,
   ])
 
   useEffect(() => {
@@ -321,13 +381,16 @@ export const StationName = ({
     align === "center" ? "center" : align === "right" ? "right" : "left"
   const multiline = result.lines.length > 1
 
+  const qualifier = placeQualifier ? result.qualifier : undefined
   const paintDiffersFromCopy =
     multiline ||
     result.abbreviated ||
+    Boolean(qualifier) ||
     result.lines.join(" ").replace(/\s+/g, " ").trim() !== copyName
   const extraFindAliases = findAliases.filter(
     (alias) => alias.toLowerCase() !== copyName.toLowerCase()
   )
+  const qualifierSide = stationQualifierSide(lineAnchor)
 
   return (
     <FindableText
@@ -381,6 +444,20 @@ export const StationName = ({
           </Fragment>
         ))}
       </span>
+      {qualifier ? (
+        <span
+          className="pointer-events-none absolute whitespace-nowrap"
+          style={{
+            fontSize: "50%",
+            lineHeight: 1.15,
+            color: `var(${STATION_NAME_BOX_COLOR_VAR}, currentColor)`,
+            ...qualifierOffsetStyle(qualifierSide, align),
+          }}
+          aria-hidden="true"
+        >
+          {qualifier}
+        </span>
+      ) : null}
     </FindableText>
   )
 }

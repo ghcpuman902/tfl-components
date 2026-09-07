@@ -84,6 +84,8 @@ export const BranchStripVertical = (props: BranchStripVerticalProps) => {
                   allowScaleDown={false}
                   allowAbbreviation={false}
                   align="center"
+                  placeQualifier
+                  lineAnchor="below"
                   className="font-medium text-foreground"
                   style={labelStyle}
                 />
@@ -117,6 +119,8 @@ export const BranchStripVertical = (props: BranchStripVerticalProps) => {
                 allowScaleDown={false}
                 allowAbbreviation={false}
                 align={labelOnLeft ? "right" : "left"}
+                placeQualifier
+                lineAnchor={labelOnLeft ? "right" : "left"}
                 className="font-medium text-foreground"
                 style={labelStyle}
               />

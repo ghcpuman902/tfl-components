@@ -57,6 +57,49 @@ export const formatStationName = (name: string): string => {
   return next.replace(/\s+/g, " ").trim()
 }
 
+/**
+ * Attraction / destination pointers such as Cutty Sark (for Maritime Greenwich)
+ * and Custom House (for ExCel). These do not fit a two-line name box — the
+ * core name stays in the box; the bracket is painted outside at half size.
+ * Place-name parens (Olympia, London, Berks) are not this pattern.
+ */
+const PLACE_QUALIFIER_RE = /\s*(\(for\s+[^)]+\))\s*$/i
+
+export type StationPlaceQualifier = {
+  /** Name that belongs in the label box. */
+  core: string
+  /** Bracketed pointer, including parentheses, when present. */
+  qualifier?: string
+}
+
+/**
+ * Split a `(for …)` pointer from an already-formatted or raw TfL name.
+ * Canonical copy / aria still use the full `formatStationName` result.
+ */
+export const splitStationPlaceQualifier = (
+  name: string
+): StationPlaceQualifier => {
+  const displayName = formatStationName(name)
+  const match = PLACE_QUALIFIER_RE.exec(displayName)
+  if (!match || match.index == null) return { core: displayName }
+  const core = displayName.slice(0, match.index).trim()
+  return { core: core || displayName, qualifier: match[1] }
+}
+
+/** Side of the label that faces the route line. Qualifier paints opposite. */
+export type StationNameLineAnchor = "above" | "below" | "left" | "right"
+
+/** Qualifier sits away from the line; unknown anchor defaults to below. */
+export const stationQualifierSide = (
+  lineAnchor?: StationNameLineAnchor
+): StationNameLineAnchor => {
+  if (lineAnchor === "above") return "below"
+  if (lineAnchor === "below") return "above"
+  if (lineAnchor === "left") return "right"
+  if (lineAnchor === "right") return "left"
+  return "below"
+}
+
 export const isLikelyInterchange = (stop: {
   lines?: { id?: string | null }[] | null
   modes?: string[] | null

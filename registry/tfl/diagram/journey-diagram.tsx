@@ -68,6 +68,8 @@ const StationRow = ({
             layout="auto"
             maxLines={2}
             align="left"
+            placeQualifier
+            lineAnchor="left"
             className="min-w-0 font-medium text-foreground"
             style={{ fontSize: m.nameSize }}
           />

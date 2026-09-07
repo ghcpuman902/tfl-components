@@ -312,6 +312,17 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 196,
   },
   {
+    slug: "drawing-the-line",
+    title: "Drawing the line",
+    description:
+      "How station order and track become a drawn line.",
+    group: "start",
+    kind: "page",
+    href: "/docs/drawing-the-line",
+    sidebarSection: "get-started",
+    sidebarOrder: 197,
+  },
+  {
     slug: "observatory",
     title: "TfL metadata tracker",
     description:
@@ -847,6 +858,30 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 0,
     excludeFromInstallLists: true,
   },
+  {
+    slug: "junction-candidates",
+    title: "Junction candidates",
+    description:
+      "Inspect every distinct minimal decomposition of a junction.",
+    group: "drafts",
+    kind: "draft",
+    href: "/drafts/junction-candidates",
+    sidebarSection: "hidden",
+    sidebarOrder: 1,
+    excludeFromInstallLists: true,
+  },
+  {
+    slug: "vertex-scenarios",
+    title: "Vertex scenarios",
+    description:
+      "Building-block drawings from through-moves at a passenger station.",
+    group: "drafts",
+    kind: "draft",
+    href: "/drafts/vertex-scenarios",
+    sidebarSection: "hidden",
+    sidebarOrder: 2,
+    excludeFromInstallLists: true,
+  },
 ] as const
 
 export const resolveDocsSlug = (slug: string): string =>
@@ -918,7 +953,7 @@ export const getCatalogueEntries = (): DocsEntry[] =>
     (entry) => entry.sidebarSection === "components" && !entry.comingSoon
   ).sort((a, b) => a.sidebarOrder - b.sidebarOrder)
 
-/** Matches DocsSidebar: get-started top → components → iPad wall display / Board URL / Troubleshoot / licensing tail → primitives. */
+/** Matches DocsSidebar: get-started top → components → iPad wall display / Board URL / Troubleshoot / data model / line topology / drawing the line / licensing tail → primitives. */
 export const GET_STARTED_BOTTOM_FROM = 185
 
 /** Tools and Drafts — footer / search in development only (J8). */

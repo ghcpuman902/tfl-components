@@ -66,4 +66,40 @@ describe("formatStationLabel", () => {
     assert.deepEqual(result.lines, ["King's X St. Pancras"])
     assert.equal(result.fits, true)
   })
+
+  it("fits only the core name when a (for …) pointer is detached", () => {
+    const result = formatStationLabel(
+      "Cutty Sark (for Maritime Greenwich)",
+      approximateStationMeasure,
+      {
+        maxWidth: 80,
+        fontSize: 16,
+        maxLines: 2,
+        allowScaleDown: false,
+        detachPlaceQualifier: true,
+      }
+    )
+    assert.ok(
+      result.lines.every((line) => !/\(for\b/i.test(line)),
+      `box should not contain the bracket, got ${JSON.stringify(result.lines)}`
+    )
+    assert.equal(result.lines.join(" "), "Cutty Sark")
+    assert.equal(result.qualifier, "(for Maritime Greenwich)")
+    assert.equal(result.fits, true)
+  })
+
+  it("keeps the full name in the box when detach is off", () => {
+    const result = formatStationLabel(
+      "Custom House (for ExCel)",
+      approximateStationMeasure,
+      {
+        maxWidth: 80,
+        fontSize: 16,
+        maxLines: 2,
+        allowScaleDown: false,
+      }
+    )
+    assert.ok(result.lines.join(" ").includes("ExCel"))
+    assert.equal(result.qualifier, undefined)
+  })
 })

@@ -81,6 +81,8 @@ export const BranchStripHorizontal = (props: BranchStripHorizontalProps) => {
                   maxLines={2}
                   allowScaleDown={false}
                   align="center"
+                  placeQualifier
+                  lineAnchor={labelAbove ? "below" : "above"}
                   className="font-medium text-foreground"
                   style={labelStyle}
                 />

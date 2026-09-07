@@ -205,7 +205,8 @@ export const octilinearLanePath = (
   x1: number,
   y1: number,
   radius: number,
-  mainAxis: "x" | "y" = "x"
+  mainAxis: "x" | "y" = "x",
+  leftoverAt: "split" | "start" | "end" = "split"
 ): string => {
   const dx = x1 - x0
   const dy = y1 - y0
@@ -229,8 +230,9 @@ export const octilinearLanePath = (
 
   const sx = Math.sign(dx) || 1
   const sy = Math.sign(dy) || 1
-  const leftover = mainDelta - crossDelta - r * S45_MAIN_EXTRA
-  const s0 = leftover * 0.5
+  const leftover = Math.max(0, mainDelta - crossDelta - r * S45_MAIN_EXTRA)
+  const s0 =
+    leftoverAt === "end" ? 0 : leftoverAt === "start" ? leftover : leftover * 0.5
   const s1 = leftover - s0
   const arcMain = r * SIN45
   const arcCross = r * ONE_MINUS_COS45

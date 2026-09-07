@@ -33,6 +33,14 @@ export default function DraftsIndexPage() {
           href: "/drafts/bus-disruption-surface",
           label: "Bus disruption surface — its own list",
         },
+        {
+          href: "/drafts/junction-candidates",
+          label: "Junction candidates — tree and reconstructed matrix",
+        },
+        {
+          href: "/drafts/vertex-scenarios",
+          label: "Vertex scenarios — through-pattern building blocks",
+        },
         { href: "/tools", label: "Tools — promoted playgrounds" },
         { href: "/docs/components", label: "Components — promoted boards" },
         { href: "/labs", label: "Labs — experimental compositions" },

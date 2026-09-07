@@ -5,8 +5,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
-import { StationName } from "@/components/tfl/station-name"
+import {
+  StationName,
+  STATION_NAME_BOX_COLOR_VAR,
+} from "@/components/tfl/station-name"
 import { TFL_BLUE } from "@/lib/tfl/brand-colours"
+import { splitStationPlaceQualifier } from "@/lib/tfl/diagram-station"
 import type { CatalogStation } from "@/lib/tfl/station-catalog"
 import { stationNameMatchesQuery } from "@/lib/tfl/station-name-match"
 import type { StationLabelFormatResult } from "@/lib/tfl/station-typography"
@@ -191,19 +195,22 @@ export const StationTypographyLab = ({
             >
               {letterStations.map((station) => {
                 const diag = diagnostics[station.id]
+                const hasQualifier = Boolean(
+                  splitStationPlaceQualifier(station.displayName).qualifier
+                )
                 return (
                   <li
                     key={station.id}
                     className="rounded-lg border border-border bg-card p-3"
                   >
                     <div
-                      className="mx-auto flex items-center justify-center px-2.5 py-2"
+                      className="mx-auto text-white"
                       style={{
                         width: boxWidth,
                         maxWidth: "100%",
                         backgroundColor: TFL_BLUE,
                         color: "#fff",
-                        minHeight: fontSize * (maxLines === 2 ? 2.5 : 1.5),
+                        [STATION_NAME_BOX_COLOR_VAR]: TFL_BLUE,
                       }}
                     >
                       <StationName
@@ -215,12 +222,21 @@ export const StationTypographyLab = ({
                         allowAbbreviation={allowAbbreviation}
                         allowScaleDown={allowScaleDown}
                         align="center"
-                        className="font-medium text-white"
-                        style={{ color: "#fff" }}
+                        placeQualifier
+                        className="h-auto px-2.5 py-2 font-medium text-white"
+                        style={{
+                          color: "#fff",
+                          minHeight: fontSize * (maxLines === 2 ? 2.5 : 1.5),
+                        }}
                         onFormat={(result) => handleFormat(station.id, result)}
                       />
                     </div>
-                    <p className="mt-2 truncate text-xs text-muted-foreground">
+                    <p
+                      className={cn(
+                        "truncate text-xs text-muted-foreground",
+                        hasQualifier ? "mt-6" : "mt-2"
+                      )}
+                    >
                       {station.modes.join(" · ")}
                       {station.lines.length > 0
                         ? ` · ${station.lines.slice(0, 3).join(", ")}`

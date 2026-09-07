@@ -316,6 +316,8 @@ export const StraightStripStationColumn = ({
             maxLines={2}
             allowScaleDown={false}
             align="center"
+            placeQualifier
+            lineAnchor={labelSide === "above" ? "below" : "above"}
             className="font-medium text-foreground"
             style={{
               fontSize: m.nameSize,

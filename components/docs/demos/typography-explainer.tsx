@@ -6,7 +6,10 @@ import { DocsResizeFrame } from "@/components/docs/docs-resize-frame"
 import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text"
 import { PlatformChip } from "@/components/tfl/arrivals/platform-chip"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
-import { StationName } from "@/components/tfl/station-name"
+import {
+  StationName,
+  STATION_NAME_BOX_COLOR_VAR,
+} from "@/components/tfl/station-name"
 import {
   STATION_LABEL_MIN_SCALE,
   type StationLabelFormatResult,
@@ -208,7 +211,10 @@ const MinSizeRow = ({
       <p className="text-xs font-medium text-muted-foreground">{title}</p>
       <div
         className="flex items-center px-3 py-2.5 text-white"
-        style={{ backgroundColor: TFL_BLUE }}
+        style={{
+          backgroundColor: TFL_BLUE,
+          [STATION_NAME_BOX_COLOR_VAR]: TFL_BLUE,
+        }}
       >
         <StationName
           name={MIN_SIZE_NAME}
