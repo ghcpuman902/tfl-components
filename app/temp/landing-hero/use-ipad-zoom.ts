@@ -2,8 +2,13 @@
 
 import { useCallback, useLayoutEffect, useRef, type RefObject } from "react"
 import type { ScrollTrigger } from "gsap/ScrollTrigger"
+import { computeCoverCanvas } from "@/lib/landing/cover-canvas"
 import { getLandingGsap } from "./gsap-client"
-import { IPAD_CASE } from "./landing-artwork"
+import {
+  IPAD_CASE,
+  LANDING_VIEWBOX_HEIGHT,
+  LANDING_VIEWBOX_WIDTH,
+} from "./landing-artwork"
 import {
   CROP_SCALE,
   HERO_COPY_GAP,
@@ -50,21 +55,29 @@ const layoutCoverCanvas = (
   composition: HTMLElement,
   canvas: HTMLElement
 ) => {
-  const width = composition.clientWidth
-  const height = composition.clientHeight
+  const rect = composition.getBoundingClientRect()
+  const width = rect.width
+  const height = rect.height
   const viewBox = svg.viewBox.baseVal
-  const coverScale =
-    Math.max(width / viewBox.width, height / viewBox.height) * CROP_SCALE
-  const canvasW = viewBox.width * coverScale
-  const canvasH = viewBox.height * coverScale
-  const panX = (width - canvasW) / 2
-  const panY = (height - canvasH) / 2
+  const {
+    coverScale,
+    width: canvasW,
+    height: canvasH,
+    panX,
+    panY,
+  } = computeCoverCanvas({
+    viewportWidth: width,
+    viewportHeight: height,
+    viewBoxWidth: viewBox.width || LANDING_VIEWBOX_WIDTH,
+    viewBoxHeight: viewBox.height || LANDING_VIEWBOX_HEIGHT,
+    cropScale: CROP_SCALE,
+  })
 
   canvas.style.width = `${canvasW}px`
   canvas.style.height = `${canvasH}px`
   canvas.style.translate = `${panX}px ${panY}px`
 
-  return { coverScale, panX, panY, viewBox }
+  return { coverScale, panX, panY, viewBox, width, height }
 }
 
 const framedIpadCamera = (
@@ -73,12 +86,11 @@ const framedIpadCamera = (
   canvas: HTMLElement,
   readCssLength: ReadCssLength
 ) => {
-  const { coverScale, panX, panY, viewBox } = layoutCoverCanvas(
+  const { coverScale, panX, panY, viewBox, width } = layoutCoverCanvas(
     svg,
     composition,
     canvas
   )
-  const width = composition.clientWidth
   const iPadWidth = IPAD_CASE.width * coverScale
   const iPadHeight = IPAD_CASE.height * coverScale
   const iPadLeft = panX + (IPAD_CASE.x - viewBox.x) * coverScale
@@ -120,13 +132,11 @@ const roomEndCamera = (
   composition: HTMLElement,
   canvas: HTMLElement
 ) => {
-  const { coverScale, panX, panY, viewBox } = layoutCoverCanvas(
+  const { coverScale, panX, panY, viewBox, width, height } = layoutCoverCanvas(
     svg,
     composition,
     canvas
   )
-  const width = composition.clientWidth
-  const height = composition.clientHeight
   const iPadLeft = IPAD_CASE.x
   const iPadRight = IPAD_CASE.x + IPAD_CASE.width
   const neededW = iPadRight - iPadLeft + ROOM_IPAD_VIEW_MARGIN * 2
@@ -146,7 +156,9 @@ const roomEndCamera = (
   }
   visibleLeft = clamp(visibleLeft, viewBox.x, maxLeft)
 
-  const canvasH = viewBox.height * coverScale
+  const canvasH = Math.ceil(
+    (viewBox.height || LANDING_VIEWBOX_HEIGHT) * coverScale
+  )
   const letterbox = Math.max(0, height - canvasH * targetScale)
 
   return {
