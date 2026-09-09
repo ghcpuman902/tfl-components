@@ -7,10 +7,7 @@ import {
   LANDING_BOARD_DEFAULT,
   type LandingBoardIndexes,
 } from "@/lib/tfl/landing-board"
-import {
-  BOARD_IFRAME_HEIGHT,
-  BOARD_IFRAME_WIDTH,
-} from "./landing-artwork"
+import { BOARD_IFRAME_HEIGHT, BOARD_IFRAME_WIDTH } from "./landing-artwork"
 
 type IpadBoardFrameProps = {
   interactive: boolean
@@ -66,6 +63,7 @@ export const IpadBoardFrame = ({
       className="relative size-full overflow-hidden bg-background"
       style={{ pointerEvents: interactive ? "auto" : "none" }}
     >
+      {/* Layout stays 1280px; CSS scale does not shrink container queries. */}
       <div
         ref={innerRef}
         className="absolute top-0 left-0 origin-top-left"

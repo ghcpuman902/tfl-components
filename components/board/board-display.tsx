@@ -113,6 +113,16 @@ const BOUND_COLUMNS_CLASS_NAMES = {
 /** Half-tile — `gap-8` (32px) is off the 24px baseline. */
 const BOARD_RHYTHM_GAP_CLASS = "gap-y-[calc(var(--arrivals-row)/2)]"
 
+/**
+ * Query this board's layout width, not the viewport. The landing iPad
+ * scales a 1280px frame with CSS `transform`; media queries would still see
+ * a phone and collapse to one column.
+ */
+const BOARD_SHELL_CONTAINER_CLASS = "@container/board"
+const BOARD_SHELL_PADDING_CLASS = "p-4 @min-[48rem]/board:p-6"
+const BOARD_TWO_COLUMN_CLASS = `grid min-w-0 grid-cols-1 items-start ${BOARD_RHYTHM_GAP_CLASS} @min-[48rem]/board:grid-cols-3 @min-[48rem]/board:gap-x-6`
+const BOARD_ONE_COLUMN_CLASS = `grid min-w-0 grid-cols-1 items-start ${BOARD_RHYTHM_GAP_CLASS}`
+
 const CycleHireMapSkeleton = ({ tiles }: { tiles: number }) => (
   <div
     className="w-full animate-pulse bg-muted"
@@ -297,8 +307,7 @@ export const BoardDisplay = ({
   const appKey = config.key ?? storedKey
   const surfaceReady = ready && hydrated
   const boardReady =
-    surfaceReady &&
-    isBoardReady(config, storedKey, { allowSiteDemo: embedded })
+    surfaceReady && isBoardReady(config, storedKey, { allowSiteDemo: embedded })
   const fullscreen = useBoardFullscreen(boardRootRef, {
     enabled: boardReady && !fromHomeScreen && !embedded,
   })
@@ -310,7 +319,9 @@ export const BoardDisplay = ({
     if (!isUsableBoardConfig(hashConfig) || !hashConfig.key) return
     writeInstalledBoardConfig(hashConfig, Date.now())
     void save(hashConfig.key, "local")
-    setInstalledConfig(applyStopName({ ...hashConfig, key: undefined }, stationNames))
+    setInstalledConfig(
+      applyStopName({ ...hashConfig, key: undefined }, stationNames)
+    )
   }, [fromHomeScreen, hashConfig, hydrated, ready, save, stationNames])
 
   const handleRecoveredBoard = useCallback(
@@ -318,7 +329,9 @@ export const BoardDisplay = ({
       writeInstalledBoardConfig(next, Date.now())
       void save(key, "local")
       replaceHashIfNeeded(boardHashFromConfig({ ...next, key }))
-      setInstalledConfig(applyStopName({ ...next, key: undefined }, stationNames))
+      setInstalledConfig(
+        applyStopName({ ...next, key: undefined }, stationNames)
+      )
     },
     [save, stationNames]
   )
@@ -819,7 +832,7 @@ export const BoardDisplay = ({
       <section
         className={
           wide && twoColumns
-            ? "min-w-0 overflow-x-clip md:col-span-2"
+            ? "min-w-0 overflow-x-clip @min-[48rem]/board:col-span-2"
             : "min-w-0 overflow-x-clip"
         }
         aria-label={label}
@@ -836,17 +849,15 @@ export const BoardDisplay = ({
   }
 
   const shellClass = isPreview
-    ? "board-embed box-border h-full w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain p-4 md:p-6 [&::-webkit-scrollbar]:hidden"
+    ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-full w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
     : fillScreen
-      ? "board-embed box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain p-4 md:p-6 [&::-webkit-scrollbar]:hidden"
-      : "box-border min-h-dvh w-full p-4 md:p-6"
+      ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
+      : `${BOARD_SHELL_CONTAINER_CLASS} box-border min-h-dvh w-full ${BOARD_SHELL_PADDING_CLASS}`
 
   if (!surfaceReady) {
     return (
       <div className={shellClass} style={ARRIVALS_RHYTHM_VARS}>
-        {isPreview ? null : (
-          <h1 className="sr-only">Live board</h1>
-        )}
+        {isPreview ? null : <h1 className="sr-only">Live board</h1>}
       </div>
     )
   }
@@ -874,11 +885,7 @@ export const BoardDisplay = ({
     >
       {isPreview ? null : <h1 className="sr-only">Live board</h1>}
       <div
-        className={
-          twoColumns
-            ? `grid min-w-0 grid-cols-1 items-start ${BOARD_RHYTHM_GAP_CLASS} md:grid-cols-3 md:gap-x-6`
-            : `grid min-w-0 grid-cols-1 items-start ${BOARD_RHYTHM_GAP_CLASS}`
-        }
+        className={twoColumns ? BOARD_TWO_COLUMN_CLASS : BOARD_ONE_COLUMN_CLASS}
       >
         {renderStack(slots.p1, "Wide slot", true)}
         {renderStack(slots.p2, "Narrow slot", false)}

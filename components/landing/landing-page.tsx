@@ -6,9 +6,7 @@ import { getLandingBoardIndexes } from "@/lib/tfl/landing-board"
 import { LANDING_SCROLL_BOOT_SCRIPT } from "@/lib/landing/space-hash"
 
 const LandingScrollBoot = () => (
-  <script
-    dangerouslySetInnerHTML={{ __html: LANDING_SCROLL_BOOT_SCRIPT }}
-  />
+  <script dangerouslySetInnerHTML={{ __html: LANDING_SCROLL_BOOT_SCRIPT }} />
 )
 
 export const LandingPage = async () => {
@@ -30,16 +28,13 @@ export const LandingFallback = () => (
   <>
     <LandingScrollBoot />
     <style>{heroArtworkThemeStyleSheet()}</style>
-    <div
-      className="landing-home relative w-full min-w-0"
-      aria-hidden
-    >
+    <div className="landing-home relative w-full min-w-0" aria-hidden>
       <div
         className="relative w-full"
         style={{ height: "calc(200dvh - var(--site-header-height))" }}
       >
         <div
-          className="sticky"
+          className="landing-hero-stage sticky"
           style={{
             top: "var(--site-header-height)",
             height: "calc(100dvh - var(--site-header-height))",

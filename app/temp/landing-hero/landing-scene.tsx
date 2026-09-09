@@ -93,7 +93,7 @@ const LandingIpadHomeButton = ({
     title={hint}
     aria-label={hint}
     onClick={onClick}
-    className="absolute z-10 rounded-full bg-transparent pointer-events-auto focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+    className="pointer-events-auto absolute z-10 rounded-full bg-transparent focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
     style={{
       left: `${ipadHomeInset.left * 100}%`,
       top: `${ipadHomeInset.top * 100}%`,
@@ -132,7 +132,7 @@ const LandingStaticRoom = () => {
   return (
     <section
       id="landing-room"
-      className="relative flex w-full flex-col overflow-hidden"
+      className="landing-hero-stage relative flex w-full flex-col overflow-hidden"
       style={{ height: "calc(100dvh - var(--site-header-height))" }}
     >
       <div className="landing-hero-paper absolute inset-0" />
@@ -214,7 +214,10 @@ export const LandingScene = ({
 
   const writeSpaceHash = useCallback((present: boolean) => {
     const next = present
-      ? landingUrlWithSpaceHash(window.location.pathname, window.location.search)
+      ? landingUrlWithSpaceHash(
+          window.location.pathname,
+          window.location.search
+        )
       : landingUrlWithoutHash(window.location.pathname, window.location.search)
     const current = `${window.location.pathname}${window.location.search}${window.location.hash}`
     if (current === next) return
@@ -248,13 +251,16 @@ export const LandingScene = ({
     }
   }, [sceneReady, scrollToRoom, skipIntro])
 
-  const handleRoomCompleteChange = useCallback((complete: boolean) => {
-    setRoomComplete((current) => {
-      if (current === complete) return current
-      if (complete) onZoomComplete?.()
-      return complete
-    })
-  }, [onZoomComplete])
+  const handleRoomCompleteChange = useCallback(
+    (complete: boolean) => {
+      setRoomComplete((current) => {
+        if (current === complete) return current
+        if (complete) onZoomComplete?.()
+        return complete
+      })
+    },
+    [onZoomComplete]
+  )
 
   const handleSeeSpace = useCallback(() => {
     onHeroInteraction?.()
@@ -520,10 +526,7 @@ export const LandingScene = ({
   }
 
   return (
-    <div
-      className="landing-home relative w-full min-w-0"
-      style={landingVars}
-    >
+    <div className="landing-home relative w-full min-w-0" style={landingVars}>
       <div
         ref={wrapperRef}
         className="relative w-full"
@@ -540,7 +543,7 @@ export const LandingScene = ({
           }}
         />
         <div
-          className="sticky z-10"
+          className="landing-hero-stage sticky z-10"
           style={{
             top: "var(--site-header-height)",
             height: "calc(100dvh - var(--site-header-height))",
@@ -567,7 +570,10 @@ export const LandingScene = ({
                 className="relative size-full"
                 style={{ visibility: sceneReady ? "visible" : "hidden" }}
               >
-                <div ref={canvasRef} className="absolute top-0 left-0 size-full">
+                <div
+                  ref={canvasRef}
+                  className="absolute top-0 left-0 size-full"
+                >
                   <LandingArtwork
                     svgRef={svgRef}
                     l0Ref={l0Ref}
