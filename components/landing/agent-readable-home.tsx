@@ -3,7 +3,7 @@ import { TEXT_LINK_CLASS } from "@/lib/text-link"
 
 const SURFACES = [
   {
-    title: "Board",
+    title: "Arrivals and status board",
     href: "/board",
     body: "Set up a live London transport display without deploying an app. Choose a stop and show arrivals, line status, buses, and nearby cycle hire on an iPad, tablet, monitor, or any screen with a modern browser.",
   },
@@ -26,12 +26,7 @@ const SURFACES = [
 
 const SurfaceLink = ({ href, title }: { href: string; title: string }) =>
   href.startsWith("http") ? (
-    <a
-      href={href}
-      className={TEXT_LINK_CLASS}
-      target="_blank"
-      rel="noreferrer"
-    >
+    <a href={href} className={TEXT_LINK_CLASS} target="_blank" rel="noreferrer">
       {title}
     </a>
   ) : (
@@ -51,9 +46,9 @@ export const AgentReadableHome = () => (
         TfL boards, React components, and typed transport data
       </h1>
       <p className="mt-3 text-muted-foreground">
-        Start with the hosted Board, take the React components into your own
-        app, or work directly with tfl-ts. The reference pages cover the TfL
-        conventions that hold those routes together.
+        Start with the arrivals and status board, take the React components into
+        your own app, or work directly with tfl-ts. The reference pages cover
+        the TfL conventions that hold those routes together.
       </p>
     </div>
     <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2">

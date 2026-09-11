@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes"
+import { applyThemeColorMeta, themeColorForResolved } from "@/lib/theme-color"
 
 // next-themes injects an inline <script> to prevent FOUC. React 19 warns that
 // scripts inside components are not executed on the client — a false positive
@@ -27,6 +28,19 @@ if (
   }
 }
 
+const ThemeColorSync = () => {
+  const { resolvedTheme } = useTheme()
+
+  React.useLayoutEffect(() => {
+    if (resolvedTheme !== "light" && resolvedTheme !== "dark") {
+      return
+    }
+    applyThemeColorMeta(themeColorForResolved(resolvedTheme), document)
+  }, [resolvedTheme])
+
+  return null
+}
+
 function ThemeProvider({
   children,
   ...props
@@ -40,6 +54,7 @@ function ThemeProvider({
       disableTransitionOnChange
       {...props}
     >
+      <ThemeColorSync />
       <ThemeHotkey />
       {children}
     </NextThemesProvider>

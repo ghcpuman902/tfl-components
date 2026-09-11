@@ -4,6 +4,9 @@ import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, it } from "node:test"
 import {
+  BOARD_NAV_ARIA_LABEL,
+  BOARD_NAV_MOBILE_SUBTEXT,
+  BOARD_NAV_TOOLTIP,
   DESKTOP_PRIMARY_LINKS,
   DOCS_NAV_ARIA_LABEL,
   DOCS_NAV_MOBILE_SUBTEXT,
@@ -177,6 +180,9 @@ describe("site navigation", () => {
   it("keeps Board last in the J6 list without button chrome", () => {
     const board = DESKTOP_PRIMARY_LINKS[DESKTOP_PRIMARY_LINKS.length - 1]
     assert.equal(board.label, "Board")
+    assert.equal(board.tooltip, BOARD_NAV_TOOLTIP)
+    assert.equal(board.ariaLabel, BOARD_NAV_ARIA_LABEL)
+    assert.equal(board.mobileSubtext, BOARD_NAV_MOBILE_SUBTEXT)
     assert.equal("prominence" in board, false)
     assert.deepEqual(
       DESKTOP_PRIMARY_LINKS.map((link) => link.label),

@@ -31,6 +31,9 @@ export const DOCS_NAV_TOOLTIP = "Get started"
 export const DOCS_NAV_ARIA_LABEL = "Docs: Get started"
 export const DOCS_NAV_MOBILE_SUBTEXT = "Get started with the component library"
 export const DOCS_SIDEBAR_TRIGGER_LABEL = "Open documentation navigation"
+export const BOARD_NAV_TOOLTIP = "Arrivals and status"
+export const BOARD_NAV_ARIA_LABEL = "Board: arrivals and status"
+export const BOARD_NAV_MOBILE_SUBTEXT = "Live arrivals and line status"
 
 /**
  * Desktop order stays Docs first and Board last (frozen J6).
@@ -48,7 +51,14 @@ export const DESKTOP_PRIMARY_LINKS: readonly SiteNavLink[] = [
   { href: "/docs/components", label: "Components", match: "components" },
   { href: "/docs/explorer", label: "Explorer", match: "explorer" },
   { href: "/labs", label: "Labs", match: "labs" },
-  { href: "/board", label: "Board", match: "board" },
+  {
+    href: "/board",
+    label: "Board",
+    match: "board",
+    tooltip: BOARD_NAV_TOOLTIP,
+    ariaLabel: BOARD_NAV_ARIA_LABEL,
+    mobileSubtext: BOARD_NAV_MOBILE_SUBTEXT,
+  },
 ]
 
 /** Mobile keeps the desktop first and last items. More follows them. */

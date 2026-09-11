@@ -19,6 +19,10 @@ import {
 } from "@/lib/agent/structured-data"
 import { SITE_AUTHOR, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site"
 import { fontPreferenceBootScript } from "@/lib/site-font"
+import {
+  SITE_VIEWPORT_THEME_COLOR,
+  themeColorBootScript,
+} from "@/lib/theme-color"
 import { cn } from "@/lib/utils"
 
 import "./globals.css"
@@ -54,10 +58,9 @@ const fontMono = Geist_Mono({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-  ],
+  // OS media queries for first paint / system theme. An explicit light/dark
+  // choice locks a single tag in themeColorBootScript + ThemeColorSync.
+  themeColor: [...SITE_VIEWPORT_THEME_COLOR],
 }
 
 export const metadata: Metadata = {
@@ -131,6 +134,11 @@ export default function RootLayout({
             dangerouslySetInnerHTML={{ __html: fontPreferenceScript }}
           />
         ) : null}
+        <Script
+          id="tfl-theme-color"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: themeColorBootScript }}
+        />
         <Analytics />
         <ThemeProvider>
           <FontPreferenceProvider

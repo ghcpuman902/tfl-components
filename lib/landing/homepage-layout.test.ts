@@ -17,6 +17,16 @@ describe("homepage iPad preview layout", () => {
     assert.doesNotMatch(display, /md:col-span-2/)
   })
 
+  it("names the hosted product as an arrivals and status board", () => {
+    const chat = read("../../components/landing/landing-room-chat.tsx")
+    const home = read("../../components/landing/agent-readable-home.tsx")
+    assert.match(chat, /arrivals and status board/)
+    assert.match(chat, /Make my own arrivals board/)
+    assert.doesNotMatch(chat, />\s*Board\s*</)
+    assert.doesNotMatch(chat, /It&apos;s a live TfL board/)
+    assert.match(home, /Arrivals and status board/)
+  })
+
   it("full-bleeds the landing stage past the scrollbar gutter", () => {
     const scene = read("../../app/temp/landing-hero/landing-scene.tsx")
     const fallback = read("../../components/landing/landing-page.tsx")

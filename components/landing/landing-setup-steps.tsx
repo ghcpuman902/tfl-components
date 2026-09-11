@@ -65,7 +65,7 @@ export const LandingSetupSteps = () => (
       href="/board"
       className={cn(TEXT_LINK_CLASS, "mt-8 text-lg text-foreground")}
     >
-      Make my board →
+      Make my arrivals board →
     </Link>
   </section>
 )
