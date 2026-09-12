@@ -86,6 +86,13 @@ describe("docs mobile sidebar trigger position", () => {
     assert.match(pageHeader, /text-sm text-muted-foreground/)
   })
 
+  it("keeps one chrome and sidebar tree mounted across route changes", () => {
+    assert.equal((chrome.match(/<SidebarProvider/g) ?? []).length, 1)
+    assert.equal((chrome.match(/<SiteHeader/g) ?? []).length, 1)
+    assert.equal((chrome.match(/<DocsSidebar/g) ?? []).length, 1)
+    assert.match(chrome, /showDocsSidebar \? "contents" : "hidden"/)
+  })
+
   it("uses next/link for docs chrome without tooltip or title wrappers", () => {
     const sidebar = read("../components/docs/docs-sidebar.tsx")
     const actions = read("../components/docs/docs-page-actions.tsx")

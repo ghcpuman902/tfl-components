@@ -6,7 +6,8 @@ import { DocsSidebar } from "@/components/docs/docs-sidebar"
 import { DocsTableOfContents } from "@/components/docs/docs-table-of-contents"
 import { SiteHeader } from "@/components/site-header"
 import { VisitBeacon } from "@/components/visit-beacon"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { SidebarProvider } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 
 type AppChromeProps = {
   children: React.ReactNode
@@ -36,42 +37,37 @@ const AppChromeShell = ({
   }
 
   const showDocsSidebar = isDocsPath(pathname)
-
-  if (!showDocsSidebar) {
-    // Empty pathname = AppChrome Suspense fallback before usePathname resolves.
-    // Prefer home chrome (no main padding) so `/` does not CLS from px-4 → px-0.
-    const isHome = pathname === "/" || pathname === ""
-    const isLandingHero = pathname === "/temp/landing-hero"
-    const isFullBleed = isHome || isLandingHero
-    return (
-      <div className="flex min-h-svh flex-col">
-        <SiteHeader pathname={pathname || "/"} />
-        <main
-          className={
-            isFullBleed
-              ? "mx-auto w-full max-w-full min-w-0 flex-1 px-0 py-0"
-              : "mx-auto w-full max-w-full min-w-0 flex-1 px-4 py-6"
-          }
-        >
-          {children}
-        </main>
-        {footer}
-      </div>
-    )
-  }
+  // Empty pathname = AppChrome Suspense fallback before usePathname resolves.
+  // Prefer home chrome (no main padding) so `/` does not CLS from px-4 → px-0.
+  const isHome = pathname === "/" || pathname === ""
+  const isLandingHero = pathname === "/temp/landing-hero"
+  const isFullBleed = isHome || isLandingHero
 
   return (
     <SidebarProvider open className="flex-col overflow-x-clip">
-      <SiteHeader pathname={pathname} docsNav />
+      <SiteHeader pathname={pathname || "/"} docsNav={showDocsSidebar} />
       <div className="flex min-h-0 w-full flex-1">
-        <DocsSidebar />
-        <SidebarInset>
-          <div className="mx-auto flex w-full max-w-full min-w-0 flex-1 gap-8 px-4 py-6 xl:pr-6">
-            <div className="min-w-0 flex-1">{children}</div>
-            <DocsTableOfContents />
-          </div>
+        <div className={showDocsSidebar ? "contents" : "hidden"}>
+          <DocsSidebar />
+        </div>
+        <div className="flex w-full min-w-0 flex-1 flex-col bg-background">
+          <main
+            className={cn(
+              "mx-auto w-full max-w-full min-w-0 flex-1",
+              showDocsSidebar
+                ? "flex gap-8 px-4 py-6 xl:pr-6"
+                : isFullBleed
+                  ? "px-0 py-0"
+                  : "px-4 py-6"
+            )}
+          >
+            <div className={cn("min-w-0 flex-1", !showDocsSidebar && "contents")}>
+              {children}
+            </div>
+            {showDocsSidebar ? <DocsTableOfContents /> : null}
+          </main>
           {footer}
-        </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   )
