@@ -90,6 +90,7 @@ describe("docs mobile sidebar trigger position", () => {
     assert.equal((chrome.match(/<SidebarProvider/g) ?? []).length, 1)
     assert.equal((chrome.match(/<SiteHeader/g) ?? []).length, 1)
     assert.equal((chrome.match(/<DocsSidebar/g) ?? []).length, 1)
+    assert.match(chrome, /pathname \? \(\s*<div/)
     assert.match(chrome, /showDocsSidebar \? "contents" : "hidden"/)
   })
 
