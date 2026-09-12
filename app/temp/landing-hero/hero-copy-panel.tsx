@@ -21,11 +21,10 @@ export const HeroCopyPanel = ({ copyRef }: HeroCopyPanelProps) => (
   >
     <h1 className="tfl-title mt-4 w-full text-[clamp(2.25rem,5.5vw,5.75rem)] leading-[1.08] font-bold! [font-synthesis:weight] md:mt-8">
       Turn any screen into a
-      <br className="max-sm:hidden" />{" "}
-      London transport board.
+      <br className="max-sm:hidden" /> London transport dashboard.
     </h1>
     <div data-hero-actions className="pointer-events-auto mt-3 w-full md:mt-4">
-      <p className="mx-auto whitespace-nowrap text-lg font-medium text-shadow-lg opacity-95 max-md:whitespace-normal md:text-xl">
+      <p className="mx-auto text-lg font-medium whitespace-nowrap opacity-95 text-shadow-lg max-md:whitespace-normal md:text-xl">
         Choose a station, see live arrivals and line status, or use the React
         components to build your own.
       </p>
@@ -37,7 +36,7 @@ export const HeroCopyPanel = ({ copyRef }: HeroCopyPanelProps) => (
             "h-10 bg-white px-4 text-base text-black hover:bg-white/90"
           )}
         >
-          Set up a board
+          Set up Board
         </Link>
         <Link
           href="/docs"

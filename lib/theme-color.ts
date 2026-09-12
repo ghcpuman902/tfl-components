@@ -59,7 +59,10 @@ type ThemeColorMeta = {
   remove: () => void
 }
 
-export const applyThemeColorMeta = (color: string, doc: ThemeColorDocument) => {
+export const applyThemeColorMeta = (
+  color: string,
+  doc: ThemeColorDocument = document as unknown as ThemeColorDocument
+) => {
   const metas = [...doc.querySelectorAll('meta[name="theme-color"]')]
   const standalone = metas.find((meta) => !meta.getAttribute("media"))
 

@@ -35,7 +35,7 @@ const ThemeColorSync = () => {
     if (resolvedTheme !== "light" && resolvedTheme !== "dark") {
       return
     }
-    applyThemeColorMeta(themeColorForResolved(resolvedTheme), document)
+    applyThemeColorMeta(themeColorForResolved(resolvedTheme))
   }, [resolvedTheme])
 
   return null

@@ -31,9 +31,9 @@ export const DOCS_NAV_TOOLTIP = "Get started"
 export const DOCS_NAV_ARIA_LABEL = "Docs: Get started"
 export const DOCS_NAV_MOBILE_SUBTEXT = "Get started with the component library"
 export const DOCS_SIDEBAR_TRIGGER_LABEL = "Open documentation navigation"
-export const BOARD_NAV_TOOLTIP = "Arrivals and status"
-export const BOARD_NAV_ARIA_LABEL = "Board: arrivals and status"
-export const BOARD_NAV_MOBILE_SUBTEXT = "Live arrivals and line status"
+export const BOARD_NAV_TOOLTIP = "Set up a display"
+export const BOARD_NAV_ARIA_LABEL = "Board: set up a display"
+export const BOARD_NAV_MOBILE_SUBTEXT = "Set up a display on any screen"
 
 /**
  * Desktop order stays Docs first and Board last (frozen J6).

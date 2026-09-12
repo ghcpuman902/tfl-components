@@ -23,7 +23,7 @@ export const LandingFinalCta = ({ onCtaClick }: LandingFinalCtaProps) => (
       onClick={onCtaClick}
       className={cn(TEXT_LINK_CLASS, "mt-4 text-lg text-foreground")}
     >
-      Set up an arrivals board
+      Set up Board
       <ArrowRightIcon
         className={cn(TEXT_LINK_ICON_CLASS, "ml-1.5")}
         aria-hidden

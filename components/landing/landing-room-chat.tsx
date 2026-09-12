@@ -53,22 +53,18 @@ const IntroBeat = ({ greeting }: { greeting: string }) => (
       <HeaderRoundel className={mentionIconClassName} />
       tfl-components
     </Link>{" "}
-    to render it as boards, maps, and line diagrams.
+    to render it as arrivals boards, status boards, maps, and line diagrams.
   </>
 )
 
 const BoardBeat = ({ onBoardClick }: { onBoardClick?: () => void }) => (
   <>
-    Combining those, I made an{" "}
-    <Link
-      href="/board"
-      onClick={onBoardClick}
-      className={cn(mentionClassName, "whitespace-normal")}
-    >
-      arrivals and status board
+    Combining those, I made{" "}
+    <Link href="/board" onClick={onBoardClick} className={mentionClassName}>
+      Board
     </Link>
-    . It runs on an old iPad, a kitchen tablet, or any screen you&apos;ve
-    already got.
+    . It&apos;s a dashboard you can put on an old iPad, a kitchen tablet, or any
+    screen you&apos;ve already got.
   </>
 )
 
@@ -86,7 +82,7 @@ const assistantBeats = (
 ]
 
 const END_CHOICES = [
-  { id: "board", href: "/board", label: "Make my own arrivals board" },
+  { id: "board", href: "/board", label: "Make my own Board" },
   { id: "components", href: "/docs/components", label: "Browse components" },
 ] as const
 

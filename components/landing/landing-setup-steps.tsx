@@ -38,7 +38,7 @@ export const LandingSetupSteps = () => (
       id="landing-setup-heading"
       className="tfl-title text-2xl text-foreground md:text-3xl"
     >
-      Pick a stop. The board does the rest.
+      Pick a stop. Board does the rest.
     </h2>
     <ol className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-3">
       {STEPS.map((step, index) => (
@@ -65,7 +65,7 @@ export const LandingSetupSteps = () => (
       href="/board"
       className={cn(TEXT_LINK_CLASS, "mt-8 text-lg text-foreground")}
     >
-      Make my arrivals board →
+      Make my Board →
     </Link>
   </section>
 )
