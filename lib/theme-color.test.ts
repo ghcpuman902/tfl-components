@@ -170,7 +170,10 @@ describe("theme-color wiring", () => {
     assert.match(provider, /ThemeColorSync/)
     assert.match(provider, /applyThemeColorMeta/)
     assert.match(provider, /useLayoutEffect/)
-    assert.match(header, /bg-background pt-\[env\(safe-area-inset-top/)
+    assert.match(
+      header,
+      /pointer-events-none h-\[env\(safe-area-inset-top,0px\)\] bg-background/
+    )
     assert.doesNotMatch(header, /bg-background\/60 backdrop-blur/)
     assert.match(css, /@apply bg-background font-sans/)
     assert.match(css, /safe-area-inset-top/)
