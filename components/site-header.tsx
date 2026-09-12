@@ -86,7 +86,7 @@ const HeaderLink = ({
     className
   )
 
-  if (!link.tooltip) {
+  if (!link.tooltip || compact) {
     return (
       <Link
         href={link.href}
