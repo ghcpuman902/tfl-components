@@ -55,7 +55,7 @@ const AppChromeShell = ({
           }
         >
           {children}
-          <NavigationPendingShell />
+          {pathname ? <NavigationPendingShell pathname={pathname} /> : null}
         </main>
         {footer}
       </div>
@@ -71,7 +71,7 @@ const AppChromeShell = ({
           <div className="mx-auto flex w-full max-w-full min-w-0 flex-1 gap-8 px-4 py-6 xl:pr-6">
             <div className="relative min-w-0 flex-1">
               {children}
-              <NavigationPendingShell />
+              {pathname ? <NavigationPendingShell pathname={pathname} /> : null}
             </div>
             <DocsTableOfContents />
           </div>

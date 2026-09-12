@@ -92,7 +92,8 @@ describe("docs mobile sidebar trigger position", () => {
     assert.match(pendingHint, /useLinkStatus/)
     assert.match(docsLayout, /export default function DocsLayout/)
     assert.match(pendingShell, /NAVIGATION_SHELL_DELAY_MS/)
-    assert.match(chrome, /NavigationPendingShell/)
+    assert.doesNotMatch(pendingShell, /usePathname/)
+    assert.match(chrome, /NavigationPendingShell pathname=\{pathname\}/)
 
     assert.match(actions, /from ["']next\/link["']/)
     assert.doesNotMatch(actions, /\btitle=\{/)

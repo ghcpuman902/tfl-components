@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { usePathname } from "next/navigation"
 import {
   AppRouteLoading,
   DocsRouteLoading,
@@ -35,8 +34,7 @@ const hrefFromClick = (event: MouseEvent) => {
  * article shell `loading.tsx` would. Covers the official gap: prefetch of
  * the loading fallback is not finished (slow network / first tap).
  */
-export const NavigationPendingShell = () => {
-  const pathname = usePathname()
+export const NavigationPendingShell = ({ pathname }: { pathname: string }) => {
   const pathnameRef = useRef(pathname)
   const [pendingHref, setPendingHref] = useState<string | null>(null)
 
