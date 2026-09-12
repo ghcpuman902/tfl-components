@@ -1,5 +1,6 @@
 import Link from "next/link"
 import type { DocsEntry } from "@/lib/docs-catalog"
+import { LinkPendingHint } from "@/components/link-pending-hint"
 import { cn } from "@/lib/utils"
 
 type DocsPageActionsProps = {
@@ -111,8 +112,10 @@ export const DocsPageActions = ({
         className={actionButtonClass}
         aria-label={`Previous: ${prev.title}`}
       >
-        <ChevronLeftIcon className="size-3.5" />
-        <span className="sr-only">Previous</span>
+        <LinkPendingHint className="inline-flex items-center gap-1.5">
+          <ChevronLeftIcon className="size-3.5" />
+          <span className="sr-only">Previous</span>
+        </LinkPendingHint>
       </Link>
     ) : (
       <span className={cn(actionButtonClass, "opacity-40")} aria-disabled>
@@ -127,8 +130,10 @@ export const DocsPageActions = ({
         className={actionButtonClass}
         aria-label={`Next: ${next.title}`}
       >
-        <ChevronRightIcon className="size-3.5" />
-        <span className="sr-only">Next</span>
+        <LinkPendingHint className="inline-flex items-center gap-1.5">
+          <ChevronRightIcon className="size-3.5" />
+          <span className="sr-only">Next</span>
+        </LinkPendingHint>
       </Link>
     ) : (
       <span className={cn(actionButtonClass, "opacity-40")} aria-disabled>

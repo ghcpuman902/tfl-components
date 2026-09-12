@@ -4,6 +4,7 @@ import { Suspense } from "react"
 import { usePathname } from "next/navigation"
 import { DocsSidebar } from "@/components/docs/docs-sidebar"
 import { DocsTableOfContents } from "@/components/docs/docs-table-of-contents"
+import { NavigationPendingShell } from "@/components/navigation-pending-shell"
 import { SiteHeader } from "@/components/site-header"
 import { VisitBeacon } from "@/components/visit-beacon"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -49,11 +50,12 @@ const AppChromeShell = ({
         <main
           className={
             isFullBleed
-              ? "mx-auto w-full max-w-full min-w-0 flex-1 px-0 py-0"
-              : "mx-auto w-full max-w-full min-w-0 flex-1 px-4 py-6"
+              ? "relative mx-auto w-full max-w-full min-w-0 flex-1 px-0 py-0"
+              : "relative mx-auto w-full max-w-full min-w-0 flex-1 px-4 py-6"
           }
         >
           {children}
+          <NavigationPendingShell />
         </main>
         {footer}
       </div>
@@ -67,7 +69,10 @@ const AppChromeShell = ({
         <DocsSidebar />
         <SidebarInset>
           <div className="mx-auto flex w-full max-w-full min-w-0 flex-1 gap-8 px-4 py-6 xl:pr-6">
-            <div className="min-w-0 flex-1">{children}</div>
+            <div className="relative min-w-0 flex-1">
+              {children}
+              <NavigationPendingShell />
+            </div>
             <DocsTableOfContents />
           </div>
           {footer}

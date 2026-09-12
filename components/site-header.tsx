@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
-import Link, { useLinkStatus } from "next/link"
+import Link from "next/link"
+import { LinkPendingHint } from "@/components/link-pending-hint"
 import { FlaskConical, Telescope } from "lucide-react"
 import { DocsSearch } from "@/components/docs/docs-search"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -29,20 +30,6 @@ import {
   type SiteMoreItem,
 } from "@/lib/site-nav"
 
-/**
- * Child of a `<Link>` — `useLinkStatus` only reports its own link's pending
- * transition. Next.js docs: show inline feedback when prefetch has not
- * finished (slow network / hydration). Prefer `loading.js` for the route.
- */
-const NavLinkLabel = ({ children }: { children: React.ReactNode }) => {
-  const { pending } = useLinkStatus()
-  return (
-    <span className={cn("transition-opacity", pending && "opacity-50")}>
-      {children}
-    </span>
-  )
-}
-
 type SiteHeaderProps = {
   /** Current pathname — passed from chrome so Suspense fallbacks stay hook-free. */
   pathname: string
@@ -64,7 +51,7 @@ const HeaderLink = ({
   const active = linkIsActive(pathname, link.match)
   const label = (
     <>
-      <NavLinkLabel>{link.label}</NavLinkLabel>
+      <LinkPendingHint>{link.label}</LinkPendingHint>
       {link.mobileSubtext && compact ? (
         <span className="sr-only">{link.mobileSubtext}</span>
       ) : null}
@@ -197,7 +184,7 @@ const MoreMenuItem = ({ item }: { item: SiteMoreItem }) => {
       nativeButton={false}
       render={<Link href={item.href} className={moreItemClassName} />}
     >
-      {label}
+      <LinkPendingHint>{label}</LinkPendingHint>
     </SheetClose>
   )
 }

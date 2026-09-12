@@ -184,8 +184,16 @@ describe("site navigation", () => {
       ),
       "utf8"
     )
+    const pendingHint = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/link-pending-hint.tsx"
+      ),
+      "utf8"
+    )
     assert.match(header, /from ["']next\/link["']/)
-    assert.match(header, /useLinkStatus/)
+    assert.match(header, /LinkPendingHint/)
+    assert.match(pendingHint, /useLinkStatus/)
     assert.match(header, /<Link href=\{link\.href\}/)
     assert.doesNotMatch(header, /Tooltip/)
     assert.match(header, /pointer-events-none h-\[env\(safe-area-inset-top/)

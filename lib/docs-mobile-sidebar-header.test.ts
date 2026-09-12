@@ -81,10 +81,18 @@ describe("docs mobile sidebar trigger position", () => {
     const pageHeader = read("../components/docs/docs-page-header.tsx")
     const primitive = read("../components/ui/sidebar.tsx")
     const docsLoading = read("../app/docs/loading.tsx")
+    const pendingHint = read("../components/link-pending-hint.tsx")
+    const docsLayout = read("../app/docs/layout.tsx")
+    const pendingShell = read("../components/navigation-pending-shell.tsx")
 
     assert.match(sidebar, /from ["']next\/link["']/)
     assert.doesNotMatch(sidebar, /tooltip=\{entry\.title\}/)
     assert.match(sidebar, /<Link href=\{entry\.href\}/)
+    assert.match(sidebar, /LinkPendingHint/)
+    assert.match(pendingHint, /useLinkStatus/)
+    assert.match(docsLayout, /export default function DocsLayout/)
+    assert.match(pendingShell, /NAVIGATION_SHELL_DELAY_MS/)
+    assert.match(chrome, /NavigationPendingShell/)
 
     assert.match(actions, /from ["']next\/link["']/)
     assert.doesNotMatch(actions, /\btitle=\{/)
