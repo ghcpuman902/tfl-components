@@ -1,4 +1,3 @@
-import Link from "next/link"
 import type { DocsEntry } from "@/lib/docs-catalog"
 import { getEntriesByGroup } from "@/lib/docs-catalog"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
@@ -47,12 +46,12 @@ export const SectionHub = ({
             <ul className="space-y-1">
               {siblings.map((item) => (
                 <li key={item.slug}>
-                  <Link
+                  <a
                     href={item.href}
-                    className="text-primary underline-offset-4 hover:underline"
+                    className="touch-manipulation text-primary underline-offset-4 [@media(hover:hover)]:hover:underline"
                   >
                     {item.title}
-                  </Link>
+                  </a>
                   <span className="text-muted-foreground">
                     {" "}
                     — {item.description}
@@ -84,12 +83,12 @@ export const SectionHub = ({
             <ul className="space-y-1">
               {relatedHrefs.map((item) => (
                 <li key={item.href}>
-                  <Link
+                  <a
                     href={item.href}
-                    className="text-primary underline-offset-4 hover:underline"
+                    className="touch-manipulation text-primary underline-offset-4 [@media(hover:hover)]:hover:underline"
                   >
                     {item.label}
-                  </Link>
+                  </a>
                 </li>
               ))}
             </ul>

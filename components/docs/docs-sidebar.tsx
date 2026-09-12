@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, type ReactNode, type Ref } from "react"
-import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Telescope } from "lucide-react"
 import {
@@ -185,9 +184,8 @@ const EntryList = ({
           ref={active ? activeItemRef : undefined}
         >
           <SidebarMenuButton
-            render={<Link href={entry.href} />}
+            render={<a href={entry.href} />}
             isActive={active}
-            tooltip={entry.title}
           >
             {entry.preferred && entry.modeMarker ? (
               <TfLRoundel

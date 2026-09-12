@@ -1,4 +1,3 @@
-import Link from "next/link"
 import { getCatalogueEntries, layerBadgeLabel } from "@/lib/docs-catalog"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -16,11 +15,11 @@ export const DocsCatalogGrid = () => {
     <ul className="grid gap-3 sm:grid-cols-2">
       {entries.map((entry) => (
         <li key={entry.slug}>
-          <Link
+          <a
             href={entry.href}
-            className="block h-full rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="block h-full touch-manipulation rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
-            <Card className="h-full transition-colors hover:bg-muted/40">
+            <Card className="h-full transition-colors [@media(hover:hover)]:hover:bg-muted/40">
               <CardHeader className="gap-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <CardTitle className="text-base">{entry.title}</CardTitle>
@@ -39,7 +38,7 @@ export const DocsCatalogGrid = () => {
                 <CardDescription>{entry.description}</CardDescription>
               </CardHeader>
             </Card>
-          </Link>
+          </a>
         </li>
       ))}
     </ul>

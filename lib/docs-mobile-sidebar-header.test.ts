@@ -74,4 +74,28 @@ describe("docs mobile sidebar trigger position", () => {
     assert.doesNotMatch(pageHeader, /SidebarTrigger/)
     assert.match(pageHeader, /text-sm text-muted-foreground/)
   })
+
+  it("uses real anchors for docs chrome so the first tap follows the href", () => {
+    const sidebar = read("../components/docs/docs-sidebar.tsx")
+    const actions = read("../components/docs/docs-page-actions.tsx")
+    const pageHeader = read("../components/docs/docs-page-header.tsx")
+    const primitive = read("../components/ui/sidebar.tsx")
+
+    assert.doesNotMatch(sidebar, /from ["']next\/link["']/)
+    assert.doesNotMatch(sidebar, /tooltip=\{entry\.title\}/)
+    assert.match(sidebar, /<a href=\{entry\.href\}/)
+
+    assert.doesNotMatch(actions, /from ["']next\/link["']/)
+    assert.doesNotMatch(actions, /\btitle=\{/)
+    assert.match(actions, /href=\{prev\.href\}/)
+    assert.match(actions, /href=\{next\.href\}/)
+    assert.match(actions, /touch-manipulation/)
+
+    assert.doesNotMatch(pageHeader, /from ["']next\/link["']/)
+    assert.match(pageHeader, /href="\/"/)
+    assert.match(pageHeader, /href="\/docs"/)
+
+    assert.match(primitive, /const showTooltip = Boolean\(tooltip\) && state === "collapsed" && !isMobile/)
+    assert.match(primitive, /touch-manipulation/)
+  })
 })
