@@ -55,6 +55,17 @@ describe("docs mobile sidebar trigger position", () => {
     )
   })
 
+  it("opens the mobile sheet even before the viewport hook hydrates", () => {
+    const sidebar = read("../components/ui/sidebar.tsx")
+    const mobileHook = read("../hooks/use-mobile.ts")
+    assert.match(sidebar, /isMobileViewport\(\)/)
+    assert.match(mobileHook, /export const isMobileViewport/)
+    assert.doesNotMatch(
+      sidebar,
+      /return isMobile \? setOpenMobile/
+    )
+  })
+
   it("does not render the trigger on tablet/desktop header widths", () => {
     assert.match(header, /className="relative z-10 -ml-1.5 size-7[\s\S]*md:hidden"/)
     assert.equal(SITE_NAV_BREAKPOINTS.tablet, 768)
