@@ -132,14 +132,20 @@ describe("theme-color", () => {
     assertLockedMetas(THEME_COLOR_LIGHT)
   })
 
-  it("replaces a standalone tag so WebKit sees new nodes", () => {
+  it("preserves React-owned tags while adding missing variants", () => {
     const existing = createFakeMeta({ content: THEME_COLOR_LIGHT })
     doc.metas = [existing]
 
     applyThemeColorMeta(THEME_COLOR_DARK, doc)
 
-    assert.equal(doc.metas.includes(existing), false)
-    assertLockedMetas(THEME_COLOR_DARK)
+    assert.equal(doc.metas.includes(existing), true)
+    assert.equal(existing.content, THEME_COLOR_DARK)
+    assert.equal(doc.metas.length, 3)
+  })
+
+  it("never removes metadata managed by the Next.js head", () => {
+    assert.doesNotMatch(applyThemeColorMeta.toString(), /\.remove\(/)
+    assert.doesNotMatch(themeColorBootScript, /\.remove\(/)
   })
 })
 

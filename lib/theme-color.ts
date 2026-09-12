@@ -63,7 +63,6 @@ type ThemeColorDocument = {
 type ThemeColorMeta = {
   getAttribute: (name: string) => string | null
   setAttribute: (name: string, value: string) => void
-  remove: () => void
 }
 
 const insertThemeColorMeta = (
@@ -80,22 +79,27 @@ const insertThemeColorMeta = (
   doc.head.appendChild(meta)
 }
 
-/**
- * Replace every theme-color tag. iOS keeps using the prefers-color-scheme
- * tags it parsed first; only rewriting those contents (and recreating the
- * nodes so WebKit notices) overrides a dark phone in a light site theme.
- */
+/** Update React-owned metadata in place; removing it breaks route commits. */
 export const applyThemeColorMeta = (
   color: string,
   doc: ThemeColorDocument = document as unknown as ThemeColorDocument
 ) => {
+  let hasLight = false
+  let hasDark = false
+  let hasStandalone = false
+
   for (const meta of [...doc.querySelectorAll('meta[name="theme-color"]')]) {
-    meta.remove()
+    meta.setAttribute("content", color)
+    const media = meta.getAttribute("media")
+    if (media === THEME_COLOR_LIGHT_MEDIA) hasLight = true
+    else if (media === THEME_COLOR_DARK_MEDIA) hasDark = true
+    else if (!media) hasStandalone = true
   }
-  insertThemeColorMeta(doc, color, THEME_COLOR_LIGHT_MEDIA)
-  insertThemeColorMeta(doc, color, THEME_COLOR_DARK_MEDIA)
-  insertThemeColorMeta(doc, color)
+
+  if (!hasLight) insertThemeColorMeta(doc, color, THEME_COLOR_LIGHT_MEDIA)
+  if (!hasDark) insertThemeColorMeta(doc, color, THEME_COLOR_DARK_MEDIA)
+  if (!hasStandalone) insertThemeColorMeta(doc, color)
 }
 
 /** Runs before paint. Locks every theme-color tag when localStorage is light or dark. */
-export const themeColorBootScript = `(function(){try{var s=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});if(s!=="light"&&s!=="dark")return;var c=s==="dark"?${JSON.stringify(THEME_COLOR_DARK)}:${JSON.stringify(THEME_COLOR_LIGHT)};var metas=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<metas.length;i++)metas[i].remove();var add=function(media){var m=document.createElement("meta");m.setAttribute("name","theme-color");m.setAttribute("content",c);if(media)m.setAttribute("media",media);document.head.appendChild(m);};add(${JSON.stringify(THEME_COLOR_LIGHT_MEDIA)});add(${JSON.stringify(THEME_COLOR_DARK_MEDIA)});add();}catch(e){}})();`
+export const themeColorBootScript = `(function(){try{var s=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});if(s!=="light"&&s!=="dark")return;var c=s==="dark"?${JSON.stringify(THEME_COLOR_DARK)}:${JSON.stringify(THEME_COLOR_LIGHT)};var light=${JSON.stringify(THEME_COLOR_LIGHT_MEDIA)},dark=${JSON.stringify(THEME_COLOR_DARK_MEDIA)},hasLight=false,hasDark=false,hasStandalone=false;var metas=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<metas.length;i++){var media=metas[i].getAttribute("media");metas[i].setAttribute("content",c);if(media===light)hasLight=true;else if(media===dark)hasDark=true;else if(!media)hasStandalone=true;}var add=function(media){var m=document.createElement("meta");m.setAttribute("name","theme-color");m.setAttribute("content",c);if(media)m.setAttribute("media",media);document.head.appendChild(m);};if(!hasLight)add(light);if(!hasDark)add(dark);if(!hasStandalone)add();}catch(e){}})();`
