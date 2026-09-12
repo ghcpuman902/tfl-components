@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
-import Link, { useLinkStatus } from "next/link"
 import { FlaskConical, Telescope } from "lucide-react"
 import { DocsSearch } from "@/components/docs/docs-search"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -29,20 +28,6 @@ import {
   type SiteMoreItem,
 } from "@/lib/site-nav"
 
-/**
- * Child of a `<Link>` — `useLinkStatus` only reports its own link's pending
- * transition. Dims the label so a click reads as "in progress" instead of
- * looking like nothing happened while the RSC payload streams in.
- */
-const NavLinkLabel = ({ children }: { children: React.ReactNode }) => {
-  const { pending } = useLinkStatus()
-  return (
-    <span className={cn("transition-opacity", pending && "opacity-50")}>
-      {children}
-    </span>
-  )
-}
-
 type SiteHeaderProps = {
   /** Current pathname — passed from chrome so Suspense fallbacks stay hook-free. */
   pathname: string
@@ -64,15 +49,17 @@ const HeaderLink = ({
   const active = linkIsActive(pathname, link.match)
   const label = (
     <>
-      <NavLinkLabel>{link.label}</NavLinkLabel>
+      {link.label}
       {link.mobileSubtext && compact ? (
         <span className="sr-only">{link.mobileSubtext}</span>
       ) : null}
     </>
   )
 
-  // iOS treats :hover as the first tap and follows on the second. Hover paint
-  // stays behind (hover: hover); touch-manipulation drops the 300ms zoom wait.
+  // Real <a href>, not next/link. Link preventDefaults the click, prefetches
+  // on touchstart/mouseenter, then client-navigates in startTransition. On
+  // iPhone the first tap is that hover/touchstart; the hijacked click is
+  // late or missing. A normal anchor follows on the same tap.
   const linkClassName = cn(
     "touch-manipulation shrink-0 px-1.5 py-2",
     link.match === "board" &&
@@ -84,13 +71,9 @@ const HeaderLink = ({
   )
 
   return (
-    <Link
-      href={link.href}
-      className={linkClassName}
-      aria-label={link.ariaLabel}
-    >
+    <a href={link.href} className={linkClassName} aria-label={link.ariaLabel}>
       {label}
-    </Link>
+    </a>
   )
 }
 
@@ -201,7 +184,7 @@ const MoreMenuItem = ({ item }: { item: SiteMoreItem }) => {
   return (
     <SheetClose
       nativeButton={false}
-      render={<Link href={item.href} className={moreItemClassName} />}
+      render={<a href={item.href} className={moreItemClassName} />}
     >
       {label}
     </SheetClose>
@@ -216,17 +199,22 @@ export const SiteHeader = ({ pathname, docsNav = false }: SiteHeaderProps) => {
     <>
       <header
         data-site-header
-        className="sticky top-0 z-30 box-border h-(--site-header-height) w-full touch-manipulation overflow-x-clip border-b border-border bg-background pt-[env(safe-area-inset-top,0px)]"
+        className="sticky top-0 z-30 w-full touch-manipulation overflow-x-clip border-b border-border bg-background"
       >
+        {/* Status-bar paint only. Not a tap target — iOS chrome sits here. */}
+        <div
+          aria-hidden
+          className="pointer-events-none h-[env(safe-area-inset-top,0px)] bg-background"
+        />
         {/* pl-4 to the logo. pr-2.5 plus the 6px icon-sm inset matches that 16px visual edge gap. */}
-        <div className="flex h-full min-w-0 flex-nowrap items-center gap-1 overflow-x-clip pr-1 pl-4 md:gap-2">
+        <div className="flex h-12 min-w-0 flex-nowrap items-center gap-1 overflow-x-clip pr-1 pl-4 md:gap-2">
           {docsNav ? (
             <SidebarTrigger
               aria-label={DOCS_SIDEBAR_TRIGGER_LABEL}
               className="relative z-10 -ml-1.5 size-7 shrink-0 md:hidden"
             />
           ) : null}
-          <Link
+          <a
             href="/"
             className="flex min-w-0 shrink touch-manipulation items-center gap-2 md:shrink-0"
             aria-label="tfl-components home"
@@ -235,7 +223,7 @@ export const SiteHeader = ({ pathname, docsNav = false }: SiteHeaderProps) => {
             <span className="truncate text-sm font-medium tracking-tight text-foreground">
               tfl-components
             </span>
-          </Link>
+          </a>
 
           <nav
             className="flex shrink-0 items-center text-sm md:hidden"

@@ -162,7 +162,7 @@ describe("site navigation", () => {
     assert.doesNotMatch(header, /link\.tooltip/)
   })
 
-  it("follows the first iPhone tap on header nav without a hover or zoom delay", () => {
+  it("uses real anchors for header nav so the first tap follows the href", () => {
     const header = readFileSync(
       join(
         dirname(fileURLToPath(import.meta.url)),
@@ -184,6 +184,11 @@ describe("site navigation", () => {
       ),
       "utf8"
     )
+    assert.doesNotMatch(header, /from ["']next\/link["']/)
+    assert.doesNotMatch(header, /useLinkStatus/)
+    assert.match(header, /<a href=\{link\.href\}/)
+    assert.match(header, /href="\/"/)
+    assert.match(header, /pointer-events-none h-\[env\(safe-area-inset-top/)
     assert.match(header, /data-site-header/)
     assert.match(header, /touch-manipulation/)
     assert.match(
