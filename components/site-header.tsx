@@ -16,11 +16,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { HeaderRoundel } from "@/components/site-header-roundel"
 import { GITHUB_REPO } from "@/lib/feedback/constants"
 import { cn } from "@/lib/utils"
@@ -86,33 +81,14 @@ const HeaderLink = ({
     className
   )
 
-  if (!link.tooltip || compact) {
-    return (
-      <Link
-        href={link.href}
-        className={linkClassName}
-        aria-label={link.ariaLabel}
-      >
-        {label}
-      </Link>
-    )
-  }
-
   return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <Link
-            href={link.href}
-            className={linkClassName}
-            aria-label={link.ariaLabel}
-          />
-        }
-      >
-        {label}
-      </TooltipTrigger>
-      <TooltipContent>{link.tooltip}</TooltipContent>
-    </Tooltip>
+    <Link
+      href={link.href}
+      className={linkClassName}
+      aria-label={link.ariaLabel}
+    >
+      {label}
+    </Link>
   )
 }
 

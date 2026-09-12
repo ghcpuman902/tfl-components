@@ -7,7 +7,6 @@ import {
   DESKTOP_PRIMARY_LINKS,
   DOCS_NAV_ARIA_LABEL,
   DOCS_NAV_MOBILE_SUBTEXT,
-  DOCS_NAV_TOOLTIP,
   HEADER_OVERFLOW_POLICY,
   MOBILE_PRIMARY_LINKS,
   MORE_MENU_NAME,
@@ -151,7 +150,7 @@ describe("site navigation", () => {
     )
   })
 
-  it("mounts the Docs tooltip on the Link via Base UI render, not asChild", () => {
+  it("keeps header nav links free of tooltip wrappers", () => {
     const header = readFileSync(
       join(
         dirname(fileURLToPath(import.meta.url)),
@@ -159,16 +158,14 @@ describe("site navigation", () => {
       ),
       "utf8"
     )
-    assert.match(header, /link\.tooltip/)
-    assert.match(header, /TooltipTrigger/)
-    assert.match(header, /render=\{/)
-    assert.doesNotMatch(header, /asChild>\{linkEl\}/)
+    assert.doesNotMatch(header, /Tooltip/)
+    assert.doesNotMatch(header, /link\.tooltip/)
   })
 
   it("keeps the Docs label and points it at Get started", () => {
     const docs = DESKTOP_PRIMARY_LINKS.find((link) => link.match === "docs")
     assert.equal(docs?.label, "Docs")
-    assert.equal(docs?.tooltip, DOCS_NAV_TOOLTIP)
+    assert.equal("tooltip" in (docs ?? {}), false)
     assert.equal(docs?.ariaLabel, DOCS_NAV_ARIA_LABEL)
     assert.equal(docs?.mobileSubtext, DOCS_NAV_MOBILE_SUBTEXT)
     assert.equal("prominence" in (docs ?? {}), false)
@@ -177,7 +174,7 @@ describe("site navigation", () => {
   it("keeps Board last in the J6 list without button chrome", () => {
     const board = DESKTOP_PRIMARY_LINKS[DESKTOP_PRIMARY_LINKS.length - 1]
     assert.equal(board.label, "Board")
-    assert.equal(board.tooltip, undefined)
+    assert.equal("tooltip" in board, false)
     assert.equal("prominence" in board, false)
     assert.deepEqual(
       DESKTOP_PRIMARY_LINKS.map((link) => link.label),
@@ -193,7 +190,6 @@ describe("site navigation", () => {
     assert.doesNotMatch(header, /link\.prominence/)
     assert.doesNotMatch(header, /isAction/)
     assert.match(header, /underline-offset-\[6px\]/)
-    assert.match(header, /!link\.tooltip \|\| compact/)
   })
 
   it("marks Labs and Board routes without treating Labs as a primary docs page", () => {
