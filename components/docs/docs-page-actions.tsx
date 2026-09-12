@@ -1,3 +1,4 @@
+import Link from "next/link"
 import type { DocsEntry } from "@/lib/docs-catalog"
 import { cn } from "@/lib/utils"
 
@@ -105,14 +106,14 @@ export const DocsPageActions = ({
     </button>
 
     {prev ? (
-      <a
+      <Link
         href={prev.href}
         className={actionButtonClass}
         aria-label={`Previous: ${prev.title}`}
       >
         <ChevronLeftIcon className="size-3.5" />
         <span className="sr-only">Previous</span>
-      </a>
+      </Link>
     ) : (
       <span className={cn(actionButtonClass, "opacity-40")} aria-disabled>
         <ChevronLeftIcon className="size-3.5" />
@@ -121,14 +122,14 @@ export const DocsPageActions = ({
     )}
 
     {next ? (
-      <a
+      <Link
         href={next.href}
         className={actionButtonClass}
         aria-label={`Next: ${next.title}`}
       >
         <ChevronRightIcon className="size-3.5" />
         <span className="sr-only">Next</span>
-      </a>
+      </Link>
     ) : (
       <span className={cn(actionButtonClass, "opacity-40")} aria-disabled>
         <ChevronRightIcon className="size-3.5" />

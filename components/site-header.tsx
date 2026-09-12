@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
+import Link, { useLinkStatus } from "next/link"
 import { FlaskConical, Telescope } from "lucide-react"
 import { DocsSearch } from "@/components/docs/docs-search"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -28,6 +29,20 @@ import {
   type SiteMoreItem,
 } from "@/lib/site-nav"
 
+/**
+ * Child of a `<Link>` — `useLinkStatus` only reports its own link's pending
+ * transition. Next.js docs: show inline feedback when prefetch has not
+ * finished (slow network / hydration). Prefer `loading.js` for the route.
+ */
+const NavLinkLabel = ({ children }: { children: React.ReactNode }) => {
+  const { pending } = useLinkStatus()
+  return (
+    <span className={cn("transition-opacity", pending && "opacity-50")}>
+      {children}
+    </span>
+  )
+}
+
 type SiteHeaderProps = {
   /** Current pathname — passed from chrome so Suspense fallbacks stay hook-free. */
   pathname: string
@@ -49,17 +64,13 @@ const HeaderLink = ({
   const active = linkIsActive(pathname, link.match)
   const label = (
     <>
-      {link.label}
+      <NavLinkLabel>{link.label}</NavLinkLabel>
       {link.mobileSubtext && compact ? (
         <span className="sr-only">{link.mobileSubtext}</span>
       ) : null}
     </>
   )
 
-  // Real <a href>, not next/link. Link preventDefaults the click, prefetches
-  // on touchstart/mouseenter, then client-navigates in startTransition. On
-  // iPhone the first tap is that hover/touchstart; the hijacked click is
-  // late or missing. A normal anchor follows on the same tap.
   const linkClassName = cn(
     "touch-manipulation shrink-0 px-1.5 py-2",
     link.match === "board" &&
@@ -71,9 +82,9 @@ const HeaderLink = ({
   )
 
   return (
-    <a href={link.href} className={linkClassName} aria-label={link.ariaLabel}>
+    <Link href={link.href} className={linkClassName} aria-label={link.ariaLabel}>
       {label}
-    </a>
+    </Link>
   )
 }
 
@@ -184,7 +195,7 @@ const MoreMenuItem = ({ item }: { item: SiteMoreItem }) => {
   return (
     <SheetClose
       nativeButton={false}
-      render={<a href={item.href} className={moreItemClassName} />}
+      render={<Link href={item.href} className={moreItemClassName} />}
     >
       {label}
     </SheetClose>
@@ -214,7 +225,7 @@ export const SiteHeader = ({ pathname, docsNav = false }: SiteHeaderProps) => {
               className="relative z-10 -ml-1.5 size-7 shrink-0 md:hidden"
             />
           ) : null}
-          <a
+          <Link
             href="/"
             className="flex min-w-0 shrink touch-manipulation items-center gap-2 md:shrink-0"
             aria-label="tfl-components home"
@@ -223,7 +234,7 @@ export const SiteHeader = ({ pathname, docsNav = false }: SiteHeaderProps) => {
             <span className="truncate text-sm font-medium tracking-tight text-foreground">
               tfl-components
             </span>
-          </a>
+          </Link>
 
           <nav
             className="flex shrink-0 items-center text-sm md:hidden"

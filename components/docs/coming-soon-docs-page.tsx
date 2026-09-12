@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { notFound } from "next/navigation"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
@@ -37,12 +38,12 @@ export const ComingSoonDocsPage = ({ slug }: ComingSoonPageProps) => {
         <DocsPageHeader entry={entry as DocsEntry} />
         <p className="max-w-prose text-muted-foreground">
           Not built yet. Use the boards that already ship on{" "}
-          <a
+          <Link
             href="/docs/components"
             className="touch-manipulation text-foreground underline underline-offset-4"
           >
             Components
-          </a>
+          </Link>
           .
         </p>
       </article>

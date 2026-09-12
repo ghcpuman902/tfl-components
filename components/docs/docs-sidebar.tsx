@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, type ReactNode, type Ref } from "react"
+import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Telescope } from "lucide-react"
 import {
@@ -184,7 +185,7 @@ const EntryList = ({
           ref={active ? activeItemRef : undefined}
         >
           <SidebarMenuButton
-            render={<a href={entry.href} />}
+            render={<Link href={entry.href} />}
             isActive={active}
           >
             {entry.preferred && entry.modeMarker ? (

@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { getDocsEntry } from "@/lib/docs-catalog"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -14,7 +15,7 @@ const BadgeLink = ({ slug }: { slug: string }) => {
   if (!entry) return null
 
   return (
-    <a
+    <Link
       href={entry.href}
       className="rounded-md touch-manipulation focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
@@ -24,7 +25,7 @@ const BadgeLink = ({ slug }: { slug: string }) => {
       >
         {entry.title}
       </Badge>
-    </a>
+    </Link>
   )
 }
 

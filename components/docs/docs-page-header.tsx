@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import Link from "next/link"
 import type { DocsEntry } from "@/lib/docs-catalog"
 import {
   DOCS_GROUPS,
@@ -50,21 +51,21 @@ export const DocsPageHeader = ({
     <header className="mb-8 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          <a
+          <Link
             href="/"
             className="touch-manipulation underline-offset-4 [@media(hover:hover)]:hover:underline"
           >
             Home
-          </a>
+          </Link>
           {entry.slug === "components-index" ? (
             <>
               <span aria-hidden> / </span>
-              <a
+              <Link
                 href="/docs"
                 className="touch-manipulation underline-offset-4 [@media(hover:hover)]:hover:underline"
               >
                 Get started
-              </a>
+              </Link>
             </>
           ) : group ? (
             <>

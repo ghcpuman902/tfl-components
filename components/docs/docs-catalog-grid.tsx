@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { getCatalogueEntries, layerBadgeLabel } from "@/lib/docs-catalog"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -15,7 +16,7 @@ export const DocsCatalogGrid = () => {
     <ul className="grid gap-3 sm:grid-cols-2">
       {entries.map((entry) => (
         <li key={entry.slug}>
-          <a
+          <Link
             href={entry.href}
             className="block h-full touch-manipulation rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
@@ -38,7 +39,7 @@ export const DocsCatalogGrid = () => {
                 <CardDescription>{entry.description}</CardDescription>
               </CardHeader>
             </Card>
-          </a>
+          </Link>
         </li>
       ))}
     </ul>

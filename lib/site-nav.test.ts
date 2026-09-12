@@ -162,7 +162,7 @@ describe("site navigation", () => {
     assert.doesNotMatch(header, /link\.tooltip/)
   })
 
-  it("uses real anchors for header nav so the first tap follows the href", () => {
+  it("uses next/link for header nav without tooltip wrappers", () => {
     const header = readFileSync(
       join(
         dirname(fileURLToPath(import.meta.url)),
@@ -184,10 +184,10 @@ describe("site navigation", () => {
       ),
       "utf8"
     )
-    assert.doesNotMatch(header, /from ["']next\/link["']/)
-    assert.doesNotMatch(header, /useLinkStatus/)
-    assert.match(header, /<a href=\{link\.href\}/)
-    assert.match(header, /href="\/"/)
+    assert.match(header, /from ["']next\/link["']/)
+    assert.match(header, /useLinkStatus/)
+    assert.match(header, /<Link href=\{link\.href\}/)
+    assert.doesNotMatch(header, /Tooltip/)
     assert.match(header, /pointer-events-none h-\[env\(safe-area-inset-top/)
     assert.match(header, /data-site-header/)
     assert.match(header, /touch-manipulation/)

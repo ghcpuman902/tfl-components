@@ -1,4 +1,5 @@
 import { Suspense, type ReactNode } from "react"
+import Link from "next/link"
 import { FeedbackTextLink } from "@/components/docs/feedback-text-link"
 import { GITHUB_REPO } from "@/lib/feedback/constants"
 import { getSiteStats } from "@/lib/site-stats"
@@ -51,14 +52,17 @@ const FooterLink = ({
 }) => {
   const className =
     "touch-manipulation underline-offset-4 [@media(hover:hover)]:hover:text-foreground [@media(hover:hover)]:hover:underline"
+  if (external) {
+    return (
+      <a href={href} className={className} target="_blank" rel="noreferrer">
+        {children}
+      </a>
+    )
+  }
   return (
-    <a
-      href={href}
-      className={className}
-      {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
-    >
+    <Link href={href} className={className}>
       {children}
-    </a>
+    </Link>
   )
 }
 
