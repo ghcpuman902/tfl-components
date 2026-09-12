@@ -58,8 +58,9 @@ const fontMono = Geist_Mono({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
   // OS media queries for first paint / system theme. An explicit light/dark
-  // choice locks a single tag in themeColorBootScript + ThemeColorSync.
+  // choice rewrites every theme-color tag in themeColorBootScript + ThemeColorSync.
   themeColor: [...SITE_VIEWPORT_THEME_COLOR],
 }
 

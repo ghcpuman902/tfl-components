@@ -236,7 +236,7 @@ export const SiteHeader = ({ pathname, docsNav = false }: SiteHeaderProps) => {
 
   return (
     <>
-      <header className="sticky top-0 z-30 box-border h-(--site-header-height) w-full overflow-x-clip border-b border-border bg-background/60 backdrop-blur backdrop-brightness-110 backdrop-saturate-150">
+      <header className="sticky top-0 z-30 box-border h-(--site-header-height) w-full overflow-x-clip border-b border-border bg-background pt-[env(safe-area-inset-top,0px)]">
         {/* pl-4 to the logo. pr-2.5 plus the 6px icon-sm inset matches that 16px visual edge gap. */}
         <div className="flex h-full min-w-0 flex-nowrap items-center gap-1 overflow-x-clip pr-1 pl-4 md:gap-2">
           {docsNav ? (

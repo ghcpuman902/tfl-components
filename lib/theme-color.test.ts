@@ -10,7 +10,9 @@ import {
   shouldLockThemeColor,
   SITE_VIEWPORT_THEME_COLOR,
   THEME_COLOR_DARK,
+  THEME_COLOR_DARK_MEDIA,
   THEME_COLOR_LIGHT,
+  THEME_COLOR_LIGHT_MEDIA,
   THEME_STORAGE_KEY,
   themeColorBootScript,
   themeColorForResolved,
@@ -73,6 +75,21 @@ const doc = {
   },
 }
 
+const assertLockedMetas = (color: string) => {
+  assert.equal(doc.metas.length, 3)
+  assert.deepEqual(
+    doc.metas.map((meta) => ({
+      media: meta.getAttribute("media"),
+      content: meta.getAttribute("content"),
+    })),
+    [
+      { media: THEME_COLOR_LIGHT_MEDIA, content: color },
+      { media: THEME_COLOR_DARK_MEDIA, content: color },
+      { media: null, content: color },
+    ]
+  )
+}
+
 describe("theme-color", () => {
   it("maps resolved themes to the header background hexes", () => {
     assert.equal(themeColorForResolved("light"), THEME_COLOR_LIGHT)
@@ -98,48 +115,48 @@ describe("theme-color", () => {
     assert.equal(resolvedThemeFromPreference("dark", false), "dark")
   })
 
-  it("replaces media-query tags with one locked theme-color", () => {
+  it("rewrites light and dark media tags to the same locked colour", () => {
     doc.metas = [
       createFakeMeta({
-        media: "(prefers-color-scheme: light)",
+        media: THEME_COLOR_LIGHT_MEDIA,
         content: THEME_COLOR_LIGHT,
       }),
       createFakeMeta({
-        media: "(prefers-color-scheme: dark)",
+        media: THEME_COLOR_DARK_MEDIA,
         content: THEME_COLOR_DARK,
       }),
     ]
 
-    applyThemeColorMeta(THEME_COLOR_DARK, doc)
+    applyThemeColorMeta(THEME_COLOR_LIGHT, doc)
 
-    assert.equal(doc.metas.length, 1)
-    assert.equal(doc.metas[0].getAttribute("media"), null)
-    assert.equal(doc.metas[0].getAttribute("content"), THEME_COLOR_DARK)
+    assertLockedMetas(THEME_COLOR_LIGHT)
   })
 
-  it("updates an existing standalone tag in place", () => {
+  it("replaces a standalone tag so WebKit sees new nodes", () => {
     const existing = createFakeMeta({ content: THEME_COLOR_LIGHT })
     doc.metas = [existing]
 
     applyThemeColorMeta(THEME_COLOR_DARK, doc)
 
-    assert.equal(doc.metas.length, 1)
-    assert.equal(doc.metas[0], existing)
-    assert.equal(existing.content, THEME_COLOR_DARK)
+    assert.equal(doc.metas.includes(existing), false)
+    assertLockedMetas(THEME_COLOR_DARK)
   })
 })
 
 describe("theme-color wiring", () => {
-  it("keeps media-query viewport colors and a before-paint lock script", () => {
+  it("covers older iOS theme-color tags and iOS 26 sticky-header sampling", () => {
     const layout = read("../app/layout.tsx")
     const provider = read("../components/theme-provider.tsx")
+    const header = read("../components/site-header.tsx")
+    const css = read("../app/globals.css")
 
     assert.match(layout, /SITE_VIEWPORT_THEME_COLOR/)
+    assert.match(layout, /viewportFit:\s*"cover"/)
     assert.match(layout, /themeColorBootScript/)
     assert.match(layout, /id="tfl-theme-color"/)
     assert.match(themeColorBootScript, new RegExp(THEME_STORAGE_KEY))
     assert.match(themeColorBootScript, /localStorage\.getItem/)
-    assert.doesNotMatch(themeColorBootScript, /prefers-color-scheme/)
+    assert.match(themeColorBootScript, /prefers-color-scheme/)
     assert.deepEqual(
       SITE_VIEWPORT_THEME_COLOR.map((entry) => entry.color),
       [THEME_COLOR_LIGHT, THEME_COLOR_DARK]
@@ -147,5 +164,9 @@ describe("theme-color wiring", () => {
     assert.match(provider, /ThemeColorSync/)
     assert.match(provider, /applyThemeColorMeta/)
     assert.match(provider, /useLayoutEffect/)
+    assert.match(header, /bg-background pt-\[env\(safe-area-inset-top/)
+    assert.doesNotMatch(header, /bg-background\/60 backdrop-blur/)
+    assert.match(css, /@apply bg-background font-sans/)
+    assert.match(css, /safe-area-inset-top/)
   })
 })
