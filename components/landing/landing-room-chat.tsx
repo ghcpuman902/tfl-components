@@ -125,7 +125,7 @@ const CHOICE_GAP_MS = 280
 const SKIP_CLICKS = 2
 const SKIP_WINDOW_MS = 500
 const SKIP_CLICK_GUARD =
-  "[data-landing-chat] a, [data-landing-chat] button, [data-landing-chrome]"
+  "a[href], button, [data-landing-chrome], [data-site-header]"
 
 const TypingDots = () => (
   <div className="flex items-center gap-1" aria-label="Typing">

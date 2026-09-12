@@ -71,13 +71,15 @@ const HeaderLink = ({
     </>
   )
 
+  // iOS treats :hover as the first tap and follows on the second. Hover paint
+  // stays behind (hover: hover); touch-manipulation drops the 300ms zoom wait.
   const linkClassName = cn(
-    "shrink-0 px-1.5 py-2",
+    "touch-manipulation shrink-0 px-1.5 py-2",
     link.match === "board" &&
       newMarkerParentClassName("after:top-0.5 after:right-0"),
     active
       ? "font-medium text-foreground underline decoration-1 underline-offset-[6px]"
-      : "text-muted-foreground hover:text-foreground",
+      : "text-muted-foreground active:text-foreground [@media(hover:hover)]:hover:text-foreground",
     className
   )
 
@@ -99,7 +101,7 @@ const MoreMenu = ({ includeSearch }: { includeSearch: boolean }) => {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
-        className="shrink-0 px-1.5 py-2 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="touch-manipulation shrink-0 px-1.5 py-2 text-sm text-muted-foreground outline-none active:text-foreground [@media(hover:hover)]:hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
         aria-label={MORE_MENU_NAME}
       >
         {MORE_MENU_NAME}
@@ -154,7 +156,7 @@ const GitHubLink = ({ className }: { className?: string }) => (
 )
 
 const moreItemClassName =
-  "flex w-full items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm text-foreground hover:bg-muted"
+  "flex w-full touch-manipulation items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm text-foreground active:bg-muted [@media(hover:hover)]:hover:bg-muted"
 
 const moreItemIcon = (label: string): ReactNode => {
   const iconClassName = "size-4 shrink-0 text-muted-foreground"
@@ -212,7 +214,10 @@ export const SiteHeader = ({ pathname, docsNav = false }: SiteHeaderProps) => {
 
   return (
     <>
-      <header className="sticky top-0 z-30 box-border h-(--site-header-height) w-full overflow-x-clip border-b border-border bg-background pt-[env(safe-area-inset-top,0px)]">
+      <header
+        data-site-header
+        className="sticky top-0 z-30 box-border h-(--site-header-height) w-full touch-manipulation overflow-x-clip border-b border-border bg-background pt-[env(safe-area-inset-top,0px)]"
+      >
         {/* pl-4 to the logo. pr-2.5 plus the 6px icon-sm inset matches that 16px visual edge gap. */}
         <div className="flex h-full min-w-0 flex-nowrap items-center gap-1 overflow-x-clip pr-1 pl-4 md:gap-2">
           {docsNav ? (
@@ -223,7 +228,7 @@ export const SiteHeader = ({ pathname, docsNav = false }: SiteHeaderProps) => {
           ) : null}
           <Link
             href="/"
-            className="flex min-w-0 shrink items-center gap-2 md:shrink-0"
+            className="flex min-w-0 shrink touch-manipulation items-center gap-2 md:shrink-0"
             aria-label="tfl-components home"
           >
             <HeaderRoundel className="size-5 shrink-0" />

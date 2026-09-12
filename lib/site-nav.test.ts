@@ -162,6 +162,44 @@ describe("site navigation", () => {
     assert.doesNotMatch(header, /link\.tooltip/)
   })
 
+  it("follows the first iPhone tap on header nav without a hover or zoom delay", () => {
+    const header = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/site-header.tsx"
+      ),
+      "utf8"
+    )
+    const toggle = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/theme-toggle.tsx"
+      ),
+      "utf8"
+    )
+    const chat = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/landing/landing-room-chat.tsx"
+      ),
+      "utf8"
+    )
+    assert.match(header, /data-site-header/)
+    assert.match(header, /touch-manipulation/)
+    assert.match(
+      header,
+      /\[@media\(hover:hover\)\]:hover:text-foreground/
+    )
+    assert.doesNotMatch(
+      header,
+      /text-muted-foreground hover:text-foreground/
+    )
+    assert.doesNotMatch(toggle, /\btitle=/)
+    assert.match(toggle, /touch-manipulation/)
+    assert.match(chat, /data-site-header/)
+    assert.match(chat, /a\[href\]/)
+  })
+
   it("keeps the Docs label and points it at Get started", () => {
     const docs = DESKTOP_PRIMARY_LINKS.find((link) => link.match === "docs")
     assert.equal(docs?.label, "Docs")
