@@ -184,6 +184,13 @@ describe("site navigation", () => {
       ),
       "utf8"
     )
+    const roundel = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/site-header-roundel.tsx"
+      ),
+      "utf8"
+    )
     const pendingHint = readFileSync(
       join(
         dirname(fileURLToPath(import.meta.url)),
@@ -211,6 +218,8 @@ describe("site navigation", () => {
     assert.match(toggle, /touch-manipulation/)
     assert.match(chat, /data-site-header/)
     assert.match(chat, /a\[href\]/)
+    assert.match(roundel, /dangerouslySetInnerHTML/)
+    assert.doesNotMatch(roundel, /\.innerHTML\s*=/)
   })
 
   it("keeps the Docs label and points it at Get started", () => {
