@@ -27,6 +27,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 const MODE_ROUNDEL_VARIANT: Record<DocsModeMarker, RoundelPreset> = {
@@ -166,11 +167,13 @@ const EntryList = ({
   entries,
   pathname,
   activeItemRef,
+  onNavigate,
   withGetStartedAdornments = false,
 }: {
   entries: DocsEntry[]
   pathname: string
   activeItemRef: Ref<HTMLLIElement>
+  onNavigate: () => void
   /** Text-sized marks after Explorer / Typography / Colours / Roundel labels. */
   withGetStartedAdornments?: boolean
 }) => (
@@ -186,7 +189,7 @@ const EntryList = ({
           ref={active ? activeItemRef : undefined}
         >
           <SidebarMenuButton
-            render={<Link href={entry.href} />}
+            render={<Link href={entry.href} onClick={onNavigate} />}
             isActive={active}
           >
             {entry.preferred && entry.modeMarker ? (
@@ -214,6 +217,7 @@ const EntryList = ({
 
 export const DocsSidebar = () => {
   const pathname = usePathname()
+  const { isMobile, setOpenMobile } = useSidebar()
   const contentRef = useRef<HTMLDivElement>(null)
   const activeItemRef = useRef<HTMLLIElement>(null)
   const getStarted = getSidebarEntries("get-started")
@@ -225,6 +229,9 @@ export const DocsSidebar = () => {
   )
   const components = getSidebarEntries("components")
   const primitivesFoundations = getSidebarEntries("primitives-foundations")
+  const handleNavigate = () => {
+    if (isMobile) setOpenMobile(false)
+  }
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -249,6 +256,7 @@ export const DocsSidebar = () => {
               entries={getStartedTop}
               pathname={pathname}
               activeItemRef={activeItemRef}
+              onNavigate={handleNavigate}
               withGetStartedAdornments
             />
           </SidebarGroupContent>
@@ -261,6 +269,7 @@ export const DocsSidebar = () => {
               entries={components}
               pathname={pathname}
               activeItemRef={activeItemRef}
+              onNavigate={handleNavigate}
             />
           </SidebarGroupContent>
         </SidebarGroup>
@@ -272,6 +281,7 @@ export const DocsSidebar = () => {
                 entries={getStartedBottom}
                 pathname={pathname}
                 activeItemRef={activeItemRef}
+                onNavigate={handleNavigate}
               />
             </SidebarGroupContent>
           </SidebarGroup>
@@ -285,6 +295,7 @@ export const DocsSidebar = () => {
                 entries={primitivesFoundations}
                 pathname={pathname}
                 activeItemRef={activeItemRef}
+                onNavigate={handleNavigate}
               />
             </SidebarGroupContent>
           </SidebarGroup>
