@@ -94,6 +94,14 @@ describe("docs mobile sidebar trigger position", () => {
     assert.match(chrome, /showDocsSidebar \? "contents" : "hidden"/)
   })
 
+  it("points agents at the client-navigation pattern", () => {
+    const note = read("../docs/client-navigation.md")
+    assert.match(note, /React owns the DOM/)
+    assert.match(note, /prefetch = "partial"/)
+    assert.match(note, /isMobileViewport/)
+    assert.match(chrome, /docs\/client-navigation\.md/)
+  })
+
   it("uses next/link for docs chrome without tooltip or title wrappers", () => {
     const sidebar = read("../components/docs/docs-sidebar.tsx")
     const actions = read("../components/docs/docs-page-actions.tsx")

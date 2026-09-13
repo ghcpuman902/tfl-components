@@ -39,6 +39,7 @@ const AppChromeShell = ({
   const showDocsSidebar = isDocsPath(pathname)
   // Empty pathname = AppChrome Suspense fallback before usePathname resolves.
   // Prefer home chrome (no main padding) so `/` does not CLS from px-4 → px-0.
+  // Keep URL hooks out of this fallback — see docs/client-navigation.md.
   const isHome = pathname === "/" || pathname === ""
   const isLandingHero = pathname === "/temp/landing-hero"
   const isFullBleed = isHome || isLandingHero

@@ -79,7 +79,7 @@ const insertThemeColorMeta = (
   doc.head.appendChild(meta)
 }
 
-/** Update React-owned metadata in place; removing it breaks route commits. */
+/** Update React-owned metadata in place; removing it breaks route commits. See docs/client-navigation.md. */
 export const applyThemeColorMeta = (
   color: string,
   doc: ThemeColorDocument = document as unknown as ThemeColorDocument

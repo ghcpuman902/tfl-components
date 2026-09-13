@@ -93,7 +93,8 @@ A **Ready** Vercel deployment with a white screen or React overlay is a **browse
 2. DevTools → **Console**. Copy the first red exception and component stack. That is the source of truth — not Analytics, not Flags.
 3. DevTools → **Network**. Confirm the document is `200` and the RSC flight is not a 500.
 4. If the overlay says hydration / `useLinkStatus` / `useSidebar`, it is chrome, not TfL data.
-5. `/` is the room homepage. `/board` is the staged setup.
+5. If the URL changed but the old page stayed, look for `removeChild` / `commitMutationEffects` — see [client-navigation.md](./client-navigation.md).
+6. `/` is the room homepage. `/board` is the staged setup.
 
 Analytics setup does not diagnose a client exception. Enable Web Analytics after the preview paints.
 
