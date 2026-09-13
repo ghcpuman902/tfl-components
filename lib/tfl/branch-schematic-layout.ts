@@ -17,6 +17,9 @@
  */
 
 import { STATION_HUBS } from "tfl-ts"
+import { buildBranchStripFromTopology } from "@/lib/tfl/geometry/branch-strip-from-topology"
+import { buildThroughMovementWeight } from "@/lib/tfl/geometry/branch-strip-through-movements"
+import { decomposeBranchStripJunctions } from "@/lib/tfl/geometry/branch-strip-joins"
 import {
   buildLineTopologyFromStaticBranches,
   getStaticLineSequence,
@@ -37,6 +40,25 @@ import {
   type SchematicNodeKind,
   type SchematicOrientationHint,
 } from "@/lib/tfl/line-schematic"
+
+/**
+ * HORIZONTAL ONLY — see `docs/branch-strip-horizontal`. Runs the staggered
+ * virtual Y-join pass on a finished schematic, keyed by real station id so
+ * `decomposeBranchStripJunctions` can weigh through-moves from actual
+ * ordered-route data instead of guessing from lane/pos alone.
+ */
+const decomposeForHorizontal = (
+  schematic: LineSchematic,
+  lineId: string,
+  stationIdByNodeId: ReadonlyMap<string, string>
+): LineSchematic => {
+  if (schematic.orientation !== "horizontal") return schematic
+  const decomposed = decomposeBranchStripJunctions(schematic, {
+    throughWeight: buildThroughMovementWeight(lineId, stationIdByNodeId),
+  })
+  assertValidSchematic(decomposed)
+  return decomposed
+}
 
 export type BranchSchematicMeta = {
   lineId: string
@@ -696,7 +718,10 @@ const layoutLoopSchematic = (
     edges,
   }
   assertValidSchematic(schematic)
-  return schematic
+  const stationIdByNodeId = new Map(
+    [...placed.entries()].map(([stationId, node]) => [node.nodeId, stationId])
+  )
+  return decomposeForHorizontal(schematic, meta.lineId, stationIdByNodeId)
 }
 
 export const computeBranchSchematicLayout = (
@@ -1093,13 +1118,39 @@ export const computeBranchSchematicLayout = (
   }
 
   assertValidSchematic(schematic)
-  return schematic
+  const stationIdByNodeId = new Map(
+    [...schematicNodesById.entries()].map(([nodeId, placed]) => [
+      nodeId,
+      placed.stationId,
+    ])
+  )
+  return decomposeForHorizontal(schematic, meta.lineId, stationIdByNodeId)
 }
+
+/**
+ * Lines whose horizontal strip comes from the topology → energy →
+ * clip-to-grid path (`branch-strip-from-topology.ts`) instead of the
+ * `LINE_STATION_SEQUENCES` trunk-and-offshoot walk below. Verified working
+ * cleanly for every branched line we tried (including Central and
+ * Piccadilly), but deliberately scoped to the lines this pass targets —
+ * see `docs/branch-strip-horizontal`'s "Where the horizontal strip comes
+ * from" for how to extend the list. Loop lines (Circle) stay on the walk
+ * below; `buildBranchStripFromTopology` already declines them.
+ */
+export const TOPOLOGY_CLIP_LINE_IDS = new Set([
+  "northern",
+  "district",
+  "metropolitan",
+])
 
 export const buildBranchSchematic = (
   lineId: string,
   orientation: SchematicOrientationHint = "horizontal"
 ): LineSchematic | null => {
+  if (orientation === "horizontal" && TOPOLOGY_CLIP_LINE_IDS.has(lineId)) {
+    const fromTopology = buildBranchStripFromTopology(lineId)
+    if (fromTopology) return fromTopology
+  }
   const topology = buildLineTopologyFromStaticBranches(lineId)
   if (!topology) return null
   const sequence = getStaticLineSequence(lineId)

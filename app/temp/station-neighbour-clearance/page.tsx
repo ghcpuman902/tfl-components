@@ -35,7 +35,12 @@ const northernSameLanePairs = (() => {
   )
   return NORTHERN_LINE_SCHEMATIC_HORIZONTAL.edges
     .map((edge) => ({ from: byId.get(edge.from)!, to: byId.get(edge.to)! }))
-    .filter((pair) => pair.from.lane === pair.to.lane)
+    .filter(
+      (pair) =>
+        pair.from.lane === pair.to.lane &&
+        pair.from.kind !== "virtual" &&
+        pair.to.kind !== "virtual"
+    )
     .map((pair) => ({
       a: pair.from.name,
       b: pair.to.name,

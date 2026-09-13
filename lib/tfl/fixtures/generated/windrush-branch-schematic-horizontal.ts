@@ -295,6 +295,27 @@ export const WINDRUSH_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
       branchIds: ["segment-2"],
       stationKey: "new-cross-ell",
     },
+    {
+      id: "surrey-quays--join-1",
+      name: "",
+      lane: 0,
+      pos: 13.333333333333334,
+      kind: "virtual",
+    },
+    {
+      id: "surrey-quays--join-2",
+      name: "",
+      lane: 0,
+      pos: 13.533333333333333,
+      kind: "virtual",
+    },
+    {
+      id: "surrey-quays--join-3",
+      name: "",
+      lane: 0,
+      pos: 13.733333333333334,
+      kind: "virtual",
+    },
   ],
   edges: [
     {
@@ -339,7 +360,7 @@ export const WINDRUSH_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     },
     {
       from: "new-cross-gate",
-      to: "surrey-quays",
+      to: "surrey-quays--join-2",
       branchId: "segment-4",
     },
     {
@@ -424,7 +445,7 @@ export const WINDRUSH_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     },
     {
       from: "queens-road-peckham",
-      to: "surrey-quays",
+      to: "surrey-quays--join-3",
       branchId: "segment-3",
     },
     {
@@ -434,8 +455,23 @@ export const WINDRUSH_BRANCH_SCHEMATIC_HORIZONTAL: LineSchematic = {
     },
     {
       from: "new-cross-ell",
-      to: "surrey-quays",
+      to: "surrey-quays--join-1",
       branchId: "segment-2",
+    },
+    {
+      from: "surrey-quays",
+      to: "surrey-quays--join-1",
+      branchId: "segment-3",
+    },
+    {
+      from: "surrey-quays--join-1",
+      to: "surrey-quays--join-2",
+      branchId: "segment-3",
+    },
+    {
+      from: "surrey-quays--join-2",
+      to: "surrey-quays--join-3",
+      branchId: "segment-3",
     },
   ],
 }
