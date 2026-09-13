@@ -6,7 +6,6 @@ export const DocsRouteLoading = () => (
   <div className="mx-auto w-full max-w-5xl space-y-8" aria-busy="true">
     <p className="sr-only">Loading page</p>
     <div className="space-y-4" aria-hidden>
-      <div className="h-4 w-24 animate-pulse rounded-md bg-muted" />
       <div className="h-9 w-2/3 max-w-md animate-pulse rounded-md bg-muted" />
       <div className="h-4 w-full max-w-prose animate-pulse rounded-md bg-muted" />
     </div>

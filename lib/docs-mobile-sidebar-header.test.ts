@@ -10,6 +10,7 @@ import {
   estimateDocsMobileHeaderRowWidth,
   estimateMobileHeaderRowWidth,
 } from "./site-nav"
+import { getDocsEntryForPathname } from "./docs-catalog"
 
 const root = dirname(fileURLToPath(import.meta.url))
 
@@ -82,8 +83,10 @@ describe("docs mobile sidebar trigger position", () => {
 
   it("does not move the trigger beside the breadcrumb", () => {
     const pageHeader = read("../components/docs/docs-page-header.tsx")
+    const toolbar = read("../components/docs/docs-page-toolbar.tsx")
     assert.doesNotMatch(pageHeader, /SidebarTrigger/)
-    assert.match(pageHeader, /text-sm text-muted-foreground/)
+    assert.doesNotMatch(toolbar, /SidebarTrigger/)
+    assert.match(toolbar, /text-sm text-muted-foreground/)
   })
 
   it("keeps one chrome and sidebar tree mounted across route changes", () => {
@@ -92,6 +95,28 @@ describe("docs mobile sidebar trigger position", () => {
     assert.equal((chrome.match(/<DocsSidebar/g) ?? []).length, 1)
     assert.match(chrome, /pathname \? \(\s*<div/)
     assert.match(chrome, /showDocsSidebar \? "contents" : "hidden"/)
+  })
+
+  it("keeps docs prev/next in persistent chrome like the sidebar", () => {
+    const toolbar = read("../components/docs/docs-page-toolbar.tsx")
+    const header = read("../components/docs/docs-page-header.tsx")
+    const actions = read("../components/docs/docs-page-actions.tsx")
+    assert.match(chrome, /DocsPersistentToolbar/)
+    assert.match(chrome, /DocsChromeProvider/)
+    assert.match(toolbar, /useOptimistic/)
+    assert.match(toolbar, /getDocsEntryForPathname/)
+    assert.match(header, /DocsPageToolbarSlot/)
+    assert.match(actions, /onClick=\{\(\) => onNavigate\?\.\(prev\.href\)\}/)
+    assert.match(actions, /onClick=\{\(\) => onNavigate\?\.\(next\.href\)\}/)
+    assert.equal(getDocsEntryForPathname("/docs")?.slug, "introduction")
+    assert.equal(
+      getDocsEntryForPathname("/docs/explorer/lines/tube-rail/victoria")?.slug,
+      "explore-index"
+    )
+    assert.equal(
+      getDocsEntryForPathname("/docs/line-topology/junctions")?.slug,
+      "line-topology"
+    )
   })
 
   it("points agents at the client-navigation pattern", () => {
@@ -106,6 +131,7 @@ describe("docs mobile sidebar trigger position", () => {
     const sidebar = read("../components/docs/docs-sidebar.tsx")
     const actions = read("../components/docs/docs-page-actions.tsx")
     const pageHeader = read("../components/docs/docs-page-header.tsx")
+    const toolbar = read("../components/docs/docs-page-toolbar.tsx")
     const primitive = read("../components/ui/sidebar.tsx")
     const docsLoading = read("../app/docs/loading.tsx")
     const pendingHint = read("../components/link-pending-hint.tsx")
@@ -130,9 +156,10 @@ describe("docs mobile sidebar trigger position", () => {
     assert.match(actions, /href=\{next\.href\}/)
     assert.match(actions, /touch-manipulation/)
 
-    assert.match(pageHeader, /from ["']next\/link["']/)
-    assert.match(pageHeader, /href="\/"/)
-    assert.match(pageHeader, /href="\/docs"/)
+    assert.match(pageHeader, /DocsPageToolbarSlot/)
+    assert.match(toolbar, /from ["']next\/link["']/)
+    assert.match(toolbar, /href="\/"/)
+    assert.match(toolbar, /href="\/docs"/)
 
     assert.match(
       primitive,

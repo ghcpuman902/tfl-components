@@ -81,6 +81,14 @@ Removing a React-owned `<meta name="theme-color">` is the classic footgun: the U
 
 Sidebar entries call `setOpenMobile(false)` on click so the sheet closes immediately, then the route commits.
 
+### 6. Docs prev / next stay in chrome
+
+Explorer already keeps its header in the segment layout so only the panel streams. Other docs pages used to render Copy / Prev / Next **inside the page**, so those buttons disappeared into `loading.tsx` and could not be tapped again until the article RSC finished.
+
+Same pattern as the sidebar: `DocsPersistentToolbar` stays mounted in `AppChrome`. Prev / Next are catalog-driven `<Link>`s. An optimistic pathname updates the pair on tap; the title and body stream underneath. `DocsPageHeader` hides its in-page toolbar when chrome owns it (Labs / tools still render the toolbar in the hero).
+
+Canonical: `components/docs/docs-page-toolbar.tsx`.
+
 ## Anti-patterns
 
 - Custom 150ms / “pending shell” overlay that paints over the real page
@@ -103,6 +111,7 @@ SSO-protected Vercel previews redirect anonymous `curl`. Diagnose client excepti
 ## Canonical files
 
 - `components/docs/app-chrome.tsx` — persistent chrome; pathname-safe fallback
+- `components/docs/docs-page-toolbar.tsx` — docs prev / next (optimistic, mounted)
 - `components/site-header.tsx` — header `<Link>`s, More sheet
 - `components/docs/docs-sidebar.tsx` — sidebar `<Link>`s close the mobile sheet
 - `components/link-pending-hint.tsx` — `useLinkStatus`

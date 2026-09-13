@@ -38,7 +38,7 @@ Canonical: [docs/explorer-inspector-streaming.md](./explorer-inspector-streaming
 
 Header and docs taps use `next/link` plus the native App Shell. A first tap that “does nothing” is usually a React commit crash (`removeChild` after imperative DOM) or a hydration race on `useIsMobile` — not a reason to add a pending overlay or replace `<Link>` with `<a>`.
 
-Keep chrome mounted. Prefetch the docs App Shell (`prefetch = "partial"`). Cover the leaf that re-renders with `loading.tsx`. Update `theme-color` in place.
+Keep chrome mounted, including docs prev/next. Prefetch the docs App Shell (`prefetch = "partial"`). Cover the leaf that re-renders with `loading.tsx`. Update `theme-color` in place.
 
 Canonical: [docs/client-navigation.md](./client-navigation.md). Agent rule: [`.cursor/rules/client-navigation.mdc`](../.cursor/rules/client-navigation.mdc).
 

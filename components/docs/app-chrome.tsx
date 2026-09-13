@@ -2,6 +2,8 @@
 
 import { Suspense } from "react"
 import { usePathname } from "next/navigation"
+import { DocsChromeProvider } from "@/components/docs/docs-chrome-context"
+import { DocsPersistentToolbar } from "@/components/docs/docs-page-toolbar"
 import { DocsSidebar } from "@/components/docs/docs-sidebar"
 import { DocsTableOfContents } from "@/components/docs/docs-table-of-contents"
 import { SiteHeader } from "@/components/site-header"
@@ -45,34 +47,39 @@ const AppChromeShell = ({
   const isFullBleed = isHome || isLandingHero
 
   return (
-    <SidebarProvider open className="flex-col overflow-x-clip">
-      <SiteHeader pathname={pathname || "/"} docsNav={showDocsSidebar} />
-      <div className="flex min-h-0 w-full flex-1">
-        {pathname ? (
-          <div className={showDocsSidebar ? "contents" : "hidden"}>
-            <DocsSidebar />
-          </div>
-        ) : null}
-        <div className="flex w-full min-w-0 flex-1 flex-col bg-background">
-          <main
-            className={cn(
-              "mx-auto w-full max-w-full min-w-0 flex-1",
-              showDocsSidebar
-                ? "flex gap-8 px-4 py-6 xl:pr-6"
-                : isFullBleed
-                  ? "px-0 py-0"
-                  : "px-4 py-6"
-            )}
-          >
-            <div className={cn("min-w-0 flex-1", !showDocsSidebar && "contents")}>
-              {children}
+    <DocsChromeProvider value={{ persistentToolbar: showDocsSidebar }}>
+      <SidebarProvider open className="flex-col overflow-x-clip">
+        <SiteHeader pathname={pathname || "/"} docsNav={showDocsSidebar} />
+        <div className="flex min-h-0 w-full flex-1">
+          {pathname ? (
+            <div className={showDocsSidebar ? "contents" : "hidden"}>
+              <DocsSidebar />
             </div>
-            {showDocsSidebar ? <DocsTableOfContents /> : null}
-          </main>
-          {footer}
+          ) : null}
+          <div className="flex w-full min-w-0 flex-1 flex-col bg-background">
+            <main
+              className={cn(
+                "mx-auto w-full max-w-full min-w-0 flex-1",
+                showDocsSidebar
+                  ? "flex gap-8 px-4 py-6 xl:pr-6"
+                  : isFullBleed
+                    ? "px-0 py-0"
+                    : "px-4 py-6"
+              )}
+            >
+              <div className={cn("min-w-0 flex-1", !showDocsSidebar && "contents")}>
+                {showDocsSidebar && pathname ? (
+                  <DocsPersistentToolbar pathname={pathname} />
+                ) : null}
+                {children}
+              </div>
+              {showDocsSidebar ? <DocsTableOfContents /> : null}
+            </main>
+            {footer}
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </DocsChromeProvider>
   )
 }
 

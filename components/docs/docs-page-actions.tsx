@@ -7,6 +7,8 @@ type DocsPageActionsProps = {
   prev: DocsEntry | null
   next: DocsEntry | null
   className?: string
+  /** Optimistic chrome update — same as sidebar `onNavigate`. */
+  onNavigate?: (href: string) => void
 }
 
 const ChevronLeftIcon = ({ className }: { className?: string }) => (
@@ -85,6 +87,7 @@ export const DocsPageActions = ({
   prev,
   next,
   className,
+  onNavigate,
 }: DocsPageActionsProps) => (
   <div
     className={cn("flex shrink-0 items-center gap-1.5", className)}
@@ -109,6 +112,7 @@ export const DocsPageActions = ({
     {prev ? (
       <Link
         href={prev.href}
+        onClick={() => onNavigate?.(prev.href)}
         className={actionButtonClass}
         aria-label={`Previous: ${prev.title}`}
       >
@@ -127,6 +131,7 @@ export const DocsPageActions = ({
     {next ? (
       <Link
         href={next.href}
+        onClick={() => onNavigate?.(next.href)}
         className={actionButtonClass}
         aria-label={`Next: ${next.title}`}
       >
