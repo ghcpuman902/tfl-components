@@ -137,30 +137,60 @@ const GitHubLink = ({ className }: { className?: string }) => (
 )
 
 const moreItemClassName =
-  "flex w-full touch-manipulation items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm text-foreground active:bg-muted [@media(hover:hover)]:hover:bg-muted"
+  "flex w-full touch-manipulation items-center gap-1.5 rounded-md px-2 py-2.5 text-left text-sm text-foreground active:bg-muted [@media(hover:hover)]:hover:bg-muted"
+
+/** Weak marks after More labels — text-sized, same row, not a second line. */
+const moreItemIconClassName = "size-[1em]! shrink-0 text-foreground opacity-40"
 
 const moreItemIcon = (label: string): ReactNode => {
-  const iconClassName = "size-4 shrink-0 text-muted-foreground"
   if (label === "Explorer") {
-    return <Telescope className={iconClassName} aria-hidden />
+    return (
+      <Telescope
+        className={moreItemIconClassName}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        absoluteStrokeWidth={false}
+        aria-hidden
+      />
+    )
   }
   if (label === "Labs") {
-    return <FlaskConical className={iconClassName} aria-hidden />
+    return (
+      <FlaskConical
+        className={moreItemIconClassName}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        absoluteStrokeWidth={false}
+        aria-hidden
+      />
+    )
   }
   if (label === "GitHub") {
-    return <GitHubMark className={iconClassName} />
+    return <GitHubMark className={moreItemIconClassName} />
   }
   return null
 }
 
-const MoreMenuItem = ({ item }: { item: SiteMoreItem }) => {
-  const label = (
-    <>
-      {item.label}
-      {moreItemIcon(item.label)}
-    </>
+const MoreItemLabel = ({ item }: { item: SiteMoreItem }) => {
+  const icon = moreItemIcon(item.label)
+  return (
+    <span className="flex min-w-0 flex-1 items-center gap-1.5">
+      <span>{item.label}</span>
+      {icon ? (
+        <span
+          className="pointer-events-none inline-flex shrink-0 items-center"
+          aria-hidden
+        >
+          {icon}
+        </span>
+      ) : null}
+    </span>
   )
+}
 
+const MoreMenuItem = ({ item }: { item: SiteMoreItem }) => {
   if (item.external) {
     return (
       <SheetClose
@@ -174,7 +204,7 @@ const MoreMenuItem = ({ item }: { item: SiteMoreItem }) => {
           />
         }
       >
-        {label}
+        <MoreItemLabel item={item} />
       </SheetClose>
     )
   }
@@ -184,7 +214,9 @@ const MoreMenuItem = ({ item }: { item: SiteMoreItem }) => {
       nativeButton={false}
       render={<Link href={item.href} className={moreItemClassName} />}
     >
-      <LinkPendingHint>{label}</LinkPendingHint>
+      <LinkPendingHint className="flex min-w-0 flex-1 items-center">
+        <MoreItemLabel item={item} />
+      </LinkPendingHint>
     </SheetClose>
   )
 }

@@ -69,6 +69,27 @@ describe("site navigation", () => {
     assert.deepEqual(labels, ["Components", "Explorer", "Labs", "GitHub"])
   })
 
+  it("keeps More item icons as weak same-row marks after the label", () => {
+    const header = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/site-header.tsx"
+      ),
+      "utf8"
+    )
+    assert.match(header, /Weak marks after More labels/)
+    assert.match(header, /size-\[1em\]! shrink-0 text-foreground opacity-40/)
+    assert.match(
+      header,
+      /flex min-w-0 flex-1 items-center gap-1\.5/
+    )
+    assert.match(
+      header,
+      /pointer-events-none inline-flex shrink-0 items-center/
+    )
+    assert.doesNotMatch(header, /size-4 shrink-0 text-muted-foreground/)
+  })
+
   it("does not render More in the desktop header", () => {
     const header = readFileSync(
       join(
