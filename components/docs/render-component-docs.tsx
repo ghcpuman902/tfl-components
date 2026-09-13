@@ -121,12 +121,41 @@ const RiverDocsPreviewFallback = () => (
   <RiverBusArrivalsBoardSkeleton stopName={HOME_RIVER_STOP.name} />
 )
 
+const LineStripDocsPreviewFallback = () => (
+  <div
+    className="space-y-4 rounded-lg border border-border bg-card p-4 sm:p-6"
+    aria-busy="true"
+  >
+    <p className="text-sm text-muted-foreground">Loading route sequence</p>
+    <div className="relative h-28 overflow-hidden" aria-hidden>
+      <div className="absolute inset-x-6 top-14 h-1 rounded-full bg-muted" />
+      <div className="absolute inset-x-6 top-[3.125rem] flex justify-between">
+        {Array.from({ length: 7 }, (_, index) => (
+          <span
+            key={index}
+            className="size-3 animate-pulse rounded-full border-2 border-muted-foreground bg-background"
+          />
+        ))}
+      </div>
+      <div className="absolute inset-x-4 top-20 flex justify-between">
+        {Array.from({ length: 4 }, (_, index) => (
+          <span
+            key={index}
+            className="h-3 w-14 animate-pulse rounded bg-muted"
+          />
+        ))}
+      </div>
+    </div>
+  </div>
+)
+
 const PREVIEW_FALLBACKS: Record<string, ComponentType> = {
   "tube-status-board": TubeStatusBoardSkeleton,
   "rail-arrivals-board": RailDocsPreviewFallback,
   "bus-arrivals-board": BusDocsPreviewFallback,
   "river-bus-arrivals": RiverDocsPreviewFallback,
   "cycle-hire-docks": CycleHireDocksBoardSkeleton,
+  "line-strip": LineStripDocsPreviewFallback,
 }
 
 const DocsPreviewFallback = ({ slug }: { slug: string }) => {

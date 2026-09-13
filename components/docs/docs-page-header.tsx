@@ -1,13 +1,8 @@
 import type { ReactNode } from "react"
-import Link from "next/link"
 import type { DocsEntry } from "@/lib/docs-catalog"
-import {
-  DOCS_GROUPS,
-  entryBadgeLabel,
-  getAdjacentEntries,
-} from "@/lib/docs-catalog"
+import { entryBadgeLabel } from "@/lib/docs-catalog"
 import { Badge } from "@/components/ui/badge"
-import { DocsPageActions } from "@/components/docs/docs-page-actions"
+import { DocsPageToolbarSlot } from "@/components/docs/docs-page-toolbar"
 import { newMarkerParentClassName } from "@/components/new-marker"
 import { cn } from "@/lib/utils"
 
@@ -33,8 +28,9 @@ type DocsPageHeaderProps = {
 }
 
 /**
- * Shared docs hero: breadcrumb + actions, title + one-line intro, single layer badge.
- * Relationship badges, install, and get-data snippets live in body sections — not here.
+ * Shared docs hero: title + one-line intro + badge. Breadcrumb / Prev / Next
+ * live in persistent chrome on docs routes (`DocsPageToolbarSlot` no-ops there).
+ * Relationship badges, install, and get-data snippets live in body sections.
  */
 export const DocsPageHeader = ({
   entry,
@@ -43,33 +39,11 @@ export const DocsPageHeader = ({
   isNew = false,
   notice,
 }: DocsPageHeaderProps) => {
-  const group = DOCS_GROUPS.find((item) => item.id === entry.group)
   const badge = entryBadgeLabel(entry)
-  const { prev, next } = getAdjacentEntries(entry.slug)
 
   return (
     <header className="mb-8 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          <Link href="/" className="underline-offset-4 hover:underline">
-            Home
-          </Link>
-          {entry.slug === "components-index" ? (
-            <>
-              <span aria-hidden> / </span>
-              <Link href="/docs" className="underline-offset-4 hover:underline">
-                Get started
-              </Link>
-            </>
-          ) : group ? (
-            <>
-              <span aria-hidden> / </span>
-              <span>{group.title}</span>
-            </>
-          ) : null}
-        </p>
-        <DocsPageActions prev={prev} next={next} />
-      </div>
+      <DocsPageToolbarSlot entry={entry} />
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">

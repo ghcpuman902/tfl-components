@@ -29,7 +29,7 @@ const SiteFooterStats = async () => {
           <span aria-hidden> · </span>
           <a
             href={GITHUB_REPO}
-            className="underline-offset-4 hover:text-foreground hover:underline"
+            className="touch-manipulation underline-offset-4 [@media(hover:hover)]:hover:text-foreground [@media(hover:hover)]:hover:underline"
             target="_blank"
             rel="noreferrer"
           >
@@ -50,7 +50,8 @@ const FooterLink = ({
   children: ReactNode
   external?: boolean
 }) => {
-  const className = "underline-offset-4 hover:text-foreground hover:underline"
+  const className =
+    "touch-manipulation underline-offset-4 [@media(hover:hover)]:hover:text-foreground [@media(hover:hover)]:hover:underline"
   if (external) {
     return (
       <a href={href} className={className} target="_blank" rel="noreferrer">

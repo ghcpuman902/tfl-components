@@ -2,6 +2,11 @@ import * as React from "react"
 
 const MOBILE_BREAKPOINT = 768
 
+/** Resolve at interaction time so a tap cannot race the hydration effect. */
+export const isMobileViewport = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`).matches
+
 /**
  * Viewport &lt; md. Always starts `false` on server and the first client render
  * so Sidebar SSR HTML matches hydration; real width is applied in an effect.
@@ -12,7 +17,7 @@ export function useIsMobile() {
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
     const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+      setIsMobile(isMobileViewport())
     }
     onChange()
     mql.addEventListener("change", onChange)

@@ -1,12 +1,6 @@
 "use client"
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { HeaderRoundel } from "@/components/site-header-roundel"
 import { useLondonGreeting } from "@/hooks/use-london-greeting"
@@ -31,11 +25,7 @@ type LandingRoomChatProps = {
 const mentionIconClassName = cn(TEXT_LINK_ICON_CLASS, "mr-1")
 
 const NpmMark = () => (
-  <svg
-    viewBox="0 0 256 256"
-    className={mentionIconClassName}
-    aria-hidden
-  >
+  <svg viewBox="0 0 256 256" className={mentionIconClassName} aria-hidden>
     <path fill="#C12127" d="M0 256V0h256v256z" />
     <path fill="#fff" d="M48 48h160v160h-32V80h-48v128H48z" />
   </svg>
@@ -63,7 +53,7 @@ const IntroBeat = ({ greeting }: { greeting: string }) => (
       <HeaderRoundel className={mentionIconClassName} />
       tfl-components
     </Link>{" "}
-    to render it as boards, maps, and line diagrams.
+    to render it as arrivals boards, status boards, maps, and line diagrams.
   </>
 )
 
@@ -73,7 +63,8 @@ const BoardBeat = ({ onBoardClick }: { onBoardClick?: () => void }) => (
     <Link href="/board" onClick={onBoardClick} className={mentionClassName}>
       Board
     </Link>
-    . It&apos;s a live TfL board that runs on an old iPad, a kitchen tablet, or any screen you&apos;ve already got.
+    . It&apos;s a dashboard you can put on an old iPad, a kitchen tablet, or any
+    screen you&apos;ve already got.
   </>
 )
 
@@ -91,7 +82,7 @@ const assistantBeats = (
 ]
 
 const END_CHOICES = [
-  { id: "board", href: "/board", label: "Make my own board" },
+  { id: "board", href: "/board", label: "Make my own Board" },
   { id: "components", href: "/docs/components", label: "Browse components" },
 ] as const
 
@@ -134,7 +125,7 @@ const CHOICE_GAP_MS = 280
 const SKIP_CLICKS = 2
 const SKIP_WINDOW_MS = 500
 const SKIP_CLICK_GUARD =
-  "[data-landing-chat] a, [data-landing-chat] button, [data-landing-chrome]"
+  "a[href], button, [data-landing-chrome], [data-site-header]"
 
 const TypingDots = () => (
   <div className="flex items-center gap-1" aria-label="Typing">
@@ -284,7 +275,14 @@ export const LandingRoomChat = ({
     if (completedRef.current) return
     completedRef.current = true
     onStoryComplete?.()
-  }, [active, beats.length, choiceCount, onStoryComplete, shownCount, skipIntro])
+  }, [
+    active,
+    beats.length,
+    choiceCount,
+    onStoryComplete,
+    shownCount,
+    skipIntro,
+  ])
 
   if (!active) return null
 
@@ -303,7 +301,7 @@ export const LandingRoomChat = ({
       className={cn(
         "pointer-events-none absolute z-20",
         "inset-4",
-        "md:inset-auto md:left-1/2 md:top-1/2 md:w-full md:max-w-sm md:translate-x-[-116.666%] md:-translate-y-1/2"
+        "md:inset-auto md:top-1/2 md:left-1/2 md:w-full md:max-w-sm md:translate-x-[-116.666%] md:-translate-y-1/2"
       )}
     >
       <div
@@ -316,9 +314,7 @@ export const LandingRoomChat = ({
             className={cn(
               BUBBLE_CLASS,
               RADIUS_TRANSITION_CLASS,
-              firstHasTail
-                ? "rounded-[26px_26px_26px_3px]"
-                : "rounded-[26px]",
+              firstHasTail ? "rounded-[26px_26px_26px_3px]" : "rounded-[26px]",
               skipIntro ? undefined : ENTER_CLASS
             )}
           >
@@ -332,7 +328,9 @@ export const LandingRoomChat = ({
           </div>
           {followUps.map((line, index) => {
             const isLatest =
-              index === followUps.length - 1 && shownCount > 1 && !typingFollowUp
+              index === followUps.length - 1 &&
+              shownCount > 1 &&
+              !typingFollowUp
             return (
               <div
                 key={line.id}
@@ -340,9 +338,7 @@ export const LandingRoomChat = ({
                   BUBBLE_CLASS,
                   RADIUS_TRANSITION_CLASS,
                   skipIntro ? undefined : ENTER_CLASS,
-                  isLatest
-                    ? "rounded-[26px_26px_26px_3px]"
-                    : "rounded-[26px]"
+                  isLatest ? "rounded-[26px_26px_26px_3px]" : "rounded-[26px]"
                 )}
               >
                 <div className={skipIntro ? undefined : ENTER_CLASS}>
@@ -382,7 +378,10 @@ export const LandingRoomChat = ({
               <button
                 type="button"
                 onClick={onRestart}
-                className={cn(RESTART_CLASS, skipIntro ? undefined : ENTER_CLASS)}
+                className={cn(
+                  RESTART_CLASS,
+                  skipIntro ? undefined : ENTER_CLASS
+                )}
               >
                 Start over
               </button>

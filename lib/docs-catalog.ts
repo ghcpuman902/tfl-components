@@ -863,6 +863,23 @@ export const getDocsEntry = (slug: string): DocsEntry | undefined => {
   return DOCS_ENTRIES.find((entry) => entry.slug === resolved)
 }
 
+/**
+ * Exact href, then longest prefix. Prefer a sidebar-visible entry so Explorer
+ * children keep the Explorer prev/next pair.
+ */
+export const getDocsEntryForPathname = (
+  pathname: string
+): DocsEntry | undefined => {
+  const matches = DOCS_ENTRIES.filter(
+    (entry) =>
+      entry.href === pathname ||
+      (entry.href !== "/" && pathname.startsWith(`${entry.href}/`))
+  ).sort((a, b) => b.href.length - a.href.length)
+  return (
+    matches.find((entry) => entry.sidebarSection !== "hidden") ?? matches[0]
+  )
+}
+
 export const getComponentEntries = (): DocsEntry[] =>
   DOCS_ENTRIES.filter(
     (entry) =>

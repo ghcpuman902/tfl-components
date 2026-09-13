@@ -5,7 +5,7 @@ const SURFACES = [
   {
     title: "Board",
     href: "/board",
-    body: "Set up a live London transport display without deploying an app. Choose a stop and show arrivals, line status, buses, and nearby cycle hire on an iPad, tablet, monitor, or any screen with a modern browser.",
+    body: "Set up a dashboard on an iPad, tablet, monitor, or any screen without deploying an app. Choose a stop, then add arrivals boards, status boards, buses, and nearby cycle hire.",
   },
   {
     title: "tfl-components",
@@ -26,12 +26,7 @@ const SURFACES = [
 
 const SurfaceLink = ({ href, title }: { href: string; title: string }) =>
   href.startsWith("http") ? (
-    <a
-      href={href}
-      className={TEXT_LINK_CLASS}
-      target="_blank"
-      rel="noreferrer"
-    >
+    <a href={href} className={TEXT_LINK_CLASS} target="_blank" rel="noreferrer">
       {title}
     </a>
   ) : (
@@ -48,12 +43,12 @@ export const AgentReadableHome = () => (
   >
     <div className="max-w-3xl">
       <h1 id="home-contains" className="tfl-title text-3xl text-foreground">
-        TfL boards, React components, and typed transport data
+        Board, React components, and typed transport data
       </h1>
       <p className="mt-3 text-muted-foreground">
-        Start with the hosted Board, take the React components into your own
-        app, or work directly with tfl-ts. The reference pages cover the TfL
-        conventions that hold those routes together.
+        Start with Board, take the React components into your own app, or work
+        directly with tfl-ts. The reference pages cover the TfL conventions that
+        hold those routes together.
       </p>
     </div>
     <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2">

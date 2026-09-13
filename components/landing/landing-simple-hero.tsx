@@ -19,14 +19,17 @@ export const LandingSimpleHero = ({ context }: LandingSimpleHeroProps) => {
     <>
       <section className="mx-auto flex min-h-[min(20rem,calc(100svh-var(--site-header-height)))] w-full max-w-6xl flex-col justify-center gap-6 px-4 pt-8 pb-6 md:px-8">
         <p className="max-w-2xl text-2xl text-foreground md:text-4xl">
-          Want a live TfL board like this:{" "}
+          Want a Board like this:{" "}
           <Link
             href="/board"
             onClick={() => track("landing_cta_click")}
             className={TEXT_LINK_CLASS}
           >
             It’s easy
-            <ArrowRightIcon className={cn(TEXT_LINK_ICON_CLASS, "ml-1.5")} aria-hidden />
+            <ArrowRightIcon
+              className={cn(TEXT_LINK_ICON_CLASS, "ml-1.5")}
+              aria-hidden
+            />
           </Link>
         </p>
         <a

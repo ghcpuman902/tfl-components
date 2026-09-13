@@ -18,9 +18,9 @@ export const DocsCatalogGrid = () => {
         <li key={entry.slug}>
           <Link
             href={entry.href}
-            className="block h-full rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="block h-full touch-manipulation rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
-            <Card className="h-full transition-colors hover:bg-muted/40">
+            <Card className="h-full transition-colors [@media(hover:hover)]:hover:bg-muted/40">
               <CardHeader className="gap-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <CardTitle className="text-base">{entry.title}</CardTitle>

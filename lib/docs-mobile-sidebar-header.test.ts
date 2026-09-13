@@ -10,6 +10,7 @@ import {
   estimateDocsMobileHeaderRowWidth,
   estimateMobileHeaderRowWidth,
 } from "./site-nav"
+import { getDocsEntryForPathname } from "./docs-catalog"
 
 const root = dirname(fileURLToPath(import.meta.url))
 
@@ -55,6 +56,17 @@ describe("docs mobile sidebar trigger position", () => {
     )
   })
 
+  it("opens the mobile sheet even before the viewport hook hydrates", () => {
+    const sidebar = read("../components/ui/sidebar.tsx")
+    const mobileHook = read("../hooks/use-mobile.ts")
+    assert.match(sidebar, /isMobileViewport\(\)/)
+    assert.match(mobileHook, /export const isMobileViewport/)
+    assert.doesNotMatch(
+      sidebar,
+      /return isMobile \? setOpenMobile/
+    )
+  })
+
   it("does not render the trigger on tablet/desktop header widths", () => {
     assert.match(header, /className="relative z-10 -ml-1.5 size-7[\s\S]*md:hidden"/)
     assert.equal(SITE_NAV_BREAKPOINTS.tablet, 768)
@@ -71,7 +83,89 @@ describe("docs mobile sidebar trigger position", () => {
 
   it("does not move the trigger beside the breadcrumb", () => {
     const pageHeader = read("../components/docs/docs-page-header.tsx")
+    const toolbar = read("../components/docs/docs-page-toolbar.tsx")
     assert.doesNotMatch(pageHeader, /SidebarTrigger/)
-    assert.match(pageHeader, /text-sm text-muted-foreground/)
+    assert.doesNotMatch(toolbar, /SidebarTrigger/)
+    assert.match(toolbar, /text-sm text-muted-foreground/)
+  })
+
+  it("keeps one chrome and sidebar tree mounted across route changes", () => {
+    assert.equal((chrome.match(/<SidebarProvider/g) ?? []).length, 1)
+    assert.equal((chrome.match(/<SiteHeader/g) ?? []).length, 1)
+    assert.equal((chrome.match(/<DocsSidebar/g) ?? []).length, 1)
+    assert.match(chrome, /pathname \? \(\s*<div/)
+    assert.match(chrome, /showDocsSidebar \? "contents" : "hidden"/)
+  })
+
+  it("keeps docs prev/next in persistent chrome like the sidebar", () => {
+    const toolbar = read("../components/docs/docs-page-toolbar.tsx")
+    const header = read("../components/docs/docs-page-header.tsx")
+    const actions = read("../components/docs/docs-page-actions.tsx")
+    assert.match(chrome, /DocsPersistentToolbar/)
+    assert.match(chrome, /DocsChromeProvider/)
+    assert.match(toolbar, /useOptimistic/)
+    assert.match(toolbar, /getDocsEntryForPathname/)
+    assert.match(header, /DocsPageToolbarSlot/)
+    assert.match(actions, /onClick=\{\(\) => onNavigate\?\.\(prev\.href\)\}/)
+    assert.match(actions, /onClick=\{\(\) => onNavigate\?\.\(next\.href\)\}/)
+    assert.equal(getDocsEntryForPathname("/docs")?.slug, "introduction")
+    assert.equal(
+      getDocsEntryForPathname("/docs/explorer/lines/tube-rail/victoria")?.slug,
+      "explore-index"
+    )
+    assert.equal(
+      getDocsEntryForPathname("/docs/line-topology/junctions")?.slug,
+      "line-topology"
+    )
+  })
+
+  it("points agents at the client-navigation pattern", () => {
+    const note = read("../docs/client-navigation.md")
+    assert.match(note, /React owns the DOM/)
+    assert.match(note, /prefetch = "partial"/)
+    assert.match(note, /isMobileViewport/)
+    assert.match(chrome, /docs\/client-navigation\.md/)
+  })
+
+  it("uses next/link for docs chrome without tooltip or title wrappers", () => {
+    const sidebar = read("../components/docs/docs-sidebar.tsx")
+    const actions = read("../components/docs/docs-page-actions.tsx")
+    const pageHeader = read("../components/docs/docs-page-header.tsx")
+    const toolbar = read("../components/docs/docs-page-toolbar.tsx")
+    const primitive = read("../components/ui/sidebar.tsx")
+    const docsLoading = read("../app/docs/loading.tsx")
+    const pendingHint = read("../components/link-pending-hint.tsx")
+    const docsLayout = read("../app/docs/layout.tsx")
+
+    assert.match(sidebar, /from ["']next\/link["']/)
+    assert.doesNotMatch(sidebar, /tooltip=\{entry\.title\}/)
+    assert.match(
+      sidebar,
+      /<Link href=\{entry\.href\} onClick=\{onNavigate\}/
+    )
+    assert.match(sidebar, /LinkPendingHint/)
+    assert.match(sidebar, /setOpenMobile\(false\)/)
+    assert.match(pendingHint, /useLinkStatus/)
+    assert.match(docsLayout, /export default function DocsLayout/)
+    assert.match(docsLayout, /export const prefetch = "partial"/)
+    assert.doesNotMatch(chrome, /NavigationPendingShell/)
+
+    assert.match(actions, /from ["']next\/link["']/)
+    assert.doesNotMatch(actions, /\btitle=\{/)
+    assert.match(actions, /href=\{prev\.href\}/)
+    assert.match(actions, /href=\{next\.href\}/)
+    assert.match(actions, /touch-manipulation/)
+
+    assert.match(pageHeader, /DocsPageToolbarSlot/)
+    assert.match(toolbar, /from ["']next\/link["']/)
+    assert.match(toolbar, /href="\/"/)
+    assert.match(toolbar, /href="\/docs"/)
+
+    assert.match(
+      primitive,
+      /const showTooltip = Boolean\(tooltip\) && state === "collapsed" && !isMobile/
+    )
+    assert.match(primitive, /touch-manipulation/)
+    assert.match(docsLoading, /export default function Loading/)
   })
 })

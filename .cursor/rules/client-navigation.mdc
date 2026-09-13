@@ -1,0 +1,33 @@
+---
+description: First-tap / Link / chrome — persistent shell, React-owned DOM, native loading.tsx
+globs: components/docs/app-chrome.tsx,components/site-header.tsx,components/site-header-roundel.tsx,components/docs/docs-sidebar.tsx,components/docs/docs-page-actions.tsx,components/docs/docs-page-toolbar.tsx,components/docs/docs-page-header.tsx,components/link-pending-hint.tsx,components/ui/sidebar.tsx,hooks/use-mobile.ts,lib/theme-color.ts,app/docs/**/*
+alwaysApply: false
+---
+
+# Client navigation
+
+Full write-up: [docs/client-navigation.md](../../docs/client-navigation.md).
+
+Header and docs taps use `next/link` plus the native App Shell. A first tap that “does nothing” is usually a React commit crash or a hydration race — not a reason to add an overlay or replace `<Link>` with `<a>`.
+
+## Do
+
+- Keep `SidebarProvider`, `SiteHeader`, `DocsSidebar`, and docs prev/next mounted; hide with `hidden` / `contents`.
+- Docs Copy / Prev / Next live in `DocsPersistentToolbar` (optimistic path). Do not wait for the article RSC.
+- `export const prefetch = "partial"` on the docs destination; leaf `loading.tsx` on the page that re-renders.
+- `LinkPendingHint` (`useLinkStatus`) on the clicked control only.
+- Update `theme-color` in place; render the header SVG atlas through React (`dangerouslySetInnerHTML`).
+- `toggleSidebar` reads `isMobileViewport()` at tap time. Sidebar links call `setOpenMobile(false)`.
+- Keep `usePathname()` out of the chrome Suspense fallback (`pathname=""` must not mount `DocsSidebar`).
+
+## Don’t
+
+- Full-viewport pending shells / `setTimeout` overlays (“150ms”).
+- Tooltip wrappers on header or sidebar nav.
+- `svg.innerHTML =` or `meta[name="theme-color"].remove()` on React-owned nodes.
+- `usePathname()` / `useLinkStatus()` / `useSidebar()` in a prerender fallback.
+- Global `partialPrefetching: true` without auditing every route.
+
+If the URL changes and the old page stays, open the console for `removeChild` / `commitMutationEffects` before adding loading UI.
+
+Canonical: `components/docs/app-chrome.tsx`, `lib/theme-color.ts`, `hooks/use-mobile.ts`.

@@ -7,7 +7,6 @@ import {
   DESKTOP_PRIMARY_LINKS,
   DOCS_NAV_ARIA_LABEL,
   DOCS_NAV_MOBILE_SUBTEXT,
-  DOCS_NAV_TOOLTIP,
   HEADER_OVERFLOW_POLICY,
   MOBILE_PRIMARY_LINKS,
   MORE_MENU_NAME,
@@ -68,6 +67,27 @@ describe("site navigation", () => {
   it("puts Components, Explorer, Labs, and GitHub in More on mobile only", () => {
     const labels = moreItemsForPlacement("mobile").map((item) => item.label)
     assert.deepEqual(labels, ["Components", "Explorer", "Labs", "GitHub"])
+  })
+
+  it("keeps More item icons as weak same-row marks after the label", () => {
+    const header = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/site-header.tsx"
+      ),
+      "utf8"
+    )
+    assert.match(header, /Weak marks after More labels/)
+    assert.match(header, /size-\[1em\]! shrink-0 text-foreground opacity-40/)
+    assert.match(
+      header,
+      /flex min-w-0 flex-1 items-center gap-1\.5/
+    )
+    assert.match(
+      header,
+      /pointer-events-none inline-flex shrink-0 items-center/
+    )
+    assert.doesNotMatch(header, /size-4 shrink-0 text-muted-foreground/)
   })
 
   it("does not render More in the desktop header", () => {
@@ -151,7 +171,7 @@ describe("site navigation", () => {
     )
   })
 
-  it("mounts the Docs tooltip on the Link via Base UI render, not asChild", () => {
+  it("keeps header nav links free of tooltip wrappers", () => {
     const header = readFileSync(
       join(
         dirname(fileURLToPath(import.meta.url)),
@@ -159,16 +179,74 @@ describe("site navigation", () => {
       ),
       "utf8"
     )
-    assert.match(header, /link\.tooltip/)
-    assert.match(header, /TooltipTrigger/)
-    assert.match(header, /render=\{/)
-    assert.doesNotMatch(header, /asChild>\{linkEl\}/)
+    assert.doesNotMatch(header, /Tooltip/)
+    assert.doesNotMatch(header, /link\.tooltip/)
+  })
+
+  it("uses next/link for header nav without tooltip wrappers", () => {
+    const header = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/site-header.tsx"
+      ),
+      "utf8"
+    )
+    const toggle = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/theme-toggle.tsx"
+      ),
+      "utf8"
+    )
+    const chat = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/landing/landing-room-chat.tsx"
+      ),
+      "utf8"
+    )
+    const roundel = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/site-header-roundel.tsx"
+      ),
+      "utf8"
+    )
+    const pendingHint = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../components/link-pending-hint.tsx"
+      ),
+      "utf8"
+    )
+    assert.match(header, /from ["']next\/link["']/)
+    assert.match(header, /LinkPendingHint/)
+    assert.match(pendingHint, /useLinkStatus/)
+    assert.match(header, /<Link href=\{link\.href\}/)
+    assert.doesNotMatch(header, /Tooltip/)
+    assert.match(header, /pointer-events-none h-\[env\(safe-area-inset-top/)
+    assert.match(header, /data-site-header/)
+    assert.match(header, /touch-manipulation/)
+    assert.match(
+      header,
+      /\[@media\(hover:hover\)\]:hover:text-foreground/
+    )
+    assert.doesNotMatch(
+      header,
+      /text-muted-foreground hover:text-foreground/
+    )
+    assert.doesNotMatch(toggle, /\btitle=/)
+    assert.match(toggle, /touch-manipulation/)
+    assert.match(chat, /data-site-header/)
+    assert.match(chat, /a\[href\]/)
+    assert.match(roundel, /dangerouslySetInnerHTML/)
+    assert.doesNotMatch(roundel, /\.innerHTML\s*=/)
   })
 
   it("keeps the Docs label and points it at Get started", () => {
     const docs = DESKTOP_PRIMARY_LINKS.find((link) => link.match === "docs")
     assert.equal(docs?.label, "Docs")
-    assert.equal(docs?.tooltip, DOCS_NAV_TOOLTIP)
+    assert.equal("tooltip" in (docs ?? {}), false)
     assert.equal(docs?.ariaLabel, DOCS_NAV_ARIA_LABEL)
     assert.equal(docs?.mobileSubtext, DOCS_NAV_MOBILE_SUBTEXT)
     assert.equal("prominence" in (docs ?? {}), false)
@@ -177,6 +255,7 @@ describe("site navigation", () => {
   it("keeps Board last in the J6 list without button chrome", () => {
     const board = DESKTOP_PRIMARY_LINKS[DESKTOP_PRIMARY_LINKS.length - 1]
     assert.equal(board.label, "Board")
+    assert.equal("tooltip" in board, false)
     assert.equal("prominence" in board, false)
     assert.deepEqual(
       DESKTOP_PRIMARY_LINKS.map((link) => link.label),

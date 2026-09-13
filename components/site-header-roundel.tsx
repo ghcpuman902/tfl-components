@@ -50,7 +50,6 @@ export const HeaderRoundel = ({ className }: HeaderRoundelProps) => {
   useLayoutEffect(() => {
     const svg = svgRef.current
     if (!svg || !atlasInner || reduced) return
-    svg.innerHTML = atlasInner
 
     const apply = (frameIndex: number) => {
       svg.setAttribute(
@@ -160,6 +159,7 @@ export const HeaderRoundel = ({ className }: HeaderRoundelProps) => {
           xmlns="http://www.w3.org/2000/svg"
           viewBox={`0 0 ${META.frameWidth} ${META.frameHeight}`}
           className="size-full"
+          dangerouslySetInnerHTML={{ __html: atlasInner }}
         />
       ) : (
         <PlaceholderRoundelSvg

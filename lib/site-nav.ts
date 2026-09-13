@@ -14,7 +14,6 @@ export type SiteNavLink = {
   match: "docs" | "components" | "explorer" | "board" | "labs"
   /** Compact labels used in the 320px header row. */
   shortLabel?: string
-  tooltip?: string
   ariaLabel?: string
   mobileSubtext?: string
 }
@@ -27,7 +26,6 @@ export type SiteMoreItem = {
   mobileOnly?: boolean
 }
 
-export const DOCS_NAV_TOOLTIP = "Get started"
 export const DOCS_NAV_ARIA_LABEL = "Docs: Get started"
 export const DOCS_NAV_MOBILE_SUBTEXT = "Get started with the component library"
 export const DOCS_SIDEBAR_TRIGGER_LABEL = "Open documentation navigation"
@@ -41,7 +39,6 @@ export const DESKTOP_PRIMARY_LINKS: readonly SiteNavLink[] = [
     href: "/docs",
     label: "Docs",
     match: "docs",
-    tooltip: DOCS_NAV_TOOLTIP,
     ariaLabel: DOCS_NAV_ARIA_LABEL,
     mobileSubtext: DOCS_NAV_MOBILE_SUBTEXT,
   },

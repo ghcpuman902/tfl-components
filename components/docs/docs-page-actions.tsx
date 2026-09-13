@@ -1,11 +1,14 @@
 import Link from "next/link"
 import type { DocsEntry } from "@/lib/docs-catalog"
+import { LinkPendingHint } from "@/components/link-pending-hint"
 import { cn } from "@/lib/utils"
 
 type DocsPageActionsProps = {
   prev: DocsEntry | null
   next: DocsEntry | null
   className?: string
+  /** Optimistic chrome update — same as sidebar `onNavigate`. */
+  onNavigate?: (href: string) => void
 }
 
 const ChevronLeftIcon = ({ className }: { className?: string }) => (
@@ -74,7 +77,7 @@ const CheckIcon = ({ className }: { className?: string }) => (
 )
 
 const actionButtonClass =
-  "inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40"
+  "inline-flex h-8 touch-manipulation items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-medium text-foreground [@media(hover:hover)]:hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40"
 
 /**
  * Server-rendered page actions. Copy uses `[data-copy-page]` + CodeCopyDelegator.
@@ -84,6 +87,7 @@ export const DocsPageActions = ({
   prev,
   next,
   className,
+  onNavigate,
 }: DocsPageActionsProps) => (
   <div
     className={cn("flex shrink-0 items-center gap-1.5", className)}
@@ -108,12 +112,14 @@ export const DocsPageActions = ({
     {prev ? (
       <Link
         href={prev.href}
+        onClick={() => onNavigate?.(prev.href)}
         className={actionButtonClass}
         aria-label={`Previous: ${prev.title}`}
-        title={prev.title}
       >
-        <ChevronLeftIcon className="size-3.5" />
-        <span className="sr-only">Previous</span>
+        <LinkPendingHint className="inline-flex items-center gap-1.5">
+          <ChevronLeftIcon className="size-3.5" />
+          <span className="sr-only">Previous</span>
+        </LinkPendingHint>
       </Link>
     ) : (
       <span className={cn(actionButtonClass, "opacity-40")} aria-disabled>
@@ -125,12 +131,14 @@ export const DocsPageActions = ({
     {next ? (
       <Link
         href={next.href}
+        onClick={() => onNavigate?.(next.href)}
         className={actionButtonClass}
         aria-label={`Next: ${next.title}`}
-        title={next.title}
       >
-        <ChevronRightIcon className="size-3.5" />
-        <span className="sr-only">Next</span>
+        <LinkPendingHint className="inline-flex items-center gap-1.5">
+          <ChevronRightIcon className="size-3.5" />
+          <span className="sr-only">Next</span>
+        </LinkPendingHint>
       </Link>
     ) : (
       <span className={cn(actionButtonClass, "opacity-40")} aria-disabled>

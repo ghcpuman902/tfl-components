@@ -49,7 +49,7 @@ export const SectionHub = ({
                 <li key={item.slug}>
                   <Link
                     href={item.href}
-                    className="text-primary underline-offset-4 hover:underline"
+                    className="touch-manipulation text-primary underline-offset-4 [@media(hover:hover)]:hover:underline"
                   >
                     {item.title}
                   </Link>
@@ -86,7 +86,7 @@ export const SectionHub = ({
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="text-primary underline-offset-4 hover:underline"
+                    className="touch-manipulation text-primary underline-offset-4 [@media(hover:hover)]:hover:underline"
                   >
                     {item.label}
                   </Link>

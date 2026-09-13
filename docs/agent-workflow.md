@@ -37,6 +37,7 @@ pnpm dev
 - Design **mobile-first**; widen to tablet and desktop after narrow layouts work.
 - Use semantic design tokens (`primary`, `background`, `muted-foreground`) — see [design-system.md](./design-system.md).
 - shadcn/ui components live in `components/ui/`; compose them rather than reinventing primitives.
+- Header / docs taps: if the URL changes but the old page stays, check the console for `removeChild` before adding loading UI. Pattern: [client-navigation.md](./client-navigation.md).
 
 ## Agent scope
 

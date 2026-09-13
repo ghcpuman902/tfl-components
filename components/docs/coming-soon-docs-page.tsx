@@ -40,7 +40,7 @@ export const ComingSoonDocsPage = ({ slug }: ComingSoonPageProps) => {
           Not built yet. Use the boards that already ship on{" "}
           <Link
             href="/docs/components"
-            className="text-foreground underline underline-offset-4"
+            className="touch-manipulation text-foreground underline underline-offset-4"
           >
             Components
           </Link>

@@ -1,4 +1,4 @@
-import { DOCS_ENTRIES } from "@/lib/docs-catalog"
+import { DOCS_ENTRIES, getDocsEntryForPathname } from "@/lib/docs-catalog"
 
 export const BUG_DESCRIPTION_LABEL =
   "What happened, and what did you expect instead?"
@@ -151,13 +151,8 @@ export const suggestComponentForPage = (
   pathname: string,
   pageTitle: string
 ): string => {
-  const exact = DOCS_ENTRIES.find((entry) => entry.href === pathname)
-  if (exact) return exact.title
-
-  const prefix = DOCS_ENTRIES.filter(
-    (entry) => entry.href !== "/" && pathname.startsWith(`${entry.href}/`)
-  ).sort((a, b) => b.href.length - a.href.length)[0]
-  if (prefix) return prefix.title
+  const fromPath = getDocsEntryForPathname(pathname)
+  if (fromPath) return fromPath.title
 
   const titleWithoutSite = pageTitle.replace(/\s*[·|].*$/, "").trim()
   const byTitle = DOCS_ENTRIES.find(

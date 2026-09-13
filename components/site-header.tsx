@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
-import Link, { useLinkStatus } from "next/link"
+import Link from "next/link"
+import { LinkPendingHint } from "@/components/link-pending-hint"
 import { FlaskConical, Telescope } from "lucide-react"
 import { DocsSearch } from "@/components/docs/docs-search"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -16,11 +17,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { HeaderRoundel } from "@/components/site-header-roundel"
 import { GITHUB_REPO } from "@/lib/feedback/constants"
 import { cn } from "@/lib/utils"
@@ -33,20 +29,6 @@ import {
   type SiteNavLink,
   type SiteMoreItem,
 } from "@/lib/site-nav"
-
-/**
- * Child of a `<Link>` — `useLinkStatus` only reports its own link's pending
- * transition. Dims the label so a click reads as "in progress" instead of
- * looking like nothing happened while the RSC payload streams in.
- */
-const NavLinkLabel = ({ children }: { children: React.ReactNode }) => {
-  const { pending } = useLinkStatus()
-  return (
-    <span className={cn("transition-opacity", pending && "opacity-50")}>
-      {children}
-    </span>
-  )
-}
 
 type SiteHeaderProps = {
   /** Current pathname — passed from chrome so Suspense fallbacks stay hook-free. */
@@ -69,7 +51,7 @@ const HeaderLink = ({
   const active = linkIsActive(pathname, link.match)
   const label = (
     <>
-      <NavLinkLabel>{link.label}</NavLinkLabel>
+      <LinkPendingHint>{link.label}</LinkPendingHint>
       {link.mobileSubtext && compact ? (
         <span className="sr-only">{link.mobileSubtext}</span>
       ) : null}
@@ -77,42 +59,19 @@ const HeaderLink = ({
   )
 
   const linkClassName = cn(
-    "shrink-0 px-1.5 py-2",
+    "touch-manipulation shrink-0 px-1.5 py-2",
     link.match === "board" &&
       newMarkerParentClassName("after:top-0.5 after:right-0"),
     active
       ? "font-medium text-foreground underline decoration-1 underline-offset-[6px]"
-      : "text-muted-foreground hover:text-foreground",
+      : "text-muted-foreground active:text-foreground [@media(hover:hover)]:hover:text-foreground",
     className
   )
 
-  if (!link.tooltip) {
-    return (
-      <Link
-        href={link.href}
-        className={linkClassName}
-        aria-label={link.ariaLabel}
-      >
-        {label}
-      </Link>
-    )
-  }
-
   return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <Link
-            href={link.href}
-            className={linkClassName}
-            aria-label={link.ariaLabel}
-          />
-        }
-      >
-        {label}
-      </TooltipTrigger>
-      <TooltipContent>{link.tooltip}</TooltipContent>
-    </Tooltip>
+    <Link href={link.href} className={linkClassName} aria-label={link.ariaLabel}>
+      {label}
+    </Link>
   )
 }
 
@@ -123,7 +82,7 @@ const MoreMenu = ({ includeSearch }: { includeSearch: boolean }) => {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
-        className="shrink-0 px-1.5 py-2 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="touch-manipulation shrink-0 px-1.5 py-2 text-sm text-muted-foreground outline-none active:text-foreground [@media(hover:hover)]:hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
         aria-label={MORE_MENU_NAME}
       >
         {MORE_MENU_NAME}
@@ -178,30 +137,60 @@ const GitHubLink = ({ className }: { className?: string }) => (
 )
 
 const moreItemClassName =
-  "flex w-full items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm text-foreground hover:bg-muted"
+  "flex w-full touch-manipulation items-center gap-1.5 rounded-md px-2 py-2.5 text-left text-sm text-foreground active:bg-muted [@media(hover:hover)]:hover:bg-muted"
+
+/** Weak marks after More labels — text-sized, same row, not a second line. */
+const moreItemIconClassName = "size-[1em]! shrink-0 text-foreground opacity-40"
 
 const moreItemIcon = (label: string): ReactNode => {
-  const iconClassName = "size-4 shrink-0 text-muted-foreground"
   if (label === "Explorer") {
-    return <Telescope className={iconClassName} aria-hidden />
+    return (
+      <Telescope
+        className={moreItemIconClassName}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        absoluteStrokeWidth={false}
+        aria-hidden
+      />
+    )
   }
   if (label === "Labs") {
-    return <FlaskConical className={iconClassName} aria-hidden />
+    return (
+      <FlaskConical
+        className={moreItemIconClassName}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        absoluteStrokeWidth={false}
+        aria-hidden
+      />
+    )
   }
   if (label === "GitHub") {
-    return <GitHubMark className={iconClassName} />
+    return <GitHubMark className={moreItemIconClassName} />
   }
   return null
 }
 
-const MoreMenuItem = ({ item }: { item: SiteMoreItem }) => {
-  const label = (
-    <>
-      {item.label}
-      {moreItemIcon(item.label)}
-    </>
+const MoreItemLabel = ({ item }: { item: SiteMoreItem }) => {
+  const icon = moreItemIcon(item.label)
+  return (
+    <span className="flex min-w-0 flex-1 items-center gap-1.5">
+      <span>{item.label}</span>
+      {icon ? (
+        <span
+          className="pointer-events-none inline-flex shrink-0 items-center"
+          aria-hidden
+        >
+          {icon}
+        </span>
+      ) : null}
+    </span>
   )
+}
 
+const MoreMenuItem = ({ item }: { item: SiteMoreItem }) => {
   if (item.external) {
     return (
       <SheetClose
@@ -215,7 +204,7 @@ const MoreMenuItem = ({ item }: { item: SiteMoreItem }) => {
           />
         }
       >
-        {label}
+        <MoreItemLabel item={item} />
       </SheetClose>
     )
   }
@@ -225,7 +214,9 @@ const MoreMenuItem = ({ item }: { item: SiteMoreItem }) => {
       nativeButton={false}
       render={<Link href={item.href} className={moreItemClassName} />}
     >
-      {label}
+      <LinkPendingHint className="flex min-w-0 flex-1 items-center">
+        <MoreItemLabel item={item} />
+      </LinkPendingHint>
     </SheetClose>
   )
 }
@@ -236,9 +227,17 @@ export const SiteHeader = ({ pathname, docsNav = false }: SiteHeaderProps) => {
 
   return (
     <>
-      <header className="sticky top-0 z-30 box-border h-(--site-header-height) w-full overflow-x-clip border-b border-border bg-background/60 backdrop-blur backdrop-brightness-110 backdrop-saturate-150">
+      <header
+        data-site-header
+        className="sticky top-0 z-30 w-full touch-manipulation overflow-x-clip border-b border-border bg-background"
+      >
+        {/* Status-bar paint only. Not a tap target — iOS chrome sits here. */}
+        <div
+          aria-hidden
+          className="pointer-events-none h-[env(safe-area-inset-top,0px)] bg-background"
+        />
         {/* pl-4 to the logo. pr-2.5 plus the 6px icon-sm inset matches that 16px visual edge gap. */}
-        <div className="flex h-full min-w-0 flex-nowrap items-center gap-1 overflow-x-clip pr-1 pl-4 md:gap-2">
+        <div className="flex h-12 min-w-0 flex-nowrap items-center gap-1 overflow-x-clip pr-1 pl-4 md:gap-2">
           {docsNav ? (
             <SidebarTrigger
               aria-label={DOCS_SIDEBAR_TRIGGER_LABEL}
@@ -247,7 +246,7 @@ export const SiteHeader = ({ pathname, docsNav = false }: SiteHeaderProps) => {
           ) : null}
           <Link
             href="/"
-            className="flex min-w-0 shrink items-center gap-2 md:shrink-0"
+            className="flex min-w-0 shrink touch-manipulation items-center gap-2 md:shrink-0"
             aria-label="tfl-components home"
           >
             <HeaderRoundel className="size-5 shrink-0" />

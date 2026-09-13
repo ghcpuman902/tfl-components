@@ -17,6 +17,6 @@ export const LandingRoomTagline = ({
       visible ? "opacity-100" : "opacity-0"
     )}
   >
-    Turn any screen into a London transport board.
+    Turn any screen into a London transport dashboard.
   </p>
 )
