@@ -61,8 +61,7 @@ import {
   PHOTO_OVERLAY_WIDTH,
   ROOM_VEIL_OPACITY,
 } from "./scene-constants"
-import { TEXT_LINK_CLASS } from "@/lib/text-link"
-import { cn } from "@/lib/utils"
+import { DEFAULT_PEEK } from "./room-peek"
 import { syncBoxToSvg, syncOverlayToSvg } from "./sync-overlay"
 import { useIpadZoom } from "./use-ipad-zoom"
 import { useParallaxInput } from "./use-parallax-input"
@@ -170,6 +169,7 @@ export const LandingScene = ({
   const stageRef = useRef<HTMLDivElement>(null)
   const compositionRef = useRef<HTMLDivElement>(null)
   const cameraRef = useRef<HTMLDivElement>(null)
+  const peekLayerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
   const veilRef = useRef<HTMLDivElement>(null)
   const letterboxRef = useRef<HTMLDivElement>(null)
@@ -305,7 +305,7 @@ export const LandingScene = ({
     writeSpaceHash(roomComplete)
   }, [roomComplete, writeSpaceHash])
 
-  const { valueRef, requestTilt, showMotionUnlock } = useParallaxInput({
+  const { valueRef, peekRef } = useParallaxInput({
     stageRef,
     enabled: !reducedMotion && roomComplete,
   })
@@ -415,6 +415,14 @@ export const LandingScene = ({
         layer.el.style.scale = String(layer.scale)
       }
 
+      const peekLayer = peekLayerRef.current
+      if (peekLayer) {
+        const peek = roomComplete ? peekRef.current : DEFAULT_PEEK
+        peekLayer.style.transformOrigin = "50% 50%"
+        peekLayer.style.translate = `${peek.panX * 50}% ${peek.panY * 50}%`
+        peekLayer.style.scale = String(peek.scale)
+      }
+
       const host = compositionRef.current
       if (host && sceneReady) {
         const clip = mirrorClipRef.current
@@ -450,6 +458,7 @@ export const LandingScene = ({
     return () => window.cancelAnimationFrame(frame)
   }, [
     pageVisible,
+    peekRef,
     progressRef,
     reducedMotion,
     roomComplete,
@@ -553,7 +562,9 @@ export const LandingScene = ({
             ref={stageRef}
             className="pointer-events-none relative h-full overflow-hidden"
             style={{
-              touchAction: production ? "pan-y pinch-zoom" : undefined,
+              // Vertical page scroll only. Browser pinch-zoom crashes the
+              // sticky GSAP camera via visualViewport; room peek is custom.
+              touchAction: production ? "pan-y" : undefined,
             }}
             onPointerDown={() => {
               onHeroInteraction?.()
@@ -570,26 +581,28 @@ export const LandingScene = ({
                 className="relative size-full"
                 style={{ visibility: sceneReady ? "visible" : "hidden" }}
               >
-                <div
-                  ref={canvasRef}
-                  className="absolute top-0 left-0 size-full"
-                >
-                  <LandingArtwork
-                    svgRef={svgRef}
-                    l0Ref={l0Ref}
-                    l1Ref={l1Ref}
-                    lampRef={lampRef}
-                    l2Ref={l2Ref}
-                    l3Ref={l3Ref}
-                    iPadRef={iPadRef}
-                    iPadHitRef={iPadHitRef}
-                    iPadCaseRef={iPadCaseRef}
-                    iPadScreenRef={iPadScreenRef}
-                    pictureMat1Ref={pictureMat1Ref}
-                    pictureMat2Ref={pictureMat2Ref}
-                    mirrorGlassRef={mirrorGlassRef}
-                    hideIpadSilhouette
-                  />
+                <div ref={peekLayerRef} className="relative size-full">
+                  <div
+                    ref={canvasRef}
+                    className="absolute top-0 left-0 size-full"
+                  >
+                    <LandingArtwork
+                      svgRef={svgRef}
+                      l0Ref={l0Ref}
+                      l1Ref={l1Ref}
+                      lampRef={lampRef}
+                      l2Ref={l2Ref}
+                      l3Ref={l3Ref}
+                      iPadRef={iPadRef}
+                      iPadHitRef={iPadHitRef}
+                      iPadCaseRef={iPadCaseRef}
+                      iPadScreenRef={iPadScreenRef}
+                      pictureMat1Ref={pictureMat1Ref}
+                      pictureMat2Ref={pictureMat2Ref}
+                      mirrorGlassRef={mirrorGlassRef}
+                      hideIpadSilhouette
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -637,10 +650,18 @@ export const LandingScene = ({
                 className="landing-hero-wall-fill pointer-events-none absolute inset-x-0 top-0 origin-top"
                 style={{ height: 0 }}
               />
+              {roomComplete ? (
+                <div
+                  aria-hidden
+                  data-landing-peek-surface
+                  className="absolute inset-0 z-[1]"
+                  style={{ pointerEvents: "auto", touchAction: "pan-y" }}
+                />
+              ) : null}
               <div
                 ref={ipadOverlayRef}
                 id="landing-example-board"
-                className="absolute overflow-hidden"
+                className="absolute z-10 overflow-hidden"
                 style={{
                   top: "var(--landing-ipad-top)",
                   left: "50%",
@@ -694,23 +715,6 @@ export const LandingScene = ({
                 onStoryComplete={handleStoryComplete}
                 onRestart={handleRestartIntro}
               />
-
-              {showMotionUnlock ? (
-                <button
-                  type="button"
-                  data-landing-chrome
-                  onClick={() => {
-                    onHeroInteraction?.()
-                    void requestTilt()
-                  }}
-                  className={cn(
-                    TEXT_LINK_CLASS,
-                    "pointer-events-auto absolute right-4 bottom-4 z-20 text-[clamp(0.9375rem,0.85rem+0.3vw,1rem)] text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
-                  )}
-                >
-                  Unlock motion
-                </button>
-              ) : null}
             </div>
 
             <div

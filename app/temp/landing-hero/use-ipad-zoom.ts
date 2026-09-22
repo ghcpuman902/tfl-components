@@ -423,7 +423,16 @@ export const useIpadZoom = ({
     window.addEventListener("resize", handleResize)
     window.addEventListener("orientationchange", handleResize)
     const viewport = window.visualViewport
-    viewport?.addEventListener("resize", handleResize)
+    /**
+     * iOS chrome show/hide still needs visualViewport. Browser pinch sets
+     * `visualViewport.scale !== 1` and would thrash ScrollTrigger + dvh
+     * camera math until the sticky hero locks up — ignore those.
+     */
+    const handleVisualViewportResize = () => {
+      if ((viewport?.scale ?? 1) !== 1) return
+      handleResize()
+    }
+    viewport?.addEventListener("resize", handleVisualViewportResize)
     // Gutter / :has() / overlay-scrollbar changes resize the stage without a
     // window resize — that is the “extra edge padding” flash on landing.
     const stageObserver = new ResizeObserver(handleResize)
@@ -432,7 +441,7 @@ export const useIpadZoom = ({
     return () => {
       window.removeEventListener("resize", handleResize)
       window.removeEventListener("orientationchange", handleResize)
-      viewport?.removeEventListener("resize", handleResize)
+      viewport?.removeEventListener("resize", handleVisualViewportResize)
       stageObserver.disconnect()
       if (resizeFrame) window.cancelAnimationFrame(resizeFrame)
       if (settleTimer) window.clearTimeout(settleTimer)
