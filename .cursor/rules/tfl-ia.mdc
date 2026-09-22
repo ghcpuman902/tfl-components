@@ -1,6 +1,7 @@
 ---
 description: Frozen TfL product IA — architecture before archaeology; layers and nav chrome (J6)
-alwaysApply: true
+alwaysApply: false
+globs: app/**/*.{tsx,ts},components/**/*.{tsx,ts},content/**/*.mdx,lib/docs-catalog.ts,lib/tfl/**/*.ts
 ---
 
 # TfL information architecture (frozen Stage 1 + J1 / J6 / J8 / J9 / J19 / J20 / J22 / J23)

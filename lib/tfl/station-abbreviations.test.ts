@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
+import { diagramAtomMetrics } from "./diagram-atoms.ts"
 import { applyStationAbbreviations } from "./station-abbreviations.ts"
 import {
   approximateStationMeasure,
@@ -33,6 +34,31 @@ describe("applyStationAbbreviations", () => {
 })
 
 describe("formatStationLabel", () => {
+  it("wraps South Kensington at the diagram label cap, keeps Bermondsey on one line", () => {
+    const metrics = diagramAtomMetrics()
+    const options = {
+      maxWidth: metrics.labelMaxWidth,
+      fontSize: metrics.nameSize,
+      maxLines: 2 as const,
+      allowAbbreviation: false,
+      allowScaleDown: false,
+    }
+    const south = formatStationLabel(
+      "South Kensington",
+      approximateStationMeasure,
+      options
+    )
+    assert.deepEqual(south.lines, ["South", "Kensington"])
+    assert.equal(south.fits, true)
+    const bermondsey = formatStationLabel(
+      "Bermondsey",
+      approximateStationMeasure,
+      options
+    )
+    assert.deepEqual(bermondsey.lines, ["Bermondsey"])
+    assert.equal(bermondsey.fits, true)
+  })
+
   it("abbreviates a long bus stop heading to fit one line", () => {
     const result = formatStationLabel(
       "King's Cross Station / York Way",

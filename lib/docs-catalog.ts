@@ -847,6 +847,18 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     builtWith: ["station-name-labels"],
   },
   {
+    slug: "component-dependencies",
+    title: "Component dependencies",
+    description:
+      "Development map of reusable TfL modules, imports, and data contracts.",
+    group: "tools",
+    kind: "tool",
+    href: "/docs/component-dependencies",
+    sidebarSection: "hidden",
+    sidebarOrder: 1,
+    excludeFromInstallLists: true,
+  },
+  {
     slug: "drafts-index",
     title: "Drafts",
     description:
@@ -880,6 +892,18 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     href: "/drafts/vertex-scenarios",
     sidebarSection: "hidden",
     sidebarOrder: 2,
+    excludeFromInstallLists: true,
+  },
+  {
+    slug: "diagram-atoms",
+    title: "Diagram atoms",
+    description:
+      "Station marks, label boxes, and the strokes that keep them readable.",
+    group: "drafts",
+    kind: "draft",
+    href: "/drafts/diagram-atoms",
+    sidebarSection: "hidden",
+    sidebarOrder: 3,
     excludeFromInstallLists: true,
   },
 ] as const

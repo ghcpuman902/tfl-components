@@ -6,8 +6,9 @@ import {
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
-  type WheelEvent as ReactWheelEvent,
 } from "react"
+import { Pause, Play } from "lucide-react"
+import { formatStationName } from "@/lib/tfl/diagram-station"
 import type {
   TrackModel,
   TransitGeometryBundle,
@@ -29,11 +30,13 @@ import overgroundStops from "@/data/geography/osm-cache/overground-route-stops.j
 import elizabethStops from "@/data/geography/osm-cache/elizabeth-route-stops.json"
 import dlrStops from "@/data/geography/osm-cache/dlr-route-stops.json"
 import tramStops from "@/data/geography/osm-cache/tram-route-stops.json"
+import { layoutTflSequences } from "@/lib/tfl/geometry/tfl-sequences-layout"
 import {
-  layoutTflSequences,
-  type LaidOutPassengerNode,
-} from "@/lib/tfl/geometry/tfl-sequences-layout"
-import { tflSequencesPassengerTopology } from "@/lib/tfl/geometry/tfl-sequences-topology"
+  serviceGroupsFromPatterns,
+  tflSequencesPassengerTopology,
+  type SequenceServiceGroup,
+  type TflSequencesPattern,
+} from "@/lib/tfl/geometry/tfl-sequences-topology"
 import type {
   LngLat,
   TrackStation,
@@ -53,7 +56,21 @@ import {
 } from "@/lib/tfl/network-model/line-slice"
 import { cn } from "@/lib/utils"
 import { RoutePatternInspector } from "./route-pattern-inspector"
-import { stationGraphScales, useSvgViewport } from "./station-graph-scale"
+import {
+  labelClearance,
+  labelLineHeight,
+  layoutStationLabels,
+} from "./station-graph-labels"
+import {
+  DEFAULT_ZOOM,
+  originAtBoundsCenter,
+  stationGraphScales,
+  useSvgViewport,
+  viewBoxScreenScale,
+  zoomAboutOrigin,
+  zoomAround,
+  type ZoomState,
+} from "./station-graph-scale"
 
 type BundlesByMode = Partial<Record<TransitMode, TransitGeometryBundle>>
 
@@ -77,9 +94,6 @@ type LineOption = {
 type LaidOutNode = ContractedNode & {
   x: number
   y: number
-  labelX: number
-  labelY: number
-  labelAnchor: "start" | "end" | "middle"
 }
 
 const TRACK_MODELS: { id: PhysicalModel; label: string }[] = [
@@ -90,16 +104,6 @@ const TRACK_MODELS: { id: PhysicalModel; label: string }[] = [
 
 const WIDTH = 1100
 const HEIGHT = 720
-const LABEL_W = 108
-const LABEL_H = 16
-const MIN_ZOOM = 0.75
-const MAX_ZOOM = 8
-
-type ZoomState = {
-  scale: number
-  x: number
-  y: number
-}
 
 type DragState = {
   pointerId: number
@@ -107,6 +111,11 @@ type DragState = {
   clientY: number
   x: number
   y: number
+}
+
+type PinchState = {
+  distance: number
+  zoom: ZoomState
 }
 
 const stationsFromBundle = (bundle: TransitGeometryBundle): TrackStation[] =>
@@ -150,125 +159,46 @@ const isSecondSplitHalf = (node: ContractedNode): boolean =>
 
 const nodeLabel = (node: ContractedNode): string => {
   if (isSecondSplitHalf(node)) return ""
-  if (node.kind === "station") return node.stationName ?? "station"
   if (node.kind === "junction") {
-    return node.nearStationName ? `junc · ${node.nearStationName}` : "junction"
+    return node.nearStationName
+      ? `junc · ${formatStationName(node.nearStationName)}`
+      : "junction"
   }
-  return node.stationName ?? "terminus"
-}
-
-const LABEL_SLOTS: {
-  x: number
-  y: number
-  anchor: "start" | "end" | "middle"
-}[] = [
-  { x: 10, y: 4, anchor: "start" },
-  { x: -10, y: 4, anchor: "end" },
-  { x: 10, y: -8, anchor: "start" },
-  { x: -10, y: -8, anchor: "end" },
-  { x: 0, y: -16, anchor: "middle" },
-  { x: 0, y: 18, anchor: "middle" },
-  { x: 10, y: 16, anchor: "start" },
-  { x: -10, y: 16, anchor: "end" },
-]
-
-const labelBox = (
-  node: { x: number; y: number },
-  slot: (typeof LABEL_SLOTS)[number]
-) => {
-  const left =
-    slot.anchor === "end"
-      ? node.x + slot.x - LABEL_W
-      : slot.anchor === "middle"
-        ? node.x + slot.x - LABEL_W / 2
-        : node.x + slot.x
-  return {
-    left,
-    top: node.y + slot.y - LABEL_H + 4,
-    right: left + LABEL_W,
-    bottom: node.y + slot.y + 4,
-  }
-}
-
-const boxesOverlap = (
-  a: { left: number; top: number; right: number; bottom: number },
-  b: { left: number; top: number; right: number; bottom: number }
-) =>
-  a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
-
-const placeLabels = (nodes: readonly LaidOutPassengerNode[]): LaidOutNode[] => {
-  const chosen = new Map<string, (typeof LABEL_SLOTS)[number]>()
-  for (const node of nodes) {
-    let best = LABEL_SLOTS[0]!
-    let bestHits = Number.POSITIVE_INFINITY
-    for (const slot of LABEL_SLOTS) {
-      const box = labelBox(node, slot)
-      let hits = 0
-      for (const other of nodes) {
-        if (other.id === node.id) continue
-        if (
-          other.x > box.left - 6 &&
-          other.x < box.right + 6 &&
-          other.y > box.top - 6 &&
-          other.y < box.bottom + 6
-        ) {
-          hits += 3
-        }
-        const otherSlot = chosen.get(other.id) ?? LABEL_SLOTS[0]!
-        if (boxesOverlap(box, labelBox(other, otherSlot))) hits += 1
-      }
-      if (hits < bestHits) {
-        bestHits = hits
-        best = slot
-      }
-    }
-    chosen.set(node.id, best)
-  }
-
-  return nodes.map((node) => {
-    const slot = chosen.get(node.id) ?? LABEL_SLOTS[0]!
-    return {
-      id: node.id,
-      coordinates: node.coordinates,
-      stationId: node.stationId,
-      stationName: node.stationName,
-      nearStationName: node.nearStationName,
-      kind: node.kind,
-      splitFrom: node.splitFrom,
-      x: node.x,
-      y: node.y,
-      labelX: slot.x,
-      labelY: slot.y,
-      labelAnchor: slot.anchor,
-    }
-  })
+  return formatStationName(
+    node.stationName ?? (node.kind === "terminus" ? "terminus" : "station")
+  )
 }
 
 const fitViewBox = (nodes: readonly LaidOutNode[]) => {
-  if (nodes.length === 0) return { x: 0, y: 0, w: WIDTH, h: HEIGHT }
+  if (nodes.length === 0) {
+    return { x: -WIDTH / 2, y: -HEIGHT / 2, w: WIDTH, h: HEIGHT }
+  }
   let minX = Number.POSITIVE_INFINITY
   let minY = Number.POSITIVE_INFINITY
   let maxX = Number.NEGATIVE_INFINITY
   let maxY = Number.NEGATIVE_INFINITY
   for (const node of nodes) {
-    const box = labelBox(node, {
-      x: node.labelX,
-      y: node.labelY,
-      anchor: node.labelAnchor,
-    })
-    minX = Math.min(minX, node.x - 14, box.left)
-    minY = Math.min(minY, node.y - 14, box.top)
-    maxX = Math.max(maxX, node.x + 14, box.right)
-    maxY = Math.max(maxY, node.y + 14, box.bottom)
+    minX = Math.min(minX, node.x)
+    minY = Math.min(minY, node.y)
+    maxX = Math.max(maxX, node.x)
+    maxY = Math.max(maxY, node.y)
   }
-  const pad = 48
+  const padX = 96
+  const padY = 132
+  const halfW = Math.max((maxX - minX) / 2 + padX, 120)
+  const halfH = Math.max((maxY - minY) / 2 + padY, 120)
   return {
-    x: minX - pad,
-    y: minY - pad,
-    w: Math.max(maxX - minX + pad * 2, 240),
-    h: Math.max(maxY - minY + pad * 2, 240),
+    x: -halfW,
+    y: -halfH,
+    w: halfW * 2,
+    h: halfH * 2,
   }
 }
+
+const stationHopKey = (a: string, b: string): string =>
+  a < b ? `${a}|${b}` : `${b}|${a}`
+
+const SERVICE_CYCLE_MS = 500
 
 const offsetEdge = (
   from: LaidOutNode,
@@ -332,43 +262,9 @@ const movementCurve = (
   return `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`
 }
 
-const zoomAround = (
-  current: ZoomState,
-  scale: number,
-  anchor: { x: number; y: number }
-): ZoomState => {
-  const nextScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale))
-  const ratio = nextScale / current.scale
-  return {
-    scale: nextScale,
-    x: anchor.x - (anchor.x - current.x) * ratio,
-    y: anchor.y - (anchor.y - current.y) * ratio,
-  }
-}
-
 const emptyTopology = (): ContractedTopology => ({ nodes: [], edges: [] })
 
 const LINE_QUERY_PARAM = "line"
-const ZOOM_SCALE_PARAM = "z"
-const ZOOM_X_PARAM = "zx"
-const ZOOM_Y_PARAM = "zy"
-
-const DEFAULT_ZOOM: ZoomState = { scale: 1, x: 0, y: 0 }
-
-const readZoomFromUrl = (): ZoomState => {
-  const params = new URLSearchParams(window.location.search)
-  const scale = Number(params.get(ZOOM_SCALE_PARAM))
-  const x = Number(params.get(ZOOM_X_PARAM))
-  const y = Number(params.get(ZOOM_Y_PARAM))
-  return {
-    scale:
-      Number.isFinite(scale) && scale > 0
-        ? Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale))
-        : 1,
-    x: Number.isFinite(x) ? x : 0,
-    y: Number.isFinite(y) ? y : 0,
-  }
-}
 
 const OSM_STOPS_BY_MODE: Partial<Record<TransitMode, OsmRouteStopsFile>> = {
   tube: tubeStops as unknown as OsmRouteStopsFile,
@@ -381,7 +277,6 @@ const OSM_STOPS_BY_MODE: Partial<Record<TransitMode, OsmRouteStopsFile>> = {
 const useLaidOutTopology = (
   topology: ContractedTopology,
   movements: readonly TopologyMovementPair[],
-  hopTimes?: LineHopTimesByLine[string],
   lineId?: string
 ) =>
   useMemo(() => {
@@ -396,15 +291,16 @@ const useLaidOutTopology = (
           patternIds: direction.patternIds,
         }))
       ),
-      hopTimes,
+      undefined,
       {
+        uniformHops: true,
         canonical: lineId
           ? hopGraphForRailLine(lineId).canonical
           : (id: string) => id,
       }
     )
-    return placeLabels(laid.nodes)
-  }, [topology, movements, hopTimes, lineId])
+    return originAtBoundsCenter(laid.nodes)
+  }, [topology, movements, lineId])
 
 type TopologyPlotProps = {
   title?: string
@@ -414,7 +310,7 @@ type TopologyPlotProps = {
   lineName: string
   lineId?: string
   movements?: readonly TopologyMovementPair[]
-  hopTimes?: LineHopTimesByLine[string]
+  patterns?: readonly TflSequencesPattern[]
   dual?: boolean
   empty?: string
 }
@@ -427,25 +323,32 @@ const TopologyPlot = ({
   lineName,
   lineId,
   movements = [],
-  hopTimes,
+  patterns = [],
   dual = false,
   empty,
 }: TopologyPlotProps) => {
   const linePaint = lineCssPaint(lineId, color)
   const svgRef = useRef<SVGSVGElement | null>(null)
   const dragRef = useRef<DragState | null>(null)
+  const pinchRef = useRef<PinchState | null>(null)
+  const pointersRef = useRef(new Map<number, { x: number; y: number }>())
+  const zoomRef = useRef<ZoomState>(DEFAULT_ZOOM)
+  const pendingZoomRef = useRef<ZoomState | null>(null)
+  const rafRef = useRef(0)
   const [zoom, setZoom] = useState<ZoomState>(DEFAULT_ZOOM)
-  const zoomUrlReady = useRef(false)
-  const painted = useLaidOutTopology(topology, movements, hopTimes, lineId)
+  zoomRef.current = zoom
+  const painted = useLaidOutTopology(topology, movements, lineId)
   const nodeById = useMemo(
     () => new Map(painted.map((node) => [node.id, node])),
     [painted]
   )
   const viewBox = useMemo(() => fitViewBox(painted), [painted])
+  const viewBoxRef = useRef(viewBox)
+  viewBoxRef.current = viewBox
   const junctionCount = topology.nodes.filter(
     (node) => node.kind === "junction"
   ).length
-  const visibleMovements = useMemo(() => {
+  const neighborIds = useMemo(() => {
     const neighbors = new Map<string, Set<string>>()
     const addNeighbor = (from: string, to: string) => {
       const values = neighbors.get(from) ?? new Set<string>()
@@ -457,63 +360,186 @@ const TopologyPlot = ({
       addNeighbor(edge.from, edge.to)
       addNeighbor(edge.to, edge.from)
     }
-    return movements.filter(
-      (movement) => (neighbors.get(movement.via)?.size ?? 0) >= 3
+    return neighbors
+  }, [topology.edges])
+  const visibleMovements = useMemo(
+    () =>
+      movements.filter(
+        (movement) => (neighborIds.get(movement.via)?.size ?? 0) >= 3
+      ),
+    [movements, neighborIds]
+  )
+  const serviceGroups = useMemo(
+    () => serviceGroupsFromPatterns(patterns),
+    [patterns]
+  )
+  const [playing, setPlaying] = useState(false)
+  const [groupIndex, setGroupIndex] = useState<number | null>(null)
+  const activeGroup: SequenceServiceGroup | null =
+    groupIndex != null ? (serviceGroups[groupIndex] ?? null) : null
+  const activeStations = useMemo(
+    () => new Set(activeGroup?.stationIds ?? []),
+    [activeGroup]
+  )
+  const activePatternIds = useMemo(
+    () => new Set(activeGroup?.patternIds ?? []),
+    [activeGroup]
+  )
+
+  useEffect(() => {
+    if (!playing || serviceGroups.length === 0) return
+    const tick = () => {
+      if (document.visibilityState === "hidden") return
+      setGroupIndex((current) => ((current ?? -1) + 1) % serviceGroups.length)
+    }
+    const timer = window.setInterval(tick, SERVICE_CYCLE_MS)
+    return () => window.clearInterval(timer)
+  }, [playing, serviceGroups.length])
+
+  const handlePlayPause = () => {
+    setPlaying((on) => {
+      if (!on && groupIndex == null) setGroupIndex(0)
+      return !on
+    })
+  }
+
+  const edgeOnGroup = (fromId: string, toId: string): boolean => {
+    if (!activeGroup) return true
+    const from = nodeById.get(fromId)
+    const to = nodeById.get(toId)
+    const fromStation = from?.stationId
+    const toStation = to?.stationId
+    if (!fromStation || !toStation) return false
+    return activeGroup.hops.has(stationHopKey(fromStation, toStation))
+  }
+
+  const nodeOnGroup = (node: LaidOutNode): boolean => {
+    if (!activeGroup) return true
+    return node.stationId != null && activeStations.has(node.stationId)
+  }
+
+  const movementOnGroup = (pair: TopologyMovementPair): boolean => {
+    if (!activeGroup) return true
+    return pair.directions.some((direction) =>
+      direction.patternIds.some((id) => activePatternIds.has(id))
     )
-  }, [movements, topology.edges])
+  }
 
   const viewPoint = (clientX: number, clientY: number) => {
     const rect = svgRef.current?.getBoundingClientRect()
+    const box = viewBoxRef.current
     if (!rect || rect.width === 0 || rect.height === 0) return null
     return {
-      x: viewBox.x + ((clientX - rect.left) / rect.width) * viewBox.w,
-      y: viewBox.y + ((clientY - rect.top) / rect.height) * viewBox.h,
+      x: box.x + ((clientX - rect.left) / rect.width) * box.w,
+      y: box.y + ((clientY - rect.top) / rect.height) * box.h,
     }
   }
 
-  const handleWheel = (event: ReactWheelEvent<SVGSVGElement>) => {
-    event.preventDefault()
-    const anchor = viewPoint(event.clientX, event.clientY)
-    if (!anchor) return
-    const factor = Math.exp(-event.deltaY * 0.0015)
-    setZoom((current) => zoomAround(current, current.scale * factor, anchor))
+  const applyZoom = (next: ZoomState) => {
+    pendingZoomRef.current = next
+    if (rafRef.current) return
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0
+      const pending = pendingZoomRef.current
+      if (!pending) return
+      pendingZoomRef.current = null
+      zoomRef.current = pending
+      setZoom(pending)
+    })
   }
+
+  const currentZoom = () => pendingZoomRef.current ?? zoomRef.current
 
   const handlePointerDown = (event: ReactPointerEvent<SVGSVGElement>) => {
     if (event.button !== 0) return
-    event.currentTarget.setPointerCapture(event.pointerId)
+    pointersRef.current.set(event.pointerId, {
+      x: event.clientX,
+      y: event.clientY,
+    })
+    if (event.pointerType === "mouse") {
+      event.currentTarget.setPointerCapture(event.pointerId)
+    }
+    if (pointersRef.current.size >= 2) {
+      dragRef.current = null
+      const points = [...pointersRef.current.values()]
+      const a = points[0]!
+      const b = points[1]!
+      pinchRef.current = {
+        distance: Math.hypot(a.x - b.x, a.y - b.y) || 1,
+        zoom: currentZoom(),
+      }
+      return
+    }
+    const live = currentZoom()
     dragRef.current = {
       pointerId: event.pointerId,
       clientX: event.clientX,
       clientY: event.clientY,
-      x: zoom.x,
-      y: zoom.y,
+      x: live.x,
+      y: live.y,
     }
   }
 
   const handlePointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
+    if (pointersRef.current.has(event.pointerId)) {
+      pointersRef.current.set(event.pointerId, {
+        x: event.clientX,
+        y: event.clientY,
+      })
+    }
+    const pinch = pinchRef.current
+    if (pinch && pointersRef.current.size >= 2) {
+      const points = [...pointersRef.current.values()]
+      const a = points[0]!
+      const b = points[1]!
+      const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1
+      const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+      const anchor = viewPoint(mid.x, mid.y)
+      if (!anchor) return
+      applyZoom(
+        zoomAround(
+          pinch.zoom,
+          pinch.zoom.scale * (dist / pinch.distance),
+          anchor
+        )
+      )
+      return
+    }
     const drag = dragRef.current
     const rect = svgRef.current?.getBoundingClientRect()
     if (!drag || drag.pointerId !== event.pointerId || !rect) return
     const dx = ((event.clientX - drag.clientX) / rect.width) * viewBox.w
     const dy = ((event.clientY - drag.clientY) / rect.height) * viewBox.h
-    setZoom((current) => ({ ...current, x: drag.x + dx, y: drag.y + dy }))
+    applyZoom({ ...currentZoom(), x: drag.x + dx, y: drag.y + dy })
   }
 
-  const finishDrag = (event: ReactPointerEvent<SVGSVGElement>) => {
-    if (dragRef.current?.pointerId !== event.pointerId) return
-    dragRef.current = null
+  const finishPointer = (event: ReactPointerEvent<SVGSVGElement>) => {
+    pointersRef.current.delete(event.pointerId)
+    if (pointersRef.current.size < 2) pinchRef.current = null
+    if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
   }
 
   const changeZoom = (factor: number) => {
-    const anchor = {
-      x: viewBox.x + viewBox.w / 2,
-      y: viewBox.y + viewBox.h / 2,
-    }
-    setZoom((current) => zoomAround(current, current.scale * factor, anchor))
+    cancelAnimationFrame(rafRef.current)
+    rafRef.current = 0
+    pendingZoomRef.current = null
+    setZoom((current) => {
+      const next = zoomAboutOrigin(current, current.scale * factor)
+      zoomRef.current = next
+      return next
+    })
+  }
+
+  const resetZoom = () => {
+    cancelAnimationFrame(rafRef.current)
+    rafRef.current = 0
+    pendingZoomRef.current = null
+    const next = { scale: 1, x: 0, y: 0 }
+    zoomRef.current = next
+    setZoom(next)
   }
 
   const viewport = useSvgViewport(svgRef)
@@ -522,40 +548,63 @@ const TopologyPlot = ({
     viewBox,
     viewport
   )
-
-  useEffect(() => {
-    if (!zoomUrlReady.current) {
-      zoomUrlReady.current = true
-      const fromUrl = readZoomFromUrl()
-      if (
-        fromUrl.scale !== zoom.scale ||
-        fromUrl.x !== zoom.x ||
-        fromUrl.y !== zoom.y
-      ) {
-        setZoom(fromUrl)
-        return
+  const hopScreenPx = useMemo(() => {
+    let nearest = Number.POSITIVE_INFINITY
+    for (const node of painted) {
+      for (const id of neighborIds.get(node.id) ?? []) {
+        const other = nodeById.get(id)
+        if (!other) continue
+        const dist = Math.hypot(other.x - node.x, other.y - node.y)
+        if (dist > 1) nearest = Math.min(nearest, dist)
       }
     }
-    const url = new URL(window.location.href)
-    const scale = zoom.scale.toFixed(2)
-    const x = zoom.x.toFixed(1)
-    const y = zoom.y.toFixed(1)
-    const same =
-      url.searchParams.get(ZOOM_SCALE_PARAM) === scale &&
-      url.searchParams.get(ZOOM_X_PARAM) === x &&
-      url.searchParams.get(ZOOM_Y_PARAM) === y
-    if (same) return
-    if (zoom.scale === 1 && zoom.x === 0 && zoom.y === 0) {
-      url.searchParams.delete(ZOOM_SCALE_PARAM)
-      url.searchParams.delete(ZOOM_X_PARAM)
-      url.searchParams.delete(ZOOM_Y_PARAM)
-    } else {
-      url.searchParams.set(ZOOM_SCALE_PARAM, scale)
-      url.searchParams.set(ZOOM_X_PARAM, x)
-      url.searchParams.set(ZOOM_Y_PARAM, y)
+    if (!Number.isFinite(nearest)) return Number.POSITIVE_INFINITY
+    return nearest * zoom.scale * viewBoxScreenScale(viewBox, viewport)
+  }, [painted, neighborIds, nodeById, zoom.scale, viewBox, viewport])
+  const labels = useMemo(
+    () =>
+      layoutStationLabels(
+        painted.map((node) => ({
+          id: node.id,
+          x: node.x,
+          y: node.y,
+          text: nodeLabel(node),
+          kind: node.kind,
+          degree: neighborIds.get(node.id)?.size ?? 0,
+          neighborIds: [...(neighborIds.get(node.id) ?? [])],
+        })),
+        zoom,
+        hopScreenPx
+      ),
+    [painted, zoom, neighborIds, hopScreenPx]
+  )
+  const labelById = useMemo(
+    () => new Map(labels.map((label) => [label.id, label])),
+    [labels]
+  )
+
+  useEffect(() => {
+    const svg = svgRef.current
+    if (!svg) return
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault()
+      const anchor = viewPoint(event.clientX, event.clientY)
+      if (!anchor) return
+      const live = currentZoom()
+      const factor = Math.exp(-event.deltaY * 0.0015)
+      applyZoom(zoomAround(live, live.scale * factor, anchor))
     }
-    window.history.replaceState(null, "", url)
-  }, [zoom])
+    const handleTouchMove = (event: TouchEvent) => {
+      if (event.touches.length >= 2) event.preventDefault()
+    }
+    svg.addEventListener("wheel", handleWheel, { passive: false })
+    svg.addEventListener("touchmove", handleTouchMove, { passive: false })
+    return () => {
+      svg.removeEventListener("wheel", handleWheel)
+      svg.removeEventListener("touchmove", handleTouchMove)
+      cancelAnimationFrame(rafRef.current)
+    }
+  }, [topology.nodes.length])
 
   return (
     <section className="min-w-0 space-y-2">
@@ -566,9 +615,6 @@ const TopologyPlot = ({
           {topology.nodes.length} nodes · {topology.edges.length} edges ·{" "}
           {junctionCount} junctions · {movements.length} layout continuities ·{" "}
           {visibleMovements.length} marked branch pairs
-          {hopTimes
-            ? ` · ${hopTimes.timedHopCount} hops seeded from TfL travel time`
-            : ""}
         </p>
       </div>
       <div className="relative overflow-hidden rounded-lg border border-border bg-muted/30">
@@ -576,7 +622,26 @@ const TopologyPlot = ({
           <p className="px-3 py-8 text-sm text-muted-foreground">{empty}</p>
         ) : (
           <>
-            <div className="absolute top-2 right-2 z-10 flex overflow-hidden rounded-md border border-border bg-background/90 shadow-sm">
+            <div className="absolute top-2 right-2 z-10 flex touch-manipulation overflow-hidden rounded-md border border-border bg-background/90 shadow-sm">
+              {serviceGroups.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={handlePlayPause}
+                  aria-pressed={playing}
+                  aria-label={
+                    playing
+                      ? `Pause ${lineName} service cycle`
+                      : `Play ${lineName} service cycle`
+                  }
+                  className="flex h-8 w-8 items-center justify-center border-r border-border"
+                >
+                  {playing ? (
+                    <Pause className="size-3 fill-current" aria-hidden />
+                  ) : (
+                    <Play className="size-3 fill-current stroke-none" aria-hidden />
+                  )}
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => changeZoom(1.35)}
@@ -595,7 +660,7 @@ const TopologyPlot = ({
               </button>
               <button
                 type="button"
-                onClick={() => setZoom({ scale: 1, x: 0, y: 0 })}
+                onClick={resetZoom}
                 className="h-8 px-2 text-[10px] tabular-nums"
                 aria-label={`Reset zoom on ${title ?? lineName}`}
               >
@@ -607,14 +672,13 @@ const TopologyPlot = ({
               viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
               data-line={lineId}
               data-tfl-diagram={lineId === "cable-car" ? "" : undefined}
-              className="h-[min(60vh,36rem)] w-full cursor-grab touch-none select-none active:cursor-grabbing"
+              className="h-[min(60vh,36rem)] w-full cursor-grab touch-none overscroll-none select-none active:cursor-grabbing"
               role="img"
-              aria-label={`${lineName} ${title}. Scroll to zoom and drag to pan.`}
-              onWheel={handleWheel}
+              aria-label={`${lineName} ${title}. Scroll or pinch to zoom and drag to pan.`}
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
-              onPointerUp={finishDrag}
-              onPointerCancel={finishDrag}
+              onPointerUp={finishPointer}
+              onPointerCancel={finishPointer}
             >
               <g
                 transform={`translate(${zoom.x} ${zoom.y}) scale(${zoom.scale})`}
@@ -623,6 +687,8 @@ const TopologyPlot = ({
                   const from = nodeById.get(edge.from)
                   const to = nodeById.get(edge.to)
                   if (!from || !to) return null
+                  const onGroup = edgeOnGroup(edge.from, edge.to)
+                  const fade = activeGroup && !onGroup
                   if (edge.kind === "bond") {
                     return (
                       <line
@@ -633,6 +699,7 @@ const TopologyPlot = ({
                         y2={to.y}
                         stroke="var(--muted-foreground)"
                         strokeWidth={3 * symbolScale}
+                        strokeOpacity={fade ? 0.18 : 1}
                         strokeLinecap="round"
                         vectorEffect="non-scaling-stroke"
                       >
@@ -644,6 +711,7 @@ const TopologyPlot = ({
                   const fast = edge.service === "fast"
                   const occasional = edge.service === "occasional"
                   const skip = fast || occasional
+                  const baseWidth = dual || skip ? 2.2 : 3
                   return (
                     <line
                       key={edge.id}
@@ -651,12 +719,18 @@ const TopologyPlot = ({
                       y1={line.y1}
                       x2={line.x2}
                       y2={line.y2}
-                      stroke={occasional ? "var(--muted-foreground)" : linePaint}
-                      strokeWidth={dual || skip ? 2.2 : 3}
+                      stroke={
+                        occasional ? "var(--muted-foreground)" : linePaint
+                      }
+                      strokeWidth={
+                        onGroup && activeGroup ? baseWidth + 1.2 : baseWidth
+                      }
                       strokeDasharray={
                         occasional ? "2 5" : fast ? "7 5" : undefined
                       }
-                      strokeOpacity={occasional ? 0.55 : fast ? 0.85 : 1}
+                      strokeOpacity={
+                        fade ? 0.16 : occasional ? 0.55 : fast ? 0.85 : 1
+                      }
                       strokeLinecap="round"
                       vectorEffect="non-scaling-stroke"
                     >
@@ -682,8 +756,9 @@ const TopologyPlot = ({
                       )
                     ),
                   ]
+                  const fade = activeGroup && !movementOnGroup(pair)
                   return (
-                    <g key={pair.id}>
+                    <g key={pair.id} opacity={fade ? 0.16 : 1}>
                       <path
                         d={curve}
                         fill="none"
@@ -707,50 +782,88 @@ const TopologyPlot = ({
                     </g>
                   )
                 })}
-                {painted.map((node) => (
-                  <g key={node.id} transform={`translate(${node.x} ${node.y})`}>
-                    <circle
-                      r={
-                        node.kind === "junction"
-                          ? 6 * symbolScale
-                          : node.kind === "station"
-                            ? 5 * symbolScale
-                            : 4 * symbolScale
-                      }
-                      fill={
-                        node.kind === "junction" ? linePaint : "var(--background)"
-                      }
-                      stroke={
-                        node.kind === "junction"
-                          ? "var(--background)"
-                          : "var(--foreground)"
-                      }
-                      strokeWidth={
-                        (node.kind === "junction" ? 2 : 1.4) * symbolScale
-                      }
-                    />
-                    {!isSecondSplitHalf(node) && (
-                      <text
-                        x={node.labelX * labelScale}
-                        y={node.labelY * labelScale}
-                        textAnchor={node.labelAnchor}
-                        className={
+                {painted.map((node) => {
+                  const label = labelById.get(node.id)
+                  const name = nodeLabel(node)
+                  const fade = activeGroup && !nodeOnGroup(node)
+                  const font =
+                    (node.kind === "junction" ? 10 : 11) *
+                    labelScale *
+                    (label?.scale ?? 1)
+                  const lineHeight = font * labelLineHeight
+                  const clearance = labelClearance * symbolScale
+                  const lines = label?.lines ?? []
+                  return (
+                    <g
+                      key={node.id}
+                      transform={`translate(${node.x} ${node.y})`}
+                      opacity={fade ? 0.22 : 1}
+                    >
+                      <circle
+                        r={
                           node.kind === "junction"
-                            ? "fill-muted-foreground"
-                            : "fill-foreground"
+                            ? 6 * symbolScale
+                            : node.kind === "station"
+                              ? 5 * symbolScale
+                              : 4 * symbolScale
                         }
-                        fontSize={
-                          (node.kind === "junction" ? 10 : 11) * labelScale
+                        fill={
+                          node.kind === "junction"
+                            ? linePaint
+                            : "var(--background)"
                         }
-                        style={{ fontFamily: "var(--font-sans)" }}
+                        stroke={
+                          node.kind === "junction"
+                            ? "var(--background)"
+                            : "var(--foreground)"
+                        }
+                        strokeWidth={
+                          (node.kind === "junction" ? 2 : 1.4) * symbolScale
+                        }
                       >
-                        {nodeLabel(node)}
-                      </text>
-                    )}
-                  </g>
-                ))}
+                        {name ? <title>{name}</title> : null}
+                      </circle>
+                      {label?.visible && lines.length > 0 ? (
+                        <text
+                          textAnchor={label.anchor}
+                          className={
+                            node.kind === "junction"
+                              ? "fill-muted-foreground"
+                              : "fill-foreground"
+                          }
+                          fontSize={font}
+                          stroke="var(--background)"
+                          strokeWidth={2.4 * symbolScale}
+                          paintOrder="stroke"
+                          style={{ fontFamily: "var(--font-sans)" }}
+                        >
+                          {lines.map((line, index) => {
+                            const y =
+                              label.side === "up"
+                                ? -clearance -
+                                  (lines.length - 1 - index) * lineHeight
+                                : clearance + index * lineHeight
+                            return (
+                              <tspan key={`${line}-${index}`} x={0} y={y}>
+                                {line}
+                              </tspan>
+                            )
+                          })}
+                        </text>
+                      ) : null}
+                    </g>
+                  )
+                })}
               </g>
             </svg>
+            {activeGroup ? (
+              <p
+                aria-live="polite"
+                className="pointer-events-none absolute bottom-2 left-2 z-10 max-w-[min(100%-1rem,24rem)] text-[10px] text-muted-foreground"
+              >
+                {activeGroup.name}
+              </p>
+            ) : null}
           </>
         )}
       </div>
@@ -763,7 +876,6 @@ export const TrackTopologyView = ({
   centreline,
   dual,
   networkModel,
-  hopTimes,
 }: TrackTopologyViewProps) => {
   const lineOptions = useMemo(() => {
     const fromOsm = linesFromBundles(centreline)
@@ -907,13 +1019,13 @@ export const TrackTopologyView = ({
         <TopologyPlot
           key={`passenger-v2-${lineId}`}
           title="TfL sequences v2"
-          source="Stations start at their map positions. Hop length follows travel time. Permitted route continuations stay smooth."
+          source="Stations start at their map positions. Each hop is the same length. Permitted route continuations stay smooth."
           topology={passengerTopology}
           color={selected?.color ?? snapshotSlice?.line.color ?? "#888"}
           lineName={selected?.lineName ?? "Line"}
           lineId={selected?.lineId}
           movements={passengerMovements}
-          hopTimes={selected ? hopTimes?.[selected.lineId] : undefined}
+          patterns={passengerCompile?.patterns ?? []}
           empty="No TfL sequence for this line."
         />
       </section>

@@ -1,6 +1,7 @@
 ---
 description: Decide how to handle Date.now / new Date / Math.random under Next.js Cache Components prerender
-alwaysApply: true
+alwaysApply: false
+globs: app/**/*.{tsx,ts,jsx,js},components/**/*.{tsx,ts},lib/**/*.{tsx,ts},hooks/**/*.{tsx,ts},next.config.*
 ---
 
 # Cache Components: time and randomness

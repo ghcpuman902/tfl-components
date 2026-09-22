@@ -101,7 +101,7 @@ describe("pattern classification", () => {
     )
     assert.deepEqual(
       drawingVariants("triangle").map((variant) => variant.id),
-      ["a-left", "a-right"]
+      ["default"]
     )
     assert.equal(drawingVariants("independent-corridors").length, 1)
   })

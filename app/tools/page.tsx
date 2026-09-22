@@ -25,6 +25,7 @@ export default function ToolsIndexPage() {
         "Diagram tuning playgrounds",
       ]}
       relatedHrefs={[
+        { href: "/docs/component-dependencies", label: "Component dependencies" },
         { href: "/drafts", label: "Drafts — not yet tools" },
         { href: "/docs/components", label: "Components — embeddable UI" },
         { href: "/docs/station-name-labels", label: "Station name labels" },

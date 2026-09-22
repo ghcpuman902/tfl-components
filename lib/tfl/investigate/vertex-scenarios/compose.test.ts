@@ -87,10 +87,14 @@ describe("composing local Ys", () => {
   })
 
   it("does not claim a pure Y tree for an all-pairs triangle or one-way case", () => {
-    for (const id of ["triangle", "directed"])
-      assert.deepEqual(
-        composeYs(WORKBENCH_PRESETS.find((p) => p.id === id)!.matrix),
-        []
-      )
+    const triangle = WORKBENCH_PRESETS.find((p) => p.id === "triangle")!.matrix
+    const oneWay = {
+      ports: ["A", "B", "C", "D", "E"] as const,
+      moves: [
+        { from: "A" as const, to: "B" as const },
+      ],
+    }
+    assert.deepEqual(composeYs(triangle), [])
+    assert.deepEqual(composeYs({ ports: [...oneWay.ports], moves: [...oneWay.moves] }), [])
   })
 })

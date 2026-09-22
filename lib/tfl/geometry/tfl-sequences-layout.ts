@@ -300,6 +300,7 @@ export const layoutTflSequences = (
     hop?: number
     minSep?: number
     bondGap?: number
+    uniformHops?: boolean
   }
 ): TflSequencesLayoutResult => {
   const hop = options?.hop ?? STRESS_HOP
@@ -347,7 +348,9 @@ export const layoutTflSequences = (
     const from = index.get(edge.from)
     const to = index.get(edge.to)
     if (from == null || to == null || from === to) continue
-    const minutes = targetByPair.get(hopKey(edge.from, edge.to)) ?? 1
+    const minutes = options?.uniformHops
+      ? 1
+      : (targetByPair.get(hopKey(edge.from, edge.to)) ?? 1)
     layoutEdges.push({ from, to, length: minutes })
     crossingEdges.push({ from, to })
     geoLengths.push(

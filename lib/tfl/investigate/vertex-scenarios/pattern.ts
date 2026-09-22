@@ -174,11 +174,6 @@ export const drawingVariants = (kind: PatternKind): DrawingVariant[] => {
       { id: "same-side", label: "Same side" },
     ]
   }
-  if (kind === "triangle")
-    return [
-      { id: "a-left", label: "A on the left" },
-      { id: "a-right", label: "A on the right" },
-    ]
   if (kind === "y") {
     return [
       { id: "stem", label: "Stem S" },
@@ -187,8 +182,8 @@ export const drawingVariants = (kind: PatternKind): DrawingVariant[] => {
   }
   if (kind === "through-terminus") {
     return [
-      { id: "same-as-a", label: "C same as A" },
-      { id: "same-as-b", label: "C same as B" },
+      { id: "same-as-a", label: "C beside A" },
+      { id: "same-as-b", label: "C beside B" },
     ]
   }
   return [{ id: "default", label: patternTitle(kind) }]

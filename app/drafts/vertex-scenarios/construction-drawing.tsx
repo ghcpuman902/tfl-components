@@ -27,11 +27,9 @@ const branch = (a: Pt, b: Pt) => octilinearLanePath(a.x, a.y, b.x, b.y, 22)
 export function ConstructionDrawing({
   construction,
   active,
-  splitMarkers,
 }: {
   construction: Construction
   active: ActiveMove
-  splitMarkers: boolean
 }) {
   const blocks = [
     ...construction.blocks,
@@ -51,18 +49,11 @@ export function ConstructionDrawing({
     top: GAP + heights.slice(0, index).reduce((sum, height) => sum + height, 0),
   }))
   const totalHeight = GAP * 2 + heights.reduce((sum, height) => sum + height, 0)
-  const markerX = splitMarkers ? 400 : 248
+  const markerX = 248
   const markers: Pt[] = []
-  for (const { block, top, height } of rows) {
+  for (const { top, height } of rows) {
     const cy = top + height / 2
-    if (splitMarkers && block.right.length) {
-      block.right.forEach((_, i) =>
-        markers.push({
-          x: markerX,
-          y: cy + (i - (block.right.length - 1) / 2) * PITCH,
-        })
-      )
-    } else markers.push({ x: markerX, y: cy })
+    markers.push({ x: markerX, y: cy })
   }
   return (
     <svg
@@ -75,7 +66,7 @@ export function ConstructionDrawing({
       }
       className="mx-auto h-auto w-full max-w-xl overflow-visible"
     >
-      {rows.map(({ block, top, height }) => (
+      {rows.map(({ top, height }) => (
         <BlockBand
           key={`band-${top}`}
           x={12}

@@ -1,26 +1,18 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { hasMove } from "@/lib/tfl/investigate/vertex-scenarios/directed-matrix"
-import {
-  blockLabel,
-  checkConstruction,
-  constructPassages,
-  togglePermission,
-  type Construction,
-} from "@/lib/tfl/investigate/vertex-scenarios/construction"
-import {
-  WORKBENCH_PRESETS,
-  type WorkbenchPreset,
-} from "@/lib/tfl/investigate/vertex-scenarios/workbench-presets"
+import { togglePermission } from "@/lib/tfl/investigate/vertex-scenarios/construction"
+import type { WorkbenchPreset } from "@/lib/tfl/investigate/vertex-scenarios/workbench-presets"
 import {
   classifyPattern,
-  composeYs,
+  directedSignature,
   drawingVariants,
   DEFAULT_LAYOUT_POLICY,
   type DirectedMatrix,
   type DirectedMove,
+  type EndMark,
   type LayoutPolicy,
   type PrimaryDirection,
   type VertexScenario,
@@ -28,12 +20,52 @@ import {
 import { PORT_LABELS } from "@/lib/tfl/investigate/vertex-scenarios/types"
 import { cn } from "@/lib/utils"
 import { VertexScenarioCatalogue } from "./catalogue"
-import { ConstructionDrawing } from "./construction-drawing"
 import { CompositionExperiment } from "./composition"
-import { SimplifiedTopologySvg } from "./diagrams"
+import {
+  DrawingVariantSelect,
+  SimplifiedTopologySvg,
+} from "./diagrams"
+import { MovementMatrix, useMovementPreview } from "./movement-matrix"
 
-const control =
-  "min-h-10 rounded-md border border-border bg-background px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+const selectControl =
+  "h-9 rounded-md border border-border bg-background px-2 text-xs text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+
+/** Same on/off control as `/drafts/diagram-atoms`'s `Toggle`. */
+const Toggle = ({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: boolean
+  onChange: (next: boolean) => void
+}) => (
+  <div className="flex flex-col gap-1">
+    <p className="text-xs text-muted-foreground">{label}</p>
+    <div className="flex gap-1" role="group" aria-label={label}>
+      {(
+        [
+          { on: true, name: "On" },
+          { on: false, name: "Off" },
+        ] as const
+      ).map((item) => (
+        <button
+          type="button"
+          key={item.name}
+          aria-pressed={value === item.on}
+          className={cn(
+            "h-9 rounded-md border border-border bg-background px-3 text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+            value === item.on &&
+              "border-foreground bg-foreground text-background"
+          )}
+          onClick={() => onChange(item.on)}
+        >
+          {item.name}
+        </button>
+      ))}
+    </div>
+  </div>
+)
 
 const DIRECTIONS: { id: PrimaryDirection; label: string; mark: string }[] = [
   { id: "right", label: "Right", mark: "→" },
@@ -42,221 +74,125 @@ const DIRECTIONS: { id: PrimaryDirection; label: string; mark: string }[] = [
   { id: "down", label: "Down", mark: "↓" },
 ]
 
-type DrawingView = "schematic" | "shared" | "pairs" | "joined"
+const ENDS: { id: EndMark; label: string }[] = [
+  { id: "terminus", label: "Terminus" },
+  { id: "through", label: "Through" },
+]
 
-const constructionSignature = (construction: Construction) =>
-  [
-    ...construction.blocks.map(blockLabel).sort(),
-    ...construction.termini.slice().sort().map((port) => `T:${port}`),
-  ].join("|")
-
-const drawingViews = (matrix: DirectedMatrix): DrawingView[] => {
-  if (classifyPattern(matrix) !== "other") return ["schematic"]
-  const pairs = constructPassages(matrix, "pairs")
-  const shared = constructPassages(matrix, "share")
-  const views: DrawingView[] = ["shared"]
-  if (constructionSignature(pairs) !== constructionSignature(shared)) {
-    views.push("pairs")
-  }
-  if (composeYs(matrix).length > 0) views.push("joined")
-  return views
-}
-
-const viewLabel = (view: DrawingView): string => {
-  if (view === "schematic") return "Drawing"
-  if (view === "shared") return "Shared"
-  if (view === "pairs") return "Each pair"
-  return "Joined"
-}
-
-function PermissionGrid({
-  matrix,
-  active,
-  decoded,
-  edit,
-  onSelect,
-  armNames,
-}: {
-  matrix: DirectedMatrix
-  active: DirectedMove | null
-  decoded?: DirectedMove[]
-  edit: boolean
-  onSelect: (move: DirectedMove) => void
-  armNames?: WorkbenchPreset["armNames"]
-}) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-separate border-spacing-1 text-sm">
-        <caption className="sr-only">
-          {decoded ? "Movements read back from the drawing" : "Required movements"}
-          . Row is from, column is to.
-        </caption>
-        <thead>
-          <tr>
-            <th className="text-left text-xs font-normal text-muted-foreground">
-              from ↓ to →
-            </th>
-            {matrix.ports.map((p) => (
-              <th scope="col" key={p} title={armNames?.[p]}>
-                {p}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {matrix.ports.map((from) => (
-            <tr key={from}>
-              <th scope="row" className="text-left" title={armNames?.[from]}>
-                {from}
-              </th>
-              {matrix.ports.map((to) => {
-                if (from === to)
-                  return (
-                    <td key={to} className="text-center text-muted-foreground">
-                      —
-                    </td>
-                  )
-                const wanted = hasMove(matrix, from, to)
-                const allowed = decoded
-                  ? decoded.some((m) => m.from === from && m.to === to)
-                  : wanted
-                const mismatch = wanted !== allowed
-                const on = active?.from === from && active.to === to
-                return (
-                  <td key={to}>
-                    <button
-                      type="button"
-                      onClick={() => onSelect({ from, to })}
-                      aria-label={`${edit ? "Toggle" : "Inspect"} ${from} to ${to}: ${allowed ? "allowed" : "not allowed"}${mismatch ? (wanted ? ", missing from drawing" : ", extra in drawing") : ""}`}
-                      aria-pressed={on}
-                      className={cn(
-                        "flex min-h-10 w-full min-w-8 cursor-pointer items-center justify-center rounded-sm focus-visible:outline-2 focus-visible:outline-ring",
-                        allowed
-                          ? "bg-primary/15 text-foreground"
-                          : "bg-muted/60 text-muted-foreground",
-                        mismatch &&
-                          "bg-destructive/15 text-destructive ring-1 ring-destructive",
-                        on && "outline-2 -outline-offset-2 outline-foreground"
-                      )}
-                    >
-                      {mismatch ? (wanted ? "−" : "+") : allowed ? "●" : "·"}
-                    </button>
-                  </td>
-                )
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
+const matrixSignature = (matrix: DirectedMatrix): string =>
+  `${matrix.ports.join(",")}|${directedSignature(matrix)}`
 
 function MatrixWorkbench({
   preset,
   presets,
+  matrix,
+  onMatrix,
   onPreset,
   policy,
   onPolicy,
+  custom,
+  overlay,
+  onOverlay,
 }: {
   preset: WorkbenchPreset
   presets: WorkbenchPreset[]
+  matrix: DirectedMatrix
+  onMatrix: (matrix: DirectedMatrix) => void
   onPreset: (preset: WorkbenchPreset) => void
   policy: LayoutPolicy
   onPolicy: (policy: LayoutPolicy) => void
+  custom: boolean
+  /** Shared with `VertexScenarioCatalogue` below — one "Margins" toggle for the whole page, matching `/drafts/diagram-atoms`. */
+  overlay: boolean
+  onOverlay: (next: boolean) => void
 }) {
-  const [matrix, setMatrix] = useState(preset.matrix)
-  const [view, setView] = useState<DrawingView>(
-    () => drawingViews(preset.matrix)[0]!
-  )
-  const [edit, setEdit] = useState(false)
   const [linked, setLinked] = useState(true)
-  const [active, setActive] = useState<DirectedMove | null>(null)
-  const [splitMarkers, setSplitMarkers] = useState(false)
-  const [held, setHeld] = useState<Construction | null>(null)
+  const { preview, setPreview } = useMovementPreview()
   const [variantIndex, setVariantIndex] = useState(0)
-  const views = useMemo(() => drawingViews(matrix), [matrix])
-  useEffect(() => {
-    if (!views.includes(view)) setView(views[0]!)
-  }, [views, view])
   const kind = classifyPattern(matrix)
-  const variants =
-    kind === "triangle" ? [] : drawingVariants(kind)
-  const variant = variants[variantIndex] ?? drawingVariants(kind)[0]!
-  const method = view === "pairs" ? "pairs" : "share"
-  const proposed = useMemo(
-    () => constructPassages(matrix, method),
-    [matrix, method]
-  )
-  const construction = held ?? proposed
-  const check = checkConstruction(matrix, construction)
-  const handleCell = (move: DirectedMove) => {
-    setActive(move)
-    if (!edit) return
-    setHeld(null)
-    setMatrix(togglePermission(matrix, move.from, move.to, linked))
-  }
-  const handleReset = () => {
-    setMatrix(preset.matrix)
-    setHeld(null)
-    setActive(null)
-    setVariantIndex(0)
-  }
-  const handleDirection = (primary: PrimaryDirection) => {
-    onPolicy({ ...policy, primary })
+  const variants = drawingVariants(kind)
+  const variant = variants[Math.min(variantIndex, variants.length - 1)]!
+  const joined = kind === "other"
+  const handleToggle = (move: DirectedMove) => {
+    onMatrix(togglePermission(matrix, move.from, move.to, linked))
   }
 
   return (
     <section
       id="workbench"
-      className="scroll-mt-24 space-y-4"
+      className="scroll-mt-24"
       aria-labelledby="workbench-heading"
     >
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 id="workbench-heading" className="text-2xl font-medium">
-          One station
-        </h2>
-        <a
-          href="#building-blocks"
-          className="text-sm underline underline-offset-4"
-        >
-          Building blocks
-        </a>
-      </div>
-      <div className="rounded-xl border border-border">
-        <div className="space-y-3 border-b border-border bg-muted/25 p-4 sm:p-5">
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="flex min-w-40 flex-1 flex-col gap-1.5 text-xs text-muted-foreground">
-              Case
-              <select
-                className={cn(control, "w-full text-foreground")}
-                value={preset.id}
-                onChange={(event) =>
-                  onPreset(presets.find((p) => p.id === event.target.value)!)
-                }
-              >
-                {presets.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+      <div className="overflow-hidden rounded-xl border border-border">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4 sm:px-5">
+          <h2 id="workbench-heading" className="text-2xl font-medium">
+            One station
+          </h2>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            <Link href="/drafts/diagram-atoms" className="underline underline-offset-4">
+              Diagram atoms
+            </Link>
+            <a href="#building-blocks" className="underline underline-offset-4">
+              Building blocks
+            </a>
+          </div>
+        </header>
+
+        <div className="space-y-2 border-b border-border p-4 sm:px-5">
+          <p className="text-xs text-muted-foreground">Cases</p>
+          <div
+            className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0"
+            role="group"
+            aria-label="Cases"
+          >
+            {presets.map((item) => {
+              const selected = !custom && preset.id === item.id
+              return (
+                <button
+                  type="button"
+                  key={item.id}
+                  aria-pressed={selected}
+                  className={cn(
+                    "min-h-8 shrink-0 rounded-full border border-border bg-background px-3 py-1 text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                    selected &&
+                      "border-foreground bg-foreground text-background"
+                  )}
+                  onClick={() => {
+                    setPreview(null)
+                    setVariantIndex(0)
+                    onPreset(item)
+                  }}
+                >
+                  {item.title}
+                </button>
+              )
+            })}
+            {custom ? (
+              <span className="inline-flex min-h-8 shrink-0 items-center rounded-full border border-foreground bg-foreground px-3 py-1 text-xs text-background">
+                Custom
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="space-y-3 border-b border-border bg-muted/25 p-4 sm:px-5">
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Arms
               <select
-                className={cn(control, "text-foreground")}
+                className={selectControl}
                 value={matrix.ports.length}
                 onChange={(event) => {
                   const ports = PORT_LABELS.slice(0, Number(event.target.value))
-                  setMatrix({
+                  onMatrix({
                     ports,
                     moves: matrix.moves.filter(
-                      (m) => ports.includes(m.from) && ports.includes(m.to)
+                      (move) =>
+                        ports.includes(move.from) && ports.includes(move.to)
                     ),
                   })
-                  setActive(null)
-                  setHeld(null)
+                  setPreview(null)
+                  setVariantIndex(0)
                 }}
               >
                 {[2, 3, 4, 5, 6].map((n) => (
@@ -264,7 +200,7 @@ function MatrixWorkbench({
                 ))}
               </select>
             </label>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1">
               <p className="text-xs text-muted-foreground">Direction</p>
               <div
                 className="flex gap-1"
@@ -278,211 +214,93 @@ function MatrixWorkbench({
                     aria-label={item.label}
                     aria-pressed={policy.primary === item.id}
                     className={cn(
-                      control,
-                      "min-w-10 px-2 text-base",
+                      "h-9 min-w-9 rounded-md border border-border bg-background px-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                       policy.primary === item.id &&
                         "border-foreground bg-foreground text-background"
                     )}
-                    onClick={() => handleDirection(item.id)}
+                    onClick={() => onPolicy({ ...policy, primary: item.id })}
                   >
                     {item.mark}
                   </button>
                 ))}
               </div>
             </div>
-            <label className="flex min-h-10 items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={linked}
-                onChange={(event) => setLinked(event.target.checked)}
-              />
-              Both ways
-            </label>
-            <button
-              type="button"
-              aria-pressed={edit}
-              className={cn(
-                control,
-                edit && "border-foreground bg-foreground text-background"
-              )}
-              onClick={() => setEdit(!edit)}
-            >
-              Edit
-            </button>
-            <button type="button" className={control} onClick={handleReset}>
-              Reset
-            </button>
+            <div className="flex flex-col gap-1">
+              <p className="text-xs text-muted-foreground">Ends</p>
+              <div
+                className="flex gap-1"
+                role="group"
+                aria-label="End marks"
+              >
+                {ENDS.map((item) => (
+                  <button
+                    type="button"
+                    key={item.id}
+                    aria-pressed={policy.end === item.id}
+                    className={cn(
+                      "h-9 rounded-md border border-border bg-background px-3 text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                      policy.end === item.id &&
+                        "border-foreground bg-foreground text-background"
+                    )}
+                    onClick={() => onPolicy({ ...policy, end: item.id })}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Toggle label="Margins" value={overlay} onChange={onOverlay} />
           </div>
-          {preset.armNames ? (
-            <p className="text-xs text-muted-foreground">
-              {matrix.ports
-                .map((port) => `${port} ${preset.armNames?.[port] ?? ""}`.trim())
-                .join(" · ")}
-            </p>
-          ) : null}
         </div>
 
         <div className="grid min-w-0 lg:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.4fr)]">
           <div className="min-w-0 space-y-3 border-b border-border p-4 sm:p-5 lg:border-r lg:border-b-0">
-            <PermissionGrid
+            <MovementMatrix
               matrix={matrix}
-              active={active}
-              decoded={
-                view === "pairs" || view === "shared"
-                  ? check.decoded
-                  : undefined
-              }
-              edit={edit}
-              onSelect={handleCell}
-              armNames={preset.armNames}
+              preview={preview}
+              onPreview={setPreview}
+              onToggle={handleToggle}
+              linked={linked}
+              onLinkedChange={setLinked}
+              density="comfortable"
             />
-            {active ? (
+            {preview ? (
               <p className="text-sm text-muted-foreground" aria-live="polite">
-                {active.from} → {active.to}
-                {hasMove(matrix, active.from, active.to) ? "" : " · not permitted"}
+                {preview.from} → {preview.to}
+                {hasMove(matrix, preview.from, preview.to)
+                  ? ""
+                  : " · not permitted"}
               </p>
             ) : null}
           </div>
 
           <div className="min-w-0 space-y-4 p-4 sm:p-5">
-            {(views.length > 1 ||
-              (view === "schematic" && variants.length > 1) ||
-              view === "pairs" ||
-              view === "shared") && (
-              <div className="flex flex-wrap items-center gap-2">
-                {views.length > 1 ? (
-                  <div
-                    className="flex flex-wrap gap-1"
-                    role="group"
-                    aria-label="Drawing"
-                  >
-                    {views.map((item) => (
-                      <button
-                        type="button"
-                        key={item}
-                        aria-pressed={view === item}
-                        className={cn(
-                          control,
-                          view === item &&
-                            "border-foreground bg-foreground text-background"
-                        )}
-                        onClick={() => {
-                          setView(item)
-                          setHeld(null)
-                        }}
-                      >
-                        {viewLabel(item)}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                {view === "schematic" && variants.length > 1
-                  ? variants.map((item, index) => (
-                      <button
-                        type="button"
-                        key={item.id}
-                        aria-pressed={index === variantIndex}
-                        className={cn(
-                          control,
-                          index === variantIndex &&
-                            "border-foreground bg-foreground text-background"
-                        )}
-                        onClick={() => setVariantIndex(index)}
-                      >
-                        {item.label}
-                      </button>
-                    ))
-                  : null}
-                {(view === "pairs" || view === "shared") && (
-                  <label className="ml-auto flex items-center gap-2 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={splitMarkers}
-                      onChange={(event) => setSplitMarkers(event.target.checked)}
-                    />
-                    S after forks
-                  </label>
-                )}
-              </div>
-            )}
-
-            {view === "joined" ? (
+            {joined ? (
               <CompositionExperiment
                 compact
                 matrix={matrix}
-                active={active}
-                photoCase={preset.id === "earls-court"}
+                active={preview}
                 mirror={policy.primary === "left"}
-                onAdoptPhotoPermissions={() => {
-                  setMatrix({
-                    ...matrix,
-                    moves: [
-                      ...matrix.moves.filter(
-                        (m) =>
-                          !(
-                            (m.from === "B" && m.to === "E") ||
-                            (m.from === "E" && m.to === "B")
-                          )
-                      ),
-                      { from: "B", to: "E" },
-                      { from: "E", to: "B" },
-                    ],
-                  })
-                  setHeld(null)
-                }}
+                end={policy.end}
+                overlay={overlay}
               />
-            ) : view === "schematic" ? (
-              <div className="rounded-lg border border-border bg-background p-3">
-                <SimplifiedTopologySvg
-                  kind={kind}
-                  variant={variant.id}
-                  active={active}
-                  policy={policy}
-                />
-              </div>
             ) : (
-              <div
-                className="max-h-[560px] overflow-auto rounded-lg border border-border bg-background"
-                tabIndex={0}
-                role="region"
-                aria-label="Construction drawing"
-              >
-                <ConstructionDrawing
-                  construction={construction}
-                  active={active}
-                  splitMarkers={splitMarkers}
+              <div className="space-y-3">
+                <DrawingVariantSelect
+                  kind={kind}
+                  index={variantIndex}
+                  onChange={setVariantIndex}
                 />
-              </div>
-            )}
-
-            {view !== "joined" && view !== "schematic" && (
-              <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-                <p>
-                  {construction.blocks.length} block
-                  {construction.blocks.length === 1 ? "" : "s"}
-                  {check.exact ? "" : " · does not match"}
-                </p>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={held != null}
-                    onChange={(event) => {
-                      setHeld(event.target.checked ? construction : null)
-                      if (event.target.checked) setEdit(true)
-                    }}
+                <div className="overflow-x-auto rounded-lg border border-border bg-background p-3">
+                  <SimplifiedTopologySvg
+                    kind={kind}
+                    variant={variant.id}
+                    active={preview}
+                    policy={policy}
+                    overlay={overlay}
                   />
-                  Hold
-                </label>
+                </div>
               </div>
-            )}
-            {held && !check.exact && (
-              <button
-                type="button"
-                className={control}
-                onClick={() => setHeld(null)}
-              >
-                Rebuild
-              </button>
             )}
           </div>
         </div>
@@ -493,34 +311,43 @@ function MatrixWorkbench({
 
 export function VertexScenarioWorkspace({
   scenarios,
-  observed,
+  cases,
   initialCase,
 }: {
   scenarios: VertexScenario[]
-  observed: WorkbenchPreset | null
+  cases: WorkbenchPreset[]
   initialCase?: string
 }) {
-  const presets = [...WORKBENCH_PRESETS, ...(observed ? [observed] : [])]
-  const [selection, setSelection] = useState({
-    preset:
-      presets.find((preset) => preset.id === initialCase) ??
-      WORKBENCH_PRESETS[0]!,
-    revision: 0,
-  })
+  const availablePresets = cases
+  const [preset, setPreset] = useState(
+    () =>
+      availablePresets.find((item) => item.id === initialCase) ??
+      availablePresets[0]!
+  )
+  const [matrix, setMatrix] = useState(() => preset.matrix)
   const [policy, setPolicy] = useState<LayoutPolicy>(DEFAULT_LAYOUT_POLICY)
-  if (!presets.some((p) => p.id === selection.preset.id))
-    presets.push(selection.preset)
-  const handlePreset = (preset: WorkbenchPreset) =>
-    setSelection((previous) => ({ preset, revision: previous.revision + 1 }))
+  const [overlay, setOverlay] = useState(false)
+  const custom = matrixSignature(matrix) !== matrixSignature(preset.matrix)
+  const presets = availablePresets.some((item) => item.id === preset.id)
+    ? availablePresets
+    : [...availablePresets, preset]
+  const applyPreset = (next: WorkbenchPreset) => {
+    setPreset(next)
+    setMatrix(next.matrix)
+  }
   return (
     <div className="space-y-14">
       <MatrixWorkbench
-        key={selection.revision}
-        preset={selection.preset}
+        preset={preset}
         presets={presets}
-        onPreset={handlePreset}
+        matrix={matrix}
+        onMatrix={setMatrix}
+        onPreset={applyPreset}
         policy={policy}
         onPolicy={setPolicy}
+        custom={custom}
+        overlay={overlay}
+        onOverlay={setOverlay}
       />
       <section
         id="building-blocks"
@@ -533,8 +360,9 @@ export function VertexScenarioWorkspace({
         <VertexScenarioCatalogue
           scenarios={scenarios}
           policy={policy}
+          overlay={overlay}
           onExplore={(scenario) => {
-            handlePreset({
+            applyPreset({
               id: scenario.id,
               title: `${scenario.degree} arms · ${scenario.title}`,
               note: scenario.note,

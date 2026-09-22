@@ -49,13 +49,13 @@ export const WORKBENCH_PRESETS: WorkbenchPreset[] = [
   {
     id: "shared-five",
     title: "5 arms · Two groups share a segment",
-    note: "Every arm in A, B reaches every arm in C, D, E, in both directions. A shared segment with forks at both ends can express all six pairs.",
+    note: "Every arm in A, B reaches every arm in C, D, E, in both directions. A shared segment with forks at both ends can express all six pairs. The complete two-group arrangement a photograph of a five-arm station would suggest.",
     matrix: shared,
   },
   {
     id: "missing-one",
     title: "5 arms · One permission removed",
-    note: "B ↔ E is removed from the previous case. Keeping the whole shared segment would silently put that movement back.",
+    note: "B ↔ E is removed from the previous case — the recorded-services snapshot. Keeping the whole shared segment would silently put that movement back.",
     matrix: {
       ...shared,
       moves: shared.moves.filter(
@@ -64,28 +64,6 @@ export const WORKBENCH_PRESETS: WorkbenchPreset[] = [
             (move.from === "B" && move.to === "E") ||
             (move.from === "E" && move.to === "B")
           )
-      ),
-    },
-  },
-  {
-    id: "directed",
-    title: "5 arms · A one-way exception",
-    note: "B → E is allowed, but E → B is not. A two-way stroke alone cannot preserve that difference; the construction needs a direction mark.",
-    matrix: {
-      ...shared,
-      moves: shared.moves.filter(
-        (move) => !(move.from === "E" && move.to === "B")
-      ),
-    },
-  },
-  {
-    id: "six",
-    title: "6 arms · Every pair",
-    note: "All 15 pairs are allowed. Compact blocks repeat some arm labels. Those copies expose a boundary-composition problem still to solve.",
-    matrix: {
-      ports: [...PORT_LABELS],
-      moves: PORT_LABELS.flatMap((from) =>
-        PORT_LABELS.filter((to) => to !== from).map((to) => ({ from, to }))
       ),
     },
   },

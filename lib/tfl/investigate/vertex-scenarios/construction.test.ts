@@ -79,10 +79,26 @@ describe("local passage construction", () => {
   })
 
   it("does not invent a reverse permission when the two directions differ", () => {
-    const matrix = WORKBENCH_PRESETS.find((p) => p.id === "directed")!.matrix
+    const shared = WORKBENCH_PRESETS.find((p) => p.id === "shared-five")!.matrix
+    const matrix = {
+      ...shared,
+      moves: shared.moves.filter((move) => !(move.from === "E" && move.to === "B")),
+    }
     const drawing = constructPassages(matrix, "share")
     assert.ok(drawing.blocks.some((block) => block.direction === "forward"))
     assertExact(matrix)
+  })
+
+  it("can edit one direction or both directions", () => {
+    const empty: DirectedMatrix = { ports: ["A", "B"], moves: [] }
+    const oneWay = togglePermission(empty, "A", "B", false)
+    assert.deepEqual(oneWay.moves, [{ from: "A", to: "B" }])
+
+    const bothWays = togglePermission(empty, "A", "B", true)
+    assert.deepEqual(bothWays.moves, [
+      { from: "A", to: "B" },
+      { from: "B", to: "A" },
+    ])
   })
 
   it("checks arm preservation even when there are no movements", () => {

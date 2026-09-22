@@ -97,12 +97,15 @@ type SizeState = {
   width: number
   fontSize: number
   fontFamily: string
+  /** Computed `font-weight` (e.g. a `font-medium` className), read the same way as `fontSize` — a canvas measure at the wrong weight under- or over-estimates advance width and disagrees with the box a caller already sized for the real weight. */
+  fontWeight: string
   measured: boolean
 }
 
 const WIDTH_EPSILON = 0.5
 const FONT_EPSILON = 0.05
 const FALLBACK_FONT = "Hammersmith One, system-ui, sans-serif"
+const FALLBACK_WEIGHT = "400"
 /** Unitless so wrapped lines stay clustered when `scale` shrinks font-size. */
 const MULTILINE_LINE_HEIGHT = 1.15
 /** Board titles are `text-3xl` in a 48px tile — shrink further than diagram labels. */
@@ -245,6 +248,7 @@ export const StationName = ({
     width: maxWidthProp ?? 0,
     fontSize: fontSizeProp ?? 16,
     fontFamily: FALLBACK_FONT,
+    fontWeight: FALLBACK_WEIGHT,
     measured: false,
   }))
 
@@ -265,16 +269,19 @@ export const StationName = ({
         el.clientWidth > 4 ? el.clientWidth : container.clientWidth
       const width = maxWidthProp ?? measuredWidth
 
+      const computed = getComputedStyle(el)
       const measuredFont =
-        fontSizeProp ?? (Number.parseFloat(getComputedStyle(el).fontSize) || 16)
+        fontSizeProp ?? (Number.parseFloat(computed.fontSize) || 16)
       const fontFamily = resolveSansFontFamily(el)
+      const fontWeight = computed.fontWeight || FALLBACK_WEIGHT
 
       setSize((prev) => {
         if (
           prev.measured &&
           Math.abs(prev.width - width) < WIDTH_EPSILON &&
           Math.abs(prev.fontSize - measuredFont) < FONT_EPSILON &&
-          prev.fontFamily === fontFamily
+          prev.fontFamily === fontFamily &&
+          prev.fontWeight === fontWeight
         ) {
           return prev
         }
@@ -282,6 +289,7 @@ export const StationName = ({
           width,
           fontSize: measuredFont,
           fontFamily,
+          fontWeight,
           measured: true,
         }
       })
@@ -310,8 +318,8 @@ export const StationName = ({
 
   const measure = useMemo(() => {
     if (!useAuto || !size.measured) return approximateStationMeasure
-    return createCanvasStationMeasure(size.fontFamily)
-  }, [size.fontFamily, size.measured, useAuto])
+    return createCanvasStationMeasure(size.fontFamily, size.fontWeight)
+  }, [size.fontFamily, size.fontWeight, size.measured, useAuto])
 
   const formatOptions = useMemo(
     () => ({

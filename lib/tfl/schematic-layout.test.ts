@@ -11,8 +11,10 @@ import {
   layoutLineSchematic,
   maxOctilinearRadius,
   maxSpurRadius,
+  octilinearLaneWaypoints,
   octilinearLanePath,
   orthogonalRoundedPath,
+  orthogonalRoundedWaypoints,
   type SchematicLayout,
 } from "./schematic-layout.ts"
 import type { LineSchematic } from "./line-schematic.ts"
@@ -93,6 +95,19 @@ describe("octilinearLanePath", () => {
     const path = octilinearLanePath(0, 40, 80, 40, 20, "y")
     assert.equal(path, "M 0 40 L 80 40")
   })
+
+  it("keeps leftover split by default", () => {
+    const implicit = octilinearLanePath(0, 0, 120, 56, 20, "x")
+    const split = octilinearLanePath(0, 0, 120, 56, 20, "x", "split")
+    assert.equal(implicit, split)
+    assert.match(implicit, /^M 0 0 L /)
+  })
+
+  it("can put leftover at the far end", () => {
+    const end = octilinearLanePath(0, 0, 120, 56, 20, "x", "end")
+    assert.match(end, /^M 0 0 A /)
+    assert.doesNotMatch(end, /^M 0 0 L /)
+  })
 })
 
 describe("orthogonalRoundedPath", () => {
@@ -100,6 +115,112 @@ describe("orthogonalRoundedPath", () => {
     const path = orthogonalRoundedPath(0, 0, 80, 60, 20, "x")
     assert.match(path, / A /)
     assert.doesNotMatch(path, / C /)
+  })
+})
+
+/**
+ * `octilinearLanePath`/`orthogonalRoundedPath` draw their stroke as an SVG
+ * string; `octilinearLaneWaypoints`/`orthogonalRoundedWaypoints` mirror the
+ * same branches as data (straight sub-runs a caller can extend into a
+ * `strokeClearanceBand` spine). Extract the *actual* straight (`L`) runs a
+ * path string visits — skipping arc control args, keeping only each arc's
+ * own endpoint — and diff against the waypoint function for the same
+ * inputs, so the two can never silently drift apart.
+ */
+const straightRunsOfPath = (
+  path: string
+): { a: { x: number; y: number }; b: { x: number; y: number } }[] => {
+  const commands = path.match(/[MLA][^MLA]*/g) ?? []
+  const runs: { a: { x: number; y: number }; b: { x: number; y: number } }[] =
+    []
+  const numsOf = (token: string) =>
+    token
+      .slice(1)
+      .trim()
+      .split(/[\s,]+/)
+      .filter(Boolean)
+      .map(Number)
+  const pointOf = (token: string) => {
+    const nums = numsOf(token)
+    return token[0] === "A"
+      ? { x: nums[5]!, y: nums[6]! }
+      : { x: nums[0]!, y: nums[1]! }
+  }
+  let cursor = pointOf(commands[0]!)
+  for (let i = 1; i < commands.length; i++) {
+    const point = pointOf(commands[i]!)
+    if (commands[i]![0] === "L") runs.push({ a: cursor, b: point })
+    cursor = point
+  }
+  return runs
+}
+
+const closeRuns = (
+  actual: { a: { x: number; y: number }; b: { x: number; y: number } }[],
+  expected: { a: { x: number; y: number }; b: { x: number; y: number } }[]
+) => {
+  assert.equal(actual.length, expected.length)
+  for (let i = 0; i < actual.length; i++) {
+    assert.ok(Math.abs(actual[i]!.a.x - expected[i]!.a.x) < 1e-6)
+    assert.ok(Math.abs(actual[i]!.a.y - expected[i]!.a.y) < 1e-6)
+    assert.ok(Math.abs(actual[i]!.b.x - expected[i]!.b.x) < 1e-6)
+    assert.ok(Math.abs(actual[i]!.b.y - expected[i]!.b.y) < 1e-6)
+  }
+}
+
+describe("octilinearLaneWaypoints", () => {
+  it("matches octilinearLanePath's own straight runs (45° S, split)", () => {
+    const path = octilinearLanePath(0, 0, 120, 56, 20, "x")
+    const waypoints = octilinearLaneWaypoints(0, 0, 120, 56, 20, "x")
+    assert.equal(waypoints.length, 3)
+    closeRuns(waypoints, straightRunsOfPath(path))
+  })
+
+  it("matches octilinearLanePath with leftover pinned to the end", () => {
+    const path = octilinearLanePath(0, 0, 120, 56, 20, "x", "end")
+    const waypoints = octilinearLaneWaypoints(0, 0, 120, 56, 20, "x", "end")
+    // No leading straight run — the S starts right on the diagonal.
+    assert.equal(waypoints.length, 2)
+    closeRuns(waypoints, straightRunsOfPath(path))
+  })
+
+  it("matches octilinearLanePath's 90° fallback when cross > main", () => {
+    const path = octilinearLanePath(0, 0, 40, 80, 20, "x")
+    const waypoints = octilinearLaneWaypoints(0, 0, 40, 80, 20, "x")
+    assert.equal(waypoints.length, 2)
+    closeRuns(waypoints, straightRunsOfPath(path))
+  })
+
+  it("matches octilinearLanePath for a mainAxis 'y' corridor", () => {
+    const path = octilinearLanePath(0, 0, 56, 120, 20, "y")
+    const waypoints = octilinearLaneWaypoints(0, 0, 56, 120, 20, "y")
+    assert.equal(waypoints.length, 3)
+    closeRuns(waypoints, straightRunsOfPath(path))
+  })
+
+  it("collapses to a single straight run when main-axis span is zero", () => {
+    const waypoints = octilinearLaneWaypoints(0, 40, 80, 40, 20, "y")
+    assert.deepEqual(waypoints, [{ a: { x: 0, y: 40 }, b: { x: 80, y: 40 } }])
+  })
+
+  it("returns nothing for a degenerate (zero-length) run", () => {
+    assert.deepEqual(octilinearLaneWaypoints(10, 10, 10, 10, 20, "x"), [])
+  })
+})
+
+describe("orthogonalRoundedWaypoints", () => {
+  it("matches orthogonalRoundedPath's own straight runs", () => {
+    const path = orthogonalRoundedPath(0, 0, 80, 60, 20, "x")
+    const waypoints = orthogonalRoundedWaypoints(0, 0, 80, 60, 20, "x")
+    assert.equal(waypoints.length, 2)
+    closeRuns(waypoints, straightRunsOfPath(path))
+  })
+
+  it("matches the sharp-corner fallback when the radius can't fit", () => {
+    const path = orthogonalRoundedPath(0, 0, 0.5, 60, 20, "x")
+    const waypoints = orthogonalRoundedWaypoints(0, 0, 0.5, 60, 20, "x")
+    assert.equal(waypoints.length, 2)
+    closeRuns(waypoints, straightRunsOfPath(path))
   })
 })
 

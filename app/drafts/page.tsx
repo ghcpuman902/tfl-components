@@ -41,6 +41,10 @@ export default function DraftsIndexPage() {
           href: "/drafts/vertex-scenarios",
           label: "Vertex scenarios — through-pattern building blocks",
         },
+        {
+          href: "/drafts/diagram-atoms",
+          label: "Diagram atoms — marks, labels, and segments",
+        },
         { href: "/tools", label: "Tools — promoted playgrounds" },
         { href: "/docs/components", label: "Components — promoted boards" },
         { href: "/labs", label: "Labs — experimental compositions" },

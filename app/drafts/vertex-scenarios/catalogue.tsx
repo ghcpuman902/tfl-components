@@ -12,13 +12,12 @@ import {
   type LayoutPolicy,
 } from "@/lib/tfl/investigate/vertex-scenarios"
 import type { VertexScenario } from "@/lib/tfl/investigate/vertex-scenarios/types"
-import { cn } from "@/lib/utils"
 import {
-  DirectedMatrixTable,
+  DrawingVariantSelect,
   RawVertexSvg,
   SimplifiedTopologySvg,
-  type ActiveMove,
 } from "./diagrams"
+import { MovementMatrix, useMovementPreview } from "./movement-matrix"
 
 const parseHash = (hash: string): string | null => {
   const id = hash.replace(/^#/, "")
@@ -30,15 +29,8 @@ const subscribeHash = (onChange: () => void) => {
   return () => window.removeEventListener("hashchange", onChange)
 }
 
-const writeHash = (id: string) => {
-  const next = `#${id}`
-  if (window.location.hash === next) return
-  history.replaceState(null, "", next)
-  window.dispatchEvent(new HashChangeEvent("hashchange"))
-}
-
 const Stage = ({ label, children }: { label: string; children: ReactNode }) => (
-  <div className="min-w-0 space-y-2 border border-border p-3">
+  <div className="min-w-0 space-y-2 overflow-x-auto border border-border p-3">
     <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
       {label}
     </p>
@@ -46,58 +38,20 @@ const Stage = ({ label, children }: { label: string; children: ReactNode }) => (
   </div>
 )
 
-const DrawingPager = ({
-  kind,
-  index,
-  onChange,
-}: {
-  kind: VertexScenario["kind"]
-  index: number
-  onChange: (index: number) => void
-}) => {
-  const variants = drawingVariants(kind)
-  if (kind === "triangle" || variants.length <= 1) return null
-  return (
-    <div
-      className="flex flex-wrap justify-center gap-2"
-      role="group"
-      aria-label="Drawing variations"
-    >
-      {variants.map((variant, variantIndex) => (
-        <button
-          key={variant.id}
-          type="button"
-          aria-pressed={variantIndex === index}
-          onClick={() => onChange(variantIndex)}
-          className={cn(
-            "min-h-10 rounded-md border border-border px-3 py-2 text-xs focus-visible:outline-2 focus-visible:outline-ring",
-            variantIndex === index
-              ? "bg-foreground text-background"
-              : "text-muted-foreground"
-          )}
-        >
-          {variant.label}
-        </button>
-      ))}
-    </div>
-  )
-}
-
 const PatternRow = ({
   scenario,
-  active,
-  onActivate,
   onExplore,
   policy,
+  overlay,
 }: {
   scenario: VertexScenario
-  active: ActiveMove
-  onActivate: (move: ActiveMove) => void
   onExplore?: (scenario: VertexScenario) => void
   policy?: LayoutPolicy
+  overlay?: boolean
 }) => {
   const variants = drawingVariants(scenario.kind)
   const [variantIndex, setVariantIndex] = useState(0)
+  const { preview, setPreview } = useMovementPreview()
   const variant = variants[variantIndex] ?? variants[0]!
   return (
     <article
@@ -131,25 +85,29 @@ const PatternRow = ({
           </button>
         )}
       </header>
-      <div className="grid gap-3 md:grid-cols-3">
-        <Stage label="Star">
-          <RawVertexSvg matrix={scenario.matrix} active={active} />
-        </Stage>
-        <Stage label="Matrix">
-          <DirectedMatrixTable
-            matrix={scenario.matrix}
-            active={active}
-            onActivate={onActivate}
-          />
-        </Stage>
+      <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <div className="min-w-0 space-y-3">
+          <Stage label="Star">
+            <RawVertexSvg matrix={scenario.matrix} active={preview} />
+          </Stage>
+          <Stage label="Matrix">
+            <MovementMatrix
+              matrix={scenario.matrix}
+              preview={preview}
+              onPreview={setPreview}
+              density="compact"
+            />
+          </Stage>
+        </div>
         <Stage label="Drawing">
           <SimplifiedTopologySvg
             kind={scenario.kind}
             variant={variant.id}
-            active={active}
+            active={preview}
             policy={policy}
+            overlay={overlay}
           />
-          <DrawingPager
+          <DrawingVariantSelect
             kind={scenario.kind}
             index={variantIndex}
             onChange={setVariantIndex}
@@ -175,7 +133,7 @@ const FilterSelect = ({
     {label}
     <select
       name={label.toLowerCase().replace(/\s+/g, "-")}
-      className="border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+      className="h-9 border border-border bg-background px-2 text-xs text-foreground"
       value={value}
       onChange={(event) => onChange(event.target.value)}
     >
@@ -192,13 +150,15 @@ export const VertexScenarioCatalogue = ({
   scenarios,
   onExplore,
   policy,
+  overlay,
 }: {
   scenarios: VertexScenario[]
   onExplore?: (scenario: VertexScenario) => void
   policy?: LayoutPolicy
+  /** Same "Margins" toggle as `/drafts/diagram-atoms` and the workbench above. */
+  overlay?: boolean
 }) => {
   const [degree, setDegree] = useState("all")
-  const [activeById, setActiveById] = useState<Record<string, ActiveMove>>({})
   const hash = useSyncExternalStore(
     subscribeHash,
     () => window.location.hash,
@@ -245,10 +205,7 @@ export const VertexScenarioCatalogue = ({
         <FilterSelect
           label="Degree"
           value={degree}
-          onChange={(value) => {
-            setDegree(value)
-            setActiveById({})
-          }}
+          onChange={setDegree}
           options={[
             { value: "all", label: "All" },
             ...degrees.map((value) => ({
@@ -282,11 +239,7 @@ export const VertexScenarioCatalogue = ({
                 scenario={scenario}
                 onExplore={onExplore}
                 policy={policy}
-                active={activeById[scenario.id] ?? null}
-                onActivate={(move) => {
-                  writeHash(scenario.id)
-                  setActiveById({ [scenario.id]: move })
-                }}
+                overlay={overlay}
               />
             ))}
           </section>

@@ -1,0 +1,37 @@
+---
+description: Line-diagram atoms are the only building blocks. Vertex scenarios import them; never invent marks, joins, or labels there.
+globs: app/drafts/diagram-atoms/**/*,app/drafts/vertex-scenarios/**/*,lib/tfl/diagram-atoms.ts,lib/tfl/diagram-atoms.test.ts,lib/tfl/investigate/vertex-scenarios/**
+alwaysApply: false
+---
+
+# Diagram atoms → vertex scenarios
+
+`/drafts/diagram-atoms` is the **proof surface** for marks, labels, segments, Y stems, and interchange bonds. `/drafts/vertex-scenarios` is a **consumer**: it composes those blocks onto a permission matrix. It does not own geometry.
+
+## Missing block
+
+If vertex needs a mark, join, label rule, or stem recipe that does not exist:
+
+1. Add it in `lib/tfl/diagram-atoms.ts` (pure geometry + a regression test).
+2. Paint it on `/drafts/diagram-atoms` (`app/drafts/diagram-atoms/atoms.tsx`) and check the Connected / Interchanges / Forks cards.
+3. **Then** import the helper or atom into vertex. Do not sketch a parallel Tick / Ring / Bond / Y in `vertex-scenarios/paint.tsx`.
+
+```ts
+// ✅ vertex imports the atom helper
+import { interchangeBondBox, diagramAtomMetrics } from "@/lib/tfl/diagram-atoms"
+
+// ❌ vertex invents a 2.5x fused dumbbell or a 16px along-track label
+const BOND_PITCH = scale(x, 2.5)
+labelAt={{ x: tip.x + dx * 16, y: tip.y + dy * 16 }}
+```
+
+## Rules the atoms already encode (do not re-derive)
+
+- Names/flags sit `lineClearance` from the **stroke centre**, same for a tick and a circle (`labelClearanceGap`, `labelAwayFromStroke`).
+- Labels anchor to the **mark** (ring column), not the SVG / stem bbox (`labelShiftFromMark`).
+- A connected tick+circle pair shares one integer `markerLane`.
+- Return Y is fully horizontal before a through-stroke starts; overlap is `STROKE_JOIN` only (`layoutStem`, `throughJoinAlong`).
+- Interchange pitch is `gappedBond` (bridge in the gap, circles on top) via `interchangeBondBox`.
+- Caps are butt; joins are integer-snapped.
+
+Walking-bond vs split-Y remain vertex *graph* choices. Their **paint** still comes from the atoms.

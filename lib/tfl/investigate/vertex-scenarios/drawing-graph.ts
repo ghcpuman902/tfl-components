@@ -34,6 +34,12 @@ export type DrawingHints = {
   /** Node ids in preferred order along the primary direction. */
   sequence: string[]
   terminusAlong: Partial<Record<PortId, TerminusAlong>>
+  /**
+   * Bonded-triangle apex. Bonds to this node are the diagonal interchange
+   * bars — they do not lock pos/lane. After the base pair is placed, the
+   * apex is moved to `triangleApexFromBase`.
+   */
+  apex?: string
 }
 
 export type DrawingForbiddenTurn = {
@@ -80,7 +86,8 @@ const scene = (
   nodes: DrawingNode[],
   edges: DrawingEdge[],
   terminusAlong: Partial<Record<PortId, TerminusAlong>>,
-  forbiddenTurns: DrawingForbiddenTurn[] = []
+  forbiddenTurns: DrawingForbiddenTurn[] = [],
+  extraHints?: Partial<DrawingHints>
 ): DrawingScene => ({
   title,
   nodes,
@@ -88,6 +95,7 @@ const scene = (
   hints: {
     sequence: nodes.map((node) => node.id),
     terminusAlong,
+    ...extraHints,
   },
   forbiddenTurns,
 })
@@ -149,11 +157,43 @@ const ySplitScene = (): DrawingScene =>
 const throughTerminusScene = (sameAs: "a" | "b"): DrawingScene =>
   scene(
     sameAs === "a"
-      ? "Through plus terminus, C same as A"
-      : "Through plus terminus, C same as B",
+      ? "Through plus terminus, C beside A"
+      : "Through plus terminus, C beside B",
     [boundary("A"), station("S1"), boundary("B"), station("S2"), boundary("C")],
     [track("A", "S1"), track("S1", "B"), track("S2", "C"), bond("S1", "S2")],
     { A: "start", B: "end", C: sameAs === "a" ? "start" : "end" }
+  )
+
+const triangleScene = (): DrawingScene =>
+  scene(
+    "Every pair",
+    [
+      boundary("A"),
+      fork("Y"),
+      station("S1"),
+      station("S2"),
+      station("S3"),
+      boundary("B"),
+      boundary("C"),
+    ],
+    [
+      track("A", "Y"),
+      track("Y", "S1"),
+      track("Y", "S2"),
+      track("S1", "B"),
+      track("S2", "C"),
+      track("S3", "B"),
+      track("S3", "C"),
+      bond("S1", "S2"),
+      bond("S1", "S3"),
+      bond("S2", "S3"),
+    ],
+    { A: "start", B: "end", C: "end" },
+    [
+      { at: "Y", from: "S1", to: "S2" },
+      { at: "Y", from: "S2", to: "S1" },
+    ],
+    { apex: "S3" }
   )
 
 const threeTerminiScene = (sameSide: boolean): DrawingScene =>
@@ -202,7 +242,7 @@ const independentCorridorsScene = (): DrawingScene =>
     { A: "start", B: "end", C: "start", D: "end" }
   )
 
-/** Topology for a building-block drawing. Null when the pattern is not a tree. */
+/** Topology for a supported building-block drawing. */
 export const buildDrawingScene = (
   kind: PatternKind,
   variant: string
@@ -214,6 +254,7 @@ export const buildDrawingScene = (
   if (kind === "through-terminus") {
     return throughTerminusScene(variant === "same-as-b" ? "b" : "a")
   }
+  if (kind === "triangle") return triangleScene()
   if (kind === "three-termini")
     return threeTerminiScene(variant === "same-side")
   if (kind === "independent-corridors") return independentCorridorsScene()

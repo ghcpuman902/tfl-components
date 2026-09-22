@@ -61,7 +61,9 @@ const HeaderLink = ({
   const linkClassName = cn(
     "touch-manipulation shrink-0 px-1.5 py-2",
     link.match === "board" &&
-      newMarkerParentClassName("after:top-0.5 after:right-0"),
+      newMarkerParentClassName(
+        "after:top-0.5 after:right-0 after:[transform:translateX(25%)]"
+      ),
     active
       ? "font-medium text-foreground underline decoration-1 underline-offset-[6px]"
       : "text-muted-foreground active:text-foreground [@media(hover:hover)]:hover:text-foreground",

@@ -1,8 +1,7 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
 import { catalogVertexScenarios } from "@/lib/tfl/investigate/vertex-scenarios"
-import { catalogAllJunctions } from "@/lib/tfl/investigate/catalog"
-import { presetFromJunction } from "@/lib/tfl/investigate/vertex-scenarios/workbench-presets"
+import { workbenchCases } from "@/lib/tfl/investigate/vertex-scenarios/case-discovery"
 import { VertexScenarioWorkspace } from "./workbench"
 
 export const metadata: Metadata = {
@@ -16,14 +15,10 @@ type DraftPageProps = { searchParams: Promise<{ case?: string | string[] }> }
 const CatalogueBody = async ({ searchParams }: DraftPageProps) => {
   const query = await searchParams
   const scenarios = catalogVertexScenarios()
-  const earlsCourt = catalogAllJunctions().find(
-    (item) =>
-      item.lineId === "district" && item.junction.station.id === "940GZZLUECT"
-  )
   return (
     <VertexScenarioWorkspace
       scenarios={scenarios}
-      observed={earlsCourt ? presetFromJunction(earlsCourt.junction) : null}
+      cases={workbenchCases()}
       initialCase={typeof query.case === "string" ? query.case : undefined}
     />
   )

@@ -3,7 +3,7 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
 minimumReleaseAgeExclude:
-  - tfl-ts@2.5.0 || 2.6.0 || 2.6.2 || 2.7.0 || 2.8.0 || 2.9.0 || 2.10.0 || 2.11.0 || 2.13.1
+  - tfl-ts@2.5.0 || 2.6.0 || 2.6.2 || 2.7.0 || 2.8.0 || 2.9.0 || 2.10.0 || 2.11.0 || 2.13.1 || 2.15.0
   - '@next/env@16.3.2'
   - '@next/mdx@16.3.2'
   - '@next/swc-darwin-arm64@16.3.2'

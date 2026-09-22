@@ -1,6 +1,11 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { labelScreenScale, stationGraphScales } from "./station-graph-scale"
+import {
+  labelScreenScale,
+  originAtBoundsCenter,
+  stationGraphScales,
+  zoomAround,
+} from "./station-graph-scale"
 
 const screenFont = (
   labelScale: number,
@@ -34,5 +39,32 @@ describe("station graph label scale", () => {
           expected
       ) < 1e-9
     )
+  })
+
+  it("keeps a pan anchored when the scale is clamped", () => {
+    const next = zoomAround({ scale: 1, x: 4, y: 6 }, 40, { x: 10, y: 20 })
+    assert.equal(next.scale, 8)
+    assert.ok(Number.isFinite(next.x) && Number.isFinite(next.y))
+  })
+
+  it("shrinks labels when zoomed out and caps them when zoomed in", () => {
+    const out = labelScreenScale(0.75)
+    const mid = labelScreenScale(1)
+    const far = labelScreenScale(8)
+    assert.ok(out < mid)
+    assert.ok(far <= 1.25 + 1e-9)
+    assert.equal(labelScreenScale(8), labelScreenScale(6))
+  })
+
+  it("places the max bound rectangle on the origin", () => {
+    const centered = originAtBoundsCenter([
+      { x: 10, y: 4 },
+      { x: 40, y: 10 },
+      { x: 10, y: 22 },
+    ])
+    const xs = centered.map((node) => node.x)
+    const ys = centered.map((node) => node.y)
+    assert.ok(Math.abs(Math.min(...xs) + Math.max(...xs)) < 1e-9)
+    assert.ok(Math.abs(Math.min(...ys) + Math.max(...ys)) < 1e-9)
   })
 })

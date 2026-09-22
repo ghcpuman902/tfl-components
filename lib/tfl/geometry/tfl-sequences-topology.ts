@@ -37,6 +37,43 @@ export type TflSequencesCompile = {
   unpairedPatternIds: string[]
 }
 
+export type SequenceServiceGroup = {
+  id: string
+  name: string
+  patternIds: readonly string[]
+  stationIds: readonly string[]
+  hops: ReadonlySet<string>
+}
+
+export const serviceGroupsFromPatterns = (
+  patterns: readonly TflSequencesPattern[]
+): SequenceServiceGroup[] => {
+  const used = new Set<string>()
+  const groups: SequenceServiceGroup[] = []
+  for (const pattern of patterns) {
+    if (used.has(pattern.id)) continue
+    used.add(pattern.id)
+    if (pattern.pairPatternId) used.add(pattern.pairPatternId)
+    const hops = new Set<string>()
+    for (let index = 0; index < pattern.stationIds.length - 1; index += 1) {
+      const from = pattern.stationIds[index]
+      const to = pattern.stationIds[index + 1]
+      if (!from || !to || from === to) continue
+      hops.add(hopKey(from, to))
+    }
+    groups.push({
+      id: pattern.id,
+      name: pattern.name,
+      patternIds: pattern.pairPatternId
+        ? [pattern.id, pattern.pairPatternId]
+        : [pattern.id],
+      stationIds: pattern.stationIds,
+      hops,
+    })
+  }
+  return groups
+}
+
 const stationNodeId = (stationId: string): string => `s:${stationId}`
 
 const hopKey = (a: string, b: string): string =>

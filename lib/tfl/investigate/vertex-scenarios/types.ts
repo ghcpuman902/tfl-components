@@ -9,6 +9,24 @@ export const PORT_LABELS = ["A", "B", "C", "D", "E", "F"] as const
 
 export type PortId = (typeof PORT_LABELS)[number]
 
+/**
+ * Demo terminus names keyed by port letter — real station strings so
+ * the name-box safe space is exercised the same way
+ * `/drafts/diagram-atoms` proves it. Typography fixtures only; not
+ * live TfL arm identities.
+ */
+export const PORT_DEMO_NAMES: Record<PortId, string> = {
+  A: "Aldgate",
+  B: "Bank",
+  C: "Cannon Street",
+  D: "Dagenham East",
+  E: "Earl's Court",
+  F: "Farringdon",
+}
+
+/** Interchange-group label `stationNameAnchors` always paints. */
+export const STATION_GROUP_NAME = "Station"
+
 export type DirectedMove = {
   from: PortId
   to: PortId

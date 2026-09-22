@@ -283,6 +283,136 @@ export const octilinearLanePath = (
   return parts.join(" ")
 }
 
+/** A screen-space point (mirrors `diagram-atoms.ts`'s `Pt` without importing it). */
+export type LaneWaypoint = { x: number; y: number }
+
+/**
+ * Straight sub-runs of `orthogonalRoundedPath`'s own corner, as data instead
+ * of an SVG string — the two legs either side of its single 90° fillet, for
+ * callers that need to paint or measure the real corridor a stroke follows
+ * (a `strokeClearanceBand` spine) rather than re-derive it from raw
+ * endpoints. Degenerates to the same straight/L-shape cases the path
+ * function does.
+ */
+export const orthogonalRoundedWaypoints = (
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  radius: number,
+  mainAxis: "x" | "y" = "x"
+): { a: LaneWaypoint; b: LaneWaypoint }[] => {
+  const dx = x1 - x0
+  const dy = y1 - y0
+  if (Math.abs(dx) < 0.5 || Math.abs(dy) < 0.5) {
+    return [{ a: { x: x0, y: y0 }, b: { x: x1, y: y1 } }]
+  }
+  const absDx = Math.abs(dx)
+  const absDy = Math.abs(dy)
+  const r = Math.min(radius, absDx * 0.5, absDy * 0.5)
+  if (r < 0.5) {
+    const corner =
+      mainAxis === "x" ? { x: x1, y: y0 } : { x: x0, y: y1 }
+    return [
+      { a: { x: x0, y: y0 }, b: corner },
+      { a: corner, b: { x: x1, y: y1 } },
+    ]
+  }
+  const sx = Math.sign(dx)
+  const sy = Math.sign(dy)
+  if (mainAxis === "x") {
+    const bendX = x1 - sx * r
+    const bendY = y0 + sy * r
+    return [
+      { a: { x: x0, y: y0 }, b: { x: bendX, y: y0 } },
+      { a: { x: x1, y: bendY }, b: { x: x1, y: y1 } },
+    ]
+  }
+  const bendY = y1 - sy * r
+  const bendX = x0 + sx * r
+  return [
+    { a: { x: x0, y: y0 }, b: { x: x0, y: bendY } },
+    { a: { x: bendX, y: y1 }, b: { x: x1, y: y1 } },
+  ]
+}
+
+/**
+ * Straight sub-runs `octilinearLanePath` actually draws its stroke through,
+ * as data instead of an SVG string — the corridor run(s) either side of its
+ * arc(s), extendable by the same bend radius `strokeClearanceBand` uses so
+ * a path-following clearance band follows the *real* bent stroke instead of
+ * a straight chord between the two endpoints (which cuts across whatever
+ * the bend actually swings wide of — a neighbour's label, another lane).
+ * Mirrors every branch of `octilinearLanePath` exactly; the two must be kept
+ * in sync.
+ */
+export const octilinearLaneWaypoints = (
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  radius: number,
+  mainAxis: "x" | "y" = "x",
+  leftoverAt: "split" | "start" | "end" = "split"
+): { a: LaneWaypoint; b: LaneWaypoint }[] => {
+  const dx = x1 - x0
+  const dy = y1 - y0
+  const absDx = Math.abs(dx)
+  const absDy = Math.abs(dy)
+  if (absDx < 0.5 && absDy < 0.5) return []
+
+  const mainDelta = mainAxis === "x" ? absDx : absDy
+  const crossDelta = mainAxis === "x" ? absDy : absDx
+  if (crossDelta < 0.5 || mainDelta < 0.5) {
+    return [{ a: { x: x0, y: y0 }, b: { x: x1, y: y1 } }]
+  }
+
+  const maxR = maxOctilinearRadius(mainDelta, crossDelta)
+  const r = Math.min(radius, maxR)
+  if (r < 0.5) {
+    return orthogonalRoundedWaypoints(x0, y0, x1, y1, radius, mainAxis)
+  }
+
+  const sx = Math.sign(dx) || 1
+  const sy = Math.sign(dy) || 1
+  const leftover = Math.max(0, mainDelta - crossDelta - r * S45_MAIN_EXTRA)
+  const s0 =
+    leftoverAt === "end" ? 0 : leftoverAt === "start" ? leftover : leftover * 0.5
+  const s1 = leftover - s0
+  const arcMain = r * SIN45
+  const arcCross = r * ONE_MINUS_COS45
+
+  const runs: { a: LaneWaypoint; b: LaneWaypoint }[] = []
+  if (mainAxis === "x") {
+    const a0x = x0 + sx * s0
+    const a0y = y0
+    const a1x = a0x + sx * arcMain
+    const a1y = a0y + sy * arcCross
+    const b0x = x1 - sx * s1 - sx * arcMain
+    const b0y = y1 - sy * arcCross
+    const b1x = x1 - sx * s1
+    const b1y = y1
+    if (s0 > 0.5) runs.push({ a: { x: x0, y: y0 }, b: { x: a0x, y: a0y } })
+    runs.push({ a: { x: a1x, y: a1y }, b: { x: b0x, y: b0y } })
+    if (s1 > 0.5) runs.push({ a: { x: b1x, y: b1y }, b: { x: x1, y: y1 } })
+    return runs
+  }
+
+  // mainAxis === "y": corridor runs along y; lane is x.
+  const a0x = x0
+  const a0y = y0 + sy * s0
+  const a1x = a0x + sx * arcCross
+  const a1y = a0y + sy * arcMain
+  const b0x = x1 - sx * arcCross
+  const b0y = y1 - sy * s1 - sy * arcMain
+  const b1x = x1
+  const b1y = y1 - sy * s1
+  if (s0 > 0.5) runs.push({ a: { x: x0, y: y0 }, b: { x: a0x, y: a0y } })
+  runs.push({ a: { x: a1x, y: a1y }, b: { x: b0x, y: b0y } })
+  if (s1 > 0.5) runs.push({ a: { x: b1x, y: b1y }, b: { x: x1, y: y1 } })
+  return runs
+}
+
 /**
  * Largest centreline R that still fits a single-fillet 45° spur.
  * Returns 0 when the diagonal cannot land (cross > main).

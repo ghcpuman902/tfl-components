@@ -1,6 +1,7 @@
 ---
 description: Docs site as proof + distribution — homepage, Blocks, preview-first pages, agent-ready MDX (shadcn-derived)
-alwaysApply: true
+alwaysApply: false
+globs: app/**/*.{tsx,ts,css},components/docs/**/*,components/landing/**/*,content/**/*.mdx,lib/docs-catalog.ts,mdx-components.tsx
 ---
 
 # Docs and proof surfaces

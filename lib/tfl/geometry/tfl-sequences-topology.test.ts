@@ -6,6 +6,7 @@ import tube from "@/data/geography/unique-track/tube/full.json"
 import type { ContractedTopology } from "./contract-track-topology"
 import {
   regularRoutePatterns,
+  serviceGroupsFromPatterns,
   tflSequencesPassengerTopology,
 } from "./tfl-sequences-topology"
 import type { LngLat, TrackStation } from "./transit-track-graph"
@@ -245,5 +246,32 @@ describe("tflSequencesPassengerTopology", () => {
       trackEdges.length >= compiled.topology.nodes.length,
       "a loop plus spur has at least as many hops as stations"
     )
+  })
+})
+
+describe("serviceGroupsFromPatterns", () => {
+  it("pairs inbound and outbound as one group", () => {
+    const groups = serviceGroupsFromPatterns([
+      {
+        id: "out",
+        name: "Reading → Abbey Wood",
+        direction: "outbound",
+        stationIds: ["A", "B", "C"],
+        paired: true,
+        pairPatternId: "in",
+      },
+      {
+        id: "in",
+        name: "Abbey Wood → Reading",
+        direction: "inbound",
+        stationIds: ["C", "B", "A"],
+        paired: true,
+        pairPatternId: "out",
+      },
+    ])
+    assert.equal(groups.length, 1)
+    assert.deepEqual([...groups[0]!.patternIds].sort(), ["in", "out"])
+    assert.ok(groups[0]!.hops.has("A|B"))
+    assert.ok(groups[0]!.hops.has("B|C"))
   })
 })

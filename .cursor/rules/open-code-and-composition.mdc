@@ -1,6 +1,7 @@
 ---
 description: Open Code, registry distribution, composition contracts, data-as-props (shadcn-derived)
-alwaysApply: true
+alwaysApply: false
+globs: registry/**/*.{tsx,ts,json},components/**/*.{tsx,ts},lib/**/*.{tsx,ts},content/**/*.mdx,scripts/**/*.{ts,js},package.json
 ---
 
 # Open Code and composition

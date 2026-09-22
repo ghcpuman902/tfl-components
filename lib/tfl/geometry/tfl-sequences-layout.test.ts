@@ -158,6 +158,43 @@ describe("layoutTflSequences", () => {
     )
   })
 
+  it("makes every hop the same target length when uniformHops is on", () => {
+    const topology = graph(
+      [
+        { id: "a", lng: -0.12, lat: 51.5, stationId: "A" },
+        { id: "b", lng: -0.1, lat: 51.5, stationId: "B" },
+        { id: "c", lng: -0.08, lat: 51.5, stationId: "C" },
+      ],
+      [
+        { from: "a", to: "b" },
+        { from: "b", to: "c" },
+      ]
+    )
+    const laid = layoutTflSequences(
+      topology,
+      [],
+      {
+        lineId: "test",
+        hops: { "A|B": 1, "B|C": 3 },
+        timedHopCount: 2,
+      },
+      { uniformHops: true }
+    )
+    const nodes = byId(laid.nodes)
+    const short = Math.hypot(
+      nodes.get("b")!.x - nodes.get("a")!.x,
+      nodes.get("b")!.y - nodes.get("a")!.y
+    )
+    const long = Math.hypot(
+      nodes.get("c")!.x - nodes.get("b")!.x,
+      nodes.get("c")!.y - nodes.get("b")!.y
+    )
+    assert.ok(
+      Math.abs(long - short) < short * 0.2,
+      `uniform hops drifted: ${short.toFixed(1)} vs ${long.toFixed(1)}`
+    )
+  })
+
   it("straightens a permitted continuation and leaves an unsupported turn sharp", () => {
     const topology = graph(
       [

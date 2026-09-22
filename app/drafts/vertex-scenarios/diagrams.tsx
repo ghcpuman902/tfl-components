@@ -6,15 +6,23 @@
 
 import { useId } from "react"
 import {
+  EXCESS,
+  MoleculeAssembler,
+  type MoleculeBond,
+  type MoleculeMark,
+  type MoleculeTrack,
+} from "@/app/drafts/diagram-atoms/atoms"
+import { bondedGroupLabelAt } from "@/lib/tfl/diagram-atoms"
+import {
   DIAGRAM_BASELINE,
   interchangeOuterRadius,
   interchangeStroke,
 } from "@/lib/tfl/line-diagram"
 import {
   buildDrawingScene,
+  drawingVariants,
   hasMove,
   layoutDrawing,
-  pairState,
   type DirectedMatrix,
   type LayoutPolicy,
   type PatternKind,
@@ -23,17 +31,17 @@ import type { DrawingScene } from "@/lib/tfl/investigate/vertex-scenarios/drawin
 import {
   trackPathBetween,
   type LaidDrawing,
+  type LaidNode,
 } from "@/lib/tfl/investigate/vertex-scenarios/drawing-layout"
 import type { PortId } from "@/lib/tfl/investigate/vertex-scenarios/types"
-import { octilinearLanePath } from "@/lib/tfl/schematic-layout"
-import { cn } from "@/lib/utils"
 import {
-  Bond,
-  Ring,
-  Tick,
-  Track,
+  Pager,
+  PORT_DEMO_NAMES,
+  StationLabel,
+  labelMaxBesideMarks,
+  opacityFor,
+  stationLabelBox,
   type ActiveMove,
-  type Pt,
 } from "./paint"
 
 export type { ActiveMove }
@@ -196,7 +204,7 @@ export const RawVertexSvg = ({
               )}
               fill="none"
               stroke={mark.allowed ? PAINT : "var(--muted-foreground)"}
-              strokeWidth={on ? 2.4 : 1.2}
+              strokeWidth={1.2}
               strokeDasharray={mark.allowed ? undefined : "5 4"}
               markerEnd={mark.allowed ? `url(#${markerId})` : undefined}
               opacity={active && !on ? 0.2 : mark.allowed ? 1 : 0.7}
@@ -258,11 +266,6 @@ export const RawVertexSvg = ({
   )
 }
 
-const pairOn = (active: ActiveMove, a: string, b: string) =>
-  active != null &&
-  ((active.from === a && active.to === b) ||
-    (active.from === b && active.to === a))
-
 const neighbourOf = (laid: LaidDrawing, id: string) => {
   const edge = laid.tracks.find((track) => track.a === id || track.b === id)
   if (!edge) return null
@@ -270,152 +273,285 @@ const neighbourOf = (laid: LaidDrawing, id: string) => {
   return laid.nodes.find((node) => node.id === otherId) ?? null
 }
 
-const LaidDrawingSvg = ({
+/** Where every boundary port sits relative to the drawing's own centre. */
+const portTravelInfo = (laid: LaidDrawing) => {
+  const portNodes = laid.nodes.filter(
+    (node) => node.kind === "boundary" && node.port
+  )
+  const portYs = portNodes.map((node) => node.y)
+  const portXs = portNodes.map((node) => node.x)
+  const midY =
+    portYs.length > 0 ? (Math.min(...portYs) + Math.max(...portYs)) / 2 : 0
+  const midX =
+    portXs.length > 0 ? (Math.min(...portXs) + Math.max(...portXs)) / 2 : 0
+  const verticalTravel =
+    laid.policy.primary === "up" || laid.policy.primary === "down"
+  return { portNodes, midX, midY, verticalTravel }
+}
+
+/**
+ * Keep names on the outside of the drawing: lower termini go down, left
+ * termini go left when travel is vertical — otherwise a 2-line "Cannon
+ * Street" climbs into the parallel track above it.
+ */
+const portAwayFor = (
+  node: LaidNode,
+  info: ReturnType<typeof portTravelInfo>
+): "up" | "down" | "left" | "right" => {
+  if (info.verticalTravel) {
+    return node.x < info.midX - 1
+      ? "left"
+      : node.x > info.midX + 1
+        ? "right"
+        : "left"
+  }
+  return node.y > info.midY + 1 ? "down" : "up"
+}
+
+const stationNameAnchors = (laid: LaidDrawing) => {
+  const stations = laid.nodes.filter((node) => node.kind === "station")
+  const parent = new Map(stations.map((node) => [node.id, node.id]))
+  const find = (id: string): string => {
+    const next = parent.get(id) ?? id
+    if (next !== id) {
+      const root = find(next)
+      parent.set(id, root)
+      return root
+    }
+    return id
+  }
+  for (const bond of laid.bonds) {
+    if (!parent.has(bond.a) || !parent.has(bond.b)) continue
+    const a = find(bond.a)
+    const b = find(bond.b)
+    if (a !== b) parent.set(b, a)
+  }
+  const groups = new Map<string, typeof stations>()
+  for (const node of stations) {
+    const root = find(node.id)
+    const list = groups.get(root) ?? []
+    list.push(node)
+    groups.set(root, list)
+  }
+  const away: "left" | "up" =
+    laid.policy.primary === "up" || laid.policy.primary === "down"
+      ? "left"
+      : "up"
+  // No collision check, no lift: a station directly next to a boundary
+  // gets a grown stroke from `layoutDrawing` (`BOUNDARY_PITCH`) sized for
+  // this label and the boundary's own port label to sit side by side, so
+  // the name always sits on the mark it names, never pushed off it.
+  return [...groups.values()].map((members) => ({
+    ...bondedGroupLabelAt(members, away),
+    away,
+    members,
+  }))
+}
+
+export const LaidDrawingSvg = ({
   scene,
   active,
   policy,
+  overlay = false,
 }: {
   scene: DrawingScene
   active: ActiveMove
   policy?: LayoutPolicy
+  overlay?: boolean
 }) => {
   const laid = layoutDrawing(scene, policy)
   const lit =
     active != null ? trackPathBetween(scene, active.from, active.to) : new Set()
   const byId = new Map(laid.nodes.map((node) => [node.id, node]))
+  const nameAnchors = stationNameAnchors(laid)
+  const travel = portTravelInfo(laid)
+  const portNodes = travel.portNodes
+  const portAway = (node: LaidNode) => portAwayFor(node, travel)
+  const marks = laid.nodes.map((node) => ({
+    x: node.x,
+    y: node.y,
+    kind: node.kind,
+  }))
+  const nameBudget = (
+    x: number,
+    y: number,
+    away: "up" | "down" | "left" | "right",
+    ignore: readonly { x: number; y: number }[] = []
+  ) =>
+    labelMaxBesideMarks(
+      x,
+      y,
+      away,
+      marks.filter(
+        (mark) =>
+          !ignore.some(
+            (point) => Math.abs(point.x - mark.x) < 1 && Math.abs(point.y - mark.y) < 1
+          )
+      )
+    )
+  // Expand the canvas past every name box so terminus strings are never
+  // cropped by the viewBox — the pad in layoutDrawing is a floor, this
+  // is the measured extent of the actual (possibly wrapped) labels we
+  // paint, not a guess.
+  const boxes = [
+    ...nameAnchors.map((anchor) =>
+      stationLabelBox(
+        anchor.x,
+        anchor.y,
+        anchor.away,
+        "Station",
+        nameBudget(anchor.x, anchor.y, anchor.away, anchor.members)
+      )
+    ),
+    ...portNodes.map((node) => {
+      const away = portAway(node)
+      return stationLabelBox(
+        node.x,
+        node.y,
+        away,
+        PORT_DEMO_NAMES[node.port!] ?? node.port!,
+        nameBudget(node.x, node.y, away)
+      )
+    }),
+  ]
+  let minX = 0
+  let minY = 0
+  let maxX = laid.width
+  let maxY = laid.height
+  for (const box of boxes) {
+    minX = Math.min(minX, box.x)
+    minY = Math.min(minY, box.y)
+    maxX = Math.max(maxX, box.x + box.width)
+    maxY = Math.max(maxY, box.y + box.height)
+  }
+  const shiftX = -minX
+  const shiftY = -minY
+  const width = Math.ceil(maxX - minX)
+  const height = Math.ceil(maxY - minY)
+
+  // Everything below is the same node+edge vocabulary `MoleculeAssembler`
+  // paints on `/drafts/diagram-atoms`: this page only reads the matrix,
+  // lays it onto a grid, and hands the result over — it does not repaint
+  // its own Tick/Ring/Bond/margin.
+  // Each edge's own core/excess breakdown (`layoutDrawing`'s `segs`) —
+  // the same green/black split `/drafts/diagram-atoms`'s demo cards
+  // paint for a growable run, not a single flat-colour chord. `spine`
+  // (the clearance band's own path-following geometry) rides on the
+  // edge's first sub-track only, so `MoleculeAssembler`'s `flatMap`
+  // never sees the same straight run twice.
+  const moleculeTracks: MoleculeTrack[] = laid.tracks.flatMap((edge) => {
+    const opacity = opacityFor(active, lit.has(edge.id))
+    return edge.segs.map((seg, index) => ({
+      id: `${edge.id}-${index}`,
+      d: seg.d,
+      spine: index === 0 ? edge.spine : undefined,
+      opacity,
+      paint: seg.paint === "excess" ? EXCESS : undefined,
+    }))
+  })
+  const moleculeBonds: MoleculeBond[] = laid.bonds.flatMap((edge) => {
+    const a = byId.get(edge.a)
+    const b = byId.get(edge.b)
+    return a && b
+      ? [{ id: edge.id, a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y } }]
+      : []
+  })
+  // Every ring paints; only one virtual, unpainted mark per bonded group
+  // (at the label's own anchor) carries the clearance band — the same
+  // "first/last ring only" convention `InterchangeAtom` uses for a column,
+  // generalised to an arbitrary bonded group.
+  const stationMarks: MoleculeMark[] = laid.nodes
+    .filter((node) => node.kind === "station")
+    .map((node) => ({
+      id: node.id,
+      x: node.x,
+      y: node.y,
+      anchor: "ring",
+      travel: "right",
+      end: "through",
+    }))
+  const stationClearanceMarks: MoleculeMark[] = nameAnchors.map(
+    (anchor, index) => ({
+      id: `station-clear-${index}`,
+      x: anchor.x,
+      y: anchor.y,
+      anchor: "ring",
+      travel: anchor.away === "up" ? "right" : "down",
+      end: "through",
+      labelAway: anchor.away,
+      paint: false,
+    })
+  )
+  const portMarks: MoleculeMark[] = portNodes.map((node) => {
+    const neighbour = neighbourOf(laid, node.id)
+    const dx = node.stub
+      ? node.stub.x - node.x
+      : neighbour
+        ? node.x - neighbour.x
+        : -1
+    const dy = node.stub
+      ? node.stub.y - node.y
+      : neighbour
+        ? node.y - neighbour.y
+        : 0
+    const axis = Math.abs(dx) >= Math.abs(dy) ? "v" : "h"
+    return {
+      id: node.id,
+      x: node.x,
+      y: node.y,
+      anchor: "tick",
+      travel: axis === "v" ? "right" : "down",
+      end: node.stub ? "through" : "terminus",
+      labelAway: portAway(node),
+    }
+  })
+
   return (
     <svg
-      viewBox={`0 0 ${laid.width} ${laid.height}`}
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
       role="img"
       aria-label={scene.title}
-      className="h-auto w-full overflow-visible"
+      className="max-w-none shrink-0 overflow-visible"
     >
-      {laid.tracks.map((edge) => (
-        <Track key={edge.id} d={edge.d} on={lit.has(edge.id)} active={active} />
-      ))}
-      {laid.bonds.map((edge) => {
-        const a = byId.get(edge.a)
-        const b = byId.get(edge.b)
-        if (!a || !b) return null
-        return <Bond key={edge.id} a={a} b={b} />
-      })}
-      {laid.nodes
-        .filter((node) => node.kind === "station")
-        .map((node) => (
-          <Ring key={node.id} x={node.x} y={node.y} />
-        ))}
-      {laid.nodes
-        .filter((node) => node.kind === "boundary" && node.port)
-        .map((node) => {
-          const neighbour = neighbourOf(laid, node.id)
-          const dx = neighbour ? node.x - neighbour.x : -1
-          const dy = neighbour ? node.y - neighbour.y : 0
-          const length = Math.hypot(dx, dy) || 1
-          const axis = Math.abs(dx) >= Math.abs(dy) ? "v" : "h"
-          return (
-            <Tick
-              key={node.id}
-              x={node.x}
-              y={node.y}
-              axis={axis}
-              label={node.port!}
-              labelAt={{
-                x: node.x + (dx / length) * 16,
-                y: node.y + (dy / length) * 16,
-              }}
+      <g transform={`translate(${shiftX} ${shiftY})`}>
+        <MoleculeAssembler
+          as="g"
+          width={laid.width}
+          height={laid.height}
+          overlay={overlay}
+          tracks={moleculeTracks}
+          bonds={moleculeBonds}
+          marks={[...stationMarks, ...stationClearanceMarks, ...portMarks]}
+        >
+          {nameAnchors.map((anchor, index) => (
+            <StationLabel
+              key={`station-name-${index}`}
+              x={anchor.x}
+              y={anchor.y}
+              away={anchor.away}
+              overlay={overlay}
+              maxWidth={nameBudget(anchor.x, anchor.y, anchor.away, anchor.members)}
             />
-          )
-        })}
+          ))}
+          {portNodes.map((node) => {
+            const away = portAway(node)
+            return (
+              <StationLabel
+                key={node.id}
+                x={node.x}
+                y={node.y}
+                away={away}
+                name={PORT_DEMO_NAMES[node.port!] ?? node.port!}
+                overlay={overlay}
+                maxWidth={nameBudget(node.x, node.y, away)}
+              />
+            )
+          })}
+        </MoleculeAssembler>
+      </g>
     </svg>
-  )
-}
-
-const TriangleDrawing = ({
-  active,
-  mirror,
-}: {
-  active: ActiveMove
-  mirror: boolean
-}) => {
-  const ab = pairOn(active, "A", "B"),
-    ac = pairOn(active, "A", "C"),
-    bc = pairOn(active, "B", "C")
-  const px = (x: number) => (mirror ? 320 - x : x)
-  return (
-    <div>
-      <svg
-        viewBox="0 0 320 200"
-        role="img"
-        aria-label={
-          mirror
-            ? "All three pairs, A on the right"
-            : "All three pairs, A on the left"
-        }
-        className="h-auto w-full"
-      >
-        <g transform={mirror ? "translate(320 0) scale(-1 1)" : undefined}>
-          <Track
-            a={{ x: 32, y: 100 }}
-            b={{ x: 72, y: 100 }}
-            on={ab || ac}
-            active={active}
-          />
-          <Track
-            d={`${octilinearLanePath(72, 100, 136, 60, 18)} L 248 60`}
-            on={ab}
-            active={active}
-          />
-          <Track
-            d={`${octilinearLanePath(72, 100, 136, 140, 18)} L 248 140`}
-            on={ac}
-            active={active}
-          />
-          <Track
-            d="M 248 60 L 232 60 A 24 24 0 0 0 208 84 L 208 116 A 24 24 0 0 0 232 140 L 248 140"
-            on={bc}
-            active={active}
-          />
-          <Track
-            a={{ x: 248, y: 60 }}
-            b={{ x: 288, y: 60 }}
-            on={ab || bc}
-            active={active}
-          />
-          <Track
-            a={{ x: 248, y: 140 }}
-            b={{ x: 288, y: 140 }}
-            on={ac || bc}
-            active={active}
-          />
-          <Bond a={{ x: 150, y: 60 }} b={{ x: 150, y: 140 }} />
-          <Bond a={{ x: 150, y: 100 }} b={{ x: 208, y: 100 }} />
-        </g>
-        <Ring x={px(150)} y={60} />
-        <Ring x={px(150)} y={140} />
-        <Ring x={px(208)} y={100} />
-        <Tick
-          x={px(32)}
-          y={100}
-          axis="v"
-          label="A"
-          labelAt={{ x: px(16), y: 100 }}
-        />
-        <Tick
-          x={px(288)}
-          y={60}
-          axis="v"
-          label="B"
-          labelAt={{ x: px(304), y: 60 }}
-        />
-        <Tick
-          x={px(288)}
-          y={140}
-          axis="v"
-          label="C"
-          labelAt={{ x: px(304), y: 140 }}
-        />
-      </svg>
-    </div>
   )
 }
 
@@ -424,20 +560,14 @@ export const SimplifiedTopologySvg = ({
   variant,
   active,
   policy,
+  overlay = false,
 }: {
   kind: PatternKind
   variant: string
   active: ActiveMove
   policy?: LayoutPolicy
+  overlay?: boolean
 }) => {
-  if (kind === "triangle") {
-    return (
-      <TriangleDrawing
-        active={active}
-        mirror={policy?.primary === "left"}
-      />
-    )
-  }
   const scene = buildDrawingScene(kind, variant)
   if (!scene) {
     return (
@@ -446,95 +576,27 @@ export const SimplifiedTopologySvg = ({
       </p>
     )
   }
-  return <LaidDrawingSvg scene={scene} active={active} policy={policy} />
+  return (
+    <LaidDrawingSvg scene={scene} active={active} policy={policy} overlay={overlay} />
+  )
 }
 
-export const DirectedMatrixTable = ({
-  matrix,
-  active,
-  onActivate,
+export const DrawingVariantSelect = ({
+  kind,
+  index,
+  onChange,
 }: {
-  matrix: DirectedMatrix
-  active: ActiveMove
-  onActivate: (move: ActiveMove) => void
+  kind: PatternKind
+  index: number
+  onChange: (index: number) => void
 }) => {
-  const ports = matrix.ports
+  const variants = drawingVariants(kind)
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-max border-collapse text-xs">
-        <caption className="sr-only">
-          From row through S to column.
-        </caption>
-        <thead>
-          <tr>
-            <th className="border border-border bg-muted/40 p-1.5 text-left font-medium text-muted-foreground">
-              from \ to
-            </th>
-            {ports.map((port) => (
-              <th
-                key={port}
-                className="border border-border bg-muted/40 p-1.5 text-center font-medium text-muted-foreground"
-              >
-                {port}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {ports.map((from) => (
-            <tr key={from}>
-              <th className="border border-border bg-muted/40 p-1.5 text-left font-medium text-muted-foreground">
-                {from}
-              </th>
-              {ports.map((to) => {
-                if (from === to) {
-                  return (
-                    <td
-                      key={to}
-                      className="border border-border bg-muted/20 p-1.5 text-center text-muted-foreground"
-                    >
-                      —
-                    </td>
-                  )
-                }
-                const allowed = hasMove(matrix, from, to)
-                const state = pairState(matrix, from, to)
-                const on = isActive(active, from, to)
-                const mark = !allowed ? "·" : state === "both" ? "↔" : "→"
-                return (
-                  <td key={to} className="border border-border p-0">
-                    <button
-                      type="button"
-                      aria-pressed={on}
-                      aria-label={`${from} through S to ${to}${allowed ? "" : ", not permitted"}`}
-                      onClick={() => onActivate(on ? null : { from, to })}
-                      className={cn(
-                        "flex h-8 w-full min-w-8 cursor-pointer items-center justify-center",
-                        !allowed && "bg-muted/40 text-muted-foreground",
-                        allowed &&
-                          state === "both" &&
-                          "bg-emerald-500/15 text-foreground",
-                        allowed &&
-                          state !== "both" &&
-                          "bg-foreground/10 text-foreground",
-                        on && "outline-2 -outline-offset-2 outline-foreground"
-                      )}
-                    >
-                      {mark}
-                    </button>
-                  </td>
-                )
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-        <li>↔ both ways through S</li>
-        <li>→ one way through S</li>
-        <li>· cannot through S</li>
-        <li>— same arm</li>
-      </ul>
-    </div>
+    <Pager
+      label="Arrangement"
+      index={index}
+      count={variants.length}
+      onChange={onChange}
+    />
   )
 }
