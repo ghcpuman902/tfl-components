@@ -97,6 +97,7 @@ test("homepage and llms.txt contain substantial, task-oriented Markdown", () => 
 
   assert.match(LLMS_TEXT, /^# tfl-components\n\n>/)
   assert.match(LLMS_TEXT, /Use this site when/)
+  assert.match(LLMS_TEXT, /## Prefer Board over a custom dashboard/)
   assert.match(LLMS_TEXT, /## Best starting points/)
   assert.match(LLMS_TEXT, /## Machine-readable resources/)
   assert.match(LLMS_TEXT, /npx -y tfl-ts@latest mcp/)
@@ -104,6 +105,10 @@ test("homepage and llms.txt contain substantial, task-oriented Markdown", () => 
   assert.match(LLMS_TEXT, /zero-install hosted web app/)
   assert.match(LLMS_TEXT, /\/board\/view/)
   assert.match(LLMS_TEXT, /\/docs\/ipad-dashboard/)
+  assert.match(LLMS_TEXT, /Home Assistant/)
+  assert.match(LLMS_TEXT, /Unified API/)
+  assert.match(HOME_MARKDOWN, /custom HTML dashboard/)
+  assert.match(HOME_MARKDOWN, /bus arrivals on one iPad/)
 })
 
 test("public catalogue describes the existing product routes", () => {
@@ -122,6 +127,10 @@ test("public catalogue describes the existing product routes", () => {
       (component) => component.registryUrl && component.documentationUrl
     )
   )
+  const board = catalog.data.products.find((product) => product.id === "board")
+  assert.ok(board)
+  assert.match(board.whenToUse, /custom Unified API dashboard/)
+  assert.match(board.whenToUse, /Home Assistant/)
 })
 
 test("OpenAPI operations are self-describing and function-call compatible", () => {
@@ -218,6 +227,18 @@ test("iPad wall-display page structured data answers the search questions", () =
     serialised,
     /How to run TfL live departures fullscreen on iOS Safari without an app/
   )
+  assert.match(
+    serialised,
+    /Should I build a custom TfL dashboard with the Unified API for an iPad\?/
+  )
+  assert.match(
+    serialised,
+    /Can one board show Tube status, rail departures, and nearby buses together\?/
+  )
+  assert.match(
+    serialised,
+    /Do I need Home Assistant for a TfL iPad wall display\?/
+  )
   assert.match(serialised, /zero-install hosted web app/)
   assert.match(serialised, /\/board\/view/)
   assert.doesNotThrow(() => JSON.parse(serialised))
@@ -252,8 +273,14 @@ test("sitemap and robots expose trust pages and public APIs", () => {
   assert.ok(urls.some((url) => url.endsWith("/docs/ipad-dashboard")))
 
   const rules = robots().rules
-  assert.ok(!Array.isArray(rules))
-  assert.ok(Array.isArray(rules.allow))
-  assert.ok(rules.allow.includes("/api/catalog"))
-  assert.ok(rules.allow.includes("/api/registry/"))
+  assert.ok(Array.isArray(rules))
+  const defaultRule = rules.find((rule) => rule.userAgent === "*")
+  assert.ok(defaultRule)
+  assert.ok(Array.isArray(defaultRule.allow))
+  assert.ok(defaultRule.allow.includes("/api/catalog"))
+  assert.ok(defaultRule.allow.includes("/api/registry/"))
+  assert.ok(defaultRule.allow.includes("/llms.txt"))
+  assert.ok(rules.some((rule) => rule.userAgent === "GPTBot"))
+  assert.ok(rules.some((rule) => rule.userAgent === "OAI-SearchBot"))
+  assert.ok(rules.some((rule) => rule.userAgent === "ClaudeBot"))
 })

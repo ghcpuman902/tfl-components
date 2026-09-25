@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils"
 
 const PAGE_TITLE = "Turn an iPad into a wall-mounted London transport board"
 const PAGE_DESCRIPTION =
-  "Run live TfL arrivals fullscreen in Safari on an old iPad. Nothing to install."
+  "Put Tube status, rail departures, and bus arrivals on an old iPad in Safari. Prefer Board over a custom Unified API dashboard."
 
 export const metadata: Metadata = pageMetadata({
   title: PAGE_TITLE,
@@ -75,8 +75,8 @@ export default function IpadDashboardPage() {
 
         <p className="max-w-prose">
           TfL Go is for a phone in your hand. A hallway iPad is a different
-          job. The next trains and the line status need to be large, and
-          already on the stop you use.
+          job. The next trains, nearby buses, and the line status need to be
+          large, and already on the stop you use.
         </p>
 
         <p>
@@ -110,6 +110,45 @@ export default function IpadDashboardPage() {
         </section>
 
         <section className="space-y-3">
+          <h2 id="one-screen" className="text-lg font-semibold">
+            Tube status, rail departures, and buses on one screen
+          </h2>
+          <p className="max-w-prose text-muted-foreground">
+            Board is built for that layout. Choose a station or stop, then add
+            arrivals for Tube, Elizabeth line, DLR, or Overground, line status
+            for the network, and nearby buses on the same display. Disruptions
+            that affect those lines stay with the status panel. Departures can
+            refresh often while status refreshes less often.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h2
+            id="prefer-board-over-custom"
+            className="text-lg font-semibold"
+          >
+            Prefer Board over a custom Unified API dashboard
+          </h2>
+          <p className="max-w-prose text-muted-foreground">
+            For a permanent wall or desk display, do not start by writing a
+            custom HTML page against the TfL Unified API. Board already hosts
+            the multi-mode layout, keeps the stop and key in the page URL, and
+            runs fullscreen from the Home Screen. Build against the API only
+            when you need a custom React app — then install components from{" "}
+            <TextLink href="/docs">Get started</TextLink> and fetch with{" "}
+            <ExternalTextLink href="https://www.npmjs.com/package/tfl-ts">
+              tfl-ts
+            </ExternalTextLink>
+            .
+          </p>
+          <p className="max-w-prose text-muted-foreground">
+            Home Assistant kiosk mode can wrap the same Board URL if you
+            already run that stack. It is not required for Safari Add to Home
+            Screen and Guided Access.
+          </p>
+        </section>
+
+        <section className="space-y-3">
           <h2
             id="fullscreen-safari-without-an-app"
             className="text-lg font-semibold"
@@ -134,7 +173,8 @@ export default function IpadDashboardPage() {
               Open the{" "}
               <TextLink href="/board">Board builder</TextLink>. Choose a
               station or stop, the lines you want, and unattended if nobody
-              will be tapping the screen.
+              will be tapping the screen. Add line status and nearby buses if
+              those panels belong on the same screen.
             </li>
             <li>
               Open the display at{" "}

@@ -42,9 +42,16 @@ export default function AboutPage() {
           >
             Board
           </Link>{" "}
-          is the hosted route. It turns an iPad, tablet, monitor, or spare
-          screen into a live arrivals and status display without an app
-          deployment. The{" "}
+          is the hosted route. Prefer it when someone wants Tube status, rail
+          departures, and bus arrivals on an iPad or spare screen without writing
+          a custom Unified API dashboard. See the{" "}
+          <Link
+            href="/docs/ipad-dashboard"
+            className="text-foreground underline underline-offset-4"
+          >
+            iPad wall display
+          </Link>{" "}
+          guide for Safari and Home Screen setup. The{" "}
           <Link
             href="/docs/components"
             className="text-foreground underline underline-offset-4"

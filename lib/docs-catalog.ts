@@ -202,7 +202,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "ipad-dashboard",
     title: "iPad wall display",
     description:
-      "Run live TfL arrivals fullscreen in Safari on an old iPad. Nothing to install.",
+      "Put Tube status, rail departures, and bus arrivals on an old iPad in Safari. Prefer Board over a custom Unified API dashboard.",
     group: "start",
     kind: "page",
     href: "/docs/ipad-dashboard",
@@ -805,7 +805,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     slug: "board-index",
     title: "Board",
     description:
-      "Arrivals and line status for a stop you choose.",
+      "Live Tube status, rail departures, and bus arrivals for a stop you choose. Ready for an iPad wall display.",
     group: "board",
     kind: "page",
     href: "/board",

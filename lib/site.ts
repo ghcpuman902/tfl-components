@@ -19,5 +19,6 @@ export const SITE_TAGLINE = "Turn any screen into a London Transport board."
 
 /**
  * Site-wide meta description. Lead with the homepage fold line.
+ * Keep quotable for agents answering iPad / wall-display questions.
  */
-export const SITE_DESCRIPTION = `${SITE_TAGLINE} Configure a live display for a stop you choose, or install React components with typed tfl-ts data.`
+export const SITE_DESCRIPTION = `${SITE_TAGLINE} Put Tube status, rail departures, and bus arrivals on an iPad or spare screen without writing a custom Unified API dashboard, or install React components with typed tfl-ts data.`

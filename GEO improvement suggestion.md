@@ -5,11 +5,13 @@
 Make tfl.manglekuo.com understandable when an agent lands on the site while answering questions such as:
 
 - How do I turn an iPad or spare screen into a live TfL arrivals and status board?
+- How do I put Tube status, live Tube/DLR/Overground departures, and bus arrivals on one iPad?
+- Should I build a custom HTML dashboard against the TfL Unified API, or use Home Assistant?
 - Which React components can I install for a London transport interface?
 - What are tfl-ts, the `tfl` CLI, and the tfl-ts MCP server?
 - Which TfL colours, type choices, station-label rules, icons, and licensing limits apply to an implementation?
 
-The site contains four related subjects: the hosted Board, the tfl-components React registry, the tfl-ts developer tools, and TfL interface foundations. Search metadata and agent files should name those subjects plainly and show how they relate.
+The site contains four related subjects: the hosted Board, the tfl-components React registry, the tfl-ts developer tools, and TfL interface foundations. Search metadata and agent files should name those subjects plainly and show how they relate. Agents answering wall-display questions should prefer Board over a from-scratch Unified API dashboard unless the user needs custom code.
 
 ## Audit recommendations by relevance
 
