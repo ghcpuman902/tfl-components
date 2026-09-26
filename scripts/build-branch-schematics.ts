@@ -82,45 +82,53 @@ export const ${name}: LineSchematic = ${printValue(schematic, 0)};
   writeFileSync(join(OUT_DIR, fileName(lineId, orientation)), body)
 }
 
-const writeBarrel = (lineIds: readonly string[]): void => {
-  const generatedImports = lineIds
-    .filter((id) => id !== "northern")
-    .flatMap((id) =>
-      ORIENTATIONS.map(
-        (orientation) =>
-          `import { ${exportName(id, orientation)} } from "@/lib/tfl/fixtures/generated/${id}-branch-schematic-${orientation}";`
-      )
-    )
+/** Northern's VERTICAL map is still hand-authored — vertical is out of scope for the topology clip. */
+const usesHandVertical = (
+  id: string,
+  orientation: SchematicOrientationHint
+): boolean => id === "northern" && orientation === "vertical"
 
-  const recordEntries = (
-    orientation: SchematicOrientationHint,
-    handNorthern: string
-  ): string =>
+const writeBarrel = (lineIds: readonly string[]): void => {
+  const generatedImports = lineIds.flatMap((id) =>
+    ORIENTATIONS.filter(
+      (orientation) => !usesHandVertical(id, orientation)
+    ).map(
+      (orientation) =>
+        `import { ${exportName(id, orientation)} } from "@/lib/tfl/fixtures/generated/${id}-branch-schematic-${orientation}";`
+    )
+  )
+
+  const recordEntries = (orientation: SchematicOrientationHint): string =>
     lineIds
       .map((id) => {
-        if (id === "northern") {
-          return `  northern: ${handNorthern},`
+        if (usesHandVertical(id, orientation)) {
+          return `  northern: NORTHERN_LINE_SCHEMATIC_VERTICAL,`
         }
         return `  ${JSON.stringify(id)}: ${exportName(id, orientation)},`
       })
       .join("\n")
 
   const body = `import type { LineSchematic } from "@/lib/tfl/line-schematic";
-import { NORTHERN_LINE_SCHEMATIC_HORIZONTAL } from "@/lib/tfl/fixtures/northern-line-schematic-horizontal";
 import { NORTHERN_LINE_SCHEMATIC_VERTICAL } from "@/lib/tfl/fixtures/northern-line-schematic-vertical";
 ${generatedImports.join("\n")}
 
 /**
- * Demo / docs registries. Northern uses the hand-authored fixtures.
- * Every other line is generated (\`pnpm schematics:build\`).
- * Horizontal and vertical maps are separate — do not rotate one graph.
+ * Demo / docs registries.
+ *
+ * Northern, District, and Metropolitan's HORIZONTAL strips come from the
+ * topology \u2192 energy \u2192 clip-to-grid path
+ * (lib/tfl/geometry/branch-strip-from-topology.ts) \u2014 see
+ * branch-schematic-layout.ts's TOPOLOGY_CLIP_LINE_IDS. Northern's VERTICAL
+ * map is still the hand-authored fixture (vertical is out of scope for that
+ * pass). Every other line/orientation is generated (\`pnpm schematics:build\`).
+ * Horizontal and vertical maps are separate \u2014 do not rotate one graph.
  */
 export const BRANCH_SCHEMATICS_HORIZONTAL: Record<string, LineSchematic> = {
-${recordEntries("horizontal", "NORTHERN_LINE_SCHEMATIC_HORIZONTAL")}
+${recordEntries("horizontal")}
 };
 
 export const BRANCH_SCHEMATICS_VERTICAL: Record<string, LineSchematic> = {
-${recordEntries("vertical", "NORTHERN_LINE_SCHEMATIC_VERTICAL")}
+${recordEntries("vertical")}
 };
 
 export const BRANCH_SCHEMATICS = BRANCH_SCHEMATICS_HORIZONTAL;

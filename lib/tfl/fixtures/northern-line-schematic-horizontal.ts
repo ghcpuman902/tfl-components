@@ -1,4 +1,9 @@
 import {
+  buildThroughMovementWeight,
+  stationIdByNodeIdFromNames,
+} from "@/lib/tfl/geometry/branch-strip-through-movements"
+import { decomposeBranchStripJunctions } from "@/lib/tfl/geometry/branch-strip-joins"
+import {
   assertValidSchematic,
   type LineSchematic,
   type SchematicEdge,
@@ -51,7 +56,8 @@ const BRANCHES = [
  *
  * Duplicate Euston: `euston-bank` (lane 0) + `euston-cx` (lane 1).
  */
-export const NORTHERN_LINE_SCHEMATIC_HORIZONTAL: LineSchematic = {
+/** Hand-authored source of truth: lane/pos + real edges, one node per station. */
+export const RAW_NORTHERN_LINE_SCHEMATIC_HORIZONTAL: LineSchematic = {
   lineId: "northern",
   lineName: "Northern",
   orientation: "horizontal",
@@ -253,6 +259,25 @@ export const NORTHERN_LINE_SCHEMATIC_HORIZONTAL: LineSchematic = {
     ),
   ],
 }
+
+assertValidSchematic(RAW_NORTHERN_LINE_SCHEMATIC_HORIZONTAL)
+
+/**
+ * Same map, run through the staggered virtual Y-join pass (Camden Town
+ * confirms as a real 2-in-2-out diamond and stays put; Kennington splits
+ * into two blobs since Bank never through-runs to Battersea). Hand-authored
+ * lane/pos stays the source of truth above — this is what actually renders.
+ */
+export const NORTHERN_LINE_SCHEMATIC_HORIZONTAL: LineSchematic =
+  decomposeBranchStripJunctions(RAW_NORTHERN_LINE_SCHEMATIC_HORIZONTAL, {
+    throughWeight: buildThroughMovementWeight(
+      "northern",
+      stationIdByNodeIdFromNames(
+        RAW_NORTHERN_LINE_SCHEMATIC_HORIZONTAL,
+        "northern"
+      )
+    ),
+  })
 
 assertValidSchematic(NORTHERN_LINE_SCHEMATIC_HORIZONTAL)
 
