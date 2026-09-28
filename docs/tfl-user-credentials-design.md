@@ -1,6 +1,7 @@
 # Design: user TfL API credentials
 
-Status: **implemented** (stages 0–6).  
+Status: **implemented** (stages 0–6) for docs and Explorer demos.  
+The hosted Board (`/board`, `/board/view`) does not use this flow. Visitors open it without a personal TfL API key. Live data uses the server `TFL_APP_KEY`. When that shared quota is exhausted, the board shows a rate-limit screen instead of a portal or paste-a-key step. A `key` in an old Board URL is ignored for fetching.  
 Audience: implementers and reviewers.  
 Branch / epic: `docs/tfl-user-credentials-design` → implementation landed in app chrome + arrivals demos.  
 CSP remains a separately tracked hardening ticket (not claimed as a mitigation here).

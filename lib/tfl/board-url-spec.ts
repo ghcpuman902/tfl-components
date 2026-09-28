@@ -97,7 +97,7 @@ export const getBoardUrlParamSpecs = (): readonly BoardUrlParamSpec[] => {
       defaultLabel: "omitted",
       location: "fragment",
       label: "TfL API key",
-      help: "Stays in the fragment so it is not sent to this origin. Treat the full link as a secret.",
+      help: "Optional. The hosted board serves live data without it. A legacy link that includes one keeps it in the fragment; treat that link as a secret.",
       repeated: false,
     },
   ]

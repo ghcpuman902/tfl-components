@@ -11,7 +11,6 @@ import {
 import { getDocsEntry } from "@/lib/docs-catalog"
 import { SITE_INDEPENDENCE } from "@/lib/site"
 import { pageMetadata } from "@/lib/site-metadata"
-import { TFL_API_PORTAL_PRODUCT_URL } from "@/lib/tfl/api-portal"
 import { BOARD_VIEW_PATH } from "@/lib/tfl/board-url-state"
 import { TEXT_LINK_CLASS, TEXT_LINK_ICON_CLASS } from "@/lib/text-link"
 import { cn } from "@/lib/utils"
@@ -132,7 +131,7 @@ export default function IpadDashboardPage() {
           <p className="max-w-prose text-muted-foreground">
             For a permanent wall or desk display, do not start by writing a
             custom HTML page against the TfL Unified API. Board already hosts
-            the multi-mode layout, keeps the stop and key in the page URL, and
+            the multi-mode layout, keeps the stop in the page URL, and
             runs fullscreen from the Home Screen. Build against the API only
             when you need a custom React app — then install components from{" "}
             <TextLink href="/docs">Get started</TextLink> and fetch with{" "}
@@ -162,26 +161,18 @@ export default function IpadDashboardPage() {
           </p>
           <ol className="max-w-prose list-decimal space-y-3 pl-5 text-muted-foreground">
             <li>
-              Get a free key from the{" "}
-              <ExternalTextLink href={TFL_API_PORTAL_PRODUCT_URL}>
-                TfL API portal
-              </ExternalTextLink>
-              . Subscribe to 500 Requests per min, then copy Primary or
-              Secondary from Profile.
-            </li>
-            <li>
               Open the{" "}
               <TextLink href="/board">Board builder</TextLink>. Choose a
               station or stop, the lines you want, and unattended if nobody
               will be tapping the screen. Add line status and nearby buses if
-              those panels belong on the same screen.
+              those panels belong on the same screen. No personal TfL API key
+              is required.
             </li>
             <li>
               Open the display at{" "}
               <code className="text-xs text-foreground">{BOARD_VIEW_PATH}</code>
-              . The stop and key stay in the page address after{" "}
-              <code className="text-xs text-foreground">#</code>, so they are
-              not sent to this site.
+              . The stop stays in the page address after{" "}
+              <code className="text-xs text-foreground">#</code>.
             </li>
             <li>
               In Safari, tap Share, then Add to Home Screen. Open the new icon.

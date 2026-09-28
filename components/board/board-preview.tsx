@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState, type CSSProperties } from "react"
-import { Button } from "@/components/ui/button"
 import {
   IpadDeviceSvg,
   IphoneDeviceSvg,
@@ -104,20 +103,14 @@ const BoardPreviewFrame = ({ href }: BoardPreviewFrameProps) => {
 type BoardPreviewProps = {
   href: string
   hydrated: boolean
-  hasKey: boolean
-  onAddKey: () => void
   className?: string
-  requireKeyOverlay?: boolean
   screenProfile?: BoardScreenProfile | null
 }
 
 export const BoardPreview = ({
   href,
   hydrated,
-  hasKey,
-  onAddKey,
   className,
-  requireKeyOverlay = true,
   screenProfile = "large",
 }: BoardPreviewProps) => {
   const profile = screenProfile
@@ -245,13 +238,6 @@ export const BoardPreview = ({
                   aria-label="Loading board preview"
                 />
               )}
-              {hydrated && !hasKey && requireKeyOverlay ? (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 p-4">
-                  <Button type="button" onClick={onAddKey}>
-                    Add TfL API key — stays in this browser
-                  </Button>
-                </div>
-              ) : null}
             </div>
           </div>
         ) : null}

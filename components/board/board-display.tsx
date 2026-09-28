@@ -11,6 +11,7 @@ import {
 import dynamic from "next/dynamic"
 import { normalizeLineId } from "tfl-ts"
 import { ARRIVALS_RHYTHM_VARS } from "@/components/tfl/arrivals/arrivals-board-view"
+import { BoardRateLimitScreen } from "@/components/board/board-rate-limit"
 import { BoardViewFooter } from "@/components/board/board-view-footer"
 import { BoardViewHomeScreenOffer } from "@/components/board/board-view-home-screen-offer"
 import { BoardViewRecovery } from "@/components/board/board-view-recovery"
@@ -202,9 +203,6 @@ const useBoardConfigFromHash = (
   return { config, ready }
 }
 
-const DEGRADED_HINT =
-  "Using shared demo data. Add a TfL key on this browser, or in the Board URL hash, for live updates."
-
 const NO_STOP_HINT =
   "Add a stop id to the URL to show live arrivals for one station."
 
@@ -248,8 +246,7 @@ export const BoardDisplay = ({
     stationNames,
     !isPreview
   )
-  const { hydrated, getAppKey, save } = useUserTflCredentials()
-  const storedKey = hydrated ? getAppKey() : null
+  const { hydrated, save } = useUserTflCredentials()
   const frameEmbedded = useSyncExternalStore(
     subscribeNoop,
     getEmbedded,
@@ -304,10 +301,8 @@ export const BoardDisplay = ({
     stationNames,
   ])
 
-  const appKey = config.key ?? storedKey
   const surfaceReady = ready && hydrated
-  const boardReady =
-    surfaceReady && isBoardReady(config, storedKey, { allowSiteDemo: embedded })
+  const boardReady = surfaceReady && isBoardReady(config, null)
   const fullscreen = useBoardFullscreen(boardRootRef, {
     enabled: boardReady && !fromHomeScreen && !embedded,
   })
@@ -316,19 +311,19 @@ export const BoardDisplay = ({
 
   useEffect(() => {
     if (!fromHomeScreen || !ready || !hydrated) return
-    if (!isUsableBoardConfig(hashConfig) || !hashConfig.key) return
+    if (!isUsableBoardConfig(hashConfig)) return
     writeInstalledBoardConfig(hashConfig, Date.now())
-    void save(hashConfig.key, "local")
+    if (hashConfig.key) void save(hashConfig.key, "local")
     setInstalledConfig(
       applyStopName({ ...hashConfig, key: undefined }, stationNames)
     )
   }, [fromHomeScreen, hashConfig, hydrated, ready, save, stationNames])
 
   const handleRecoveredBoard = useCallback(
-    (next: BoardConfig, key: string) => {
+    (next: BoardConfig, key: string | null) => {
       writeInstalledBoardConfig(next, Date.now())
-      void save(key, "local")
-      replaceHashIfNeeded(boardHashFromConfig({ ...next, key }))
+      if (key) void save(key, "local")
+      replaceHashIfNeeded(boardHashFromConfig({ ...next, key: key ?? undefined }))
       setInstalledConfig(
         applyStopName({ ...next, key: undefined }, stationNames)
       )
@@ -367,7 +362,7 @@ export const BoardDisplay = ({
   const showStatus = boardSlotsInclude(slots, "status")
 
   const status = useBoardStatus({
-    appKey,
+    appKey: null,
     enabled: boardReady && showStatus,
   })
   const pollStopIds = useMemo(
@@ -385,10 +380,11 @@ export const BoardDisplay = ({
   const arrivals = useDualPathArrivals({
     stopPointId: boardReady && showRail ? stopId : "",
     stopPointIds: boardReady && showRail ? pollStopIds : [],
-    appKeyOverride: boardReady ? appKey : null,
+    appKeyOverride: null,
     sharedTrackLineIds: boardReady && showRail ? sharedTrackLineIds : undefined,
     sharedTrackFamilies:
       boardReady && showRail ? sharedTrackFamilies : undefined,
+    siteScope: "board",
   })
 
   const busStopId = config.bus.stop ?? ""
@@ -397,16 +393,19 @@ export const BoardDisplay = ({
 
   const busArrivals = useDualPathArrivals({
     stopPointId: boardReady && showBus ? busStopId : "",
-    appKeyOverride: boardReady ? appKey : null,
+    appKeyOverride: null,
+    siteScope: "board",
   })
   const riverArrivals = useDualPathArrivals({
     stopPointId: boardReady && showRiver ? riverStopId : "",
-    appKeyOverride: boardReady ? appKey : null,
+    appKeyOverride: null,
+    siteScope: "board",
   })
   const cyclePoints = useDualPathBikePoints({
     dockIds: cycleDockIds,
-    appKeyOverride: boardReady ? appKey : null,
+    appKeyOverride: null,
     enabled: boardReady && showCycle,
+    siteScope: "board",
   })
 
   const handleRefresh = useCallback(() => {
@@ -454,7 +453,7 @@ export const BoardDisplay = ({
         fetchedAt: status.fetchedAt,
         pollMs: STATUS_POLL_MS,
         enabled: boardReady && showStatus,
-        polls: status.source === "user",
+        polls: true,
       },
     ],
     [
@@ -469,7 +468,6 @@ export const BoardDisplay = ({
       showRiver,
       showStatus,
       status.fetchedAt,
-      status.source,
     ]
   )
 
@@ -540,13 +538,6 @@ export const BoardDisplay = ({
     arrivalsProps.pageSizeByLine,
   ])
 
-  const statusHint =
-    boardReady &&
-    !embedded &&
-    !appKey &&
-    (status.source === "site" || cyclePoints.source === "site")
-      ? DEGRADED_HINT
-      : null
   const arrivalsError = !boardReady
     ? null
     : !stopId
@@ -594,7 +585,7 @@ export const BoardDisplay = ({
 
   const editHref = `${BOARD_PATH}${boardHashFromConfig({
     ...config,
-    key: appKey ?? undefined,
+    key: undefined,
   })}`
 
   const railData = useMemo(() => {
@@ -854,6 +845,27 @@ export const BoardDisplay = ({
       ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
       : `${BOARD_SHELL_CONTAINER_CLASS} box-border min-h-dvh w-full ${BOARD_SHELL_PADDING_CLASS}`
 
+  const rateLimited =
+    (showRail && arrivals.rateLimited) ||
+    (showBus && busArrivals.rateLimited) ||
+    (showRiver && riverArrivals.rateLimited) ||
+    (showCycle && cyclePoints.rateLimited) ||
+    (showStatus && status.rateLimited)
+  const hasLiveData =
+    (showRail && arrivals.data.length > 0) ||
+    (showBus && busArrivals.data.length > 0) ||
+    (showRiver && riverArrivals.data.length > 0) ||
+    (showCycle && cyclePoints.data.length > 0) ||
+    (showStatus && status.data.length > 0)
+  const waitingOnLive =
+    (showRail && arrivals.loading && !arrivals.rateLimited) ||
+    (showBus && busArrivals.loading && !busArrivals.rateLimited) ||
+    (showRiver && riverArrivals.loading && !riverArrivals.rateLimited) ||
+    (showCycle && cyclePoints.loading && !cyclePoints.rateLimited) ||
+    (showStatus && status.loading && !status.rateLimited)
+  const showRateLimitScreen =
+    boardReady && !isPreview && rateLimited && !hasLiveData && !waitingOnLive
+
   if (!surfaceReady) {
     return (
       <div className={shellClass} style={ARRIVALS_RHYTHM_VARS}>
@@ -877,6 +889,17 @@ export const BoardDisplay = ({
     )
   }
 
+  if (showRateLimitScreen) {
+    return (
+      <div
+        className={`${shellClass} flex items-center justify-center`}
+        style={ARRIVALS_RHYTHM_VARS}
+      >
+        <BoardRateLimitScreen onRetry={handleRefresh} retrying={refreshing} />
+      </div>
+    )
+  }
+
   return (
     <div
       ref={boardRootRef}
@@ -890,11 +913,8 @@ export const BoardDisplay = ({
         {renderStack(slots.p1, "Wide slot", true)}
         {renderStack(slots.p2, "Narrow slot", false)}
       </div>
-      {showStatus && status.error ? (
+      {showStatus && status.error && !status.rateLimited ? (
         <p className="mt-3 text-sm text-muted-foreground">{status.error}</p>
-      ) : null}
-      {statusHint ? (
-        <p className="mt-3 text-sm text-muted-foreground">{statusHint}</p>
       ) : null}
       {isPreview ? null : (
         <BoardViewFooter

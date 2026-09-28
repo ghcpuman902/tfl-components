@@ -3,7 +3,6 @@ import Link from "next/link"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code"
-import { TFL_API_PORTAL_PRODUCT_URL } from "@/components/user-tfl-api-key-copy"
 import { getDocsEntry } from "@/lib/docs-catalog"
 import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 import {
@@ -171,19 +170,10 @@ export default function BoardUrlSpecPage() {
           </h2>
           <p className="max-w-prose text-muted-foreground">
             Copy the full address from the Board builder, or build one from
-            these parameters. If the fragment includes{" "}
-            <code className="text-xs">key</code>, anyone who opens the link can
-            use that key and its request quota. Treat the complete link as a
-            secret. Get a key from the{" "}
-            <a
-              href={TFL_API_PORTAL_PRODUCT_URL}
-              className="text-foreground underline underline-offset-4"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              TfL API portal
-            </a>
-            .
+            these parameters. The hosted board serves live data without a
+            personal TfL API key. If a link still includes{" "}
+            <code className="text-xs">key</code>, anyone who opens it can use
+            that key and its request quota, so treat that link as a secret.
           </p>
         </section>
 
