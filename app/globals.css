@@ -274,6 +274,27 @@ html:has(.board-embed) *::-webkit-scrollbar-thumb,
 }
 
 /*
+ * Homepage copy stays in the DOM on phones (collapsed <details>) and is
+ * shown in full from md even before the disclosure is opened. Author
+ * `display` wins over the UA `details:not([open]) > *` rule.
+ */
+@media (max-width: 47.99rem) {
+  details.landing-seo:not([open]) > .landing-seo-body {
+    display: none;
+  }
+}
+
+@media (min-width: 48rem) {
+  details.landing-seo:not([open]) > .landing-seo-body {
+    display: block;
+  }
+
+  details.landing-seo > summary {
+    display: none;
+  }
+}
+
+/*
  * Line title / text colour from tfl-colours role tokens.
  * Pair with `data-line="<id>"` so `--line-color` resolves (incl. dark Northern).
  */

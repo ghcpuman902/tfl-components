@@ -181,6 +181,11 @@ type UseIpadZoomArgs = {
   copyRef: RefObject<HTMLElement | null>
   copySlotRef: RefObject<HTMLElement | null>
   reducedMotion: boolean
+  /**
+   * Phone widths skip ScrollTrigger and hold the framed iPad. `null` until
+   * the viewport is known so the first effect does not arm the desktop story.
+   */
+  phoneCanvas: boolean | null
   onRoomCompleteChange: (complete: boolean) => void
   onSceneReady: () => void
 }
@@ -197,6 +202,7 @@ export const useIpadZoom = ({
   copyRef,
   copySlotRef,
   reducedMotion,
+  phoneCanvas,
   onRoomCompleteChange,
   onSceneReady,
 }: UseIpadZoomArgs) => {
@@ -237,6 +243,8 @@ export const useIpadZoom = ({
   }, [])
 
   useLayoutEffect(() => {
+    if (phoneCanvas == null) return
+
     const { gsap, ScrollTrigger } = getLandingGsap()
     const wrapper = wrapperRef.current
     const composition = compositionRef.current
@@ -251,6 +259,7 @@ export const useIpadZoom = ({
     if (!wrapper || !composition || !camera || !canvas || !svg || !iPad) return
 
     const cssProbe = createCssLengthProbe()
+    let refreshFramed = () => {}
     const ctx = gsap.context(() => {
       const startCamera = () => {
         const next = framedIpadCamera(
@@ -336,9 +345,15 @@ export const useIpadZoom = ({
 
       timelineRef.current = timeline
       onSceneReadyRef.current()
+      refreshFramed = () => {
+        start = startCamera()
+        end = endCamera()
+        timeline.invalidate()
+        applyProgress(0, true)
+      }
 
-      if (reducedMotion) {
-        applyProgress(0)
+      if (reducedMotion || phoneCanvas) {
+        applyProgress(0, true)
         return
       }
 
@@ -376,6 +391,46 @@ export const useIpadZoom = ({
 
     if (reducedMotion) {
       return () => {
+        cssProbe.dispose()
+        timelineRef.current = null
+        triggerRef.current = null
+        ctx.revert()
+      }
+    }
+
+    if (phoneCanvas) {
+      let resizeFrame = 0
+      let settleTimer = 0
+      const handleResize = () => {
+        if (settleTimer) window.clearTimeout(settleTimer)
+        settleTimer = window.setTimeout(() => {
+          settleTimer = 0
+          refreshFramed()
+        }, RESIZE_SETTLE_MS)
+        if (resizeFrame) return
+        resizeFrame = window.requestAnimationFrame(() => {
+          resizeFrame = 0
+          refreshFramed()
+        })
+      }
+      window.addEventListener("resize", handleResize)
+      window.addEventListener("orientationchange", handleResize)
+      const viewport = window.visualViewport
+      const handleVisualViewportResize = () => {
+        if ((viewport?.scale ?? 1) !== 1) return
+        handleResize()
+      }
+      viewport?.addEventListener("resize", handleVisualViewportResize)
+      const stageObserver = new ResizeObserver(handleResize)
+      stageObserver.observe(composition)
+
+      return () => {
+        window.removeEventListener("resize", handleResize)
+        window.removeEventListener("orientationchange", handleResize)
+        viewport?.removeEventListener("resize", handleVisualViewportResize)
+        stageObserver.disconnect()
+        if (resizeFrame) window.cancelAnimationFrame(resizeFrame)
+        if (settleTimer) window.clearTimeout(settleTimer)
         cssProbe.dispose()
         timelineRef.current = null
         triggerRef.current = null
@@ -450,7 +505,7 @@ export const useIpadZoom = ({
       triggerRef.current = null
       ctx.revert()
     }
-  }, [applyProgress, reducedMotion])
+  }, [applyProgress, phoneCanvas, reducedMotion])
 
   return { progressRef }
 }

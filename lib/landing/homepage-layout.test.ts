@@ -31,6 +31,24 @@ describe("homepage iPad preview layout", () => {
     assert.doesNotMatch(home, /Arrivals and status board/)
   })
 
+  it("locks phone landing to one canvas and keeps the desktop scroll story", () => {
+    const scene = read("../../app/temp/landing-hero/landing-scene.tsx")
+    const fold = read("../../components/landing/landing-fold-copy.tsx")
+    const home = read("../../components/landing/agent-readable-home.tsx")
+    const zoom = read("../../app/temp/landing-hero/use-ipad-zoom.ts")
+    assert.match(scene, /h-\[calc\(100dvh-var\(--site-header-height\)\)\]/)
+    assert.match(scene, /md:h-\[calc\(200dvh-var\(--site-header-height\)\)\]/)
+    assert.match(scene, /phoneCanvas/)
+    assert.match(zoom, /reducedMotion \|\| phoneCanvas/)
+    assert.match(fold, /Make my own Board/)
+    assert.match(fold, /href="\/board"/)
+    assert.match(fold, /See it in the space/)
+    assert.match(fold, /max-md:hidden/)
+    assert.match(home, /LandingSeoDisclosure/)
+    assert.match(home, /docs\/ipad-dashboard/)
+    assert.match(home, /title: "Board"/)
+  })
+
   it("full-bleeds the landing stage past the scrollbar gutter", () => {
     const scene = read("../../app/temp/landing-hero/landing-scene.tsx")
     const fallback = read("../../components/landing/landing-page.tsx")

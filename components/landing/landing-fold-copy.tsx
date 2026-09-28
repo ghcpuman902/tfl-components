@@ -1,5 +1,6 @@
 import type { Ref } from "react"
-import { ChevronDownIcon } from "lucide-react"
+import Link from "next/link"
+import { ArrowRightIcon, ChevronDownIcon } from "lucide-react"
 import { TEXT_LINK_CLASS, TEXT_LINK_ICON_CLASS } from "@/lib/text-link"
 import { cn } from "@/lib/utils"
 
@@ -7,6 +8,7 @@ type LandingFoldCopyProps = {
   className?: string
   copyRef?: Ref<HTMLDivElement | null>
   onContinue?: () => void
+  onBoardClick?: () => void
 }
 
 const foldCopyClassName =
@@ -16,6 +18,7 @@ export const LandingFoldCopy = ({
   className,
   copyRef,
   onContinue,
+  onBoardClick,
 }: LandingFoldCopyProps) => (
   <div
     ref={copyRef}
@@ -28,6 +31,21 @@ export const LandingFoldCopy = ({
       <span>Turn any screen into a</span>
       <span>London Transport board.</span>
     </h1>
+    <Link
+      href="/board"
+      onClick={onBoardClick}
+      className={cn(
+        foldCopyClassName,
+        TEXT_LINK_CLASS,
+        "pointer-events-auto focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none md:hidden"
+      )}
+    >
+      Make my own Board
+      <ArrowRightIcon
+        className={cn(TEXT_LINK_ICON_CLASS, "ml-1")}
+        aria-hidden
+      />
+    </Link>
     {onContinue ? (
       <button
         type="button"
@@ -35,11 +53,14 @@ export const LandingFoldCopy = ({
         className={cn(
           foldCopyClassName,
           TEXT_LINK_CLASS,
-          "pointer-events-auto focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+          "pointer-events-auto focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none max-md:hidden"
         )}
       >
         See it in the space
-        <ChevronDownIcon className={cn(TEXT_LINK_ICON_CLASS, "ml-1")} aria-hidden />
+        <ChevronDownIcon
+          className={cn(TEXT_LINK_ICON_CLASS, "ml-1")}
+          aria-hidden
+        />
       </button>
     ) : null}
   </div>

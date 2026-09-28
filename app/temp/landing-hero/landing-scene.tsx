@@ -9,6 +9,7 @@ import {
   type CSSProperties,
 } from "react"
 import dynamic from "next/dynamic"
+import { MOBILE_MEDIA_QUERY } from "@/hooks/use-mobile"
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
 import { useDocumentVisible } from "@/hooks/use-document-visible"
 import { LandingExampleObserver } from "@/components/landing/landing-example-observer"
@@ -196,6 +197,8 @@ export const LandingScene = ({
   const [roomComplete, setRoomComplete] = useState(false)
   const [sceneReady, setSceneReady] = useState(false)
   const [skipIntro, setSkipIntro] = useState(false)
+  /** `null` until matchMedia runs, so the scroll story is not armed on phones. */
+  const [phoneCanvas, setPhoneCanvas] = useState<boolean | null>(null)
   const [holdChat, setHoldChat] = useState(false)
   const [chatKey, setChatKey] = useState(0)
   const [journeyIndex, setJourneyIndex] = useState(0)
@@ -225,8 +228,23 @@ export const LandingScene = ({
   }, [])
 
   useLayoutEffect(() => {
+    const media = window.matchMedia(MOBILE_MEDIA_QUERY)
+    const sync = () => setPhoneCanvas(media.matches)
+    sync()
+    media.addEventListener("change", sync)
+    return () => media.removeEventListener("change", sync)
+  }, [])
+
+  useLayoutEffect(() => {
+    if (phoneCanvas == null) return
     const previousRestoration = window.history.scrollRestoration
     window.history.scrollRestoration = "manual"
+    if (phoneCanvas) {
+      window.scrollTo(0, 0)
+      return () => {
+        window.history.scrollRestoration = previousRestoration
+      }
+    }
     const hashed = hasLandingSpaceHash(window.location.hash)
     setSkipIntro(hashed)
     if (hashed) {
@@ -237,10 +255,10 @@ export const LandingScene = ({
     return () => {
       window.history.scrollRestoration = previousRestoration
     }
-  }, [scrollToRoom])
+  }, [phoneCanvas, scrollToRoom])
 
   useLayoutEffect(() => {
-    if (!skipIntro || !sceneReady) return
+    if (!skipIntro || !sceneReady || phoneCanvas) return
     const snap = () => scrollToRoom("auto")
     snap()
     const frame = window.requestAnimationFrame(snap)
@@ -249,7 +267,7 @@ export const LandingScene = ({
       window.cancelAnimationFrame(frame)
       window.clearTimeout(later)
     }
-  }, [sceneReady, scrollToRoom, skipIntro])
+  }, [phoneCanvas, sceneReady, scrollToRoom, skipIntro])
 
   const handleRoomCompleteChange = useCallback(
     (complete: boolean) => {
@@ -322,6 +340,7 @@ export const LandingScene = ({
     copyRef,
     copySlotRef,
     reducedMotion,
+    phoneCanvas,
     onRoomCompleteChange: handleRoomCompleteChange,
     onSceneReady: () => {
       setSceneReady(true)
@@ -487,7 +506,11 @@ export const LandingScene = ({
   }
 
   const heroCopy = (
-    <LandingFoldCopy copyRef={copyRef} onContinue={handleSeeSpace} />
+    <LandingFoldCopy
+      copyRef={copyRef}
+      onContinue={handleSeeSpace}
+      onBoardClick={onCtaClick}
+    />
   )
 
   const landingVars = {
@@ -529,19 +552,19 @@ export const LandingScene = ({
           </div>
           <div className="mt-5">{heroCopy}</div>
         </section>
-        <LandingStaticRoom />
+        <div className="max-md:hidden">
+          <LandingStaticRoom />
+        </div>
       </div>
     )
   }
 
   return (
     <div className="landing-home relative w-full min-w-0" style={landingVars}>
+      {/* Phone: one framed canvas. md+: extra viewport for the scroll zoom. */}
       <div
         ref={wrapperRef}
-        className="relative w-full"
-        style={{
-          height: "calc(200dvh - var(--site-header-height))",
-        }}
+        className="landing-scroll-runway relative h-[calc(100dvh-var(--site-header-height))] w-full md:h-[calc(200dvh-var(--site-header-height))]"
       >
         <div
           id="space"
@@ -709,7 +732,7 @@ export const LandingScene = ({
 
               <LandingRoomChat
                 key={chatKey}
-                active={roomComplete && !holdChat}
+                active={roomComplete && !holdChat && phoneCanvas !== true}
                 skipIntro={skipIntro}
                 onBoardClick={onCtaClick}
                 onStoryComplete={handleStoryComplete}
