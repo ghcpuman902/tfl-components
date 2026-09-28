@@ -323,9 +323,11 @@ export const LandingScene = ({
     writeSpaceHash(roomComplete)
   }, [roomComplete, writeSpaceHash])
 
+  const canvasLook = roomComplete || phoneCanvas === true
+
   const { valueRef, peekRef } = useParallaxInput({
     stageRef,
-    enabled: !reducedMotion && roomComplete,
+    enabled: !reducedMotion && canvasLook,
   })
 
   const { progressRef } = useIpadZoom({
@@ -421,7 +423,7 @@ export const LandingScene = ({
         frame = window.requestAnimationFrame(tick)
         return
       }
-      const pointer = roomComplete ? valueRef.current : POINTER_REST
+      const pointer = canvasLook ? valueRef.current : POINTER_REST
       const dolly = Math.sin(progressRef.current * Math.PI)
       for (const layer of layers) {
         const targetX = pointer.x * layer.xAmount + dolly * layer.dollyX
@@ -436,7 +438,7 @@ export const LandingScene = ({
 
       const peekLayer = peekLayerRef.current
       if (peekLayer) {
-        const peek = roomComplete ? peekRef.current : DEFAULT_PEEK
+        const peek = canvasLook ? peekRef.current : DEFAULT_PEEK
         peekLayer.style.transformOrigin = "50% 50%"
         peekLayer.style.translate = `${peek.panX * 50}% ${peek.panY * 50}%`
         peekLayer.style.scale = String(peek.scale)
@@ -476,11 +478,11 @@ export const LandingScene = ({
     frame = window.requestAnimationFrame(tick)
     return () => window.cancelAnimationFrame(frame)
   }, [
+    canvasLook,
     pageVisible,
     peekRef,
     progressRef,
     reducedMotion,
-    roomComplete,
     sceneReady,
     valueRef,
   ])
@@ -673,7 +675,7 @@ export const LandingScene = ({
                 className="landing-hero-wall-fill pointer-events-none absolute inset-x-0 top-0 origin-top"
                 style={{ height: 0 }}
               />
-              {roomComplete ? (
+              {canvasLook ? (
                 <div
                   aria-hidden
                   data-landing-peek-surface
@@ -693,6 +695,7 @@ export const LandingScene = ({
                   translate: "-50% 0",
                   borderRadius: ipadCaseRounding,
                   pointerEvents: "auto",
+                  touchAction: "pan-y",
                 }}
                 onPointerDown={() => {
                   if (exampleInteracted.current) return

@@ -279,6 +279,17 @@ html:has(.board-embed) *::-webkit-scrollbar-thumb,
  * `display` wins over the UA `details:not([open]) > *` rule.
  */
 @media (max-width: 47.99rem) {
+  /*
+   * Phone canvas: keep one-finger vertical scroll, and stop pinch-out at
+   * the document edge from handing the gesture to Safari's tab overview.
+   * Custom peek zoom lives in JS and clamps at scale 1.
+   */
+  html:has(.landing-home),
+  html:has(.landing-home) body {
+    overscroll-behavior: none;
+    touch-action: pan-y;
+  }
+
   details.landing-seo:not([open]) > .landing-seo-body {
     display: none;
   }
