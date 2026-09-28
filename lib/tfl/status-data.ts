@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache"
 import { sortLinesBySeverityAndOrder } from "tfl-ts"
+import { isTflRateLimitError } from "@/lib/tfl/board-rate-limit"
 import { getTflClient } from "@/lib/tfl/client"
 import type { StatusLine } from "@/lib/tfl/status-types"
 
@@ -21,6 +22,8 @@ export type CachedLineStatusesPayload = {
   data: StatusLine[]
   /** Clock for tfl-ts current-row helpers. Stamped inside `"use cache"`. */
   fetchedAt: number
+  /** Set when TfL rejected the fetch for quota. Empty `data` is not live severity. */
+  rateLimited?: boolean
 }
 
 /**
@@ -54,7 +57,11 @@ export async function getCachedLineStatuses(
       data: sortLinesBySeverityAndOrder(lineStatuses, { now: fetchedAt }),
       fetchedAt,
     }
-  } catch {
-    return { data: [], fetchedAt }
+  } catch (error) {
+    return {
+      data: [],
+      fetchedAt,
+      rateLimited: isTflRateLimitError(error),
+    }
   }
 }

@@ -4,6 +4,7 @@ import {
   getBoardArrivalsStopIdsIndex,
   lookupBoardArrivalsStopIds,
 } from "@/lib/tfl/board-arrivals-stop-ids"
+import { isTflRateLimitError } from "@/lib/tfl/board-rate-limit"
 import { SHARED_TRACK_LINE_SETS } from "@/lib/tfl/board-station-lines"
 import { getTflClient } from "@/lib/tfl/client"
 import {
@@ -32,13 +33,35 @@ export const DEMO_STOP_ARRIVALS_IDS = new Set<string>([
 export const isDemoStopArrivalsId = (stopPointId: string): boolean =>
   DEMO_STOP_ARRIVALS_IDS.has(stopPointId.trim())
 
+export type CachedArrivalsState = {
+  arrivals: RealtimePrediction[]
+  rateLimited: boolean
+}
+
+const rateLimitedArrivals = (): CachedArrivalsState => ({
+  arrivals: [],
+  rateLimited: true,
+})
+
 /**
- * Shared cache for docs-demo arrivals polling.
+ * Shared cache for arrivals polling.
  * Many concurrent viewers collapse to a few TfL calls per stop per minute.
+ * A rate-limit result is cached too, so quota exhaustion does not retry TfL
+ * on every board poll.
  */
 export async function getCachedStopArrivals(
   stopPointId: string
 ): Promise<RealtimePrediction[]> {
+  const state = await getCachedStopArrivalsState(stopPointId)
+  if (state.rateLimited) {
+    throw new Error("TfL rate-limited this request.")
+  }
+  return state.arrivals
+}
+
+export async function getCachedStopArrivalsState(
+  stopPointId: string
+): Promise<CachedArrivalsState> {
   return getCachedStopArrivalsById(stopPointId.trim())
 }
 
@@ -49,20 +72,26 @@ export async function getCachedStopArrivals(
  */
 async function getCachedStopArrivalsById(
   stopPointId: string
-): Promise<RealtimePrediction[]> {
+): Promise<CachedArrivalsState> {
   "use cache"
   cacheLife({ stale: 15, revalidate: 20, expire: 60 })
   cacheTag("tfl-stop-arrivals", `tfl-stop-arrivals-${stopPointId}`)
 
-  const client = getTflClient()
-  const stopPointIds = lookupBoardArrivalsStopIds(
-    getBoardArrivalsStopIdsIndex(),
-    stopPointId
-  )
-  return client.stopPoint.getArrivals({
-    stopPointIds: stopPointIds.length > 0 ? stopPointIds : [stopPointId],
-    sortBy: "timeToStation",
-  })
+  try {
+    const client = getTflClient()
+    const stopPointIds = lookupBoardArrivalsStopIds(
+      getBoardArrivalsStopIdsIndex(),
+      stopPointId
+    )
+    const arrivals = await client.stopPoint.getArrivals({
+      stopPointIds: stopPointIds.length > 0 ? stopPointIds : [stopPointId],
+      sortBy: "timeToStation",
+    })
+    return { arrivals, rateLimited: false }
+  } catch (error) {
+    if (isTflRateLimitError(error)) return rateLimitedArrivals()
+    throw error
+  }
 }
 
 const lineSetKey = (lineIds: readonly string[]): string =>
@@ -82,13 +111,28 @@ export const isDemoLineArrivalsSet = (lineIds: readonly string[]): boolean =>
 export async function getCachedLineArrivals(
   lineIds: readonly string[]
 ): Promise<RealtimePrediction[]> {
+  const state = await getCachedLineArrivalsByKey(lineSetKey(lineIds))
+  if (state.rateLimited) {
+    throw new Error("TfL rate-limited this request.")
+  }
+  return state.arrivals
+}
+
+async function getCachedLineArrivalsByKey(
+  key: string
+): Promise<CachedArrivalsState> {
   "use cache"
   cacheLife({ stale: 15, revalidate: 20, expire: 60 })
-  const key = lineSetKey(lineIds)
   cacheTag("tfl-line-arrivals", `tfl-line-arrivals-${key}`)
 
-  const client = getTflClient()
-  return client.line.getArrivals({
-    lineIds: key.split(","),
-  })
+  try {
+    const client = getTflClient()
+    const arrivals = await client.line.getArrivals({
+      lineIds: key.split(","),
+    })
+    return { arrivals, rateLimited: false }
+  } catch (error) {
+    if (isTflRateLimitError(error)) return rateLimitedArrivals()
+    throw error
+  }
 }

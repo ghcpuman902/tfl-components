@@ -131,24 +131,18 @@ export const IPAD_DASHBOARD_STRUCTURED_DATA = {
         {
           "@type": "HowToStep",
           position: 1,
-          name: "Get a TfL API key",
-          text: "Get a free key from the TfL API portal. Subscribe to 500 Requests per min, then copy Primary or Secondary from Profile.",
+          name: "Configure the board",
+          text: `Open ${SITE_URL}/board. Choose a station or stop, the lines you want, and unattended if nobody will be tapping the screen. Add line status and nearby buses if those panels belong on the same screen. No personal TfL API key is required.`,
         },
         {
           "@type": "HowToStep",
           position: 2,
-          name: "Configure the board",
-          text: `Open ${SITE_URL}/board. Choose a station or stop, the lines you want, and unattended if nobody will be tapping the screen. Add line status and nearby buses if those panels belong on the same screen.`,
+          name: "Open the display",
+          text: `Open ${BOARD_VIEW_URL} in Safari. The stop stays in the page address after #.`,
         },
         {
           "@type": "HowToStep",
           position: 3,
-          name: "Open the display",
-          text: `Open ${BOARD_VIEW_URL} in Safari. The stop and key stay in the page address after #, so they are not sent to this site.`,
-        },
-        {
-          "@type": "HowToStep",
-          position: 4,
           name: "Add to Home Screen",
           text: "In Safari, tap Share, then Add to Home Screen. Open the new icon. Safari's toolbar is gone. Rotate to landscape and put the iPad on a stand. Use Guided Access if you need a locked display.",
         },

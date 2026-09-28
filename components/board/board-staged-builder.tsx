@@ -7,7 +7,6 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
-  type ReactNode,
 } from "react"
 import { BoardAdvancedConfig } from "@/components/board/board-config-form"
 import { BoardModeRoundel } from "@/components/board/board-mode-roundel"
@@ -19,16 +18,9 @@ import { BoardPreview } from "@/components/board/board-preview"
 import { BoardPreviewModePills } from "@/components/board/board-preview-mode"
 import { BoardShareCard } from "@/components/board/board-share-card"
 import { BoardStationSearch } from "@/components/board/board-station-search"
-import { TflApiKeyField } from "@/components/tfl-api-key-field"
 import { Button } from "@/components/ui/button"
-import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
-import { TFL_API_PORTAL_PRODUCT_URL } from "@/components/user-tfl-api-key-copy"
 import { useIsMobile } from "@/hooks/use-mobile"
-import {
-  ChevronDownIcon,
-  ExternalLinkIcon,
-  LocateIcon,
-} from "lucide-react"
+import { ChevronDownIcon, LocateIcon } from "lucide-react"
 import { useLandingTrack } from "@/components/landing/landing-analytics"
 import type { AnalyticsContext } from "@/lib/analytics/context"
 import { defaultAnalyticsContext } from "@/lib/analytics/context"
@@ -55,13 +47,6 @@ import {
   type BoardSettingId,
 } from "@/lib/tfl/board-settings"
 import {
-  boardConfigForShare,
-  boardKeyModeFromPersist,
-  buildShareableBoardHref,
-  buildShareableBoardUrl,
-  type BoardKeyMode,
-} from "@/lib/tfl/board-share"
-import {
   completeBoardStage,
   createBoardSetupDraft,
   detectScreenProfile,
@@ -79,6 +64,7 @@ import {
 import {
   BOARD_VIEW_PATH,
   DEFAULT_BOARD_CONFIG,
+  buildBoardHref,
   describeBoardHrefSegments,
   hashHasBoardConfig,
   parseBoardConfig,
@@ -88,7 +74,6 @@ import {
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
 import { LINE_ORDER } from "tfl-ts"
 import { getLineNameTiers } from "@/lib/tfl/line-names"
-import { TEXT_LINK_CLASS, TEXT_LINK_ICON_CLASS } from "@/lib/text-link"
 import { cn } from "@/lib/utils"
 
 const subscribe = () => () => undefined
@@ -96,28 +81,6 @@ const getOrigin = () => window.location.origin
 const getServerOrigin = () => ""
 
 const EXAMPLE_STOP = HOME_RAIL_STOP
-
-const LockedRegion = ({
-  locked,
-  children,
-  className,
-}: {
-  locked: boolean
-  children: ReactNode
-  className?: string
-}) => (
-  <div className={cn("relative min-w-0", className)}>
-    <div
-      className={cn("h-full min-h-0", locked && "pointer-events-none select-none")}
-      inert={locked || undefined}
-    >
-      {children}
-    </div>
-    {locked ? (
-      <div className="absolute inset-0 z-10 bg-background/60" aria-hidden />
-    ) : null}
-  </div>
-)
 
 const persistDraft = (draft: BoardSetupDraft) => {
   try {
@@ -292,12 +255,6 @@ export const BoardStagedBuilder = ({
   analyticsContext = defaultAnalyticsContext("room"),
 }: BoardStagedBuilderProps) => {
   const track = useLandingTrack(analyticsContext)
-  const {
-    hydrated,
-    persistMode,
-    getAppKey,
-    openDialog,
-  } = useUserTflCredentials()
   const isMobile = useIsMobile()
   const [draft, setDraft] = useState<BoardSetupDraft>(createBoardSetupDraft)
   const [ready, setReady] = useState(false)
@@ -425,40 +382,24 @@ export const BoardStagedBuilder = ({
   const lineGroups = lookupBoardStationLineGroups(config.stop)
   const autoStopName = lookupBoardStationName(stationNames, config.stop)
   const formSettings = useMemo(() => formSettingsFromConfig(config), [config])
-  const appKey = hydrated ? (getAppKey() ?? "") : ""
-  const hasKey = Boolean(appKey)
   const origin = useSyncExternalStore(subscribe, getOrigin, getServerOrigin)
-  const inferredKeyMode = boardKeyModeFromPersist(
-    hydrated ? persistMode : undefined,
-    hasKey
-  )
-  const keyMode: BoardKeyMode =
-    draft.keyMode === "own" && inferredKeyMode === "browser"
-      ? "browser"
-      : "portable"
 
   const forUrl = useMemo(
     () => ({
       ...config,
       stop: config.stop?.trim() || undefined,
       stopName: resolveBoardStopNameOverride(config.stopName, autoStopName),
-      key: appKey.trim() || config.key?.trim() || undefined,
+      key: undefined,
     }),
-    [appKey, autoStopName, config]
+    [autoStopName, config]
   )
-  const shareConfig = useMemo(
-    () => boardConfigForShare(forUrl, keyMode),
-    [forUrl, keyMode]
-  )
-  const href = useMemo(
-    () => buildShareableBoardHref(forUrl, keyMode),
-    [forUrl, keyMode]
-  )
+  const shareConfig = forUrl
+  const href = useMemo(() => buildBoardHref(forUrl), [forUrl])
   const segments = useMemo(
     () => describeBoardHrefSegments(shareConfig),
     [shareConfig]
   )
-  const absoluteUrl = buildShareableBoardUrl(origin, forUrl, keyMode)
+  const absoluteUrl = origin ? `${origin}${href}` : href
   const legendPath = origin ? `${origin}${BOARD_VIEW_PATH}` : BOARD_VIEW_PATH
   const announce = draft.continueWithoutStop
     ? "Network status"
@@ -600,15 +541,6 @@ export const BoardStagedBuilder = ({
     )
   }
 
-  const handleKeySaved = () => {
-    updateDraft((current) => ({
-      ...startIfNeeded(current),
-      keyMode: "own",
-    }))
-    finishStage(4)
-  }
-
-  const locked = hydrated && !hasKey
   const previewProfile = draft.screenProfile
   const selectedStopLabel = draft.continueWithoutStop
     ? "Network status"
@@ -632,46 +564,13 @@ export const BoardStagedBuilder = ({
       <div
         className={cn(
           "mx-auto grid w-full max-w-md items-start gap-5",
-          "grid-cols-1 [grid-template-areas:'key'_'loc'_'preview'_'share']",
+          "grid-cols-1 [grid-template-areas:'loc'_'preview'_'share']",
           "md:max-w-none md:grid-cols-[minmax(16rem,22rem)_minmax(0,max-content)]",
           "md:items-stretch md:justify-center md:gap-8 md:[grid-template-areas:none]"
         )}
       >
         <div className="contents md:col-start-1 md:row-start-1 md:flex md:flex-col md:gap-5">
-          <section
-            aria-labelledby="board-key-heading"
-            className="[grid-area:key] space-y-2 md:[grid-area:auto]"
-          >
-            <h2
-              id="board-key-heading"
-              className="font-heading text-sm font-medium text-pretty text-foreground"
-            >
-              Get a free TfL API key from{" "}
-              <a
-                href={TFL_API_PORTAL_PRODUCT_URL}
-                className={TEXT_LINK_CLASS}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                api-portal.tfl.gov.uk
-                <ExternalLinkIcon
-                  className={cn(TEXT_LINK_ICON_CLASS, "ml-1")}
-                  aria-hidden
-                />
-                <span className="sr-only">(opens in a new tab)</span>
-              </a>{" "}
-              and come back
-            </h2>
-            <TflApiKeyField
-              id="board-tfl-key"
-              labelledBy="board-key-heading"
-              seedKey={advancedConfig.key?.trim()}
-              onSaved={handleKeySaved}
-              centerHelp
-            />
-          </section>
-
-          <LockedRegion locked={locked} className="[grid-area:loc] md:[grid-area:auto]">
+          <div className="[grid-area:loc] min-w-0 md:[grid-area:auto]">
             <div>
               <section
                 aria-labelledby="board-location-heading"
@@ -863,9 +762,9 @@ export const BoardStagedBuilder = ({
                 ) : null}
               </section>
             </div>
-          </LockedRegion>
+          </div>
 
-          <LockedRegion locked={locked} className="[grid-area:share] md:[grid-area:auto]">
+          <div className="[grid-area:share] min-w-0 md:[grid-area:auto]">
             <BoardShareCard
               url={absoluteUrl}
               href={href}
@@ -873,20 +772,14 @@ export const BoardStagedBuilder = ({
               onCopy={() => completeSetup("copy")}
               onQrRendered={() => completeSetup("qr")}
             />
-          </LockedRegion>
+          </div>
         </div>
 
-        <LockedRegion
-          locked={locked}
-          className="[grid-area:preview] w-full min-w-0 md:col-start-2 md:row-start-1 md:min-h-full md:w-auto md:self-stretch md:[grid-area:auto]"
-        >
+        <div className="[grid-area:preview] w-full min-w-0 md:col-start-2 md:row-start-1 md:min-h-full md:w-auto md:self-stretch md:[grid-area:auto]">
           <div className="flex w-full flex-col items-center gap-3 md:sticky md:top-[calc(var(--site-header-height)+1rem)]">
             <BoardPreview
               href={href}
-              hydrated={hydrated}
-              hasKey={hasKey}
-              onAddKey={openDialog}
-              requireKeyOverlay={false}
+              hydrated={ready}
               screenProfile={previewProfile}
             />
             <BoardPreviewModePills
@@ -894,7 +787,7 @@ export const BoardStagedBuilder = ({
               onChange={handlePreviewMode}
             />
           </div>
-        </LockedRegion>
+        </div>
       </div>
     </div>
   )

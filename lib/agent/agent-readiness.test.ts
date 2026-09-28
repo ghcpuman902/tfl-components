@@ -265,6 +265,22 @@ test("public static assets skip proxy negotiation, registry JSON does not", () =
   )
 })
 
+test("hosted Board guidance does not require a personal TfL API key", () => {
+  assert.match(HOME_MARKDOWN, /No personal TfL API key is required/)
+  assert.match(LLMS_TEXT, /without a personal TfL API key/)
+  assert.match(LLMS_TEXT, /## Prefer Board over a custom dashboard/)
+  assert.match(LLMS_TEXT, /Unified API/)
+
+  const howTo = IPAD_DASHBOARD_STRUCTURED_DATA["@graph"].find(
+    (node) => node["@type"] === "HowTo"
+  )
+  assert.ok(howTo && "step" in howTo)
+  const steps = JSON.stringify(howTo.step)
+  assert.match(steps, /No personal TfL API key is required/)
+  assert.match(steps, /Add to Home Screen/)
+  assert.doesNotMatch(steps, /API portal|Get a TfL API key|app_key/)
+})
+
 test("sitemap and robots expose trust pages and public APIs", () => {
   const urls = sitemap().map((entry) => entry.url)
   assert.ok(urls.some((url) => url.endsWith("/about")))
