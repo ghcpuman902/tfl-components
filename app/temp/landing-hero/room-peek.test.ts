@@ -7,7 +7,11 @@ import {
   peekPanByPixels,
   peekPanLimit,
   peekScaleAboutPoint,
-  phoneDollyFromPinch,
+  PHONE_DEEP_SCALE,
+  PHONE_ZOOM_IN,
+  PHONE_ZOOM_OUT,
+  phoneZoomFromPinch,
+  phoneZoomToCamera,
   sanitizePeek,
   touchDistance,
   touchMidpoint,
@@ -79,13 +83,36 @@ describe("room-peek", () => {
     assert.ok(zoomed.panY < 0)
   })
 
-  it("docks the phone camera toward the iPad and pulls back into the room", () => {
-    assert.equal(phoneDollyFromPinch(0, 80, 160), 0)
-    assert.ok(phoneDollyFromPinch(0, 100, 50) > 0.5)
-    assert.equal(phoneDollyFromPinch(1, 40, 10), 1)
-    const docked = phoneDollyFromPinch(1, 80, 200)
-    assert.ok(docked < 0.2)
-    assert.ok(docked >= 0)
+  it("pulls back to the room, frames the iPad, and zooms into the board", () => {
+    assert.ok(phoneZoomFromPinch(0, 100, 50) > 0.5)
+    assert.equal(phoneZoomFromPinch(PHONE_ZOOM_OUT, 40, 10), PHONE_ZOOM_OUT)
+    assert.equal(phoneZoomFromPinch(PHONE_ZOOM_OUT, 100, 100), PHONE_ZOOM_OUT)
+    assert.equal(phoneZoomFromPinch(PHONE_ZOOM_IN, 80, 160), PHONE_ZOOM_IN)
+    const intoBoard = phoneZoomFromPinch(0, 80, 160)
+    assert.ok(intoBoard < 0)
+    assert.ok(intoBoard >= PHONE_ZOOM_IN)
+  })
+
+  it("keeps a second pinch at the zoom-out stop from jumping inward", () => {
+    const held = phoneZoomFromPinch(PHONE_ZOOM_OUT, 90, 90)
+    assert.equal(held, PHONE_ZOOM_OUT)
+    const nudged = phoneZoomFromPinch(held, 90, 86)
+    assert.equal(nudged, PHONE_ZOOM_OUT)
+    assert.deepEqual(phoneZoomToCamera(PHONE_ZOOM_OUT), {
+      zoom: 1,
+      progress: 1,
+      scale: 1,
+    })
+    assert.deepEqual(phoneZoomToCamera(0), {
+      zoom: 0,
+      progress: 0,
+      scale: 1,
+    })
+    assert.deepEqual(phoneZoomToCamera(PHONE_ZOOM_IN), {
+      zoom: -1,
+      progress: 0,
+      scale: PHONE_DEEP_SCALE,
+    })
   })
 
   it("sanitizes out-of-range peek state", () => {

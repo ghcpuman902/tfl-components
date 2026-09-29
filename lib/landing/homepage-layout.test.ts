@@ -60,12 +60,10 @@ describe("homepage iPad preview layout", () => {
     )
     assert.match(scene, /enabled: !reducedMotion && canvasLook/)
     assert.match(scene, /onPhoneDolly: phoneCanvas === true \? setPhoneDolly/)
-    assert.match(
-      scene,
-      /phoneCanvas === true \|\| !roomComplete \? DEFAULT_PEEK/
-    )
+    assert.match(scene, /phoneDeepScaleRef/)
     assert.match(zoom, /setPhoneDolly/)
-    assert.match(zoom, /PHONE_PULLBACK/)
+    assert.match(zoom, /phoneZoomToCamera/)
+    assert.match(input, /phoneZoomFromPinch/)
     assert.match(input, /#landing-example-board/)
     assert.match(input, /gesturestart/)
     assert.match(input, /touches\.length >= 2/)

@@ -4,6 +4,7 @@ import { useCallback, useLayoutEffect, useRef, type RefObject } from "react"
 import type { ScrollTrigger } from "gsap/ScrollTrigger"
 import { computeCoverCanvas } from "@/lib/landing/cover-canvas"
 import { getLandingGsap } from "./gsap-client"
+import { phoneZoomToCamera } from "./room-peek"
 import {
   IPAD_CASE,
   LANDING_VIEWBOX_HEIGHT,
@@ -17,7 +18,6 @@ import {
   IPAD_FRAME_WIDTH,
   COPY_FADE_DURATION,
   COPY_FADE_START,
-  PHONE_PULLBACK,
   LETTERBOX_FADE_DURATION,
   LETTERBOX_FADE_START,
   ROOM_COMPLETE_AT,
@@ -114,12 +114,16 @@ const framedIpadCamera = (
   const targetScale = desiredWidth / iPadWidth
   const iPadCenterX = iPadLeft + iPadWidth / 2
   const iPadCenterY = iPadTop + iPadHeight / 2
+  const height = composition.getBoundingClientRect().height
 
   return {
     targetScale,
     targetX: desiredLeft + desiredWidth / 2 - targetScale * iPadCenterX,
     targetY: desiredTop + desiredHeight / 2 - targetScale * iPadCenterY,
     copyTop,
+    /** iPad center in the camera box, for pinch-in past the framed tablet. */
+    focusOriginX: width > 0 ? (iPadCenterX / width) * 100 : 50,
+    focusOriginY: height > 0 ? (iPadCenterY / height) * 100 : 50,
   }
 }
 
@@ -247,17 +251,25 @@ export const useIpadZoom = ({
     []
   )
 
-  /** Phone pinch position along the framed-iPad → room camera. Not scroll. */
+  /**
+   * Phone pinch in the same units `phoneZoomFromPinch` reads back.
+   * 1 = room, 0 = framed iPad, -1 = deepest board zoom.
+   */
   const phoneDollyRef = useRef(0)
+  const phoneDeepScaleRef = useRef(1)
+  const phoneFocusOriginRef = useRef({ x: 50, y: 50 })
 
   const setPhoneDolly = useCallback(
-    (progress: number) => {
-      const clamped = clamp(progress, 0, 1) * PHONE_PULLBACK
-      phoneDollyRef.current = clamped
-      applyProgress(clamped, true, false)
+    (zoom: number) => {
+      const camera = phoneZoomToCamera(zoom)
+      phoneDollyRef.current = camera.zoom
+      applyProgress(camera.progress, true, false)
+      phoneDeepScaleRef.current = camera.scale
       const slot = copySlotRef.current
       if (!slot) return
-      const copyHidden = clamped >= COPY_FADE_START + COPY_FADE_DURATION
+      const copyHidden =
+        camera.zoom < -0.02 ||
+        camera.zoom >= COPY_FADE_START + COPY_FADE_DURATION
       slot.style.visibility = copyHidden ? "hidden" : "visible"
     },
     [applyProgress, copySlotRef]
@@ -294,12 +306,18 @@ export const useIpadZoom = ({
           copySlot.style.bottom = "auto"
           copySlot.style.height = "auto"
         }
+        phoneFocusOriginRef.current = {
+          x: next.focusOriginX,
+          y: next.focusOriginY,
+        }
         return next
       }
       const endCamera = () => {
         const next = roomEndCamera(svg, composition, canvas)
         if (letterbox) {
-          letterbox.style.height = `${next.letterbox}px`
+          // Phone pull-back is the camera alone. A late letterbox bar
+          // reads as a hitch at the zoom-out stop.
+          letterbox.style.height = phoneCanvas ? "0px" : `${next.letterbox}px`
         }
         return next
       }
@@ -370,19 +388,19 @@ export const useIpadZoom = ({
         start = startCamera()
         end = endCamera()
         timeline.invalidate()
-        applyProgress(
-          phoneCanvas ? phoneDollyRef.current : 0,
-          true,
-          !phoneCanvas
-        )
+        if (phoneCanvas) {
+          setPhoneDolly(phoneDollyRef.current)
+          return
+        }
+        applyProgress(0, true)
       }
 
       if (reducedMotion || phoneCanvas) {
-        applyProgress(
-          phoneCanvas ? phoneDollyRef.current : 0,
-          true,
-          !phoneCanvas
-        )
+        if (phoneCanvas) {
+          setPhoneDolly(phoneDollyRef.current)
+        } else {
+          applyProgress(0, true)
+        }
         return
       }
 
@@ -534,7 +552,13 @@ export const useIpadZoom = ({
       triggerRef.current = null
       ctx.revert()
     }
-  }, [applyProgress, phoneCanvas, reducedMotion])
+  }, [applyProgress, phoneCanvas, reducedMotion, setPhoneDolly])
 
-  return { progressRef, setPhoneDolly, phoneDollyRef }
+  return {
+    progressRef,
+    setPhoneDolly,
+    phoneDollyRef,
+    phoneDeepScaleRef,
+    phoneFocusOriginRef,
+  }
 }

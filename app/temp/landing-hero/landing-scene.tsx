@@ -325,7 +325,13 @@ export const LandingScene = ({
 
   const canvasLook = roomComplete || phoneCanvas === true
 
-  const { progressRef, setPhoneDolly, phoneDollyRef } = useIpadZoom({
+  const {
+    progressRef,
+    setPhoneDolly,
+    phoneDollyRef,
+    phoneDeepScaleRef,
+    phoneFocusOriginRef,
+  } = useIpadZoom({
     wrapperRef,
     compositionRef,
     cameraRef,
@@ -440,13 +446,19 @@ export const LandingScene = ({
 
       const peekLayer = peekLayerRef.current
       if (peekLayer) {
-        // Phone pinch drives the camera dolly. Extra peek scale would crop
-        // the framed iPad out of view.
-        const peek =
-          phoneCanvas === true || !roomComplete ? DEFAULT_PEEK : peekRef.current
-        peekLayer.style.transformOrigin = "50% 50%"
-        peekLayer.style.translate = `${peek.panX * 50}% ${peek.panY * 50}%`
-        peekLayer.style.scale = String(peek.scale)
+        if (phoneCanvas === true) {
+          const scale = phoneDeepScaleRef.current
+          const origin = phoneFocusOriginRef.current
+          peekLayer.style.transformOrigin =
+            scale > 1 ? `${origin.x}% ${origin.y}%` : "50% 50%"
+          peekLayer.style.translate = "0 0"
+          peekLayer.style.scale = String(scale)
+        } else {
+          const peek = roomComplete ? peekRef.current : DEFAULT_PEEK
+          peekLayer.style.transformOrigin = "50% 50%"
+          peekLayer.style.translate = `${peek.panX * 50}% ${peek.panY * 50}%`
+          peekLayer.style.scale = String(peek.scale)
+        }
       }
 
       const host = compositionRef.current
@@ -487,6 +499,8 @@ export const LandingScene = ({
     pageVisible,
     peekRef,
     phoneCanvas,
+    phoneDeepScaleRef,
+    phoneFocusOriginRef,
     progressRef,
     reducedMotion,
     roomComplete,

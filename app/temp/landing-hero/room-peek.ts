@@ -102,24 +102,48 @@ export const peekScaleAboutPoint = ({
 }
 
 /**
- * Phone canvas dolly. 0 is the framed iPad; 1 is the room pulled back.
- * Spreading fingers decreases progress (dock onto the tablet). Pinching
- * together increases it (more room around the iPad). Gain is chosen so one
- * comfortable pinch can cover the whole dolly, and the result never leaves
- * the camera path that keeps the iPad on screen.
+ * Phone pinch, one continuous value.
+ * `PHONE_ZOOM_OUT` (1) is the room camera. `0` is the framed iPad.
+ * `PHONE_ZOOM_IN` (-1) is the deepest pinch into the board.
+ * The stored value is what the next pinch reads, so the clamp does not
+ * get scaled a second time and bounce.
  */
-export const PHONE_DOLLY_GAIN = 1.25
+export const PHONE_ZOOM_OUT = 1
+export const PHONE_ZOOM_IN = -1
+export const PHONE_DOLLY_GAIN = 1.6
+/** Scale of the framed iPad at `PHONE_ZOOM_IN`, anchored on the tablet. */
+export const PHONE_DEEP_SCALE = 2.5
 
-export const phoneDollyFromPinch = (
-  startDolly: number,
+export const phoneZoomFromPinch = (
+  startZoom: number,
   startDistance: number,
   distance: number
 ): number => {
   if (!(startDistance > 0) || !(distance > 0)) {
-    return clamp(startDolly, 0, 1)
+    return clamp(startZoom, PHONE_ZOOM_IN, PHONE_ZOOM_OUT)
   }
   const ratio = distance / startDistance
-  return clamp(startDolly + (1 - ratio) * PHONE_DOLLY_GAIN, 0, 1)
+  return clamp(
+    startZoom + (1 - ratio) * PHONE_DOLLY_GAIN,
+    PHONE_ZOOM_IN,
+    PHONE_ZOOM_OUT
+  )
+}
+
+/** Map the pinch value onto the room camera, then extra scale past the framed iPad. */
+export const phoneZoomToCamera = (
+  zoom: number
+): { zoom: number; progress: number; scale: number } => {
+  const clamped = clamp(zoom, PHONE_ZOOM_IN, PHONE_ZOOM_OUT)
+  if (clamped >= 0) {
+    return { zoom: clamped, progress: clamped, scale: 1 }
+  }
+  const depth = -clamped
+  return {
+    zoom: clamped,
+    progress: 0,
+    scale: 1 + depth * (PHONE_DEEP_SCALE - 1),
+  }
 }
 
 export const peekPanByPixels = ({

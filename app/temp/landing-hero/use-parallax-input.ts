@@ -5,7 +5,7 @@ import {
   DEFAULT_PEEK,
   peekPanByPixels,
   peekScaleAboutPoint,
-  phoneDollyFromPinch,
+  phoneZoomFromPinch,
   sanitizePeek,
   touchDistance,
   touchMidpoint,
@@ -248,7 +248,7 @@ export const useParallaxInput = ({
         if (!(pinch.startDistance > 0) || !(distance > 0)) return
         if (onPhoneDolly) {
           onPhoneDolly(
-            phoneDollyFromPinch(pinch.startDolly, pinch.startDistance, distance)
+            phoneZoomFromPinch(pinch.startDolly, pinch.startDistance, distance)
           )
           return
         }
