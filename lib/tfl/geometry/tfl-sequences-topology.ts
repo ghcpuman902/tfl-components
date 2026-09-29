@@ -169,7 +169,7 @@ const hopsFromPatterns = (
   return hops
 }
 
-const movementsFromPatterns = (
+export const movementsFromPatterns = (
   patterns: readonly TflSequencesPattern[]
 ): DirectedTopologyMovement[] => {
   const byKey = new Map<string, DirectedTopologyMovement>()

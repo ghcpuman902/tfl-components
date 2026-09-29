@@ -1,5 +1,4 @@
 import type { LineSchematic } from "@/lib/tfl/line-schematic"
-import { NORTHERN_LINE_SCHEMATIC_HORIZONTAL } from "@/lib/tfl/fixtures/northern-line-schematic-horizontal"
 import { NORTHERN_LINE_SCHEMATIC_VERTICAL } from "@/lib/tfl/fixtures/northern-line-schematic-vertical"
 import { CENTRAL_BRANCH_SCHEMATIC_HORIZONTAL } from "@/lib/tfl/fixtures/generated/central-branch-schematic-horizontal"
 import { CENTRAL_BRANCH_SCHEMATIC_VERTICAL } from "@/lib/tfl/fixtures/generated/central-branch-schematic-vertical"
@@ -15,6 +14,7 @@ import { METROPOLITAN_BRANCH_SCHEMATIC_HORIZONTAL } from "@/lib/tfl/fixtures/gen
 import { METROPOLITAN_BRANCH_SCHEMATIC_VERTICAL } from "@/lib/tfl/fixtures/generated/metropolitan-branch-schematic-vertical"
 import { MILDMAY_BRANCH_SCHEMATIC_HORIZONTAL } from "@/lib/tfl/fixtures/generated/mildmay-branch-schematic-horizontal"
 import { MILDMAY_BRANCH_SCHEMATIC_VERTICAL } from "@/lib/tfl/fixtures/generated/mildmay-branch-schematic-vertical"
+import { NORTHERN_BRANCH_SCHEMATIC_HORIZONTAL } from "@/lib/tfl/fixtures/generated/northern-branch-schematic-horizontal"
 import { PICCADILLY_BRANCH_SCHEMATIC_HORIZONTAL } from "@/lib/tfl/fixtures/generated/piccadilly-branch-schematic-horizontal"
 import { PICCADILLY_BRANCH_SCHEMATIC_VERTICAL } from "@/lib/tfl/fixtures/generated/piccadilly-branch-schematic-vertical"
 import { RB1_BRANCH_SCHEMATIC_HORIZONTAL } from "@/lib/tfl/fixtures/generated/rb1-branch-schematic-horizontal"
@@ -29,8 +29,14 @@ import { WINDRUSH_BRANCH_SCHEMATIC_HORIZONTAL } from "@/lib/tfl/fixtures/generat
 import { WINDRUSH_BRANCH_SCHEMATIC_VERTICAL } from "@/lib/tfl/fixtures/generated/windrush-branch-schematic-vertical"
 
 /**
- * Demo / docs registries. Northern uses the hand-authored fixtures.
- * Every other line is generated (`pnpm schematics:build`).
+ * Demo / docs registries.
+ *
+ * Northern, District, and Metropolitan's HORIZONTAL strips come from the
+ * topology → energy → clip-to-grid path
+ * (lib/tfl/geometry/branch-strip-from-topology.ts) — see
+ * branch-schematic-layout.ts's TOPOLOGY_CLIP_LINE_IDS. Northern's VERTICAL
+ * map is still the hand-authored fixture (vertical is out of scope for that
+ * pass). Every other line/orientation is generated (`pnpm schematics:build`).
  * Horizontal and vertical maps are separate — do not rotate one graph.
  */
 export const BRANCH_SCHEMATICS_HORIZONTAL: Record<string, LineSchematic> = {
@@ -41,7 +47,7 @@ export const BRANCH_SCHEMATICS_HORIZONTAL: Record<string, LineSchematic> = {
   elizabeth: ELIZABETH_BRANCH_SCHEMATIC_HORIZONTAL,
   metropolitan: METROPOLITAN_BRANCH_SCHEMATIC_HORIZONTAL,
   mildmay: MILDMAY_BRANCH_SCHEMATIC_HORIZONTAL,
-  northern: NORTHERN_LINE_SCHEMATIC_HORIZONTAL,
+  northern: NORTHERN_BRANCH_SCHEMATIC_HORIZONTAL,
   piccadilly: PICCADILLY_BRANCH_SCHEMATIC_HORIZONTAL,
   rb1: RB1_BRANCH_SCHEMATIC_HORIZONTAL,
   rb6: RB6_BRANCH_SCHEMATIC_HORIZONTAL,
