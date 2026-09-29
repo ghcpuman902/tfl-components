@@ -5,6 +5,7 @@ import {
   DEFAULT_PEEK,
   peekPanByPixels,
   peekScaleAboutPoint,
+  phoneDollyFromPinch,
   sanitizePeek,
   touchDistance,
   touchMidpoint,
@@ -24,6 +25,13 @@ type ParallaxValue = {
 type UseParallaxInputArgs = {
   stageRef: RefObject<HTMLElement | null>
   enabled: boolean
+  /**
+   * Phone canvas: pinch moves the room camera between the framed iPad (0)
+   * and the pulled-back room (1). Peek scale stays at rest so the tablet
+   * cannot be scaled out of frame.
+   */
+  phoneDollyRef?: RefObject<number>
+  onPhoneDolly?: (progress: number) => void
 }
 
 /** Controls and page chrome. The framed board is not a control: two-finger pinch on it zooms the room. */
@@ -59,6 +67,8 @@ const isPeekSurfaceTarget = (target: EventTarget | null) => {
 export const useParallaxInput = ({
   stageRef,
   enabled,
+  phoneDollyRef,
+  onPhoneDolly,
 }: UseParallaxInputArgs) => {
   const valueRef = useRef<ParallaxValue>({ x: 0, y: 0 })
   const peekRef = useRef<PeekState>({ ...DEFAULT_PEEK })
@@ -68,6 +78,7 @@ export const useParallaxInput = ({
   const pinchRef = useRef<{
     startDistance: number
     startScale: number
+    startDolly: number
   } | null>(null)
 
   useEffect(() => {
@@ -219,6 +230,7 @@ export const useParallaxInput = ({
       pinchRef.current = {
         startDistance: touchDistance(event.touches[0]!, event.touches[1]!),
         startScale: peekRef.current.scale,
+        startDolly: phoneDollyRef?.current ?? 0,
       }
     }
 
@@ -234,6 +246,12 @@ export const useParallaxInput = ({
         const rect = stage.getBoundingClientRect()
         const distance = touchDistance(event.touches[0]!, event.touches[1]!)
         if (!(pinch.startDistance > 0) || !(distance > 0)) return
+        if (onPhoneDolly) {
+          onPhoneDolly(
+            phoneDollyFromPinch(pinch.startDolly, pinch.startDistance, distance)
+          )
+          return
+        }
         const mid = touchMidpoint(event.touches[0]!, event.touches[1]!)
         peekRef.current = peekScaleAboutPoint({
           peek: peekRef.current,
@@ -312,7 +330,7 @@ export const useParallaxInput = ({
         capture: true,
       })
     }
-  }, [enabled, stageRef])
+  }, [enabled, onPhoneDolly, phoneDollyRef, stageRef])
 
   return {
     valueRef,

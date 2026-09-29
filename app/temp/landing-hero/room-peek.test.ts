@@ -7,6 +7,7 @@ import {
   peekPanByPixels,
   peekPanLimit,
   peekScaleAboutPoint,
+  phoneDollyFromPinch,
   sanitizePeek,
   touchDistance,
   touchMidpoint,
@@ -30,7 +31,10 @@ describe("room-peek", () => {
   })
 
   it("measures pinch distance and midpoint", () => {
-    assert.equal(touchDistance({ clientX: 0, clientY: 0 }, { clientX: 3, clientY: 4 }), 5)
+    assert.equal(
+      touchDistance({ clientX: 0, clientY: 0 }, { clientX: 3, clientY: 4 }),
+      5
+    )
     assert.deepEqual(
       touchMidpoint({ clientX: 0, clientY: 10 }, { clientX: 10, clientY: 0 }),
       { x: 5, y: 5 }
@@ -75,14 +79,20 @@ describe("room-peek", () => {
     assert.ok(zoomed.panY < 0)
   })
 
+  it("docks the phone camera toward the iPad and pulls back into the room", () => {
+    assert.equal(phoneDollyFromPinch(0, 80, 160), 0)
+    assert.ok(phoneDollyFromPinch(0, 100, 50) > 0.5)
+    assert.equal(phoneDollyFromPinch(1, 40, 10), 1)
+    const docked = phoneDollyFromPinch(1, 80, 200)
+    assert.ok(docked < 0.2)
+    assert.ok(docked >= 0)
+  })
+
   it("sanitizes out-of-range peek state", () => {
-    assert.deepEqual(
-      sanitizePeek({ scale: 4, panX: 9, panY: -9 }),
-      {
-        scale: 1.85,
-        panX: peekPanLimit(1.85),
-        panY: -peekPanLimit(1.85),
-      }
-    )
+    assert.deepEqual(sanitizePeek({ scale: 4, panX: 9, panY: -9 }), {
+      scale: 1.85,
+      panX: peekPanLimit(1.85),
+      panY: -peekPanLimit(1.85),
+    })
   })
 })

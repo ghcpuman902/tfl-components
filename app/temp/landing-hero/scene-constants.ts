@@ -81,6 +81,12 @@ export const COPY_FADE_DURATION = 0.28
 export const LETTERBOX_FADE_START = 0.78
 export const LETTERBOX_FADE_DURATION = 0.22
 export const ROOM_COMPLETE_AT = 0.98
+/**
+ * Phone pinch-out end, as a fraction of the framed-iPad → room dolly.
+ * The full room end shrinks the tablet into the corner of a tall phone crop.
+ * Stopping here leaves the iPad on screen and readable, with the room around it.
+ */
+export const PHONE_PULLBACK = 0.72
 /** Keep the room tall — never shrink past this to show the full width. */
 export const ROOM_MIN_HEIGHT_FILL = 0.72
 /** ViewBox padding around the iPad when panning the end crop. */

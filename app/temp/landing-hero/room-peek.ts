@@ -30,10 +30,7 @@ export const peekPanLimit = (scale: number): number => {
   return PEEK_PAN_LIMIT * (excess / (PEEK_MAX_SCALE - 1))
 }
 
-export const clampPeekPan = (
-  pan: number,
-  scale: number
-): number => {
+export const clampPeekPan = (pan: number, scale: number): number => {
   const limit = peekPanLimit(scale)
   return clamp(pan, -limit, limit)
 }
@@ -102,6 +99,27 @@ export const peekScaleAboutPoint = ({
     panX: worldX - nx / scale,
     panY: worldY - ny / scale,
   })
+}
+
+/**
+ * Phone canvas dolly. 0 is the framed iPad; 1 is the room pulled back.
+ * Spreading fingers decreases progress (dock onto the tablet). Pinching
+ * together increases it (more room around the iPad). Gain is chosen so one
+ * comfortable pinch can cover the whole dolly, and the result never leaves
+ * the camera path that keeps the iPad on screen.
+ */
+export const PHONE_DOLLY_GAIN = 1.25
+
+export const phoneDollyFromPinch = (
+  startDolly: number,
+  startDistance: number,
+  distance: number
+): number => {
+  if (!(startDistance > 0) || !(distance > 0)) {
+    return clamp(startDolly, 0, 1)
+  }
+  const ratio = distance / startDistance
+  return clamp(startDolly + (1 - ratio) * PHONE_DOLLY_GAIN, 0, 1)
 }
 
 export const peekPanByPixels = ({

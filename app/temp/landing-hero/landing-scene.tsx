@@ -325,12 +325,7 @@ export const LandingScene = ({
 
   const canvasLook = roomComplete || phoneCanvas === true
 
-  const { valueRef, peekRef } = useParallaxInput({
-    stageRef,
-    enabled: !reducedMotion && canvasLook,
-  })
-
-  const { progressRef } = useIpadZoom({
+  const { progressRef, setPhoneDolly, phoneDollyRef } = useIpadZoom({
     wrapperRef,
     compositionRef,
     cameraRef,
@@ -347,6 +342,13 @@ export const LandingScene = ({
     onSceneReady: () => {
       setSceneReady(true)
     },
+  })
+
+  const { valueRef, peekRef } = useParallaxInput({
+    stageRef,
+    enabled: !reducedMotion && canvasLook,
+    phoneDollyRef: phoneCanvas === true ? phoneDollyRef : undefined,
+    onPhoneDolly: phoneCanvas === true ? setPhoneDolly : undefined,
   })
 
   useEffect(() => {
@@ -438,7 +440,10 @@ export const LandingScene = ({
 
       const peekLayer = peekLayerRef.current
       if (peekLayer) {
-        const peek = canvasLook ? peekRef.current : DEFAULT_PEEK
+        // Phone pinch drives the camera dolly. Extra peek scale would crop
+        // the framed iPad out of view.
+        const peek =
+          phoneCanvas === true || !roomComplete ? DEFAULT_PEEK : peekRef.current
         peekLayer.style.transformOrigin = "50% 50%"
         peekLayer.style.translate = `${peek.panX * 50}% ${peek.panY * 50}%`
         peekLayer.style.scale = String(peek.scale)
@@ -481,8 +486,10 @@ export const LandingScene = ({
     canvasLook,
     pageVisible,
     peekRef,
+    phoneCanvas,
     progressRef,
     reducedMotion,
+    roomComplete,
     sceneReady,
     valueRef,
   ])

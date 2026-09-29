@@ -17,6 +17,7 @@ import {
   IPAD_FRAME_WIDTH,
   COPY_FADE_DURATION,
   COPY_FADE_START,
+  PHONE_PULLBACK,
   LETTERBOX_FADE_DURATION,
   LETTERBOX_FADE_START,
   ROOM_COMPLETE_AT,
@@ -223,24 +224,44 @@ export const useIpadZoom = ({
   const onSceneReadyRef = useRef(onSceneReady)
   onSceneReadyRef.current = onSceneReady
 
-  const applyProgress = useCallback((progress: number, force = false) => {
-    const clamped = clamp(progress, 0, 1)
-    progressRef.current = clamped
-    const timeline = timelineRef.current
-    if (timeline) {
-      if (force) {
-        // `.progress(x)` is a no-op when `x` already equals the timeline's
-        // cached time — invalidate() (after a resize) never gets rendered,
-        // so the camera keeps its pre-resize transform under a freshly
-        // resized canvas. `.render(..., force: true)` re-runs the dynamic
-        // x/y/scale getters unconditionally.
-        timeline.render(clamped * timeline.duration(), false, true)
-      } else {
-        timeline.progress(clamped)
+  const applyProgress = useCallback(
+    (progress: number, force = false, reportComplete = true) => {
+      const clamped = clamp(progress, 0, 1)
+      progressRef.current = clamped
+      const timeline = timelineRef.current
+      if (timeline) {
+        if (force) {
+          // `.progress(x)` is a no-op when `x` already equals the timeline's
+          // cached time — invalidate() (after a resize) never gets rendered,
+          // so the camera keeps its pre-resize transform under a freshly
+          // resized canvas. `.render(..., force: true)` re-runs the dynamic
+          // x/y/scale getters unconditionally.
+          timeline.render(clamped * timeline.duration(), false, true)
+        } else {
+          timeline.progress(clamped)
+        }
       }
-    }
-    onRoomCompleteChangeRef.current(clamped >= ROOM_COMPLETE_AT)
-  }, [])
+      if (!reportComplete) return
+      onRoomCompleteChangeRef.current(clamped >= ROOM_COMPLETE_AT)
+    },
+    []
+  )
+
+  /** Phone pinch position along the framed-iPad → room camera. Not scroll. */
+  const phoneDollyRef = useRef(0)
+
+  const setPhoneDolly = useCallback(
+    (progress: number) => {
+      const clamped = clamp(progress, 0, 1) * PHONE_PULLBACK
+      phoneDollyRef.current = clamped
+      applyProgress(clamped, true, false)
+      const slot = copySlotRef.current
+      if (!slot) return
+      const copyHidden = clamped >= COPY_FADE_START + COPY_FADE_DURATION
+      slot.style.visibility = copyHidden ? "hidden" : "visible"
+    },
+    [applyProgress, copySlotRef]
+  )
 
   useLayoutEffect(() => {
     if (phoneCanvas == null) return
@@ -349,11 +370,19 @@ export const useIpadZoom = ({
         start = startCamera()
         end = endCamera()
         timeline.invalidate()
-        applyProgress(0, true)
+        applyProgress(
+          phoneCanvas ? phoneDollyRef.current : 0,
+          true,
+          !phoneCanvas
+        )
       }
 
       if (reducedMotion || phoneCanvas) {
-        applyProgress(0, true)
+        applyProgress(
+          phoneCanvas ? phoneDollyRef.current : 0,
+          true,
+          !phoneCanvas
+        )
         return
       }
 
@@ -507,5 +536,5 @@ export const useIpadZoom = ({
     }
   }, [applyProgress, phoneCanvas, reducedMotion])
 
-  return { progressRef }
+  return { progressRef, setPhoneDolly, phoneDollyRef }
 }
