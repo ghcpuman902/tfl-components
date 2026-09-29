@@ -7,6 +7,12 @@ import {
   peekPanByPixels,
   peekPanLimit,
   peekScaleAboutPoint,
+  PHONE_DEEP_SCALE_GAIN,
+  PHONE_ZOOM_OUT,
+  clampPhonePanToArtwork,
+  phonePanForGesture,
+  phoneZoomFromPinch,
+  phoneZoomToCamera,
   sanitizePeek,
   touchDistance,
   touchMidpoint,
@@ -30,7 +36,10 @@ describe("room-peek", () => {
   })
 
   it("measures pinch distance and midpoint", () => {
-    assert.equal(touchDistance({ clientX: 0, clientY: 0 }, { clientX: 3, clientY: 4 }), 5)
+    assert.equal(
+      touchDistance({ clientX: 0, clientY: 0 }, { clientX: 3, clientY: 4 }),
+      5
+    )
     assert.deepEqual(
       touchMidpoint({ clientX: 0, clientY: 10 }, { clientX: 10, clientY: 0 }),
       { x: 5, y: 5 }
@@ -75,14 +84,93 @@ describe("room-peek", () => {
     assert.ok(zoomed.panY < 0)
   })
 
-  it("sanitizes out-of-range peek state", () => {
+  it("pulls back to the room and keeps zooming in past the framed iPad", () => {
+    assert.ok(phoneZoomFromPinch(0, 100, 50) > 0.5)
+    assert.equal(phoneZoomFromPinch(PHONE_ZOOM_OUT, 40, 10), PHONE_ZOOM_OUT)
+    assert.equal(phoneZoomFromPinch(PHONE_ZOOM_OUT, 100, 100), PHONE_ZOOM_OUT)
+    const intoBoard = phoneZoomFromPinch(0, 80, 160)
+    assert.ok(intoBoard < 0)
+    const deeper = phoneZoomFromPinch(intoBoard, 40, 120)
+    assert.ok(deeper < intoBoard)
+  })
+
+  it("keeps a second pinch at the zoom-out stop from jumping inward", () => {
+    const held = phoneZoomFromPinch(PHONE_ZOOM_OUT, 90, 90)
+    assert.equal(held, PHONE_ZOOM_OUT)
+    const nudged = phoneZoomFromPinch(held, 90, 86)
+    assert.equal(nudged, PHONE_ZOOM_OUT)
+    assert.deepEqual(phoneZoomToCamera(PHONE_ZOOM_OUT), {
+      zoom: 1,
+      progress: 1,
+      scale: 1,
+    })
+    assert.deepEqual(phoneZoomToCamera(0), {
+      zoom: 0,
+      progress: 0,
+      scale: 1,
+    })
+    assert.deepEqual(phoneZoomToCamera(-1), {
+      zoom: -1,
+      progress: 0,
+      scale: 1 + PHONE_DEEP_SCALE_GAIN,
+    })
+    assert.equal(phoneZoomToCamera(-4).scale, 1 + 4 * PHONE_DEEP_SCALE_GAIN)
+  })
+
+  it("pans with two fingers and stays on the artwork", () => {
+    const panned = phonePanForGesture({
+      panX: 0,
+      panY: 0,
+      startScale: 2,
+      nextScale: 2,
+      originX: 100,
+      originY: 80,
+      startX: 40,
+      startY: 50,
+      nextX: 70,
+      nextY: 30,
+    })
+    assert.equal(panned.x, 30)
+    assert.equal(panned.y, -20)
     assert.deepEqual(
-      sanitizePeek({ scale: 4, panX: 9, panY: -9 }),
-      {
-        scale: 1.85,
-        panX: peekPanLimit(1.85),
-        panY: -peekPanLimit(1.85),
-      }
+      phonePanForGesture({
+        panX: 10,
+        panY: 10,
+        startScale: 2,
+        nextScale: 1,
+        originX: 0,
+        originY: 0,
+        startX: 0,
+        startY: 0,
+        nextX: 20,
+        nextY: 20,
+      }),
+      { x: 0, y: 0 }
     )
+    const clamped = clampPhonePanToArtwork({
+      panX: 5000,
+      panY: -5000,
+      scale: 3,
+      originX: 50,
+      originY: 40,
+      viewLeft: 0,
+      viewTop: 0,
+      viewRight: 100,
+      viewBottom: 80,
+      artLeft: 0,
+      artTop: 0,
+      artRight: 200,
+      artBottom: 160,
+    })
+    assert.ok(clamped.x < 5000)
+    assert.ok(clamped.y > -5000)
+  })
+
+  it("sanitizes out-of-range peek state", () => {
+    assert.deepEqual(sanitizePeek({ scale: 4, panX: 9, panY: -9 }), {
+      scale: 1.85,
+      panX: peekPanLimit(1.85),
+      panY: -peekPanLimit(1.85),
+    })
   })
 })

@@ -30,10 +30,7 @@ export const peekPanLimit = (scale: number): number => {
   return PEEK_PAN_LIMIT * (excess / (PEEK_MAX_SCALE - 1))
 }
 
-export const clampPeekPan = (
-  pan: number,
-  scale: number
-): number => {
+export const clampPeekPan = (pan: number, scale: number): number => {
   const limit = peekPanLimit(scale)
   return clamp(pan, -limit, limit)
 }
@@ -102,6 +99,139 @@ export const peekScaleAboutPoint = ({
     panX: worldX - nx / scale,
     panY: worldY - ny / scale,
   })
+}
+
+/**
+ * Phone pinch, one continuous value.
+ * `PHONE_ZOOM_OUT` (1) is the room camera. `0` is the framed iPad.
+ * Values below 0 zoom into the board. There is no zoom-in cap: each unit
+ * past 0 adds `PHONE_DEEP_SCALE_GAIN` of scale (zoom −1 is 2.5×).
+ * The stored value is what the next pinch reads, so the zoom-out stop
+ * does not get scaled a second time and bounce.
+ */
+export const PHONE_ZOOM_OUT = 1
+export const PHONE_DOLLY_GAIN = 1.6
+/** Extra scale per unit of zoom below the framed iPad. Zoom −1 is 2.5×. */
+export const PHONE_DEEP_SCALE_GAIN = 1.5
+
+export const phoneZoomFromPinch = (
+  startZoom: number,
+  startDistance: number,
+  distance: number
+): number => {
+  if (!(startDistance > 0) || !(distance > 0)) {
+    return Math.min(startZoom, PHONE_ZOOM_OUT)
+  }
+  const ratio = distance / startDistance
+  return Math.min(startZoom + (1 - ratio) * PHONE_DOLLY_GAIN, PHONE_ZOOM_OUT)
+}
+
+/** Map the pinch value onto the room camera, then extra scale past the framed iPad. */
+export const phoneZoomToCamera = (
+  zoom: number
+): { zoom: number; progress: number; scale: number } => {
+  const clamped = Math.min(zoom, PHONE_ZOOM_OUT)
+  if (clamped >= 0) {
+    return { zoom: clamped, progress: clamped, scale: 1 }
+  }
+  const depth = -clamped
+  return {
+    zoom: clamped,
+    progress: 0,
+    scale: 1 + depth * PHONE_DEEP_SCALE_GAIN,
+  }
+}
+
+export type PhonePan = { x: number; y: number }
+
+/**
+ * Two-finger move in camera-local pixels. Keeps the point under the
+ * starting midpoint stuck to the fingers while scale changes, and follows
+ * the midpoint when it moves. Scale ≤ 1 clears the pan (framed iPad / room).
+ */
+export const phonePanForGesture = ({
+  panX,
+  panY,
+  startScale,
+  nextScale,
+  originX,
+  originY,
+  startX,
+  startY,
+  nextX,
+  nextY,
+}: {
+  panX: number
+  panY: number
+  startScale: number
+  nextScale: number
+  originX: number
+  originY: number
+  startX: number
+  startY: number
+  nextX: number
+  nextY: number
+}): PhonePan => {
+  if (!(startScale > 0) || !(nextScale > 1)) return { x: 0, y: 0 }
+  const ratio = nextScale / startScale
+  return {
+    x: nextX - originX - ratio * (startX - panX - originX),
+    y: nextY - originY - ratio * (startY - panY - originY),
+  }
+}
+
+/**
+ * Keep the magnified artwork covering the visible camera window so a pan
+ * can reach the edges of the scene without sliding into empty space.
+ */
+export const clampPhonePanToArtwork = ({
+  panX,
+  panY,
+  scale,
+  originX,
+  originY,
+  viewLeft,
+  viewTop,
+  viewRight,
+  viewBottom,
+  artLeft,
+  artTop,
+  artRight,
+  artBottom,
+}: {
+  panX: number
+  panY: number
+  scale: number
+  originX: number
+  originY: number
+  viewLeft: number
+  viewTop: number
+  viewRight: number
+  viewBottom: number
+  artLeft: number
+  artTop: number
+  artRight: number
+  artBottom: number
+}): PhonePan => {
+  if (!(scale > 1)) return { x: 0, y: 0 }
+  const clampAxis = (
+    value: number,
+    origin: number,
+    view0: number,
+    view1: number,
+    art0: number,
+    art1: number
+  ) => {
+    const base = origin * (1 - scale)
+    const maxPan = view0 - base - scale * art0
+    const minPan = view1 - base - scale * art1
+    if (minPan > maxPan) return (minPan + maxPan) / 2
+    return clamp(value, minPan, maxPan)
+  }
+  return {
+    x: clampAxis(panX, originX, viewLeft, viewRight, artLeft, artRight),
+    y: clampAxis(panY, originY, viewTop, viewBottom, artTop, artBottom),
+  }
 }
 
 export const peekPanByPixels = ({
