@@ -4,7 +4,7 @@ import { useCallback, useLayoutEffect, useRef, type RefObject } from "react"
 import type { ScrollTrigger } from "gsap/ScrollTrigger"
 import { computeCoverCanvas } from "@/lib/landing/cover-canvas"
 import { getLandingGsap } from "./gsap-client"
-import { phoneZoomToCamera } from "./room-peek"
+import { clampPhonePanToArtwork, phoneZoomToCamera } from "./room-peek"
 import {
   IPAD_CASE,
   LANDING_VIEWBOX_HEIGHT,
@@ -78,7 +78,7 @@ const layoutCoverCanvas = (
   canvas.style.height = `${canvasH}px`
   canvas.style.translate = `${panX}px ${panY}px`
 
-  return { coverScale, panX, panY, viewBox, width, height }
+  return { coverScale, panX, panY, viewBox, width, height, canvasW, canvasH }
 }
 
 const framedIpadCamera = (
@@ -87,11 +87,8 @@ const framedIpadCamera = (
   canvas: HTMLElement,
   readCssLength: ReadCssLength
 ) => {
-  const { coverScale, panX, panY, viewBox, width } = layoutCoverCanvas(
-    svg,
-    composition,
-    canvas
-  )
+  const { coverScale, panX, panY, viewBox, width, canvasW, canvasH } =
+    layoutCoverCanvas(svg, composition, canvas)
   const iPadWidth = IPAD_CASE.width * coverScale
   const iPadHeight = IPAD_CASE.height * coverScale
   const iPadLeft = panX + (IPAD_CASE.x - viewBox.x) * coverScale
@@ -124,6 +121,12 @@ const framedIpadCamera = (
     /** iPad center in the camera box, for pinch-in past the framed tablet. */
     focusOriginX: width > 0 ? (iPadCenterX / width) * 100 : 50,
     focusOriginY: height > 0 ? (iPadCenterY / height) * 100 : 50,
+    viewWidth: width,
+    viewHeight: height,
+    artworkLeft: panX,
+    artworkTop: panY,
+    artworkRight: panX + canvasW,
+    artworkBottom: panY + canvasH,
   }
 }
 
@@ -253,18 +256,56 @@ export const useIpadZoom = ({
 
   /**
    * Phone pinch in the same units `phoneZoomFromPinch` reads back.
-   * 1 = room, 0 = framed iPad, -1 = deepest board zoom.
+   * 1 = room, 0 = framed iPad, below 0 = into the board (no zoom-in cap).
    */
   const phoneDollyRef = useRef(0)
   const phoneDeepScaleRef = useRef(1)
   const phoneFocusOriginRef = useRef({ x: 50, y: 50 })
+  const phonePanRef = useRef({ x: 0, y: 0 })
+  const phonePoseRef = useRef({
+    x: 0,
+    y: 0,
+    scale: 1,
+    viewWidth: 1,
+    viewHeight: 1,
+  })
+  const phoneArtworkRef = useRef({ left: 0, top: 0, right: 1, bottom: 1 })
 
   const setPhoneDolly = useCallback(
-    (zoom: number) => {
+    (zoom: number, pan?: { x: number; y: number }) => {
       const camera = phoneZoomToCamera(zoom)
       phoneDollyRef.current = camera.zoom
       applyProgress(camera.progress, true, false)
       phoneDeepScaleRef.current = camera.scale
+      if (camera.scale <= 1) {
+        phonePanRef.current = { x: 0, y: 0 }
+      } else {
+        const pose = phonePoseRef.current
+        const art = phoneArtworkRef.current
+        const origin = phoneFocusOriginRef.current
+        const originX = (origin.x / 100) * pose.viewWidth
+        const originY = (origin.y / 100) * pose.viewHeight
+        const viewLeft = -pose.x / pose.scale
+        const viewTop = -pose.y / pose.scale
+        const viewRight = (pose.viewWidth - pose.x) / pose.scale
+        const viewBottom = (pose.viewHeight - pose.y) / pose.scale
+        const next = pan ?? phonePanRef.current
+        phonePanRef.current = clampPhonePanToArtwork({
+          panX: next.x,
+          panY: next.y,
+          scale: camera.scale,
+          originX,
+          originY,
+          viewLeft,
+          viewTop,
+          viewRight,
+          viewBottom,
+          artLeft: art.left,
+          artTop: art.top,
+          artRight: art.right,
+          artBottom: art.bottom,
+        })
+      }
       const slot = copySlotRef.current
       if (!slot) return
       const copyHidden =
@@ -309,6 +350,19 @@ export const useIpadZoom = ({
         phoneFocusOriginRef.current = {
           x: next.focusOriginX,
           y: next.focusOriginY,
+        }
+        phonePoseRef.current = {
+          x: next.targetX,
+          y: next.targetY,
+          scale: next.targetScale,
+          viewWidth: next.viewWidth,
+          viewHeight: next.viewHeight,
+        }
+        phoneArtworkRef.current = {
+          left: next.artworkLeft,
+          top: next.artworkTop,
+          right: next.artworkRight,
+          bottom: next.artworkBottom,
         }
         return next
       }
@@ -560,5 +614,8 @@ export const useIpadZoom = ({
     phoneDollyRef,
     phoneDeepScaleRef,
     phoneFocusOriginRef,
+    phonePanRef,
+    phonePoseRef,
+    phoneArtworkRef,
   }
 }

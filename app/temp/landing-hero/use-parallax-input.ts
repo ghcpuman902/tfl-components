@@ -5,7 +5,10 @@ import {
   DEFAULT_PEEK,
   peekPanByPixels,
   peekScaleAboutPoint,
+  clampPhonePanToArtwork,
+  phonePanForGesture,
   phoneZoomFromPinch,
+  phoneZoomToCamera,
   sanitizePeek,
   touchDistance,
   touchMidpoint,
@@ -31,7 +34,22 @@ type UseParallaxInputArgs = {
    * cannot be scaled out of frame.
    */
   phoneDollyRef?: RefObject<number>
-  onPhoneDolly?: (progress: number) => void
+  phonePanRef?: RefObject<{ x: number; y: number }>
+  phonePoseRef?: RefObject<{
+    x: number
+    y: number
+    scale: number
+    viewWidth: number
+    viewHeight: number
+  }>
+  phoneArtworkRef?: RefObject<{
+    left: number
+    top: number
+    right: number
+    bottom: number
+  }>
+  phoneFocusOriginRef?: RefObject<{ x: number; y: number }>
+  onPhoneDolly?: (zoom: number, pan?: { x: number; y: number }) => void
 }
 
 /** Controls and page chrome. The framed board is not a control: two-finger pinch on it zooms the room. */
@@ -68,6 +86,10 @@ export const useParallaxInput = ({
   stageRef,
   enabled,
   phoneDollyRef,
+  phonePanRef,
+  phonePoseRef,
+  phoneArtworkRef,
+  phoneFocusOriginRef,
   onPhoneDolly,
 }: UseParallaxInputArgs) => {
   const valueRef = useRef<ParallaxValue>({ x: 0, y: 0 })
@@ -79,6 +101,10 @@ export const useParallaxInput = ({
     startDistance: number
     startScale: number
     startDolly: number
+    startPanX: number
+    startPanY: number
+    startLocalX: number
+    startLocalY: number
   } | null>(null)
 
   useEffect(() => {
@@ -227,10 +253,26 @@ export const useParallaxInput = ({
 
       dragPointerIdRef.current = null
       dragLastRef.current = null
+      const startDolly = phoneDollyRef?.current ?? 0
+      const pose = phonePoseRef?.current
+      const local =
+        pose && pose.scale > 0
+          ? {
+              x: (mid.x - rect.left - pose.x) / pose.scale,
+              y: (mid.y - rect.top - pose.y) / pose.scale,
+            }
+          : { x: mid.x - rect.left, y: mid.y - rect.top }
+      const pan = phonePanRef?.current
       pinchRef.current = {
         startDistance: touchDistance(event.touches[0]!, event.touches[1]!),
-        startScale: peekRef.current.scale,
-        startDolly: phoneDollyRef?.current ?? 0,
+        startScale: onPhoneDolly
+          ? phoneZoomToCamera(startDolly).scale
+          : peekRef.current.scale,
+        startDolly,
+        startPanX: pan?.x ?? 0,
+        startPanY: pan?.y ?? 0,
+        startLocalX: local.x,
+        startLocalY: local.y,
       }
     }
 
@@ -247,8 +289,61 @@ export const useParallaxInput = ({
         const distance = touchDistance(event.touches[0]!, event.touches[1]!)
         if (!(pinch.startDistance > 0) || !(distance > 0)) return
         if (onPhoneDolly) {
+          const zoom = phoneZoomFromPinch(
+            pinch.startDolly,
+            pinch.startDistance,
+            distance
+          )
+          const nextScale = phoneZoomToCamera(zoom).scale
+          const pose = phonePoseRef?.current
+          const art = phoneArtworkRef?.current
+          const originPct = phoneFocusOriginRef?.current
+          if (
+            !pose ||
+            !art ||
+            !originPct ||
+            !(pose.scale > 0) ||
+            nextScale <= 1
+          ) {
+            onPhoneDolly(zoom)
+            return
+          }
+          const mid = touchMidpoint(event.touches[0]!, event.touches[1]!)
+          const localX = (mid.x - rect.left - pose.x) / pose.scale
+          const localY = (mid.y - rect.top - pose.y) / pose.scale
+          const originX = (originPct.x / 100) * pose.viewWidth
+          const originY = (originPct.y / 100) * pose.viewHeight
+          const followed = phonePanForGesture({
+            panX: pinch.startPanX,
+            panY: pinch.startPanY,
+            startScale: Math.max(pinch.startScale, 1),
+            nextScale,
+            originX,
+            originY,
+            startX: pinch.startLocalX,
+            startY: pinch.startLocalY,
+            nextX: localX,
+            nextY: localY,
+          })
+          const viewLeft = -pose.x / pose.scale
+          const viewTop = -pose.y / pose.scale
           onPhoneDolly(
-            phoneZoomFromPinch(pinch.startDolly, pinch.startDistance, distance)
+            zoom,
+            clampPhonePanToArtwork({
+              panX: followed.x,
+              panY: followed.y,
+              scale: nextScale,
+              originX,
+              originY,
+              viewLeft,
+              viewTop,
+              viewRight: (pose.viewWidth - pose.x) / pose.scale,
+              viewBottom: (pose.viewHeight - pose.y) / pose.scale,
+              artLeft: art.left,
+              artTop: art.top,
+              artRight: art.right,
+              artBottom: art.bottom,
+            })
           )
           return
         }
@@ -266,12 +361,14 @@ export const useParallaxInput = ({
         return
       }
 
-      // While zoomed, one-finger drag owns the gesture so pan-y does not
-      // steal the peek pan.
+      // While the desktop peek is zoomed, one-finger drag owns the gesture
+      // so pan-y does not steal it. A finger on the framed board always
+      // scrolls the board, including when the phone view is magnified.
       if (
         event.touches.length === 1 &&
         peekRef.current.scale > 1.01 &&
-        dragPointerIdRef.current != null
+        dragPointerIdRef.current != null &&
+        !isExampleBoardTarget(event.target)
       ) {
         event.preventDefault()
       }
@@ -330,7 +427,16 @@ export const useParallaxInput = ({
         capture: true,
       })
     }
-  }, [enabled, onPhoneDolly, phoneDollyRef, stageRef])
+  }, [
+    enabled,
+    onPhoneDolly,
+    phoneArtworkRef,
+    phoneDollyRef,
+    phoneFocusOriginRef,
+    phonePanRef,
+    phonePoseRef,
+    stageRef,
+  ])
 
   return {
     valueRef,

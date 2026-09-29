@@ -331,6 +331,9 @@ export const LandingScene = ({
     phoneDollyRef,
     phoneDeepScaleRef,
     phoneFocusOriginRef,
+    phonePanRef,
+    phonePoseRef,
+    phoneArtworkRef,
   } = useIpadZoom({
     wrapperRef,
     compositionRef,
@@ -354,6 +357,10 @@ export const LandingScene = ({
     stageRef,
     enabled: !reducedMotion && canvasLook,
     phoneDollyRef: phoneCanvas === true ? phoneDollyRef : undefined,
+    phonePanRef: phoneCanvas === true ? phonePanRef : undefined,
+    phonePoseRef: phoneCanvas === true ? phonePoseRef : undefined,
+    phoneArtworkRef: phoneCanvas === true ? phoneArtworkRef : undefined,
+    phoneFocusOriginRef: phoneCanvas === true ? phoneFocusOriginRef : undefined,
     onPhoneDolly: phoneCanvas === true ? setPhoneDolly : undefined,
   })
 
@@ -449,9 +456,11 @@ export const LandingScene = ({
         if (phoneCanvas === true) {
           const scale = phoneDeepScaleRef.current
           const origin = phoneFocusOriginRef.current
+          const pan = phonePanRef.current
           peekLayer.style.transformOrigin =
             scale > 1 ? `${origin.x}% ${origin.y}%` : "50% 50%"
-          peekLayer.style.translate = "0 0"
+          peekLayer.style.translate =
+            scale > 1 ? `${pan.x}px ${pan.y}px` : "0 0"
           peekLayer.style.scale = String(scale)
         } else {
           const peek = roomComplete ? peekRef.current : DEFAULT_PEEK
@@ -501,6 +510,7 @@ export const LandingScene = ({
     phoneCanvas,
     phoneDeepScaleRef,
     phoneFocusOriginRef,
+    phonePanRef,
     progressRef,
     reducedMotion,
     roomComplete,
