@@ -20,7 +20,7 @@ Site favicon is the grey filled placeholder roundel (`app/icon.svg`), not line-c
 
 Arrivals board vertical rhythm (fixed tiles, absolute hairlines, box-border brand bars): [docs/design-system.md](./docs/design-system.md#arrivals-board-rhythm) and [`.cursor/rules/arrivals-board-layout.mdc`](./.cursor/rules/arrivals-board-layout.mdc).
 
-Line-diagram marks live on `/drafts/diagram-atoms`; vertex scenarios import them and do not invent parallel Tick/Ring/Bond/Y paint: [`.cursor/rules/diagram-atoms.mdc`](./.cursor/rules/diagram-atoms.mdc).
+Line-diagram marks live on `/drafts/diagram-atoms`; vertex scenarios import them and do not invent parallel Tick/Ring/Bond/Y paint: [`.cursor/rules/diagram-atoms.mdc`](./.cursor/rules/diagram-atoms.mdc). Schematic problem terrain (layers, merge ladder, what's solved vs later): [docs/schematic-problem-tree.md](./docs/schematic-problem-tree.md).
 
 Domain board skeletons (static identity vs live severity, Suspense fallbacks): [docs/coding-style.md](./docs/coding-style.md) (“Domain board skeletons”) and [`.cursor/rules/domain-skeletons.mdc`](./.cursor/rules/domain-skeletons.mdc).
 

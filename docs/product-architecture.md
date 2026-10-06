@@ -193,7 +193,7 @@ Real London geography: coordinates, geometry, GeoJSON, layers (stations, lines, 
 
 Topology and transport relationships: line diagrams, route diagrams, branches, multi-line networks, interchanges, journey highlighting, TfL-style schematic network maps.
 
-Architecture, naming, and docs must keep geographic vs schematic distinct. Allow incremental growth from simple line diagrams toward richer network visualisation; do not assume a full TfL Go–like product exists.
+Architecture, naming, and docs must keep geographic vs schematic distinct. Allow incremental growth from simple line diagrams toward richer network visualisation; do not assume a full TfL Go–like product exists. The schematic work is a tree of independent layers, not one renderer: [schematic-problem-tree.md](./schematic-problem-tree.md).
 
 ---
 
