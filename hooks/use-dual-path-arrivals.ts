@@ -9,6 +9,8 @@ import {
   type DualPathSource,
 } from "@/lib/tfl/dual-path-arrivals"
 import { createBrowserTflClient } from "@/lib/tfl/browser-tfl-client"
+import { getBoardStopArrivalsAction } from "@/lib/tfl/board-live-action"
+import { BOARD_RATE_LIMIT_INLINE } from "@/lib/tfl/board-rate-limit"
 import { translateTflClientError } from "@/lib/tfl/tfl-error-translation"
 import {
   getLineArrivalsAction,
@@ -47,6 +49,11 @@ type UseDualPathArrivalsOptions = {
   sharedTrackFamilies?: readonly (readonly string[])[]
   /** Changing this tears down the current poller (hash-only board updates). */
   resetKey?: string
+  /**
+   * `demo` keeps the docs allowlist. `board` serves any Board stop with the
+   * project key and reports quota exhaustion separately.
+   */
+  siteScope?: "demo" | "board"
 }
 
 type UseDualPathArrivalsResult = {
@@ -56,6 +63,7 @@ type UseDualPathArrivalsResult = {
   fetchedAt: number | null
   refresh: () => void
   source: DualPathSource
+  rateLimited: boolean
 }
 
 /**
@@ -72,6 +80,7 @@ export const useDualPathArrivals = ({
   sharedTrackLineIds,
   sharedTrackFamilies,
   resetKey,
+  siteScope = "demo",
 }: UseDualPathArrivalsOptions): UseDualPathArrivalsResult => {
   const {
     status,
@@ -122,6 +131,7 @@ export const useDualPathArrivals = ({
   const [loading, setLoading] = useState(true)
   const [fetchedAt, setFetchedAt] = useState<number | null>(null)
   const [refreshNonce, setRefreshNonce] = useState(0)
+  const [rateLimited, setRateLimited] = useState(false)
   // Heading can update from the URL before the poller restarts. Drop the
   // previous stop's rows in the same render so we never paint them as the
   // new station (site-cache SWR can take ~15s to catch up).
@@ -132,6 +142,7 @@ export const useDualPathArrivals = ({
     setData([])
     setPollError(null)
     setFetchedAt(null)
+    setRateLimited(false)
     setLoading(Boolean(trimmedStop) && !isInvalid)
   }
 
@@ -149,6 +160,7 @@ export const useDualPathArrivals = ({
     if (!trimmedStop) {
       setData([])
       setPollError(null)
+      setRateLimited(false)
       setLoading(false)
       return
     }
@@ -173,8 +185,17 @@ export const useDualPathArrivals = ({
     const applySuccess = (arrivals: RealtimePrediction[]) => {
       if (cancelled) return
       setPollError(null)
+      setRateLimited(false)
       setData(arrivals)
       setFetchedAt(Date.now())
+      setLoading(false)
+    }
+
+    const applyRateLimit = () => {
+      if (cancelled) return
+      setRateLimited(true)
+      setPollError(BOARD_RATE_LIMIT_INLINE)
+      setData([])
       setLoading(false)
     }
 
@@ -198,6 +219,7 @@ export const useDualPathArrivals = ({
 
     const applyFailure = (message: string) => {
       if (cancelled) return
+      setRateLimited(false)
       setPollError(message)
       setData([])
       setLoading(false)
@@ -214,16 +236,29 @@ export const useDualPathArrivals = ({
     const runSiteLoad = async () => {
       if (cancelled || paused) return
       try {
-        const result = await getStopArrivalsAction(stopForThisPoll)
+        const result =
+          siteScope === "board"
+            ? await getBoardStopArrivalsAction(stopForThisPoll)
+            : await getStopArrivalsAction(stopForThisPoll)
         if (cancelled || paused) return
         if (!result.ok) {
-          applyFailure(result.error)
-        } else if (!arrivalsBelongToStops(result.arrivals, idsForThisPoll)) {
+          if ("kind" in result && result.kind === "rate-limited") {
+            applyRateLimit()
+          } else {
+            applyFailure(result.error)
+          }
+        } else if (
+          !arrivalsBelongToStops(
+            "arrivals" in result ? result.arrivals : result.data,
+            idsForThisPoll
+          )
+        ) {
           // Wrong-stop cache hit — retry shortly instead of painting it.
           scheduleSitePoll(1_000)
           return
         } else {
-          const tagged = await tagStopArrivals(result.arrivals, async () => {
+          const rows = "arrivals" in result ? result.arrivals : result.data
+          const tagged = await tagStopArrivals(rows, async () => {
             const lineResult = await getLineArrivalsAction(lineIdsForThisPoll)
             return lineResult.ok ? lineResult.arrivals : null
           })
@@ -270,11 +305,11 @@ export const useDualPathArrivals = ({
           (caught) => {
             if (cancelled) return
             const translated = translateTflClientError(caught, [appKey])
-            if (
-              !usingOverride &&
-              (translated.kind === "invalid-key" ||
-                translated.kind === "rate-limited")
-            ) {
+            if (translated.kind === "rate-limited") {
+              applyRateLimit()
+              return
+            }
+            if (!usingOverride && translated.kind === "invalid-key") {
               markInvalid(translated)
             }
             applyFailure(translated.message)
@@ -284,11 +319,11 @@ export const useDualPathArrivals = ({
         if (cancelled) return
         const appKeyForRedact = resolveUserKey() ?? ""
         const translated = translateTflClientError(caught, [appKeyForRedact])
-        if (
-          !usingOverride &&
-          (translated.kind === "invalid-key" ||
-            translated.kind === "rate-limited")
-        ) {
+        if (translated.kind === "rate-limited") {
+          applyRateLimit()
+          return
+        }
+        if (!usingOverride && translated.kind === "invalid-key") {
           markInvalid(translated)
         }
         applyFailure(translated.message)
@@ -343,6 +378,7 @@ export const useDualPathArrivals = ({
     getAppKey,
     markInvalid,
     resetKey,
+    siteScope,
   ])
 
   if (isInvalid) {
@@ -353,6 +389,7 @@ export const useDualPathArrivals = ({
       fetchedAt,
       refresh,
       source,
+      rateLimited: credentialError?.kind === "rate-limited",
     }
   }
 
@@ -364,6 +401,7 @@ export const useDualPathArrivals = ({
       fetchedAt,
       refresh,
       source,
+      rateLimited: false,
     }
   }
 
@@ -374,5 +412,6 @@ export const useDualPathArrivals = ({
     fetchedAt,
     refresh,
     source,
+    rateLimited,
   }
 }

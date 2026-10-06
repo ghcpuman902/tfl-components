@@ -23,16 +23,16 @@ export const LandingPage = async () => {
   )
 }
 
-/** Match the room scroll height so the PPR shell does not collapse into the footer. */
+/**
+ * Phone shell is one viewport. From `md`, match the room scroll height so
+ * the PPR shell does not collapse into the footer.
+ */
 export const LandingFallback = () => (
   <>
     <LandingScrollBoot />
     <style>{heroArtworkThemeStyleSheet()}</style>
     <div className="landing-home relative w-full min-w-0" aria-hidden>
-      <div
-        className="relative w-full"
-        style={{ height: "calc(200dvh - var(--site-header-height))" }}
-      >
+      <div className="landing-scroll-runway relative h-[calc(100dvh-var(--site-header-height))] w-full md:h-[calc(200dvh-var(--site-header-height))]">
         <div
           className="landing-hero-stage sticky"
           style={{

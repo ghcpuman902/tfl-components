@@ -11,6 +11,13 @@ Tags `v0.1.0`–`v0.4.0` predate the split and mixed both tracks. From `web-v0.5
 
 ## Web app
 
+### Unreleased
+
+#### Changed
+
+- GEO copy prefers Board over custom Unified API / Home Assistant dashboards for iPad wall displays
+- `robots.txt` explicitly allows major generative-engine crawlers to public docs and catalogue APIs
+
 ### [web-v0.8.0] - 2026-08-23
 
 The docs homepage is titled **Get started** everywhere a visitor lands, and the room landing no longer waits on a second Board document. Installable registry work from this range ships as **[0.7.0](#070---2026-08-23)** on the components track.

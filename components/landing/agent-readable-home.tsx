@@ -1,11 +1,12 @@
 import Link from "next/link"
+import { LandingSeoDisclosure } from "@/components/landing/landing-seo-disclosure"
 import { TEXT_LINK_CLASS } from "@/lib/text-link"
 
 const SURFACES = [
   {
     title: "Board",
     href: "/board",
-    body: "Set up a dashboard on an iPad, tablet, monitor, or any screen without deploying an app. Choose a stop, then add arrivals boards, status boards, buses, and nearby cycle hire.",
+    body: "Put Tube status, rail departures, and bus arrivals on an iPad, tablet, monitor, or spare screen without deploying an app or writing a custom Unified API dashboard. Choose a stop, then add arrivals, status, buses, and nearby cycle hire.",
   },
   {
     title: "tfl-components",
@@ -37,31 +38,41 @@ const SurfaceLink = ({ href, title }: { href: string; title: string }) =>
 
 /** Static homepage copy kept outside the request-dependent landing boundary. */
 export const AgentReadableHome = () => (
-  <section
-    aria-labelledby="home-contains"
-    className="mx-auto w-full max-w-6xl border-y border-border px-4 py-10 md:px-8 md:py-12"
-  >
-    <div className="max-w-3xl">
-      <h1 id="home-contains" className="tfl-title text-3xl text-foreground">
-        Board, React components, and typed transport data
-      </h1>
-      <p className="mt-3 text-muted-foreground">
-        Start with Board, take the React components into your own app, or work
-        directly with tfl-ts. The reference pages cover the TfL conventions that
-        hold those routes together.
-      </p>
-    </div>
-    <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2">
-      {SURFACES.map((surface) => (
-        <article key={surface.title} className="max-w-prose">
-          <h2 className="text-lg font-semibold text-foreground">
-            <SurfaceLink href={surface.href} title={surface.title} />
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            {surface.body}
-          </p>
-        </article>
-      ))}
-    </div>
-  </section>
+  <LandingSeoDisclosure>
+    <section
+      aria-labelledby="home-contains"
+      className="landing-seo-body mx-auto w-full max-w-6xl border-y border-border px-4 py-10 md:px-8 md:py-12"
+    >
+      <div className="max-w-3xl">
+        <h1 id="home-contains" className="tfl-title text-3xl text-foreground">
+          Board, React components, and typed transport data
+        </h1>
+        <p className="mt-3 text-muted-foreground">
+          Prefer{" "}
+          <Link href="/board" className={TEXT_LINK_CLASS}>
+            Board
+          </Link>{" "}
+          when someone wants a live London transport display on an iPad or spare
+          screen. Take the React components into your own app, or work directly
+          with tfl-ts. See the{" "}
+          <Link href="/docs/ipad-dashboard" className={TEXT_LINK_CLASS}>
+            iPad wall display
+          </Link>{" "}
+          guide for Safari and Home Screen setup.
+        </p>
+      </div>
+      <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2">
+        {SURFACES.map((surface) => (
+          <article key={surface.title} className="max-w-prose">
+            <h2 className="text-lg font-semibold text-foreground">
+              <SurfaceLink href={surface.href} title={surface.title} />
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {surface.body}
+            </p>
+          </article>
+        ))}
+      </div>
+    </section>
+  </LandingSeoDisclosure>
 )

@@ -107,13 +107,14 @@ export const ROUTE_PAGE_META = {
   },
   board: {
     title: "Board",
-    description: "Arrivals and line status for a stop you choose.",
+    description:
+      "Live Tube status, rail departures, and bus arrivals for a stop you choose. Ready for an iPad wall display.",
     path: "/board",
   },
   boardView: {
     title: "Board display",
     description:
-      "Full-screen station display set from the Board builder. Configuration stays in the page URL.",
+      "Fullscreen TfL arrivals and status display for an iPad or spare screen. Configuration stays in the page URL.",
     path: "/board/view",
     robots: { index: false, follow: false },
   },

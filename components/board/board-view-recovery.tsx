@@ -27,7 +27,7 @@ import { parseBoardViewLink } from "@/lib/tfl/board-view-resolve"
 import { BOARD_PATH, type BoardConfig } from "@/lib/tfl/board-url-state"
 
 type BoardViewRecoveryProps = {
-  onLoad: (config: BoardConfig, key: string) => void
+  onLoad: (config: BoardConfig, key: string | null) => void
 }
 
 const RECOVERY_OVERLAY_CLASS =
@@ -149,8 +149,7 @@ export const BoardViewRecovery = ({ onLoad }: BoardViewRecoveryProps) => {
             <SheetHeader>
               <SheetTitle>Open your board</SheetTitle>
               <SheetDescription>
-                Paste the complete Board link from the device where you set it
-                up. The link contains the layout and TfL API key.
+                Paste the Board link from the device where you set it up.
               </SheetDescription>
             </SheetHeader>
             <RecoveryFields
@@ -177,8 +176,7 @@ export const BoardViewRecovery = ({ onLoad }: BoardViewRecoveryProps) => {
             <DialogHeader>
               <DialogTitle>Open your board</DialogTitle>
               <DialogDescription>
-                Paste the complete Board link from the device where you set it
-                up. The link contains the layout and TfL API key.
+                Paste the Board link from the device where you set it up.
               </DialogDescription>
             </DialogHeader>
             <RecoveryFields

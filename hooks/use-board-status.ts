@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { sortLinesBySeverityAndOrder } from "tfl-ts"
 import { createBrowserTflClient } from "@/lib/tfl/browser-tfl-client"
+import { BOARD_RATE_LIMIT_INLINE } from "@/lib/tfl/board-rate-limit"
 import { getCachedLineStatusesAction } from "@/lib/tfl/cached-status-action"
 import { shouldPausePollingForVisibility } from "@/lib/tfl/dual-path-arrivals"
 import type { StatusLine } from "@/lib/tfl/status-types"
@@ -37,11 +38,13 @@ type UseBoardStatusResult = {
   error: string | null
   source: "site" | "user"
   refresh: () => void
+  rateLimited: boolean
 }
 
 /**
  * Tube & rail status for the hosted board.
- * User key → browser poll (paused while hidden). No key → one cached fetch.
+ * User key → browser poll (paused while hidden).
+ * No key → poll the project-key cache so an unattended board recovers after quota.
  */
 export const useBoardStatus = ({
   appKey,
@@ -57,6 +60,7 @@ export const useBoardStatus = ({
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshNonce, setRefreshNonce] = useState(0)
+  const [rateLimited, setRateLimited] = useState(false)
 
   const refresh = useCallback(() => {
     setLoading(true)
@@ -78,6 +82,7 @@ export const useBoardStatus = ({
 
     const applySuccess = (rows: StatusLine[], stamp: number) => {
       if (cancelled) return
+      setRateLimited(false)
       setError(null)
       setData(rows)
       setFetchedAt(stamp)
@@ -86,19 +91,41 @@ export const useBoardStatus = ({
 
     const applyFailure = (message: string) => {
       if (cancelled) return
+      setRateLimited(false)
       setError(message)
       setData([])
       setFetchedAt(null)
       setLoading(false)
     }
 
+    const applyRateLimit = () => {
+      if (cancelled) return
+      setRateLimited(true)
+      setError(BOARD_RATE_LIMIT_INLINE)
+      setData([])
+      setFetchedAt(null)
+      setLoading(false)
+    }
+
+    const scheduleSitePoll = () => {
+      clearTimer()
+      if (cancelled || paused) return
+      timer = setTimeout(() => {
+        void runSiteLoad()
+      }, pollMs)
+    }
+
     const runSiteLoad = async () => {
+      if (cancelled || paused) return
       try {
         const payload = await getCachedLineStatusesAction()
-        applySuccess(payload.data, payload.fetchedAt)
+        if (cancelled || paused) return
+        if (payload.rateLimited) applyRateLimit()
+        else applySuccess(payload.data, payload.fetchedAt)
       } catch {
         applyFailure("Failed to load line status.")
       }
+      if (!cancelled && !paused) scheduleSitePoll()
     }
 
     const runUserLoad = async () => {
@@ -117,7 +144,8 @@ export const useBoardStatus = ({
         applySuccess(rows, stamp)
       } catch (caught) {
         const translated = translateTflClientError(caught, [trimmed])
-        applyFailure(translated.message)
+        if (translated.kind === "rate-limited") applyRateLimit()
+        else applyFailure(translated.message)
         return
       }
 
@@ -138,6 +166,8 @@ export const useBoardStatus = ({
       paused = false
       if (source === "user") {
         void runUserLoad()
+      } else {
+        void runSiteLoad()
       }
     }
 
@@ -158,5 +188,5 @@ export const useBoardStatus = ({
     }
   }, [enabled, pollMs, source, trimmed, refreshNonce, resetKey])
 
-  return { data, fetchedAt, loading, error, source, refresh }
+  return { data, fetchedAt, loading, error, source, refresh, rateLimited }
 }

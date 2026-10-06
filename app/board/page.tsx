@@ -31,7 +31,8 @@ const BoardFromParams = async () => {
         <header className="text-center">
           <h1 className="tfl-title text-3xl text-foreground">Board</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Arrivals and line status for a stop you choose.
+            Live Tube status, rail departures, and bus arrivals for a stop you
+            choose.
           </p>
         </header>
 
@@ -52,7 +53,8 @@ const BoardBuilderFallback = () => (
       <header className="text-center">
         <h1 className="tfl-title text-3xl text-foreground">Board</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Arrivals and line status for a stop you choose.
+          Live Tube status, rail departures, and bus arrivals for a stop you
+          choose.
         </p>
       </header>
       <div

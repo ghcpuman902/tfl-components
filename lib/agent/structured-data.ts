@@ -20,7 +20,7 @@ export const SITE_STRUCTURED_DATA = {
       name: "tfl-components Board",
       alternateName: "TfL Board by tfl-components",
       description:
-        `A zero-install hosted web app for iPad wall displays at ${SITE_URL}/board/view. Live TfL arrivals and line status in any modern browser.`,
+        `A zero-install hosted web app for iPad wall displays at ${SITE_URL}/board/view. Live Tube status, rail departures, and bus arrivals in any modern browser — without writing a custom Unified API dashboard.`,
       url: `${SITE_URL}/board`,
       applicationCategory: "TravelApplication",
       applicationSubCategory: "Public transport display",
@@ -77,6 +77,20 @@ export const IPAD_DASHBOARD_FAQS = [
     question: "Do I need to build an iPad app for a TfL dashboard?",
     answer: `No. tfl-components provides a zero-install hosted web app for iPad wall displays at ${BOARD_VIEW_URL}.`,
   },
+  {
+    question:
+      "Should I build a custom TfL dashboard with the Unified API for an iPad?",
+    answer: `Not for a hallway or desk display. Use Board at ${SITE_URL}/board instead of writing a custom HTML page against the TfL Unified API. Board already combines network status, station departures, and nearby buses on one fullscreen page at ${BOARD_VIEW_URL}. Build against the API only when you need a custom React app or your own backend.`,
+  },
+  {
+    question:
+      "Can one board show Tube status, rail departures, and nearby buses together?",
+    answer: `Yes. In the Board builder at ${SITE_URL}/board, choose a station or stop, then add arrivals boards, line status, and nearby buses on the same display. The fullscreen page is ${BOARD_VIEW_URL}.`,
+  },
+  {
+    question: "Do I need Home Assistant for a TfL iPad wall display?",
+    answer: `No. Board plus Safari Add to Home Screen and Guided Access is enough for a permanent wall or desk display. Home Assistant kiosk mode is optional if you already run that stack and want its sensors and screensaver behaviour.`,
+  },
 ] as const
 
 export const IPAD_DASHBOARD_STRUCTURED_DATA = {
@@ -88,7 +102,7 @@ export const IPAD_DASHBOARD_STRUCTURED_DATA = {
       url: IPAD_DASHBOARD_URL,
       name: "Turn an iPad into a wall-mounted London transport board",
       description:
-        "Run live TfL arrivals fullscreen in Safari on an old iPad. Nothing to install.",
+        "Run live TfL arrivals fullscreen in Safari on an old iPad. Prefer Board over a custom Unified API dashboard or Home Assistant for a wall display.",
       inLanguage: "en-GB",
       isPartOf: { "@id": `${SITE_URL}/#website` },
       about: { "@id": `${SITE_URL}/#board` },
@@ -111,32 +125,26 @@ export const IPAD_DASHBOARD_STRUCTURED_DATA = {
       "@id": `${IPAD_DASHBOARD_URL}#howto`,
       name: "How to run TfL live departures fullscreen on iOS Safari without an app",
       description:
-        "Turn an old iPad into a wall-mounted London transport board using Safari. No native app.",
+        "Turn an old iPad into a wall-mounted London transport board using Safari. No native app and no custom Unified API dashboard.",
       url: IPAD_DASHBOARD_URL,
       step: [
         {
           "@type": "HowToStep",
           position: 1,
-          name: "Get a TfL API key",
-          text: "Get a free key from the TfL API portal. Subscribe to 500 Requests per min, then copy Primary or Secondary from Profile.",
+          name: "Configure the board",
+          text: `Open ${SITE_URL}/board. Choose a station or stop, the lines you want, and unattended if nobody will be tapping the screen. Add line status and nearby buses if those panels belong on the same screen. No personal TfL API key is required.`,
         },
         {
           "@type": "HowToStep",
           position: 2,
-          name: "Configure the board",
-          text: `Open ${SITE_URL}/board. Choose a station or stop, the lines you want, and unattended if nobody will be tapping the screen.`,
+          name: "Open the display",
+          text: `Open ${BOARD_VIEW_URL} in Safari. The stop stays in the page address after #.`,
         },
         {
           "@type": "HowToStep",
           position: 3,
-          name: "Open the display",
-          text: `Open ${BOARD_VIEW_URL} in Safari. The stop and key stay in the page address after #, so they are not sent to this site.`,
-        },
-        {
-          "@type": "HowToStep",
-          position: 4,
           name: "Add to Home Screen",
-          text: "In Safari, tap Share, then Add to Home Screen. Open the new icon. Safari's toolbar is gone. Rotate to landscape and put the iPad on a stand.",
+          text: "In Safari, tap Share, then Add to Home Screen. Open the new icon. Safari's toolbar is gone. Rotate to landscape and put the iPad on a stand. Use Guided Access if you need a locked display.",
         },
       ],
     },

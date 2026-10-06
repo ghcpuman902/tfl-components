@@ -95,10 +95,10 @@ describe("isUsableBoardConfig", () => {
 })
 
 describe("isBoardReady", () => {
-  it("needs both a usable layout and a key from either source", () => {
+  it("needs a usable layout and does not require a visitor key", () => {
     const withStop = { ...DEFAULT_BOARD_CONFIG, stop: "940GZZLUOXC" }
     assert.equal(isBoardReady(DEFAULT_BOARD_CONFIG, SAMPLE_KEY), false)
-    assert.equal(isBoardReady(withStop, null), false)
+    assert.equal(isBoardReady(withStop, null), true)
     assert.equal(isBoardReady(withStop, SAMPLE_KEY), true)
     assert.equal(
       isBoardReady({ ...withStop, key: SAMPLE_KEY }, null),
@@ -118,13 +118,8 @@ describe("isBoardReady", () => {
     })
   })
 
-  it("lets previews render a usable layout without a visitor key", () => {
-    const withStop = { ...DEFAULT_BOARD_CONFIG, stop: "940GZZLUOXC" }
-    assert.equal(isBoardReady(withStop, null, { allowSiteDemo: true }), true)
-    assert.equal(
-      isBoardReady(DEFAULT_BOARD_CONFIG, null, { allowSiteDemo: true }),
-      false
-    )
+  it("still rejects an empty layout when no visitor key is stored", () => {
+    assert.equal(isBoardReady(DEFAULT_BOARD_CONFIG, null), false)
   })
 })
 
@@ -164,19 +159,21 @@ describe("parseBoardViewLink", () => {
     })
   })
 
-  it("rejects a Board view URL that is missing the layout or key", () => {
-    assert.deepEqual(
-      parseBoardViewLink(`${ORIGIN}/board/view#stop=940GZZLUOXC`, ORIGIN),
-      {
-        ok: false,
-        error: "This link is missing the Board setup or TfL API key.",
-      }
+  it("accepts a keyless Board view URL and rejects a key without a layout", () => {
+    const keyless = parseBoardViewLink(
+      `${ORIGIN}/board/view#stop=940GZZLUOXC`,
+      ORIGIN
     )
+    assert.equal(keyless.ok, true)
+    if (keyless.ok) {
+      assert.equal(keyless.key, null)
+      assert.equal(keyless.config.stop, "940GZZLUOXC")
+    }
     assert.deepEqual(
       parseBoardViewLink(`${ORIGIN}/board/view#key=${SAMPLE_KEY}`, ORIGIN),
       {
         ok: false,
-        error: "This link is missing the Board setup or TfL API key.",
+        error: "This link is missing the Board setup.",
       }
     )
   })

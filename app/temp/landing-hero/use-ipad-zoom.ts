@@ -4,6 +4,7 @@ import { useCallback, useLayoutEffect, useRef, type RefObject } from "react"
 import type { ScrollTrigger } from "gsap/ScrollTrigger"
 import { computeCoverCanvas } from "@/lib/landing/cover-canvas"
 import { getLandingGsap } from "./gsap-client"
+import { clampPhonePanToArtwork, phoneZoomToCamera } from "./room-peek"
 import {
   IPAD_CASE,
   LANDING_VIEWBOX_HEIGHT,
@@ -77,7 +78,7 @@ const layoutCoverCanvas = (
   canvas.style.height = `${canvasH}px`
   canvas.style.translate = `${panX}px ${panY}px`
 
-  return { coverScale, panX, panY, viewBox, width, height }
+  return { coverScale, panX, panY, viewBox, width, height, canvasW, canvasH }
 }
 
 const framedIpadCamera = (
@@ -86,11 +87,8 @@ const framedIpadCamera = (
   canvas: HTMLElement,
   readCssLength: ReadCssLength
 ) => {
-  const { coverScale, panX, panY, viewBox, width } = layoutCoverCanvas(
-    svg,
-    composition,
-    canvas
-  )
+  const { coverScale, panX, panY, viewBox, width, canvasW, canvasH } =
+    layoutCoverCanvas(svg, composition, canvas)
   const iPadWidth = IPAD_CASE.width * coverScale
   const iPadHeight = IPAD_CASE.height * coverScale
   const iPadLeft = panX + (IPAD_CASE.x - viewBox.x) * coverScale
@@ -113,12 +111,22 @@ const framedIpadCamera = (
   const targetScale = desiredWidth / iPadWidth
   const iPadCenterX = iPadLeft + iPadWidth / 2
   const iPadCenterY = iPadTop + iPadHeight / 2
+  const height = composition.getBoundingClientRect().height
 
   return {
     targetScale,
     targetX: desiredLeft + desiredWidth / 2 - targetScale * iPadCenterX,
     targetY: desiredTop + desiredHeight / 2 - targetScale * iPadCenterY,
     copyTop,
+    /** iPad center in the camera box, for pinch-in past the framed tablet. */
+    focusOriginX: width > 0 ? (iPadCenterX / width) * 100 : 50,
+    focusOriginY: height > 0 ? (iPadCenterY / height) * 100 : 50,
+    viewWidth: width,
+    viewHeight: height,
+    artworkLeft: panX,
+    artworkTop: panY,
+    artworkRight: panX + canvasW,
+    artworkBottom: panY + canvasH,
   }
 }
 
@@ -181,6 +189,11 @@ type UseIpadZoomArgs = {
   copyRef: RefObject<HTMLElement | null>
   copySlotRef: RefObject<HTMLElement | null>
   reducedMotion: boolean
+  /**
+   * Phone widths skip ScrollTrigger and hold the framed iPad. `null` until
+   * the viewport is known so the first effect does not arm the desktop story.
+   */
+  phoneCanvas: boolean | null
   onRoomCompleteChange: (complete: boolean) => void
   onSceneReady: () => void
 }
@@ -197,6 +210,7 @@ export const useIpadZoom = ({
   copyRef,
   copySlotRef,
   reducedMotion,
+  phoneCanvas,
   onRoomCompleteChange,
   onSceneReady,
 }: UseIpadZoomArgs) => {
@@ -217,26 +231,94 @@ export const useIpadZoom = ({
   const onSceneReadyRef = useRef(onSceneReady)
   onSceneReadyRef.current = onSceneReady
 
-  const applyProgress = useCallback((progress: number, force = false) => {
-    const clamped = clamp(progress, 0, 1)
-    progressRef.current = clamped
-    const timeline = timelineRef.current
-    if (timeline) {
-      if (force) {
-        // `.progress(x)` is a no-op when `x` already equals the timeline's
-        // cached time — invalidate() (after a resize) never gets rendered,
-        // so the camera keeps its pre-resize transform under a freshly
-        // resized canvas. `.render(..., force: true)` re-runs the dynamic
-        // x/y/scale getters unconditionally.
-        timeline.render(clamped * timeline.duration(), false, true)
-      } else {
-        timeline.progress(clamped)
+  const applyProgress = useCallback(
+    (progress: number, force = false, reportComplete = true) => {
+      const clamped = clamp(progress, 0, 1)
+      progressRef.current = clamped
+      const timeline = timelineRef.current
+      if (timeline) {
+        if (force) {
+          // `.progress(x)` is a no-op when `x` already equals the timeline's
+          // cached time — invalidate() (after a resize) never gets rendered,
+          // so the camera keeps its pre-resize transform under a freshly
+          // resized canvas. `.render(..., force: true)` re-runs the dynamic
+          // x/y/scale getters unconditionally.
+          timeline.render(clamped * timeline.duration(), false, true)
+        } else {
+          timeline.progress(clamped)
+        }
       }
-    }
-    onRoomCompleteChangeRef.current(clamped >= ROOM_COMPLETE_AT)
-  }, [])
+      if (!reportComplete) return
+      onRoomCompleteChangeRef.current(clamped >= ROOM_COMPLETE_AT)
+    },
+    []
+  )
+
+  /**
+   * Phone pinch in the same units `phoneZoomFromPinch` reads back.
+   * 1 = room, 0 = framed iPad, below 0 = into the board (no zoom-in cap).
+   */
+  const phoneDollyRef = useRef(0)
+  const phoneDeepScaleRef = useRef(1)
+  const phoneFocusOriginRef = useRef({ x: 50, y: 50 })
+  const phonePanRef = useRef({ x: 0, y: 0 })
+  const phonePoseRef = useRef({
+    x: 0,
+    y: 0,
+    scale: 1,
+    viewWidth: 1,
+    viewHeight: 1,
+  })
+  const phoneArtworkRef = useRef({ left: 0, top: 0, right: 1, bottom: 1 })
+
+  const setPhoneDolly = useCallback(
+    (zoom: number, pan?: { x: number; y: number }) => {
+      const camera = phoneZoomToCamera(zoom)
+      phoneDollyRef.current = camera.zoom
+      applyProgress(camera.progress, true, false)
+      phoneDeepScaleRef.current = camera.scale
+      if (camera.scale <= 1) {
+        phonePanRef.current = { x: 0, y: 0 }
+      } else {
+        const pose = phonePoseRef.current
+        const art = phoneArtworkRef.current
+        const origin = phoneFocusOriginRef.current
+        const originX = (origin.x / 100) * pose.viewWidth
+        const originY = (origin.y / 100) * pose.viewHeight
+        const viewLeft = -pose.x / pose.scale
+        const viewTop = -pose.y / pose.scale
+        const viewRight = (pose.viewWidth - pose.x) / pose.scale
+        const viewBottom = (pose.viewHeight - pose.y) / pose.scale
+        const next = pan ?? phonePanRef.current
+        phonePanRef.current = clampPhonePanToArtwork({
+          panX: next.x,
+          panY: next.y,
+          scale: camera.scale,
+          originX,
+          originY,
+          viewLeft,
+          viewTop,
+          viewRight,
+          viewBottom,
+          artLeft: art.left,
+          artTop: art.top,
+          artRight: art.right,
+          artBottom: art.bottom,
+        })
+      }
+      const slot = copySlotRef.current
+      if (!slot) return
+      const copyHidden =
+        camera.zoom < -0.02 ||
+        camera.zoom >= COPY_FADE_START + COPY_FADE_DURATION
+      slot.style.visibility = copyHidden ? "hidden" : "visible"
+    },
+    [applyProgress, copySlotRef]
+  )
 
   useLayoutEffect(() => {
+    if (phoneCanvas == null) return
+
     const { gsap, ScrollTrigger } = getLandingGsap()
     const wrapper = wrapperRef.current
     const composition = compositionRef.current
@@ -251,6 +333,7 @@ export const useIpadZoom = ({
     if (!wrapper || !composition || !camera || !canvas || !svg || !iPad) return
 
     const cssProbe = createCssLengthProbe()
+    let refreshFramed = () => {}
     const ctx = gsap.context(() => {
       const startCamera = () => {
         const next = framedIpadCamera(
@@ -264,12 +347,31 @@ export const useIpadZoom = ({
           copySlot.style.bottom = "auto"
           copySlot.style.height = "auto"
         }
+        phoneFocusOriginRef.current = {
+          x: next.focusOriginX,
+          y: next.focusOriginY,
+        }
+        phonePoseRef.current = {
+          x: next.targetX,
+          y: next.targetY,
+          scale: next.targetScale,
+          viewWidth: next.viewWidth,
+          viewHeight: next.viewHeight,
+        }
+        phoneArtworkRef.current = {
+          left: next.artworkLeft,
+          top: next.artworkTop,
+          right: next.artworkRight,
+          bottom: next.artworkBottom,
+        }
         return next
       }
       const endCamera = () => {
         const next = roomEndCamera(svg, composition, canvas)
         if (letterbox) {
-          letterbox.style.height = `${next.letterbox}px`
+          // Phone pull-back is the camera alone. A late letterbox bar
+          // reads as a hitch at the zoom-out stop.
+          letterbox.style.height = phoneCanvas ? "0px" : `${next.letterbox}px`
         }
         return next
       }
@@ -336,9 +438,23 @@ export const useIpadZoom = ({
 
       timelineRef.current = timeline
       onSceneReadyRef.current()
+      refreshFramed = () => {
+        start = startCamera()
+        end = endCamera()
+        timeline.invalidate()
+        if (phoneCanvas) {
+          setPhoneDolly(phoneDollyRef.current)
+          return
+        }
+        applyProgress(0, true)
+      }
 
-      if (reducedMotion) {
-        applyProgress(0)
+      if (reducedMotion || phoneCanvas) {
+        if (phoneCanvas) {
+          setPhoneDolly(phoneDollyRef.current)
+        } else {
+          applyProgress(0, true)
+        }
         return
       }
 
@@ -376,6 +492,46 @@ export const useIpadZoom = ({
 
     if (reducedMotion) {
       return () => {
+        cssProbe.dispose()
+        timelineRef.current = null
+        triggerRef.current = null
+        ctx.revert()
+      }
+    }
+
+    if (phoneCanvas) {
+      let resizeFrame = 0
+      let settleTimer = 0
+      const handleResize = () => {
+        if (settleTimer) window.clearTimeout(settleTimer)
+        settleTimer = window.setTimeout(() => {
+          settleTimer = 0
+          refreshFramed()
+        }, RESIZE_SETTLE_MS)
+        if (resizeFrame) return
+        resizeFrame = window.requestAnimationFrame(() => {
+          resizeFrame = 0
+          refreshFramed()
+        })
+      }
+      window.addEventListener("resize", handleResize)
+      window.addEventListener("orientationchange", handleResize)
+      const viewport = window.visualViewport
+      const handleVisualViewportResize = () => {
+        if ((viewport?.scale ?? 1) !== 1) return
+        handleResize()
+      }
+      viewport?.addEventListener("resize", handleVisualViewportResize)
+      const stageObserver = new ResizeObserver(handleResize)
+      stageObserver.observe(composition)
+
+      return () => {
+        window.removeEventListener("resize", handleResize)
+        window.removeEventListener("orientationchange", handleResize)
+        viewport?.removeEventListener("resize", handleVisualViewportResize)
+        stageObserver.disconnect()
+        if (resizeFrame) window.cancelAnimationFrame(resizeFrame)
+        if (settleTimer) window.clearTimeout(settleTimer)
         cssProbe.dispose()
         timelineRef.current = null
         triggerRef.current = null
@@ -423,7 +579,16 @@ export const useIpadZoom = ({
     window.addEventListener("resize", handleResize)
     window.addEventListener("orientationchange", handleResize)
     const viewport = window.visualViewport
-    viewport?.addEventListener("resize", handleResize)
+    /**
+     * iOS chrome show/hide still needs visualViewport. Browser pinch sets
+     * `visualViewport.scale !== 1` and would thrash ScrollTrigger + dvh
+     * camera math until the sticky hero locks up — ignore those.
+     */
+    const handleVisualViewportResize = () => {
+      if ((viewport?.scale ?? 1) !== 1) return
+      handleResize()
+    }
+    viewport?.addEventListener("resize", handleVisualViewportResize)
     // Gutter / :has() / overlay-scrollbar changes resize the stage without a
     // window resize — that is the “extra edge padding” flash on landing.
     const stageObserver = new ResizeObserver(handleResize)
@@ -432,7 +597,7 @@ export const useIpadZoom = ({
     return () => {
       window.removeEventListener("resize", handleResize)
       window.removeEventListener("orientationchange", handleResize)
-      viewport?.removeEventListener("resize", handleResize)
+      viewport?.removeEventListener("resize", handleVisualViewportResize)
       stageObserver.disconnect()
       if (resizeFrame) window.cancelAnimationFrame(resizeFrame)
       if (settleTimer) window.clearTimeout(settleTimer)
@@ -441,7 +606,16 @@ export const useIpadZoom = ({
       triggerRef.current = null
       ctx.revert()
     }
-  }, [applyProgress, reducedMotion])
+  }, [applyProgress, phoneCanvas, reducedMotion, setPhoneDolly])
 
-  return { progressRef }
+  return {
+    progressRef,
+    setPhoneDolly,
+    phoneDollyRef,
+    phoneDeepScaleRef,
+    phoneFocusOriginRef,
+    phonePanRef,
+    phonePoseRef,
+    phoneArtworkRef,
+  }
 }
