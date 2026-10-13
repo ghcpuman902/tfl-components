@@ -210,6 +210,17 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 185,
   },
   {
+    slug: "apple-homeview",
+    title: "Board in HomeView",
+    description:
+      "Open the hosted Board in square layout on Apple HomeView's Safari tab. Not an always-on wall appliance.",
+    group: "start",
+    kind: "page",
+    href: "/docs/apple-homeview",
+    sidebarSection: "get-started",
+    sidebarOrder: 186,
+  },
+  {
     slug: "board-url",
     title: "Board URL",
     description:
@@ -218,7 +229,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     kind: "page",
     href: "/docs/board-url",
     sidebarSection: "get-started",
-    sidebarOrder: 186,
+    sidebarOrder: 187,
   },
   {
     slug: "components-index",

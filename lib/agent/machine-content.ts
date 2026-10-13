@@ -47,6 +47,7 @@ The tfl-ts npm package installs the \`tfl\` CLI. After \`pnpm add tfl-ts\`, run 
 ## Best starting points
 
 - [iPad wall display](${SITE_URL}/docs/ipad-dashboard): Turn an iPad into a wall-mounted London transport board. Safari, no native app.
+- [Board in HomeView Safari](${SITE_URL}/docs/apple-homeview): Square Board layout for Apple HomeView's Safari tab. Not an always-on wall appliance.
 - [Hosted Board](${SITE_URL}/board): Configure a full-screen arrivals and status display. The rendered page is ${SITE_URL}/board/view.
 - [Get started](${SITE_URL}/docs): Installation and data-to-UI examples.
 - [Component catalogue](${SITE_URL}/docs/components): Boards, maps, line strips, labels, chips, and foundations.
