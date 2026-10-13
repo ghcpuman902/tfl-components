@@ -213,7 +213,7 @@ const MinSizeRow = ({
         className="flex items-center px-3 py-2.5 text-white"
         style={{
           backgroundColor: TFL_BLUE,
-          [STATION_NAME_BOX_COLOR_VAR]: TFL_BLUE,
+          ...({ [STATION_NAME_BOX_COLOR_VAR]: TFL_BLUE } as React.CSSProperties),
         }}
       >
         <StationName

@@ -210,7 +210,7 @@ export const StationTypographyLab = ({
                         maxWidth: "100%",
                         backgroundColor: TFL_BLUE,
                         color: "#fff",
-                        [STATION_NAME_BOX_COLOR_VAR]: TFL_BLUE,
+                        ...({ [STATION_NAME_BOX_COLOR_VAR]: TFL_BLUE } as React.CSSProperties),
                       }}
                     >
                       <StationName

@@ -74,7 +74,7 @@ export const StationWidthDemo = () => (
             style={{
               width: 160,
               backgroundColor: TFL_BLUE,
-              [STATION_NAME_BOX_COLOR_VAR]: TFL_BLUE,
+              ...({ [STATION_NAME_BOX_COLOR_VAR]: TFL_BLUE } as React.CSSProperties),
             }}
           >
             <StationName
