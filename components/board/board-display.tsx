@@ -82,6 +82,8 @@ import {
   type BoardLayoutMode,
 } from "@/lib/tfl/board-layout"
 import { resolveSquareArrivalsPageSize } from "@/lib/tfl/board-square-arrivals"
+import { OXFORD_CIRCUS_ARRIVALS } from "@/lib/tfl/fixtures/arrivals-boards"
+import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
 import { BOARD_SETTINGS } from "@/lib/tfl/board-settings"
 import {
   readInstalledBoardConfig,
@@ -730,6 +732,20 @@ export const BoardDisplay = ({
     config.arrivals.lineOrder,
   ])
 
+  // Square builder / embed preview: when the site key path is unavailable,
+  // keep Oxford Circus glanceable with deterministic fixtures so the wall
+  // layout can be judged (live boards still surface the real error).
+  const squareFixtureFallback =
+    isSquare &&
+    embedded &&
+    !arrivals.loading &&
+    railData.length === 0 &&
+    stopId === HOME_RAIL_STOP.id
+  const squareRailData = squareFixtureFallback
+    ? OXFORD_CIRCUS_ARRIVALS
+    : railData
+  const squareRailError = squareFixtureFallback ? null : arrivalsError
+
   const railEmpty = useMemo(() => {
     if (!arrivals.fetchedAt || arrivals.fetchError) {
       return { kind: "empty" as const }
@@ -789,14 +805,18 @@ export const BoardDisplay = ({
             stopName={stopName}
             stopPointId={stopId || undefined}
             headingLevel={2}
-            data={railData}
-            now={arrivals.fetchedAt ?? undefined}
+            data={squareRailData}
+            now={
+              squareFixtureFallback
+                ? undefined
+                : (arrivals.fetchedAt ?? undefined)
+            }
             pageSize={squarePageSize}
             densityFar={densityFar}
             pinFirst={arrivalsProps.pinFirst ?? true}
             startDelayMs={0}
-            loading={arrivals.loading}
-            error={arrivalsError}
+            loading={arrivals.loading && !squareFixtureFallback}
+            error={squareRailError}
             emptyKind={railEmpty.kind}
             emptyMessage={arrivalsLineEmptyCopy(railEmpty)}
             className="min-h-0 flex-1"
