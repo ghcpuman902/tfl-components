@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { BoardSquareArrivals } from "@/components/board/board-square-arrivals"
 import { BoardViewFooter } from "@/components/board/board-view-footer"
 import { boardSquareGutterCss } from "@/lib/tfl/board-layout"
@@ -10,13 +11,24 @@ import { OXFORD_CIRCUS_ARRIVALS } from "@/lib/tfl/fixtures/arrivals-boards"
  * Not a public product surface.
  */
 export const BoardSquareDraft = () => {
+  useEffect(() => {
+    const html = document.documentElement
+    const hadSquare = html.classList.contains("board-square")
+    const hadDark = html.classList.contains("dark")
+    html.classList.add("board-square", "dark")
+    return () => {
+      if (!hadSquare) html.classList.remove("board-square")
+      if (!hadDark) html.classList.remove("dark")
+    }
+  }, [])
+
   return (
     <div className="min-h-dvh bg-muted/40 p-4 md:p-8">
       <p className="mb-4 text-sm text-muted-foreground">
         Square Board draft — Oxford Circus fixtures, Far density (2 rows).
       </p>
       <div
-        className="board-embed board-square mx-auto flex flex-col overflow-hidden border border-border bg-background text-foreground shadow-sm"
+        className="board-embed board-square mx-auto flex flex-col overflow-hidden border border-border bg-background text-foreground shadow-sm dark"
         data-density="far"
         style={{
           width: 1088,
