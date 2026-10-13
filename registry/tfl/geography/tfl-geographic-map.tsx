@@ -30,6 +30,7 @@ import {
 import { useVehicleSegmentSource } from "@/components/tfl/geography/sync-vehicle-source"
 import { provideMissingStyleImages } from "@/components/tfl/maps/provide-missing-style-images"
 import {
+  vehiclesToCarriageGeoJSON,
   vehiclesToSegmentGeoJSON,
   type VehiclePosition,
 } from "@/lib/tfl/map-vehicles"
@@ -71,6 +72,17 @@ type TflGeographicMapProps = {
   vehiclePolylines?: readonly RoutePolyline[]
   /** Keep vehicles walking along the track between arrival snapshots. */
   coast?: boolean
+  /**
+   * Per-frame placement while `coast` is on, from the latest estimate and the
+   * last drawn position. Replaces the built-in walk along the hop.
+   */
+  advanceVehicle?: (
+    vehicle: VehiclePosition,
+    previous: VehiclePosition | undefined,
+    at: number
+  ) => VehiclePosition
+  /** Fit the view to `lineIds` on load. Default true. */
+  fitToLines?: boolean
   /** Show station circles and names. Default true. */
   showStations?: boolean
   /** Show line tracks. Default true. */
@@ -132,7 +144,7 @@ const LINE_LAYOUT = {
 }
 
 const VEHICLE_LAYOUT = {
-  "line-join": "bevel" as const,
+  "line-join": "round" as const,
   "line-cap": "butt" as const,
 }
 
@@ -172,16 +184,51 @@ const STATION_RADIUS: ExpressionSpecification = [
   5,
 ]
 
-const VEHICLE_LINE_WIDTH: ExpressionSpecification = [
+const carriageWidth = (
+  at10: number,
+  at14: number,
+  at16: number
+): ExpressionSpecification => [
   "interpolate",
   ["linear"],
   ["zoom"],
   10,
-  ["*", 5.5, ["coalesce", ["get", "widthScale"], 1]],
+  ["*", at10, ["coalesce", ["get", "widthScale"], 1]],
   14,
-  ["*", 9, ["coalesce", ["get", "widthScale"], 1]],
+  ["*", at14, ["coalesce", ["get", "widthScale"], 1]],
   16,
-  ["*", 12, ["coalesce", ["get", "widthScale"], 1]],
+  ["*", at16, ["coalesce", ["get", "widthScale"], 1]],
+]
+
+/** A carriage is a little wider than the track it runs on, with a 1 px outline. */
+const CARRIAGE_BODY_WIDTH = carriageWidth(3.5, 6, 8)
+const CARRIAGE_OUTLINE_WIDTH = carriageWidth(5.5, 8, 10)
+const CARRIAGE_WINDOW_WIDTH = carriageWidth(1.5, 2.6, 3.6)
+
+/**
+ * Below this many pixels a train stops shrinking with the map. From zoom ~12.5
+ * up, a Tube train is longer than this, so it is drawn at its true length.
+ */
+const MIN_CARRIAGE_PX = 7
+
+const metresPerPixel = (zoom: number, lat = LONDON_CENTER[1]) =>
+  (40_075_016.686 * Math.cos((lat * Math.PI) / 180)) / 2 ** (zoom + 9)
+
+const carriageGeoJSON = (
+  vehicles: readonly VehiclePosition[],
+  polylines: readonly RoutePolyline[],
+  zoom: number
+) =>
+  vehiclesToCarriageGeoJSON(
+    vehicles,
+    polylines,
+    MIN_CARRIAGE_PX * metresPerPixel(zoom)
+  )
+
+const isCarriagePart = (part: "body" | "front"): ExpressionSpecification => [
+  "==",
+  ["get", "part"],
+  part,
 ]
 
 const VEHICLE_LINE_OFFSET: ExpressionSpecification = [
@@ -195,6 +242,30 @@ const VEHICLE_LINE_OFFSET: ExpressionSpecification = [
   16,
   -5,
 ]
+
+/** Carriage paint follows the painted track colour for each line id. */
+const lineColorExpression = (
+  bundles: { bundle: TransitGeometryBundle }[],
+  dark: boolean
+): ExpressionSpecification => {
+  const colours = new Map<string, string>()
+  for (const { bundle } of bundles) {
+    for (const feature of bundle.lines.features ?? []) {
+      const props = feature.properties
+      if (props?.lineId && props.color && !colours.has(props.lineId)) {
+        colours.set(props.lineId, mapLineColorForBasemap(props.color, dark))
+      }
+    }
+  }
+  const fallback = dark ? "#9ca3af" : "#4b5563"
+  if (colours.size === 0) return ["literal", fallback]
+  return [
+    "match",
+    ["get", "lineId"],
+    ...[...colours].flat(),
+    fallback,
+  ] as unknown as ExpressionSpecification
+}
 
 const STATION_LABEL_SIZE: ExpressionSpecification = [
   "interpolate",
@@ -411,16 +482,41 @@ const addTransitLayers = (
       type: "geojson",
       data: vehiclesToSegmentGeoJSON([], []),
     })
+    // Outline and window use the station paint, so trains read as map marks.
+    map.addLayer({
+      id: "rail-vehicles-outline",
+      type: "line",
+      source: "rail-vehicles",
+      filter: isCarriagePart("body"),
+      layout: VEHICLE_LAYOUT,
+      paint: {
+        "line-color": STATION_STROKE[tone],
+        "line-width": CARRIAGE_OUTLINE_WIDTH,
+        "line-offset": VEHICLE_LINE_OFFSET,
+      },
+    })
     map.addLayer({
       id: "rail-vehicles",
       type: "line",
       source: "rail-vehicles",
+      filter: isCarriagePart("body"),
       layout: VEHICLE_LAYOUT,
       paint: {
-        "line-color": dark ? "#9ca3af" : "#4b5563",
-        "line-width": VEHICLE_LINE_WIDTH,
+        "line-color": lineColorExpression(bundles, dark),
+        "line-width": CARRIAGE_BODY_WIDTH,
         "line-offset": VEHICLE_LINE_OFFSET,
-        "line-opacity": 0.96,
+      },
+    })
+    map.addLayer({
+      id: "rail-vehicles-front",
+      type: "line",
+      source: "rail-vehicles",
+      filter: isCarriagePart("front"),
+      layout: VEHICLE_LAYOUT,
+      paint: {
+        "line-color": STATION_FILL[tone],
+        "line-width": CARRIAGE_WINDOW_WIDTH,
+        "line-offset": VEHICLE_LINE_OFFSET,
       },
     })
   }
@@ -449,6 +545,8 @@ export const TflGeographicMap = ({
   vehicles,
   vehiclePolylines,
   coast = false,
+  advanceVehicle,
+  fitToLines = true,
   showStations = true,
   showLines = true,
   showNavigation = true,
@@ -538,8 +636,20 @@ export const TflGeographicMap = ({
     vehicles,
     getPolylines,
     coast,
+    advance: advanceVehicle,
+    toGeoJSON: carriageGeoJSON,
     ready: status === "ready",
   })
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || status !== "ready") return
+    // Keeps the minimum carriage length right when nothing is animating.
+    map.on("zoomend", flushVehicles)
+    return () => {
+      map.off("zoomend", flushVehicles)
+    }
+  }, [status, flushVehicles])
 
   useEffect(() => {
     const container = containerRef.current
@@ -574,7 +684,7 @@ export const TflGeographicMap = ({
 
         addTransitLayers(map, bundles, showLines, showStations, dark, lineIds)
         if (!fittedRef.current) {
-          fitLineBounds(map, bundles, lineIds)
+          if (fitToLines) fitLineBounds(map, bundles, lineIds)
           fittedRef.current = true
         }
         setStatus("ready")

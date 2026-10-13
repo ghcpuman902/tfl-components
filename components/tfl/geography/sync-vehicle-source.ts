@@ -25,6 +25,15 @@ const COAST_FRAME_MS = 80
 const EASE_MS = 1_200
 const SNAP_EPSILON_DEG = 0.00004
 
+type VehicleGeoJSON = (
+  vehicles: readonly VehiclePosition[],
+  polylines: readonly RoutePolyline[],
+  zoom: number
+) => FeatureCollection<LineString, VehicleSegmentProperties>
+
+const segmentGeoJSON: VehicleGeoJSON = (vehicles, polylines) =>
+  vehiclesToSegmentGeoJSON(vehicles, polylines)
+
 const setSegmentData = (
   map: maplibregl.Map,
   sourceId: string,
@@ -115,7 +124,9 @@ const placeAlongHop = (
  * Writes vehicle segments onto an existing GeoJSON source.
  * When `coast` is on, walks each vehicle along its hop using elapsed
  * time and eases onto a new poll's committed target — setData only,
- * never recreates the map.
+ * never recreates the map. `advance` replaces that walk with the caller's
+ * own per-frame placement. With `coast` off, each new `vehicles` array is
+ * written as it arrives.
  */
 export const useVehicleSegmentSource = ({
   mapRef,
@@ -123,6 +134,8 @@ export const useVehicleSegmentSource = ({
   vehicles,
   getPolylines,
   coast = false,
+  advance,
+  toGeoJSON = segmentGeoJSON,
   ready,
 }: {
   mapRef: { current: maplibregl.Map | null }
@@ -130,10 +143,24 @@ export const useVehicleSegmentSource = ({
   vehicles: readonly VehiclePosition[] | undefined
   getPolylines: () => readonly RoutePolyline[]
   coast?: boolean
+  /** Per-frame placement from the latest estimate and the last drawn position. */
+  advance?: (
+    vehicle: VehiclePosition,
+    previous: VehiclePosition | undefined,
+    at: number
+  ) => VehiclePosition
+  /** Features to write. Receives the map zoom. Default: plain segments. */
+  toGeoJSON?: VehicleGeoJSON
   ready: boolean
 }) => {
   const vehiclesRef = useRef(vehicles)
   const getPolylinesRef = useRef(getPolylines)
+  const advanceRef = useRef(advance)
+  const toGeoJSONRef = useRef(toGeoJSON)
+  /** The `vehicles` array behind the last write. */
+  const writtenFromRef = useRef<readonly VehiclePosition[] | undefined>(
+    undefined
+  )
   const renderedRef = useRef<Map<string, VehiclePosition>>(new Map())
   const easesRef = useRef<Map<string, EaseState>>(new Map())
   const lastAsOfRef = useRef<number | null>(null)
@@ -141,6 +168,8 @@ export const useVehicleSegmentSource = ({
   useEffect(() => {
     vehiclesRef.current = vehicles
     getPolylinesRef.current = getPolylines
+    advanceRef.current = advance
+    toGeoJSONRef.current = toGeoJSON
   })
 
   const write = useCallback(
@@ -150,7 +179,7 @@ export const useVehicleSegmentSource = ({
       setSegmentData(
         map,
         sourceId,
-        vehiclesToSegmentGeoJSON(next, getPolylinesRef.current())
+        toGeoJSONRef.current(next, getPolylinesRef.current(), map.getZoom())
       )
       const nextRendered = new Map<string, VehiclePosition>()
       for (const vehicle of next) {
@@ -161,18 +190,25 @@ export const useVehicleSegmentSource = ({
     [mapRef, sourceId]
   )
 
+  /** Rewrite what is on screen (after a style swap or zoom). */
   const flush = useCallback(() => {
-    write(vehiclesRef.current ?? [])
+    const rendered = [...renderedRef.current.values()]
+    write(rendered.length > 0 ? rendered : (vehiclesRef.current ?? []))
   }, [write])
+
+  useEffect(() => {
+    if (!mapRef.current || !ready || coast) return
+    // Unchanged vehicles (for example a paused caller) keep the drawn positions.
+    if (vehicles === writtenFromRef.current) return
+    writtenFromRef.current = vehicles
+    write(vehicles ?? [])
+  }, [mapRef, coast, ready, vehicles, write])
 
   useEffect(() => {
     const map = mapRef.current
     if (!map || !ready) return
 
-    if (!coast) {
-      write(vehicles ?? [])
-      return
-    }
+    if (!coast) return
 
     let frame = 0
     let last = 0
@@ -182,6 +218,21 @@ export const useVehicleSegmentSource = ({
         const snapshot = vehiclesRef.current ?? []
         const polylines = getPolylinesRef.current()
         const clock = Date.now()
+        writtenFromRef.current = vehiclesRef.current
+        const place = advanceRef.current
+        if (place) {
+          write(
+            snapshot.map((vehicle) =>
+              place(
+                vehicle,
+                renderedRef.current.get(vehicleKey(vehicle)),
+                clock
+              )
+            )
+          )
+          frame = requestAnimationFrame(tick)
+          return
+        }
         const snapshotAsOf = snapshot[0]?.asOf ?? null
         if (snapshotAsOf != null && snapshotAsOf !== lastAsOfRef.current) {
           lastAsOfRef.current = snapshotAsOf
@@ -266,8 +317,7 @@ export const useVehicleSegmentSource = ({
     }
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-    // vehicles are read from vehiclesRef so the map is not remounted on polls.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // vehicles are read from vehiclesRef so the loop is not restarted on polls.
   }, [mapRef, coast, ready, write])
 
   return { flush }

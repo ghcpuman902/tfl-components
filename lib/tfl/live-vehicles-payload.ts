@@ -1,7 +1,6 @@
 import type { RealtimePrediction } from "tfl-ts"
 import type { BusRouteGeometry } from "@/lib/tfl/bus-geography-types"
 import { getCachedBusRouteGeometries } from "@/lib/tfl/bus-route-geometry"
-import { getCachedBatchedLineArrivals } from "@/lib/tfl/cached-line-vehicle-arrivals"
 import {
   BODS_STALE_MS,
   boundingBoxFromGeometries,
@@ -10,6 +9,7 @@ import {
   matchBodsLine,
   type BodsVehicleActivity,
 } from "@/lib/tfl/bods-siri-vm"
+import { fetchBatchedLineArrivals } from "@/lib/tfl/line-vehicle-arrivals"
 import {
   TRACKED_BUS_DIRECTION,
   TRACKED_BUS_ROUTE_ID,
@@ -31,9 +31,15 @@ export type LiveVehiclesPayload = LiveVehiclesSnapshot
 export async function buildLiveVehiclesSnapshot({
   railLineIds = [TRACKED_RAIL_LINE_ID],
   busRouteIds = [TRACKED_BUS_ROUTE_ID],
+  predictions = true,
 }: {
   railLineIds?: readonly string[]
   busRouteIds?: readonly string[]
+  /**
+   * `false` skips TfL arrivals. Personal-key clients fetch those from the
+   * browser and only need bus geometry and BODS positions from the server.
+   */
+  predictions?: boolean
 } = {}): Promise<LiveVehiclesSnapshot> {
   const railIds = [
     ...new Set(railLineIds.map((id) => id.trim()).filter(Boolean)),
@@ -41,17 +47,13 @@ export async function buildLiveVehiclesSnapshot({
   const busIds = [
     ...new Set(busRouteIds.map((id) => id.trim()).filter(Boolean)),
   ]
-  const [railCached, busCached, busGeometries] = await Promise.all([
-    getCachedBatchedLineArrivals(railIds),
-    getCachedBatchedLineArrivals(busIds),
+  const [rail, bus, busGeometries] = await Promise.all([
+    fetchBatchedLineArrivals(predictions ? railIds : []),
+    fetchBatchedLineArrivals(predictions ? busIds : []),
     getCachedBusRouteGeometries(busIds, TRACKED_BUS_DIRECTION),
   ])
   const bodsConfigured = isBodsConfigured()
-  const fetchedAt = Math.max(
-    railCached.fetchedAt,
-    busCached.fetchedAt,
-    Date.now()
-  )
+  const fetchedAt = Math.max(rail.fetchedAt, bus.fetchedAt, Date.now())
   let bodsActivities: BodsVehicleActivity[] = []
   if (bodsConfigured && busIds.length > 0) {
     const boundingBox = boundingBoxFromGeometries(busGeometries)
@@ -71,8 +73,8 @@ export async function buildLiveVehiclesSnapshot({
     }
   }
   return {
-    railPredictions: railCached.arrivals,
-    busPredictions: busCached.arrivals,
+    railPredictions: rail.arrivals,
+    busPredictions: bus.arrivals,
     busGeometries,
     bodsActivities,
     fetchedAt,

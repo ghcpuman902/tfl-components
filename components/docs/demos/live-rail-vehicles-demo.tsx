@@ -1,56 +1,83 @@
 "use client"
 
-import { useState } from "react"
-import { getLineColor } from "tfl-ts"
+import { useEffect, useState } from "react"
+import { BoardLineChipPicker } from "@/components/board/board-line-chip-picker"
 import { LiveRailVehicles } from "@/components/tfl/live-vehicles/live-rail-vehicles"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
+import { TEXT_LINK_CLASS } from "@/lib/text-link"
+import {
+  DEFAULT_LIVE_RAIL_LINE_IDS,
+  LIVE_RAIL_LINE_IDS,
+  SITE_MAX_LIVE_RAIL_LINES,
+} from "@/lib/tfl/live-rail-line-ids"
 import type { TargetRequestsPerMinute } from "@/lib/tfl/vehicle-poll-rate"
-import { cn } from "@/lib/utils"
 
-const RAIL_OPTIONS = [
-  { id: "victoria", label: "Victoria" },
-  { id: "northern", label: "Northern" },
-  { id: "central", label: "Central" },
-  { id: "jubilee", label: "Jubilee" },
-  { id: "elizabeth", label: "Elizabeth" },
-] as const
+const RAIL_LINES = LIVE_RAIL_LINE_IDS.map((lineId) => ({ lineId }))
 
 export default function LiveRailVehiclesDemo() {
-  const { status } = useUserTflCredentials()
+  const { status, openDialog } = useUserTflCredentials()
   const hasKey = status === "ready"
-  const [railLineIds, setRailLineIds] = useState<string[]>(["victoria"])
+  const [railLineIds, setRailLineIds] = useState<readonly string[]>([
+    ...DEFAULT_LIVE_RAIL_LINE_IDS,
+  ])
   const [rate, setRate] = useState<TargetRequestsPerMinute>("max")
+  const [capMessage, setCapMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (hasKey) return
+    if (railLineIds.length <= SITE_MAX_LIVE_RAIL_LINES) return
+    setRailLineIds(railLineIds.slice(0, SITE_MAX_LIVE_RAIL_LINES))
+  }, [hasKey, railLineIds])
+
+  const handleLinesChange = (next: readonly string[] | undefined) => {
+    const resolved = next?.length ? [...next] : [...LIVE_RAIL_LINE_IDS]
+    if (!hasKey && resolved.length > SITE_MAX_LIVE_RAIL_LINES) {
+      setCapMessage(
+        `The shared key follows up to ${SITE_MAX_LIVE_RAIL_LINES} lines at once. Add your own TfL API key to follow more.`
+      )
+      openDialog()
+      return
+    }
+    setCapMessage(null)
+    setRailLineIds(resolved)
+  }
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Lines">
-        {RAIL_OPTIONS.map((option) => (
+      <p className="text-sm text-muted-foreground">
+        TfL arrivals update about every 30 seconds and are often around 45
+        seconds old. This demo polls at that low rate and interpolates train
+        positions between updates.
+      </p>
+      <BoardLineChipPicker
+        lines={RAIL_LINES}
+        selected={railLineIds}
+        onChange={handleLinesChange}
+      />
+      {capMessage ? (
+        <p className="text-sm text-muted-foreground">
+          {capMessage}{" "}
           <button
-            key={option.id}
             type="button"
-            aria-pressed={railLineIds.includes(option.id)}
-            onClick={() =>
-              setRailLineIds((ids) =>
-                ids.includes(option.id)
-                  ? ids.filter((id) => id !== option.id)
-                  : [...ids, option.id]
-              )
-            }
-            className={cn(
-              "flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm focus-visible:outline-2 focus-visible:outline-ring",
-              railLineIds.includes(option.id)
-                ? "border-foreground/20 bg-muted text-foreground"
-                : "border-transparent text-muted-foreground hover:bg-muted/60"
-            )}
+            className={TEXT_LINK_CLASS}
+            onClick={() => openDialog()}
           >
-            <span
-              className="size-2 rounded-full"
-              style={{ background: getLineColor(option.id).hex }}
-            />
-            {option.label}
+            Add a key
           </button>
-        ))}
-      </div>
+        </p>
+      ) : !hasKey ? (
+        <p className="text-sm text-muted-foreground">
+          Shared key: pick up to {SITE_MAX_LIVE_RAIL_LINES} lines.{" "}
+          <button
+            type="button"
+            className={TEXT_LINK_CLASS}
+            onClick={() => openDialog()}
+          >
+            Add your own key
+          </button>{" "}
+          to follow more at once.
+        </p>
+      ) : null}
       <LiveRailVehicles
         railLineIds={railLineIds}
         targetRequestsPerMinute={hasKey ? rate : "max"}

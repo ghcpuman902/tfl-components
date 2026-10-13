@@ -1,5 +1,6 @@
 import type { RealtimePrediction } from "tfl-ts"
 import { getStaticLineSequence } from "@/lib/tfl/line-topology"
+import { AnonymousTrainIds } from "@/lib/tfl/rail-train-identity"
 import { hopGraphForRailLine } from "@/lib/tfl/vehicle-hop-graph"
 import {
   railPolylinesForLine,
@@ -355,6 +356,11 @@ export const placeTrainMotion = (
 export class RailTrainTracker {
   readonly tracks = new Map<string, TrainTrack>()
   readonly runTimes = new Map<string, number[]>()
+  private readonly anonymous = new AnonymousTrainIds(
+    trainRoutes,
+    (lineId) => hopGraphForRailLine(lineId).canonical,
+    predictionArrivalTime
+  )
   private hopSeconds(route: TrainRoute, i: number): number {
     const key = `${route.lineId}:${route.stations[i - 1]}>${route.stations[i]}`
     const learned = this.runTimes.get(key) ?? []
@@ -369,7 +375,7 @@ export class RailTrainTracker {
     receivedAt: number
   ): VehiclePosition[] {
     const groups = new Map<string, RealtimePrediction[]>()
-    for (const row of predictions) {
+    for (const row of this.anonymous.assign(predictions, receivedAt)) {
       if (!row.vehicleId?.trim() || !row.lineId || row.vehicleId === "000")
         continue
       const key = `${row.lineId}:${row.vehicleId}`

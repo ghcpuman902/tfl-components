@@ -83,14 +83,20 @@ const uniqueIds = (ids: readonly string[] | undefined): string[] => [
   ...new Set((ids ?? []).map((id) => id.trim()).filter(Boolean)),
 ]
 
+/**
+ * `predictions: false` asks only for bus geometry and BODS positions, so a
+ * personal-key poll never spends the site key on arrivals.
+ */
 const fetchSiteSnapshot = async (
   railLineIds: readonly string[],
-  busRouteIds: readonly string[]
+  busRouteIds: readonly string[],
+  { predictions = true }: { predictions?: boolean } = {}
 ): Promise<LiveVehiclesResponse> => {
   try {
     const params = new URLSearchParams()
-    if (railLineIds.length) params.set("rail", railLineIds.join(","))
-    if (busRouteIds.length) params.set("bus", busRouteIds.join(","))
+    params.set("rail", railLineIds.join(","))
+    params.set("bus", busRouteIds.join(","))
+    if (!predictions) params.set("predictions", "0")
     const response = await fetch(`/api/live-vehicles?${params}`, {
       cache: "no-store",
     })
@@ -274,7 +280,7 @@ export const useLiveVehicleTracking = ({
   }, [])
 
   useEffect(() => {
-    if (isInvalid) return
+    if (isInvalid || (railIds.length === 0 && busIds.length === 0)) return
 
     let cancelled = false
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -338,7 +344,9 @@ export const useLiveVehicleTracking = ({
       if (cancelled) return
 
       if (busGeometries.length === 0 && busIds.length > 0) {
-        const seed = await fetchSiteSnapshot(railIds, busIds)
+        const seed = await fetchSiteSnapshot([], busIds, {
+          predictions: false,
+        })
         if (cancelled) return
         if (seed.ok) {
           setBusGeometries(seed.data.busGeometries)
@@ -358,7 +366,7 @@ export const useLiveVehicleTracking = ({
               ? client.line.getArrivals({ lineIds: busIds })
               : Promise.resolve([]),
             busIds.length && busPositionSource !== "dead-reckoning"
-              ? fetchSiteSnapshot(railIds, busIds)
+              ? fetchSiteSnapshot([], busIds, { predictions: false })
               : Promise.resolve(null),
           ])
           if (cancelled || paused) return

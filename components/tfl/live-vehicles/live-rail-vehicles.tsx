@@ -36,9 +36,7 @@ export const LiveRailVehicles = ({
 
   return (
     <div className={cn("space-y-2", className)}>
-      <div className="h-[min(78vh,44rem)] min-h-96 overflow-hidden rounded-2xl border border-border [--train-map-paper:#f7f5ef] dark:[--train-map-paper:#171d25]">
-        <LiveTrainMap lineIds={railLineIds} vehicles={tracking.rail} />
-      </div>
+      <LiveTrainMap lineIds={railLineIds} vehicles={tracking.rail} />
       <LiveVehicleChrome
         source={tracking.source}
         fetchedAt={tracking.fetchedAt}
