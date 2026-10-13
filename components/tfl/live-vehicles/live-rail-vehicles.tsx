@@ -1,10 +1,9 @@
 "use client"
 
-import { TflGeographicMap } from "@/components/tfl/geography/tfl-geographic-map"
+import { LiveTrainMap } from "@/components/tfl/live-vehicles/live-train-map"
 import { LiveVehicleChrome } from "@/components/tfl/live-vehicles/live-vehicle-chrome"
 import { useLiveVehicleTracking } from "@/hooks/use-live-vehicle-tracking"
 import type { LiveVehiclesSnapshot } from "@/lib/tfl/live-vehicles-payload"
-import { railModesForLineIds } from "@/lib/tfl/rail-vehicle-geometry"
 import type { TargetRequestsPerMinute } from "@/lib/tfl/vehicle-poll-rate"
 import { cn } from "@/lib/utils"
 
@@ -26,9 +25,6 @@ export const LiveRailVehicles = ({
     targetRequestsPerMinute,
     initial,
   })
-  const algorithm = tracking.algorithms.find(
-    (row) => row.domain === "rail"
-  )?.algorithm
 
   if (railLineIds.length === 0) {
     return (
@@ -40,18 +36,10 @@ export const LiveRailVehicles = ({
 
   return (
     <div className={cn("space-y-2", className)}>
-      <div className="h-[min(60vh,28rem)] overflow-hidden rounded-lg border border-border">
-        <TflGeographicMap
-          modes={railModesForLineIds(railLineIds)}
-          lineIds={railLineIds}
-          vehicles={tracking.rail}
-          vehiclePolylines={tracking.railPolylines}
-          coast
-          showNavigation={false}
-        />
+      <div className="h-[min(78vh,44rem)] min-h-96 overflow-hidden rounded-2xl border border-border [--train-map-paper:#f7f5ef] dark:[--train-map-paper:#171d25]">
+        <LiveTrainMap lineIds={railLineIds} vehicles={tracking.rail} />
       </div>
       <LiveVehicleChrome
-        algorithm={algorithm}
         source={tracking.source}
         fetchedAt={tracking.fetchedAt}
         loading={tracking.loading}

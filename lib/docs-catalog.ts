@@ -521,7 +521,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "live-vehicle-tracking",
     title: "Live Tube & Rail vehicles",
-    description: "Place trains on the geographic map from arrival countdowns.",
+    description: "Follow estimated train positions on a live schematic map.",
     group: "interfaces",
     kind: "component",
     href: "/docs/live-vehicle-tracking",
@@ -530,7 +530,6 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     preferred: true,
     modeMarker: "tube-rail",
     layer: "data-aware",
-    builtWith: ["maps-geographic"],
     usesFoundations: ["colours"],
   },
   {

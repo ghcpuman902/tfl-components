@@ -9,6 +9,26 @@ import {
 } from "@/lib/tfl/vehicle-progress"
 
 export type VehiclePosition = {
+  /** Optional rail motion state for a schematic renderer. Route distance is in metres. */
+  trainMotion?: {
+    route: {
+      id: string
+      lineId: string
+      direction: string
+      stations: string[]
+      metres: number[]
+      runSeconds: number[]
+    }
+    distance: number
+    speed: number
+    acceleration: number
+    target: number
+    arrivalAt: number
+    asOf: number
+    phase: "dwelling" | "accelerating" | "running" | "braking"
+    departureAt?: number
+    following?: { target: number; departureAt: number; arrivalAt: number }[]
+  }
   vehicleId: string
   lineId: string
   lat: number

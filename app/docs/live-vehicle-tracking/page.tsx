@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
-import Link from "next/link"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import { SyntaxHighlightedCode } from "@/components/docs/syntax-highlighted-code"
@@ -21,17 +20,10 @@ const USAGE_SNIPPET = `<LiveRailVehicles
   targetRequestsPerMinute="max"
 />`
 
-const DATA_SNIPPET = `const arrivals = await client.line.getArrivals({
-  lineIds: ["victoria", "northern"],
-})
+const DATA_SNIPPET = `const tracker = new RailTrainTracker()
 
-const point = positionBehindStop({
-  nextStop,
-  remainingKm: hopKm * (timeToStation / hopSeconds),
-  fromStopId,
-  toStopId,
-  polylines, // unique-track hop between those stops
-})`
+// Keep the same tracker across updates.
+const vehicles = tracker.ingest(arrivals, receivedAt)`
 
 export default function LiveRailVehiclesPage() {
   const entry = getDocsEntry("live-vehicle-tracking")
@@ -79,12 +71,11 @@ export default function LiveRailVehiclesPage() {
             Getting the data
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            TfL arrivals have no coordinates —{" "}
-            <code className="text-xs">line.getArrivals</code> only gives a{" "}
-            <code className="text-xs">timeToStation</code> countdown. One call
-            covers every tracked line. The tracker locks each train to the
-            unique-track hop between the previous and next stop, then walks it
-            forward as the countdown runs.
+            TfL provides arrival predictions, not live train coordinates.
+            Positions are estimates, using the reported location, feed
+            timestamps and station order. The tracker fits recent observations
+            along the track and learns inter-station run times as trains reach
+            platforms.
           </p>
           <SyntaxHighlightedCode
             code={DATA_SNIPPET}
@@ -98,22 +89,11 @@ export default function LiveRailVehiclesPage() {
             Render
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Pass the line ids you want. A simple corridor uses hop-lock; a
-            junctioned line uses branch-aware placement. Paint goes through{" "}
-            <Link
-              href="/docs/map-geographic"
-              className="text-foreground underline-offset-4 hover:underline"
-            >
-              Map – Tube &amp; Rail (Geo)
-            </Link>
-            . Buses are a separate component —{" "}
-            <Link
-              href="/docs/live-bus-vehicles"
-              className="text-foreground underline-offset-4 hover:underline"
-            >
-              Live buses
-            </Link>
-            .
+            Trains move along a schematic route. They slow down or wait when a
+            new estimate falls behind the displayed position. Delayed or missing
+            reports can still leave a train at the wrong place. Pause the map to
+            inspect it; reduced-motion settings show position updates without
+            continuous travel.
           </p>
         </section>
       </article>

@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { getLineColor } from "tfl-ts"
 import { LiveRailVehicles } from "@/components/tfl/live-vehicles/live-rail-vehicles"
-import { Checkbox } from "@/components/ui/checkbox"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
 import type { TargetRequestsPerMinute } from "@/lib/tfl/vehicle-poll-rate"
 import { cn } from "@/lib/utils"
@@ -15,16 +15,6 @@ const RAIL_OPTIONS = [
   { id: "elizabeth", label: "Elizabeth" },
 ] as const
 
-const RATE_OPTIONS: { id: TargetRequestsPerMinute; label: string }[] = [
-  { id: "max", label: "Max" },
-  { id: 15, label: "15/min" },
-  { id: 6, label: "6/min" },
-  { id: 3, label: "3/min" },
-]
-
-const toggleId = (ids: string[], id: string): string[] =>
-  ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id]
-
 export default function LiveRailVehiclesDemo() {
   const { status } = useUserTflCredentials()
   const hasKey = status === "ready"
@@ -32,61 +22,65 @@ export default function LiveRailVehiclesDemo() {
   const [rate, setRate] = useState<TargetRequestsPerMinute>("max")
 
   return (
-    <div className="space-y-4">
-      <fieldset className="space-y-3 rounded-lg border border-border p-3">
-        <legend className="px-1 text-sm font-medium">Lines</legend>
-        <div className="flex flex-wrap gap-3">
-          {RAIL_OPTIONS.map((option) => (
-            <label key={option.id} className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={railLineIds.includes(option.id)}
-                onCheckedChange={() =>
-                  setRailLineIds((ids) => toggleId(ids, option.id))
-                }
-              />
-              {option.label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset className="space-y-2 rounded-lg border border-border p-3">
-        <legend className="px-1 text-sm font-medium">Refresh rate</legend>
-        <div
-          className={cn(
-            "flex flex-wrap gap-2",
-            !hasKey && "pointer-events-none opacity-50"
-          )}
-        >
-          {RATE_OPTIONS.map((option) => (
-            <button
-              key={String(option.id)}
-              type="button"
-              disabled={!hasKey}
-              aria-pressed={rate === option.id}
-              onClick={() => setRate(option.id)}
-              className={cn(
-                "rounded-full border border-border px-2.5 py-1 text-xs",
-                rate === option.id
-                  ? "bg-foreground text-background"
-                  : "bg-background text-foreground"
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-        {!hasKey ? (
-          <p className="text-xs text-muted-foreground">
-            Add a TfL API key in the sidebar to choose a faster refresh rate.
-          </p>
-        ) : null}
-      </fieldset>
-
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Lines">
+        {RAIL_OPTIONS.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            aria-pressed={railLineIds.includes(option.id)}
+            onClick={() =>
+              setRailLineIds((ids) =>
+                ids.includes(option.id)
+                  ? ids.filter((id) => id !== option.id)
+                  : [...ids, option.id]
+              )
+            }
+            className={cn(
+              "flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm focus-visible:outline-2 focus-visible:outline-ring",
+              railLineIds.includes(option.id)
+                ? "border-foreground/20 bg-muted text-foreground"
+                : "border-transparent text-muted-foreground hover:bg-muted/60"
+            )}
+          >
+            <span
+              className="size-2 rounded-full"
+              style={{ background: getLineColor(option.id).hex }}
+            />
+            {option.label}
+          </button>
+        ))}
+      </div>
       <LiveRailVehicles
         railLineIds={railLineIds}
         targetRequestsPerMinute={hasKey ? rate : "max"}
       />
+      <details className="text-xs text-muted-foreground">
+        <summary className="w-fit cursor-pointer py-2">Refresh rate</summary>
+        {hasKey ? (
+          <select
+            aria-label="Refresh rate"
+            value={rate}
+            onChange={(event) =>
+              setRate(
+                event.target.value === "max"
+                  ? "max"
+                  : (Number(event.target.value) as TargetRequestsPerMinute)
+              )
+            }
+            className="min-h-11 rounded-md border bg-background px-3 text-foreground"
+          >
+            <option value="max">Maximum</option>
+            <option value="15">15/min</option>
+            <option value="6">6/min</option>
+            <option value="3">3/min</option>
+          </select>
+        ) : (
+          <p className="pb-2">
+            Add a TfL API key in the sidebar to choose a faster refresh rate.
+          </p>
+        )}
+      </details>
     </div>
   )
 }

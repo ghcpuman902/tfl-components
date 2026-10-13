@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import { RailTrainTracker } from "@/lib/tfl/rail-train-tracker"
 import { createBrowserTflClient } from "@/lib/tfl/browser-tfl-client"
 import { translateTflClientError } from "@/lib/tfl/tfl-error-translation"
 import {
@@ -38,7 +39,6 @@ import {
 } from "@/lib/tfl/vehicle-poll-rate"
 import {
   railPolylinesForLines,
-  railStationsById,
   railVehicleColor,
 } from "@/lib/tfl/rail-vehicle-geometry"
 
@@ -136,7 +136,6 @@ export const useLiveVehicleTracking = ({
   })
   const pollIntervalMs = source === "user" ? userPollMs : SITE_POLL_MS
 
-  const stationsById = useMemo(() => railStationsById(), [])
   const railPolylines = useMemo(() => railPolylinesForLines(railIds), [railIds])
   const railGraphs = useMemo(() => {
     const map = new Map<string, HopGraph>()
@@ -145,9 +144,7 @@ export const useLiveVehicleTracking = ({
   }, [railIds])
 
   const tracksRef = useRef<Map<string, VehicleHopTrack>>(new Map())
-  const stationsRef = useRef(stationsById)
-  const railPolylinesRef = useRef(railPolylines)
-  const railGraphsRef = useRef(railGraphs)
+  const [railTracker] = useState(() => new RailTrainTracker())
   const [rail, setRail] = useState<VehiclePosition[]>([])
   const [bus, setBus] = useState<VehiclePosition[]>([])
   const [busGeometries, setBusGeometries] = useState<BusRouteGeometry[]>(
@@ -164,9 +161,6 @@ export const useLiveVehicleTracking = ({
   )
 
   useEffect(() => {
-    stationsRef.current = stationsById
-    railPolylinesRef.current = railPolylines
-    railGraphsRef.current = railGraphs
     busGeometriesRef.current = busGeometries
   })
 
@@ -215,16 +209,10 @@ export const useLiveVehicleTracking = ({
     geometries: BusRouteGeometry[] = busGeometriesRef.current
   ) => {
     const asOf = snapshot.fetchedAt
-    const graphs = railGraphsRef.current
     const railPlaced = colorVehicles(
-      ingestVehicleHops({
-        tracks: tracksRef.current,
-        predictions: snapshot.railPredictions,
-        stationsById: stationsRef.current,
-        polylines: railPolylinesRef.current,
-        graphForLine: (lineId) => graphs.get(lineId) ?? null,
-        asOf,
-      }),
+      railTracker
+        .ingest(snapshot.railPredictions, asOf)
+        .filter((vehicle) => railIds.includes(vehicle.lineId)),
       railVehicleColor
     )
     const gps =
@@ -276,7 +264,11 @@ export const useLiveVehicleTracking = ({
   }
 
   useEffect(() => {
-    if (initial) placeSnapshot(initial, initial.busGeometries)
+    if (!initial) return
+    const frame = requestAnimationFrame(() =>
+      placeSnapshot(initial, initial.busGeometries)
+    )
+    return () => cancelAnimationFrame(frame)
     // Seed once from SSR payload.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
