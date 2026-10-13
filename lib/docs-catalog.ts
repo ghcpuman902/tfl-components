@@ -521,7 +521,8 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "live-vehicle-tracking",
     title: "Live Tube & Rail vehicles",
-    description: "Follow estimated train positions on the Tube & Rail map.",
+    description:
+      "Estimate train positions from TfL's slow arrivals feed, then interpolate between polls on the Tube & Rail map.",
     group: "interfaces",
     kind: "component",
     href: "/docs/live-vehicle-tracking",

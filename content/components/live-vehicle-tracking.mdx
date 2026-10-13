@@ -1,6 +1,6 @@
 ## Getting the data
 
-TfL provides arrival predictions, not live train coordinates. Positions are estimates, using the reported location, feed timestamps and station order. The tracker fits recent observations along the track and learns inter-station run times as trains reach platforms.
+TfL provides arrival predictions, not live train coordinates. Positions are estimates from the reported location, feed timestamps and station order. The Unified API updates about every 30 seconds and is often around 45 seconds old when it arrives — the tracker fits recent observations along the track, learns inter-station run times, and interpolates smoothly between those coarse polls.
 
 ```ts
 const tracker = new RailTrainTracker()
@@ -8,6 +8,8 @@ const tracker = new RailTrainTracker()
 // Keep the same tracker across updates.
 const vehicles = tracker.ingest(arrivals, receivedAt)
 ```
+
+On this docs site the shared key follows a few lines at a time. Add your own TfL API key in the sidebar to follow more lines against your quota.
 
 ## Render
 

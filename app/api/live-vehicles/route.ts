@@ -1,4 +1,5 @@
 import { connection } from "next/server"
+import { SITE_MAX_LIVE_RAIL_LINES } from "@/lib/tfl/live-rail-line-ids"
 import { buildLiveVehiclesSnapshot } from "@/lib/tfl/live-vehicles-payload"
 import {
   TRACKED_BUS_ROUTE_ID,
@@ -21,6 +22,7 @@ const splitIds = (value: string | null): string[] =>
  * Site-key fallback for visitors without a personal TfL key. Uncached: every
  * request reads TfL. Without `rail` or `bus`, serves the tracked defaults;
  * with either, the other is empty. `predictions=0` skips TfL arrivals.
+ * Rail line count is capped so the shared key cannot pull the whole network.
  */
 export async function GET(request: Request) {
   await connection()
@@ -32,6 +34,15 @@ export async function GET(request: Request) {
   const busRouteIds = hasIds
     ? splitIds(searchParams.get("bus"))
     : [TRACKED_BUS_ROUTE_ID]
+  if (railLineIds.length > SITE_MAX_LIVE_RAIL_LINES) {
+    return Response.json(
+      {
+        ok: false,
+        error: `The shared key follows up to ${SITE_MAX_LIVE_RAIL_LINES} rail lines at once. Add your own TfL API key to follow more.`,
+      },
+      { status: 400, headers: { "Cache-Control": "no-store" } }
+    )
+  }
   try {
     const data = await buildLiveVehiclesSnapshot({
       railLineIds,

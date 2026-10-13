@@ -7,7 +7,8 @@ export type TargetRequestsPerMinute =
 export const MAX_USER_POLL_MS = 4_000
 /**
  * Site-key poll. `/api/live-vehicles` is uncached, so each open tab costs the
- * site key 6 TfL requests a minute. TfL source times change about every 34 s.
+ * site key 6 TfL requests a minute. TfL's own source times change about every
+ * 30-34 s and are often ~45 s old; the client interpolates between polls.
  */
 export const SITE_POLL_MS = 10_000
 export const MIN_POLL_MS = 4_000

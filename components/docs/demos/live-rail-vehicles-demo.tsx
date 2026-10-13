@@ -1,39 +1,83 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { BoardLineChipPicker } from "@/components/board/board-line-chip-picker"
 import { LiveRailVehicles } from "@/components/tfl/live-vehicles/live-rail-vehicles"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
+import { TEXT_LINK_CLASS } from "@/lib/text-link"
+import {
+  DEFAULT_LIVE_RAIL_LINE_IDS,
+  LIVE_RAIL_LINE_IDS,
+  SITE_MAX_LIVE_RAIL_LINES,
+} from "@/lib/tfl/live-rail-line-ids"
 import type { TargetRequestsPerMinute } from "@/lib/tfl/vehicle-poll-rate"
 
-const RAIL_LINES = [
-  { lineId: "victoria" },
-  { lineId: "northern" },
-  { lineId: "central" },
-  { lineId: "jubilee" },
-  { lineId: "elizabeth" },
-] as const
-
-const ALL_LINE_IDS = RAIL_LINES.map((line) => line.lineId)
+const RAIL_LINES = LIVE_RAIL_LINE_IDS.map((lineId) => ({ lineId }))
 
 export default function LiveRailVehiclesDemo() {
-  const { status } = useUserTflCredentials()
+  const { status, openDialog } = useUserTflCredentials()
   const hasKey = status === "ready"
-  // One batched TfL request covers every selected line.
   const [railLineIds, setRailLineIds] = useState<readonly string[]>([
-    "victoria",
-    "northern",
-    "central",
+    ...DEFAULT_LIVE_RAIL_LINE_IDS,
   ])
   const [rate, setRate] = useState<TargetRequestsPerMinute>("max")
+  const [capMessage, setCapMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (hasKey) return
+    if (railLineIds.length <= SITE_MAX_LIVE_RAIL_LINES) return
+    setRailLineIds(railLineIds.slice(0, SITE_MAX_LIVE_RAIL_LINES))
+  }, [hasKey, railLineIds])
+
+  const handleLinesChange = (next: readonly string[] | undefined) => {
+    const resolved = next?.length ? [...next] : [...LIVE_RAIL_LINE_IDS]
+    if (!hasKey && resolved.length > SITE_MAX_LIVE_RAIL_LINES) {
+      setCapMessage(
+        `The shared key follows up to ${SITE_MAX_LIVE_RAIL_LINES} lines at once. Add your own TfL API key to follow more.`
+      )
+      openDialog()
+      return
+    }
+    setCapMessage(null)
+    setRailLineIds(resolved)
+  }
 
   return (
     <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        TfL arrivals update about every 30 seconds and are often around 45
+        seconds old. This demo polls at that low rate and interpolates train
+        positions between updates.
+      </p>
       <BoardLineChipPicker
         lines={RAIL_LINES}
         selected={railLineIds}
-        onChange={(next) => setRailLineIds(next ?? ALL_LINE_IDS)}
+        onChange={handleLinesChange}
       />
+      {capMessage ? (
+        <p className="text-sm text-muted-foreground">
+          {capMessage}{" "}
+          <button
+            type="button"
+            className={TEXT_LINK_CLASS}
+            onClick={() => openDialog()}
+          >
+            Add a key
+          </button>
+        </p>
+      ) : !hasKey ? (
+        <p className="text-sm text-muted-foreground">
+          Shared key: pick up to {SITE_MAX_LIVE_RAIL_LINES} lines.{" "}
+          <button
+            type="button"
+            className={TEXT_LINK_CLASS}
+            onClick={() => openDialog()}
+          >
+            Add your own key
+          </button>{" "}
+          to follow more at once.
+        </p>
+      ) : null}
       <LiveRailVehicles
         railLineIds={railLineIds}
         targetRequestsPerMinute={hasKey ? rate : "max"}

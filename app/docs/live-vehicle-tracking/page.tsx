@@ -8,7 +8,7 @@ export const generateMetadata = (): Promise<Metadata> =>
   componentDocsMetadata("live-vehicle-tracking")
 
 const USAGE_SNIPPET = `<LiveRailVehicles
-  railLineIds={["victoria", "northern"]}
+  railLineIds={["central"]}
   targetRequestsPerMinute="max"
 />`
 
