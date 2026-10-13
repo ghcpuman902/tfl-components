@@ -118,7 +118,7 @@ export const BoardViewFooter = ({
     <footer
       className={
         compact
-          ? "mt-auto shrink-0 pt-[calc(var(--arrivals-row)/4)] text-xl tabular-nums text-muted-foreground"
+          ? "mt-auto shrink-0 pt-3 text-xl tabular-nums text-muted-foreground"
           : "mt-[calc(var(--arrivals-row)/2)] max-w-3xl text-sm text-muted-foreground"
       }
     >

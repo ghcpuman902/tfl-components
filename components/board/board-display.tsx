@@ -1008,7 +1008,7 @@ export const BoardDisplay = ({
   }
 
   const shellClass = isSquare
-    ? `board-embed board-square ${BOARD_SHELL_CONTAINER_CLASS} box-border flex ${isPreview ? "h-full" : "h-dvh"} w-full flex-col overflow-hidden overscroll-none [touch-action:manipulation] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${isPreview ? "p-5" : ""}`
+    ? `board-embed board-square ${BOARD_SHELL_CONTAINER_CLASS} box-border flex min-h-0 ${isPreview ? "h-full" : "h-dvh"} w-full flex-col overflow-hidden overscroll-none [touch-action:manipulation] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${isPreview ? "p-5" : ""}`
     : isPreview
       ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-full w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
       : fillScreen

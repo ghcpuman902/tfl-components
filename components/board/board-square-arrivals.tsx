@@ -131,7 +131,7 @@ const SquareArrivalRow = ({
       data-slot="board-square-row"
       aria-label={ariaLabel}
       className={cn(
-        "grid min-h-0 min-w-0 flex-1 grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-[clamp(0.75rem,2cqi,1.25rem)]",
+        "grid min-h-0 min-w-0 flex-1 basis-0 grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-[clamp(0.75rem,2cqi,1.25rem)] py-[clamp(0.5rem,1.5cqi,1rem)]",
         showRule && "border-b border-border/70"
       )}
     >
@@ -298,7 +298,7 @@ export const BoardSquareArrivals = ({
         <>
           <ul
             data-slot="board-square-rows"
-            className="m-0 flex min-h-0 flex-1 list-none flex-col p-0"
+            className="m-0 flex min-h-0 flex-1 basis-0 list-none flex-col p-0"
             role="list"
           >
             {(activeFrame?.rows ?? []).map((row, index, list) => (
