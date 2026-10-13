@@ -10,7 +10,12 @@ import {
 } from "@/lib/tfl/board-panels"
 import type { BoardConfig } from "@/lib/tfl/board-url-state"
 
-export type BoardPresetId = "station" | "near" | "arrivals" | "status"
+export type BoardPresetId =
+  | "station"
+  | "near"
+  | "arrivals"
+  | "status"
+  | "homeview"
 
 export type BoardPresetDef = {
   id: BoardPresetId
@@ -91,6 +96,25 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
     ],
     slots: { p1: ["status"], p2: [] },
   },
+  {
+    id: "homeview",
+    title: "HomeView square",
+    available: true,
+    formSettings: [
+      "stop",
+      "stopName",
+      "behaviour",
+      "layout",
+      "density",
+      "arrivalsLines",
+      "arrivalsRows",
+      "arrivalsPinFirst",
+      "statusSurface",
+      "statusLines",
+      "statusOverview",
+    ],
+    slots: { p1: ["rail"], p2: ["status"] },
+  },
 ]
 
 export const DEFAULT_BOARD_PRESET_ID: BoardPresetId = "station"
@@ -100,11 +124,13 @@ export const getBoardPreset = (id: BoardPresetId): BoardPresetDef =>
 
 /** Infer the layout card from slot stacks. URL does not name the recipe (J13). */
 export const matchBoardPresetId = (
-  config: Pick<BoardConfig, "slots">
+  config: Pick<BoardConfig, "slots" | "layout" | "density">
 ): BoardPresetId | undefined => {
+  if (config.layout === "square") return "homeview"
   const resolved = resolveBoardSlots(config.slots.p1, config.slots.p2)
   return BOARD_PRESETS.find(
     (preset) =>
+      preset.id !== "homeview" &&
       preset.slots.p1.join(",") === resolved.p1.join(",") &&
       preset.slots.p2.join(",") === resolved.p2.join(",")
   )?.id
@@ -113,10 +139,21 @@ export const matchBoardPresetId = (
 export const applyBoardRecipe = (
   current: BoardConfig,
   preset: BoardPresetDef
-): BoardConfig => ({
-  ...current,
-  slots: {
-    p1: [...preset.slots.p1],
-    p2: [...preset.slots.p2],
-  },
-})
+): BoardConfig => {
+  const next: BoardConfig = {
+    ...current,
+    slots: {
+      p1: [...preset.slots.p1],
+      p2: [...preset.slots.p2],
+    },
+  }
+  if (preset.id === "homeview") {
+    next.layout = "square"
+    next.density = "far"
+    next.behaviour = "unattended"
+    if (next.arrivals.rows === undefined) {
+      next.arrivals = { ...next.arrivals, rows: 3 }
+    }
+  }
+  return next
+}

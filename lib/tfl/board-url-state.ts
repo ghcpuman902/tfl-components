@@ -14,7 +14,9 @@ import {
   parseBehaviour,
   parseBooleanFlag,
   parseCycleSurface,
+  parseDensity,
   parseDwellSeconds,
+  parseLayout,
   parseOptionalString,
   parseRowsItem,
   parseStatusOverview,
@@ -23,6 +25,8 @@ import {
   serializeArrivalsRows,
   type BoardBehaviour,
   type BoardCycleSurface,
+  type BoardDensity,
+  type BoardLayout,
   type BoardSettingId,
   type BoardStatusOverview,
   type BoardStatusSurface,
@@ -41,7 +45,14 @@ import {
 export const BOARD_PATH = "/board"
 export const BOARD_VIEW_PATH = "/board/view"
 
-export type { BoardBehaviour, BoardCycleSurface, BoardStatusOverview, BoardStatusSurface }
+export type {
+  BoardBehaviour,
+  BoardCycleSurface,
+  BoardDensity,
+  BoardLayout,
+  BoardStatusOverview,
+  BoardStatusSurface,
+}
 export type { BoardPanelKind }
 
 export type BoardArrivalsConfig = {
@@ -93,6 +104,10 @@ export type BoardConfig = {
   stop?: string
   stopName?: string
   behaviour: BoardBehaviour
+  /** Explicit layout; omit for auto-detect on coarse square viewports. */
+  layout?: BoardLayout
+  /** Sparse room-distance density; omit for ordinary Board density. */
+  density?: BoardDensity
   slots: BoardSlotsConfig
   arrivals: BoardArrivalsConfig
   bus: BoardBusConfig
@@ -141,6 +156,8 @@ export const parseBoardConfig = (
     parseBehaviour(params.get("behaviour") ?? "") ??
     parseBehaviour(params.get("mode") ?? "") ??
     DEFAULT_BOARD_CONFIG.behaviour
+  const layout = parseLayout(params.get("layout") ?? "") ?? undefined
+  const density = parseDensity(params.get("density") ?? "") ?? undefined
 
   const arrivals: BoardArrivalsConfig = {}
   const rows = parseArrivalsRows(params.get("a.rows"))
@@ -195,6 +212,8 @@ export const parseBoardConfig = (
     stop,
     stopName,
     behaviour,
+    ...(layout ? { layout } : {}),
+    ...(density ? { density } : {}),
     slots,
     arrivals,
     bus,
@@ -215,6 +234,8 @@ const KNOWN_HASH_PARAMS = new Set<string>([
   BOARD_SETTINGS.stop.param,
   BOARD_SETTINGS.stopName.param,
   BOARD_SETTINGS.behaviour.param,
+  BOARD_SETTINGS.layout.param,
+  BOARD_SETTINGS.density.param,
   BOARD_SETTINGS.slot1.param,
   BOARD_SETTINGS.slot2.param,
   BOARD_SETTINGS.arrivalsRows.param,
@@ -340,6 +361,24 @@ export const describeBoardHrefSegments = (
     segments.push({
       setting: "behaviour",
       text: encodeSegment(BOARD_SETTINGS.behaviour.param, merged.behaviour),
+    })
+  }
+  if (
+    merged.layout !== undefined &&
+    !BOARD_SETTINGS.layout.isDefault(merged.layout)
+  ) {
+    segments.push({
+      setting: "layout",
+      text: encodeSegment(BOARD_SETTINGS.layout.param, merged.layout),
+    })
+  }
+  if (
+    merged.density !== undefined &&
+    !BOARD_SETTINGS.density.isDefault(merged.density)
+  ) {
+    segments.push({
+      setting: "density",
+      text: encodeSegment(BOARD_SETTINGS.density.param, merged.density),
     })
   }
 

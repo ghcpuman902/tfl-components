@@ -22,6 +22,8 @@ export type BoardScope =
   "shell" | "arrivals" | "status" | "bus" | "river" | "cycle"
 
 export type BoardBehaviour = "interactive" | "unattended"
+export type BoardLayout = "square" | "default"
+export type BoardDensity = "far"
 export type BoardCycleSurface = "map" | "display"
 export type BoardStatusSurface = "display" | "strip"
 export type BoardStatusOverview = "network" | "selection" | "none"
@@ -69,6 +71,8 @@ export type ListSetting<T> = SettingBase<T> & {
 export type BoardSetting<T = unknown> = ScalarSetting<T> | ListSetting<T>
 
 const BEHAVIOURS = new Set<BoardBehaviour>(["interactive", "unattended"])
+const LAYOUTS = new Set<BoardLayout>(["square", "default"])
+const DENSITIES = new Set<BoardDensity>(["far"])
 const CYCLE_SURFACES = new Set<BoardCycleSurface>(["map", "display"])
 const STATUS_SURFACES = new Set<BoardStatusSurface>(["display", "strip"])
 const STATUS_OVERVIEWS = new Set<BoardStatusOverview>([
@@ -116,6 +120,20 @@ export const parseBehaviour = (raw: string): BoardBehaviour | undefined => {
     return trimmed as BoardBehaviour
   }
   return LEGACY_MODE_TO_BEHAVIOUR[trimmed]
+}
+
+export const parseLayout = (raw: string): BoardLayout | undefined => {
+  const trimmed = raw.trim()
+  return LAYOUTS.has(trimmed as BoardLayout)
+    ? (trimmed as BoardLayout)
+    : undefined
+}
+
+export const parseDensity = (raw: string): BoardDensity | undefined => {
+  const trimmed = raw.trim()
+  return DENSITIES.has(trimmed as BoardDensity)
+    ? (trimmed as BoardDensity)
+    : undefined
 }
 
 export const parseCycleSurface = (
@@ -256,6 +274,59 @@ export const BOARD_SETTINGS = {
       ],
     },
   } satisfies ScalarSetting<BoardBehaviour>,
+
+  layout: {
+    kind: "scalar",
+    param: "layout",
+    scope: "shell",
+    defaultValue: undefined as BoardLayout | undefined,
+    parse: parseLayout,
+    serialize: (value: BoardLayout | undefined) => value ?? "",
+    isDefault: (value: BoardLayout | undefined) => value === undefined,
+    url: true,
+    form: true,
+    ui: {
+      label: "Layout",
+      help: "Square is for room-distance wall displays. Leave unset to auto-detect a square coarse touchscreen.",
+      control: "select",
+      options: [
+        {
+          value: "square",
+          label: "Square",
+          description: "One column, large type, no scroll",
+        },
+        {
+          value: "default",
+          label: "Default",
+          description: "Force the ordinary Board layout",
+        },
+      ],
+    },
+  } satisfies ScalarSetting<BoardLayout | undefined>,
+
+  density: {
+    kind: "scalar",
+    param: "density",
+    scope: "shell",
+    defaultValue: undefined as BoardDensity | undefined,
+    parse: parseDensity,
+    serialize: (value: BoardDensity | undefined) => value ?? "",
+    isDefault: (value: BoardDensity | undefined) => value === undefined,
+    url: true,
+    form: true,
+    ui: {
+      label: "Density",
+      help: "Far keeps fewer, larger rows for reading across a room. Saved in the URL — not Apple near/far switching.",
+      control: "select",
+      options: [
+        {
+          value: "far",
+          label: "Far",
+          description: "Sparse rows, large type",
+        },
+      ],
+    },
+  } satisfies ScalarSetting<BoardDensity | undefined>,
 
   arrivalsRows: {
     kind: "scalar",

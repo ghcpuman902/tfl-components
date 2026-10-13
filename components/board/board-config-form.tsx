@@ -957,6 +957,60 @@ export const BoardAdvancedConfig = ({
                 />
               </Field>
             ) : null}
+
+            {show(formSettings, "layout") ? (
+              <Field>
+                <DescribedSelect
+                  id="board-layout"
+                  ariaLabel={BOARD_SETTINGS.layout.ui?.label ?? "Layout"}
+                  value={config.layout ?? "auto"}
+                  onChange={(value) =>
+                    onChange({
+                      layout:
+                        value === "auto"
+                          ? undefined
+                          : (value as BoardConfig["layout"]),
+                    })
+                  }
+                  options={[
+                    {
+                      value: "auto",
+                      label: "Auto",
+                      description: "Detect a square coarse touchscreen",
+                    },
+                    ...(BOARD_SETTINGS.layout.ui?.options ?? []),
+                  ]}
+                />
+                <Help>{BOARD_SETTINGS.layout.ui?.help}</Help>
+              </Field>
+            ) : null}
+
+            {show(formSettings, "density") ? (
+              <Field>
+                <DescribedSelect
+                  id="board-density"
+                  ariaLabel={BOARD_SETTINGS.density.ui?.label ?? "Density"}
+                  value={config.density ?? "ordinary"}
+                  onChange={(value) =>
+                    onChange({
+                      density:
+                        value === "ordinary"
+                          ? undefined
+                          : (value as BoardConfig["density"]),
+                    })
+                  }
+                  options={[
+                    {
+                      value: "ordinary",
+                      label: "Ordinary",
+                      description: "Default Board density",
+                    },
+                    ...(BOARD_SETTINGS.density.ui?.options ?? []),
+                  ]}
+                />
+                <Help>{BOARD_SETTINGS.density.ui?.help}</Help>
+              </Field>
+            ) : null}
           </div>
         </div>
   )

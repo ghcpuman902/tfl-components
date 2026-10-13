@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 const MODES = [
   { value: "small" as const, label: "Narrow" },
   { value: "large" as const, label: "Wide" },
+  { value: "square" as const, label: "Square" },
 ] as const
 
 type BoardPreviewModePillsProps = {

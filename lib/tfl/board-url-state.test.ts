@@ -43,6 +43,18 @@ describe("parseBoardConfig", () => {
     assert.equal(config.behaviour, "interactive")
   })
 
+  it("parses layout=square and density=far", () => {
+    const config = parseBoardConfig("layout=square&density=far")
+    assert.equal(config.layout, "square")
+    assert.equal(config.density, "far")
+  })
+
+  it("ignores invalid layout and density", () => {
+    const config = parseBoardConfig("layout=wide&density=near")
+    assert.equal(config.layout, undefined)
+    assert.equal(config.density, undefined)
+  })
+
   it("ignores retired a.pinAdvance", () => {
     const config = parseBoardConfig(
       "stop=940GZZLUOXC&a.pinAdvance=jump&a.pinFirst=false"
@@ -237,6 +249,25 @@ describe("buildBoardHref", () => {
     assert.equal(
       buildBoardHref({ behaviour: "interactive", stop: "940GZZLUOXC" }),
       `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`
+    )
+  })
+
+  it("serializes layout=square and density=far", () => {
+    assert.equal(
+      buildBoardHref({
+        stop: "940GZZLUOXC",
+        layout: "square",
+        density: "far",
+        behaviour: "unattended",
+      }),
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&behaviour=unattended&layout=square&density=far`
+    )
+  })
+
+  it("serializes layout=default to opt out of auto-detect", () => {
+    assert.equal(
+      buildBoardHref({ stop: "940GZZLUOXC", layout: "default" }),
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&layout=default`
     )
   })
 

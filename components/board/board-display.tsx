@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
 } from "react"
 import dynamic from "next/dynamic"
 import { normalizeLineId } from "tfl-ts"
@@ -73,6 +74,12 @@ import {
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
 import { useBoardFullscreen } from "@/hooks/use-board-fullscreen"
 import { useBoardHomeScreen } from "@/hooks/use-board-home-screen"
+import { useBoardWakeLock } from "@/hooks/use-board-wake-lock"
+import {
+  boardSquareGutterCss,
+  resolveBoardLayout,
+  type BoardLayoutMode,
+} from "@/lib/tfl/board-layout"
 import { BOARD_SETTINGS } from "@/lib/tfl/board-settings"
 import {
   readInstalledBoardConfig,
@@ -123,6 +130,49 @@ const BOARD_SHELL_CONTAINER_CLASS = "@container/board"
 const BOARD_SHELL_PADDING_CLASS = "p-4 @min-[48rem]/board:p-6"
 const BOARD_TWO_COLUMN_CLASS = `grid min-w-0 grid-cols-1 items-start ${BOARD_RHYTHM_GAP_CLASS} @min-[48rem]/board:grid-cols-3 @min-[48rem]/board:gap-x-6`
 const BOARD_ONE_COLUMN_CLASS = `grid min-w-0 grid-cols-1 items-start ${BOARD_RHYTHM_GAP_CLASS}`
+
+const SQUARE_RHYTHM_VARS = {
+  "--arrivals-unit": "0.75rem",
+  "--arrivals-row": "calc(var(--arrivals-unit) * 14)",
+} as CSSProperties
+
+const SQUARE_FAR_RHYTHM_VARS = {
+  "--arrivals-unit": "0.85rem",
+  "--arrivals-row": "calc(var(--arrivals-unit) * 16)",
+} as CSSProperties
+
+const readViewportLayoutHints = (): {
+  width: number
+  height: number
+  hoverNone: boolean
+  pointerCoarse: boolean
+} => ({
+  width: window.innerWidth,
+  height: window.innerHeight,
+  hoverNone: window.matchMedia("(hover: none)").matches,
+  pointerCoarse: window.matchMedia("(pointer: coarse)").matches,
+})
+
+const subscribeViewportLayout = (onStoreChange: () => void) => {
+  window.addEventListener("resize", onStoreChange)
+  const hoverMq = window.matchMedia("(hover: none)")
+  const pointerMq = window.matchMedia("(pointer: coarse)")
+  hoverMq.addEventListener("change", onStoreChange)
+  pointerMq.addEventListener("change", onStoreChange)
+  return () => {
+    window.removeEventListener("resize", onStoreChange)
+    hoverMq.removeEventListener("change", onStoreChange)
+    pointerMq.removeEventListener("change", onStoreChange)
+  }
+}
+
+const getAutoSquareLayout = (): BoardLayoutMode =>
+  resolveBoardLayout({
+    ...readViewportLayoutHints(),
+    explicitLayout: null,
+  })
+
+const getServerBoardLayout = (): BoardLayoutMode => "default"
 
 const CycleHireMapSkeleton = ({ tiles }: { tiles: number }) => (
   <div
@@ -306,8 +356,30 @@ export const BoardDisplay = ({
   const fullscreen = useBoardFullscreen(boardRootRef, {
     enabled: boardReady && !fromHomeScreen && !embedded,
   })
+
+  const [awaitingFresh, setAwaitingFresh] = useState(false)
+  const freshnessEpochRef = useRef<number | null>(null)
+
+  const autoLayout = useSyncExternalStore(
+    subscribeViewportLayout,
+    getAutoSquareLayout,
+    getServerBoardLayout
+  )
+  const resolvedLayout: BoardLayoutMode =
+    config.layout === "square" || config.layout === "default"
+      ? config.layout
+      : isPreview
+        ? "default"
+        : autoLayout
+
+  // Gate on surfaceReady so SSR / hydration never disagree on `board-square`.
+  const isSquare = surfaceReady && resolvedLayout === "square"
+  const densityFar = config.density === "far"
   const fillScreen =
-    !isPreview && (frameEmbedded || fromHomeScreen || fullscreen.active)
+    !isPreview &&
+    (isSquare || frameEmbedded || fromHomeScreen || fullscreen.active)
+
+  useBoardWakeLock({ enabled: boardReady && isSquare && !isPreview })
 
   useEffect(() => {
     if (!fromHomeScreen || !ready || !hydrated) return
@@ -332,16 +404,26 @@ export const BoardDisplay = ({
   )
 
   useEffect(() => {
-    if (!fillScreen) return
+    if (!fillScreen && !isSquare) return
     const html = document.documentElement
-    const previous = html.style.overflow
+    const previousOverflow = html.style.overflow
+    const hadEmbed = html.classList.contains("board-embed")
+    const hadSquare = html.classList.contains("board-square")
+    const hadDark = html.classList.contains("dark")
     html.style.overflow = "hidden"
     html.classList.add("board-embed")
-    return () => {
-      html.style.overflow = previous
-      html.classList.remove("board-embed")
+    if (isSquare) {
+      html.classList.add("board-square", "dark")
     }
-  }, [fillScreen])
+    return () => {
+      html.style.overflow = previousOverflow
+      if (!hadEmbed) html.classList.remove("board-embed")
+      if (isSquare) {
+        if (!hadSquare) html.classList.remove("board-square")
+        if (!hadDark) html.classList.remove("dark")
+      }
+    }
+  }, [fillScreen, isSquare])
 
   const stopId = config.stop ?? ""
   // URL `stopName` is an override only. Otherwise the catalog paints the
@@ -471,6 +553,52 @@ export const BoardDisplay = ({
     ]
   )
 
+  const latestFetchedAt = useMemo(() => {
+    let latest: number | null = null
+    for (const source of pollSources) {
+      if (!source.enabled || source.fetchedAt == null) continue
+      if (latest == null || source.fetchedAt > latest) latest = source.fetchedAt
+    }
+    return latest
+  }, [pollSources])
+
+  const requestFreshData = useCallback(() => {
+    freshnessEpochRef.current = latestFetchedAt
+    setAwaitingFresh(true)
+    handleRefresh()
+  }, [handleRefresh, latestFetchedAt])
+
+  useEffect(() => {
+    if (!awaitingFresh) return
+    if (latestFetchedAt == null) return
+    if (
+      freshnessEpochRef.current != null &&
+      latestFetchedAt <= freshnessEpochRef.current
+    ) {
+      return
+    }
+    setAwaitingFresh(false)
+    freshnessEpochRef.current = null
+  }, [awaitingFresh, latestFetchedAt])
+
+  useEffect(() => {
+    if (!boardReady || isPreview) return
+    const onVisibleAgain = () => {
+      if (document.visibilityState !== "visible") return
+      requestFreshData()
+    }
+    const onPageShow = (event: PageTransitionEvent) => {
+      // bfcache restore — ordinary loads already fetch on mount.
+      if (event.persisted) requestFreshData()
+    }
+    document.addEventListener("visibilitychange", onVisibleAgain)
+    window.addEventListener("pageshow", onPageShow)
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibleAgain)
+      window.removeEventListener("pageshow", onPageShow)
+    }
+  }, [boardReady, isPreview, requestFreshData])
+
   const refreshing =
     (showRail && arrivals.loading) ||
     (showBus && busArrivals.loading) ||
@@ -518,7 +646,9 @@ export const BoardDisplay = ({
       ),
     [config, servingLines]
   )
-  const unattended = config.behaviour === "unattended"
+  // Square wall displays page overflow instead of scrolling or swiping.
+  const panelBehaviour = isSquare ? "unattended" : config.behaviour
+  const unattended = panelBehaviour === "unattended"
   const pageSizeByLine = useMemo(() => {
     // A scalar `a.rows` broadcasts to every section — do not keep the
     // curated merge default (6) on top of that.
@@ -651,7 +781,13 @@ export const BoardDisplay = ({
     )
   }, [status.data, config.status.lines, config.status.overview])
 
-  const twoColumns = slots.p1.length > 0 && slots.p2.length > 0
+  const twoColumns = !isSquare && slots.p1.length > 0 && slots.p2.length > 0
+  const squarePageSize =
+    isSquare && arrivalsProps.pageSize === undefined
+      ? densityFar
+        ? 3
+        : 4
+      : arrivalsProps.pageSize
 
   const renderPanel = (kind: BoardPanelKind) => {
     if (kind === "rail") {
@@ -666,16 +802,16 @@ export const BoardDisplay = ({
           lines={arrivalsProps.lines}
           lineGroups={lineGroups}
           lineOrder={arrivalsProps.lineOrder}
-          pageSize={arrivalsProps.pageSize}
-          pageSizeByLine={pageSizeByLine}
-          behaviour={config.behaviour}
+          pageSize={squarePageSize}
+          pageSizeByLine={isSquare ? undefined : pageSizeByLine}
+          behaviour={panelBehaviour}
           pinFirst={arrivalsProps.pinFirst}
           startDelayMs={unattended ? 0 : undefined}
           loading={arrivals.loading}
           error={arrivalsError}
           emptyKind={railEmpty.kind}
           emptyMessage={arrivalsLineEmptyCopy(railEmpty)}
-          classNames={BOUND_COLUMNS_CLASS_NAMES}
+          classNames={isSquare ? undefined : BOUND_COLUMNS_CLASS_NAMES}
         />
       )
     }
@@ -688,8 +824,8 @@ export const BoardDisplay = ({
           data={busData}
           now={busArrivals.fetchedAt ?? undefined}
           groupBy={config.bus.routes?.length ? "none" : "route"}
-          pageSize={config.bus.rows}
-          behaviour={config.behaviour}
+          pageSize={config.bus.rows ?? (isSquare ? 3 : undefined)}
+          behaviour={panelBehaviour}
           pinFirst={arrivalsProps.pinFirst}
           startDelayMs={unattended ? 400 : undefined}
           loading={busArrivals.loading}
@@ -706,8 +842,8 @@ export const BoardDisplay = ({
           data={riverArrivals.data}
           now={riverArrivals.fetchedAt ?? undefined}
           groupBy="route"
-          pageSize={config.river.rows}
-          behaviour={config.behaviour}
+          pageSize={config.river.rows ?? (isSquare ? 3 : undefined)}
+          behaviour={panelBehaviour}
           pinFirst={arrivalsProps.pinFirst}
           startDelayMs={unattended ? 800 : undefined}
           loading={riverArrivals.loading}
@@ -731,7 +867,7 @@ export const BoardDisplay = ({
           <CycleHireDocksDisplay
             data={cyclePoints.data}
             tiles={cycleTiles}
-            behaviour={config.behaviour}
+            behaviour={panelBehaviour}
             startDelayMs={unattended ? 1200 : undefined}
             error={cycleError}
           />
@@ -840,10 +976,25 @@ export const BoardDisplay = ({
   }
 
   const shellClass = isPreview
-    ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-full w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
-    : fillScreen
-      ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
-      : `${BOARD_SHELL_CONTAINER_CLASS} box-border min-h-dvh w-full ${BOARD_SHELL_PADDING_CLASS}`
+    ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-full w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden${isSquare ? " board-square" : ""}`
+      : isSquare
+      ? `board-embed board-square ${BOARD_SHELL_CONTAINER_CLASS} box-border flex h-dvh w-full flex-col overflow-hidden overscroll-none [touch-action:manipulation] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`
+      : fillScreen
+        ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
+        : `${BOARD_SHELL_CONTAINER_CLASS} box-border min-h-dvh w-full ${BOARD_SHELL_PADDING_CLASS}`
+
+  const boardRhythmStyle = isSquare
+    ? densityFar
+      ? SQUARE_FAR_RHYTHM_VARS
+      : SQUARE_RHYTHM_VARS
+    : ARRIVALS_RHYTHM_VARS
+
+  const boardShellStyle = {
+    ...boardRhythmStyle,
+    ...(isSquare && !isPreview
+      ? boardSquareGutterCss(20)
+      : homeScreenPadding),
+  }
 
   const rateLimited =
     (showRail && arrivals.rateLimited) ||
@@ -868,7 +1019,11 @@ export const BoardDisplay = ({
 
   if (!surfaceReady) {
     return (
-      <div className={shellClass} style={ARRIVALS_RHYTHM_VARS}>
+      <div
+        className={shellClass}
+        style={boardShellStyle}
+        data-density={densityFar ? "far" : undefined}
+      >
         {isPreview ? null : <h1 className="sr-only">Live board</h1>}
       </div>
     )
@@ -876,7 +1031,11 @@ export const BoardDisplay = ({
 
   if (!boardReady) {
     return (
-      <div className={shellClass} style={ARRIVALS_RHYTHM_VARS}>
+      <div
+        className={shellClass}
+        style={boardShellStyle}
+        data-density={densityFar ? "far" : undefined}
+      >
         {fromHomeScreen ? (
           <>
             {isPreview ? null : <h1 className="sr-only">Live board</h1>}
@@ -893,9 +1052,10 @@ export const BoardDisplay = ({
     return (
       <div
         className={`${shellClass} flex items-center justify-center`}
-        style={ARRIVALS_RHYTHM_VARS}
+        style={boardShellStyle}
+        data-density={densityFar ? "far" : undefined}
       >
-        <BoardRateLimitScreen onRetry={handleRefresh} retrying={refreshing} />
+        <BoardRateLimitScreen onRetry={requestFreshData} retrying={refreshing} />
       </div>
     )
   }
@@ -904,11 +1064,18 @@ export const BoardDisplay = ({
     <div
       ref={boardRootRef}
       className={shellClass}
-      style={{ ...ARRIVALS_RHYTHM_VARS, ...homeScreenPadding }}
+      style={boardShellStyle}
+      data-density={densityFar ? "far" : undefined}
     >
       {isPreview ? null : <h1 className="sr-only">Live board</h1>}
       <div
-        className={twoColumns ? BOARD_TWO_COLUMN_CLASS : BOARD_ONE_COLUMN_CLASS}
+        className={
+          isSquare
+            ? `${BOARD_ONE_COLUMN_CLASS} min-h-0 flex-1`
+            : twoColumns
+              ? BOARD_TWO_COLUMN_CLASS
+              : BOARD_ONE_COLUMN_CLASS
+        }
       >
         {renderStack(slots.p1, "Wide slot", true)}
         {renderStack(slots.p2, "Narrow slot", false)}
@@ -919,35 +1086,43 @@ export const BoardDisplay = ({
       {isPreview ? null : (
         <BoardViewFooter
           sources={pollSources}
-          onRefresh={handleRefresh}
+          onRefresh={requestFreshData}
           refreshing={refreshing}
-          editHref={editHref}
+          stale={awaitingFresh}
+          compact={isSquare}
+          editHref={isSquare ? undefined : editHref}
           fullscreenLabel={
-            fullscreen.available && !fromHomeScreen && !embedded
+            !isSquare &&
+            fullscreen.available &&
+            !fromHomeScreen &&
+            !embedded
               ? fullscreen.active
                 ? "Exit full screen"
                 : "Full screen"
               : undefined
           }
           onFullscreen={
-            fullscreen.available && !fromHomeScreen && !embedded
+            !isSquare &&
+            fullscreen.available &&
+            !fromHomeScreen &&
+            !embedded
               ? fullscreen.toggle
               : undefined
           }
           fullscreenError={fullscreen.error}
           onAddToHomeScreen={
-            offerInstall && platform === "ios"
+            !isSquare && offerInstall && platform === "ios"
               ? () => setHomeScreenOfferOpen(true)
               : undefined
           }
           onChromiumInstall={
-            offerInstall && platform === "chromium"
+            !isSquare && offerInstall && platform === "chromium"
               ? promptNativeInstall
               : undefined
           }
         />
       )}
-      {offerInstall && platform === "ios" ? (
+      {offerInstall && platform === "ios" && !isSquare ? (
         <BoardViewHomeScreenOffer
           open={homeScreenOfferOpen}
           onDismiss={handleDismissHomeScreenOffer}

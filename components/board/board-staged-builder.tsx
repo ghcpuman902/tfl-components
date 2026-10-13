@@ -105,7 +105,7 @@ const readDraft = (): BoardSetupDraft | null => {
 
 const formSettingsFromConfig = (config: BoardConfig): BoardSettingId[] => {
   const resolved = resolveBoardSlots(config.slots.p1, config.slots.p2)
-  const ids = new Set<BoardSettingId>(["behaviour"])
+  const ids = new Set<BoardSettingId>(["behaviour", "layout", "density"])
   if (boardSlotsInclude(resolved, "rail")) {
     ids.add("stop")
     ids.add("arrivalsLines")
@@ -149,18 +149,25 @@ const statusConfigFromDraft = (draft: BoardSetupDraft) => {
 }
 
 const configFromDraft = (draft: BoardSetupDraft): BoardConfig => {
+  const square = draft.screenProfile === "square"
+
   if (draft.continueWithoutStop) {
     return {
       ...DEFAULT_BOARD_CONFIG,
+      behaviour: square ? "unattended" : DEFAULT_BOARD_CONFIG.behaviour,
+      layout: square ? "square" : undefined,
+      density: square ? "far" : undefined,
       slots: { p1: ["status"], p2: [] },
       status: statusConfigFromDraft(draft),
     }
   }
 
   const stop = draft.stopId ?? EXAMPLE_STOP.id
-  const p1: Array<"rail" | "bus" | "cycle" | "river"> = ["rail", "bus"]
-  const includeCycle = draft.nearbyModes.includes("cycle")
-  const includeRiver = draft.nearbyModes.includes("river")
+  const p1: Array<"rail" | "bus" | "cycle" | "river"> = square
+    ? ["rail"]
+    : ["rail", "bus"]
+  const includeCycle = !square && draft.nearbyModes.includes("cycle")
+  const includeRiver = !square && draft.nearbyModes.includes("river")
   if (includeCycle) p1.push("cycle")
   if (includeRiver) p1.push("river")
 
@@ -168,11 +175,15 @@ const configFromDraft = (draft: BoardSetupDraft): BoardConfig => {
     ...DEFAULT_BOARD_CONFIG,
     stop,
     stopName: draft.stopName ?? undefined,
+    behaviour: square ? "unattended" : DEFAULT_BOARD_CONFIG.behaviour,
+    layout: square ? "square" : undefined,
+    density: square ? "far" : undefined,
     slots: { p1, p2: ["status"] },
     arrivals: {
       lineOrder: draft.lineIds.length > 0 ? draft.lineIds : undefined,
+      rows: square ? 3 : undefined,
     },
-    bus: { stop: draft.busStopId ?? undefined },
+    bus: square ? {} : { stop: draft.busStopId ?? undefined },
     river: includeRiver ? { stop: draft.riverStopId ?? undefined } : {},
     cycle: includeCycle ? { docks: draft.cycleDockIds } : {},
     status: statusConfigFromDraft(draft),

@@ -12,7 +12,7 @@ import type { BoardConfig } from "@/lib/tfl/board-url-state"
 export const BOARD_SETUP_STAGES = [1, 2, 3, 4, 5] as const
 export type BoardSetupStage = (typeof BOARD_SETUP_STAGES)[number]
 
-export type BoardScreenProfile = "small" | "large"
+export type BoardScreenProfile = "small" | "large" | "square"
 export type BoardSetupKeyMode = "own" | "shared" | "skipped"
 export type BoardNearbyMode = "bus" | "river" | "cycle"
 
@@ -52,7 +52,7 @@ const isStage = (value: unknown): value is BoardSetupStage =>
   value === 1 || value === 2 || value === 3 || value === 4 || value === 5
 
 const isScreenProfile = (value: unknown): value is BoardScreenProfile =>
-  value === "small" || value === "large"
+  value === "small" || value === "large" || value === "square"
 
 const isKeyMode = (value: unknown): value is BoardSetupKeyMode =>
   value === "own" || value === "shared" || value === "skipped"
@@ -176,6 +176,12 @@ export const detectScreenProfile = (
   orientation: "portrait" | "landscape"
 } => {
   const orientation = width >= height ? "landscape" : "portrait"
+  const shorter = Math.min(width, height)
+  const longer = Math.max(width, height)
+  const roughlySquare = longer > 0 && shorter / longer >= 0.88 && shorter >= 520
+  if (roughlySquare) {
+    return { profile: "square", orientation }
+  }
   const profile: BoardScreenProfile =
     orientation === "landscape" || width >= 768 ? "large" : "small"
   return { profile, orientation }
@@ -184,12 +190,14 @@ export const detectScreenProfile = (
 export const BOARD_PREVIEW_SMALL_FRAME = { width: 390, height: 844 } as const
 /** Matches the landing-hero iPad screen aspect (110.3998 × 82.2392). */
 export const BOARD_PREVIEW_LARGE_FRAME = { width: 1280, height: 953 } as const
+/** Square wall display (Apple HomeView-class). */
+export const BOARD_PREVIEW_SQUARE_FRAME = { width: 1088, height: 1088 } as const
 
 export type BoardPreviewFrame = {
   width: number
   height: number
   chrome: "phone" | "none"
-  density: "compact" | "roomy"
+  density: "compact" | "roomy" | "far"
 }
 
 /** Small = narrow/phone frame. Large = wide frame. Never fitted to the current viewport. */
@@ -198,6 +206,9 @@ export const previewFrameForProfile = (
 ): BoardPreviewFrame => {
   if (profile === "small") {
     return { ...BOARD_PREVIEW_SMALL_FRAME, chrome: "phone", density: "compact" }
+  }
+  if (profile === "square") {
+    return { ...BOARD_PREVIEW_SQUARE_FRAME, chrome: "none", density: "far" }
   }
   return { ...BOARD_PREVIEW_LARGE_FRAME, chrome: "none", density: "roomy" }
 }
@@ -259,6 +270,8 @@ export const leftoverBoardConfig = (
     behaviour: config.behaviour,
     slots: config.slots,
   }
+  if (config.layout !== undefined) leftover.layout = config.layout
+  if (config.density !== undefined) leftover.density = config.density
   const key = config.key?.trim()
   if (key) leftover.key = key
 
