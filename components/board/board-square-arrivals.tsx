@@ -5,11 +5,11 @@ import type { PredictionWithSharedTrackIdentity, RealtimePrediction } from "tfl-
 import { LineBadge, LineBadgeGroup } from "@/components/tfl/brand/line-badge"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
 import { StationName, StationNameTitle } from "@/components/tfl/station-name"
-import { formatArrivalsCountdown } from "@/components/tfl/arrivals/arrivals-bound-group"
 import { useUnattendedSequence } from "@/hooks/use-unattended-sequence"
 import { resolveArrivalsDestinationText } from "@/lib/tfl/arrivals-destination-text"
 import type { ArrivalsEmptyKind } from "@/lib/tfl/arrivals-empty"
 import { ARRIVALS_EMPTY_COPY } from "@/lib/tfl/arrivals-empty"
+import { isUnknownArrivalsPlatform } from "@/lib/tfl/arrivals-bound-sort"
 import type { ArrivalsPreparedRow } from "@/lib/tfl/arrivals-prepare"
 import {
   buildSquareArrivalFrames,
@@ -39,6 +39,19 @@ export type BoardSquareArrivalsProps = {
   emptyMessage?: string
   className?: string
   headingLevel?: 1 | 2 | 3 | 4 | 5 | 6
+}
+
+/** Wall-board countdown: hero number + unit, or a single Due word. */
+const formatSquareCountdown = (
+  seconds?: number,
+  platformName?: string
+): { primary: string; unit?: string } => {
+  if (isUnknownArrivalsPlatform(platformName)) {
+    return { primary: "Sched" }
+  }
+  if (seconds === undefined || seconds < 0) return { primary: "—" }
+  if (seconds < 60) return { primary: "Due" }
+  return { primary: `${Math.floor(seconds / 60)}`, unit: "min" }
 }
 
 const SquareArrivalRow = ({
@@ -87,24 +100,28 @@ const SquareArrivalRow = ({
     currentLocation: usableTflText(arrival.currentLocation),
   })
   const meta = formatSquareArrivalMeta(arrival.platformName)
-  const countdown = formatArrivalsCountdown(arrival.timeToStation, {
-    platformName: arrival.platformName,
-  })
+  const countdown = formatSquareCountdown(
+    arrival.timeToStation,
+    arrival.platformName
+  )
   const lineChip = sharedChipLabel ? (
     <LineBadgeGroup variant="codes" lineIds={sharedChipIds} />
   ) : lineTiers && lineId ? (
     <LineBadge
       lineId={lineId}
       name={lineTiers.short}
-      className="h-12 min-w-[6ch] justify-center px-2 text-lg"
+      className="h-[clamp(2.75rem,5.5cqi,3.5rem)] min-w-[7ch] justify-center px-2.5 text-[clamp(1.125rem,2.2cqi,1.375rem)]"
     />
   ) : null
 
+  const spokenTime = countdown.unit
+    ? `${countdown.primary} ${countdown.unit}`
+    : countdown.primary
   const ariaLabel = [
     sharedChipLabel ?? lineTiers?.full,
     meta,
     destination,
-    countdown,
+    spokenTime,
   ]
     .filter(Boolean)
     .join(", ")
@@ -114,38 +131,51 @@ const SquareArrivalRow = ({
       data-slot="board-square-row"
       aria-label={ariaLabel}
       className={cn(
-        "grid min-h-0 min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[auto_1fr] gap-x-4 gap-y-1 py-3",
-        showRule && "border-b border-border/80"
+        "grid min-h-0 min-w-0 flex-1 grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-[clamp(0.75rem,2cqi,1.25rem)]",
+        showRule && "border-b border-border/70"
       )}
     >
-      <div className="row-span-2 flex items-start pt-1">{lineChip}</div>
-      <div className="min-w-0 self-end text-muted-foreground">
-        {meta ? (
-          <p data-slot="board-square-meta" className="truncate text-[length:var(--square-meta)] leading-tight">
-            {meta}
-          </p>
-        ) : (
-          <p data-slot="board-square-meta" className="truncate text-[length:var(--square-meta)] leading-tight">
-            {lineTiers?.full ?? "Next train"}
-          </p>
-        )}
+      {lineId ? (
+        <span
+          data-line={lineId}
+          className="box-border h-[68%] min-h-12 w-2.5 shrink-0 self-center rounded-sm bg-[var(--line-color)]"
+          aria-hidden
+        />
+      ) : (
+        <span className="w-2.5 shrink-0" aria-hidden />
+      )}
+      <div className="flex items-center" aria-hidden="true">
+        {lineChip}
       </div>
-      <div
-        data-slot="board-square-time"
-        className="row-span-2 flex items-end justify-end self-stretch font-semibold tabular-nums leading-none tracking-tight text-[length:var(--square-time)]"
-        aria-hidden="true"
-      >
-        {countdown}
-      </div>
-      <div className="min-w-0 self-start" aria-hidden="true">
+      <div className="min-w-0" aria-hidden="true">
         <StationName
           name={destination}
           layout="auto"
           maxLines={2}
           allowAbbreviation
           allowScaleDown
-          className="font-medium text-[length:var(--square-dest)] leading-tight"
+          className="font-semibold text-[length:var(--square-dest)] leading-[1.1]"
         />
+        <p
+          data-slot="board-square-meta"
+          className="mt-[0.35em] truncate text-[length:var(--square-meta)] leading-tight text-muted-foreground"
+        >
+          {meta ?? lineTiers?.full ?? "Next train"}
+        </p>
+      </div>
+      <div
+        data-slot="board-square-time"
+        className="flex shrink-0 flex-col items-end justify-center tabular-nums tracking-tight"
+        aria-hidden="true"
+      >
+        <span className="font-semibold leading-none text-[length:var(--square-time)]">
+          {countdown.primary}
+        </span>
+        {countdown.unit ? (
+          <span className="mt-[0.15em] text-[length:var(--square-unit)] font-medium leading-none text-muted-foreground">
+            {countdown.unit}
+          </span>
+        ) : null}
       </div>
     </li>
   )
@@ -203,18 +233,20 @@ export const BoardSquareArrivals = ({
         aria-busy
         aria-label="Loading arrivals"
       >
-        <div className="flex shrink-0 items-center gap-x-4 pb-4">
-          <div className="size-14 animate-pulse rounded-full bg-muted" />
-          <div className="h-10 w-64 max-w-[70%] animate-pulse rounded bg-muted" />
+        <div className="flex shrink-0 items-center gap-x-5 pb-[clamp(1rem,2.5cqi,1.75rem)]">
+          <div className="size-[clamp(3.5rem,7cqi,4.5rem)] animate-pulse rounded-full bg-muted" />
+          <div className="h-[clamp(2.5rem,5cqi,3.25rem)] w-[min(70%,22rem)] animate-pulse rounded bg-muted" />
         </div>
         <ul className="flex min-h-0 flex-1 flex-col" aria-hidden>
           {Array.from({ length: pageSize }).map((_, index) => (
             <li
               key={index}
-              className="flex min-h-0 flex-1 flex-col justify-center gap-3 border-b border-border/60 py-4"
+              className="flex min-h-0 flex-1 items-center gap-4 border-b border-border/60"
             >
-              <div className="h-6 w-40 animate-pulse rounded bg-muted" />
-              <div className="h-10 w-full max-w-md animate-pulse rounded bg-muted" />
+              <div className="h-[70%] w-2 animate-pulse rounded-full bg-muted" />
+              <div className="h-12 w-16 animate-pulse rounded bg-muted" />
+              <div className="h-12 flex-1 animate-pulse rounded bg-muted" />
+              <div className="h-16 w-20 animate-pulse rounded bg-muted" />
             </li>
           ))}
         </ul>
@@ -233,10 +265,14 @@ export const BoardSquareArrivals = ({
       onFocus={sequence.handleFocus}
       onBlur={sequence.handleBlur}
     >
-      <div className="flex shrink-0 items-center gap-x-4 pb-3">
-        <TfLRoundel variant="underground" className="size-14 shrink-0" aria-hidden />
+      <div className="flex shrink-0 items-center gap-x-[clamp(0.875rem,2cqi,1.25rem)] pb-[clamp(0.75rem,2cqi,1.25rem)]">
+        <TfLRoundel
+          variant="underground"
+          className="size-[clamp(3.5rem,7cqi,4.5rem)] shrink-0"
+          aria-hidden
+        />
         {stopName ? (
-          <TitleTag className="tfl-title min-w-0 flex-1 text-[clamp(1.75rem,4.2cqi,2.25rem)] leading-tight [font-synthesis:none] [font-weight:var(--tfl-title-weight,400)]">
+          <TitleTag className="tfl-title min-w-0 flex-1 text-[length:var(--square-title)] leading-tight [font-synthesis:none] [font-weight:var(--tfl-title-weight,400)]">
             <StationNameTitle name={stopName} />
           </TitleTag>
         ) : (
@@ -245,12 +281,15 @@ export const BoardSquareArrivals = ({
       </div>
 
       {error ? (
-        <p className="flex min-h-0 flex-1 items-center text-2xl text-destructive" role="alert">
+        <p
+          className="flex min-h-0 flex-1 items-center text-[length:var(--square-dest)] text-destructive"
+          role="alert"
+        >
           {error}
         </p>
       ) : rows.length === 0 ? (
         <p
-          className="flex min-h-0 flex-1 items-center text-2xl text-muted-foreground"
+          className="flex min-h-0 flex-1 items-center text-[length:var(--square-dest)] text-muted-foreground"
           role="status"
         >
           {emptyCopy}
@@ -273,11 +312,11 @@ export const BoardSquareArrivals = ({
           {frames.length > 1 ? (
             <div
               data-slot="board-square-dwell"
-              className="relative mt-2 h-1.5 w-full shrink-0 overflow-hidden rounded-full bg-muted"
+              className="relative mt-[clamp(0.75rem,1.8cqi,1.25rem)] h-2 w-full shrink-0 overflow-hidden rounded-full bg-muted"
               aria-hidden
             >
               <div
-                className="absolute inset-y-0 left-0 bg-foreground/70 transition-[width] duration-200 ease-linear"
+                className="absolute inset-y-0 left-0 bg-foreground/75 transition-[width] duration-200 ease-linear"
                 style={{
                   width: sequence.started
                     ? `${Math.round(sequence.progress * 100)}%`

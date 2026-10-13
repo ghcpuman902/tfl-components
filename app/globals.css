@@ -280,17 +280,25 @@ html:has(.board-square) .board-square {
   color: var(--foreground);
 }
 
+/*
+ * Type scale keyed to the square board container (`@container/square-arrivals`).
+ * At HomeView ~1088: title ~40px, dest ~34px, time ~72px.
+ */
 [data-slot="board-square-arrivals"] {
-  --square-meta: clamp(1.25rem, 2.4cqi, 1.5rem);
-  --square-dest: clamp(1.75rem, 3.2cqi, 2.125rem); /* 28–34px */
-  --square-time: clamp(3.5rem, 6.8cqi, 4.5rem); /* 56–72px */
+  --square-title: clamp(2rem, 4.2cqi, 2.75rem);
+  --square-meta: clamp(1.25rem, 2.5cqi, 1.625rem);
+  --square-dest: clamp(1.875rem, 3.5cqi, 2.25rem); /* ~30–36px */
+  --square-time: clamp(3.75rem, 7.5cqi, 4.75rem); /* ~60–76px */
+  --square-unit: clamp(1.25rem, 2.6cqi, 1.75rem);
 }
 
 [data-slot="board-square-arrivals"][data-density="far"],
 .board-square[data-density="far"] [data-slot="board-square-arrivals"] {
-  --square-meta: clamp(1.35rem, 2.6cqi, 1.625rem);
-  --square-dest: clamp(1.875rem, 3.4cqi, 2.125rem);
-  --square-time: clamp(3.75rem, 7.2cqi, 4.5rem);
+  --square-title: clamp(2.125rem, 4.5cqi, 2.875rem);
+  --square-meta: clamp(1.35rem, 2.7cqi, 1.75rem);
+  --square-dest: clamp(2rem, 3.8cqi, 2.375rem);
+  --square-time: clamp(4rem, 8cqi, 5rem);
+  --square-unit: clamp(1.375rem, 2.8cqi, 1.875rem);
 }
 
 /*
