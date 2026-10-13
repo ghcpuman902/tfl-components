@@ -1,0 +1,16 @@
+## Getting the data
+
+TfL provides arrival predictions, not live train coordinates. Positions are estimates, using the reported location, feed timestamps and station order. The tracker fits recent observations along the track and learns inter-station run times as trains reach platforms.
+
+```ts
+const tracker = new RailTrainTracker()
+
+// Keep the same tracker across updates.
+const vehicles = tracker.ingest(arrivals, receivedAt)
+```
+
+## Render
+
+Trains are drawn on the [Tube & Rail map](/docs/map-geographic) at their estimated positions, each direction on its own side of the line. A train is drawn at its real length against the map, with a window at the front. When you zoom out far enough that a train would be smaller than a few pixels, it stops shrinking.
+
+Trains slow down or wait when a new estimate falls behind the displayed position. Delayed or missing reports can still leave a train in the wrong place. Pause to inspect; with reduced motion, trains move only when a new estimate arrives.

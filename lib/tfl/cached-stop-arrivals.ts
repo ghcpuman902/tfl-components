@@ -33,6 +33,14 @@ export const DEMO_STOP_ARRIVALS_IDS = new Set<string>([
 export const isDemoStopArrivalsId = (stopPointId: string): boolean =>
   DEMO_STOP_ARRIVALS_IDS.has(stopPointId.trim())
 
+/**
+ * Boards poll every 20 s (`ARRIVALS_POLL_MS`). `expire` sits just under that,
+ * so a lone viewer waits for a fresh TfL read instead of getting the entry
+ * from their previous poll. Concurrent viewers share an entry for up to 15 s.
+ * Per stop: 3 TfL calls/min for one viewer, at most 4/min under load.
+ */
+const ARRIVALS_CACHE_LIFE = { stale: 15, revalidate: 15, expire: 19 }
+
 export type CachedArrivalsState = {
   arrivals: RealtimePrediction[]
   rateLimited: boolean
@@ -68,13 +76,13 @@ export async function getCachedStopArrivalsState(
 /**
  * Inner `"use cache"` so the trimmed id is the only argument — and therefore
  * the cache key. A shared entry across stops would paint the previous station
- * for `cacheLife.stale` (~15s) after the Board URL changes.
+ * for `cacheLife.stale` (15 s) after the Board URL changes.
  */
 async function getCachedStopArrivalsById(
   stopPointId: string
 ): Promise<CachedArrivalsState> {
   "use cache"
-  cacheLife({ stale: 15, revalidate: 20, expire: 60 })
+  cacheLife(ARRIVALS_CACHE_LIFE)
   cacheTag("tfl-stop-arrivals", `tfl-stop-arrivals-${stopPointId}`)
 
   try {
@@ -122,7 +130,7 @@ async function getCachedLineArrivalsByKey(
   key: string
 ): Promise<CachedArrivalsState> {
   "use cache"
-  cacheLife({ stale: 15, revalidate: 20, expire: 60 })
+  cacheLife(ARRIVALS_CACHE_LIFE)
   cacheTag("tfl-line-arrivals", `tfl-line-arrivals-${key}`)
 
   try {

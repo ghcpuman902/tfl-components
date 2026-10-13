@@ -35,8 +35,9 @@ export const LiveVehicleChrome = ({
         </Badge>
       ) : null}
       <KeySourcePill source={source} />
+      {/* Both key paths read TfL live; the site key path is not cached. */}
       <DataSourceLabel
-        source={source === "user" ? "live" : "cached"}
+        source="live"
         fetchedAt={fetchedAt ?? undefined}
         loading={loading}
       />

@@ -3,8 +3,12 @@ export const DEFAULT_TARGET_REQUESTS_PER_MINUTE = "max" as const
 export type TargetRequestsPerMinute =
   number | typeof DEFAULT_TARGET_REQUESTS_PER_MINUTE
 
-/** Fastest user-key poll. Site cache is slower regardless of this dial. */
+/** Fastest user-key poll. */
 export const MAX_USER_POLL_MS = 4_000
+/**
+ * Site-key poll. `/api/live-vehicles` is uncached, so each open tab costs the
+ * site key 6 TfL requests a minute. TfL source times change about every 34 s.
+ */
 export const SITE_POLL_MS = 10_000
 export const MIN_POLL_MS = 4_000
 export const MAX_POLL_MS = 60_000

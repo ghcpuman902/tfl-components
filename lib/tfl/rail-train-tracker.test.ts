@@ -1,5 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
+import length from "@turf/length"
+import type { LineString } from "geojson"
 import type { RealtimePrediction } from "tfl-ts"
 import {
   RailTrainTracker,
@@ -11,7 +13,8 @@ import {
   trainDistanceAt,
   trainRoutes,
 } from "./rail-train-tracker"
-import { diagramHop, pointOnDiagramHop } from "./train-map-layout"
+import { vehiclesToCarriageGeoJSON } from "./map-vehicles"
+import { railPolylinesForLine } from "./rail-vehicle-geometry"
 
 const now = Date.parse("2026-10-12T12:00:00Z")
 const row = (fields: Partial<RealtimePrediction> = {}): RealtimePrediction =>
@@ -140,18 +143,27 @@ describe("recording-informed train tracking", () => {
         route.metres[route.stations.indexOf("940GZZLUEUS")]!
     )
   })
-  it("keeps opposite directions separate while rendering the same octilinear track", () => {
+  it("keeps opposite directions on separate routes and draws each train as a carriage with a front", () => {
     const routes = trainRoutes("victoria")
     assert.ok(routes.some((r) => r.direction === "inbound"))
     assert.ok(routes.some((r) => r.direction === "outbound"))
-    const points = diagramHop({ x: 0, y: 0 }, { x: 100, y: 40 })
-    for (let i = 1; i < points.length; i++) {
-      const dx = Math.abs(points[i]!.x - points[i - 1]!.x),
-        dy = Math.abs(points[i]!.y - points[i - 1]!.y)
-      assert.ok(dx === 0 || dy === 0 || Math.abs(dx - dy) < 0.001)
-    }
-    assert.deepEqual(pointOnDiagramHop(points, 0), { x: 0, y: 0, angle: 0 })
-    assert.equal(pointOnDiagramHop(points, 1).x, 100)
+    const [vehicle] = new RailTrainTracker().ingest([row()], now)
+    const placed = advanceTrainDisplay(vehicle!, undefined, now)
+    const [body, front] = vehiclesToCarriageGeoJSON(
+      [placed],
+      railPolylinesForLine("victoria")
+    ).features
+    assert.equal(body!.properties.part, "body")
+    assert.equal(front!.properties.part, "front")
+    // The front piece ends where the body ends: the leading end of the train.
+    assert.deepEqual(
+      front!.geometry.coordinates.at(-1),
+      body!.geometry.coordinates.at(-1)
+    )
+    const km = (line: LineString) =>
+      length({ type: "Feature", properties: {}, geometry: line })
+    const ratio = km(front!.geometry) / km(body!.geometry)
+    assert.ok(ratio > 0.15 && ratio < 0.3, `front is ${ratio} of the train`)
   })
 })
 
@@ -315,4 +327,63 @@ it("uses downstream timing to distinguish a late train when its next platform pr
   assert.equal(sooner.route.id, later.route.id)
   assert.ok(sooner.distance > later.distance)
   assert.equal(later.arrivalAt - sooner.arrivalAt, 50000)
+})
+
+describe("trains without a vehicleId", () => {
+  // Elizabeth line, Overground, DLR and tram rows usually carry no vehicleId.
+  const route = trainRoutes("elizabeth").reduce((a, b) =>
+    b.stations.length > a.stations.length ? b : a
+  )
+  const terminus = route.stations.at(-1)!
+  const hopMs = 120_000
+  /** Each offset is one train, that many ms behind the front train. */
+  const poll = (at: number, offsets: readonly number[]) =>
+    offsets.flatMap((offset) => {
+      const progress = (at - now + 600_000 - offset) / hopMs
+      const rows: RealtimePrediction[] = []
+      for (let k = Math.floor(progress) + 1; k < route.stations.length; k++) {
+        const eta = at + (k - progress) * hopMs
+        if (eta - at > 1_800_000) break
+        rows.push({
+          vehicleId: "",
+          lineId: "elizabeth",
+          naptanId: route.stations[k],
+          destinationNaptanId: terminus,
+          currentLocation: "",
+          timestamp: new Date(at - 5000).toISOString(),
+          timeToStation: Math.round((eta - at) / 1000),
+          expectedArrival: new Date(eta).toISOString(),
+        } as RealtimePrediction)
+      }
+      return rows
+    })
+
+  it("chains anonymous predictions into trains and keeps their ids across polls", () => {
+    const tracker = new RailTrainTracker()
+    const offsets = [0, 360_000, 720_000]
+    const frames: Map<string, number>[] = []
+    for (let step = 0; step < 6; step++) {
+      const at = now + step * 30_000
+      const vehicles = tracker.ingest(poll(at, offsets), at)
+      assert.equal(vehicles.length, offsets.length)
+      frames.push(
+        new Map(vehicles.map((v) => [v.vehicleId, v.trainMotion!.distance]))
+      )
+    }
+    const ids = [...frames[0]!.keys()].sort()
+    for (const frame of frames) assert.deepEqual([...frame.keys()].sort(), ids)
+    for (const id of ids)
+      assert.ok(frames.at(-1)!.get(id)! > frames[0]!.get(id)!, id)
+  })
+
+  it("leaves lines whose trains carry ids to the per-vehicle path", () => {
+    const vehicles = new RailTrainTracker().ingest(
+      [row(), row({ vehicleId: "000", naptanId: "940GZZLUGPK" })],
+      now
+    )
+    assert.deepEqual(
+      vehicles.map((v) => v.vehicleId),
+      ["231"]
+    )
+  })
 })

@@ -513,6 +513,17 @@ const sliceLineByKm = (
   return out
 }
 
+/** The last `metres` of a line, in the same order (the front of an oriented vehicle). */
+export const lineTail = (line: LineString, metres: number): LineString => {
+  const totalKm = lengthKm(line)
+  const coordinates = sliceLineByKm(
+    line,
+    Math.max(0, totalKm - metres / 1000),
+    totalKm
+  )
+  return coordinates.length >= 2 ? { type: "LineString", coordinates } : line
+}
+
 /**
  * In-service length along the track. Elizabeth is a 9-car Class 345;
  * most Tube stock is shorter. Trams are a single short unit. Bus routes

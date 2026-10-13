@@ -1,6 +1,7 @@
 import type { FeatureCollection, LineString, Point } from "geojson"
 import { hopGraphForRailLine } from "@/lib/tfl/vehicle-hop-graph"
 import {
+  lineTail,
   orientLineToBearing,
   segmentAroundPoint,
   vehicleLengthMeters,
@@ -131,3 +132,59 @@ export const vehiclesToSegmentGeoJSON = (
       ),
     })),
 })
+
+export type CarriageProperties = VehicleSegmentProperties & {
+  /** `body` is the whole train; `front` is its leading end. */
+  part: "body" | "front"
+}
+
+/** Share of a carriage painted as its front window. */
+const FRONT_SHARE = 0.22
+
+/**
+ * Trains as carriages on the track: a body at its in-service length and a
+ * front piece at the leading end. `minLengthMeters` keeps a train visible when
+ * the map is zoomed out far enough that true length is under a few pixels.
+ */
+export const vehiclesToCarriageGeoJSON = (
+  vehicles: readonly VehiclePosition[],
+  polylines: readonly RoutePolyline[],
+  minLengthMeters = 0
+): FeatureCollection<LineString, CarriageProperties> => {
+  const sized = vehicles.map((vehicle) => ({
+    ...vehicle,
+    lengthMeters: Math.max(
+      vehicle.lengthMeters ?? vehicleLengthMeters(vehicle.lineId),
+      minLengthMeters
+    ),
+  }))
+  const lengths = new Map(
+    sized.map((vehicle) => [
+      `${vehicle.lineId}:${vehicle.vehicleId}`,
+      vehicle.lengthMeters,
+    ])
+  )
+  return {
+    type: "FeatureCollection",
+    features: vehiclesToSegmentGeoJSON(sized, polylines).features.flatMap(
+      (body) => {
+        const length =
+          lengths.get(
+            `${body.properties.lineId}:${body.properties.vehicleId}`
+          ) ?? 0
+        return [
+          {
+            ...body,
+            properties: { ...body.properties, part: "body" as const },
+          },
+          {
+            ...body,
+            id: `${body.properties.lineId}:${body.id}:front`,
+            properties: { ...body.properties, part: "front" as const },
+            geometry: lineTail(body.geometry, length * FRONT_SHARE),
+          },
+        ]
+      }
+    ),
+  }
+}

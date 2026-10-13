@@ -1,56 +1,39 @@
 "use client"
 
 import { useState } from "react"
-import { getLineColor } from "tfl-ts"
+import { BoardLineChipPicker } from "@/components/board/board-line-chip-picker"
 import { LiveRailVehicles } from "@/components/tfl/live-vehicles/live-rail-vehicles"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
 import type { TargetRequestsPerMinute } from "@/lib/tfl/vehicle-poll-rate"
-import { cn } from "@/lib/utils"
 
-const RAIL_OPTIONS = [
-  { id: "victoria", label: "Victoria" },
-  { id: "northern", label: "Northern" },
-  { id: "central", label: "Central" },
-  { id: "jubilee", label: "Jubilee" },
-  { id: "elizabeth", label: "Elizabeth" },
+const RAIL_LINES = [
+  { lineId: "victoria" },
+  { lineId: "northern" },
+  { lineId: "central" },
+  { lineId: "jubilee" },
+  { lineId: "elizabeth" },
 ] as const
+
+const ALL_LINE_IDS = RAIL_LINES.map((line) => line.lineId)
 
 export default function LiveRailVehiclesDemo() {
   const { status } = useUserTflCredentials()
   const hasKey = status === "ready"
-  const [railLineIds, setRailLineIds] = useState<string[]>(["victoria"])
+  // One batched TfL request covers every selected line.
+  const [railLineIds, setRailLineIds] = useState<readonly string[]>([
+    "victoria",
+    "northern",
+    "central",
+  ])
   const [rate, setRate] = useState<TargetRequestsPerMinute>("max")
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Lines">
-        {RAIL_OPTIONS.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            aria-pressed={railLineIds.includes(option.id)}
-            onClick={() =>
-              setRailLineIds((ids) =>
-                ids.includes(option.id)
-                  ? ids.filter((id) => id !== option.id)
-                  : [...ids, option.id]
-              )
-            }
-            className={cn(
-              "flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm focus-visible:outline-2 focus-visible:outline-ring",
-              railLineIds.includes(option.id)
-                ? "border-foreground/20 bg-muted text-foreground"
-                : "border-transparent text-muted-foreground hover:bg-muted/60"
-            )}
-          >
-            <span
-              className="size-2 rounded-full"
-              style={{ background: getLineColor(option.id).hex }}
-            />
-            {option.label}
-          </button>
-        ))}
-      </div>
+      <BoardLineChipPicker
+        lines={RAIL_LINES}
+        selected={railLineIds}
+        onChange={(next) => setRailLineIds(next ?? ALL_LINE_IDS)}
+      />
       <LiveRailVehicles
         railLineIds={railLineIds}
         targetRequestsPerMinute={hasKey ? rate : "max"}
