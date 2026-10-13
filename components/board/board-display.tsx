@@ -13,6 +13,7 @@ import dynamic from "next/dynamic"
 import { normalizeLineId } from "tfl-ts"
 import { ARRIVALS_RHYTHM_VARS } from "@/components/tfl/arrivals/arrivals-board-view"
 import { BoardRateLimitScreen } from "@/components/board/board-rate-limit"
+import { BoardSquareArrivals } from "@/components/board/board-square-arrivals"
 import { BoardViewFooter } from "@/components/board/board-view-footer"
 import { BoardViewHomeScreenOffer } from "@/components/board/board-view-home-screen-offer"
 import { BoardViewRecovery } from "@/components/board/board-view-recovery"
@@ -80,6 +81,7 @@ import {
   resolveBoardLayout,
   type BoardLayoutMode,
 } from "@/lib/tfl/board-layout"
+import { resolveSquareArrivalsPageSize } from "@/lib/tfl/board-square-arrivals"
 import { BOARD_SETTINGS } from "@/lib/tfl/board-settings"
 import {
   readInstalledBoardConfig,
@@ -130,16 +132,6 @@ const BOARD_SHELL_CONTAINER_CLASS = "@container/board"
 const BOARD_SHELL_PADDING_CLASS = "p-4 @min-[48rem]/board:p-6"
 const BOARD_TWO_COLUMN_CLASS = `grid min-w-0 grid-cols-1 items-start ${BOARD_RHYTHM_GAP_CLASS} @min-[48rem]/board:grid-cols-3 @min-[48rem]/board:gap-x-6`
 const BOARD_ONE_COLUMN_CLASS = `grid min-w-0 grid-cols-1 items-start ${BOARD_RHYTHM_GAP_CLASS}`
-
-const SQUARE_RHYTHM_VARS = {
-  "--arrivals-unit": "0.75rem",
-  "--arrivals-row": "calc(var(--arrivals-unit) * 14)",
-} as CSSProperties
-
-const SQUARE_FAR_RHYTHM_VARS = {
-  "--arrivals-unit": "0.85rem",
-  "--arrivals-row": "calc(var(--arrivals-unit) * 16)",
-} as CSSProperties
 
 const readViewportLayoutHints = (): {
   width: number
@@ -433,15 +425,17 @@ export const BoardDisplay = ({
     lookupBoardStationName(stationNames, stopId) ||
     undefined
 
-  const slots = useMemo(
-    () => resolveBoardSlots(config.slots.p1, config.slots.p2),
-    [config.slots.p1, config.slots.p2]
-  )
+  // Square wall boards are glanceable next-trains only — never cram status /
+  // bus / cycle panels into the same square.
+  const slots = useMemo(() => {
+    if (isSquare) return { p1: ["rail" as const], p2: [] as const }
+    return resolveBoardSlots(config.slots.p1, config.slots.p2)
+  }, [config.slots.p1, config.slots.p2, isSquare])
   const showRail = boardSlotsInclude(slots, "rail")
-  const showBus = boardSlotsInclude(slots, "bus")
-  const showRiver = boardSlotsInclude(slots, "river")
-  const showCycle = boardSlotsInclude(slots, "cycle")
-  const showStatus = boardSlotsInclude(slots, "status")
+  const showBus = !isSquare && boardSlotsInclude(slots, "bus")
+  const showRiver = !isSquare && boardSlotsInclude(slots, "river")
+  const showCycle = !isSquare && boardSlotsInclude(slots, "cycle")
+  const showStatus = !isSquare && boardSlotsInclude(slots, "status")
 
   const status = useBoardStatus({
     appKey: null,
@@ -782,15 +776,33 @@ export const BoardDisplay = ({
   }, [status.data, config.status.lines, config.status.overview])
 
   const twoColumns = !isSquare && slots.p1.length > 0 && slots.p2.length > 0
-  const squarePageSize =
-    isSquare && arrivalsProps.pageSize === undefined
-      ? densityFar
-        ? 3
-        : 4
-      : arrivalsProps.pageSize
+  const squarePageSize = resolveSquareArrivalsPageSize(
+    densityFar,
+    arrivalsProps.pageSize
+  )
 
   const renderPanel = (kind: BoardPanelKind) => {
     if (kind === "rail") {
+      if (isSquare) {
+        return (
+          <BoardSquareArrivals
+            stopName={stopName}
+            stopPointId={stopId || undefined}
+            headingLevel={2}
+            data={railData}
+            now={arrivals.fetchedAt ?? undefined}
+            pageSize={squarePageSize}
+            densityFar={densityFar}
+            pinFirst={arrivalsProps.pinFirst ?? true}
+            startDelayMs={0}
+            loading={arrivals.loading}
+            error={arrivalsError}
+            emptyKind={railEmpty.kind}
+            emptyMessage={arrivalsLineEmptyCopy(railEmpty)}
+            className="min-h-0 flex-1"
+          />
+        )
+      }
       return (
         <RailArrivalsBoard
           stopName={stopName}
@@ -802,8 +814,8 @@ export const BoardDisplay = ({
           lines={arrivalsProps.lines}
           lineGroups={lineGroups}
           lineOrder={arrivalsProps.lineOrder}
-          pageSize={squarePageSize}
-          pageSizeByLine={isSquare ? undefined : pageSizeByLine}
+          pageSize={arrivalsProps.pageSize}
+          pageSizeByLine={pageSizeByLine}
           behaviour={panelBehaviour}
           pinFirst={arrivalsProps.pinFirst}
           startDelayMs={unattended ? 0 : undefined}
@@ -811,7 +823,7 @@ export const BoardDisplay = ({
           error={arrivalsError}
           emptyKind={railEmpty.kind}
           emptyMessage={arrivalsLineEmptyCopy(railEmpty)}
-          classNames={isSquare ? undefined : BOUND_COLUMNS_CLASS_NAMES}
+          classNames={BOUND_COLUMNS_CLASS_NAMES}
         />
       )
     }
@@ -975,24 +987,20 @@ export const BoardDisplay = ({
     )
   }
 
-  const shellClass = isPreview
-    ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-full w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden${isSquare ? " board-square" : ""}`
-      : isSquare
-      ? `board-embed board-square ${BOARD_SHELL_CONTAINER_CLASS} box-border flex h-dvh w-full flex-col overflow-hidden overscroll-none [touch-action:manipulation] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`
+  const shellClass = isSquare
+    ? `board-embed board-square ${BOARD_SHELL_CONTAINER_CLASS} box-border flex ${isPreview ? "h-full" : "h-dvh"} w-full flex-col overflow-hidden overscroll-none [touch-action:manipulation] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${isPreview ? "p-5" : ""}`
+    : isPreview
+      ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-full w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
       : fillScreen
         ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
         : `${BOARD_SHELL_CONTAINER_CLASS} box-border min-h-dvh w-full ${BOARD_SHELL_PADDING_CLASS}`
 
-  const boardRhythmStyle = isSquare
-    ? densityFar
-      ? SQUARE_FAR_RHYTHM_VARS
-      : SQUARE_RHYTHM_VARS
-    : ARRIVALS_RHYTHM_VARS
-
-  const boardShellStyle = {
-    ...boardRhythmStyle,
-    ...(isSquare && !isPreview
-      ? boardSquareGutterCss(20)
+  const boardShellStyle: CSSProperties = {
+    ...(isSquare ? {} : ARRIVALS_RHYTHM_VARS),
+    ...(isSquare
+      ? isPreview
+        ? {}
+        : boardSquareGutterCss(20)
       : homeScreenPadding),
   }
 
@@ -1071,14 +1079,22 @@ export const BoardDisplay = ({
       <div
         className={
           isSquare
-            ? `${BOARD_ONE_COLUMN_CLASS} min-h-0 flex-1`
+            ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
             : twoColumns
               ? BOARD_TWO_COLUMN_CLASS
               : BOARD_ONE_COLUMN_CLASS
         }
       >
-        {renderStack(slots.p1, "Wide slot", true)}
-        {renderStack(slots.p2, "Narrow slot", false)}
+        {isSquare ? (
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            {renderPanel("rail")}
+          </div>
+        ) : (
+          <>
+            {renderStack(slots.p1, "Wide slot", true)}
+            {renderStack(slots.p2, "Narrow slot", false)}
+          </>
+        )}
       </div>
       {showStatus && status.error && !status.rateLimited ? (
         <p className="mt-3 text-sm text-muted-foreground">{status.error}</p>

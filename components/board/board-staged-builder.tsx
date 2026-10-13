@@ -178,10 +178,10 @@ const configFromDraft = (draft: BoardSetupDraft): BoardConfig => {
     behaviour: square ? "unattended" : DEFAULT_BOARD_CONFIG.behaviour,
     layout: square ? "square" : undefined,
     density: square ? "far" : undefined,
-    slots: { p1, p2: ["status"] },
+    slots: { p1, p2: square ? [] : ["status"] },
     arrivals: {
       lineOrder: draft.lineIds.length > 0 ? draft.lineIds : undefined,
-      rows: square ? 3 : undefined,
+      rows: square ? 2 : undefined,
     },
     bus: square ? {} : { stop: draft.busStopId ?? undefined },
     river: includeRiver ? { stop: draft.riverStopId ?? undefined } : {},

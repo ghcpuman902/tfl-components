@@ -109,11 +109,8 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
       "arrivalsLines",
       "arrivalsRows",
       "arrivalsPinFirst",
-      "statusSurface",
-      "statusLines",
-      "statusOverview",
     ],
-    slots: { p1: ["rail"], p2: ["status"] },
+    slots: { p1: ["rail"], p2: [] },
   },
 ]
 
@@ -152,7 +149,7 @@ export const applyBoardRecipe = (
     next.density = "far"
     next.behaviour = "unattended"
     if (next.arrivals.rows === undefined) {
-      next.arrivals = { ...next.arrivals, rows: 3 }
+      next.arrivals = { ...next.arrivals, rows: 2 }
     }
   }
   return next
