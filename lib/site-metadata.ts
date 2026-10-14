@@ -94,6 +94,12 @@ export const ROUTE_PAGE_META = {
       "Encode a hosted Board in the page address. Configuration lives in the fragment.",
     path: "/docs/board-url",
   },
+  appleHomeview: {
+    title: "Board in HomeView Safari",
+    description:
+      "Open the hosted Board in glance mode on Apple HomeView's Safari tab. Not an always-on wall appliance.",
+    path: "/docs/apple-homeview",
+  },
   components: {
     title: "Components",
     description: "Boards, maps, and the parts they are built from.",

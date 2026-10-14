@@ -261,18 +261,18 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Behaviour",
-      help: "Interactive is for touchscreens like iPad. Unattended is for monitors without touch.",
+      help: "Defaults to interactive on a touchscreen. Choose Unattended only when nobody will touch the display.",
       control: "select",
       options: [
         {
           value: "interactive",
           label: "Interactive",
-          description: "For touchscreens like iPad",
+          description: "Default when the screen can be touched",
         },
         {
           value: "unattended",
           label: "Unattended",
-          description: "For monitors without touch",
+          description: "Nobody will touch it — pages automatically",
         },
       ],
     },
@@ -290,13 +290,13 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "View",
-      help: "Glance is room-distance reading: few trains, large type, no scroll, paging when needed. Works on any screen shape. Off by default — turn it on for wall displays like HomeView.",
+      help: "Viewing distance can't be detected. Leave unset for the ordinary scrolling Board; Glance is across-the-room reading on any screen shape.",
       control: "select",
       options: [
         {
           value: "glance",
           label: "Glance",
-          description: "Large type, few rows, no scroll",
+          description: "Across the room — few trains, large type",
         },
       ],
     },
