@@ -110,7 +110,7 @@ const SquareArrivalRow = ({
     <LineBadge
       lineId={lineId}
       name={lineTiers.short}
-      className="h-[clamp(2.75rem,5.5cqi,3.5rem)] min-w-[7ch] justify-center px-2.5 text-[clamp(1.125rem,2.2cqi,1.375rem)]"
+      className="h-[clamp(3rem,6.5cqi,4rem)] min-w-[7.5ch] justify-center px-3 text-[clamp(1.25rem,2.6cqi,1.5rem)]"
     />
   ) : null
 
