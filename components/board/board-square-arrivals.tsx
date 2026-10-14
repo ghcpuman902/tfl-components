@@ -259,7 +259,7 @@ export const BoardSquareArrivals = ({
       data-slot="board-square-arrivals"
       data-density={densityFar ? "far" : "default"}
       className={cn(
-        "@container/square-arrivals flex h-full min-h-0 w-full flex-col overflow-hidden",
+        "@container/square-arrivals flex min-h-0 w-full flex-1 flex-col overflow-hidden",
         className
       )}
       onFocus={sequence.handleFocus}
