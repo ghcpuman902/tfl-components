@@ -2,6 +2,7 @@
 
 import { BoardGlanceArrivals } from "@/components/board/board-glance-arrivals"
 import { BoardViewFooter } from "@/components/board/board-view-footer"
+import { resolveGlanceArrivalsPageSize } from "@/lib/tfl/board-glance-arrivals"
 import { boardGlanceGutterCss } from "@/lib/tfl/board-layout"
 import { OXFORD_CIRCUS_ARRIVALS } from "@/lib/tfl/fixtures/arrivals-boards"
 
@@ -57,6 +58,9 @@ export const BoardGlanceDraft = () => {
                 <BoardGlanceArrivals
                   stopName="Oxford Circus"
                   data={OXFORD_CIRCUS_ARRIVALS}
+                  pageSize={resolveGlanceArrivalsPageSize(
+                    frame.height / frame.width
+                  )}
                   pinFirst
                   className="min-h-0 flex-1"
                 />

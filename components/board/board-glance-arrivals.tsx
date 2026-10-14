@@ -109,7 +109,7 @@ const GlanceArrivalRow = ({
     <LineBadge
       lineId={lineId}
       name={lineTiers.short}
-      className="h-[clamp(3rem,6.5cqi,4rem)] min-w-[7.5ch] justify-center px-3 text-[clamp(1.25rem,2.6cqi,1.5rem)]"
+      className="h-[clamp(2rem,6.5cqi,4rem)] min-w-[4.5ch] justify-center px-2 text-[clamp(0.875rem,2.6cqi,1.5rem)] @min-[28rem]/glance-arrivals:min-w-[7.5ch] @min-[28rem]/glance-arrivals:px-3"
     />
   ) : null
 
@@ -130,23 +130,23 @@ const GlanceArrivalRow = ({
       data-slot="board-glance-row"
       aria-label={ariaLabel}
       className={cn(
-        "grid min-h-0 min-w-0 flex-1 basis-0 grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-[clamp(0.75rem,2cqi,1.25rem)] py-[clamp(0.5rem,1.5cqi,1rem)]",
+        "grid min-h-0 min-w-0 flex-1 basis-0 grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-[clamp(0.5rem,2cqi,1.25rem)] py-[clamp(0.35rem,1.5cqi,1rem)]",
         showRule && "border-b border-border/70"
       )}
     >
       {lineId ? (
         <span
           data-line={lineId}
-          className="box-border h-[68%] min-h-12 w-2.5 shrink-0 self-center rounded-sm bg-[var(--line-color)]"
+          className="box-border h-[68%] min-h-8 w-2 shrink-0 self-center rounded-sm bg-[var(--line-color)] @min-[28rem]/glance-arrivals:min-h-12 @min-[28rem]/glance-arrivals:w-2.5"
           aria-hidden
         />
       ) : (
-        <span className="w-2.5 shrink-0" aria-hidden />
+        <span className="w-2 shrink-0 @min-[28rem]/glance-arrivals:w-2.5" aria-hidden />
       )}
       <div className="flex items-center" aria-hidden="true">
         {lineChip}
       </div>
-      <div className="min-w-0" aria-hidden="true">
+      <div className="min-w-0 overflow-hidden" aria-hidden="true">
         <StationName
           name={destination}
           layout="auto"
@@ -164,7 +164,7 @@ const GlanceArrivalRow = ({
       </div>
       <div
         data-slot="board-glance-time"
-        className="flex shrink-0 flex-col items-end justify-center tabular-nums tracking-tight"
+        className="flex w-[4.5ch] shrink-0 flex-col items-end justify-center tabular-nums tracking-tight @min-[28rem]/glance-arrivals:w-auto"
         aria-hidden="true"
       >
         <span className="font-semibold leading-none text-[length:var(--glance-time)]">
@@ -205,12 +205,13 @@ export const BoardGlanceArrivals = ({
     const el = rootRef.current
     if (!el || typeof ResizeObserver === "undefined") return
     const update = () => {
-      const { width, height } = el.getBoundingClientRect()
-      if (width > 0 && height > 0) setAspect(height / width)
+      // Prefer the filled parent (aspect-ratio frame); the root can lag on first paint.
+      const box = (el.parentElement ?? el).getBoundingClientRect()
+      if (box.width > 0 && box.height > 0) setAspect(box.height / box.width)
     }
     update()
     const observer = new ResizeObserver(update)
-    observer.observe(el)
+    observer.observe(el.parentElement ?? el)
     return () => observer.disconnect()
   }, [])
 
