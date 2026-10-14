@@ -35,7 +35,13 @@ const AppChromeShell = ({
   footer,
 }: AppChromeProps & { pathname: string }) => {
   if (isChromelessPath(pathname)) {
-    return <main className="min-h-dvh w-full">{children}</main>
+    // Square wall boards use `h-full` through html/body; `min-h-dvh` alone
+    // leaves height:auto so the shell collapses to content in the builder iframe.
+    return (
+      <main className="min-h-dvh w-full has-[.board-square]:h-full has-[.board-square]:min-h-0 has-[.board-square]:overflow-hidden">
+        {children}
+      </main>
+    )
   }
 
   const showDocsSidebar = isDocsPath(pathname)

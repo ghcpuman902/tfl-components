@@ -732,15 +732,14 @@ export const BoardDisplay = ({
     config.arrivals.lineOrder,
   ])
 
-  // Square builder / embed preview: when the site key path is unavailable,
-  // keep Oxford Circus glanceable with deterministic fixtures so the wall
-  // layout can be judged (live boards still surface the real error).
+  // Square builder iframe: mock Oxford Circus when live data is empty so
+  // layout can be judged without a TfL key. Non-embed still shows the error.
   const squareFixtureFallback =
     isSquare &&
     embedded &&
-    !arrivals.loading &&
     railData.length === 0 &&
-    stopId === HOME_RAIL_STOP.id
+    stopId === HOME_RAIL_STOP.id &&
+    !arrivals.loading
   const squareRailData = squareFixtureFallback
     ? OXFORD_CIRCUS_ARRIVALS
     : railData
