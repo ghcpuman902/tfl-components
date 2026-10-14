@@ -270,9 +270,15 @@ html:has(.board-embed) *::-webkit-scrollbar-thumb,
  * dense grouped arrivals board.
  */
 html:has(.board-square) {
+  height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
   touch-action: manipulation;
+}
+
+html:has(.board-square) body {
+  height: 100%;
+  margin: 0;
 }
 
 html:has(.board-square) .board-square {
