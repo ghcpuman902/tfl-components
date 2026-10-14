@@ -97,7 +97,7 @@ export const ROUTE_PAGE_META = {
   appleHomeview: {
     title: "Board in HomeView Safari",
     description:
-      "Open the hosted Board in square layout on Apple HomeView's Safari tab. Not an always-on wall appliance.",
+      "Open the hosted Board in glance mode on Apple HomeView's Safari tab. Not an always-on wall appliance.",
     path: "/docs/apple-homeview",
   },
   components: {
