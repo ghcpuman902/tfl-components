@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect } from "react"
 import { BoardGlanceArrivals } from "@/components/board/board-glance-arrivals"
 import { BoardViewFooter } from "@/components/board/board-view-footer"
 import { boardGlanceGutterCss } from "@/lib/tfl/board-layout"
@@ -15,20 +14,10 @@ const FRAMES = [
 
 /**
  * Design sandbox: glance mode across key aspects with Oxford Circus fixtures.
+ * Does not put `board-glance` on <html> — that would lock page scroll.
  * Not a public product surface.
  */
 export const BoardGlanceDraft = () => {
-  useEffect(() => {
-    const html = document.documentElement
-    const hadGlance = html.classList.contains("board-glance")
-    const hadDark = html.classList.contains("dark")
-    html.classList.add("board-glance", "dark")
-    return () => {
-      if (!hadGlance) html.classList.remove("board-glance")
-      if (!hadDark) html.classList.remove("dark")
-    }
-  }, [])
-
   const footer = (
     <BoardViewFooter
       compact
@@ -44,7 +33,7 @@ export const BoardGlanceDraft = () => {
   )
 
   return (
-    <div className="min-h-dvh bg-muted/40 p-4 md:p-6">
+    <div className="min-h-dvh bg-muted/40 p-4 md:p-6 dark">
       <p className="mb-4 max-w-prose text-sm text-muted-foreground">
         Glance mode — room-distance type, few next trains, no scroll. Same
         fixtures at four aspect ratios.
@@ -56,7 +45,7 @@ export const BoardGlanceDraft = () => {
               {frame.label}
             </p>
             <div
-              className="board-embed board-glance mx-auto flex flex-col overflow-hidden border border-border bg-background text-foreground shadow-sm dark"
+              className="board-embed board-glance mx-auto flex flex-col overflow-hidden border border-border bg-background text-foreground shadow-sm"
               style={{
                 ...boardGlanceGutterCss(24),
                 width: "100%",

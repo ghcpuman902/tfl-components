@@ -38,7 +38,7 @@ const AppChromeShell = ({
     // Square wall boards use `h-full` through html/body; `min-h-dvh` alone
     // leaves height:auto so the shell collapses to content in the builder iframe.
     return (
-      <main className="min-h-dvh w-full has-[.board-glance]:h-full has-[.board-glance]:min-h-0 has-[.board-glance]:overflow-hidden">
+      <main className="min-h-dvh w-full [:where(html.board-glance)_&]:h-full [:where(html.board-glance)_&]:min-h-0 [:where(html.board-glance)_&]:overflow-hidden">
         {children}
       </main>
     )

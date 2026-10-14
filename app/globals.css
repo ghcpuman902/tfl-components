@@ -268,19 +268,20 @@ html:has(.board-embed) *::-webkit-scrollbar-thumb,
  * unchanged. No page scroll. Type scales with container query units so the
  * same surface works on square, landscape, portrait, and phone.
  */
-html:has(.board-glance) {
+/* Class on <html> only — nested `.board-glance` frames (drafts) must not lock scroll. */
+html.board-glance {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
   touch-action: manipulation;
 }
 
-html:has(.board-glance) body {
+html.board-glance body {
   height: 100%;
   margin: 0;
 }
 
-html:has(.board-glance) .board-glance {
+html.board-glance .board-glance {
   background: var(--background);
   color: var(--foreground);
 }
