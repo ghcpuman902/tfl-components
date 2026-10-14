@@ -107,7 +107,6 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
       "layout",
       "density",
       "arrivalsLines",
-      "arrivalsRows",
       "arrivalsPinFirst",
     ],
     slots: { p1: ["rail"], p2: [] },
@@ -148,8 +147,10 @@ export const applyBoardRecipe = (
     next.layout = "square"
     next.density = "far"
     next.behaviour = "unattended"
-    if (next.arrivals.rows === undefined) {
-      next.arrivals = { ...next.arrivals, rows: 2 }
+    // Density owns square row count — do not pin a.rows.
+    if (next.arrivals.rows !== undefined) {
+      const { rows: _rows, ...rest } = next.arrivals
+      next.arrivals = rest
     }
   }
   return next

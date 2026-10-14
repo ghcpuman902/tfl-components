@@ -316,13 +316,13 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Density",
-      help: "Far keeps fewer, larger rows for reading across a room. Saved in the URL — not Apple near/far switching.",
+      help: "On Square, Ordinary shows three room-readable rows; Far shows two much larger ones for across-the-room reading. Saved in the URL.",
       control: "select",
       options: [
         {
           value: "far",
           label: "Far",
-          description: "Sparse rows, large type",
+          description: "Two rows, wall-distance type",
         },
       ],
     },

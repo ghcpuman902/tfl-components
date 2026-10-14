@@ -156,7 +156,7 @@ const configFromDraft = (draft: BoardSetupDraft): BoardConfig => {
       ...DEFAULT_BOARD_CONFIG,
       behaviour: square ? "unattended" : DEFAULT_BOARD_CONFIG.behaviour,
       layout: square ? "square" : undefined,
-      density: square ? "far" : undefined,
+      // Density lives in advancedConfig so Ordinary ↔ Far can toggle.
       slots: { p1: ["status"], p2: [] },
       status: statusConfigFromDraft(draft),
     }
@@ -177,11 +177,10 @@ const configFromDraft = (draft: BoardSetupDraft): BoardConfig => {
     stopName: draft.stopName ?? undefined,
     behaviour: square ? "unattended" : DEFAULT_BOARD_CONFIG.behaviour,
     layout: square ? "square" : undefined,
-    density: square ? "far" : undefined,
     slots: { p1, p2: square ? [] : ["status"] },
     arrivals: {
       lineOrder: draft.lineIds.length > 0 ? draft.lineIds : undefined,
-      rows: square ? 2 : undefined,
+      // Square row count comes from density (2 Far / 3 Ordinary), not a.rows.
     },
     bus: square ? {} : { stop: draft.busStopId ?? undefined },
     river: includeRiver ? { stop: draft.riverStopId ?? undefined } : {},
@@ -510,7 +509,17 @@ export const BoardStagedBuilder = ({
   }
 
   const handleConfigChange = (next: Partial<BoardConfig>) => {
-    setAdvancedConfig((current) => mergePartialBoardConfig(current, next))
+    setAdvancedConfig((current) => {
+      const merged = mergePartialBoardConfig(current, next)
+      // Square row count follows density — drop a.rows when density changes.
+      if ("density" in next && merged.arrivals?.rows !== undefined) {
+        return {
+          ...merged,
+          arrivals: { ...merged.arrivals, rows: undefined },
+        }
+      }
+      return merged
+    })
     updateDraft((current) => ({
       ...current,
       stopId: next.stop !== undefined ? next.stop || null : current.stopId,
@@ -550,6 +559,21 @@ export const BoardStagedBuilder = ({
         screenProfile: profile,
       })
     )
+    if (profile === "square") {
+      // Default Square → Far, but keep an explicit Ordinary choice.
+      setAdvancedConfig((current) => ({
+        ...current,
+        layout: "square",
+        density: current.density === undefined ? "far" : current.density,
+        arrivals: { ...current.arrivals, rows: undefined },
+      }))
+    } else {
+      setAdvancedConfig((current) => {
+        const next = { ...current }
+        if (next.layout === "square") delete next.layout
+        return next
+      })
+    }
   }
 
   const previewProfile = draft.screenProfile

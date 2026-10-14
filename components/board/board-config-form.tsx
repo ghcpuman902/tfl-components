@@ -1003,7 +1003,10 @@ export const BoardAdvancedConfig = ({
                     {
                       value: "ordinary",
                       label: "Ordinary",
-                      description: "Default Board density",
+                      description:
+                        config.layout === "square"
+                          ? "Three rows, room-readable"
+                          : "Default Board density",
                     },
                     ...(BOARD_SETTINGS.density.ui?.options ?? []),
                   ]}

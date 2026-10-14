@@ -16,8 +16,9 @@ describe("resolveSquareArrivalsPageSize", () => {
     assert.equal(resolveSquareArrivalsPageSize(false), BOARD_SQUARE_PAGE_SIZE)
   })
 
-  it("honours a positive override", () => {
-    assert.equal(resolveSquareArrivalsPageSize(true, 4), 4)
+  it("ignores non-positive overrides so density still wins", () => {
+    assert.equal(resolveSquareArrivalsPageSize(true, 0), BOARD_SQUARE_FAR_PAGE_SIZE)
+    assert.equal(resolveSquareArrivalsPageSize(false, -1), BOARD_SQUARE_PAGE_SIZE)
   })
 })
 

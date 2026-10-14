@@ -22,78 +22,68 @@ export const BoardSquareDraft = () => {
     }
   }, [])
 
+  const footer = (
+    <BoardViewFooter
+      compact
+      sources={[
+        {
+          fetchedAt: 1_700_000_000_000,
+          pollMs: 20_000,
+          enabled: true,
+          polls: false,
+        },
+      ]}
+    />
+  )
+
   return (
-    <div className="flex min-h-dvh flex-col items-center gap-10 bg-muted/40 p-4 md:p-8">
-      <section className="w-full max-w-[1088px]">
-        <p className="mb-3 text-sm text-muted-foreground">
-          Far · 2 rows · 1088×1088 · Oxford Circus fixtures
-        </p>
-        <div
-          className="board-embed board-square mx-auto flex flex-col overflow-hidden border border-border bg-background text-foreground shadow-sm dark"
-          data-density="far"
-          style={{
-            width: 1088,
-            height: 1088,
-            maxWidth: "100%",
-            ...boardSquareGutterCss(28),
-          }}
-        >
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <BoardSquareArrivals
-              stopName="Oxford Circus"
-              data={OXFORD_CIRCUS_ARRIVALS}
-              densityFar
-              pinFirst
-              className="min-h-0 flex-1"
-            />
+    <div className="min-h-dvh bg-muted/40 p-4 md:p-6">
+      <p className="mb-4 text-sm text-muted-foreground">
+        Square Ordinary (3 rows) vs Far (2 rows) — same fixtures, side by side
+        from md.
+      </p>
+      <div className="mx-auto grid w-full max-w-[2200px] gap-6 md:grid-cols-2">
+        <section className="min-w-0">
+          <p className="mb-2 text-sm font-medium text-foreground">
+            Ordinary · 3 rows · denser, still room-readable
+          </p>
+          <div
+            className="board-embed board-square mx-auto flex aspect-square w-full max-w-[1088px] flex-col overflow-hidden border border-border bg-background text-foreground shadow-sm dark"
+            style={boardSquareGutterCss(24)}
+          >
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <BoardSquareArrivals
+                stopName="Oxford Circus"
+                data={OXFORD_CIRCUS_ARRIVALS}
+                pinFirst
+                className="min-h-0 flex-1"
+              />
+            </div>
+            {footer}
           </div>
-          <BoardViewFooter
-            compact
-            sources={[
-              {
-                fetchedAt: 1_700_000_000_000,
-                pollMs: 20_000,
-                enabled: true,
-                polls: false,
-              },
-            ]}
-          />
-        </div>
-      </section>
-      <section className="w-full max-w-[1088px]">
-        <p className="mb-3 text-sm text-muted-foreground">
-          Default square · 3 rows · 1088×1088 · same fixtures
-        </p>
-        <div
-          className="board-embed board-square mx-auto flex flex-col overflow-hidden border border-border bg-background text-foreground shadow-sm dark"
-          style={{
-            width: 1088,
-            height: 1088,
-            maxWidth: "100%",
-            ...boardSquareGutterCss(28),
-          }}
-        >
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <BoardSquareArrivals
-              stopName="Oxford Circus"
-              data={OXFORD_CIRCUS_ARRIVALS}
-              pinFirst
-              className="min-h-0 flex-1"
-            />
+        </section>
+        <section className="min-w-0">
+          <p className="mb-2 text-sm font-medium text-foreground">
+            Far · 2 rows · wall-distance type
+          </p>
+          <div
+            className="board-embed board-square mx-auto flex aspect-square w-full max-w-[1088px] flex-col overflow-hidden border border-border bg-background text-foreground shadow-sm dark"
+            data-density="far"
+            style={boardSquareGutterCss(24)}
+          >
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <BoardSquareArrivals
+                stopName="Oxford Circus"
+                data={OXFORD_CIRCUS_ARRIVALS}
+                densityFar
+                pinFirst
+                className="min-h-0 flex-1"
+              />
+            </div>
+            {footer}
           </div>
-          <BoardViewFooter
-            compact
-            sources={[
-              {
-                fetchedAt: 1_700_000_000_000,
-                pollMs: 20_000,
-                enabled: true,
-                polls: false,
-              },
-            ]}
-          />
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   )
 }

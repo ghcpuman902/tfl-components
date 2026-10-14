@@ -791,10 +791,9 @@ export const BoardDisplay = ({
   }, [status.data, config.status.lines, config.status.overview])
 
   const twoColumns = !isSquare && slots.p1.length > 0 && slots.p2.length > 0
-  const squarePageSize = resolveSquareArrivalsPageSize(
-    densityFar,
-    arrivalsProps.pageSize
-  )
+  // Square density owns visible rows (2 Far / 3 Ordinary). Ignore a.rows so
+  // a leftover URL broadcast cannot collapse Far and Ordinary together.
+  const squarePageSize = resolveSquareArrivalsPageSize(densityFar)
 
   const renderPanel = (kind: BoardPanelKind) => {
     if (kind === "rail") {

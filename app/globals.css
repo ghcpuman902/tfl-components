@@ -287,24 +287,24 @@ html:has(.board-square) .board-square {
 }
 
 /*
- * Type scale keyed to the square board container (`@container/square-arrivals`).
- * Far uses larger ceilings so two rows visually fill an ~1088 square.
+ * Square type scales — Ordinary vs Far must read as different products.
+ * Ordinary (3 rows): room-readable. Far (2 rows): across-the-room.
  */
 [data-slot="board-square-arrivals"] {
-  --square-title: clamp(2rem, 4.2cqi, 2.75rem);
-  --square-meta: clamp(1.25rem, 2.5cqi, 1.625rem);
-  --square-dest: clamp(1.875rem, 3.8cqi, 2.5rem);
-  --square-time: clamp(3.75rem, 8cqi, 5.5rem);
-  --square-unit: clamp(1.25rem, 2.8cqi, 1.875rem);
+  --square-title: clamp(1.75rem, 3.6cqi, 2.25rem);
+  --square-meta: clamp(1.0625rem, 2.1cqi, 1.375rem);
+  --square-dest: clamp(1.5rem, 3cqi, 2rem); /* ~28–32px at 1088 */
+  --square-time: clamp(2.75rem, 5.5cqi, 4rem); /* ~48–64px at 1088 */
+  --square-unit: clamp(1rem, 2.2cqi, 1.375rem);
 }
 
 [data-slot="board-square-arrivals"][data-density="far"],
 .board-square[data-density="far"] [data-slot="board-square-arrivals"] {
   --square-title: clamp(2.25rem, 4.8cqi, 3rem);
   --square-meta: clamp(1.375rem, 2.9cqi, 1.875rem);
-  --square-dest: clamp(2.25rem, 5cqi, 3rem); /* ~48px at 1088 */
-  --square-time: clamp(4.5rem, 11cqi, 6.5rem); /* ~104–120px at 1088 */
-  --square-unit: clamp(1.5rem, 3.2cqi, 2.25rem);
+  --square-dest: clamp(2.25rem, 5.2cqi, 3.125rem); /* ~48–50px at 1088 */
+  --square-time: clamp(4.75rem, 11.5cqi, 7rem); /* ~104–112px at 1088 */
+  --square-unit: clamp(1.5rem, 3.4cqi, 2.375rem);
 }
 
 /*
