@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import type { PredictionWithSharedTrackIdentity, RealtimePrediction } from "tfl-ts"
 import { LineBadge, LineBadgeGroup } from "@/components/tfl/brand/line-badge"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
@@ -12,23 +12,22 @@ import { ARRIVALS_EMPTY_COPY } from "@/lib/tfl/arrivals-empty"
 import { isUnknownArrivalsPlatform } from "@/lib/tfl/arrivals-bound-sort"
 import type { ArrivalsPreparedRow } from "@/lib/tfl/arrivals-prepare"
 import {
-  buildSquareArrivalFrames,
-  formatSquareArrivalMeta,
-  prepareSquareArrivals,
-  resolveSquareArrivalsPageSize,
-} from "@/lib/tfl/board-square-arrivals"
+  buildGlanceArrivalFrames,
+  formatGlanceArrivalMeta,
+  prepareGlanceArrivals,
+  resolveGlanceArrivalsPageSize,
+} from "@/lib/tfl/board-glance-arrivals"
 import { getLineNameTiers, joinLineNames } from "@/lib/tfl/line-names"
 import { usableTflText } from "@/lib/tfl/bus-stop-letter"
 import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort"
 import { cn } from "@/lib/utils"
 
-export type BoardSquareArrivalsProps = {
+export type BoardGlanceArrivalsProps = {
   data?: readonly RealtimePrediction[]
   stopName?: string
   stopPointId?: string
-  /** Visible trains per frame. Default 3; prefer 2 when density=far. */
+  /** Visible trains per frame. Omit to pick 2 or 3 from container aspect. */
   pageSize?: number
-  densityFar?: boolean
   pinFirst?: boolean
   dwellMs?: number
   startDelayMs?: number
@@ -42,7 +41,7 @@ export type BoardSquareArrivalsProps = {
 }
 
 /** Wall-board countdown: hero number + unit, or a single Due word. */
-const formatSquareCountdown = (
+const formatGlanceCountdown = (
   seconds?: number,
   platformName?: string
 ): { primary: string; unit?: string } => {
@@ -54,7 +53,7 @@ const formatSquareCountdown = (
   return { primary: `${Math.floor(seconds / 60)}`, unit: "min" }
 }
 
-const SquareArrivalRow = ({
+const GlanceArrivalRow = ({
   row,
   showRule,
 }: {
@@ -99,8 +98,8 @@ const SquareArrivalRow = ({
     lineName: sharedChipLabel ?? lineTiers?.full,
     currentLocation: usableTflText(arrival.currentLocation),
   })
-  const meta = formatSquareArrivalMeta(arrival.platformName)
-  const countdown = formatSquareCountdown(
+  const meta = formatGlanceArrivalMeta(arrival.platformName)
+  const countdown = formatGlanceCountdown(
     arrival.timeToStation,
     arrival.platformName
   )
@@ -128,7 +127,7 @@ const SquareArrivalRow = ({
 
   return (
     <li
-      data-slot="board-square-row"
+      data-slot="board-glance-row"
       aria-label={ariaLabel}
       className={cn(
         "grid min-h-0 min-w-0 flex-1 basis-0 grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-[clamp(0.75rem,2cqi,1.25rem)] py-[clamp(0.5rem,1.5cqi,1rem)]",
@@ -154,25 +153,25 @@ const SquareArrivalRow = ({
           maxLines={2}
           allowAbbreviation
           allowScaleDown
-          className="font-semibold text-[length:var(--square-dest)] leading-[1.1]"
+          className="font-semibold text-[length:var(--glance-dest)] leading-[1.1]"
         />
         <p
-          data-slot="board-square-meta"
-          className="mt-[0.35em] truncate text-[length:var(--square-meta)] leading-tight text-muted-foreground"
+          data-slot="board-glance-meta"
+          className="mt-[0.35em] truncate text-[length:var(--glance-meta)] leading-tight text-muted-foreground"
         >
           {meta ?? lineTiers?.full ?? "Next train"}
         </p>
       </div>
       <div
-        data-slot="board-square-time"
+        data-slot="board-glance-time"
         className="flex shrink-0 flex-col items-end justify-center tabular-nums tracking-tight"
         aria-hidden="true"
       >
-        <span className="font-semibold leading-none text-[length:var(--square-time)]">
+        <span className="font-semibold leading-none text-[length:var(--glance-time)]">
           {countdown.primary}
         </span>
         {countdown.unit ? (
-          <span className="mt-[0.15em] text-[length:var(--square-unit)] font-medium leading-none text-muted-foreground">
+          <span className="mt-[0.15em] text-[length:var(--glance-unit)] font-medium leading-none text-muted-foreground">
             {countdown.unit}
           </span>
         ) : null}
@@ -182,14 +181,13 @@ const SquareArrivalRow = ({
 }
 
 /**
- * Room-distance square Board arrivals: flat next trains, huge type, no scroll.
- * Pages overflow with the existing unattended sequence (pin-first).
+ * Room-distance glance Board arrivals: flat next trains, huge type, no scroll.
+ * Works on any aspect ratio. Pages overflow with unattended pin-first frames.
  */
-export const BoardSquareArrivals = ({
+export const BoardGlanceArrivals = ({
   data,
   stopName,
   pageSize: pageSizeProp,
-  densityFar = false,
   pinFirst = true,
   dwellMs = 10_000,
   startDelayMs = 0,
@@ -199,14 +197,30 @@ export const BoardSquareArrivals = ({
   emptyMessage,
   className,
   headingLevel = 2,
-}: BoardSquareArrivalsProps) => {
-  const pageSize = resolveSquareArrivalsPageSize(densityFar, pageSizeProp)
+}: BoardGlanceArrivalsProps) => {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [aspect, setAspect] = useState<number | undefined>(undefined)
+
+  useEffect(() => {
+    const el = rootRef.current
+    if (!el || typeof ResizeObserver === "undefined") return
+    const update = () => {
+      const { width, height } = el.getBoundingClientRect()
+      if (width > 0 && height > 0) setAspect(height / width)
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const pageSize = resolveGlanceArrivalsPageSize(aspect, pageSizeProp)
   const rows = useMemo(
-    () => prepareSquareArrivals({ data: data ?? [], now }),
+    () => prepareGlanceArrivals({ data: data ?? [], now }),
     [data, now]
   )
   const frames = useMemo(
-    () => buildSquareArrivalFrames(rows, pageSize, { pinFirst }),
+    () => buildGlanceArrivalFrames(rows, pageSize, { pinFirst }),
     [rows, pageSize, pinFirst]
   )
   const frameIds = useMemo(() => frames.map((frame) => frame.id), [frames])
@@ -224,10 +238,10 @@ export const BoardSquareArrivals = ({
   if (loading && rows.length === 0 && !error) {
     return (
       <div
-        data-slot="board-square-arrivals"
-        data-density={densityFar ? "far" : "default"}
+        ref={rootRef}
+        data-slot="board-glance-arrivals"
         className={cn(
-          "@container/square-arrivals flex min-h-0 w-full flex-1 flex-col",
+          "@container/glance-arrivals flex min-h-0 w-full flex-1 flex-col",
           className
         )}
         aria-busy
@@ -256,10 +270,10 @@ export const BoardSquareArrivals = ({
 
   return (
     <div
-      data-slot="board-square-arrivals"
-      data-density={densityFar ? "far" : "default"}
+      ref={rootRef}
+      data-slot="board-glance-arrivals"
       className={cn(
-        "@container/square-arrivals flex min-h-0 w-full flex-1 flex-col overflow-hidden",
+        "@container/glance-arrivals flex min-h-0 w-full flex-1 flex-col overflow-hidden",
         className
       )}
       onFocus={sequence.handleFocus}
@@ -272,7 +286,7 @@ export const BoardSquareArrivals = ({
           aria-hidden
         />
         {stopName ? (
-          <TitleTag className="tfl-title min-w-0 flex-1 text-[length:var(--square-title)] leading-tight [font-synthesis:none] [font-weight:var(--tfl-title-weight,400)]">
+          <TitleTag className="tfl-title min-w-0 flex-1 text-[length:var(--glance-title)] leading-tight [font-synthesis:none] [font-weight:var(--tfl-title-weight,400)]">
             <StationNameTitle name={stopName} />
           </TitleTag>
         ) : (
@@ -282,14 +296,14 @@ export const BoardSquareArrivals = ({
 
       {error ? (
         <p
-          className="flex min-h-0 flex-1 items-center text-[length:var(--square-dest)] text-destructive"
+          className="flex min-h-0 flex-1 items-center text-[length:var(--glance-dest)] text-destructive"
           role="alert"
         >
           {error}
         </p>
       ) : rows.length === 0 ? (
         <p
-          className="flex min-h-0 flex-1 items-center text-[length:var(--square-dest)] text-muted-foreground"
+          className="flex min-h-0 flex-1 items-center text-[length:var(--glance-dest)] text-muted-foreground"
           role="status"
         >
           {emptyCopy}
@@ -297,12 +311,12 @@ export const BoardSquareArrivals = ({
       ) : (
         <>
           <ul
-            data-slot="board-square-rows"
+            data-slot="board-glance-rows"
             className="m-0 flex min-h-0 flex-1 basis-0 list-none flex-col p-0"
             role="list"
           >
             {(activeFrame?.rows ?? []).map((row, index, list) => (
-              <SquareArrivalRow
+              <GlanceArrivalRow
                 key={row.key}
                 row={row}
                 showRule={index < list.length - 1}
@@ -311,7 +325,7 @@ export const BoardSquareArrivals = ({
           </ul>
           {frames.length > 1 ? (
             <div
-              data-slot="board-square-dwell"
+              data-slot="board-glance-dwell"
               className="relative mt-[clamp(0.75rem,1.8cqi,1.25rem)] h-2 w-full shrink-0 overflow-hidden rounded-full bg-muted"
               aria-hidden
             >

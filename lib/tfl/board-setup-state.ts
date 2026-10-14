@@ -270,8 +270,7 @@ export const leftoverBoardConfig = (
     behaviour: config.behaviour,
     slots: config.slots,
   }
-  if (config.layout !== undefined) leftover.layout = config.layout
-  if (config.density !== undefined) leftover.density = config.density
+  if (config.view !== undefined) leftover.view = config.view
   const key = config.key?.trim()
   if (key) leftover.key = key
 

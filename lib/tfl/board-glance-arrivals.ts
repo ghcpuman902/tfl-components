@@ -1,6 +1,6 @@
 /**
- * Square wall Board (HomeView-class): flat next-departures prep.
- * Few huge rows, not every line×bound group.
+ * Glance Board: flat next-departures prep for room-distance reading.
+ * Few huge rows, not every line×bound group. Aspect-agnostic.
  */
 
 import type { RealtimePrediction } from "tfl-ts"
@@ -17,19 +17,30 @@ import {
 } from "@/lib/tfl/arrivals-prepare"
 import { chunkWithFinalBackfill } from "@/lib/tfl/arrivals-unattended-frames"
 
-/** Far density: two glanceable trains. */
-export const BOARD_SQUARE_FAR_PAGE_SIZE = 2
-/** Default square density: three trains. */
-export const BOARD_SQUARE_PAGE_SIZE = 3
+/** Default glance page: two trains on square / landscape. */
+export const BOARD_GLANCE_PAGE_SIZE = 2
+/** Tall containers can hold a third huge row. */
+export const BOARD_GLANCE_TALL_PAGE_SIZE = 3
 /** Cap how many next trains enter the rotate pool. */
-export const BOARD_SQUARE_MAX_ROWS = 24
+export const BOARD_GLANCE_MAX_ROWS = 24
+/**
+ * Height/width at or above this uses the tall page size.
+ * Portrait phone (~2.1) and portrait iPad (~1.33) clear it; square does not.
+ */
+export const BOARD_GLANCE_TALL_ASPECT = 1.2
 
-export const resolveSquareArrivalsPageSize = (
-  densityFar: boolean,
+export const resolveGlanceArrivalsPageSize = (
+  aspectHeightOverWidth?: number,
   override?: number
 ): number => {
   if (typeof override === "number" && override > 0) return override
-  return densityFar ? BOARD_SQUARE_FAR_PAGE_SIZE : BOARD_SQUARE_PAGE_SIZE
+  if (
+    typeof aspectHeightOverWidth === "number" &&
+    aspectHeightOverWidth >= BOARD_GLANCE_TALL_ASPECT
+  ) {
+    return BOARD_GLANCE_TALL_PAGE_SIZE
+  }
+  return BOARD_GLANCE_PAGE_SIZE
 }
 
 const arrivalIdentityKey = (arrival: RealtimePrediction, index: number) => {
@@ -50,12 +61,12 @@ const arrivalIdentityKey = (arrival: RealtimePrediction, index: number) => {
 
 /**
  * Sort all predictions by time-to-station (soonest first). No line/bound
- * grouping — the square board pages this flat list.
+ * grouping — the glance board pages this flat list.
  */
-export const prepareSquareArrivals = ({
+export const prepareGlanceArrivals = ({
   data,
   now,
-  maxRows = BOARD_SQUARE_MAX_ROWS,
+  maxRows = BOARD_GLANCE_MAX_ROWS,
 }: {
   data: readonly RealtimePrediction[]
   now?: number
@@ -78,8 +89,8 @@ export const prepareSquareArrivals = ({
   }))
 }
 
-/** Platform / bound meta for a square row (e.g. "Westbound · Platform 1"). */
-export const formatSquareArrivalMeta = (
+/** Platform / bound meta for a glance row (e.g. "Westbound · Platform 1"). */
+export const formatGlanceArrivalMeta = (
   platformName?: string
 ): string | null => {
   const boundId = parseCompassBoundId(platformName)
@@ -93,7 +104,7 @@ export const formatSquareArrivalMeta = (
   })
 }
 
-export type SquareArrivalFrame = {
+export type GlanceArrivalFrame = {
   id: string
   rows: readonly ArrivalsPreparedRow[]
 }
@@ -102,11 +113,11 @@ export type SquareArrivalFrame = {
  * Chunk the flat next-train list into unattended frames.
  * When `pinFirst`, the soonest train stays on every frame and the rest rotate.
  */
-export const buildSquareArrivalFrames = (
+export const buildGlanceArrivalFrames = (
   rows: readonly ArrivalsPreparedRow[],
   pageSize: number,
   options?: { pinFirst?: boolean }
-): SquareArrivalFrame[] => {
+): GlanceArrivalFrame[] => {
   if (pageSize <= 0) {
     return rows.length
       ? [{ id: rows.map((r) => r.key).join("|"), rows: [...rows] }]

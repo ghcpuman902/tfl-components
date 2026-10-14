@@ -3,9 +3,9 @@
 import { useEffect } from "react"
 import { BOARD_VIEW_PATH } from "@/lib/tfl/board-url-state"
 
-/** Square + far density + unattended paging for Apple HomeView Safari. */
+/** Glance + unattended paging for Apple HomeView Safari (and similar walls). */
 export const HOMEVIEW_BOARD_HASH =
-  "#layout=square&density=far&behaviour=unattended"
+  "#view=glance&behaviour=unattended"
 
 export const HomeViewRedirect = () => {
   useEffect(() => {
@@ -17,7 +17,7 @@ export const HomeViewRedirect = () => {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-background p-6 text-muted-foreground">
       <p>
-        Opening the Board in square layout…
+        Opening the Board in glance mode…
         {" "}
         <a
           href={`${BOARD_VIEW_PATH}${HOMEVIEW_BOARD_HASH}`}

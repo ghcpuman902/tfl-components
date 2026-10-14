@@ -14,22 +14,21 @@ import {
   parseBehaviour,
   parseBooleanFlag,
   parseCycleSurface,
-  parseDensity,
   parseDwellSeconds,
-  parseLayout,
+  parseLegacyLayoutAsView,
   parseOptionalString,
   parseRowsItem,
   parseStatusOverview,
   parseStatusSurface,
+  parseView,
   serializeArrivalsLines,
   serializeArrivalsRows,
   type BoardBehaviour,
   type BoardCycleSurface,
-  type BoardDensity,
-  type BoardLayout,
   type BoardSettingId,
   type BoardStatusOverview,
   type BoardStatusSurface,
+  type BoardView,
 } from "@/lib/tfl/board-settings"
 import {
   isDefaultBoardSlots,
@@ -48,10 +47,9 @@ export const BOARD_VIEW_PATH = "/board/view"
 export type {
   BoardBehaviour,
   BoardCycleSurface,
-  BoardDensity,
-  BoardLayout,
   BoardStatusOverview,
   BoardStatusSurface,
+  BoardView,
 }
 export type { BoardPanelKind }
 
@@ -104,10 +102,8 @@ export type BoardConfig = {
   stop?: string
   stopName?: string
   behaviour: BoardBehaviour
-  /** Explicit layout; omit for auto-detect on coarse square viewports. */
-  layout?: BoardLayout
-  /** Sparse room-distance density; omit for ordinary Board density. */
-  density?: BoardDensity
+  /** Room-distance glance Board; omit for the ordinary scrolling Board. */
+  view?: BoardView
   slots: BoardSlotsConfig
   arrivals: BoardArrivalsConfig
   bus: BoardBusConfig
@@ -156,8 +152,11 @@ export const parseBoardConfig = (
     parseBehaviour(params.get("behaviour") ?? "") ??
     parseBehaviour(params.get("mode") ?? "") ??
     DEFAULT_BOARD_CONFIG.behaviour
-  const layout = parseLayout(params.get("layout") ?? "") ?? undefined
-  const density = parseDensity(params.get("density") ?? "") ?? undefined
+  // `view=glance` wins; legacy `layout=square` maps to glance.
+  const explicitView = parseView(params.get("view") ?? "")
+  const legacyLayout = parseLegacyLayoutAsView(params.get("layout") ?? "")
+  const view: BoardView | undefined =
+    explicitView ?? (legacyLayout === "glance" ? "glance" : undefined)
 
   const arrivals: BoardArrivalsConfig = {}
   const rows = parseArrivalsRows(params.get("a.rows"))
@@ -212,8 +211,7 @@ export const parseBoardConfig = (
     stop,
     stopName,
     behaviour,
-    ...(layout ? { layout } : {}),
-    ...(density ? { density } : {}),
+    ...(view ? { view } : {}),
     slots,
     arrivals,
     bus,
@@ -234,8 +232,10 @@ const KNOWN_HASH_PARAMS = new Set<string>([
   BOARD_SETTINGS.stop.param,
   BOARD_SETTINGS.stopName.param,
   BOARD_SETTINGS.behaviour.param,
-  BOARD_SETTINGS.layout.param,
-  BOARD_SETTINGS.density.param,
+  BOARD_SETTINGS.view.param,
+  // Legacy aliases — still accepted on parse, never written.
+  "layout",
+  "density",
   BOARD_SETTINGS.slot1.param,
   BOARD_SETTINGS.slot2.param,
   BOARD_SETTINGS.arrivalsRows.param,
@@ -364,21 +364,12 @@ export const describeBoardHrefSegments = (
     })
   }
   if (
-    merged.layout !== undefined &&
-    !BOARD_SETTINGS.layout.isDefault(merged.layout)
+    merged.view !== undefined &&
+    !BOARD_SETTINGS.view.isDefault(merged.view)
   ) {
     segments.push({
-      setting: "layout",
-      text: encodeSegment(BOARD_SETTINGS.layout.param, merged.layout),
-    })
-  }
-  if (
-    merged.density !== undefined &&
-    !BOARD_SETTINGS.density.isDefault(merged.density)
-  ) {
-    segments.push({
-      setting: "density",
-      text: encodeSegment(BOARD_SETTINGS.density.param, merged.density),
+      setting: "view",
+      text: encodeSegment(BOARD_SETTINGS.view.param, merged.view),
     })
   }
 

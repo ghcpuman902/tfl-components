@@ -22,8 +22,8 @@ export type BoardScope =
   "shell" | "arrivals" | "status" | "bus" | "river" | "cycle"
 
 export type BoardBehaviour = "interactive" | "unattended"
-export type BoardLayout = "square" | "default"
-export type BoardDensity = "far"
+/** Room-distance Board; omit for the ordinary scrolling Board. */
+export type BoardView = "glance"
 export type BoardCycleSurface = "map" | "display"
 export type BoardStatusSurface = "display" | "strip"
 export type BoardStatusOverview = "network" | "selection" | "none"
@@ -71,8 +71,7 @@ export type ListSetting<T> = SettingBase<T> & {
 export type BoardSetting<T = unknown> = ScalarSetting<T> | ListSetting<T>
 
 const BEHAVIOURS = new Set<BoardBehaviour>(["interactive", "unattended"])
-const LAYOUTS = new Set<BoardLayout>(["square", "default"])
-const DENSITIES = new Set<BoardDensity>(["far"])
+const VIEWS = new Set<BoardView>(["glance"])
 const CYCLE_SURFACES = new Set<BoardCycleSurface>(["map", "display"])
 const STATUS_SURFACES = new Set<BoardStatusSurface>(["display", "strip"])
 const STATUS_OVERVIEWS = new Set<BoardStatusOverview>([
@@ -122,18 +121,22 @@ export const parseBehaviour = (raw: string): BoardBehaviour | undefined => {
   return LEGACY_MODE_TO_BEHAVIOUR[trimmed]
 }
 
-export const parseLayout = (raw: string): BoardLayout | undefined => {
+export const parseView = (raw: string): BoardView | undefined => {
   const trimmed = raw.trim()
-  return LAYOUTS.has(trimmed as BoardLayout)
-    ? (trimmed as BoardLayout)
-    : undefined
+  return VIEWS.has(trimmed as BoardView) ? (trimmed as BoardView) : undefined
 }
 
-export const parseDensity = (raw: string): BoardDensity | undefined => {
+/**
+ * Legacy `layout=square` (and `layout=default`) from older share URLs.
+ * Square mapped onto glance; default meant force the ordinary Board.
+ */
+export const parseLegacyLayoutAsView = (
+  raw: string
+): BoardView | "board" | undefined => {
   const trimmed = raw.trim()
-  return DENSITIES.has(trimmed as BoardDensity)
-    ? (trimmed as BoardDensity)
-    : undefined
+  if (trimmed === "square") return "glance"
+  if (trimmed === "default") return "board"
+  return undefined
 }
 
 export const parseCycleSurface = (
@@ -275,58 +278,29 @@ export const BOARD_SETTINGS = {
     },
   } satisfies ScalarSetting<BoardBehaviour>,
 
-  layout: {
+  view: {
     kind: "scalar",
-    param: "layout",
+    param: "view",
     scope: "shell",
-    defaultValue: undefined as BoardLayout | undefined,
-    parse: parseLayout,
-    serialize: (value: BoardLayout | undefined) => value ?? "",
-    isDefault: (value: BoardLayout | undefined) => value === undefined,
+    defaultValue: undefined as BoardView | undefined,
+    parse: parseView,
+    serialize: (value: BoardView | undefined) => value ?? "",
+    isDefault: (value: BoardView | undefined) => value === undefined,
     url: true,
     form: true,
     ui: {
-      label: "Layout",
-      help: "Square is for room-distance wall displays. Leave unset to auto-detect a square coarse touchscreen.",
+      label: "View",
+      help: "Glance is room-distance reading: few trains, large type, no scroll, paging when needed. Works on any screen shape. Off by default — turn it on for wall displays like HomeView.",
       control: "select",
       options: [
         {
-          value: "square",
-          label: "Square",
-          description: "One column, large type, no scroll",
-        },
-        {
-          value: "default",
-          label: "Default",
-          description: "Force the ordinary Board layout",
+          value: "glance",
+          label: "Glance",
+          description: "Large type, few rows, no scroll",
         },
       ],
     },
-  } satisfies ScalarSetting<BoardLayout | undefined>,
-
-  density: {
-    kind: "scalar",
-    param: "density",
-    scope: "shell",
-    defaultValue: undefined as BoardDensity | undefined,
-    parse: parseDensity,
-    serialize: (value: BoardDensity | undefined) => value ?? "",
-    isDefault: (value: BoardDensity | undefined) => value === undefined,
-    url: true,
-    form: true,
-    ui: {
-      label: "Density",
-      help: "On Square, Ordinary shows three room-readable rows; Far shows two much larger ones for across-the-room reading. Saved in the URL.",
-      control: "select",
-      options: [
-        {
-          value: "far",
-          label: "Far",
-          description: "Two rows, wall-distance type",
-        },
-      ],
-    },
-  } satisfies ScalarSetting<BoardDensity | undefined>,
+  } satisfies ScalarSetting<BoardView | undefined>,
 
   arrivalsRows: {
     kind: "scalar",

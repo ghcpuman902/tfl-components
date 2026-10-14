@@ -5,7 +5,7 @@ import { pageMetadata } from "@/lib/site-metadata"
 export const metadata: Metadata = pageMetadata({
   title: "Board for HomeView",
   description:
-    "Open the hosted Board in square layout for an Apple HomeView Safari tab.",
+    "Open the hosted Board in glance mode for an Apple HomeView Safari tab.",
   path: "/homeview",
 })
 

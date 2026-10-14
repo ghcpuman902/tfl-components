@@ -43,16 +43,21 @@ describe("parseBoardConfig", () => {
     assert.equal(config.behaviour, "interactive")
   })
 
-  it("parses layout=square and density=far", () => {
-    const config = parseBoardConfig("layout=square&density=far")
-    assert.equal(config.layout, "square")
-    assert.equal(config.density, "far")
+  it("parses view=glance", () => {
+    const config = parseBoardConfig("view=glance")
+    assert.equal(config.view, "glance")
   })
 
-  it("ignores invalid layout and density", () => {
-    const config = parseBoardConfig("layout=wide&density=near")
-    assert.equal(config.layout, undefined)
-    assert.equal(config.density, undefined)
+  it("maps legacy layout=square to view=glance", () => {
+    const config = parseBoardConfig("layout=square&density=far")
+    assert.equal(config.view, "glance")
+    assert.equal("layout" in config, false)
+    assert.equal("density" in config, false)
+  })
+
+  it("ignores invalid view and legacy layout", () => {
+    const config = parseBoardConfig("view=wide&layout=near")
+    assert.equal(config.view, undefined)
   })
 
   it("ignores retired a.pinAdvance", () => {
@@ -252,22 +257,21 @@ describe("buildBoardHref", () => {
     )
   })
 
-  it("serializes layout=square and density=far", () => {
+  it("serializes view=glance", () => {
     assert.equal(
       buildBoardHref({
         stop: "940GZZLUOXC",
-        layout: "square",
-        density: "far",
+        view: "glance",
         behaviour: "unattended",
       }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&behaviour=unattended&layout=square&density=far`
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&behaviour=unattended&view=glance`
     )
   })
 
-  it("serializes layout=default to opt out of auto-detect", () => {
+  it("does not serialize legacy layout or density", () => {
     assert.equal(
-      buildBoardHref({ stop: "940GZZLUOXC", layout: "default" }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&layout=default`
+      buildBoardHref({ stop: "940GZZLUOXC", view: "glance" }),
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&view=glance`
     )
   })
 

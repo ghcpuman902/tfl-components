@@ -15,7 +15,7 @@ export type BoardPresetId =
   | "near"
   | "arrivals"
   | "status"
-  | "homeview"
+  | "glance"
 
 export type BoardPresetDef = {
   id: BoardPresetId
@@ -97,15 +97,14 @@ export const BOARD_PRESETS: readonly BoardPresetDef[] = [
     slots: { p1: ["status"], p2: [] },
   },
   {
-    id: "homeview",
-    title: "HomeView square",
+    id: "glance",
+    title: "Glance",
     available: true,
     formSettings: [
       "stop",
       "stopName",
       "behaviour",
-      "layout",
-      "density",
+      "view",
       "arrivalsLines",
       "arrivalsPinFirst",
     ],
@@ -120,13 +119,13 @@ export const getBoardPreset = (id: BoardPresetId): BoardPresetDef =>
 
 /** Infer the layout card from slot stacks. URL does not name the recipe (J13). */
 export const matchBoardPresetId = (
-  config: Pick<BoardConfig, "slots" | "layout" | "density">
+  config: Pick<BoardConfig, "slots" | "view">
 ): BoardPresetId | undefined => {
-  if (config.layout === "square") return "homeview"
+  if (config.view === "glance") return "glance"
   const resolved = resolveBoardSlots(config.slots.p1, config.slots.p2)
   return BOARD_PRESETS.find(
     (preset) =>
-      preset.id !== "homeview" &&
+      preset.id !== "glance" &&
       preset.slots.p1.join(",") === resolved.p1.join(",") &&
       preset.slots.p2.join(",") === resolved.p2.join(",")
   )?.id
@@ -143,15 +142,15 @@ export const applyBoardRecipe = (
       p2: [...preset.slots.p2],
     },
   }
-  if (preset.id === "homeview") {
-    next.layout = "square"
-    next.density = "far"
+  if (preset.id === "glance") {
+    next.view = "glance"
     next.behaviour = "unattended"
-    // Density owns square row count — do not pin a.rows.
     if (next.arrivals.rows !== undefined) {
       const { rows: _rows, ...rest } = next.arrivals
       next.arrivals = rest
     }
+  } else if (next.view === "glance") {
+    delete next.view
   }
   return next
 }

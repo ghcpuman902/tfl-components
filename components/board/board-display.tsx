@@ -13,7 +13,7 @@ import dynamic from "next/dynamic"
 import { normalizeLineId } from "tfl-ts"
 import { ARRIVALS_RHYTHM_VARS } from "@/components/tfl/arrivals/arrivals-board-view"
 import { BoardRateLimitScreen } from "@/components/board/board-rate-limit"
-import { BoardSquareArrivals } from "@/components/board/board-square-arrivals"
+import { BoardGlanceArrivals } from "@/components/board/board-glance-arrivals"
 import { BoardViewFooter } from "@/components/board/board-view-footer"
 import { BoardViewHomeScreenOffer } from "@/components/board/board-view-home-screen-offer"
 import { BoardViewRecovery } from "@/components/board/board-view-recovery"
@@ -76,12 +76,7 @@ import { useUserTflCredentials } from "@/components/user-tfl-credentials-provide
 import { useBoardFullscreen } from "@/hooks/use-board-fullscreen"
 import { useBoardHomeScreen } from "@/hooks/use-board-home-screen"
 import { useBoardWakeLock } from "@/hooks/use-board-wake-lock"
-import {
-  boardSquareGutterCss,
-  resolveBoardLayout,
-  type BoardLayoutMode,
-} from "@/lib/tfl/board-layout"
-import { resolveSquareArrivalsPageSize } from "@/lib/tfl/board-square-arrivals"
+import { boardGlanceGutterCss } from "@/lib/tfl/board-layout"
 import { OXFORD_CIRCUS_ARRIVALS } from "@/lib/tfl/fixtures/arrivals-boards"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
 import { BOARD_SETTINGS } from "@/lib/tfl/board-settings"
@@ -134,39 +129,6 @@ const BOARD_SHELL_CONTAINER_CLASS = "@container/board"
 const BOARD_SHELL_PADDING_CLASS = "p-4 @min-[48rem]/board:p-6"
 const BOARD_TWO_COLUMN_CLASS = `grid min-w-0 grid-cols-1 items-start ${BOARD_RHYTHM_GAP_CLASS} @min-[48rem]/board:grid-cols-3 @min-[48rem]/board:gap-x-6`
 const BOARD_ONE_COLUMN_CLASS = `grid min-w-0 grid-cols-1 items-start ${BOARD_RHYTHM_GAP_CLASS}`
-
-const readViewportLayoutHints = (): {
-  width: number
-  height: number
-  hoverNone: boolean
-  pointerCoarse: boolean
-} => ({
-  width: window.innerWidth,
-  height: window.innerHeight,
-  hoverNone: window.matchMedia("(hover: none)").matches,
-  pointerCoarse: window.matchMedia("(pointer: coarse)").matches,
-})
-
-const subscribeViewportLayout = (onStoreChange: () => void) => {
-  window.addEventListener("resize", onStoreChange)
-  const hoverMq = window.matchMedia("(hover: none)")
-  const pointerMq = window.matchMedia("(pointer: coarse)")
-  hoverMq.addEventListener("change", onStoreChange)
-  pointerMq.addEventListener("change", onStoreChange)
-  return () => {
-    window.removeEventListener("resize", onStoreChange)
-    hoverMq.removeEventListener("change", onStoreChange)
-    pointerMq.removeEventListener("change", onStoreChange)
-  }
-}
-
-const getAutoSquareLayout = (): BoardLayoutMode =>
-  resolveBoardLayout({
-    ...readViewportLayoutHints(),
-    explicitLayout: null,
-  })
-
-const getServerBoardLayout = (): BoardLayoutMode => "default"
 
 const CycleHireMapSkeleton = ({ tiles }: { tiles: number }) => (
   <div
@@ -354,26 +316,13 @@ export const BoardDisplay = ({
   const [awaitingFresh, setAwaitingFresh] = useState(false)
   const freshnessEpochRef = useRef<number | null>(null)
 
-  const autoLayout = useSyncExternalStore(
-    subscribeViewportLayout,
-    getAutoSquareLayout,
-    getServerBoardLayout
-  )
-  const resolvedLayout: BoardLayoutMode =
-    config.layout === "square" || config.layout === "default"
-      ? config.layout
-      : isPreview
-        ? "default"
-        : autoLayout
-
-  // Gate on surfaceReady so SSR / hydration never disagree on `board-square`.
-  const isSquare = surfaceReady && resolvedLayout === "square"
-  const densityFar = config.density === "far"
+  // Explicit `view=glance` only — no viewport auto-detect.
+  const isGlance = surfaceReady && config.view === "glance"
   const fillScreen =
     !isPreview &&
-    (isSquare || frameEmbedded || fromHomeScreen || fullscreen.active)
+    (isGlance || frameEmbedded || fromHomeScreen || fullscreen.active)
 
-  useBoardWakeLock({ enabled: boardReady && isSquare && !isPreview })
+  useBoardWakeLock({ enabled: boardReady && isGlance && !isPreview })
 
   useEffect(() => {
     if (!fromHomeScreen || !ready || !hydrated) return
@@ -398,26 +347,26 @@ export const BoardDisplay = ({
   )
 
   useEffect(() => {
-    if (!fillScreen && !isSquare) return
+    if (!fillScreen && !isGlance) return
     const html = document.documentElement
     const previousOverflow = html.style.overflow
     const hadEmbed = html.classList.contains("board-embed")
-    const hadSquare = html.classList.contains("board-square")
+    const hadGlance = html.classList.contains("board-glance")
     const hadDark = html.classList.contains("dark")
     html.style.overflow = "hidden"
     html.classList.add("board-embed")
-    if (isSquare) {
-      html.classList.add("board-square", "dark")
+    if (isGlance) {
+      html.classList.add("board-glance", "dark")
     }
     return () => {
       html.style.overflow = previousOverflow
       if (!hadEmbed) html.classList.remove("board-embed")
-      if (isSquare) {
-        if (!hadSquare) html.classList.remove("board-square")
+      if (isGlance) {
+        if (!hadGlance) html.classList.remove("board-glance")
         if (!hadDark) html.classList.remove("dark")
       }
     }
-  }, [fillScreen, isSquare])
+  }, [fillScreen, isGlance])
 
   const stopId = config.stop ?? ""
   // URL `stopName` is an override only. Otherwise the catalog paints the
@@ -427,17 +376,17 @@ export const BoardDisplay = ({
     lookupBoardStationName(stationNames, stopId) ||
     undefined
 
-  // Square wall boards are glanceable next-trains only — never cram status /
-  // bus / cycle panels into the same square.
+  // Glance boards are next-trains only — never cram status / bus / cycle panels
+  // into the same surface.
   const slots = useMemo(() => {
-    if (isSquare) return { p1: ["rail" as const], p2: [] as const }
+    if (isGlance) return { p1: ["rail" as const], p2: [] as const }
     return resolveBoardSlots(config.slots.p1, config.slots.p2)
-  }, [config.slots.p1, config.slots.p2, isSquare])
+  }, [config.slots.p1, config.slots.p2, isGlance])
   const showRail = boardSlotsInclude(slots, "rail")
-  const showBus = !isSquare && boardSlotsInclude(slots, "bus")
-  const showRiver = !isSquare && boardSlotsInclude(slots, "river")
-  const showCycle = !isSquare && boardSlotsInclude(slots, "cycle")
-  const showStatus = !isSquare && boardSlotsInclude(slots, "status")
+  const showBus = !isGlance && boardSlotsInclude(slots, "bus")
+  const showRiver = !isGlance && boardSlotsInclude(slots, "river")
+  const showCycle = !isGlance && boardSlotsInclude(slots, "cycle")
+  const showStatus = !isGlance && boardSlotsInclude(slots, "status")
 
   const status = useBoardStatus({
     appKey: null,
@@ -643,7 +592,7 @@ export const BoardDisplay = ({
     [config, servingLines]
   )
   // Square wall displays page overflow instead of scrolling or swiping.
-  const panelBehaviour = isSquare ? "unattended" : config.behaviour
+  const panelBehaviour = isGlance ? "unattended" : config.behaviour
   const unattended = panelBehaviour === "unattended"
   const pageSizeByLine = useMemo(() => {
     // A scalar `a.rows` broadcasts to every section — do not keep the
@@ -732,18 +681,18 @@ export const BoardDisplay = ({
     config.arrivals.lineOrder,
   ])
 
-  // Square builder iframe: mock Oxford Circus when live data is empty so
+  // Glance builder iframe: mock Oxford Circus when live data is empty so
   // layout can be judged without a TfL key. Non-embed still shows the error.
-  const squareFixtureFallback =
-    isSquare &&
+  const glanceFixtureFallback =
+    isGlance &&
     embedded &&
     railData.length === 0 &&
     stopId === HOME_RAIL_STOP.id &&
     !arrivals.loading
-  const squareRailData = squareFixtureFallback
+  const glanceRailData = glanceFixtureFallback
     ? OXFORD_CIRCUS_ARRIVALS
     : railData
-  const squareRailError = squareFixtureFallback ? null : arrivalsError
+  const glanceRailError = glanceFixtureFallback ? null : arrivalsError
 
   const railEmpty = useMemo(() => {
     if (!arrivals.fetchedAt || arrivals.fetchError) {
@@ -790,31 +739,26 @@ export const BoardDisplay = ({
     )
   }, [status.data, config.status.lines, config.status.overview])
 
-  const twoColumns = !isSquare && slots.p1.length > 0 && slots.p2.length > 0
-  // Square density owns visible rows (2 Far / 3 Ordinary). Ignore a.rows so
-  // a leftover URL broadcast cannot collapse Far and Ordinary together.
-  const squarePageSize = resolveSquareArrivalsPageSize(densityFar)
+  const twoColumns = !isGlance && slots.p1.length > 0 && slots.p2.length > 0
 
   const renderPanel = (kind: BoardPanelKind) => {
     if (kind === "rail") {
-      if (isSquare) {
+      if (isGlance) {
         return (
-          <BoardSquareArrivals
+          <BoardGlanceArrivals
             stopName={stopName}
             stopPointId={stopId || undefined}
             headingLevel={2}
-            data={squareRailData}
+            data={glanceRailData}
             now={
-              squareFixtureFallback
+              glanceFixtureFallback
                 ? undefined
                 : (arrivals.fetchedAt ?? undefined)
             }
-            pageSize={squarePageSize}
-            densityFar={densityFar}
             pinFirst={arrivalsProps.pinFirst ?? true}
             startDelayMs={0}
-            loading={arrivals.loading && !squareFixtureFallback}
-            error={squareRailError}
+            loading={arrivals.loading && !glanceFixtureFallback}
+            error={glanceRailError}
             emptyKind={railEmpty.kind}
             emptyMessage={arrivalsLineEmptyCopy(railEmpty)}
             className="min-h-0 flex-1"
@@ -854,7 +798,7 @@ export const BoardDisplay = ({
           data={busData}
           now={busArrivals.fetchedAt ?? undefined}
           groupBy={config.bus.routes?.length ? "none" : "route"}
-          pageSize={config.bus.rows ?? (isSquare ? 3 : undefined)}
+          pageSize={config.bus.rows ?? (isGlance ? 3 : undefined)}
           behaviour={panelBehaviour}
           pinFirst={arrivalsProps.pinFirst}
           startDelayMs={unattended ? 400 : undefined}
@@ -872,7 +816,7 @@ export const BoardDisplay = ({
           data={riverArrivals.data}
           now={riverArrivals.fetchedAt ?? undefined}
           groupBy="route"
-          pageSize={config.river.rows ?? (isSquare ? 3 : undefined)}
+          pageSize={config.river.rows ?? (isGlance ? 3 : undefined)}
           behaviour={panelBehaviour}
           pinFirst={arrivalsProps.pinFirst}
           startDelayMs={unattended ? 800 : undefined}
@@ -1006,9 +950,9 @@ export const BoardDisplay = ({
   }
 
   // Prefer `h-full` so builder iframes (1088×1088) and HomeView share one
-  // height chain; `html/body { height:100% }` is set for `.board-square`.
-  const shellClass = isSquare
-    ? `board-embed board-square ${BOARD_SHELL_CONTAINER_CLASS} box-border flex h-full min-h-0 w-full flex-col overflow-hidden overscroll-none [touch-action:manipulation] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${embedded || isPreview ? "p-5" : ""}`
+  // height chain; `html/body { height:100% }` is set for `.board-glance`.
+  const shellClass = isGlance
+    ? `board-embed board-glance ${BOARD_SHELL_CONTAINER_CLASS} box-border flex h-full min-h-0 w-full flex-col overflow-hidden overscroll-none [touch-action:manipulation] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${embedded || isPreview ? "p-5" : ""}`
     : isPreview
       ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-full w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
       : fillScreen
@@ -1016,11 +960,11 @@ export const BoardDisplay = ({
         : `${BOARD_SHELL_CONTAINER_CLASS} box-border min-h-dvh w-full ${BOARD_SHELL_PADDING_CLASS}`
 
   const boardShellStyle: CSSProperties = {
-    ...(isSquare ? {} : ARRIVALS_RHYTHM_VARS),
-    ...(isSquare
+    ...(isGlance ? {} : ARRIVALS_RHYTHM_VARS),
+    ...(isGlance
       ? isPreview
         ? {}
-        : boardSquareGutterCss(20)
+        : boardGlanceGutterCss(20)
       : homeScreenPadding),
   }
 
@@ -1050,7 +994,6 @@ export const BoardDisplay = ({
       <div
         className={shellClass}
         style={boardShellStyle}
-        data-density={densityFar ? "far" : undefined}
       >
         {isPreview ? null : <h1 className="sr-only">Live board</h1>}
       </div>
@@ -1062,7 +1005,6 @@ export const BoardDisplay = ({
       <div
         className={shellClass}
         style={boardShellStyle}
-        data-density={densityFar ? "far" : undefined}
       >
         {fromHomeScreen ? (
           <>
@@ -1081,7 +1023,6 @@ export const BoardDisplay = ({
       <div
         className={`${shellClass} flex items-center justify-center`}
         style={boardShellStyle}
-        data-density={densityFar ? "far" : undefined}
       >
         <BoardRateLimitScreen onRetry={requestFreshData} retrying={refreshing} />
       </div>
@@ -1093,19 +1034,18 @@ export const BoardDisplay = ({
       ref={boardRootRef}
       className={shellClass}
       style={boardShellStyle}
-      data-density={densityFar ? "far" : undefined}
     >
       {isPreview ? null : <h1 className="sr-only">Live board</h1>}
       <div
         className={
-          isSquare
+          isGlance
             ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
             : twoColumns
               ? BOARD_TWO_COLUMN_CLASS
               : BOARD_ONE_COLUMN_CLASS
         }
       >
-        {isSquare ? (
+        {isGlance ? (
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             {renderPanel("rail")}
           </div>
@@ -1125,10 +1065,10 @@ export const BoardDisplay = ({
           onRefresh={requestFreshData}
           refreshing={refreshing}
           stale={awaitingFresh}
-          compact={isSquare}
-          editHref={isSquare ? undefined : editHref}
+          compact={isGlance}
+          editHref={isGlance ? undefined : editHref}
           fullscreenLabel={
-            !isSquare &&
+            !isGlance &&
             fullscreen.available &&
             !fromHomeScreen &&
             !embedded
@@ -1138,7 +1078,7 @@ export const BoardDisplay = ({
               : undefined
           }
           onFullscreen={
-            !isSquare &&
+            !isGlance &&
             fullscreen.available &&
             !fromHomeScreen &&
             !embedded
@@ -1147,18 +1087,18 @@ export const BoardDisplay = ({
           }
           fullscreenError={fullscreen.error}
           onAddToHomeScreen={
-            !isSquare && offerInstall && platform === "ios"
+            !isGlance && offerInstall && platform === "ios"
               ? () => setHomeScreenOfferOpen(true)
               : undefined
           }
           onChromiumInstall={
-            !isSquare && offerInstall && platform === "chromium"
+            !isGlance && offerInstall && platform === "chromium"
               ? promptNativeInstall
               : undefined
           }
         />
       )}
-      {offerInstall && platform === "ios" && !isSquare ? (
+      {offerInstall && platform === "ios" && !isGlance ? (
         <BoardViewHomeScreenOffer
           open={homeScreenOfferOpen}
           onDismiss={handleDismissHomeScreenOffer}

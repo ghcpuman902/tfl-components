@@ -958,60 +958,30 @@ export const BoardAdvancedConfig = ({
               </Field>
             ) : null}
 
-            {show(formSettings, "layout") ? (
+            {show(formSettings, "view") ? (
               <Field>
                 <DescribedSelect
-                  id="board-layout"
-                  ariaLabel={BOARD_SETTINGS.layout.ui?.label ?? "Layout"}
-                  value={config.layout ?? "auto"}
+                  id="board-view"
+                  ariaLabel={BOARD_SETTINGS.view.ui?.label ?? "View"}
+                  value={config.view ?? "board"}
                   onChange={(value) =>
                     onChange({
-                      layout:
-                        value === "auto"
+                      view:
+                        value === "board"
                           ? undefined
-                          : (value as BoardConfig["layout"]),
+                          : (value as BoardConfig["view"]),
                     })
                   }
                   options={[
                     {
-                      value: "auto",
-                      label: "Auto",
-                      description: "Detect a square coarse touchscreen",
+                      value: "board",
+                      label: "Board",
+                      description: "Ordinary scrolling Board",
                     },
-                    ...(BOARD_SETTINGS.layout.ui?.options ?? []),
+                    ...(BOARD_SETTINGS.view.ui?.options ?? []),
                   ]}
                 />
-                <Help>{BOARD_SETTINGS.layout.ui?.help}</Help>
-              </Field>
-            ) : null}
-
-            {show(formSettings, "density") ? (
-              <Field>
-                <DescribedSelect
-                  id="board-density"
-                  ariaLabel={BOARD_SETTINGS.density.ui?.label ?? "Density"}
-                  value={config.density ?? "ordinary"}
-                  onChange={(value) =>
-                    onChange({
-                      density:
-                        value === "ordinary"
-                          ? undefined
-                          : (value as BoardConfig["density"]),
-                    })
-                  }
-                  options={[
-                    {
-                      value: "ordinary",
-                      label: "Ordinary",
-                      description:
-                        config.layout === "square"
-                          ? "Three rows, room-readable"
-                          : "Default Board density",
-                    },
-                    ...(BOARD_SETTINGS.density.ui?.options ?? []),
-                  ]}
-                />
-                <Help>{BOARD_SETTINGS.density.ui?.help}</Help>
+                <Help>{BOARD_SETTINGS.view.ui?.help}</Help>
               </Field>
             ) : null}
           </div>
