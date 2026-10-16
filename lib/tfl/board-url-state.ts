@@ -15,10 +15,12 @@ import {
   parseBooleanFlag,
   parseCycleSurface,
   parseDwellSeconds,
+  parseLegacyLayoutAsView,
   parseOptionalString,
   parseRowsItem,
   parseStatusOverview,
   parseStatusSurface,
+  parseView,
   serializeArrivalsLines,
   serializeArrivalsRows,
   type BoardBehaviour,
@@ -26,6 +28,7 @@ import {
   type BoardSettingId,
   type BoardStatusOverview,
   type BoardStatusSurface,
+  type BoardView,
 } from "@/lib/tfl/board-settings"
 import {
   isDefaultBoardSlots,
@@ -41,7 +44,13 @@ import {
 export const BOARD_PATH = "/board"
 export const BOARD_VIEW_PATH = "/board/view"
 
-export type { BoardBehaviour, BoardCycleSurface, BoardStatusOverview, BoardStatusSurface }
+export type {
+  BoardBehaviour,
+  BoardCycleSurface,
+  BoardStatusOverview,
+  BoardStatusSurface,
+  BoardView,
+}
 export type { BoardPanelKind }
 
 export type BoardArrivalsConfig = {
@@ -93,6 +102,8 @@ export type BoardConfig = {
   stop?: string
   stopName?: string
   behaviour: BoardBehaviour
+  /** Room-distance glance Board; omit for the ordinary scrolling Board. */
+  view?: BoardView
   slots: BoardSlotsConfig
   arrivals: BoardArrivalsConfig
   bus: BoardBusConfig
@@ -141,6 +152,11 @@ export const parseBoardConfig = (
     parseBehaviour(params.get("behaviour") ?? "") ??
     parseBehaviour(params.get("mode") ?? "") ??
     DEFAULT_BOARD_CONFIG.behaviour
+  // `view=glance` wins; legacy `layout=square` maps to glance.
+  const explicitView = parseView(params.get("view") ?? "")
+  const legacyLayout = parseLegacyLayoutAsView(params.get("layout") ?? "")
+  const view: BoardView | undefined =
+    explicitView ?? (legacyLayout === "glance" ? "glance" : undefined)
 
   const arrivals: BoardArrivalsConfig = {}
   const rows = parseArrivalsRows(params.get("a.rows"))
@@ -195,6 +211,7 @@ export const parseBoardConfig = (
     stop,
     stopName,
     behaviour,
+    ...(view ? { view } : {}),
     slots,
     arrivals,
     bus,
@@ -215,6 +232,10 @@ const KNOWN_HASH_PARAMS = new Set<string>([
   BOARD_SETTINGS.stop.param,
   BOARD_SETTINGS.stopName.param,
   BOARD_SETTINGS.behaviour.param,
+  BOARD_SETTINGS.view.param,
+  // Legacy aliases — still accepted on parse, never written.
+  "layout",
+  "density",
   BOARD_SETTINGS.slot1.param,
   BOARD_SETTINGS.slot2.param,
   BOARD_SETTINGS.arrivalsRows.param,
@@ -340,6 +361,15 @@ export const describeBoardHrefSegments = (
     segments.push({
       setting: "behaviour",
       text: encodeSegment(BOARD_SETTINGS.behaviour.param, merged.behaviour),
+    })
+  }
+  if (
+    merged.view !== undefined &&
+    !BOARD_SETTINGS.view.isDefault(merged.view)
+  ) {
+    segments.push({
+      setting: "view",
+      text: encodeSegment(BOARD_SETTINGS.view.param, merged.view),
     })
   }
 

@@ -957,6 +957,33 @@ export const BoardAdvancedConfig = ({
                 />
               </Field>
             ) : null}
+
+            {show(formSettings, "view") ? (
+              <Field>
+                <DescribedSelect
+                  id="board-view"
+                  ariaLabel={BOARD_SETTINGS.view.ui?.label ?? "View"}
+                  value={config.view ?? "board"}
+                  onChange={(value) =>
+                    onChange({
+                      view:
+                        value === "board"
+                          ? undefined
+                          : (value as BoardConfig["view"]),
+                    })
+                  }
+                  options={[
+                    {
+                      value: "board",
+                      label: "Board",
+                      description: "Ordinary scrolling Board",
+                    },
+                    ...(BOARD_SETTINGS.view.ui?.options ?? []),
+                  ]}
+                />
+                <Help>{BOARD_SETTINGS.view.ui?.help}</Help>
+              </Field>
+            ) : null}
           </div>
         </div>
   )

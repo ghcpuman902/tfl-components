@@ -14,6 +14,7 @@ const STATIC_PATHS = [
   "/labs/network-rings",
   "/board",
   "/docs/ipad-dashboard",
+  "/docs/apple-homeview",
   "/docs/explorer",
   "/licence",
   "/credits",

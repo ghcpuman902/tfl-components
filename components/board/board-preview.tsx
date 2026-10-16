@@ -19,6 +19,8 @@ const SLOT_WIDE =
   "w-full max-w-[calc(min(42dvh,22rem)*125.7409/88.4773)] md:w-[min(calc(min(50dvh,26rem)*125.7409/88.4773),calc(100vw-26rem))] md:max-w-none"
 const SLOT_NARROW =
   "w-full max-w-[calc(min(42dvh,22rem)*75/154)] md:w-[min(calc(min(50dvh,26rem)*75/154),calc(100vw-26rem))] md:max-w-none"
+const SLOT_SQUARE =
+  "w-full max-w-[min(42dvh,22rem)] md:w-[min(50dvh,26rem)] md:max-w-none"
 const SLOT_UNRESOLVED = cn(
   "w-full max-w-[calc(min(42dvh,22rem)*75/154)]",
   "md:w-[min(calc(min(50dvh,26rem)*125.7409/88.4773),calc(100vw-26rem))] md:max-w-none"
@@ -115,9 +117,14 @@ export const BoardPreview = ({
 }: BoardPreviewProps) => {
   const profile = screenProfile
   const isPhone = profile === "small"
+  const isSquare = profile === "square"
   const frame = profile ? previewFrameForProfile(profile) : null
   const inset = isPhone ? iphoneScreenInset : ipadScreenInset
-  const caseRounding = isPhone ? iphoneCaseRounding : ipadCaseRounding
+  const caseRounding = isPhone
+    ? iphoneCaseRounding
+    : isSquare
+      ? "1.25rem"
+      : ipadCaseRounding
   const [reveal, setReveal] = useState(false)
   const screenRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
@@ -176,9 +183,11 @@ export const BoardPreview = ({
           "relative @container",
           profile === "small"
             ? SLOT_NARROW
-            : profile === "large"
-              ? SLOT_WIDE
-              : SLOT_UNRESOLVED
+            : profile === "square"
+              ? SLOT_SQUARE
+              : profile === "large"
+                ? SLOT_WIDE
+                : SLOT_UNRESOLVED
         )}
         style={
           {
@@ -192,9 +201,11 @@ export const BoardPreview = ({
           className={cn(
             profile === "small"
               ? "aspect-75/154"
-              : profile === "large"
-                ? "aspect-[125.7409/88.4773]"
-                : "aspect-75/154 md:aspect-[125.7409/88.4773]",
+              : profile === "square"
+                ? "aspect-square"
+                : profile === "large"
+                  ? "aspect-[125.7409/88.4773]"
+                  : "aspect-75/154 md:aspect-[125.7409/88.4773]",
             "w-full bg-muted",
             !profile &&
               "rounded-(--preview-rounding-narrow) md:rounded-(--preview-rounding-wide)"
@@ -208,17 +219,24 @@ export const BoardPreview = ({
               reveal ? "opacity-100" : "opacity-0"
             )}
           >
-            {isPhone ? <IphoneDeviceSvg /> : <IpadDeviceSvg />}
+            {isSquare ? null : isPhone ? <IphoneDeviceSvg /> : <IpadDeviceSvg />}
             <div
               ref={screenRef}
-              className="absolute overflow-hidden bg-background"
-              style={{
-                left: `${inset.left * 100}%`,
-                top: `${inset.top * 100}%`,
-                width: `${inset.width * 100}%`,
-                height: `${inset.height * 100}%`,
-                borderRadius: `calc(${inset.radius} * 100cqw)`,
-              }}
+              className={cn(
+                "absolute overflow-hidden bg-background",
+                isSquare && "inset-0 rounded-[1.25rem] ring-1 ring-border"
+              )}
+              style={
+                isSquare
+                  ? undefined
+                  : {
+                      left: `${inset.left * 100}%`,
+                      top: `${inset.top * 100}%`,
+                      width: `${inset.width * 100}%`,
+                      height: `${inset.height * 100}%`,
+                      borderRadius: `calc(${inset.radius} * 100cqw)`,
+                    }
+              }
             >
               {hydrated ? (
                 <div

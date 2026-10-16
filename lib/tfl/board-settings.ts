@@ -22,6 +22,8 @@ export type BoardScope =
   "shell" | "arrivals" | "status" | "bus" | "river" | "cycle"
 
 export type BoardBehaviour = "interactive" | "unattended"
+/** Room-distance Board; omit for the ordinary scrolling Board. */
+export type BoardView = "glance"
 export type BoardCycleSurface = "map" | "display"
 export type BoardStatusSurface = "display" | "strip"
 export type BoardStatusOverview = "network" | "selection" | "none"
@@ -69,6 +71,7 @@ export type ListSetting<T> = SettingBase<T> & {
 export type BoardSetting<T = unknown> = ScalarSetting<T> | ListSetting<T>
 
 const BEHAVIOURS = new Set<BoardBehaviour>(["interactive", "unattended"])
+const VIEWS = new Set<BoardView>(["glance"])
 const CYCLE_SURFACES = new Set<BoardCycleSurface>(["map", "display"])
 const STATUS_SURFACES = new Set<BoardStatusSurface>(["display", "strip"])
 const STATUS_OVERVIEWS = new Set<BoardStatusOverview>([
@@ -116,6 +119,24 @@ export const parseBehaviour = (raw: string): BoardBehaviour | undefined => {
     return trimmed as BoardBehaviour
   }
   return LEGACY_MODE_TO_BEHAVIOUR[trimmed]
+}
+
+export const parseView = (raw: string): BoardView | undefined => {
+  const trimmed = raw.trim()
+  return VIEWS.has(trimmed as BoardView) ? (trimmed as BoardView) : undefined
+}
+
+/**
+ * Legacy `layout=square` (and `layout=default`) from older share URLs.
+ * Square mapped onto glance; default meant force the ordinary Board.
+ */
+export const parseLegacyLayoutAsView = (
+  raw: string
+): BoardView | "board" | undefined => {
+  const trimmed = raw.trim()
+  if (trimmed === "square") return "glance"
+  if (trimmed === "default") return "board"
+  return undefined
 }
 
 export const parseCycleSurface = (
@@ -240,22 +261,46 @@ export const BOARD_SETTINGS = {
     form: true,
     ui: {
       label: "Behaviour",
-      help: "Interactive is for touchscreens like iPad. Unattended is for monitors without touch.",
+      help: "Defaults to interactive on a touchscreen. Choose Unattended only when nobody will touch the display.",
       control: "select",
       options: [
         {
           value: "interactive",
           label: "Interactive",
-          description: "For touchscreens like iPad",
+          description: "Default when the screen can be touched",
         },
         {
           value: "unattended",
           label: "Unattended",
-          description: "For monitors without touch",
+          description: "Nobody will touch it — pages automatically",
         },
       ],
     },
   } satisfies ScalarSetting<BoardBehaviour>,
+
+  view: {
+    kind: "scalar",
+    param: "view",
+    scope: "shell",
+    defaultValue: undefined as BoardView | undefined,
+    parse: parseView,
+    serialize: (value: BoardView | undefined) => value ?? "",
+    isDefault: (value: BoardView | undefined) => value === undefined,
+    url: true,
+    form: true,
+    ui: {
+      label: "View",
+      help: "Viewing distance can't be detected. Leave unset for the ordinary scrolling Board; Glance is across-the-room reading on any screen shape.",
+      control: "select",
+      options: [
+        {
+          value: "glance",
+          label: "Glance",
+          description: "Across the room — few trains, large type",
+        },
+      ],
+    },
+  } satisfies ScalarSetting<BoardView | undefined>,
 
   arrivalsRows: {
     kind: "scalar",
