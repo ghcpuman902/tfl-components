@@ -8,13 +8,13 @@ import {
 
 const INK = "#171717"
 const PAPER = "#FFFFFF"
-const RULE = "#E5E5E5"
 const CHIP = "#767676"
 const FACE = "Hammersmith One"
 
 const TILE = 90
 const BOARD_ROWS = 6
 const BRAND_BAND = 90
+const COLUMN_GAP = 32
 const BRAND_SIZE = 43
 const PAD_X = 28
 const BAR = 8
@@ -28,7 +28,7 @@ const face = (size: number, color: string = INK): CSSProperties => ({
   fontSynthesis: "none",
 })
 
-const tile = (rule: "hairline" | "none" | string): CSSProperties => ({
+const tile = (rule: "none" | string): CSSProperties => ({
   display: "flex",
   alignItems: "center",
   boxSizing: "border-box",
@@ -38,8 +38,8 @@ const tile = (rule: "hairline" | "none" | string): CSSProperties => ({
   paddingRight: PAD_X,
   overflow: "hidden",
   borderBottomStyle: "solid",
-  borderBottomWidth: rule === "none" ? 0 : rule === "hairline" ? 1 : BAR,
-  borderBottomColor: rule === "hairline" || rule === "none" ? RULE : rule,
+  borderBottomWidth: rule === "none" ? 0 : BAR,
+  borderBottomColor: rule === "none" ? PAPER : rule,
 })
 
 const roundelSrc = (disc: string, bar: string): string => {
@@ -90,14 +90,8 @@ type Arrival = {
   chip?: { label: string; background: string; width: number }
 }
 
-const ArrivalRow = ({
-  row,
-  rule,
-}: {
-  row: Arrival
-  rule: "hairline" | "none"
-}) => (
-  <div style={tile(rule)}>
+const ArrivalRow = ({ row }: { row: Arrival }) => (
+  <div style={tile("none")}>
     {row.chip ? (
       <IdentityChip
         label={row.chip.label}
@@ -125,7 +119,7 @@ const StopTitle = ({
   disc: string
   bar: string
 }) => (
-  <div style={tile("hairline")}>
+  <div style={tile("none")}>
     <Roundel disc={disc} bar={bar} />
     <div style={face(34)}>{name}</div>
   </div>
@@ -200,11 +194,7 @@ const BoardColumn = ({
       >
         <LineHeader name={section.name} color={section.color} />
         {section.rows.map((row) => (
-          <ArrivalRow
-            key={`${section.name}-${row.destination}`}
-            row={row}
-            rule="hairline"
-          />
+          <ArrivalRow key={`${section.name}-${row.destination}`} row={row} />
         ))}
       </div>
     ))}
@@ -230,7 +220,12 @@ export const BoardDepartureImage = () => {
       }}
     >
       <div
-        style={{ display: "flex", width: "100%", height: TILE * BOARD_ROWS }}
+        style={{
+          display: "flex",
+          width: "100%",
+          height: TILE * BOARD_ROWS,
+          gap: COLUMN_GAP,
+        }}
       >
         <BoardColumn
           title="King's Cross St. Pancras"
@@ -266,7 +261,6 @@ export const BoardDepartureImage = () => {
             },
           ]}
         />
-        <div style={{ width: 1, height: "100%", backgroundColor: RULE }} />
         <BoardColumn
           title="King's Cross Station"
           disc={buses}
