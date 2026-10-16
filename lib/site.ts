@@ -14,7 +14,7 @@ export const BOARD_SITE_NAME = "Board"
  * suffix it again.
  */
 export const BOARD_HOME_TITLE =
-  "Board – live London Tube & bus departures for any screen"
+  "Board · live London Tube & bus departures for any screen"
 
 /** Homepage meta description. One concise match for {@link BOARD_HOME_TITLE}. */
 export const BOARD_HOME_DESCRIPTION =

@@ -117,7 +117,7 @@ export const NETWORK_MODEL_STATUS: readonly SourceSnapshot[] = [
     note: "Centreline, dual, and graph snapshots live under data/geography/unique-track. Rebuild with pnpm geography:unique-track. Default map paint is the preview LOD.",
     sources: [
       { label: "data/geography/ORIGIN.md" },
-      { label: "Map – Tube & Rail (Geo)", href: "/docs/map-geographic" },
+      { label: "Map · Tube & Rail (Geo)", href: "/docs/map-geographic" },
     ],
     usedOn: "geographic",
   },

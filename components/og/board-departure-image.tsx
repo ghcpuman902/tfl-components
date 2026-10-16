@@ -12,7 +12,8 @@ const RULE = "#E5E5E5"
 const CHIP = "#767676"
 const FACE = "Hammersmith One"
 
-const TILE = 90
+const TILE = 85
+const BRAND_BAND = 35
 const PAD_X = 28
 const BAR = 8
 
@@ -134,6 +135,24 @@ const platform = (label: string) => ({
   width: 58,
 })
 
+const BrandLine = () => (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      boxSizing: "border-box",
+      width: "100%",
+      height: BRAND_BAND,
+      paddingLeft: PAD_X,
+      paddingRight: PAD_X,
+      backgroundColor: PAPER,
+    }}
+  >
+    <div style={face(20, INK)}>Board</div>
+    <div style={face(20, CHIP)}> · tfl.manglekuo.com</div>
+  </div>
+)
+
 const BoardColumn = ({
   title,
   disc,
@@ -183,6 +202,7 @@ export const BoardDepartureImage = () => {
     <div
       style={{
         display: "flex",
+        flexDirection: "column",
         width: "100%",
         height: "100%",
         backgroundColor: PAPER,
@@ -190,69 +210,72 @@ export const BoardDepartureImage = () => {
         fontFamily: FACE,
       }}
     >
-      <BoardColumn
-        title="King's Cross St. Pancras"
-        disc={UNDERGROUND_RING_RED}
-        bar={TFL_BLUE}
-        sections={[
-          {
-            name: "Victoria",
-            color: victoria,
-            rows: [
-              {
-                chip: platform("P4"),
-                destination: "Walthamstow Central",
-                when: "2 min",
-              },
-              {
-                chip: platform("P5"),
-                destination: "Brixton",
-                when: "5 min",
-              },
-            ],
-          },
-          {
-            name: "Piccadilly",
-            color: piccadilly,
-            rows: [
-              {
-                chip: platform("P6"),
-                destination: "Cockfosters",
-                when: "3 min",
-              },
-              {
-                chip: platform("P1"),
-                destination: "Heathrow Terminal 5",
-                when: "7 min",
-              },
-            ],
-          },
-        ]}
-      />
-      <div style={{ width: 1, height: "100%", backgroundColor: RULE }} />
-      <BoardColumn
-        title="King's Cross Station"
-        disc={buses}
-        bar={buses}
-        sections={[
-          {
-            name: "73",
-            color: buses,
-            rows: [
-              { destination: "Oxford Circus", when: "1 min" },
-              { destination: "Marble Arch", when: "4 min" },
-            ],
-          },
-          {
-            name: "390",
-            color: buses,
-            rows: [
-              { destination: "Archway", when: "6 min" },
-              { destination: "Euston", when: "8 min" },
-            ],
-          },
-        ]}
-      />
+      <div style={{ display: "flex", width: "100%", height: TILE * 7 }}>
+        <BoardColumn
+          title="King's Cross St. Pancras"
+          disc={UNDERGROUND_RING_RED}
+          bar={TFL_BLUE}
+          sections={[
+            {
+              name: "Victoria",
+              color: victoria,
+              rows: [
+                {
+                  chip: platform("P4"),
+                  destination: "Walthamstow Central",
+                  when: "2 min",
+                },
+                {
+                  chip: platform("P5"),
+                  destination: "Brixton",
+                  when: "5 min",
+                },
+              ],
+            },
+            {
+              name: "Piccadilly",
+              color: piccadilly,
+              rows: [
+                {
+                  chip: platform("P6"),
+                  destination: "Cockfosters",
+                  when: "3 min",
+                },
+                {
+                  chip: platform("P1"),
+                  destination: "Heathrow Terminal 5",
+                  when: "7 min",
+                },
+              ],
+            },
+          ]}
+        />
+        <div style={{ width: 1, height: "100%", backgroundColor: RULE }} />
+        <BoardColumn
+          title="King's Cross Station"
+          disc={buses}
+          bar={buses}
+          sections={[
+            {
+              name: "73",
+              color: buses,
+              rows: [
+                { destination: "Oxford Circus", when: "1 min" },
+                { destination: "Marble Arch", when: "4 min" },
+              ],
+            },
+            {
+              name: "390",
+              color: buses,
+              rows: [
+                { destination: "Archway", when: "6 min" },
+                { destination: "Euston", when: "8 min" },
+              ],
+            },
+          ]}
+        />
+      </div>
+      <BrandLine />
     </div>
   )
 }

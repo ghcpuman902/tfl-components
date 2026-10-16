@@ -13,6 +13,7 @@ import {
   pageMetadata,
   ROUTE_PAGE_META,
 } from "./site-metadata"
+import { DOCS_ENTRIES } from "./docs-catalog"
 import { BOARD_VIEW_MANIFEST_PATH } from "./tfl/board-view-manifest"
 
 const REQUIRED_ROUTES = [
@@ -105,6 +106,37 @@ describe("route metadata", () => {
   it("uses a concise Board description on the homepage", () => {
     assert.equal(ROUTE_PAGE_META.home.description, BOARD_HOME_DESCRIPTION)
     assert.equal(ROUTE_PAGE_META.home.title, BOARD_HOME_TITLE)
+    assert.equal(
+      BOARD_HOME_TITLE,
+      "Board · live London Tube & bus departures for any screen"
+    )
+  })
+
+  it("separates title clauses with a middle dot", () => {
+    const titles = [
+      BOARD_HOME_TITLE,
+      ...Object.values(ROUTE_PAGE_META).map((meta) => meta.title),
+      ...DOCS_ENTRIES.map((entry) => entry.title),
+    ]
+    for (const title of titles) {
+      assert.doesNotMatch(title, /[–—]/, title)
+    }
+    assert.equal(
+      docsEntryMetadata("maps-geographic").openGraph?.title,
+      "Map · Tube & Rail (Geo)"
+    )
+    assert.equal(
+      docsEntryMetadata("maps-bus").twitter?.title,
+      "Map · Bus (Geo)"
+    )
+    assert.equal(
+      docsEntryMetadata("branch-strip-horizontal").title,
+      "Branch strip · horizontal"
+    )
+    assert.equal(
+      docsEntryMetadata("branch-strip-vertical").title,
+      "Branch strip · vertical"
+    )
   })
 
   it("gives catalogue pages a canonical URL and social tags", () => {

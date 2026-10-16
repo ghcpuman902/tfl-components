@@ -100,7 +100,7 @@ export default function LiveBusVehiclesPage() {
               href="/docs/map-bus-geo"
               className="text-foreground underline-offset-4 hover:underline"
             >
-              Map – Bus (Geo)
+              Map · Bus (Geo)
             </Link>
             . Trains are a separate component —{" "}
             <Link

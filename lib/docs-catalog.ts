@@ -473,7 +473,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   },
   {
     slug: "maps-geographic",
-    title: "Map – Tube & Rail (Geo)",
+    title: "Map · Tube & Rail (Geo)",
     description:
       "Geographic track for Tube, Elizabeth, Overground, DLR, and Tram.",
     group: "maps",
@@ -490,7 +490,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   },
   {
     slug: "maps-bus",
-    title: "Map – Bus (Geo)",
+    title: "Map · Bus (Geo)",
     description: "A geographic map of one bus route.",
     group: "maps",
     kind: "component",
@@ -586,7 +586,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   },
   {
     slug: "branch-strip-horizontal",
-    title: "Branch strip — horizontal",
+    title: "Branch strip · horizontal",
     description: "A branched corridor with labels above and below the track.",
     group: "primitives",
     kind: "component",
@@ -601,7 +601,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   },
   {
     slug: "branch-strip-vertical",
-    title: "Branch strip — vertical",
+    title: "Branch strip · vertical",
     description:
       "A branched corridor with labels to the left and right of the track.",
     group: "primitives",

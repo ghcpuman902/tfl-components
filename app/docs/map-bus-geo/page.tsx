@@ -156,7 +156,7 @@ export default function MapBusGeoPage() {
               href="/docs/map-geographic"
               className="text-foreground underline-offset-4 hover:underline"
             >
-              Map – Tube &amp; Rail (Geo)
+              Map · Tube &amp; Rail (Geo)
             </Link>
             {" · "}
             <Link
