@@ -12,8 +12,10 @@ const RULE = "#E5E5E5"
 const CHIP = "#767676"
 const FACE = "Hammersmith One"
 
-const TILE = 85
-const BRAND_BAND = 35
+const TILE = 90
+const BOARD_ROWS = 6
+const BRAND_BAND = 90
+const BRAND_SIZE = 43
 const PAD_X = 28
 const BAR = 8
 
@@ -135,6 +137,22 @@ const platform = (label: string) => ({
   width: 58,
 })
 
+const brandFace = (color: string): CSSProperties => ({
+  display: "flex",
+  fontFamily: FACE,
+  fontSize: BRAND_SIZE,
+  color,
+  lineHeight: 1,
+  fontSynthesis: "none",
+})
+
+/** Hammersmith One ships one weight, so the stroke supplies the bold. */
+const BoldWord = ({ text }: { text: string }) => (
+  <div style={{ ...brandFace(INK), WebkitTextStroke: `1.25px ${INK}` }}>
+    {text}
+  </div>
+)
+
 const BrandLine = () => (
   <div
     style={{
@@ -148,8 +166,9 @@ const BrandLine = () => (
       backgroundColor: PAPER,
     }}
   >
-    <div style={face(20, INK)}>Board</div>
-    <div style={face(20, CHIP)}> · tfl.manglekuo.com</div>
+    <BoldWord text="Board" />
+    <div style={{ ...brandFace(CHIP), marginLeft: 12, marginRight: 12 }}>·</div>
+    <div style={brandFace(CHIP)}>tfl.manglekuo.com</div>
   </div>
 )
 
@@ -210,7 +229,9 @@ export const BoardDepartureImage = () => {
         fontFamily: FACE,
       }}
     >
-      <div style={{ display: "flex", width: "100%", height: TILE * 7 }}>
+      <div
+        style={{ display: "flex", width: "100%", height: TILE * BOARD_ROWS }}
+      >
         <BoardColumn
           title="King's Cross St. Pancras"
           disc={UNDERGROUND_RING_RED}
@@ -241,11 +262,6 @@ export const BoardDepartureImage = () => {
                   destination: "Cockfosters",
                   when: "3 min",
                 },
-                {
-                  chip: platform("P1"),
-                  destination: "Heathrow Terminal 5",
-                  when: "7 min",
-                },
               ],
             },
           ]}
@@ -267,10 +283,7 @@ export const BoardDepartureImage = () => {
             {
               name: "390",
               color: buses,
-              rows: [
-                { destination: "Archway", when: "6 min" },
-                { destination: "Euston", when: "8 min" },
-              ],
+              rows: [{ destination: "Archway", when: "6 min" }],
             },
           ]}
         />
