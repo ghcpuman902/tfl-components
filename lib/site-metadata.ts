@@ -1,6 +1,12 @@
 import type { Metadata } from "next"
 import { getDocsEntry } from "@/lib/docs-catalog"
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site"
+import {
+  BOARD_HOME_DESCRIPTION,
+  BOARD_HOME_TITLE,
+  BOARD_SITE_NAME,
+  SITE_NAME,
+  SITE_URL,
+} from "@/lib/site"
 import {
   BOARD_VIEW_APPLE_WEB_APP,
   BOARD_VIEW_MANIFEST_PATH,
@@ -11,8 +17,10 @@ export type PageMetaInput = {
   description: string
   path: string
   robots?: Metadata["robots"]
-  /** Home uses the bare site name as the document title. */
+  /** Home sets an absolute title so the root template does not suffix it. */
   absoluteTitle?: boolean
+  /** Open Graph site name. Defaults to {@link SITE_NAME}. */
+  siteName?: string
 }
 
 const absoluteUrl = (path: string): string => {
@@ -28,6 +36,7 @@ export const pageMetadata = ({
   path,
   robots,
   absoluteTitle = false,
+  siteName = SITE_NAME,
 }: PageMetaInput): Metadata => {
   const url = absoluteUrl(path)
   const documentTitle = absoluteTitle ? { absolute: title } : title
@@ -45,7 +54,7 @@ export const pageMetadata = ({
     openGraph: {
       type: "website",
       locale: "en_GB",
-      siteName: SITE_NAME,
+      siteName,
       title,
       description,
       url,
@@ -75,9 +84,10 @@ export const docsEntryMetadata = (slug: string): Metadata => {
 }
 
 export const HOME_PAGE_META = {
-  title: SITE_NAME,
-  description: SITE_DESCRIPTION,
+  title: BOARD_HOME_TITLE,
+  description: BOARD_HOME_DESCRIPTION,
   path: "/",
+  siteName: BOARD_SITE_NAME,
 } as const satisfies PageMetaInput
 
 export const ROUTE_PAGE_META = {

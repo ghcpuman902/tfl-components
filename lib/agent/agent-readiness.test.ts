@@ -77,7 +77,10 @@ test("Markdown 404 routing is conservative and recoverable", () => {
   assert.equal(hasUnknownTopLevelPath("/about"), false)
   assert.equal(hasUnknownTopLevelPath("/privacy"), false)
   assert.equal(hasUnknownTopLevelPath("/google3280ccf112e8b472.html"), false)
-  assert.equal(hasUnknownTopLevelPath("/images/home/thames-foreshore.jpg"), false)
+  assert.equal(
+    hasUnknownTopLevelPath("/images/home/thames-foreshore.jpg"),
+    false
+  )
   const body = markdownNotFound("/missing-page")
   assert.match(body, /^# 404: Page not found/m)
   assert.match(body, /\/llms\.txt/)
@@ -107,6 +110,14 @@ test("homepage and llms.txt contain substantial, task-oriented Markdown", () => 
   assert.match(LLMS_TEXT, /\/docs\/ipad-dashboard/)
   assert.match(LLMS_TEXT, /Home Assistant/)
   assert.match(LLMS_TEXT, /Unified API/)
+  assert.match(
+    LLMS_TEXT,
+    /built with \[tfl-ts\]\(https:\/\/github\.com\/ghcpuman902\/tfl-ts\)/i
+  )
+  assert.match(
+    LLMS_TEXT,
+    /npm: \[tfl-ts\]\(https:\/\/www\.npmjs\.com\/package\/tfl-ts\)/
+  )
   assert.match(HOME_MARKDOWN, /custom HTML dashboard/)
   assert.match(HOME_MARKDOWN, /bus arrivals on one iPad/)
 })

@@ -88,6 +88,11 @@ export const SiteFooter = () => {
             Feedback?
           </FeedbackTextLink>
         </p>
+        <p>
+          <FooterLink href="https://github.com/ghcpuman902/tfl-ts" external>
+            Built with tfl-ts
+          </FooterLink>
+        </p>
         <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
           {process.env.NODE_ENV === "development" ? (
             <>

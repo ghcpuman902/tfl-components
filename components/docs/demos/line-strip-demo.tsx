@@ -87,7 +87,7 @@ export default function LineStripDemo() {
           Overground paints as parallel rails; cable car is three red rails with
           white gaps. Branched lines live under{" "}
           <Link href="/docs/branch-strip-horizontal" className="underline">
-            Branch strip — horizontal
+            Branch strip · horizontal
           </Link>
           {" / "}
           <Link href="/docs/branch-strip-vertical" className="underline">
@@ -233,7 +233,7 @@ import { LineStrip } from "@/components/tfl/diagram/line-strip";
           </Link>
           . Branched schematics live under{" "}
           <Link href="/docs/branch-strip-horizontal" className="underline">
-            Branch strip — horizontal
+            Branch strip · horizontal
           </Link>
           {" / "}
           <Link href="/docs/branch-strip-vertical" className="underline">

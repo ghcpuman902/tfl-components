@@ -133,6 +133,8 @@ const KNOWN_TOP_LEVEL_PATHS = new Set([
   "llms.txt",
   "maps",
   "observatory",
+  "og",
+  "opengraph-image",
   "opengraph-image.png",
   "openapi.json",
   "primitives",

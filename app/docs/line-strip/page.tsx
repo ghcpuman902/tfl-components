@@ -13,9 +13,9 @@ export default function LineStripDocsPage() {
     relatedLinks: [
       {
         href: "/docs/branch-strip-horizontal",
-        label: "Branch strip — horizontal",
+        label: "Branch strip · horizontal",
       },
-      { href: "/docs/branch-strip-vertical", label: "Branch strip — vertical" },
+      { href: "/docs/branch-strip-vertical", label: "Branch strip · vertical" },
       { href: "/docs/station-name-labels", label: "Station name labels" },
       { href: "/docs/map-schematic", label: "Schematic & network" },
       { href: "/labs/week-ahead", label: "Week ahead Lab" },

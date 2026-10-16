@@ -216,7 +216,7 @@ export default function MapsGeographicPage() {
               href="/docs/map-bus-geo"
               className="text-foreground underline-offset-4 hover:underline"
             >
-              Map – Bus (Geo)
+              Map · Bus (Geo)
             </Link>
             . Pass derived dots as <code className="text-xs">vehicles</code> —{" "}
             <Link
@@ -451,7 +451,7 @@ export default function MapsGeographicPage() {
               href="/docs/map-bus-geo"
               className="text-foreground underline-offset-4 hover:underline"
             >
-              Map – Bus (Geo)
+              Map · Bus (Geo)
             </Link>
             {" · "}
             <Link

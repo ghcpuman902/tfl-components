@@ -18,7 +18,7 @@ export default function LiveRailVehiclesPage() {
     previewBleed: "inset",
     getDataExample: USAGE_SNIPPET,
     relatedLinks: [
-      { href: "/docs/map-geographic", label: "Map – Tube & Rail (Geo)" },
+      { href: "/docs/map-geographic", label: "Map · Tube & Rail (Geo)" },
       { href: "/docs/live-bus-vehicles", label: "Live buses" },
     ],
   })

@@ -13,7 +13,7 @@ export default function BranchStripHorizontalDocsPage() {
     slug: "branch-strip-horizontal",
     previewBleed: "inset",
     relatedLinks: [
-      { href: "/docs/branch-strip-vertical", label: "Branch strip — vertical" },
+      { href: "/docs/branch-strip-vertical", label: "Branch strip · vertical" },
       { href: "/docs/line-strip", label: "Simple line strip" },
       { href: "/docs/station-name-labels", label: "Station name labels" },
     ],

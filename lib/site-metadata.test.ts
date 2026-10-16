@@ -1,12 +1,19 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "./site"
+import {
+  BOARD_HOME_DESCRIPTION,
+  BOARD_HOME_TITLE,
+  BOARD_SITE_NAME,
+  SITE_TITLE_TEMPLATE,
+  SITE_URL,
+} from "./site"
 import {
   boardViewPageMetadata,
   docsEntryMetadata,
   pageMetadata,
   ROUTE_PAGE_META,
 } from "./site-metadata"
+import { DOCS_ENTRIES } from "./docs-catalog"
 import { BOARD_VIEW_MANIFEST_PATH } from "./tfl/board-view-manifest"
 
 const REQUIRED_ROUTES = [
@@ -79,23 +86,56 @@ describe("route metadata", () => {
     assert.equal(meta.other?.["mobile-web-app-capable"], "yes")
   })
 
-  it("does not reuse the site name as every page's Open Graph title", () => {
+  it("does not reuse one title as every page's Open Graph title", () => {
     const titles = REQUIRED_ROUTES.map(
       (key) => pageMetadata(ROUTE_PAGE_META[key]).openGraph?.title
     )
     const unique = new Set(titles)
     assert.ok(unique.size > 1)
+    const home = pageMetadata({
+      ...ROUTE_PAGE_META.home,
+      absoluteTitle: true,
+    })
+    assert.equal(home.openGraph?.title, BOARD_HOME_TITLE)
+    assert.equal(home.openGraph?.siteName, BOARD_SITE_NAME)
+    assert.equal(home.twitter?.card, "summary_large_image")
+    assert.deepEqual(home.title, { absolute: BOARD_HOME_TITLE })
+    assert.equal(SITE_TITLE_TEMPLATE, "%s · Board")
+  })
+
+  it("uses a concise Board description on the homepage", () => {
+    assert.equal(ROUTE_PAGE_META.home.description, BOARD_HOME_DESCRIPTION)
+    assert.equal(ROUTE_PAGE_META.home.title, BOARD_HOME_TITLE)
     assert.equal(
-      pageMetadata({ ...ROUTE_PAGE_META.home, absoluteTitle: true }).openGraph
-        ?.title,
-      SITE_NAME
+      BOARD_HOME_TITLE,
+      "Board · live London Tube & bus departures for any screen"
     )
   })
 
-  it("leads the home description with the homepage fold line", () => {
+  it("separates title clauses with a middle dot", () => {
+    const titles = [
+      BOARD_HOME_TITLE,
+      ...Object.values(ROUTE_PAGE_META).map((meta) => meta.title),
+      ...DOCS_ENTRIES.map((entry) => entry.title),
+    ]
+    for (const title of titles) {
+      assert.doesNotMatch(title, /[–—]/, title)
+    }
     assert.equal(
-      ROUTE_PAGE_META.home.description.startsWith(SITE_TAGLINE),
-      true
+      docsEntryMetadata("maps-geographic").openGraph?.title,
+      "Map · Tube & Rail (Geo)"
+    )
+    assert.equal(
+      docsEntryMetadata("maps-bus").twitter?.title,
+      "Map · Bus (Geo)"
+    )
+    assert.equal(
+      docsEntryMetadata("branch-strip-horizontal").title,
+      "Branch strip · horizontal"
+    )
+    assert.equal(
+      docsEntryMetadata("branch-strip-vertical").title,
+      "Branch strip · vertical"
     )
   })
 

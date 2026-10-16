@@ -56,7 +56,7 @@ export default function MapsSchematicPage() {
                   href="/docs/branch-strip-horizontal"
                   className="text-foreground underline underline-offset-4"
                 >
-                  Branch strip — horizontal
+                  Branch strip · horizontal
                 </Link>
                 {" · "}
                 <Link
