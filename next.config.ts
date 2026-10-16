@@ -8,6 +8,8 @@ const nodeModuleShim = path.join(dir, "lib/shims/node-module.ts")
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // Takumi's native binding must stay external so Next does not bundle it.
+  serverExternalPackages: ["@takumi-rs/core"],
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   experimental: {
     mdxRs: {

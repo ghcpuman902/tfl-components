@@ -76,6 +76,10 @@ The tfl-ts npm package installs the \`tfl\` CLI. After \`pnpm add tfl-ts\`, run 
 - [Contact](${SITE_URL}/contact): Where to report bugs, suggest changes, or ask about the project.
 - [Privacy](${SITE_URL}/privacy): TfL keys, browser storage, visitor counting, and feedback data.
 
+## Credit
+
+Board is built with [tfl-ts](https://github.com/ghcpuman902/tfl-ts) (npm: [tfl-ts](https://www.npmjs.com/package/tfl-ts)).
+
 ## Optional
 
 - [GitHub repository](https://github.com/ghcpuman902/tfl-components): Source, releases, and issue tracker.

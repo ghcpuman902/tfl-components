@@ -35,6 +35,8 @@
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "^16.3.3",
     "@shadcn/react": "^0.3.0",
+    "@takumi-rs/core": "^2.16.2",
+    "@takumi-rs/image-response": "^2.16.2",
     "@turf/along": "^7.4.0",
     "@turf/helpers": "^7.4.0",
     "@turf/length": "^7.4.0",

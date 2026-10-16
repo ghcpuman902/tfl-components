@@ -17,7 +17,14 @@ import {
   serialiseStructuredData,
   SITE_STRUCTURED_DATA,
 } from "@/lib/agent/structured-data"
-import { SITE_AUTHOR, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site"
+import {
+  BOARD_HOME_DESCRIPTION,
+  BOARD_HOME_TITLE,
+  BOARD_SITE_NAME,
+  SITE_AUTHOR,
+  SITE_TITLE_TEMPLATE,
+  SITE_URL,
+} from "@/lib/site"
 import { fontPreferenceBootScript } from "@/lib/site-font"
 import {
   SITE_VIEWPORT_THEME_COLOR,
@@ -65,31 +72,27 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    URL.canParse(process.env.NEXT_PUBLIC_APP_URL ?? "")
-      ? process.env.NEXT_PUBLIC_APP_URL!
-      : SITE_URL
-  ),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "tfl-components",
-    template: "%s · tfl-components",
+    default: BOARD_HOME_TITLE,
+    template: SITE_TITLE_TEMPLATE,
   },
-  description: SITE_DESCRIPTION,
-  applicationName: SITE_NAME,
+  description: BOARD_HOME_DESCRIPTION,
+  applicationName: BOARD_SITE_NAME,
   authors: [{ name: SITE_AUTHOR.name, url: SITE_AUTHOR.url }],
   creator: SITE_AUTHOR.name,
   openGraph: {
     type: "website",
     locale: "en_GB",
-    siteName: SITE_NAME,
-    title: SITE_NAME,
-    description: SITE_DESCRIPTION,
+    siteName: BOARD_SITE_NAME,
+    title: BOARD_HOME_TITLE,
+    description: BOARD_HOME_DESCRIPTION,
     url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",
-    title: SITE_NAME,
-    description: SITE_DESCRIPTION,
+    title: BOARD_HOME_TITLE,
+    description: BOARD_HOME_DESCRIPTION,
   },
 }
 

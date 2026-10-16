@@ -1,6 +1,12 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "./site"
+import {
+  BOARD_HOME_DESCRIPTION,
+  BOARD_HOME_TITLE,
+  BOARD_SITE_NAME,
+  SITE_TITLE_TEMPLATE,
+  SITE_URL,
+} from "./site"
 import {
   boardViewPageMetadata,
   docsEntryMetadata,
@@ -79,24 +85,26 @@ describe("route metadata", () => {
     assert.equal(meta.other?.["mobile-web-app-capable"], "yes")
   })
 
-  it("does not reuse the site name as every page's Open Graph title", () => {
+  it("does not reuse one title as every page's Open Graph title", () => {
     const titles = REQUIRED_ROUTES.map(
       (key) => pageMetadata(ROUTE_PAGE_META[key]).openGraph?.title
     )
     const unique = new Set(titles)
     assert.ok(unique.size > 1)
-    assert.equal(
-      pageMetadata({ ...ROUTE_PAGE_META.home, absoluteTitle: true }).openGraph
-        ?.title,
-      SITE_NAME
-    )
+    const home = pageMetadata({
+      ...ROUTE_PAGE_META.home,
+      absoluteTitle: true,
+    })
+    assert.equal(home.openGraph?.title, BOARD_HOME_TITLE)
+    assert.equal(home.openGraph?.siteName, BOARD_SITE_NAME)
+    assert.equal(home.twitter?.card, "summary_large_image")
+    assert.deepEqual(home.title, { absolute: BOARD_HOME_TITLE })
+    assert.equal(SITE_TITLE_TEMPLATE, "%s · Board")
   })
 
-  it("leads the home description with the homepage fold line", () => {
-    assert.equal(
-      ROUTE_PAGE_META.home.description.startsWith(SITE_TAGLINE),
-      true
-    )
+  it("uses a concise Board description on the homepage", () => {
+    assert.equal(ROUTE_PAGE_META.home.description, BOARD_HOME_DESCRIPTION)
+    assert.equal(ROUTE_PAGE_META.home.title, BOARD_HOME_TITLE)
   })
 
   it("gives catalogue pages a canonical URL and social tags", () => {
