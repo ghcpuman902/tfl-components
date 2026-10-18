@@ -1,6 +1,12 @@
 "use client"
 
-import { useEffect, useRef, useState, type CSSProperties } from "react"
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react"
 import {
   IpadDeviceSvg,
   IphoneDeviceSvg,
@@ -73,9 +79,12 @@ const BoardPreviewFrame = ({ href }: BoardPreviewFrameProps) => {
   const embedHref = withEmbedQuery(href)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const hrefRef = useRef(embedHref)
-  const initialSrc = useRef(embedHref)
+  const [initialSrc] = useState(embedHref)
   const assignedHref = useRef(embedHref)
-  hrefRef.current = embedHref
+
+  useLayoutEffect(() => {
+    hrefRef.current = embedHref
+  })
 
   useEffect(() => {
     const iframe = iframeRef.current
@@ -93,7 +102,7 @@ const BoardPreviewFrame = ({ href }: BoardPreviewFrameProps) => {
     <iframe
       ref={iframeRef}
       title="Board preview"
-      src={initialSrc.current}
+      src={initialSrc}
       onLoad={handleLoad}
       className="h-full w-full overflow-auto border-0 bg-background [touch-action:pan-y]"
     />
@@ -116,9 +125,13 @@ export const BoardPreview = ({
   const profile = screenProfile
   const isPhone = profile === "small"
   const frame = profile ? previewFrameForProfile(profile) : null
+  const frameWidth = frame?.width
+  const frameHeight = frame?.height
   const inset = isPhone ? iphoneScreenInset : ipadScreenInset
   const caseRounding = isPhone ? iphoneCaseRounding : ipadCaseRounding
-  const [reveal, setReveal] = useState(false)
+  const [revealedProfile, setRevealedProfile] =
+    useState<BoardScreenProfile | null>(null)
+  const reveal = profile != null && revealedProfile === profile
   const screenRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
   const [previewHref, setPreviewHref] = useState(href)
@@ -145,29 +158,25 @@ export const BoardPreview = ({
   }, [hydrated])
 
   useEffect(() => {
-    if (!profile) {
-      setReveal(false)
-      return
-    }
-    setReveal(false)
-    const id = window.requestAnimationFrame(() => setReveal(true))
+    if (!profile) return
+    const id = window.requestAnimationFrame(() => setRevealedProfile(profile))
     return () => window.cancelAnimationFrame(id)
   }, [profile])
 
   useEffect(() => {
     const element = screenRef.current
-    if (!element || !frame) return
+    if (!element || frameWidth == null || frameHeight == null) return
     const update = () => {
       const width = element.clientWidth
       const height = element.clientHeight
       if (width <= 0 || height <= 0) return
-      setScale(Math.min(width / frame.width, height / frame.height))
+      setScale(Math.min(width / frameWidth, height / frameHeight))
     }
     update()
     const observer = new ResizeObserver(update)
     observer.observe(element)
     return () => observer.disconnect()
-  }, [frame?.width, frame?.height])
+  }, [frameWidth, frameHeight])
 
   return (
     <div className={cn("flex w-full justify-center md:w-auto", className)}>

@@ -463,12 +463,14 @@ export const BoardAdvancedConfig = ({
     !sameChipOrder(config.bus.routes ?? [], servingBusRoutes)
   const segments = hideTrigger ? [] : segmentsProp
 
+  const busStop = config.bus.stop?.trim()
+  if (!busStop && servingBusRoutes.length > 0) {
+    setServingBusRoutes([])
+  }
+
   useEffect(() => {
     const stop = config.bus.stop?.trim()
-    if (!stop) {
-      setServingBusRoutes([])
-      return
-    }
+    if (!stop) return
     let cancelled = false
     void getBoardBusStopRoutes(stop).then((result) => {
       if (cancelled) return

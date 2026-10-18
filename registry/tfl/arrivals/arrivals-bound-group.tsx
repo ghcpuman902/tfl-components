@@ -373,15 +373,10 @@ const useArrivalsPageTrack = (pageCount: number) => {
     slideRefs.current = slideRefs.current.slice(0, pageCount)
   }, [pageCount])
 
-  useEffect(() => {
-    if (activePage <= pageCount - 1) return
-    const safe = Math.max(0, pageCount - 1)
-    setActivePage(safe)
-    const frame = requestAnimationFrame(() => {
-      scrollArrivalsTrackToSlide(containerRef.current, slideRefs.current[safe])
-    })
-    return () => cancelAnimationFrame(frame)
-  }, [activePage, pageCount])
+  // Pages can shrink under the active one; clamp before the next commit.
+  if (activePage > Math.max(0, pageCount - 1)) {
+    setActivePage(Math.max(0, pageCount - 1))
+  }
 
   useEffect(() => {
     const container = containerRef.current

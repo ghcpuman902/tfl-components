@@ -133,7 +133,6 @@ console.log(`unique hex: ${uniqueHex.length}  classes: ${classFill.size}  cluste
 for (const [i, c] of clusters.entries()) {
   const L = c.members.reduce((s, m) => s + m.oklab.L, 0) / c.members.length;
   const C = c.members.reduce((s, m) => s + m.oklab.C, 0) / c.members.length;
-  const H = c.members[0].oklab.H;
   console.log(`--- cluster ${i + 1}  n=${c.members.length}  L=${(L * 100).toFixed(1)} C=${C.toFixed(3)} ---`);
   for (const m of c.members) {
     const o = m.oklab;

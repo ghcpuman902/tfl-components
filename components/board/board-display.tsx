@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
   useSyncExternalStore,
@@ -75,7 +76,7 @@ import { useBoardFullscreen } from "@/hooks/use-board-fullscreen"
 import { useBoardHomeScreen } from "@/hooks/use-board-home-screen"
 import { BOARD_SETTINGS } from "@/lib/tfl/board-settings"
 import {
-  readInstalledBoardConfig,
+  readInstalledBoardRecord,
   writeInstalledBoardConfig,
 } from "@/lib/tfl/board-installed-storage"
 import {
@@ -262,20 +263,22 @@ export const BoardDisplay = ({
     nativePromptAvailable,
     promptNativeInstall,
   } = useBoardHomeScreen()
-  const [installedConfig, setInstalledConfig] = useState<BoardConfig | null>(
-    null
-  )
   const [homeScreenOfferOpen, setHomeScreenOfferOpen] = useState(false)
   const boardRootRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!fromHomeScreen) {
-      setInstalledConfig(null)
-      return
-    }
-    const stored = readInstalledBoardConfig()
-    setInstalledConfig(stored ? applyStopName(stored, stationNames) : null)
-  }, [fromHomeScreen, hashConfig, stationNames])
+  const [, rereadInstalled] = useReducer((version: number) => version + 1, 0)
+  // The stored hash is a string, so reading it every render keeps the parsed
+  // config stable until the record actually changes.
+  const installedHash = fromHomeScreen
+    ? (readInstalledBoardRecord()?.hash ?? null)
+    : null
+  const installedConfig = useMemo(
+    () =>
+      installedHash
+        ? applyStopName(parseBoardConfig(installedHash), stationNames)
+        : null,
+    [installedHash, stationNames]
+  )
 
   const config = useMemo(() => {
     if (previewConfig) return applyStopName(previewConfig, stationNames)
@@ -314,21 +317,16 @@ export const BoardDisplay = ({
     if (!isUsableBoardConfig(hashConfig)) return
     writeInstalledBoardConfig(hashConfig, Date.now())
     if (hashConfig.key) void save(hashConfig.key, "local")
-    setInstalledConfig(
-      applyStopName({ ...hashConfig, key: undefined }, stationNames)
-    )
-  }, [fromHomeScreen, hashConfig, hydrated, ready, save, stationNames])
+  }, [fromHomeScreen, hashConfig, hydrated, ready, save])
 
   const handleRecoveredBoard = useCallback(
     (next: BoardConfig, key: string | null) => {
       writeInstalledBoardConfig(next, Date.now())
       if (key) void save(key, "local")
       replaceHashIfNeeded(boardHashFromConfig({ ...next, key: key ?? undefined }))
-      setInstalledConfig(
-        applyStopName({ ...next, key: undefined }, stationNames)
-      )
+      rereadInstalled()
     },
-    [save, stationNames]
+    [save]
   )
 
   useEffect(() => {
@@ -408,23 +406,28 @@ export const BoardDisplay = ({
     siteScope: "board",
   })
 
+  const { refresh: refreshArrivals } = arrivals
+  const { refresh: refreshBus } = busArrivals
+  const { refresh: refreshRiver } = riverArrivals
+  const { refresh: refreshCycle } = cyclePoints
+  const { refresh: refreshStatus } = status
   const handleRefresh = useCallback(() => {
-    if (showRail) arrivals.refresh()
-    if (showBus) busArrivals.refresh()
-    if (showRiver) riverArrivals.refresh()
-    if (showCycle) cyclePoints.refresh()
-    if (showStatus) status.refresh()
+    if (showRail) refreshArrivals()
+    if (showBus) refreshBus()
+    if (showRiver) refreshRiver()
+    if (showCycle) refreshCycle()
+    if (showStatus) refreshStatus()
   }, [
-    arrivals.refresh,
-    busArrivals.refresh,
-    cyclePoints.refresh,
-    riverArrivals.refresh,
+    refreshArrivals,
+    refreshBus,
+    refreshCycle,
+    refreshRiver,
+    refreshStatus,
     showBus,
     showCycle,
     showRail,
     showRiver,
     showStatus,
-    status.refresh,
   ])
 
   const pollSources = useMemo(
@@ -572,11 +575,15 @@ export const BoardDisplay = ({
       jsFullscreenActive,
     })
 
-  useEffect(() => {
-    if (!boardReady || !offerInstall || platform !== "ios") return
-    if (readHomeScreenOfferDismissed()) return
+  if (
+    !homeScreenOfferOpen &&
+    boardReady &&
+    offerInstall &&
+    platform === "ios" &&
+    !readHomeScreenOfferDismissed()
+  ) {
     setHomeScreenOfferOpen(true)
-  }, [boardReady, offerInstall, platform])
+  }
 
   const handleDismissHomeScreenOffer = useCallback(() => {
     writeHomeScreenOfferDismissed()
@@ -627,6 +634,7 @@ export const BoardDisplay = ({
     railData.length,
     servingLines,
     status.data,
+    stopId,
   ])
 
   const busData = useMemo(() => {

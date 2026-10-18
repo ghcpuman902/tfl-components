@@ -134,17 +134,17 @@ export const BoardPlaceSearch = ({
     }
   }, [kind])
 
-  useEffect(() => {
-    if (!selectedId) {
-      setSelected(null)
-      return
-    }
-    if (selected?.id === selectedId) return
+  if (!selectedId) {
+    if (selected) setSelected(null)
+  } else if (selected?.id !== selectedId) {
     const fromPiers = piers.find((pier) => pier.id === selectedId)
-    if (fromPiers) {
-      setSelected(fromPiers)
-      return
-    }
+    if (fromPiers) setSelected(fromPiers)
+  }
+
+  useEffect(() => {
+    if (!selectedId) return
+    if (selected?.id === selectedId) return
+    if (piers.some((pier) => pier.id === selectedId)) return
     let cancelled = false
     void getBoardPlaceLabel(kind, selectedId).then((result) => {
       if (cancelled || !result.ok) return

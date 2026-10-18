@@ -89,10 +89,7 @@ export const BoardViewFooter = ({
   const dueAt = nextRefreshAt(sources)
 
   useEffect(() => {
-    if (fetchedAt == null && dueAt == null) {
-      setNow(null)
-      return
-    }
+    if (fetchedAt == null && dueAt == null) return
     const tick = () => {
       setNow(Date.now())
     }
@@ -101,8 +98,9 @@ export const BoardViewFooter = ({
     return () => window.clearInterval(id)
   }, [dueAt, fetchedAt])
 
+  const ticking = fetchedAt != null || dueAt != null
   const remainingSec =
-    dueAt != null && now != null ? Math.max(0, Math.ceil((dueAt - now) / 1_000)) : null
+    dueAt != null && ticking && now != null ? Math.max(0, Math.ceil((dueAt - now) / 1_000)) : null
 
   return (
     <footer className="mt-[calc(var(--arrivals-row)/2)] max-w-3xl text-sm text-muted-foreground">

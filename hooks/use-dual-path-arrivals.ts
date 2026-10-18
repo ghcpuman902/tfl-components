@@ -112,7 +112,6 @@ export const useDualPathArrivals = ({
   ]
     .sort()
     .join(",")
-  const sharedTrackIds = sharedTrackKey ? sharedTrackKey.split(",") : []
   const familyKeys = (sharedTrackFamilies ?? [])
     .map((family) =>
       [...new Set(family.map((id) => id.trim()).filter(Boolean))]
@@ -120,11 +119,7 @@ export const useDualPathArrivals = ({
         .join(",")
     )
     .filter((key) => key.includes(","))
-  const familiesToApply = familyKeys.length
-    ? familyKeys.map((key) => key.split(","))
-    : sharedTrackIds.length >= 2
-      ? [sharedTrackIds]
-      : []
+  const familyKey = familyKeys.join("|")
 
   const [data, setData] = useState<RealtimePrediction[]>([])
   const [pollError, setPollError] = useState<string | null>(null)
@@ -149,26 +144,25 @@ export const useDualPathArrivals = ({
   const refresh = useCallback(() => {
     setLoading(true)
     setRefreshNonce((n) => n + 1)
-  }, [])
+  }, [setLoading])
 
   const pathKey = usingOverride
-    ? `${source}:override:${pollStopKey}:${sharedTrackKey}:${familyKeys.join("|")}`
-    : `${source}:${status}:${pollStopKey}:${sharedTrackKey}:${familyKeys.join("|")}`
+    ? `${source}:override:${pollStopKey}:${sharedTrackKey}:${familyKey}`
+    : `${source}:${status}:${pollStopKey}:${sharedTrackKey}:${familyKey}`
 
   useEffect(() => {
     if (isInvalid) return
-    if (!trimmedStop) {
-      setData([])
-      setPollError(null)
-      setRateLimited(false)
-      setLoading(false)
-      return
-    }
+    // No stop: the result below is already empty and not loading.
+    if (!trimmedStop) return
 
     const stopForThisPoll = trimmedStop
     const idsForThisPoll = pollStopKey.split(",").filter(Boolean)
-    const familiesForThisPoll = familiesToApply
-    const lineIdsForThisPoll = sharedTrackIds
+    const lineIdsForThisPoll = sharedTrackKey ? sharedTrackKey.split(",") : []
+    const familiesForThisPoll = familyKey
+      ? familyKey.split("|").map((key) => key.split(","))
+      : lineIdsForThisPoll.length >= 2
+        ? [lineIdsForThisPoll]
+        : []
 
     let cancelled = false
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -372,6 +366,7 @@ export const useDualPathArrivals = ({
     trimmedStop,
     pollStopKey,
     sharedTrackKey,
+    familyKey,
     isInvalid,
     usingOverride,
     overrideKey,

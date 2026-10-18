@@ -135,16 +135,7 @@ export const BusPointFinder = ({
     setQuery(next)
   }
 
-  const handleSearchSubmit = async (
-    nextQuery: string,
-    preferId?: string | null
-  ) => {
-    const trimmed = nextQuery.trim()
-    if (trimmed.length < 2) {
-      setError("Enter at least 2 characters, or a 5-digit SMS code.")
-      return false
-    }
-
+  const searchBusStops = async (trimmed: string, preferId?: string | null) => {
     const result = await runKeyed(async (client) => {
       const stops = await client.stopPoint.searchBusStops({
         query: trimmed,
@@ -170,17 +161,36 @@ export const BusPointFinder = ({
     return true
   }
 
+  const handleSearchSubmit = async (
+    nextQuery: string,
+    preferId?: string | null
+  ) => {
+    const trimmed = nextQuery.trim()
+    if (trimmed.length < 2) {
+      setError("Enter at least 2 characters, or a 5-digit SMS code.")
+      return false
+    }
+    return searchBusStops(trimmed, preferId)
+  }
+
   useEffect(() => {
     if (restoredRef.current || !hydrated || !ready) return
-    restoredRef.current = true
-    const q = (initialQuery || readExplorerQueryParam()).trim()
-    if (q.length >= 2) {
-      void handleSearchSubmit(q, selectedId)
-      return
-    }
-    if (selectedId && !initialPoints.some((point) => point.id === selectedId)) {
-      void hydratePointById(selectedId)
-    }
+    // Start after the effect returns: both restores set loading state.
+    const timer = window.setTimeout(() => {
+      restoredRef.current = true
+      const q = (initialQuery || readExplorerQueryParam()).trim()
+      if (q.length >= 2) {
+        void searchBusStops(q, selectedId)
+        return
+      }
+      if (
+        selectedId &&
+        !initialPoints.some((point) => point.id === selectedId)
+      ) {
+        void hydratePointById(selectedId)
+      }
+    }, 0)
+    return () => window.clearTimeout(timer)
     // Restore search hits / deep-linked ids after remount. Wait for the key.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per ready key
   }, [hydrated, ready])

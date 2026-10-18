@@ -1,10 +1,7 @@
 import { getTflClient } from "@/lib/tfl/client"
 import { toDiagramStation } from "@/lib/tfl/diagram-mappers"
 import type { DiagramStation } from "@/lib/tfl/diagram-station"
-import {
-  type LineSpine,
-  sliceLineSpineStations,
-} from "@/lib/tfl/line-spine-model"
+import type { LineSpine } from "@/lib/tfl/line-spine-model"
 import { resolveDiagramLineColor } from "@/lib/tfl/route-track"
 import { getStaticLineSpine } from "@/lib/tfl/static-line-spines"
 import { selectLongestOrderedRoute } from "@/lib/tfl/week-ahead-status"

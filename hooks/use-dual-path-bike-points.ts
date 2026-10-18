@@ -52,11 +52,25 @@ export const useDualPathBikePoints = ({
   const idKey = ids.join(",")
 
   const [data, setData] = useState<CycleHireDock[]>([])
-  const [loading, setLoading] = useState(true)
+  const active = enabled && ids.length > 0
+  const [loading, setLoading] = useState(active)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [fetchedAt, setFetchedAt] = useState<number | null>(null)
   const [refreshNonce, setRefreshNonce] = useState(0)
   const [rateLimited, setRateLimited] = useState(false)
+
+  // Going inactive clears the previous result in the same render.
+  const [wasActive, setWasActive] = useState(active)
+  if (wasActive !== active) {
+    setWasActive(active)
+    if (!active) {
+      setData([])
+      setFetchError(null)
+      setFetchedAt(null)
+      setRateLimited(false)
+      setLoading(false)
+    }
+  }
 
   const refresh = useCallback(() => {
     setLoading(true)
@@ -64,14 +78,8 @@ export const useDualPathBikePoints = ({
   }, [])
 
   useEffect(() => {
-    if (!enabled || ids.length === 0) {
-      setData([])
-      setFetchError(null)
-      setFetchedAt(null)
-      setRateLimited(false)
-      setLoading(false)
-      return
-    }
+    if (!active) return
+    const ids = idKey.split(",")
 
     let cancelled = false
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -179,7 +187,7 @@ export const useDualPathBikePoints = ({
       document.removeEventListener("visibilitychange", handleVisibility)
     }
   }, [
-    enabled,
+    active,
     idKey,
     source,
     usingOverride,
@@ -192,5 +200,13 @@ export const useDualPathBikePoints = ({
     siteScope,
   ])
 
-  return { data, loading, fetchError, fetchedAt, refresh, source, rateLimited }
+  return {
+    data,
+    loading: active && loading,
+    fetchError,
+    fetchedAt,
+    refresh,
+    source,
+    rateLimited,
+  }
 }

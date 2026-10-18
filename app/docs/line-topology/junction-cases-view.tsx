@@ -307,23 +307,8 @@ const useLaidOut = (
   const simRef = useRef<Simulation | null>(null)
 
   useEffect(() => {
-    if (!seeded) {
-      setLaidNodes([])
-      return
-    }
-    if (layout === "geo") {
-      setLaidNodes(
-        snapshotLayout({
-          ...seeded,
-          state: {
-            ...seeded.state,
-            x: seeded.state.geoX.slice(),
-            y: seeded.state.geoY.slice(),
-          },
-        })
-      )
-      return
-    }
+    // The geo layout is derived below; only the schematic layout simulates.
+    if (!seeded || layout === "geo") return
     simRef.current = seeded
     let frame = 0
     let raf = 0
@@ -352,9 +337,6 @@ const useLaidOut = (
 
   return useMemo(() => {
     if (!seeded) return []
-    const seededIds = seeded.nodes.map((node) => node.id).join("\0")
-    const laidIds = laidNodes.map((node) => node.id).join("\0")
-    if (laidIds === seededIds) return laidNodes
     if (layout === "geo") {
       return snapshotLayout({
         ...seeded,
@@ -365,6 +347,9 @@ const useLaidOut = (
         },
       })
     }
+    const seededIds = seeded.nodes.map((node) => node.id).join("\0")
+    const laidIds = laidNodes.map((node) => node.id).join("\0")
+    if (laidIds === seededIds) return laidNodes
     return snapshotLayout(seeded)
   }, [seeded, laidNodes, layout])
 }

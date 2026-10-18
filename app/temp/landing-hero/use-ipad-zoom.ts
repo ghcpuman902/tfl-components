@@ -227,9 +227,12 @@ export const useIpadZoom = ({
    */
   const resizeProgressRef = useRef<number | null>(null)
   const onRoomCompleteChangeRef = useRef(onRoomCompleteChange)
-  onRoomCompleteChangeRef.current = onRoomCompleteChange
   const onSceneReadyRef = useRef(onSceneReady)
-  onSceneReadyRef.current = onSceneReady
+  // Declared before the other layout effects so they see the latest callbacks.
+  useLayoutEffect(() => {
+    onRoomCompleteChangeRef.current = onRoomCompleteChange
+    onSceneReadyRef.current = onSceneReady
+  })
 
   const applyProgress = useCallback(
     (progress: number, force = false, reportComplete = true) => {
@@ -606,7 +609,22 @@ export const useIpadZoom = ({
       triggerRef.current = null
       ctx.revert()
     }
-  }, [applyProgress, phoneCanvas, reducedMotion, setPhoneDolly])
+  }, [
+    applyProgress,
+    cameraRef,
+    canvasRef,
+    compositionRef,
+    copyRef,
+    copySlotRef,
+    iPadRef,
+    letterboxRef,
+    phoneCanvas,
+    reducedMotion,
+    setPhoneDolly,
+    svgRef,
+    veilRef,
+    wrapperRef,
+  ])
 
   return {
     progressRef,

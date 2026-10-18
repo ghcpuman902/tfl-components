@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent,
@@ -129,9 +130,11 @@ export const BoardChipListEditor = ({
   const selectedRef = useRef(selectedIds)
   const poolRef = useRef(poolIds)
   const onChangeRef = useRef(onChange)
-  selectedRef.current = selectedIds
-  poolRef.current = poolIds
-  onChangeRef.current = onChange
+  useLayoutEffect(() => {
+    selectedRef.current = selectedIds
+    poolRef.current = poolIds
+    onChangeRef.current = onChange
+  })
 
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overZone, setOverZone] = useState<ChipListZone | null>(null)

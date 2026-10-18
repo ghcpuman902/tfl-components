@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useHydrated } from "@/hooks/use-hydrated"
 import {
   CHART_ROWS,
   dayMark,
@@ -122,12 +123,10 @@ export const ObservationChart = ({
 }: {
   events: readonly ObservatoryHistoryEvent[]
 }) => {
-  const [now, setNow] = useState<number | null>(null)
+  const hydrated = useHydrated()
+  const [renderedAt] = useState(() => Date.now())
+  const now = hydrated ? renderedAt : null
   const scrollerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    setNow(Date.now())
-  }, [])
 
   const grid = useMemo(() => {
     if (now == null) return null
