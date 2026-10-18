@@ -2,6 +2,7 @@ import { heroArtworkThemeStyleSheet } from "@/app/temp/landing-palette/palette"
 import { LandingAnalytics } from "@/components/landing/landing-analytics"
 import { LandingRoomVariant } from "@/components/landing/landing-room-variant"
 import { readHomepageContext } from "@/lib/landing/assignment"
+import type { HeroExposure } from "@/lib/landing/hero-experiment"
 import { getLandingBoardIndexes } from "@/lib/tfl/landing-board"
 import { LANDING_SCROLL_BOOT_SCRIPT } from "@/lib/landing/space-hash"
 
@@ -9,16 +10,16 @@ const LandingScrollBoot = () => (
   <script dangerouslySetInnerHTML={{ __html: LANDING_SCROLL_BOOT_SCRIPT }} />
 )
 
-export const LandingPage = async () => {
+export const LandingPage = async ({ hero }: { hero: HeroExposure }) => {
   const context = await readHomepageContext()
   const board = getLandingBoardIndexes()
 
   return (
     <>
       <LandingScrollBoot />
-      <LandingAnalytics context={context} />
+      <LandingAnalytics context={context} hero={hero} />
       <style>{heroArtworkThemeStyleSheet()}</style>
-      <LandingRoomVariant context={context} board={board} />
+      <LandingRoomVariant context={context} board={board} hero={hero} />
     </>
   )
 }

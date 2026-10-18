@@ -18,6 +18,7 @@ const DISALLOW = [
   "/drafts",
   "/tools",
   "/board/view",
+  "/hero-ab/",
 ] as const
 
 /** Generative-engine and AI-search user agents that should read public docs. */

@@ -15,6 +15,7 @@ import { useDocumentVisible } from "@/hooks/use-document-visible"
 import { LandingExampleObserver } from "@/components/landing/landing-example-observer"
 import { LandingFoldCopy } from "@/components/landing/landing-fold-copy"
 import { LandingRoomChat } from "@/components/landing/landing-room-chat"
+import type { HeroVariantId } from "@/lib/landing/hero-experiment"
 import {
   hasLandingSpaceHash,
   landingRoomScrollTop,
@@ -109,6 +110,8 @@ const POINTER_REST = { x: 0, y: 0 }
 type LandingSceneProps = {
   production?: boolean
   board: LandingBoardIndexes
+  /** Hero headline test variant. Defaults to the control. */
+  heroVariant?: HeroVariantId
   onCtaClick?: () => void
   onZoomComplete?: () => void
   onHeroInteraction?: () => void
@@ -158,6 +161,7 @@ const LandingStaticRoom = () => {
 export const LandingScene = ({
   production = false,
   board,
+  heroVariant,
   onCtaClick,
   onZoomComplete,
   onHeroInteraction,
@@ -550,6 +554,7 @@ export const LandingScene = ({
 
   const heroCopy = (
     <LandingFoldCopy
+      variant={heroVariant}
       copyRef={copyRef}
       onContinue={handleSeeSpace}
       onBoardClick={onCtaClick}

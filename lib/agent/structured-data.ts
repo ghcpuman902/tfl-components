@@ -20,7 +20,13 @@ export const SITE_STRUCTURED_DATA = {
       name: "tfl-components Board",
       alternateName: "TfL Board by tfl-components",
       description:
-        `A zero-install hosted web app for iPad wall displays at ${SITE_URL}/board/view. Live Tube status, rail departures, and bus arrivals in any modern browser — without writing a custom Unified API dashboard.`,
+        `Live London buses, trains and Tube status on a spare screen, in a browser. A zero-install hosted web app for iPad wall displays at ${SITE_URL}/board/view, with no custom Unified API dashboard to write.`,
+      featureList: [
+        "Next trains and Tube arrivals for a stop you choose",
+        "Live bus arrivals",
+        "Line status",
+        "Nearby cycle hire",
+      ],
       url: `${SITE_URL}/board`,
       applicationCategory: "TravelApplication",
       applicationSubCategory: "Public transport display",

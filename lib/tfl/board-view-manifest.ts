@@ -254,7 +254,7 @@ export const BOARD_VIEW_MANIFEST = {
   name: BOARD_VIEW_MANIFEST_NAME,
   short_name: BOARD_VIEW_MANIFEST_SHORT_NAME,
   description:
-    "Full-screen station display set from the Board builder. Configuration stays in the page URL.",
+    "Fullscreen TfL arrivals and status display for an iPad or spare screen. Configuration stays in the page URL.",
   lang: "en-GB",
   dir: "ltr",
   start_url: BOARD_VIEW_PATH,

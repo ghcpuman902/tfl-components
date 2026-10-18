@@ -6,10 +6,14 @@ import {
   type AnalyticsEventName,
   type AnalyticsEventProps,
 } from "@/lib/analytics/events"
+import type {
+  HeroEventName,
+  HeroVariantId,
+} from "@/lib/landing/hero-experiment"
 
-export const trackSiteEvent = (
+const dispatch = (
   name: AnalyticsEventName,
-  props: AnalyticsEventProps,
+  props: Record<string, unknown>,
   secrets: readonly string[] = []
 ) => {
   const safe = redactAnalyticsProps({ ...props }, secrets)
@@ -20,3 +24,16 @@ export const trackSiteEvent = (
     // Analytics must never take down the page (preview or production).
   }
 }
+
+export const trackSiteEvent = (
+  name: AnalyticsEventName,
+  props: AnalyticsEventProps,
+  secrets: readonly string[] = []
+) => dispatch(name, props, secrets)
+
+/**
+ * Hero headline test events. The only prop is `variant`, so Vercel Analytics
+ * can filter any of the three by it. Callers decide whether a view counts.
+ */
+export const trackHeroEvent = (name: HeroEventName, variant: HeroVariantId) =>
+  dispatch(name, { variant })

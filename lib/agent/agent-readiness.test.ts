@@ -255,13 +255,13 @@ test("iPad wall-display page structured data answers the search questions", () =
   assert.doesNotThrow(() => JSON.parse(serialised))
 })
 
-test("public static assets skip proxy negotiation, registry JSON does not", () => {
+test("public static assets skip proxy negotiation, registry JSON does not", async () => {
   assert.equal(isPublicStaticAsset("/google3280ccf112e8b472.html"), true)
   assert.equal(isPublicStaticAsset("/images/home/thames-foreshore.jpg"), true)
   assert.equal(isPublicStaticAsset("/r/line-badge.json"), false)
   assert.equal(isPublicStaticAsset("/missing-page"), false)
 
-  const verification = proxy(
+  const verification = await proxy(
     new NextRequest("http://localhost/google3280ccf112e8b472.html", {
       headers: { accept: "text/markdown" },
     })
@@ -269,7 +269,7 @@ test("public static assets skip proxy negotiation, registry JSON does not", () =
   assert.equal(verification.status, 200)
   assert.equal(verification.headers.get("x-middleware-next"), "1")
 
-  const registry = proxy(new NextRequest("http://localhost/r/line-badge.json"))
+  const registry = await proxy(new NextRequest("http://localhost/r/line-badge.json"))
   assert.match(
     registry.headers.get("x-middleware-rewrite") ?? "",
     /\/api\/registry\/line-badge$/

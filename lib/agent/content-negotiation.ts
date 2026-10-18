@@ -124,6 +124,7 @@ const KNOWN_TOP_LEVEL_PATHS = new Set([
   "drafts",
   "explore",
   "foundations",
+  "hero-ab",
   "how-it-was-built",
   "icon.svg",
   "index.md",

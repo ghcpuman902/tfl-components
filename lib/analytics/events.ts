@@ -1,3 +1,5 @@
+import type { HeroVariantId } from "@/lib/landing/hero-experiment"
+
 /**
  * Public analytics event names and allowed properties.
  * Never attach keys, coordinates, raw searches, credentialed URLs, or PII.
@@ -15,6 +17,10 @@ export const ANALYTICS_EVENT_NAMES = [
   "board_stage_completed",
   "board_setup_completed",
   "landing_docs_visit",
+  // Hero headline test. Only prop is `variant`: "a" | "b" | "c".
+  "hero_view",
+  "hero_cta",
+  "board_made",
 ] as const
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENT_NAMES)[number]
@@ -33,6 +39,7 @@ export type AnalyticsReferrerCategory =
   | "other"
 export type AnalyticsKeyMode = "own" | "shared" | "skipped"
 export type AnalyticsLandingVariant = "room" | "simple" | "control"
+export type AnalyticsHeroVariant = HeroVariantId
 export type AnalyticsScreenProfile = "small" | "large"
 export type AnalyticsBoardStage = 1 | 2 | 3 | 4 | 5
 
@@ -71,6 +78,9 @@ export type AnalyticsEventProps = {
   time_to_example_interaction_ms?: number
   time_to_setup_start_ms?: number
 }
+
+/** Payload of `hero_view`, `hero_cta` and `board_made`. */
+export type AnalyticsHeroEventProps = { variant: AnalyticsHeroVariant }
 
 export const isAnalyticsEventName = (
   value: string

@@ -59,6 +59,20 @@ export default function PrivacyPage() {
       </section>
 
       <section className="space-y-2">
+        <h2 id="homepage-test" className="text-lg font-semibold text-foreground">
+          Homepage test
+        </h2>
+        <p>
+          The homepage headline is being tested. A first-party cookie named{" "}
+          <code className="text-xs">tfl_hero_vid</code> (a random id) keeps you
+          on the same version for 30 days, and{" "}
+          <code className="text-xs">tfl_hero</code> records which version you
+          saw so a finished Board can be counted against it. Neither identifies
+          you. Clearing site data removes them.
+        </p>
+      </section>
+
+      <section className="space-y-2">
         <h2 id="fonts" className="text-lg font-semibold text-foreground">
           Fonts
         </h2>
@@ -93,8 +107,8 @@ export default function PrivacyPage() {
           Analytics
         </h2>
         <p>
-          Page views and a small set of product events (landing, Board setup,
-          docs visits) go to Vercel Web Analytics. TfL keys, searches, and Board
+          Page views and a small set of product events (landing, homepage
+          headline test, Board setup, docs visits) go to Vercel Web Analytics. TfL keys, searches, and Board
           URLs are not included. There is no advertising tracker.
         </p>
       </section>

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, it } from "node:test"
@@ -19,22 +19,42 @@ describe("homepage iPad preview layout", () => {
 
   it("keeps Board as the hosted product, separate from arrivals and status boards", () => {
     const chat = read("../../components/landing/landing-room-chat.tsx")
-    const home = read("../../components/landing/agent-readable-home.tsx")
     assert.match(chat, /arrivals boards, status boards/)
     assert.match(chat, />\s*Board\s*</)
     assert.match(chat, /It&apos;s a dashboard/)
     assert.match(chat, /Make my own Board/)
     assert.doesNotMatch(chat, /arrivals and status board/)
     assert.doesNotMatch(chat, /It&apos;s a live TfL board/)
-    assert.match(home, /title: "Board"/)
-    assert.match(home, /arrivals boards, status boards/)
-    assert.doesNotMatch(home, /Arrivals and status board/)
+  })
+
+  it("explains the page with short visible copy, not an SEO disclosure", () => {
+    const copy = read("../../components/landing/home-short-copy.tsx")
+    const content = read("../../components/landing/home-content.tsx")
+    const css = read("../../app/globals.css")
+    assert.equal(
+      existsSync(join(root, "../../components/landing/agent-readable-home.tsx")),
+      false
+    )
+    assert.equal(
+      existsSync(
+        join(root, "../../components/landing/landing-seo-disclosure.tsx")
+      ),
+      false
+    )
+    assert.doesNotMatch(css, /landing-seo/)
+    assert.doesNotMatch(copy, /<details|<summary|About/)
+    assert.doesNotMatch(copy, /<h1/)
+    assert.match(copy, /href="\/board"/)
+    assert.match(copy, /href="\/docs\/ipad-dashboard"/)
+    assert.match(copy, /href="\/docs\/components"/)
+    assert.match(copy, /https:\/\/www\.npmjs\.com\/package\/tfl-ts/)
+    // Outside the request-time Suspense, so it is in the static shell.
+    assert.match(content, /<\/Suspense>\s*<HomeShortCopy \/>/)
   })
 
   it("locks phone landing to one canvas and keeps the desktop scroll story", () => {
     const scene = read("../../app/temp/landing-hero/landing-scene.tsx")
     const fold = read("../../components/landing/landing-fold-copy.tsx")
-    const home = read("../../components/landing/agent-readable-home.tsx")
     const zoom = read("../../app/temp/landing-hero/use-ipad-zoom.ts")
     assert.match(scene, /h-\[calc\(100dvh-var\(--site-header-height\)\)\]/)
     assert.match(scene, /md:h-\[calc\(200dvh-var\(--site-header-height\)\)\]/)
@@ -44,9 +64,6 @@ describe("homepage iPad preview layout", () => {
     assert.match(fold, /href="\/board"/)
     assert.match(fold, /See it in the space/)
     assert.match(fold, /max-md:hidden/)
-    assert.match(home, /LandingSeoDisclosure/)
-    assert.match(home, /docs\/ipad-dashboard/)
-    assert.match(home, /title: "Board"/)
   })
 
   it("lets the phone canvas pinch the framed board and clamps zoom-out", () => {

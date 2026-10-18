@@ -1,7 +1,5 @@
 import type { Metadata } from "next"
-import { Suspense } from "react"
-import { AgentReadableHome } from "@/components/landing/agent-readable-home"
-import { LandingFallback, LandingPage } from "@/components/landing/landing-page"
+import { HomeContent } from "@/components/landing/home-content"
 import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 
 export const metadata: Metadata = pageMetadata({
@@ -9,13 +7,10 @@ export const metadata: Metadata = pageMetadata({
   absoluteTitle: true,
 })
 
+/**
+ * Normally the proxy rewrites `/` to `/hero-ab/<code>` (see `proxy.ts`).
+ * This is the control, uncounted, for any request that skips the proxy.
+ */
 export default function HomePage() {
-  return (
-    <>
-      <Suspense fallback={<LandingFallback />}>
-        <LandingPage />
-      </Suspense>
-      <AgentReadableHome />
-    </>
-  )
+  return <HomeContent hero={{ variant: "a", counted: false }} />
 }

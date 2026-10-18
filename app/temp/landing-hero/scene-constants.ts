@@ -8,8 +8,12 @@ export const HERO_SIDE_INSET = 0.04
 export const HERO_TOP_INSET = "1rem"
 /** Gap between the iPad and the headline block. */
 export const HERO_COPY_GAP = "1.25rem"
-/** Headline + continue control in the first-fold group. */
-export const HERO_COPY_BAND = "8.5rem"
+/**
+ * Headline + subline + continue control in the first-fold group. Sized for
+ * the tallest hero test variant (3 headline + 3 subline lines on a phone,
+ * see `HERO_RESERVED_LINES`), so no variant moves the iPad.
+ */
+export const HERO_COPY_BAND = "11.5rem"
 /** Nudge the iPad + copy group above geometric centre. */
 export const HERO_GROUP_BIAS = "1.25rem"
 

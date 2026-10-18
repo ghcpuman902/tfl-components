@@ -12,6 +12,12 @@ import {
   MARKDOWN_RESPONSE_HEADERS,
   markdownNotFound,
 } from "@/lib/agent/machine-content"
+import { assignHero } from "@/lib/landing/hero-precompute"
+import {
+  HERO_AB_PATH,
+  HERO_COOKIE_MAX_AGE_SECONDS,
+  HERO_VISITOR_COOKIE,
+} from "@/lib/landing/hero-experiment"
 import {
   EXPLORER_PATH,
   legacyExplorerRedirectHref,
@@ -36,10 +42,45 @@ const continueAsHtml = (includeHomepageDiscovery = false) => {
 }
 
 /**
+ * Homepage hero test (flags SDK precompute pattern). Rewrites `/` to the
+ * statically generated `/hero-ab/<code>` permutation, so the page stays
+ * static: no flicker, no layout shift, no per-request render. Assignment is
+ * sticky through the `tfl_hero_vid` cookie; `?hero=a|b|c` and crawlers get
+ * an uncounted page and no cookie. Applies to RSC fetches too, so client
+ * navigation back to `/` shows the same variant as a fresh load.
+ */
+const rewriteHomepage = async (
+  request: NextRequest,
+  includeHomepageDiscovery: boolean
+) => {
+  const assignment = await assignHero(request)
+  const url = request.nextUrl.clone()
+  url.pathname = `${HERO_AB_PATH}/${assignment.code}`
+  const response = NextResponse.rewrite(url)
+  response.headers.set(
+    "Vary",
+    mergeVary(response.headers.get("Vary"), "Accept")
+  )
+  if (includeHomepageDiscovery) {
+    response.headers.set("Link", HOMEPAGE_DISCOVERY_LINK)
+  }
+  if (assignment.newVisitorId) {
+    response.cookies.set(HERO_VISITOR_COOKIE, assignment.newVisitorId, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: HERO_COOKIE_MAX_AGE_SECONDS,
+    })
+  }
+  return response
+}
+
+/**
  * Intercept static registry JSON so we can count installs while keeping
  * public URLs at `/r/<name>.json` (shadcn CLI + docs install commands).
  */
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (isPublicStaticAsset(pathname)) {
@@ -47,36 +88,37 @@ export function proxy(request: NextRequest) {
   }
 
   if (pathname === "/") {
-    if (
-      !isHomepageRepresentationRequest(
-        request.method,
-        request.headers.get("Accept"),
-        request.headers.get("Sec-Fetch-Dest")
-      )
-    ) {
+    const isRepresentation = isHomepageRepresentationRequest(
+      request.method,
+      request.headers.get("Accept"),
+      request.headers.get("Sec-Fetch-Dest")
+    )
+    if (isRepresentation) {
+      const negotiated = negotiateHomepageContent(request.headers.get("Accept"))
+      if (negotiated === "markdown") {
+        return new NextResponse(HOME_MARKDOWN, {
+          status: 200,
+          headers: MARKDOWN_RESPONSE_HEADERS,
+        })
+      }
+      if (negotiated === "not-acceptable") {
+        return new NextResponse(
+          "No acceptable representation is available. Request text/html or text/markdown.\n",
+          {
+            status: 406,
+            headers: {
+              "Cache-Control": "no-store",
+              "Content-Type": "text/plain; charset=utf-8",
+              Vary: "Accept",
+            },
+          }
+        )
+      }
+    }
+    if (request.method !== "GET" && request.method !== "HEAD") {
       return NextResponse.next()
     }
-    const negotiated = negotiateHomepageContent(request.headers.get("Accept"))
-    if (negotiated === "markdown") {
-      return new NextResponse(HOME_MARKDOWN, {
-        status: 200,
-        headers: MARKDOWN_RESPONSE_HEADERS,
-      })
-    }
-    if (negotiated === "not-acceptable") {
-      return new NextResponse(
-        "No acceptable representation is available. Request text/html or text/markdown.\n",
-        {
-          status: 406,
-          headers: {
-            "Cache-Control": "no-store",
-            "Content-Type": "text/plain; charset=utf-8",
-            Vary: "Accept",
-          },
-        }
-      )
-    }
-    return continueAsHtml(true)
+    return rewriteHomepage(request, isRepresentation)
   }
 
   if (hasUnknownTopLevelPath(pathname)) {

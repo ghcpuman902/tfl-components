@@ -22,6 +22,8 @@ import { Button } from "@/components/ui/button"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { ChevronDownIcon, LocateIcon } from "lucide-react"
 import { useLandingTrack } from "@/components/landing/landing-analytics"
+import { trackHeroEvent } from "@/lib/analytics/track"
+import { readExposedHeroVariant } from "@/lib/landing/hero-client"
 import type { AnalyticsContext } from "@/lib/analytics/context"
 import { defaultAnalyticsContext } from "@/lib/analytics/context"
 import { elapsedSinceExposureMs } from "@/lib/landing/timing"
@@ -424,6 +426,10 @@ export const BoardStagedBuilder = ({
           stopSelected: Boolean(next.stopId) && !next.continueWithoutStop,
           keyMode: next.keyMode ?? undefined,
         })
+        // Hero test conversion. The cookie only exists for visitors who saw
+        // a counted hero, so direct and `?hero=` visits send nothing.
+        const heroVariant = readExposedHeroVariant()
+        if (heroVariant) trackHeroEvent("board_made", heroVariant)
       }
       return next
     })
