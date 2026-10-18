@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { BoardLineChipPicker } from "@/components/board/board-line-chip-picker"
 import { LiveRailVehicles } from "@/components/tfl/live-vehicles/live-rail-vehicles"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
@@ -23,11 +23,11 @@ export default function LiveRailVehiclesDemo() {
   const [rate, setRate] = useState<TargetRequestsPerMinute>("max")
   const [capMessage, setCapMessage] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (hasKey) return
-    if (railLineIds.length <= SITE_MAX_LIVE_RAIL_LINES) return
-    setRailLineIds(railLineIds.slice(0, SITE_MAX_LIVE_RAIL_LINES))
-  }, [hasKey, railLineIds])
+  // Without the user's own key, the shared key caps how many lines we follow.
+  const visibleLineIds =
+    !hasKey && railLineIds.length > SITE_MAX_LIVE_RAIL_LINES
+      ? railLineIds.slice(0, SITE_MAX_LIVE_RAIL_LINES)
+      : railLineIds
 
   const handleLinesChange = (next: readonly string[] | undefined) => {
     const resolved = next?.length ? [...next] : [...LIVE_RAIL_LINE_IDS]
@@ -51,7 +51,7 @@ export default function LiveRailVehiclesDemo() {
       </p>
       <BoardLineChipPicker
         lines={RAIL_LINES}
-        selected={railLineIds}
+        selected={visibleLineIds}
         onChange={handleLinesChange}
       />
       {capMessage ? (
@@ -79,7 +79,7 @@ export default function LiveRailVehiclesDemo() {
         </p>
       ) : null}
       <LiveRailVehicles
-        railLineIds={railLineIds}
+        railLineIds={visibleLineIds}
         targetRequestsPerMinute={hasKey ? rate : "max"}
       />
       <details className="text-xs text-muted-foreground">
