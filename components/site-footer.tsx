@@ -6,6 +6,9 @@ import { getSiteStats } from "@/lib/site-stats"
 import { SITE_AUTHOR, SITE_INDEPENDENCE } from "@/lib/site"
 import { APP_VERSION_LABEL } from "@/lib/version"
 
+/** Optional support link. Footer is hidden on chromeless `/board/view` kiosk screens. */
+const SUPPORT_URL = "https://buymeacoffee.com/manglekuo"
+
 const COUNT_FORMAT = new Intl.NumberFormat("en-GB")
 const formatCount = (n: number) => COUNT_FORMAT.format(n)
 
@@ -87,6 +90,15 @@ export const SiteFooter = () => {
           >
             Feedback?
           </FeedbackTextLink>
+          <span aria-hidden> · </span>
+          <a
+            href={SUPPORT_URL}
+            className="touch-manipulation text-foreground underline-offset-4 hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Buy me a coffee ☕
+          </a>
         </p>
         <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
           {process.env.NODE_ENV === "development" ? (
