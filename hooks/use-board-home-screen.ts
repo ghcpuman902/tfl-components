@@ -74,6 +74,16 @@ const subscribeJsFullscreen = (onStoreChange: () => void) => {
 
 const getServerJsFullscreen = (): boolean => false
 
+const subscribeNever = () => () => {}
+
+const readPlatform = (): HomeScreenPromptPlatform =>
+  detectHomeScreenPlatform({
+    userAgent: navigator.userAgent,
+    maxTouchPoints: navigator.maxTouchPoints,
+  })
+
+const getServerPlatform = (): HomeScreenPromptPlatform => "other"
+
 const HOME_SCREEN_PADDING = {
   paddingTop: "max(1rem, env(safe-area-inset-top))",
   paddingRight: "max(1rem, env(safe-area-inset-right))",
@@ -99,16 +109,11 @@ export const useBoardHomeScreen = () => {
   const fromHomeScreen = isHomeScreenLaunch(displayMode, jsFullscreenActive)
   const [nativePrompt, setNativePrompt] =
     useState<BeforeInstallPromptEvent | null>(null)
-  const [platform, setPlatform] = useState<HomeScreenPromptPlatform>("other")
-
-  useEffect(() => {
-    setPlatform(
-      detectHomeScreenPlatform({
-        userAgent: navigator.userAgent,
-        maxTouchPoints: navigator.maxTouchPoints,
-      })
-    )
-  }, [])
+  const platform = useSyncExternalStore(
+    subscribeNever,
+    readPlatform,
+    getServerPlatform
+  )
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {

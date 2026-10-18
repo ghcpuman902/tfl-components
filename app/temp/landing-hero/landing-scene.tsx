@@ -235,6 +235,17 @@ export const LandingScene = ({
     return () => media.removeEventListener("change", sync)
   }, [])
 
+  // Once the canvas mode is known, a desktop visit with the space hash skips
+  // the intro. `phoneCanvas` is null on the server and hydration render, so
+  // `window` is only read on later client renders.
+  const [skipIntroBasis, setSkipIntroBasis] = useState(phoneCanvas)
+  if (skipIntroBasis !== phoneCanvas) {
+    setSkipIntroBasis(phoneCanvas)
+    if (phoneCanvas === false) {
+      setSkipIntro(hasLandingSpaceHash(window.location.hash))
+    }
+  }
+
   useLayoutEffect(() => {
     if (phoneCanvas == null) return
     const previousRestoration = window.history.scrollRestoration
@@ -245,9 +256,7 @@ export const LandingScene = ({
         window.history.scrollRestoration = previousRestoration
       }
     }
-    const hashed = hasLandingSpaceHash(window.location.hash)
-    setSkipIntro(hashed)
-    if (hashed) {
+    if (hasLandingSpaceHash(window.location.hash)) {
       scrollToRoom("auto")
     } else {
       window.scrollTo(0, 0)
@@ -307,10 +316,11 @@ export const LandingScene = ({
     })
   }, [reducedMotion, writeSpaceHash])
 
-  useEffect(() => {
-    if (roomComplete) return
-    setHoldChat(false)
-  }, [roomComplete])
+  const [prevRoomComplete, setPrevRoomComplete] = useState(roomComplete)
+  if (prevRoomComplete !== roomComplete) {
+    setPrevRoomComplete(roomComplete)
+    if (!roomComplete) setHoldChat(false)
+  }
 
   /**
    * Mirror the visual "end of scroll" state in the URL as soon as it's

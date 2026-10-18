@@ -18,10 +18,7 @@ export const ObservationTime = ({
   const [now, setNow] = useState<number | null>(null)
 
   useEffect(() => {
-    if (!iso) {
-      setNow(null)
-      return
-    }
+    if (!iso) return
 
     const readNow = () => {
       setNow(Date.now())

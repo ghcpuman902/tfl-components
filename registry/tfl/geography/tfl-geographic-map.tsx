@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useCallback,
@@ -563,6 +564,11 @@ export const TflGeographicMap = ({
   const fittedRef = useRef(false)
   const trackModelRef = useRef(trackModel)
   const lineIdsKey = lineIds?.join(",") ?? ""
+  // Parent arrays are often inline; compare by id list. Empty means all lines.
+  const stableLineIds = useMemo(
+    () => (lineIdsKey ? lineIdsKey.split(",") : undefined),
+    [lineIdsKey]
+  )
   const modesKey = (modes ?? DEFAULT_MODES).join(",")
   const dark = useDocumentDark()
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
@@ -615,19 +621,19 @@ export const TflGeographicMap = ({
   }, [data, activeModes, trackModel])
 
   const loadGeometryRef = useRef(loadGeometry)
-  loadGeometryRef.current = loadGeometry
   const vehiclePolylinesRef = useRef(vehiclePolylines)
-  vehiclePolylinesRef.current = vehiclePolylines
+  useLayoutEffect(() => {
+    loadGeometryRef.current = loadGeometry
+    vehiclePolylinesRef.current = vehiclePolylines
+  })
 
   const getPolylines = useCallback(
     (): RoutePolyline[] => {
       const hops = vehiclePolylinesRef.current
       if (hops && hops.length > 0) return [...hops]
-      return polylinesFromBundles(bundlesRef.current ?? [], lineIds)
+      return polylinesFromBundles(bundlesRef.current ?? [], stableLineIds)
     },
-    // lineIds identity is represented by lineIdsKey.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lineIdsKey]
+    [stableLineIds]
   )
 
   const { flush: flushVehicles } = useVehicleSegmentSource({
@@ -682,9 +688,9 @@ export const TflGeographicMap = ({
         if (cancelled) return
         bundlesRef.current = bundles
 
-        addTransitLayers(map, bundles, showLines, showStations, dark, lineIds)
+        addTransitLayers(map, bundles, showLines, showStations, dark, stableLineIds)
         if (!fittedRef.current) {
-          if (fitToLines) fitLineBounds(map, bundles, lineIds)
+          if (fitToLines) fitLineBounds(map, bundles, stableLineIds)
           fittedRef.current = true
         }
         setStatus("ready")
@@ -714,7 +720,7 @@ export const TflGeographicMap = ({
       const bundles = bundlesRef.current
       if (!bundles) return
       prepareBasemapForTransit(map)
-      addTransitLayers(map, bundles, showLines, showStations, dark, lineIds)
+      addTransitLayers(map, bundles, showLines, showStations, dark, stableLineIds)
       flushVehicles()
     }
 
@@ -723,7 +729,7 @@ export const TflGeographicMap = ({
     return () => {
       map.off("style.load", applyOverlays)
     }
-  }, [dark, showLines, showStations, lineIdsKey, flushVehicles])
+  }, [dark, showLines, showStations, stableLineIds, flushVehicles])
 
   useEffect(() => {
     if (data) return
@@ -742,7 +748,7 @@ export const TflGeographicMap = ({
           const source = map.getSource(`${mode}-lines`) as
             GeoJSONSource | undefined
           source?.setData(
-            remapLineCollection(filterBundleLines(bundle, lineIds), dark)
+            remapLineCollection(filterBundleLines(bundle, stableLineIds), dark)
           )
         }
         flushVehicles()
@@ -754,7 +760,7 @@ export const TflGeographicMap = ({
     return () => {
       cancelled = true
     }
-  }, [trackModel, status, data, loadGeometry, dark, lineIds, flushVehicles])
+  }, [trackModel, status, data, loadGeometry, dark, stableLineIds, flushVehicles])
 
   return (
     <div

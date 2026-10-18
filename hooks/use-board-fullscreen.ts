@@ -39,11 +39,7 @@ export const useBoardFullscreen = (
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!options.enabled) {
-      setAvailable(false)
-      setActive(false)
-      return
-    }
+    if (!options.enabled) return
     const sync = () => {
       setActive(Boolean(readJsFullscreenElement()))
       setAvailable(
@@ -102,5 +98,10 @@ export const useBoardFullscreen = (
     setError("Full screen is not available.")
   }, [rootRef])
 
-  return { active, available, error, toggle }
+  return {
+    active: options.enabled && active,
+    available: options.enabled && available,
+    error,
+    toggle,
+  }
 }

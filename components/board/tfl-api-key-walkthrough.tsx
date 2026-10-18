@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { ArrowDownIcon } from "lucide-react"
 import {
   TFL_API_KEY_PHONE_SHOT,
@@ -58,11 +59,12 @@ export const TflApiKeyWalkthrough = () => (
               width: `min(100%, calc(${MAX_SHOT_HEIGHT} * ${shot.width} / ${shot.height}))`,
             }}
           >
-            <img
+            <Image
               src={step.src}
               alt={step.alt}
               width={shot.width}
               height={shot.height}
+              unoptimized
               className="block size-full object-contain"
             />
             <WalkthroughArrow arrows={step.arrow} />

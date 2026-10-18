@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -316,6 +317,11 @@ export const TflBusGeoMap = ({
   const [status, setStatus] = useState<"loading" | "ready">("loading")
 
   const routes = useMemo(() => [data, alternate], [data, alternate])
+  // Style swaps re-add the latest routes without re-running on route changes.
+  const routesRef = useRef(routes)
+  useLayoutEffect(() => {
+    routesRef.current = routes
+  })
   const getPolylines = useCallback(
     (): RoutePolyline[] => polylinesFromRoutes(routes),
     [routes]
@@ -382,7 +388,7 @@ export const TflBusGeoMap = ({
       return
     }
     const apply = () => {
-      addRouteLayers(map, routes, showStops, dark)
+      addRouteLayers(map, routesRef.current, showStops, dark)
       flushVehicles()
     }
     map.setStyle(openFreeMapStyleUrl(dark))

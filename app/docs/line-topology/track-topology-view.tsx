@@ -2,11 +2,14 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type PointerEvent as ReactPointerEvent,
 } from "react"
+import { useHydrated } from "@/hooks/use-hydrated"
 import { Pause, Play } from "lucide-react"
 import { formatStationName } from "@/lib/tfl/diagram-station"
 import type {
@@ -266,6 +269,12 @@ const emptyTopology = (): ContractedTopology => ({ nodes: [], edges: [] })
 
 const LINE_QUERY_PARAM = "line"
 
+const subscribeNever = () => () => {}
+
+const readSearch = (): string => window.location.search
+
+const getServerSearch = (): string => ""
+
 const OSM_STOPS_BY_MODE: Partial<Record<TransitMode, OsmRouteStopsFile>> = {
   tube: tubeStops as unknown as OsmRouteStopsFile,
   overground: overgroundStops as unknown as OsmRouteStopsFile,
@@ -336,7 +345,9 @@ const TopologyPlot = ({
   const pendingZoomRef = useRef<ZoomState | null>(null)
   const rafRef = useRef(0)
   const [zoom, setZoom] = useState<ZoomState>(DEFAULT_ZOOM)
-  zoomRef.current = zoom
+  useLayoutEffect(() => {
+    zoomRef.current = zoom
+  }, [zoom])
   const painted = useLaidOutTopology(topology, movements, lineId)
   const nodeById = useMemo(
     () => new Map(painted.map((node) => [node.id, node])),
@@ -344,7 +355,9 @@ const TopologyPlot = ({
   )
   const viewBox = useMemo(() => fitViewBox(painted), [painted])
   const viewBoxRef = useRef(viewBox)
-  viewBoxRef.current = viewBox
+  useLayoutEffect(() => {
+    viewBoxRef.current = viewBox
+  }, [viewBox])
   const junctionCount = topology.nodes.filter(
     (node) => node.kind === "junction"
   ).length
@@ -890,36 +903,36 @@ export const TrackTopologyView = ({
       }))
     return [...fromOsm, ...extra]
   }, [centreline, networkModel.lines])
-  const [lineId, setLineId] = useState(
+  const [defaultLineId] = useState(
     () =>
       lineOptions.find((option) => option.lineId === "elizabeth")?.lineId ??
       lineOptions[0]?.lineId ??
       ""
   )
+  const [pickedLineId, setPickedLineId] = useState<string | null>(null)
   const [trackModel, setTrackModel] = useState<PhysicalModel>("centreline")
-  const lineUrlReady = useRef(false)
+  const hydrated = useHydrated()
+  // Server and hydration render use the default; `?line=` applies afterwards.
+  const search = useSyncExternalStore(
+    subscribeNever,
+    readSearch,
+    getServerSearch
+  )
+  const requestedLineId = new URLSearchParams(search).get(LINE_QUERY_PARAM)
+  const urlLineId =
+    requestedLineId &&
+    lineOptions.some((option) => option.lineId === requestedLineId)
+      ? requestedLineId
+      : null
+  const lineId = pickedLineId ?? urlLineId ?? defaultLineId
 
   useEffect(() => {
-    if (!lineUrlReady.current) {
-      lineUrlReady.current = true
-      const requested = new URLSearchParams(window.location.search).get(
-        LINE_QUERY_PARAM
-      )
-      if (
-        requested &&
-        requested !== lineId &&
-        lineOptions.some((option) => option.lineId === requested)
-      ) {
-        setLineId(requested)
-        return
-      }
-    }
-    if (!lineId) return
+    if (!hydrated || !lineId) return
     const url = new URL(window.location.href)
     if (url.searchParams.get(LINE_QUERY_PARAM) === lineId) return
     url.searchParams.set(LINE_QUERY_PARAM, lineId)
     window.history.replaceState(null, "", url)
-  }, [lineId, lineOptions])
+  }, [hydrated, lineId])
 
   const selected = lineOptions.find((option) => option.lineId === lineId)
   const snapshotSlice = useMemo(
@@ -972,14 +985,12 @@ export const TrackTopologyView = ({
   )
 
   const handleLineSelect = (nextLineId: string) => {
-    setLineId(nextLineId)
+    setPickedLineId(nextLineId)
   }
 
-  useEffect(() => {
-    if (trackModel === "timetable" && !timetableBundle) {
-      setTrackModel("centreline")
-    }
-  }, [selected?.mode, timetableBundle, trackModel])
+  if (trackModel === "timetable" && !timetableBundle) {
+    setTrackModel("centreline")
+  }
 
   return (
     <div className="space-y-10">

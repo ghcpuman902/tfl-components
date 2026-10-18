@@ -70,8 +70,7 @@ export const GoogleMapsExample = () => {
 
 const GoogleMapsLiveMap = ({ apiKey }: { apiKey: string }) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const mapRef = useRef<any>(null)
-  const [loaded, setLoaded] = useState(false)
+  const mapRef = useRef<google.maps.Map | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
@@ -116,7 +115,7 @@ const GoogleMapsLiveMap = ({ apiKey }: { apiKey: string }) => {
           map.data.addGeoJson(bundle.stations)
         }
 
-        map.data.setStyle((feature: any) => {
+        map.data.setStyle((feature: google.maps.Data.Feature) => {
           if (feature.getGeometry()?.getType() === "Point") {
             return {
               icon: {
@@ -137,8 +136,6 @@ const GoogleMapsLiveMap = ({ apiKey }: { apiKey: string }) => {
             fillOpacity: 0,
           }
         })
-
-        setLoaded(true)
       } catch (error) {
         if (cancelled) return
         setErrorMessage(

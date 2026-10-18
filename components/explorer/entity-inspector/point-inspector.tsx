@@ -347,8 +347,8 @@ const PointInspectorLive = ({
             isBus || isRiver
               ? client.stopPoint.getDisruption({ stopPointIds })
               : [],
-            isRiver && riverLineIds.length > 0
-              ? client.line.getStatus({ lineIds: riverLineIds })
+            isRiver && riverLineKey
+              ? client.line.getStatus({ lineIds: riverLineKey.split(",") })
               : [],
             client.stopPoint.get({ stopPointIds: [pointId] }),
           ])
@@ -391,11 +391,11 @@ const PointInspectorLive = ({
   ])
 
   useEffect(() => {
-    if (!hydrated || ready || !isRiver || riverLineIds.length === 0) return
+    if (!hydrated || ready || !isRiver || !riverLineKey) return
 
     let cancelled = false
     const load = async () => {
-      const payload = await getCachedLineStatusesAction(riverLineIds)
+      const payload = await getCachedLineStatusesAction(riverLineKey.split(","))
       if (cancelled) return
       setRiverStatuses(payload.data)
       setStatusFetchedAt(payload.fetchedAt)

@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { SiteMoreAbout } from "@/components/site-more-about"
 import { SiteProsePage } from "@/components/site-prose-page"
 import { SITE_AUTHOR, SITE_INDEPENDENCE, SITE_URL } from "@/lib/site"
 
@@ -77,6 +78,8 @@ export default function AboutPage() {
         </p>
         <p>{SITE_INDEPENDENCE}</p>
       </section>
+
+      <SiteMoreAbout />
     </SiteProsePage>
   )
 }

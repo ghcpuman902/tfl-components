@@ -295,8 +295,6 @@ export const BoardStagedBuilder = ({
     const stored = importedDraft ? null : readDraft()
     const next = importedDraft ?? stored ?? createBoardSetupDraft(newId)
     if (imported && importedDraft) {
-      setAdvancedConfig(leftoverBoardConfig(imported))
-      setAdvancedOpen(true)
       persistDraft(importedDraft)
       window.history.replaceState(
         null,
@@ -306,6 +304,10 @@ export const BoardStagedBuilder = ({
     }
     const frame = window.requestAnimationFrame(() => {
       const desktop = window.innerWidth >= 1024
+      if (imported && importedDraft) {
+        setAdvancedConfig(leftoverBoardConfig(imported))
+        setAdvancedOpen(true)
+      }
       setDraft({
         ...next,
         screenProfile: next.screenProfile ?? nextDetected.profile,

@@ -56,16 +56,7 @@ export const CyclePointFinder = ({
     lon: number
   } | null>(null)
 
-  const handleSearchSubmit = async (
-    nextQuery: string,
-    preferId?: string | null
-  ) => {
-    const trimmed = nextQuery.trim()
-    if (trimmed.length < 2) {
-      setError("Enter at least 2 characters to search.")
-      return false
-    }
-
+  const searchDocks = async (trimmed: string, preferId?: string | null) => {
     const result = await runKeyed(async (client) => {
       const searchResults = await client.bikePoint.search({ query: trimmed })
       return searchResults
@@ -85,10 +76,26 @@ export const CyclePointFinder = ({
     return true
   }
 
+  const handleSearchSubmit = async (
+    nextQuery: string,
+    preferId?: string | null
+  ) => {
+    const trimmed = nextQuery.trim()
+    if (trimmed.length < 2) {
+      setError("Enter at least 2 characters to search.")
+      return false
+    }
+    return searchDocks(trimmed, preferId)
+  }
+
   useEffect(() => {
     const q = (initialQuery || readExplorerQueryParam()).trim()
     if (q.length < 2) return
-    void handleSearchSubmit(q, selectedId)
+    // Start after the effect returns: the search sets loading state.
+    const timer = window.setTimeout(() => {
+      void searchDocks(q, selectedId)
+    }, 0)
+    return () => window.clearTimeout(timer)
     // Restore API results after a remount / shared URL.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
   }, [])

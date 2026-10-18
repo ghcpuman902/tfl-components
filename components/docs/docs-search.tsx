@@ -1,6 +1,14 @@
 "use client"
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react"
 import { useRouter } from "next/navigation"
 import { SearchIcon } from "lucide-react"
 import {
@@ -12,6 +20,12 @@ import {
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Kbd, KbdGroup } from "@/components/ui/kbd"
+
+const subscribeNever = () => () => {}
+
+const readIsMac = () => isMacUserAgent(navigator.userAgent)
+
+const getServerIsMac = () => true
 
 const isMacUserAgent = (userAgent: string) =>
   /Mac|iPhone|iPod|iPad/.test(userAgent)
@@ -63,7 +77,11 @@ export const DocsSearch = ({
   const [query, setQuery] = useState("")
   const [activeIndex, setActiveIndex] = useState(0)
   const [open, setOpen] = useState(false)
-  const [isMac, setIsMac] = useState(true)
+  const isMac = useSyncExternalStore(
+    subscribeNever,
+    readIsMac,
+    getServerIsMac
+  )
   const showShortcutHint = variant === "header"
 
   const results = useMemo(() => {
@@ -96,10 +114,6 @@ export const DocsSearch = ({
     },
     [onNavigate, router]
   )
-
-  useEffect(() => {
-    setIsMac(isMacUserAgent(navigator.userAgent))
-  }, [])
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {

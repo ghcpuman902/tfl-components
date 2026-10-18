@@ -1,132 +1,45 @@
-import { Suspense, type ReactNode } from "react"
 import Link from "next/link"
-import { FeedbackTextLink } from "@/components/docs/feedback-text-link"
 import { GITHUB_REPO } from "@/lib/feedback/constants"
-import { getSiteStats } from "@/lib/site-stats"
-import { SITE_AUTHOR, SITE_INDEPENDENCE } from "@/lib/site"
-import { APP_VERSION_LABEL } from "@/lib/version"
 
-const COUNT_FORMAT = new Intl.NumberFormat("en-GB")
-const formatCount = (n: number) => COUNT_FORMAT.format(n)
+const LINK_CLASS =
+  "whitespace-nowrap underline-offset-4 [@media(hover:hover)]:hover:text-foreground [@media(hover:hover)]:hover:underline"
 
-const StatsFallback = () => (
-  <p className="text-xs text-muted-foreground" aria-hidden>
-    — visitors · — installs · — stars
-  </p>
-)
-
-const SiteFooterStats = async () => {
-  const { visitors, installs, stars } = await getSiteStats()
-  const showStars = stars !== null && stars > 0
-
-  return (
-    <p className="text-xs text-muted-foreground">
-      <span>{formatCount(visitors)} visitors</span>
-      <span aria-hidden> · </span>
-      <span>{formatCount(installs)} installs</span>
-      {showStars ? (
-        <>
-          <span aria-hidden> · </span>
-          <a
-            href={GITHUB_REPO}
-            className="touch-manipulation underline-offset-4 [@media(hover:hover)]:hover:text-foreground [@media(hover:hover)]:hover:underline"
-            target="_blank"
-            rel="noreferrer"
-          >
-            {formatCount(stars)} stars
-          </a>
-        </>
-      ) : null}
-    </p>
-  )
-}
-
-const FooterLink = ({
-  href,
-  children,
-  external = false,
-}: {
-  href: string
-  children: ReactNode
-  external?: boolean
-}) => {
-  const className =
-    "touch-manipulation underline-offset-4 [@media(hover:hover)]:hover:text-foreground [@media(hover:hover)]:hover:underline"
-  if (external) {
-    return (
-      <a href={href} className={className} target="_blank" rel="noreferrer">
-        {children}
+/** One quiet line. Hidden on chromeless `/board/view` kiosk screens via AppChrome. */
+export const SiteFooter = () => (
+  <footer className="mt-auto border-t border-border px-4 py-4">
+    <p className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-xs text-muted-foreground">
+      <span className="whitespace-nowrap">Not affiliated with TfL</span>
+      <span aria-hidden>·</span>
+      <Link href="/about" className={LINK_CLASS}>
+        About
+      </Link>
+      <span aria-hidden>·</span>
+      <a
+        href={GITHUB_REPO}
+        className={LINK_CLASS}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        GitHub
       </a>
-    )
-  }
-  return (
-    <Link href={href} className={className}>
-      {children}
-    </Link>
-  )
-}
-
-export const SiteFooter = () => {
-  return (
-    <footer className="mt-auto border-t border-border px-4 py-4">
-      <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 text-center text-sm text-muted-foreground">
-        <p className="max-w-prose">{SITE_INDEPENDENCE}</p>
-        <p>
-          Designed and built by{" "}
-          <a
-            href={SITE_AUTHOR.url}
-            className="text-foreground underline-offset-4 hover:underline"
-            rel="author"
-          >
-            {SITE_AUTHOR.name}
-          </a>
-          .{" "}
-          <FeedbackTextLink
-            screenshot={false}
-            className="text-foreground no-underline hover:underline"
-          >
-            Feedback?
-          </FeedbackTextLink>
-        </p>
-        <p>
-          <FooterLink href="https://github.com/ghcpuman902/tfl-ts" external>
-            Built with tfl-ts
-          </FooterLink>
-        </p>
-        <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
-          {process.env.NODE_ENV === "development" ? (
-            <>
-              <FooterLink href="/tools">Tools</FooterLink>
-              <span aria-hidden>·</span>
-              <FooterLink href="/tools/typography">Typography lab</FooterLink>
-              <span aria-hidden>·</span>
-              <FooterLink href="/drafts">Drafts</FooterLink>
-              <span aria-hidden>·</span>
-            </>
-          ) : null}
-          <FooterLink href="/about">About</FooterLink>
-          <span aria-hidden>·</span>
-          <FooterLink href="/contact">Contact</FooterLink>
-          <span aria-hidden>·</span>
-          <FooterLink href="/licence">Licence</FooterLink>
-          <span aria-hidden>·</span>
-          <FooterLink href="/credits">Data and credits</FooterLink>
-          <span aria-hidden>·</span>
-          <FooterLink href="/privacy">Privacy</FooterLink>
-          <span aria-hidden>·</span>
-          <FooterLink href="/observatory">TfL metadata tracker</FooterLink>
-          <span aria-hidden>·</span>
-          <FooterLink
-            href={`https://github.com/ghcpuman902/tfl-components/releases/tag/${APP_VERSION_LABEL}`}
-            external
-          >
-            {APP_VERSION_LABEL}
-          </FooterLink>
-        </p>
-        <Suspense fallback={<StatsFallback />}>
-          <SiteFooterStats />
-        </Suspense>
-      </div>
-    </footer>
-  )
-}
+      <span aria-hidden>·</span>
+      <a
+        href="https://github.com/ghcpuman902/tfl-ts"
+        className={LINK_CLASS}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Built with tfl-ts
+      </a>
+      <span aria-hidden>·</span>
+      <a
+        href="https://buymeacoffee.com/manglekuo"
+        className={LINK_CLASS}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Buy me a coffee ☕
+      </a>
+    </p>
+  </footer>
+)

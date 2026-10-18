@@ -192,19 +192,29 @@ export const LandingRoomChat = ({
     setIsTyping(false)
   }, [beats.length])
 
+  // Leaving the room replays the story; skipping the intro reveals it all.
+  const [prevActive, setPrevActive] = useState(active)
+  if (prevActive !== active) {
+    setPrevActive(active)
+    if (!active) {
+      setShownCount(0)
+      setChoiceCount(0)
+      setIsTyping(true)
+    }
+  }
+  const [prevSkipIntro, setPrevSkipIntro] = useState(skipIntro)
+  if (prevSkipIntro !== skipIntro) {
+    setPrevSkipIntro(skipIntro)
+    if (skipIntro) revealAll()
+  }
+
   useEffect(() => {
-    if (active) return
-    completedRef.current = false
-    setShownCount(0)
-    setChoiceCount(0)
-    setIsTyping(true)
+    if (!active) completedRef.current = false
   }, [active])
 
   useEffect(() => {
-    if (!skipIntro) return
-    completedRef.current = true
-    revealAll()
-  }, [revealAll, skipIntro])
+    if (skipIntro) completedRef.current = true
+  }, [skipIntro])
 
   useEffect(() => {
     if (!active || skipIntro) return

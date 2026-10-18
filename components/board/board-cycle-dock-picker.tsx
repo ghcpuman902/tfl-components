@@ -21,6 +21,32 @@ import type { ExplorerView } from "@/lib/tfl/explorer-url-state"
 const dockLabelFallback = (id: string): string =>
   id.startsWith("BikePoints_") ? id.slice("BikePoints_".length) : id
 
+/** Keeps pool order, appends new seeds; returns `current` when unchanged. */
+const reconcilePoolIds = (
+  current: string[],
+  seedIds: readonly string[],
+  selected: readonly string[],
+  binnedIds: ReadonlySet<string>
+): string[] => {
+  const selectedSet = new Set(selected)
+  const next: string[] = []
+  const seen = new Set<string>()
+  for (const dockId of [...current, ...seedIds]) {
+    if (selectedSet.has(dockId) || binnedIds.has(dockId) || seen.has(dockId)) {
+      continue
+    }
+    seen.add(dockId)
+    next.push(dockId)
+  }
+  if (
+    next.length === current.length &&
+    next.every((dockId, index) => dockId === current[index])
+  ) {
+    return current
+  }
+  return next
+}
+
 type BoardCycleDockPickerProps = {
   id?: string
   stopId?: string
@@ -47,11 +73,12 @@ export const BoardCycleDockPicker = ({
   const [finderOpen, setFinderOpen] = useState(false)
   const [view, setView] = useState<ExplorerView>("list")
 
+  if (!stopId && seedIds.length > 0) {
+    setSeedIds([])
+  }
+
   useEffect(() => {
-    if (!stopId) {
-      setSeedIds([])
-      return
-    }
+    if (!stopId) return
     let cancelled = false
     void getBoardNearbyPlacesForStop(stopId).then((result) => {
       if (cancelled || !result.ok) return
@@ -62,31 +89,10 @@ export const BoardCycleDockPicker = ({
     }
   }, [stopId])
 
-  useEffect(() => {
-    setPoolIds((current) => {
-      const selectedSet = new Set(selected)
-      const next: string[] = []
-      const seen = new Set<string>()
-      for (const dockId of [...current, ...seedIds]) {
-        if (
-          selectedSet.has(dockId) ||
-          binnedIds.has(dockId) ||
-          seen.has(dockId)
-        ) {
-          continue
-        }
-        seen.add(dockId)
-        next.push(dockId)
-      }
-      if (
-        next.length === current.length &&
-        next.every((dockId, index) => dockId === current[index])
-      ) {
-        return current
-      }
-      return next
-    })
-  }, [binnedIds, seedIds, selected])
+  const nextPoolIds = reconcilePoolIds(poolIds, seedIds, selected, binnedIds)
+  if (nextPoolIds !== poolIds) {
+    setPoolIds(nextPoolIds)
+  }
 
   const missingKey = [...selected, ...poolIds]
     .filter((dockId) => !labels[dockId])

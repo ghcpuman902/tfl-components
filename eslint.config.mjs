@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "reference/**",
     "_agent/**",
+    // Gitignored throwaway probes (.gitignore: scratch/), not app code.
+    "scripts/scratch/**",
   ]),
 ]);
 

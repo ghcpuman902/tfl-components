@@ -34,10 +34,7 @@ export const DataSourceLabel = ({
   const [now, setNow] = useState<number | null>(null)
 
   useEffect(() => {
-    if (!isLive || fetchedAt == null) {
-      setNow(null)
-      return
-    }
+    if (!isLive || fetchedAt == null) return
 
     const readNow = () => {
       setNow(Date.now())
