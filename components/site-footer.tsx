@@ -93,7 +93,7 @@ export const SiteFooter = () => {
           <span aria-hidden> · </span>
           <a
             href={SUPPORT_URL}
-            className="touch-manipulation text-foreground underline-offset-4 hover:underline"
+            className="touch-manipulation whitespace-nowrap text-foreground underline-offset-4 hover:underline"
             target="_blank"
             rel="noopener noreferrer"
           >
