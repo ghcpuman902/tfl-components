@@ -323,7 +323,9 @@ export const BoardDisplay = ({
     (next: BoardConfig, key: string | null) => {
       writeInstalledBoardConfig(next, Date.now())
       if (key) void save(key, "local")
-      replaceHashIfNeeded(boardHashFromConfig({ ...next, key: key ?? undefined }))
+      replaceHashIfNeeded(
+        boardHashFromConfig({ ...next, key: key ?? undefined })
+      )
       rereadInstalled()
     },
     [save]
@@ -665,6 +667,7 @@ export const BoardDisplay = ({
     if (kind === "rail") {
       return (
         <RailArrivalsBoard
+          headerMark="label"
           stopName={stopName}
           stopPointId={stopId || undefined}
           headingLevel={2}
@@ -690,6 +693,7 @@ export const BoardDisplay = ({
     if (kind === "bus") {
       return (
         <BusArrivalsBoard
+          headerMark="label"
           stopName={busArrivals.data[0]?.stationName ?? "Bus"}
           stopPointId={busStopId || undefined}
           headingLevel={2}
@@ -708,6 +712,7 @@ export const BoardDisplay = ({
     if (kind === "river") {
       return (
         <RiverBusArrivalsBoard
+          headerMark="label"
           stopName={riverArrivals.data[0]?.stationName ?? "River"}
           stopPointId={riverStopId || undefined}
           headingLevel={2}

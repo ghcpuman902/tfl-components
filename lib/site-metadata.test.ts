@@ -12,8 +12,11 @@ import {
   docsEntryMetadata,
   pageMetadata,
   ROUTE_PAGE_META,
+  SOCIAL_IMAGE,
 } from "./site-metadata"
 import { DOCS_ENTRIES } from "./docs-catalog"
+import { COMPARE_ALTERNATIVES } from "./compare/alternatives"
+import { OG_IMAGE, OG_IMAGE_URL } from "./og/image"
 import { BOARD_VIEW_MANIFEST_PATH } from "./tfl/board-view-manifest"
 
 const REQUIRED_ROUTES = [
@@ -64,6 +67,37 @@ describe("route metadata", () => {
       assert.equal(meta.twitter?.title, input.title, key)
       assert.equal(meta.twitter?.description, input.description, key)
       assert.equal(meta.twitter?.card, "summary_large_image", key)
+      assert.deepEqual(
+        meta.openGraph?.images,
+        [SOCIAL_IMAGE],
+        `${key} og:image`
+      )
+      assert.deepEqual(
+        meta.twitter?.images,
+        [{ url: OG_IMAGE_URL, alt: OG_IMAGE.alt }],
+        `${key} twitter:image`
+      )
+    }
+  })
+
+  it("points the social image at the opengraph-image route", () => {
+    assert.equal(SOCIAL_IMAGE.url, `${SITE_URL}/opengraph-image`)
+    assert.equal(SOCIAL_IMAGE.width, 1200)
+    assert.equal(SOCIAL_IMAGE.height, 630)
+    assert.ok(docsEntryMetadata("ipad-dashboard").openGraph?.images)
+    assert.ok(docsEntryMetadata("tv").twitter?.images)
+  })
+
+  it("cites a public source for every /compare row", () => {
+    assert.ok(COMPARE_ALTERNATIVES.length >= 7)
+    for (const item of COMPARE_ALTERNATIVES) {
+      assert.ok(item.sources.length > 0, item.id)
+      for (const source of item.sources) {
+        assert.match(source.url, /^https:\/\//, `${item.id} ${source.url}`)
+      }
+      for (const text of [item.kind, item.cost, item.tflData, item.goodFit]) {
+        assert.doesNotMatch(text, /\bbest\b|[–—]/i, item.id)
+      }
     }
   })
 

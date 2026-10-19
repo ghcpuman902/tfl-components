@@ -295,3 +295,15 @@ fill: #976336;
 .landing-cls-98 {
 fill: #692512;
 }
+
+/*
+ * Phone hero: the camera frames the iPad, so the console-table drawer knobs
+ * sit right behind the sub-headline and read as stray rings. Hide only the
+ * knobs below the `md` breakpoint (same as `MOBILE_MEDIA_QUERY`); the room
+ * keeps them at tablet and desktop widths.
+ */
+@media (max-width: 767px) {
+  .landing-drawer-knob {
+    display: none;
+  }
+}

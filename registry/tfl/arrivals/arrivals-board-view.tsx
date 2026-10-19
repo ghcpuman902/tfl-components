@@ -49,6 +49,46 @@ const arrivalsRoundelVariant = (mode: ArrivalsBoardMode): RoundelPreset => {
 const isRouteArrivalsMode = (mode: ArrivalsBoardMode): boolean =>
   mode === "bus" || mode === "river"
 
+/**
+ * Title-row mark. `roundel` keeps the env-gated `TfLRoundel` (registry
+ * default). `label` paints a neutral text chip instead, for hosted apps that
+ * must not show a circle-and-bar mark at all (TfL open-data branding rules).
+ */
+export type ArrivalsHeaderMark = "roundel" | "label"
+
+const ARRIVALS_MODE_LABEL: Record<ArrivalsBoardMode, string> = {
+  rail: "Trains",
+  bus: "Buses",
+  river: "River",
+}
+
+const ArrivalsModeLabel = ({ mode }: { mode: ArrivalsBoardMode }) => (
+  <span
+    data-slot="arrivals-mode-label"
+    aria-hidden
+    className="inline-flex h-[calc(var(--arrivals-row)*0.5)] shrink-0 items-center rounded-sm border border-current/30 px-1.5 text-xs leading-none font-medium tracking-wide text-muted-foreground uppercase"
+  >
+    {ARRIVALS_MODE_LABEL[mode]}
+  </span>
+)
+
+const ArrivalsHeaderMarkView = ({
+  mark,
+  mode,
+}: {
+  mark: ArrivalsHeaderMark
+  mode: ArrivalsBoardMode
+}) =>
+  mark === "label" ? (
+    <ArrivalsModeLabel mode={mode} />
+  ) : (
+    <TfLRoundel
+      variant={arrivalsRoundelVariant(mode)}
+      className="size-[var(--arrivals-row)] shrink-0"
+      aria-hidden
+    />
+  )
+
 export type { ArrivalsBoardClassNames }
 export {
   formatArrivalsCountdown,
@@ -78,6 +118,8 @@ export type ArrivalsBoardChromeProps = {
   title?: string
   /** Semantic heading level for the stop name. Prefer `2` when embedded under a page `h1`. */
   headingLevel?: 1 | 2
+  /** Title-row mark. Default `roundel`; `label` shows a neutral mode word. */
+  headerMark?: ArrivalsHeaderMark
   loading?: boolean
   /**
    * Fetch/render failure. Takes precedence over an empty list.
@@ -145,8 +187,10 @@ export const ArrivalsBoardSkeleton = ({
   className,
   stopName,
   stopLetter,
+  headerMark = "roundel",
 }: {
   mode?: ArrivalsBoardMode
+  headerMark?: ArrivalsHeaderMark
   className?: string
   /** Known stop identity — paint immediately; do not wait on predictions. */
   stopName?: string
@@ -167,11 +211,7 @@ export const ArrivalsBoardSkeleton = ({
     >
       {stopName ? (
         <>
-          <TfLRoundel
-            variant={arrivalsRoundelVariant(mode)}
-            className="size-[var(--arrivals-row)] shrink-0"
-            aria-hidden
-          />
+          <ArrivalsHeaderMarkView mark={headerMark} mode={mode} />
           <p
             className={cn(
               "flex h-full min-w-0 flex-1 items-center text-3xl",
@@ -447,6 +487,7 @@ export const ArrivalsBoardView = ({
   resolvedStopLetter,
   disruptions = [],
   headingLevel = 1,
+  headerMark = "roundel",
   loading = false,
   error = null,
   statusLabel,
@@ -491,11 +532,7 @@ export const ArrivalsBoardView = ({
             hasStopDisruptionChips && "overflow-visible"
           )}
         >
-          <TfLRoundel
-            variant={arrivalsRoundelVariant(mode)}
-            className="size-[var(--arrivals-row)] shrink-0"
-            aria-hidden
-          />
+          <ArrivalsHeaderMarkView mark={headerMark} mode={mode} />
           {stopName ? (
             <TitleTag
               className={cn(

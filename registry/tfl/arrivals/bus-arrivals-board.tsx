@@ -79,14 +79,17 @@ export type BusArrivalsBoardProps = ArrivalsBoardChromeProps & {
 export const BusArrivalsBoardSkeleton = ({
   className,
   stopName,
+  headerMark,
   stopLetter,
 }: {
   className?: string
   stopName?: string
+  headerMark?: ArrivalsBoardChromeProps["headerMark"]
   stopLetter?: string
 } = {}) => (
   <ArrivalsBoardSkeleton
     mode="bus"
+    headerMark={headerMark}
     className={className}
     stopName={stopName}
     stopLetter={stopLetter}
@@ -128,6 +131,7 @@ export const BusArrivalsBoard = ({
     return (
       <BusArrivalsBoardSkeleton
         className={className}
+        headerMark={chrome.headerMark}
         stopName={heading}
         stopLetter={stopLetter}
       />

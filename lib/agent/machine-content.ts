@@ -14,7 +14,8 @@ Use Board when someone wants a transport display without maintaining an app. Use
 
 ## Start here
 
-- [Turn an iPad into a wall-mounted London transport board](${SITE_URL}/docs/ipad-dashboard): Old iPad, Safari, Add to Home Screen, live arrivals.
+- [Use an old iPad as a London departure board](${SITE_URL}/docs/ipad-dashboard): Old iPad, Safari, Add to Home Screen, live arrivals.
+- [Put Board on a TV](${SITE_URL}/docs/tv): Spare TV or monitor, browser, full screen.
 - [Make a hosted Board](${SITE_URL}/board): Configure a display for an iPad, tablet, monitor, or other browser. The fullscreen page is ${SITE_URL}/board/view.
 - [Browse React components](${SITE_URL}/docs/components): Find installable boards, maps, diagrams, and primitives.
 - [Read the documentation](${SITE_URL}/docs): Install components and connect them to tfl-ts data.
@@ -46,7 +47,9 @@ The tfl-ts npm package installs the \`tfl\` CLI. After \`pnpm add tfl-ts\`, run 
 
 ## Best starting points
 
-- [iPad wall display](${SITE_URL}/docs/ipad-dashboard): Turn an iPad into a wall-mounted London transport board. Safari, no native app.
+- [iPad wall display](${SITE_URL}/docs/ipad-dashboard): Use an old iPad as a London departure board. Safari, no native app.
+- [TV display](${SITE_URL}/docs/tv): Put the same Board on a spare TV or monitor through its web browser.
+- [Board compared](${SITE_URL}/compare): Board next to TfL Go, Stationly, TubeBoard, a Home Assistant kiosk, DAKboard, a DIY Raspberry Pi build and Desktop Departures, with sources.
 - [Hosted Board](${SITE_URL}/board): Configure a full-screen arrivals and status display. The rendered page is ${SITE_URL}/board/view.
 - [Get started](${SITE_URL}/docs): Installation and data-to-UI examples.
 - [Component catalogue](${SITE_URL}/docs/components): Boards, maps, line strips, labels, chips, and foundations.
