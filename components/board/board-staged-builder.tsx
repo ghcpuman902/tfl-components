@@ -19,8 +19,16 @@ import { BoardPreviewModePills } from "@/components/board/board-preview-mode"
 import { BoardShareCard } from "@/components/board/board-share-card"
 import { BoardStationSearch } from "@/components/board/board-station-search"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { ChevronDownIcon, LocateIcon } from "lucide-react"
+import { ChevronDownIcon, LocateFixedIcon, LocateIcon } from "lucide-react"
 import { useLandingTrack } from "@/components/landing/landing-analytics"
 import { trackHeroEvent } from "@/lib/analytics/track"
 import { readExposedHeroVariant } from "@/lib/landing/hero-client"
@@ -43,6 +51,15 @@ import {
   getBoardNearbyPlacesForStop,
   type BoardNearbyResult,
 } from "@/lib/tfl/board-nearby-action"
+import {
+  LOCATE_HELP,
+  LOCATE_WATCHDOG_MS,
+  locateFailureAction,
+  locateFailureFromGeolocation,
+  locateFailureSentence,
+  locatePlatform,
+  type LocateFailure,
+} from "@/lib/tfl/board-locate"
 import { boardSlotsInclude, resolveBoardSlots } from "@/lib/tfl/board-panels"
 import {
   BOARD_STATUS_CORE_LINE_IDS,
@@ -261,7 +278,11 @@ export const BoardStagedBuilder = ({
   const [draft, setDraft] = useState<BoardSetupDraft>(createBoardSetupDraft)
   const [ready, setReady] = useState(false)
   const [locateBusy, setLocateBusy] = useState(false)
-  const [locateMessage, setLocateMessage] = useState<string | null>(null)
+  const [locateFailure, setLocateFailure] = useState<LocateFailure | null>(null)
+  const [locateHelpOpen, setLocateHelpOpen] = useState(false)
+  const [locatedStopId, setLocatedStopId] = useState<string | null>(null)
+  const locateRunRef = useRef(0)
+  const locateWatchdogRef = useRef(0)
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [advancedConfig, setAdvancedConfig] = useState<Partial<BoardConfig>>(
     {}
@@ -324,6 +345,8 @@ export const BoardStagedBuilder = ({
     if (!ready) return
     persistDraft(draft)
   }, [draft, ready])
+
+  useEffect(() => () => window.clearTimeout(locateWatchdogRef.current), [])
 
   const updateDraft = (
     next: BoardSetupDraft | ((current: BoardSetupDraft) => BoardSetupDraft)
@@ -435,41 +458,76 @@ export const BoardStagedBuilder = ({
     })
   }, [track])
 
+  const failLocate = (failure: LocateFailure) => {
+    window.clearTimeout(locateWatchdogRef.current)
+    locateRunRef.current += 1
+    setLocateBusy(false)
+    setLocateFailure(failure)
+    setLocatedStopId(null)
+    updateDraft((current) => {
+      if (current.stopId || current.continueWithoutStop) return current
+      const lineIds = (
+        lookupBoardStationLines(stationLines, HOME_RAIL_STOP.id) ?? []
+      ).map((line) => line.lineId)
+      return startIfNeeded({
+        ...current,
+        stopId: HOME_RAIL_STOP.id,
+        stopName: HOME_RAIL_STOP.name,
+        lineIds: current.lineIds.length > 0 ? current.lineIds : lineIds,
+      })
+    })
+  }
+
   const handleLocate = () => {
-    if (!navigator.geolocation) {
-      setLocateMessage("Location is not available.")
-      setAdvancedOpen(true)
-      focusSearch()
+    setLocateHelpOpen(false)
+    if (!window.isSecureContext) {
+      failLocate("insecure")
       return
     }
+    if (!navigator.geolocation) {
+      failLocate("unsupported")
+      return
+    }
+    window.clearTimeout(locateWatchdogRef.current)
+    const run = ++locateRunRef.current
+    const stale = () => locateRunRef.current !== run
     setLocateBusy(true)
-    setLocateMessage(null)
+    setLocateFailure(null)
+    locateWatchdogRef.current = window.setTimeout(
+      () => failLocate("timeout"),
+      LOCATE_WATCHDOG_MS
+    )
     navigator.geolocation.getCurrentPosition(
       async (position) => {
+        if (stale()) return
         try {
           const result = await getBoardNearbyPlaces(
             position.coords.latitude,
             position.coords.longitude
           )
+          if (stale()) return
           if (!result.ok) {
-            setLocateMessage(result.error)
-            setAdvancedOpen(true)
-            focusSearch()
+            failLocate("lookup")
             return
           }
           const rail = result.rail
-          const lineIds = rail
-            ? (lookupBoardStationLines(stationLines, rail.id) ?? []).map(
-                (line) => line.lineId
-              )
-            : []
+          if (!rail) {
+            failLocate("no-station")
+            return
+          }
+          window.clearTimeout(locateWatchdogRef.current)
+          setLocateBusy(false)
+          setLocatedStopId(rail.id)
+          const lineIds = (
+            lookupBoardStationLines(stationLines, rail.id) ?? []
+          ).map((line) => line.lineId)
           updateDraft((current) =>
             startIfNeeded({
               ...current,
               locationUsed: true,
               continueWithoutStop: false,
-              stopId: rail?.id ?? current.stopId,
-              stopName: rail?.name ?? current.stopName,
+              stopId: rail.id,
+              stopName: rail.name,
               lineIds: lineIds.length > 0 ? lineIds : current.lineIds,
               statusLineIds:
                 lineIds.length > 0
@@ -487,20 +545,15 @@ export const BoardStagedBuilder = ({
               ),
             })
           )
-          if (!rail) setAdvancedOpen(true)
         } catch {
-          setLocateMessage("Could not find a nearby stop.")
-          setAdvancedOpen(true)
-          focusSearch()
-        } finally {
-          setLocateBusy(false)
+          if (!stale()) failLocate("lookup")
         }
       },
-      () => {
-        setLocateBusy(false)
-        setLocateMessage("Location was not shared.")
-        setAdvancedOpen(true)
-        focusSearch()
+      (error) => {
+        if (stale()) return
+        failLocate(
+          locateFailureFromGeolocation(error.code, navigator.userAgent)
+        )
       },
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 30_000 }
     )
@@ -550,6 +603,12 @@ export const BoardStagedBuilder = ({
   }
 
   const previewProfile = draft.screenProfile
+  const locateAction = locateFailure ? locateFailureAction(locateFailure) : null
+  const located =
+    !locateBusy &&
+    !draft.continueWithoutStop &&
+    locatedStopId != null &&
+    locatedStopId === draft.stopId
   const selectedStopLabel = draft.continueWithoutStop
     ? "Network status"
     : (draft.stopName ?? autoStopName)
@@ -589,19 +648,77 @@ export const BoardStagedBuilder = ({
                 </h2>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={located ? "secondary" : "outline"}
                   className="w-full"
                   onClick={handleLocate}
                   disabled={locateBusy}
                 >
-                  <LocateIcon data-icon="inline-start" aria-hidden />
-                  {locateBusy ? "Finding a stop…" : "Pick for me"}
+                  {located ? (
+                    <LocateFixedIcon data-icon="inline-start" aria-hidden />
+                  ) : (
+                    <LocateIcon data-icon="inline-start" aria-hidden />
+                  )}
+                  {locateBusy
+                    ? "Finding a stop…"
+                    : located
+                      ? `Near ${selectedStopLabel}`
+                      : "Pick for me"}
                 </Button>
-                {locateMessage ? (
-                  <p className="text-sm text-muted-foreground" role="status">
-                    {locateMessage}
+                {locateFailure ? (
+                  <p
+                    className="text-sm text-balance text-muted-foreground"
+                    role="status"
+                  >
+                    {locateFailureSentence(
+                      locateFailure,
+                      draft.stopId === HOME_RAIL_STOP.id
+                        ? HOME_RAIL_STOP.name
+                        : null,
+                      locatePlatform(
+                        navigator.userAgent,
+                        navigator.maxTouchPoints
+                      )
+                    )}
+                    {locateAction ? (
+                      <>
+                        {" "}
+                        <button
+                          type="button"
+                          className="text-foreground underline underline-offset-4"
+                          onClick={
+                            locateAction === "help"
+                              ? () => setLocateHelpOpen(true)
+                              : handleLocate
+                          }
+                        >
+                          {locateAction === "help" ? "How to fix" : "Try again"}
+                        </button>
+                      </>
+                    ) : null}
                   </p>
                 ) : null}
+                <Dialog open={locateHelpOpen} onOpenChange={setLocateHelpOpen}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Allow location</DialogTitle>
+                      <DialogDescription>
+                        {locateHelpOpen
+                          ? LOCATE_HELP[
+                              locatePlatform(
+                                navigator.userAgent,
+                                navigator.maxTouchPoints
+                              )
+                            ]
+                          : null}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button type="button" onClick={handleLocate}>
+                        Try again
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
                 {draft.stopId || draft.continueWithoutStop ? (
                   <p className="text-sm text-foreground">
                     {selectedStopLabel}

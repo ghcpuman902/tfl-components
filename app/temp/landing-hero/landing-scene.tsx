@@ -136,7 +136,7 @@ const LandingStaticRoom = () => {
     <section
       id="landing-room"
       className="landing-hero-stage relative flex w-full flex-col overflow-hidden"
-      style={{ height: "calc(100dvh - var(--site-header-height))" }}
+      style={{ height: "calc(100svh - var(--site-header-height))" }}
     >
       <div className="landing-hero-paper absolute inset-0" />
       <div className="absolute inset-0">
@@ -345,9 +345,9 @@ export const LandingScene = ({
     phoneDollyRef,
     phoneDeepScaleRef,
     phoneFocusOriginRef,
+    phoneFreePanRef,
     phonePanRef,
     phonePoseRef,
-    phoneArtworkRef,
   } = useIpadZoom({
     wrapperRef,
     compositionRef,
@@ -371,9 +371,8 @@ export const LandingScene = ({
     stageRef,
     enabled: !reducedMotion && canvasLook,
     phoneDollyRef: phoneCanvas === true ? phoneDollyRef : undefined,
-    phonePanRef: phoneCanvas === true ? phonePanRef : undefined,
+    phoneFreePanRef: phoneCanvas === true ? phoneFreePanRef : undefined,
     phonePoseRef: phoneCanvas === true ? phonePoseRef : undefined,
-    phoneArtworkRef: phoneCanvas === true ? phoneArtworkRef : undefined,
     phoneFocusOriginRef: phoneCanvas === true ? phoneFocusOriginRef : undefined,
     onPhoneDolly: phoneCanvas === true ? setPhoneDolly : undefined,
   })
@@ -563,14 +562,14 @@ export const LandingScene = ({
 
   const landingVars = {
     "--landing-ipad-width": IPAD_FRAME_WIDTH,
-    "--landing-ipad-top": `max(${HERO_TOP_INSET}, calc((100dvh - var(--site-header-height) - (var(--landing-ipad-width) / ${IPAD_FRAME_ASPECT}) - ${HERO_COPY_GAP} - ${HERO_COPY_BAND}) / 2 - ${HERO_GROUP_BIAS}))`,
+    "--landing-ipad-top": `max(${HERO_TOP_INSET}, calc((100svh - var(--site-header-height) - (var(--landing-ipad-width) / ${IPAD_FRAME_ASPECT}) - ${HERO_COPY_GAP} - ${HERO_COPY_BAND}) / 2 - ${HERO_GROUP_BIAS}))`,
     "--landing-copy-top": `calc(var(--landing-ipad-top) + var(--landing-ipad-width) / ${IPAD_FRAME_ASPECT} + ${HERO_COPY_GAP})`,
   } as CSSProperties
 
   if (reducedMotion) {
     return (
       <div className="landing-home w-full min-w-0" style={landingVars}>
-        <section className="mx-auto flex min-h-[calc(100dvh-var(--site-header-height))] w-full flex-col justify-center px-4 pt-4 pb-10">
+        <section className="mx-auto flex min-h-[calc(100svh-var(--site-header-height))] w-full flex-col justify-center px-4 pt-4 pb-10">
           <div
             className="relative mx-auto w-(--landing-ipad-width)"
             style={{ aspectRatio: IPAD_ASPECT }}
@@ -612,29 +611,25 @@ export const LandingScene = ({
       {/* Phone: one framed canvas. md+: extra viewport for the scroll zoom. */}
       <div
         ref={wrapperRef}
-        className="landing-scroll-runway relative h-[calc(100dvh-var(--site-header-height))] w-full md:h-[calc(200dvh-var(--site-header-height))]"
+        className="landing-scroll-runway relative h-[calc(100svh-var(--site-header-height))] w-full md:h-[calc(200svh-var(--site-header-height))]"
       >
         <div
           id="space"
           aria-hidden
           className="pointer-events-none absolute left-0 h-px w-px"
           style={{
-            top: "calc(100dvh - var(--site-header-height) + var(--site-hash-scroll-margin))",
+            top: "calc(100svh - var(--site-header-height) + var(--site-hash-scroll-margin))",
           }}
         />
         <div
-          className="landing-hero-stage sticky z-10"
-          style={{
-            top: "var(--site-header-height)",
-            height: "calc(100dvh - var(--site-header-height))",
-          }}
+          className="landing-hero-stage relative z-10 md:sticky md:top-(--site-header-height)"
+          style={{ height: "calc(100svh - var(--site-header-height))" }}
         >
           <div
             ref={stageRef}
             className="pointer-events-none relative h-full overflow-hidden"
             style={{
-              // Vertical page scroll only. Browser pinch-zoom crashes the
-              // sticky GSAP camera via visualViewport; room peek is custom.
+              // Vertical page scroll only; room peek is custom.
               touchAction: production ? "pan-y" : undefined,
             }}
             onPointerDown={() => {
@@ -645,7 +640,7 @@ export const LandingScene = ({
             <div
               ref={compositionRef}
               className="absolute inset-x-0 top-0 overflow-hidden"
-              style={{ height: "calc(100dvh - var(--site-header-height))" }}
+              style={{ height: "calc(100svh - var(--site-header-height))" }}
             >
               <div
                 ref={cameraRef}

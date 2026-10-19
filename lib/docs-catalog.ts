@@ -210,6 +210,17 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 185,
   },
   {
+    slug: "tv",
+    title: "TV display",
+    description:
+      "Show live TfL arrivals and line status on a spare TV or monitor through its web browser. No app and no API key.",
+    group: "start",
+    kind: "page",
+    href: "/docs/tv",
+    sidebarSection: "get-started",
+    sidebarOrder: 186,
+  },
+  {
     slug: "board-url",
     title: "Board URL",
     description:
@@ -314,8 +325,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "drawing-the-line",
     title: "Drawing the line",
-    description:
-      "How station order and track become a drawn line.",
+    description: "How station order and track become a drawn line.",
     group: "start",
     kind: "page",
     href: "/docs/drawing-the-line",
@@ -390,8 +400,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "tube-rail-status",
     title: "Tube & Rail Status",
-    description:
-      "Line status for Tube, Elizabeth, Overground, DLR, and Tram.",
+    description: "Line status for Tube, Elizabeth, Overground, DLR, and Tram.",
     group: "interfaces",
     kind: "component",
     href: "/docs/tube-rail-status",
@@ -408,8 +417,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "bus-arrivals",
     title: "Bus Arrivals",
-    description:
-      "Next buses at a stop, listed together or grouped by route.",
+    description: "Next buses at a stop, listed together or grouped by route.",
     group: "interfaces",
     kind: "component",
     href: "/docs/bus-arrivals",
@@ -426,8 +434,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "bus-disruptions",
     title: "Bus disruption information",
-    description:
-      "Route-level disruption summaries.",
+    description: "Route-level disruption summaries.",
     group: "interfaces",
     kind: "placeholder",
     href: "/docs/bus-disruptions",
@@ -566,8 +573,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "line-strip",
     title: "Simple line strip",
-    description:
-      "A line diagram with colour, station labels, and closures.",
+    description: "A line diagram with colour, station labels, and closures.",
     group: "interfaces",
     kind: "component",
     href: "/docs/line-strip",
@@ -672,8 +678,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "line-chip",
     title: "Line chip",
-    description:
-      "Filled chips and colour bars in official line colours.",
+    description: "Filled chips and colour bars in official line colours.",
     group: "primitives",
     kind: "component",
     href: "/docs/line-chip",
@@ -874,8 +879,7 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
   {
     slug: "junction-candidates",
     title: "Junction candidates",
-    description:
-      "Inspect every distinct minimal decomposition of a junction.",
+    description: "Inspect every distinct minimal decomposition of a junction.",
     group: "drafts",
     kind: "draft",
     href: "/drafts/junction-candidates",

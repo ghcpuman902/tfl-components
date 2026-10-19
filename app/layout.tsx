@@ -26,6 +26,7 @@ import {
   SITE_URL,
 } from "@/lib/site"
 import { fontPreferenceBootScript } from "@/lib/site-font"
+import { SOCIAL_IMAGE } from "@/lib/site-metadata"
 import {
   SITE_VIEWPORT_THEME_COLOR,
   themeColorBootScript,
@@ -88,11 +89,13 @@ export const metadata: Metadata = {
     title: BOARD_HOME_TITLE,
     description: BOARD_HOME_DESCRIPTION,
     url: SITE_URL,
+    images: [SOCIAL_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: BOARD_HOME_TITLE,
     description: BOARD_HOME_DESCRIPTION,
+    images: [{ url: SOCIAL_IMAGE.url, alt: SOCIAL_IMAGE.alt }],
   },
 }
 

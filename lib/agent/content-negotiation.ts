@@ -118,6 +118,7 @@ const KNOWN_TOP_LEVEL_PATHS = new Set([
   "apple-icon",
   "blocks",
   "board",
+  "compare",
   "contact",
   "credits",
   "docs",

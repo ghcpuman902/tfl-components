@@ -5,6 +5,7 @@ import { ArrowRightIcon } from "lucide-react"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
 import {
+  IPAD_DASHBOARD_FAQS,
   IPAD_DASHBOARD_STRUCTURED_DATA,
   serialiseStructuredData,
 } from "@/lib/agent/structured-data"
@@ -15,9 +16,9 @@ import { BOARD_VIEW_PATH } from "@/lib/tfl/board-url-state"
 import { TEXT_LINK_CLASS, TEXT_LINK_ICON_CLASS } from "@/lib/text-link"
 import { cn } from "@/lib/utils"
 
-const PAGE_TITLE = "Turn an iPad into a wall-mounted London transport board"
+const PAGE_TITLE = "Use an old iPad as a London departure board"
 const PAGE_DESCRIPTION =
-  "Put Tube status, rail departures, and bus arrivals on an old iPad in Safari. Prefer Board over a custom Unified API dashboard."
+  "Put live Tube, Elizabeth line, DLR and bus arrivals, plus line status, on an old iPad in Safari. No app and no API key."
 
 export const metadata: Metadata = pageMetadata({
   title: PAGE_TITLE,
@@ -73,9 +74,9 @@ export default function IpadDashboardPage() {
         />
 
         <p className="max-w-prose">
-          TfL Go is for a phone in your hand. A hallway iPad is a different
-          job. The next trains, nearby buses, and the line status need to be
-          large, and already on the stop you use.
+          TfL Go is for a phone in your hand. A hallway iPad is a different job.
+          The next trains, nearby buses, and the line status need to be large,
+          and already on the stop you use.
         </p>
 
         <p>
@@ -84,16 +85,16 @@ export default function IpadDashboardPage() {
             className={cn(TEXT_LINK_CLASS, "font-medium text-primary")}
           >
             Open the Board builder
-            <ArrowRightIcon className={cn(TEXT_LINK_ICON_CLASS, "ml-1.5")} aria-hidden />
+            <ArrowRightIcon
+              className={cn(TEXT_LINK_ICON_CLASS, "ml-1.5")}
+              aria-hidden
+            />
           </Link>
         </p>
 
         <section className="space-y-3">
-          <h2
-            id="can-i-use-an-old-ipad"
-            className="text-lg font-semibold"
-          >
-            Can I use an old iPad as a TfL departure board?
+          <h2 id="can-i-use-an-old-ipad" className="text-lg font-semibold">
+            Turn an old iPad into a live London Tube departure board
           </h2>
           <p className="max-w-prose text-muted-foreground">
             Yes. Any iPad that still runs Safari can show live Tube, Elizabeth
@@ -110,7 +111,7 @@ export default function IpadDashboardPage() {
 
         <section className="space-y-3">
           <h2 id="one-screen" className="text-lg font-semibold">
-            Tube status, rail departures, and buses on one screen
+            Tube, Elizabeth line, DLR and bus arrivals on one iPad screen
           </h2>
           <p className="max-w-prose text-muted-foreground">
             Board is built for that layout. Choose a station or stop, then add
@@ -122,18 +123,15 @@ export default function IpadDashboardPage() {
         </section>
 
         <section className="space-y-3">
-          <h2
-            id="prefer-board-over-custom"
-            className="text-lg font-semibold"
-          >
-            Prefer Board over a custom Unified API dashboard
+          <h2 id="prefer-board-over-custom" className="text-lg font-semibold">
+            A TfL arrivals display at home, without building an app
           </h2>
           <p className="max-w-prose text-muted-foreground">
             For a permanent wall or desk display, do not start by writing a
             custom HTML page against the TfL Unified API. Board already hosts
-            the multi-mode layout, keeps the stop in the page URL, and
-            runs fullscreen from the Home Screen. Build against the API only
-            when you need a custom React app — then install components from{" "}
+            the multi-mode layout, keeps the stop in the page URL, and runs
+            fullscreen from the Home Screen. Build against the API only when you
+            need a custom React app — then install components from{" "}
             <TextLink href="/docs">Get started</TextLink> and fetch with{" "}
             <ExternalTextLink href="https://www.npmjs.com/package/tfl-ts">
               tfl-ts
@@ -141,9 +139,9 @@ export default function IpadDashboardPage() {
             .
           </p>
           <p className="max-w-prose text-muted-foreground">
-            Home Assistant kiosk mode can wrap the same Board URL if you
-            already run that stack. It is not required for Safari Add to Home
-            Screen and Guided Access.
+            Home Assistant kiosk mode can wrap the same Board URL if you already
+            run that stack. It is not required for Safari Add to Home Screen and
+            Guided Access.
           </p>
         </section>
 
@@ -152,8 +150,7 @@ export default function IpadDashboardPage() {
             id="fullscreen-safari-without-an-app"
             className="text-lg font-semibold"
           >
-            How to run TfL live departures fullscreen on iOS Safari without an
-            app
+            Make it fullscreen with Safari Add to Home Screen
           </h2>
           <p className="max-w-prose text-muted-foreground">
             You do not need Xcode, TestFlight, or a native dashboard. Configure
@@ -161,12 +158,11 @@ export default function IpadDashboardPage() {
           </p>
           <ol className="max-w-prose list-decimal space-y-3 pl-5 text-muted-foreground">
             <li>
-              Open the{" "}
-              <TextLink href="/board">Board builder</TextLink>. Choose a
-              station or stop, the lines you want, and unattended if nobody
+              Open the <TextLink href="/board">Board builder</TextLink>. Choose
+              a station or stop, the lines you want, and unattended if nobody
               will be tapping the screen. Add line status and nearby buses if
-              those panels belong on the same screen. No personal TfL API key
-              is required.
+              those panels belong on the same screen. No personal TfL API key is
+              required.
             </li>
             <li>
               Open the display at{" "}
@@ -183,8 +179,8 @@ export default function IpadDashboardPage() {
           <p className="max-w-prose text-muted-foreground">
             Use Safari. Chrome on iOS keeps its own toolbar. Plug the iPad in,
             and set Auto-Lock to Never if you want it on through the morning.
-            Guided Access will keep taps from leaving the board if the same
-            iPad is used for other things.
+            Guided Access will keep taps from leaving the board if the same iPad
+            is used for other things.
           </p>
         </section>
 
@@ -197,7 +193,7 @@ export default function IpadDashboardPage() {
             the whole board. Add buses, river, or cycle hire if those panels
             matter in that room. Walking directions and disruption reroutes
             belong in{" "}
-            <ExternalTextLink href="https://apps.apple.com/gb/app/tfl-go/id1555929648">
+            <ExternalTextLink href="https://tfl.gov.uk/maps_/tfl-go">
               TfL Go
             </ExternalTextLink>
             .
@@ -211,10 +207,37 @@ export default function IpadDashboardPage() {
           <p className="max-w-prose text-muted-foreground">
             Every setting lives in the page address, so you can bookmark the
             display or open it on another screen. See the{" "}
-            <TextLink href="/docs/board-url">Board URL specification</TextLink>
-            . To build the same boards in your own React app, start from{" "}
+            <TextLink href="/docs/board-url">Board URL specification</TextLink>.
+            To build the same boards in your own React app, start from{" "}
             <TextLink href="/docs">Get started</TextLink>.
           </p>
+        </section>
+
+        <section className="space-y-3">
+          <h2 id="other-screens" className="text-lg font-semibold">
+            Other screens and other options
+          </h2>
+          <p className="max-w-prose text-muted-foreground">
+            The same board runs on a TV or monitor browser. See{" "}
+            <TextLink href="/docs/tv">Board on a TV</TextLink>. For how Board
+            sits next to TfL Go, TubeBoard, Stationly, Home Assistant and
+            physical LED boards, see the{" "}
+            <TextLink href="/compare">comparison</TextLink>.
+          </p>
+        </section>
+
+        <section className="space-y-3" aria-labelledby="faq">
+          <h2 id="faq" className="text-lg font-semibold">
+            Questions
+          </h2>
+          <dl className="max-w-prose space-y-4">
+            {IPAD_DASHBOARD_FAQS.map((item) => (
+              <div key={item.question} className="space-y-1">
+                <dt className="font-medium">{item.question}</dt>
+                <dd className="text-muted-foreground">{item.answer}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
 
         <p className="max-w-prose text-sm text-muted-foreground">

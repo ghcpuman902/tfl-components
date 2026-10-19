@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { getDocsEntry } from "@/lib/docs-catalog"
+import { OG_IMAGE, OG_IMAGE_URL } from "@/lib/og/image"
 import {
   BOARD_HOME_DESCRIPTION,
   BOARD_HOME_TITLE,
@@ -22,6 +23,20 @@ export type PageMetaInput = {
   /** Open Graph site name. Defaults to {@link SITE_NAME}. */
   siteName?: string
 }
+
+/**
+ * Shared social card from `app/opengraph-image`. Next.js drops the file-based
+ * image as soon as a route sets its own `openGraph` / `twitter` objects, so
+ * every route lists it explicitly (absolute URL, so previews and crawlers
+ * resolve it without `metadataBase`).
+ */
+export const SOCIAL_IMAGE = {
+  url: OG_IMAGE_URL,
+  width: OG_IMAGE.width,
+  height: OG_IMAGE.height,
+  alt: OG_IMAGE.alt,
+  type: "image/png",
+} as const
 
 const absoluteUrl = (path: string): string => {
   if (path.startsWith("http://") || path.startsWith("https://")) return path
@@ -58,11 +73,13 @@ export const pageMetadata = ({
       title,
       description,
       url,
+      images: [SOCIAL_IMAGE],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [{ url: SOCIAL_IMAGE.url, alt: SOCIAL_IMAGE.alt }],
     },
   }
 }
@@ -157,6 +174,18 @@ export const ROUTE_PAGE_META = {
     description:
       "TfL keys and a visitor cookie stay in this browser. P22 Underground loads from Adobe Fonts. Analytics omit keys and Board URLs.",
     path: "/privacy",
+  },
+  compare: {
+    title: "Board vs TfL Go, Stationly, TubeBoard and wall displays",
+    description:
+      "How Board compares with TfL Go, Stationly, TubeBoard, a Home Assistant kiosk, DAKboard, a DIY Raspberry Pi build and Desktop Departures.",
+    path: "/compare",
+  },
+  tv: {
+    title: "TV departure board for London",
+    description:
+      "Show live TfL arrivals and line status on a spare TV or monitor through its web browser. No app and no API key.",
+    path: "/docs/tv",
   },
   howItWasBuilt: {
     title: "How it was built",

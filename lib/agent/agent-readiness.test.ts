@@ -15,6 +15,7 @@ import {
   negotiateHomepageContent,
 } from "@/lib/agent/content-negotiation"
 import { proxy } from "@/proxy"
+import { SITE_URL } from "@/lib/site"
 import {
   HOME_MARKDOWN,
   LLMS_TEXT,
@@ -210,16 +211,26 @@ test("machine-readable route handlers return the declared formats", async () => 
 test("structured data identifies the real project without a fabricated organisation", () => {
   const types = SITE_STRUCTURED_DATA["@graph"].map((node) => node["@type"])
   assert.ok(types.includes("WebSite"))
-  assert.ok(types.includes("SoftwareApplication"))
+  // WebApplication is schema.org's SoftwareApplication subtype for web apps.
+  assert.ok(types.includes("WebApplication"))
   assert.ok(types.includes("SoftwareSourceCode"))
   assert.ok(types.includes("Person"))
   assert.ok(!types.includes("Organization"))
-  assert.match(
-    SITE_STRUCTURED_DATA["@graph"].find(
-      (node) => node["@type"] === "SoftwareApplication"
-    )?.description ?? "",
-    /\/board\/view/
+  const board = SITE_STRUCTURED_DATA["@graph"].find(
+    (node) => node["@id"] === `${SITE_URL}/#board`
   )
+  assert.match(board?.description ?? "", /\/board\/view/)
+  assert.equal(board?.name, "Board")
+  assert.ok(
+    board &&
+      "alternateName" in board &&
+      board.alternateName.includes("tfl-components")
+  )
+  const tflTs = SITE_STRUCTURED_DATA["@graph"].find(
+    (node) => node["@id"] === `${SITE_URL}/#tfl-ts`
+  )
+  assert.ok(tflTs && "url" in tflTs)
+  assert.equal(tflTs.url, "https://www.npmjs.com/package/tfl-ts")
   assert.doesNotThrow(() =>
     JSON.parse(serialiseStructuredData(SITE_STRUCTURED_DATA))
   )
@@ -233,22 +244,26 @@ test("iPad wall-display page structured data answers the search questions", () =
   assert.ok(types.includes("FAQPage"))
   assert.ok(types.includes("HowTo"))
   const serialised = serialiseStructuredData(IPAD_DASHBOARD_STRUCTURED_DATA)
-  assert.match(serialised, /Can I use an old iPad as a TfL departure board\?/)
+  assert.match(
+    serialised,
+    /How do I turn an old iPad into a live London Tube departure board\?/
+  )
   assert.match(
     serialised,
     /How to run TfL live departures fullscreen on iOS Safari without an app/
   )
   assert.match(
     serialised,
-    /Should I build a custom TfL dashboard with the Unified API for an iPad\?/
+    /How do I make a fullscreen TfL arrivals board with Safari Add to Home Screen\?/
   )
   assert.match(
     serialised,
-    /Can one board show Tube status, rail departures, and nearby buses together\?/
+    /Can one iPad screen show Tube, Elizabeth line, DLR and bus arrivals at home\?/
   )
+  assert.match(serialised, /TfL arrivals display at home/)
   assert.match(
     serialised,
-    /Do I need Home Assistant for a TfL iPad wall display\?/
+    /Should I use Home Assistant for a TfL kiosk display\?/
   )
   assert.match(serialised, /zero-install hosted web app/)
   assert.match(serialised, /\/board\/view/)
@@ -269,7 +284,9 @@ test("public static assets skip proxy negotiation, registry JSON does not", asyn
   assert.equal(verification.status, 200)
   assert.equal(verification.headers.get("x-middleware-next"), "1")
 
-  const registry = await proxy(new NextRequest("http://localhost/r/line-badge.json"))
+  const registry = await proxy(
+    new NextRequest("http://localhost/r/line-badge.json")
+  )
   assert.match(
     registry.headers.get("x-middleware-rewrite") ?? "",
     /\/api\/registry\/line-badge$/

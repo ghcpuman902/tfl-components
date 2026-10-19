@@ -21,7 +21,7 @@ export const HERO_GROUP_BIAS = "1.25rem"
  * First-fold iPad: as large as the useful viewport allows, leaving the
  * copy band free. Same token at every width — height does the rest.
  */
-export const IPAD_FRAME_WIDTH = `min(${(1 - HERO_SIDE_INSET * 2) * 100}vw, calc((100dvh - var(--site-header-height) - ${HERO_TOP_INSET} - ${HERO_COPY_GAP} - ${HERO_COPY_BAND}) * ${IPAD_FRAME_ASPECT}))`
+export const IPAD_FRAME_WIDTH = `min(${(1 - HERO_SIDE_INSET * 2) * 100}vw, calc((100svh - var(--site-header-height) - ${HERO_TOP_INSET} - ${HERO_COPY_GAP} - ${HERO_COPY_BAND}) * ${IPAD_FRAME_ASPECT}))`
 
 /**
  * Pointer follow. L2 (iPad + mirror frame, 5 m) is the lock plane.

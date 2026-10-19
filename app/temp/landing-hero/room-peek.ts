@@ -144,6 +144,14 @@ export const phoneZoomToCamera = (
 
 export type PhonePan = { x: number; y: number }
 
+export const PHONE_FREE_ZOOM_BLEND = 0.45
+
+export const phoneFreeZoomWeight = (scale: number): number => {
+  if (!(scale > 1)) return 0
+  const t = Math.min(1, (scale - 1) / PHONE_FREE_ZOOM_BLEND)
+  return t * t * (3 - 2 * t)
+}
+
 /**
  * Two-finger move in camera-local pixels. Keeps the point under the
  * starting midpoint stuck to the fingers while scale changes, and follows
@@ -173,10 +181,14 @@ export const phonePanForGesture = ({
   nextY: number
 }): PhonePan => {
   if (!(startScale > 0) || !(nextScale > 1)) return { x: 0, y: 0 }
-  const ratio = nextScale / startScale
+  const fromPath = startScale <= 1
+  const fromScale = fromPath ? 1 : startScale
+  const fromX = fromPath ? 0 : panX
+  const fromY = fromPath ? 0 : panY
+  const ratio = nextScale / fromScale
   return {
-    x: nextX - originX - ratio * (startX - panX - originX),
-    y: nextY - originY - ratio * (startY - panY - originY),
+    x: nextX - originX - ratio * (startX - fromX - originX),
+    y: nextY - originY - ratio * (startY - fromY - originY),
   }
 }
 

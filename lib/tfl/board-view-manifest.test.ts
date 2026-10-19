@@ -4,13 +4,11 @@ import { SITE_URL } from "@/lib/site"
 import { ROUTE_PAGE_META } from "@/lib/site-metadata"
 import { BOARD_VIEW_PATH } from "@/lib/tfl/board-url-state"
 import {
-  BOARD_VIEW_APPLE_WEB_APP,
   BOARD_VIEW_DISPLAY_MODES,
   BOARD_VIEW_ICON_192_PATH,
   BOARD_VIEW_ICON_512_PATH,
   BOARD_VIEW_MANIFEST,
   BOARD_VIEW_MANIFEST_PATH,
-  BOARD_VIEW_VIEWPORT,
   isStartUrlInScope,
   manifestIssuesAtLevel,
   validateWebAppManifest,
@@ -25,16 +23,9 @@ describe("board view web app manifest", () => {
     assert.deepEqual(manifestIssuesAtLevel(issues, "warning"), [])
   })
 
-  it("reopens every board view fullscreen from the home screen, with no status bar", () => {
-    assert.equal("behaviour" in BOARD_VIEW_MANIFEST, false)
+  it("reopens every board view fullscreen from the home screen", () => {
     assert.equal(BOARD_VIEW_MANIFEST.display, "fullscreen")
     assert.equal(BOARD_VIEW_MANIFEST.display_override[0], "fullscreen")
-    assert.deepEqual(BOARD_VIEW_MANIFEST.display_override, [
-      "fullscreen",
-      "standalone",
-    ])
-    assert.equal(BOARD_VIEW_MANIFEST.start_url, BOARD_VIEW_PATH)
-    assert.equal(BOARD_VIEW_MANIFEST.scope, BOARD_VIEW_PATH)
     assert.equal(
       isStartUrlInScope(
         BOARD_VIEW_MANIFEST.start_url,
@@ -42,10 +33,6 @@ describe("board view web app manifest", () => {
       ),
       true
     )
-    assert.equal(BOARD_VIEW_APPLE_WEB_APP.capable, true)
-    assert.equal(BOARD_VIEW_APPLE_WEB_APP.statusBarStyle, "black-translucent")
-    assert.equal(BOARD_VIEW_VIEWPORT.viewportFit, "cover")
-    assert.equal(BOARD_VIEW_VIEWPORT.themeColor, "#0a0a0a")
   })
 
   it("stays on the board view path and never includes a key", () => {

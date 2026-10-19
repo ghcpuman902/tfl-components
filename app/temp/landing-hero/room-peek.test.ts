@@ -173,4 +173,21 @@ describe("room-peek", () => {
       panY: -peekPanLimit(1.85),
     })
   })
+
+  it("starts the free pan at zero when a pinch leaves the path", () => {
+    const crossing = phonePanForGesture({
+      panX: 999,
+      panY: 999,
+      startScale: 1,
+      nextScale: 1.01,
+      originX: 100,
+      originY: 80,
+      startX: 140,
+      startY: 120,
+      nextX: 141,
+      nextY: 120,
+    })
+    assert.ok(Math.abs(crossing.x) < 2)
+    assert.ok(Math.abs(crossing.y) < 1)
+  })
 })

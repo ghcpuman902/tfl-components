@@ -26,6 +26,7 @@ export const SITE_TITLE_TEMPLATE = "%s · Board"
 export const SITE_AUTHOR = {
   name: "MangleKuo",
   url: "https://manglekuo.com",
+  coffeeUrl: "https://buymeacoffee.com/manglekuo",
 } as const
 
 export const SITE_INDEPENDENCE =

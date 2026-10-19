@@ -16,7 +16,7 @@ const FooterLink = ({
 }) => (
   <a
     href={href}
-    className="underline-offset-4 hover:text-foreground hover:underline"
+    className="whitespace-nowrap underline-offset-4 hover:text-foreground hover:underline"
     target="_blank"
     rel="noreferrer"
   >
@@ -169,7 +169,8 @@ export const BoardViewFooter = ({
       <p>
         Not affiliated with or endorsed by Transport for London. Built with{" "}
         <FooterLink href={TFL_TS_URL}>tfl-ts</FooterLink>. Made by{" "}
-        <FooterLink href={SITE_AUTHOR.url}>{SITE_AUTHOR.name}</FooterLink>.
+        <FooterLink href={SITE_AUTHOR.url}>{SITE_AUTHOR.name}</FooterLink>.{" "}
+        <FooterLink href={SITE_AUTHOR.coffeeUrl}>Buy me a coffee ☕</FooterLink>
       </p>
     </footer>
   )

@@ -33,13 +33,10 @@ export const LandingFallback = () => (
     <LandingScrollBoot />
     <style>{heroArtworkThemeStyleSheet()}</style>
     <div className="landing-home relative w-full min-w-0" aria-hidden>
-      <div className="landing-scroll-runway relative h-[calc(100dvh-var(--site-header-height))] w-full md:h-[calc(200dvh-var(--site-header-height))]">
+      <div className="landing-scroll-runway relative h-[calc(100svh-var(--site-header-height))] w-full md:h-[calc(200svh-var(--site-header-height))]">
         <div
-          className="landing-hero-stage sticky"
-          style={{
-            top: "var(--site-header-height)",
-            height: "calc(100dvh - var(--site-header-height))",
-          }}
+          className="landing-hero-stage relative md:sticky md:top-(--site-header-height)"
+          style={{ height: "calc(100svh - var(--site-header-height))" }}
         >
           <div className="landing-hero-paper absolute inset-0" />
         </div>

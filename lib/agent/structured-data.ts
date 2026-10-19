@@ -1,6 +1,9 @@
 import { GITHUB_REPO } from "@/lib/feedback/constants"
 import { SITE_DESCRIPTION, SITE_URL } from "@/lib/site"
 
+export const TFL_TS_NPM_URL = "https://www.npmjs.com/package/tfl-ts"
+export const TFL_TS_REPO_URL = "https://github.com/ghcpuman902/tfl-ts"
+
 export const SITE_STRUCTURED_DATA = {
   "@context": "https://schema.org",
   "@graph": [
@@ -9,18 +12,17 @@ export const SITE_STRUCTURED_DATA = {
       "@id": `${SITE_URL}/#website`,
       url: SITE_URL,
       name: "tfl-components",
-      alternateName: ["TfL Components", "MangleKuo tfl-components"],
+      alternateName: ["Board", "TfL Components", "MangleKuo tfl-components"],
       description: SITE_DESCRIPTION,
       inLanguage: "en-GB",
       author: { "@id": `${SITE_URL}/#author` },
     },
     {
-      "@type": "SoftwareApplication",
+      "@type": "WebApplication",
       "@id": `${SITE_URL}/#board`,
-      name: "tfl-components Board",
-      alternateName: "TfL Board by tfl-components",
-      description:
-        `Live London buses, trains and Tube status on a spare screen, in a browser. A zero-install hosted web app for iPad wall displays at ${SITE_URL}/board/view, with no custom Unified API dashboard to write.`,
+      name: "Board",
+      alternateName: ["tfl-components", "tfl-components Board"],
+      description: `Live London buses, trains and Tube status on a spare screen, in a browser. A zero-install hosted web app for iPad wall displays at ${SITE_URL}/board/view, with no custom Unified API dashboard to write.`,
       featureList: [
         "Next trains and Tube arrivals for a stop you choose",
         "Live bus arrivals",
@@ -30,13 +32,27 @@ export const SITE_STRUCTURED_DATA = {
       url: `${SITE_URL}/board`,
       applicationCategory: "TravelApplication",
       applicationSubCategory: "Public transport display",
-      operatingSystem: "Any operating system with a modern web browser",
+      operatingSystem: "Web (Safari, Chrome, any modern browser)",
+      browserRequirements: "Requires JavaScript. Runs in Safari on iPad.",
+      screenshot: `${SITE_URL}/opengraph-image`,
       isAccessibleForFree: true,
       offers: {
         "@type": "Offer",
         price: "0",
         priceCurrency: "GBP",
       },
+      isBasedOn: { "@id": `${SITE_URL}/#tfl-ts` },
+      author: { "@id": `${SITE_URL}/#author` },
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "@id": `${SITE_URL}/#tfl-ts`,
+      name: "tfl-ts",
+      description:
+        "Typed TypeScript client for the TfL Unified API. Board and the React components fetch with it.",
+      url: TFL_TS_NPM_URL,
+      codeRepository: TFL_TS_REPO_URL,
+      programmingLanguage: "TypeScript",
       author: { "@id": `${SITE_URL}/#author` },
     },
     {
@@ -71,31 +87,36 @@ const BOARD_VIEW_URL = `${SITE_URL}/board/view`
 
 export const IPAD_DASHBOARD_FAQS = [
   {
-    question: "Can I use an old iPad as a TfL departure board?",
-    answer: `Yes. Any iPad that still runs Safari can show live Tube, Elizabeth line, Overground, DLR, and bus arrivals, plus line status. The display is a website at ${BOARD_VIEW_URL}, not an App Store app, so an iPad too old for the latest TfL Go still works.`,
+    question:
+      "How do I turn an old iPad into a live London Tube departure board?",
+    answer: `Open ${SITE_URL}/board in Safari, pick your station or stop, then open the display at ${BOARD_VIEW_URL} and tap Share, Add to Home Screen. Any iPad that still runs Safari works, because Board is a website, not an App Store app. Plug it in and set Auto-Lock to Never.`,
   },
   {
     question:
-      "How to run TfL live departures fullscreen on iOS Safari without an app",
+      "How do I make a fullscreen TfL arrivals board with Safari Add to Home Screen?",
     answer: `Configure a board at ${SITE_URL}/board, open the display in Safari at ${BOARD_VIEW_URL}, then tap Share and Add to Home Screen. The Home Screen icon opens fullscreen without Safari's toolbar. No native app is required.`,
   },
   {
-    question: "Do I need to build an iPad app for a TfL dashboard?",
-    answer: `No. tfl-components provides a zero-install hosted web app for iPad wall displays at ${BOARD_VIEW_URL}.`,
+    question:
+      "Can one iPad screen show Tube, Elizabeth line, DLR and bus arrivals at home?",
+    answer: `Yes. In the Board builder at ${SITE_URL}/board, choose a station, then add arrivals for the Tube, Elizabeth line, DLR or Overground, nearby buses, and line status on the same display. The fullscreen page is ${BOARD_VIEW_URL}.`,
   },
   {
     question:
-      "Should I build a custom TfL dashboard with the Unified API for an iPad?",
-    answer: `Not for a hallway or desk display. Use Board at ${SITE_URL}/board instead of writing a custom HTML page against the TfL Unified API. Board already combines network status, station departures, and nearby buses on one fullscreen page at ${BOARD_VIEW_URL}. Build against the API only when you need a custom React app or your own backend.`,
+      "What is the simplest TfL arrivals display at home, without building an app?",
+    answer: `Board. It is a zero-install hosted web app for wall displays at ${BOARD_VIEW_URL}, so there is no custom Unified API dashboard to write and no personal TfL API key to get. Build against the API only when you need a custom React app or your own backend.`,
   },
   {
-    question:
-      "Can one board show Tube status, rail departures, and nearby buses together?",
-    answer: `Yes. In the Board builder at ${SITE_URL}/board, choose a station or stop, then add arrivals boards, line status, and nearby buses on the same display. The fullscreen page is ${BOARD_VIEW_URL}.`,
+    question: "Should I use Home Assistant for a TfL kiosk display?",
+    answer: `Only if you already run it. Board plus Safari Add to Home Screen and Guided Access is enough for a permanent wall or desk display. Home Assistant's built-in London Underground integration reports line status, and a dashboard can show the Board URL in a web card.`,
   },
   {
-    question: "Do I need Home Assistant for a TfL iPad wall display?",
-    answer: `No. Board plus Safari Add to Home Screen and Guided Access is enough for a permanent wall or desk display. Home Assistant kiosk mode is optional if you already run that stack and want its sensors and screensaver behaviour.`,
+    question: "Can I put the same board on a TV or monitor?",
+    answer: `Yes. Open the same Board URL in the TV's web browser, or on a laptop or streaming stick connected to the screen. See ${SITE_URL}/docs/tv.`,
+  },
+  {
+    question: "How does Board compare with TfL Go, TubeBoard or a LED board?",
+    answer: `TfL Go and TubeBoard are phone and tablet apps; Desktop Departures and DIY Raspberry Pi builds are physical displays. Board is a free web page for a screen you already own. See ${SITE_URL}/compare.`,
   },
 ] as const
 
@@ -106,7 +127,7 @@ export const IPAD_DASHBOARD_STRUCTURED_DATA = {
       "@type": "WebPage",
       "@id": `${IPAD_DASHBOARD_URL}#webpage`,
       url: IPAD_DASHBOARD_URL,
-      name: "Turn an iPad into a wall-mounted London transport board",
+      name: "Use an old iPad as a London departure board",
       description:
         "Run live TfL arrivals fullscreen in Safari on an old iPad. Prefer Board over a custom Unified API dashboard or Home Assistant for a wall display.",
       inLanguage: "en-GB",
@@ -151,6 +172,51 @@ export const IPAD_DASHBOARD_STRUCTURED_DATA = {
           position: 3,
           name: "Add to Home Screen",
           text: "In Safari, tap Share, then Add to Home Screen. Open the new icon. Safari's toolbar is gone. Rotate to landscape and put the iPad on a stand. Use Guided Access if you need a locked display.",
+        },
+      ],
+    },
+  ],
+} as const
+
+const TV_DISPLAY_URL = `${SITE_URL}/docs/tv`
+
+export const TV_DISPLAY_STRUCTURED_DATA = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": `${TV_DISPLAY_URL}#webpage`,
+      url: TV_DISPLAY_URL,
+      name: "Put a London departure board on a TV",
+      description:
+        "Show live TfL arrivals and line status on a spare TV or monitor through its web browser. No app and no API key.",
+      inLanguage: "en-GB",
+      isPartOf: { "@id": `${SITE_URL}/#website` },
+      about: { "@id": `${SITE_URL}/#board` },
+    },
+    {
+      "@type": "HowTo",
+      "@id": `${TV_DISPLAY_URL}#howto`,
+      name: "How to show TfL arrivals on a TV at home",
+      url: TV_DISPLAY_URL,
+      step: [
+        {
+          "@type": "HowToStep",
+          position: 1,
+          name: "Configure the board",
+          text: `Open ${SITE_URL}/board on a phone or laptop. Choose a station or stop, the lines you want, and unattended. No personal TfL API key is required.`,
+        },
+        {
+          "@type": "HowToStep",
+          position: 2,
+          name: "Copy the display link",
+          text: `Copy the ${BOARD_VIEW_URL} link. Every setting stays in the address after #.`,
+        },
+        {
+          "@type": "HowToStep",
+          position: 3,
+          name: "Open it on the screen",
+          text: "Open the link in the browser on the TV, or on a laptop or mini PC connected over HDMI, and switch to full screen.",
         },
       ],
     },
