@@ -33,7 +33,6 @@ type UseParallaxInputArgs = {
    * cannot be scaled out of frame.
    */
   phoneDollyRef?: RefObject<number>
-  /** Free-zoom pan (before the path blend) that each pinch move integrates. */
   phoneFreePanRef?: RefObject<{ x: number; y: number }>
   phonePoseRef?: RefObject<{
     x: number
@@ -94,7 +93,6 @@ export const useParallaxInput = ({
     startDistance: number
     startScale: number
     startDolly: number
-    /** Previous move, so the phone pan integrates step by step. */
     lastScale: number
     lastLocalX: number
     lastLocalY: number
@@ -293,8 +291,6 @@ export const useParallaxInput = ({
             onPhoneDolly(zoom)
             return
           }
-          // Camera-local midpoint in the framed-iPad pose, which is the pose
-          // whenever the free pan matters (scale > 1 ⇒ path progress 0).
           const mid = touchMidpoint(event.touches[0]!, event.touches[1]!)
           const localX = (mid.x - rect.left - pose.x) / pose.scale
           const localY = (mid.y - rect.top - pose.y) / pose.scale
@@ -305,15 +301,10 @@ export const useParallaxInput = ({
           pinch.lastLocalX = localX
           pinch.lastLocalY = localY
           if (nextScale <= 1) {
-            // Path side: the camera follows the centred path, no free pan.
             onPhoneDolly(zoom)
             return
           }
           const free = phoneFreePanRef?.current ?? { x: 0, y: 0 }
-          // Step from the previous move. Leaving the path (lastScale ≤ 1)
-          // starts the free pan at zero, so drift on the path side never
-          // lands as one jump; `setPhoneDolly` clamps to the artwork and
-          // fades the free pan in over `PHONE_FREE_ZOOM_BLEND`.
           onPhoneDolly(
             zoom,
             phonePanForGesture({

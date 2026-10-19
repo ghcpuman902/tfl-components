@@ -67,14 +67,6 @@ import { DEFAULT_PEEK } from "./room-peek"
 import { syncBoxToSvg, syncOverlayToSvg } from "./sync-overlay"
 import { useIpadZoom } from "./use-ipad-zoom"
 import { useParallaxInput } from "./use-parallax-input"
-import {
-  readStableLandingViewportHeight,
-  useStableLandingViewport,
-} from "./use-stable-viewport"
-import {
-  LANDING_HERO_HEIGHT,
-  LANDING_RUNWAY_DESKTOP_HEIGHT,
-} from "@/lib/landing/hero-viewport"
 
 const PHOTO_1_HEIGHT =
   PHOTO_OVERLAY_WIDTH * (PICTURE_FRAME_1.height / PICTURE_FRAME_1.width)
@@ -144,7 +136,7 @@ const LandingStaticRoom = () => {
     <section
       id="landing-room"
       className="landing-hero-stage relative flex w-full flex-col overflow-hidden"
-      style={{ height: LANDING_HERO_HEIGHT }}
+      style={{ height: "calc(100svh - var(--site-header-height))" }}
     >
       <div className="landing-hero-paper absolute inset-0" />
       <div className="absolute inset-0">
@@ -176,8 +168,6 @@ export const LandingScene = ({
   onExampleSeen,
   onExampleInteraction,
 }: LandingSceneProps) => {
-  // First: the camera layout effects below measure the stable hero height.
-  useStableLandingViewport()
   const reducedMotion = usePrefersReducedMotion()
   const pageVisible = useDocumentVisible()
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -224,9 +214,7 @@ export const LandingScene = ({
       wrapperTop: wrapper.getBoundingClientRect().top,
       wrapperHeight: wrapper.offsetHeight,
       scrollY: window.scrollY,
-      // The runway is sized from the stable hero height, not the live
-      // viewport, so the end of the story is measured in the same units.
-      viewportHeight: readStableLandingViewportHeight(),
+      viewportHeight: window.innerHeight,
     })
     window.scrollTo({ top, behavior })
   }, [])
@@ -573,17 +561,15 @@ export const LandingScene = ({
   )
 
   const landingVars = {
-    "--landing-hero-height": LANDING_HERO_HEIGHT,
-    "--landing-runway-height": LANDING_RUNWAY_DESKTOP_HEIGHT,
     "--landing-ipad-width": IPAD_FRAME_WIDTH,
-    "--landing-ipad-top": `max(${HERO_TOP_INSET}, calc((var(--landing-hero-height) - (var(--landing-ipad-width) / ${IPAD_FRAME_ASPECT}) - ${HERO_COPY_GAP} - ${HERO_COPY_BAND}) / 2 - ${HERO_GROUP_BIAS}))`,
+    "--landing-ipad-top": `max(${HERO_TOP_INSET}, calc((100svh - var(--site-header-height) - (var(--landing-ipad-width) / ${IPAD_FRAME_ASPECT}) - ${HERO_COPY_GAP} - ${HERO_COPY_BAND}) / 2 - ${HERO_GROUP_BIAS}))`,
     "--landing-copy-top": `calc(var(--landing-ipad-top) + var(--landing-ipad-width) / ${IPAD_FRAME_ASPECT} + ${HERO_COPY_GAP})`,
   } as CSSProperties
 
   if (reducedMotion) {
     return (
       <div className="landing-home w-full min-w-0" style={landingVars}>
-        <section className="mx-auto flex min-h-(--landing-hero-height) w-full flex-col justify-center px-4 pt-4 pb-10">
+        <section className="mx-auto flex min-h-[calc(100svh-var(--site-header-height))] w-full flex-col justify-center px-4 pt-4 pb-10">
           <div
             className="relative mx-auto w-(--landing-ipad-width)"
             style={{ aspectRatio: IPAD_ASPECT }}
@@ -622,34 +608,28 @@ export const LandingScene = ({
 
   return (
     <div className="landing-home relative w-full min-w-0" style={landingVars}>
-      {/*
-        Phone: one framed canvas. md+: extra viewport for the scroll zoom.
-        Heights come from the stable measured hero, never a viewport unit.
-      */}
+      {/* Phone: one framed canvas. md+: extra viewport for the scroll zoom. */}
       <div
         ref={wrapperRef}
-        className="landing-scroll-runway relative h-(--landing-hero-height) w-full md:h-(--landing-runway-height)"
+        className="landing-scroll-runway relative h-[calc(100svh-var(--site-header-height))] w-full md:h-[calc(200svh-var(--site-header-height))]"
       >
         <div
           id="space"
           aria-hidden
           className="pointer-events-none absolute left-0 h-px w-px"
           style={{
-            top: "calc(var(--landing-hero-height) + var(--site-hash-scroll-margin))",
+            top: "calc(100svh - var(--site-header-height) + var(--site-hash-scroll-margin))",
           }}
         />
-        {/*
-          Phone: the runway is exactly one stage tall, so sticky would never
-          engage; keep it in flow, flush under the header, out of Safari's
-          sticky offset while its toolbar collapses. md+: sticky camera.
-        */}
-        <div className="landing-hero-stage relative z-10 h-(--landing-hero-height) md:sticky md:top-(--site-header-height)">
+        <div
+          className="landing-hero-stage relative z-10 md:sticky md:top-(--site-header-height)"
+          style={{ height: "calc(100svh - var(--site-header-height))" }}
+        >
           <div
             ref={stageRef}
             className="pointer-events-none relative h-full overflow-hidden"
             style={{
-              // Vertical page scroll only. Browser pinch-zoom would fight
-              // the custom camera; room peek and phone pinch are custom.
+              // Vertical page scroll only; room peek is custom.
               touchAction: production ? "pan-y" : undefined,
             }}
             onPointerDown={() => {
@@ -659,7 +639,8 @@ export const LandingScene = ({
             <div className="landing-hero-paper pointer-events-none absolute inset-0" />
             <div
               ref={compositionRef}
-              className="absolute inset-x-0 top-0 h-(--landing-hero-height) overflow-hidden"
+              className="absolute inset-x-0 top-0 overflow-hidden"
+              style={{ height: "calc(100svh - var(--site-header-height))" }}
             >
               <div
                 ref={cameraRef}

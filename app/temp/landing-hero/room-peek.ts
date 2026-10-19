@@ -144,18 +144,8 @@ export const phoneZoomToCamera = (
 
 export type PhonePan = { x: number; y: number }
 
-/**
- * Scale range (above the framed iPad at 1) over which free zoom around the
- * fingers fades in. Below it the camera keeps zooming about the iPad
- * centre, continuing the path; above it the fingers own the camera.
- */
 export const PHONE_FREE_ZOOM_BLEND = 0.45
 
-/**
- * 0 at the framed iPad (path camera), 1 once fully into free zoom. Smooth
- * at both ends, so neither position nor speed steps when a pinch crosses
- * the framed point in either direction.
- */
 export const phoneFreeZoomWeight = (scale: number): number => {
   if (!(scale > 1)) return 0
   const t = Math.min(1, (scale - 1) / PHONE_FREE_ZOOM_BLEND)
@@ -164,14 +154,8 @@ export const phoneFreeZoomWeight = (scale: number): number => {
 
 /**
  * Two-finger move in camera-local pixels. Keeps the point under the
- * previous midpoint stuck to the fingers while scale changes, and follows
+ * starting midpoint stuck to the fingers while scale changes, and follows
  * the midpoint when it moves. Scale ≤ 1 clears the pan (framed iPad / room).
- *
- * Call it per move (previous → next), not from the gesture start: on the
- * path side of the framed iPad the fingers do not pan, so integrating from
- * the start would dump all of that drift into the pan the moment the pinch
- * crosses into free zoom — the old jump. A `startScale` ≤ 1 starts the
- * free pan from zero at the crossing.
  */
 export const phonePanForGesture = ({
   panX,

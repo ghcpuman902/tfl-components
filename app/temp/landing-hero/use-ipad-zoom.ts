@@ -9,7 +9,6 @@ import {
   phoneFreeZoomWeight,
   phoneZoomToCamera,
 } from "./room-peek"
-import { readStableLandingViewportHeight } from "./use-stable-viewport"
 import {
   IPAD_CASE,
   LANDING_VIEWBOX_HEIGHT,
@@ -224,9 +223,8 @@ export const useIpadZoom = ({
   const progressRef = useRef(0)
   /**
    * Captured just before a resize-driven `ScrollTrigger.refresh()`. The
-   * trigger's start/end are page-pixel positions derived from the measured
-   * hero height, so a width change (or a desktop window resize) changes the
-   * scroll distance under a fixed `scrollY` —
+   * trigger's start/end are page-pixel positions derived from `svh`, so a
+   * viewport resize changes the scroll distance under a fixed `scrollY` —
    * naively refreshing would read a different, distorted progress. Snap
    * exactly to 0/1 at rest so top and end match a fresh load; otherwise
    * replay the same fractional progress under the new geometry.
@@ -270,13 +268,6 @@ export const useIpadZoom = ({
   const phoneDollyRef = useRef(0)
   const phoneDeepScaleRef = useRef(1)
   const phoneFocusOriginRef = useRef({ x: 50, y: 50 })
-  /**
-   * Two pans past the framed iPad. `phoneFreePanRef` is pure free zoom
-   * around the fingers (what the gesture integrates). `phonePanRef` is what
-   * is drawn: the free pan faded in by `phoneFreeZoomWeight(scale)`, so the
-   * camera morphs from the centred path into free zoom (and back) instead
-   * of snapping between them.
-   */
   const phoneFreePanRef = useRef({ x: 0, y: 0 })
   const phonePanRef = useRef({ x: 0, y: 0 })
   const phonePoseRef = useRef({
@@ -483,9 +474,7 @@ export const useIpadZoom = ({
         trigger: wrapper,
         start: () =>
           `top ${getComputedStyle(document.documentElement).getPropertyValue("--site-header-height").trim() || "3rem"}`,
-        // "bottom bottom", with the bottom taken from the stable measured
-        // height rather than the live viewport (which follows the toolbar).
-        end: () => `bottom ${readStableLandingViewportHeight()}px`,
+        end: () => `+=${composition.offsetHeight}`,
         pin: false,
         invalidateOnRefresh: true,
         onRefresh: (self) => {
@@ -525,32 +514,16 @@ export const useIpadZoom = ({
     if (phoneCanvas) {
       let resizeFrame = 0
       let settleTimer = 0
-      let lastSizeW = composition.clientWidth
-      let lastSizeH = composition.clientHeight
-      /**
-       * Only the composition box drives a re-frame. Its height is the stable
-       * measured hero (`useStableLandingViewport`), so a toolbar collapse —
-       * a height-only window / visualViewport resize — never reaches here;
-       * a width or orientation change does.
-       */
-      const refreshIfResized = (force: boolean) => {
-        const width = composition.clientWidth
-        const height = composition.clientHeight
-        if (!force && width === lastSizeW && height === lastSizeH) return
-        lastSizeW = width
-        lastSizeH = height
-        refreshFramed()
-      }
       const handleResize = () => {
         if (settleTimer) window.clearTimeout(settleTimer)
         settleTimer = window.setTimeout(() => {
           settleTimer = 0
-          refreshIfResized(false)
+          refreshFramed()
         }, RESIZE_SETTLE_MS)
         if (resizeFrame) return
         resizeFrame = window.requestAnimationFrame(() => {
           resizeFrame = 0
-          refreshIfResized(false)
+          refreshFramed()
         })
       }
       const stageObserver = new ResizeObserver(handleResize)
@@ -604,10 +577,6 @@ export const useIpadZoom = ({
         refreshScene(false)
       })
     }
-    // No visualViewport listener: toolbar show/hide must not re-lay out the
-    // camera (the hero height is measured, not read from the viewport), and
-    // browser pinch would thrash ScrollTrigger. Real window resizes still
-    // arrive through `resize` and the stage observer.
     window.addEventListener("resize", handleResize)
     window.addEventListener("orientationchange", handleResize)
     // Gutter / :has() / overlay-scrollbar changes resize the stage without a
