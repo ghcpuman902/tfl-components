@@ -112,15 +112,12 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
 export const RailArrivalsBoardSkeleton = ({
   className,
   stopName,
-  headerMark,
 }: {
   className?: string
   stopName?: string
-  headerMark?: ArrivalsBoardChromeProps["headerMark"]
 } = {}) => (
   <ArrivalsBoardSkeleton
     mode="rail"
-    headerMark={headerMark}
     className={className}
     stopName={stopName}
   />
@@ -164,11 +161,7 @@ export const RailArrivalsBoard = ({
   const heading = resolveArrivalsHeading(chrome.stopName, rows)
   if (loading && rows.length === 0 && !error) {
     return (
-      <RailArrivalsBoardSkeleton
-        className={className}
-        headerMark={chrome.headerMark}
-        stopName={heading}
-      />
+      <RailArrivalsBoardSkeleton className={className} stopName={heading} />
     )
   }
 

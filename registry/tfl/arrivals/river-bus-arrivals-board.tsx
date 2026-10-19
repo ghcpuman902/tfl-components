@@ -66,15 +66,12 @@ export type RiverBusArrivalsBoardProps = ArrivalsBoardChromeProps & {
 export const RiverBusArrivalsBoardSkeleton = ({
   className,
   stopName,
-  headerMark,
 }: {
   className?: string
   stopName?: string
-  headerMark?: ArrivalsBoardChromeProps["headerMark"]
 } = {}) => (
   <ArrivalsBoardSkeleton
     mode="river"
-    headerMark={headerMark}
     className={className}
     stopName={stopName}
   />
@@ -112,11 +109,7 @@ export const RiverBusArrivalsBoard = ({
   const heading = resolveArrivalsHeading(chrome.stopName, rows)
   if (loading && rows.length === 0 && !error) {
     return (
-      <RiverBusArrivalsBoardSkeleton
-        className={className}
-        headerMark={chrome.headerMark}
-        stopName={heading}
-      />
+      <RiverBusArrivalsBoardSkeleton className={className} stopName={heading} />
     )
   }
 
