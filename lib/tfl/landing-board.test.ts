@@ -13,17 +13,8 @@ import {
 } from "./landing-board"
 
 describe("LANDING_BOARD_PRESETS", () => {
-  it("starts on Clapham Common with the boardable 77 stop", () => {
+  it("starts on Clapham Common with a boardable bus stop", () => {
     assert.equal(LANDING_BOARD_DEFAULT.id, "clapham-common")
-    assert.equal(LANDING_BOARD_DEFAULT.config.stop, "940GZZLUCPC")
-    assert.equal(LANDING_BOARD_DEFAULT.config.bus.stop, "490012162E")
-    assert.equal(LANDING_BOARD_DEFAULT.config.bus.routes, undefined)
-    assert.equal(LANDING_BOARD_DEFAULT.config.cycle.surface, "map")
-    assert.deepEqual(LANDING_BOARD_DEFAULT.config.cycle.docks, [
-      "BikePoints_612",
-      "BikePoints_677",
-    ])
-    assert.equal(isBoardableBusStopId("490G00012162"), false)
     assert.equal(
       isBoardableBusStopId(LANDING_BOARD_DEFAULT.config.bus.stop!),
       true

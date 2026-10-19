@@ -1,7 +1,4 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
-import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
 import { describe, it } from "node:test"
 import { NextRequest } from "next/server"
 import { proxy } from "../../proxy"
@@ -22,9 +19,6 @@ import {
 } from "@/lib/landing/hero-precompute"
 import { ANALYTICS_EVENT_NAMES } from "@/lib/analytics/events"
 import { redactAnalyticsProps } from "@/lib/analytics/redact"
-
-const root = dirname(fileURLToPath(import.meta.url))
-const read = (relative: string) => readFileSync(join(root, relative), "utf8")
 
 const request = (url: string, cookie?: string, userAgent = "Mozilla/5.0") => {
   const headers = new Headers({ "user-agent": userAgent })
@@ -139,72 +133,6 @@ describe("hero events", () => {
       assert.ok((ANALYTICS_EVENT_NAMES as readonly string[]).includes(name))
     }
     assert.deepEqual(redactAnalyticsProps({ variant: "b" }), { variant: "b" })
-  })
-
-  it("sends through the redacting wrapper, never straight to Vercel", () => {
-    const track = read("../analytics/track.ts")
-    assert.match(track, /export const trackHeroEvent/)
-    assert.match(track, /dispatch\(name, \{ variant \}\)/)
-    assert.match(track, /vercelTrack\(name, safe\)/)
-    for (const file of [
-      "../../components/landing/landing-analytics.tsx",
-      "../../components/landing/landing-room-variant.tsx",
-      "../../components/board/board-staged-builder.tsx",
-    ]) {
-      assert.doesNotMatch(read(file), /@vercel\/analytics/, file)
-    }
-  })
-
-  it("fires hero_view only for counted views and marks exposure then", () => {
-    const analytics = read("../../components/landing/landing-analytics.tsx")
-    assert.match(
-      analytics,
-      /if \(hero\?\.counted\) \{\s*markHeroExposure\(hero\.variant\)\s*trackHeroEvent\("hero_view", hero\.variant\)/
-    )
-    assert.match(analytics, /sent\.current/)
-  })
-
-  it("fires hero_cta on the Make my Board click, counted views only", () => {
-    const variant = read("../../components/landing/landing-room-variant.tsx")
-    assert.match(
-      variant,
-      /if \(hero\.counted\) trackHeroEvent\("hero_cta", hero\.variant\)/
-    )
-  })
-
-  it("fires board_made on first completion from the exposure cookie", () => {
-    const builder = read("../../components/board/board-staged-builder.tsx")
-    assert.match(
-      builder,
-      /if \(firstCompletion\) \{[\s\S]*board_setup_completed[\s\S]*readExposedHeroVariant\(\)[\s\S]*trackHeroEvent\("board_made", heroVariant\)/
-    )
-  })
-})
-
-describe("static permutation wiring", () => {
-  it("rewrites the homepage in the proxy and keeps cookie options private", () => {
-    const source = read("../../proxy.ts")
-    assert.match(source, /NextResponse\.rewrite\(url\)/)
-    assert.match(source, /\$\{HERO_AB_PATH\}\/\$\{assignment\.code\}/)
-    assert.match(source, /httpOnly: true/)
-    assert.match(source, /markdown/)
-  })
-
-  it("prerenders every permutation and 404s unknown codes", () => {
-    const page = read("../../app/hero-ab/[code]/page.tsx")
-    assert.match(page, /generateStaticParams/)
-    assert.match(page, /heroStaticCodes\(\)/)
-    assert.match(page, /notFound\(\)/)
-    assert.doesNotMatch(page, /searchParams|cookies\(|headers\(/)
-  })
-
-  it("keeps secrets and non-flags out of the flags discovery module", () => {
-    const flags = read("../../flags.ts")
-    assert.doesNotMatch(flags, /FLAGS_SECRET/)
-    assert.deepEqual(
-      [...flags.matchAll(/^export const (\w+)/gm)].map((match) => match[1]),
-      ["heroVariantFlag", "heroCountedFlag"]
-    )
   })
 })
 

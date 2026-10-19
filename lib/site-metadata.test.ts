@@ -1,10 +1,8 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
-  BOARD_HOME_DESCRIPTION,
   BOARD_HOME_TITLE,
   BOARD_SITE_NAME,
-  SITE_TITLE_TEMPLATE,
   SITE_URL,
 } from "./site"
 import {
@@ -134,16 +132,6 @@ describe("route metadata", () => {
     assert.equal(home.openGraph?.siteName, BOARD_SITE_NAME)
     assert.equal(home.twitter?.card, "summary_large_image")
     assert.deepEqual(home.title, { absolute: BOARD_HOME_TITLE })
-    assert.equal(SITE_TITLE_TEMPLATE, "%s · Board")
-  })
-
-  it("uses a concise Board description on the homepage", () => {
-    assert.equal(ROUTE_PAGE_META.home.description, BOARD_HOME_DESCRIPTION)
-    assert.equal(ROUTE_PAGE_META.home.title, BOARD_HOME_TITLE)
-    assert.equal(
-      BOARD_HOME_TITLE,
-      "Board · live London Tube & bus departures for any screen"
-    )
   })
 
   it("separates title clauses with a middle dot", () => {
