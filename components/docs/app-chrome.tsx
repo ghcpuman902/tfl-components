@@ -9,6 +9,7 @@ import { DocsTableOfContents } from "@/components/docs/docs-table-of-contents"
 import { SiteHeader } from "@/components/site-header"
 import { VisitBeacon } from "@/components/visit-beacon"
 import { SidebarProvider } from "@/components/ui/sidebar"
+import { HERO_AB_PATH } from "@/lib/landing/hero-experiment"
 import { cn } from "@/lib/utils"
 
 type AppChromeProps = {
@@ -42,7 +43,10 @@ const AppChromeShell = ({
   // Empty pathname = AppChrome Suspense fallback before usePathname resolves.
   // Prefer home chrome (no main padding) so `/` does not CLS from px-4 → px-0.
   // Keep URL hooks out of this fallback — see docs/client-navigation.md.
-  const isHome = pathname === "/" || pathname === ""
+  const isHome =
+    pathname === "/" ||
+    pathname === "" ||
+    pathname.startsWith(`${HERO_AB_PATH}/`)
   const isLandingHero = pathname === "/temp/landing-hero"
   const isFullBleed = isHome || isLandingHero
 
