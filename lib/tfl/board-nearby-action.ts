@@ -40,11 +40,15 @@ export async function getBoardNearbyPlaces(
     const [busResult, piers, cycleNearby] = await Promise.all([
       getNearbyBusStops(truncatedLat, truncatedLon),
       getExplorerRiverPiers(),
-      getTflClient().bikePoint.getByRadius({
-        lat: truncatedLat,
-        lon: truncatedLon,
-        radius: CYCLE_RADIUS_METERS,
-      }),
+      Promise.resolve()
+        .then(() =>
+          getTflClient().bikePoint.getByRadius({
+            lat: truncatedLat,
+            lon: truncatedLon,
+            radius: CYCLE_RADIUS_METERS,
+          })
+        )
+        .catch(() => ({ places: [] })),
     ])
 
     const rail = nearestCatalogStation(truncatedLat, truncatedLon)
