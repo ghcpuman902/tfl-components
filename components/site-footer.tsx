@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { GITHUB_REPO } from "@/lib/feedback/constants"
+import { SITE_AUTHOR } from "@/lib/site"
 
 const LINK_CLASS =
   "whitespace-nowrap underline-offset-4 [@media(hover:hover)]:hover:text-foreground [@media(hover:hover)]:hover:underline"
@@ -33,7 +34,7 @@ export const SiteFooter = () => (
       </a>
       <span aria-hidden>·</span>
       <a
-        href="https://buymeacoffee.com/manglekuo"
+        href={SITE_AUTHOR.coffeeUrl}
         className={LINK_CLASS}
         target="_blank"
         rel="noopener noreferrer"
