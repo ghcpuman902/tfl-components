@@ -11,6 +11,7 @@ import { stationCoord } from "@/lib/tfl/station-coords"
 const RIVER_RADIUS_METERS = 600
 const CYCLE_RADIUS_METERS = 100
 const CYCLE_LIMIT = 4
+const RAIL_RADIUS_METERS = 5_000
 
 export type BoardNearbyResult =
   | {
@@ -51,7 +52,11 @@ export async function getBoardNearbyPlaces(
         .catch(() => ({ places: [] })),
     ])
 
-    const rail = nearestCatalogStation(truncatedLat, truncatedLon)
+    const rail = nearestCatalogStation(
+      truncatedLat,
+      truncatedLon,
+      RAIL_RADIUS_METERS
+    )
     const bus =
       busResult.ok && busResult.stops[0]
         ? { id: busResult.stops[0].id, name: busResult.stops[0].name }

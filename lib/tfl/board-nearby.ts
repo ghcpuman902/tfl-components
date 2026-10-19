@@ -11,13 +11,15 @@ export type NearbyNamedPlace = {
 /** Closest catalogue rail station to a WGS84 point. */
 export const nearestCatalogStation = (
   lat: number,
-  lon: number
+  lon: number,
+  maxMeters = Infinity
 ): NearbyNamedPlace | undefined => {
   let best: NearbyNamedPlace | undefined
   for (const station of getStationCatalog()) {
     const coord = stationCoord(station.id)
     if (!coord) continue
     const meters = distanceMeters(lat, lon, coord.lat, coord.lon)
+    if (meters > maxMeters) continue
     if (!best || meters < best.meters) {
       best = { id: station.id, name: station.displayName, meters }
     }

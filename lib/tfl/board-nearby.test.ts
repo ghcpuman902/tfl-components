@@ -8,6 +8,10 @@ describe("nearestCatalogStation", () => {
     assert.ok(nearest)
     assert.equal(nearest?.id, "940GZZLUOXC")
   })
+
+  it("finds nothing from Manchester within a London-sized radius", () => {
+    assert.equal(nearestCatalogStation(53.4808, -2.2426, 5_000), undefined)
+  })
 })
 
 describe("filterNamedPlaces", () => {
