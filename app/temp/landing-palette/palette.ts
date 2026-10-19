@@ -1,3 +1,4 @@
+import { LANDING_TOUCH_TOOLBAR_QUERY } from "@/lib/landing/hero-viewport"
 import {
   hexToOklch,
   oklchCss,
@@ -554,6 +555,18 @@ export const heroArtworkStyleSheet = (
   return rules.join("\n")
 }
 
+/**
+ * Phones and tablets: black behind the browser's bottom UI on the homepage.
+ * Safari 26 tints its toolbar from the html/body background when no fixed
+ * or sticky element touches the bottom edge, and older iOS shows that
+ * background in the home-indicator strip and overscroll. Every visible
+ * surface above it (header, hero, copy, footer) paints its own background,
+ * so only the area under the browser chrome turns black. The bottom inset
+ * pads the end of the page so the footer clears the home indicator.
+ * Desktop keeps the paper colour for its elastic overscroll.
+ */
+const LANDING_TOUCH_CHROME_RULES = `@media ${LANDING_TOUCH_TOOLBAR_QUERY} { html:has(.landing-home), html.dark:has(.landing-home), html:has(.landing-home) body, html.dark:has(.landing-home) body { background: #000; } html:has(.landing-home) body { padding-bottom: env(safe-area-inset-bottom, 0px); } }`
+
 /** Light fills by default; `.dark` on `<html>` swaps to the dark tokens. */
 export const heroArtworkThemeStyleSheet = (): string =>
   [
@@ -565,6 +578,7 @@ export const heroArtworkThemeStyleSheet = (): string =>
     `html.dark:has(.landing-home) { background: ${LANDING_PAPER.dark}; }`,
     `html:has(.landing-home) body { background: ${LANDING_PAPER.light}; }`,
     `html.dark:has(.landing-home) body { background: ${LANDING_PAPER.dark}; }`,
+    LANDING_TOUCH_CHROME_RULES,
     `.landing-hero-wall-fill { background: ${tokenCss(TOKEN_BY_ID["wall-front"], "light")}; }`,
     `.dark .landing-hero-wall-fill { background: ${tokenCss(TOKEN_BY_ID["wall-front"], "dark")}; }`,
     `.landing-hero-floor-fill { background: ${tokenCss(TOKEN_BY_ID["floor"], "light")}; }`,

@@ -4,6 +4,10 @@ import { heroArtworkThemeStyleSheet } from "@/app/temp/landing-palette/palette"
 import { LandingScene } from "./landing-scene"
 import { PostHeroPlaceholder } from "./post-hero-placeholder"
 import { getLandingBoardIndexes } from "@/lib/tfl/landing-board"
+import {
+  LANDING_HERO_HEIGHT,
+  LANDING_VIEWPORT_BOOT_SCRIPT,
+} from "@/lib/landing/hero-viewport"
 
 export const metadata: Metadata = {
   title: "Landing hero (temp)",
@@ -16,10 +20,19 @@ export default function LandingHeroTempPage() {
   const board = getLandingBoardIndexes()
   return (
     <div className="w-full min-w-0">
+      <script
+        dangerouslySetInnerHTML={{ __html: LANDING_VIEWPORT_BOOT_SCRIPT }}
+      />
       <style>{heroArtworkThemeStyleSheet()}</style>
       <p className="sr-only">Temp landing hero test — not linked in nav.</p>
       <Suspense
-        fallback={<div className="landing-hero-paper h-svh" aria-hidden />}
+        fallback={
+          <div
+            className="landing-hero-paper"
+            style={{ height: LANDING_HERO_HEIGHT }}
+            aria-hidden
+          />
+        }
       >
         <LandingScene board={board} />
       </Suspense>

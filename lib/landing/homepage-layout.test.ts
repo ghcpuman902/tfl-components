@@ -32,7 +32,9 @@ describe("homepage iPad preview layout", () => {
     const content = read("../../components/landing/home-content.tsx")
     const css = read("../../app/globals.css")
     assert.equal(
-      existsSync(join(root, "../../components/landing/agent-readable-home.tsx")),
+      existsSync(
+        join(root, "../../components/landing/agent-readable-home.tsx")
+      ),
       false
     )
     assert.equal(
@@ -56,8 +58,9 @@ describe("homepage iPad preview layout", () => {
     const scene = read("../../app/temp/landing-hero/landing-scene.tsx")
     const fold = read("../../components/landing/landing-fold-copy.tsx")
     const zoom = read("../../app/temp/landing-hero/use-ipad-zoom.ts")
-    assert.match(scene, /h-\[calc\(100dvh-var\(--site-header-height\)\)\]/)
-    assert.match(scene, /md:h-\[calc\(200dvh-var\(--site-header-height\)\)\]/)
+    assert.match(scene, /h-\(--landing-hero-height\)/)
+    assert.match(scene, /md:h-\(--landing-runway-height\)/)
+    assert.match(scene, /LANDING_RUNWAY_DESKTOP_HEIGHT/)
     assert.match(scene, /phoneCanvas/)
     assert.match(zoom, /reducedMotion \|\| phoneCanvas/)
     assert.match(fold, /Make my own Board/)
@@ -89,6 +92,28 @@ describe("homepage iPad preview layout", () => {
       /html:has\(\.landing-home\)[\s\S]*overscroll-behavior:\s*none/
     )
     assert.match(css, /touch-action:\s*pan-y/)
+  })
+
+  it("sizes the hero from the stable measured height, never a viewport unit", () => {
+    const files = [
+      "../../app/temp/landing-hero/landing-scene.tsx",
+      "../../app/temp/landing-hero/scene-constants.ts",
+      "../../app/temp/landing-hero/use-ipad-zoom.ts",
+      "../../app/temp/landing-hero/page.tsx",
+      "../../components/landing/landing-page.tsx",
+    ]
+    for (const file of files) {
+      const source = read(file)
+      assert.doesNotMatch(source, /\d+(?:d|s|l)?vh\b/, file)
+      assert.doesNotMatch(source, /window\.innerHeight/, file)
+      assert.doesNotMatch(source, /visualViewport\??\.addEventListener/, file)
+    }
+    const fallback = read("../../components/landing/landing-page.tsx")
+    assert.match(fallback, /LANDING_VIEWPORT_BOOT_SCRIPT/)
+    const scene = read("../../app/temp/landing-hero/landing-scene.tsx")
+    assert.match(scene, /useStableLandingViewport\(\)/)
+    // Phone stage stays in flow under the header; sticky only from md.
+    assert.match(scene, /landing-hero-stage relative z-10 [^"]*md:sticky/)
   })
 
   it("full-bleeds the landing stage past the scrollbar gutter", () => {

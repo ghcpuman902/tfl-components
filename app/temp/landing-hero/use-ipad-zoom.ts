@@ -4,7 +4,12 @@ import { useCallback, useLayoutEffect, useRef, type RefObject } from "react"
 import type { ScrollTrigger } from "gsap/ScrollTrigger"
 import { computeCoverCanvas } from "@/lib/landing/cover-canvas"
 import { getLandingGsap } from "./gsap-client"
-import { clampPhonePanToArtwork, phoneZoomToCamera } from "./room-peek"
+import {
+  clampPhonePanToArtwork,
+  phoneFreeZoomWeight,
+  phoneZoomToCamera,
+} from "./room-peek"
+import { readStableLandingViewportHeight } from "./use-stable-viewport"
 import {
   IPAD_CASE,
   LANDING_VIEWBOX_HEIGHT,
@@ -219,8 +224,9 @@ export const useIpadZoom = ({
   const progressRef = useRef(0)
   /**
    * Captured just before a resize-driven `ScrollTrigger.refresh()`. The
-   * trigger's start/end are page-pixel positions derived from `dvh`, so a
-   * viewport resize changes the scroll distance under a fixed `scrollY` —
+   * trigger's start/end are page-pixel positions derived from the measured
+   * hero height, so a width change (or a desktop window resize) changes the
+   * scroll distance under a fixed `scrollY` —
    * naively refreshing would read a different, distorted progress. Snap
    * exactly to 0/1 at rest so top and end match a fresh load; otherwise
    * replay the same fractional progress under the new geometry.
@@ -264,6 +270,14 @@ export const useIpadZoom = ({
   const phoneDollyRef = useRef(0)
   const phoneDeepScaleRef = useRef(1)
   const phoneFocusOriginRef = useRef({ x: 50, y: 50 })
+  /**
+   * Two pans past the framed iPad. `phoneFreePanRef` is pure free zoom
+   * around the fingers (what the gesture integrates). `phonePanRef` is what
+   * is drawn: the free pan faded in by `phoneFreeZoomWeight(scale)`, so the
+   * camera morphs from the centred path into free zoom (and back) instead
+   * of snapping between them.
+   */
+  const phoneFreePanRef = useRef({ x: 0, y: 0 })
   const phonePanRef = useRef({ x: 0, y: 0 })
   const phonePoseRef = useRef({
     x: 0,
@@ -281,6 +295,7 @@ export const useIpadZoom = ({
       applyProgress(camera.progress, true, false)
       phoneDeepScaleRef.current = camera.scale
       if (camera.scale <= 1) {
+        phoneFreePanRef.current = { x: 0, y: 0 }
         phonePanRef.current = { x: 0, y: 0 }
       } else {
         const pose = phonePoseRef.current
@@ -292,8 +307,8 @@ export const useIpadZoom = ({
         const viewTop = -pose.y / pose.scale
         const viewRight = (pose.viewWidth - pose.x) / pose.scale
         const viewBottom = (pose.viewHeight - pose.y) / pose.scale
-        const next = pan ?? phonePanRef.current
-        phonePanRef.current = clampPhonePanToArtwork({
+        const next = pan ?? phoneFreePanRef.current
+        const free = clampPhonePanToArtwork({
           panX: next.x,
           panY: next.y,
           scale: camera.scale,
@@ -308,6 +323,9 @@ export const useIpadZoom = ({
           artRight: art.right,
           artBottom: art.bottom,
         })
+        phoneFreePanRef.current = free
+        const weight = phoneFreeZoomWeight(camera.scale)
+        phonePanRef.current = { x: free.x * weight, y: free.y * weight }
       }
       const slot = copySlotRef.current
       if (!slot) return
@@ -465,7 +483,9 @@ export const useIpadZoom = ({
         trigger: wrapper,
         start: () =>
           `top ${getComputedStyle(document.documentElement).getPropertyValue("--site-header-height").trim() || "3rem"}`,
-        end: "bottom bottom",
+        // "bottom bottom", with the bottom taken from the stable measured
+        // height rather than the live viewport (which follows the toolbar).
+        end: () => `bottom ${readStableLandingViewportHeight()}px`,
         pin: false,
         invalidateOnRefresh: true,
         onRefresh: (self) => {
@@ -505,33 +525,38 @@ export const useIpadZoom = ({
     if (phoneCanvas) {
       let resizeFrame = 0
       let settleTimer = 0
+      let lastSizeW = composition.clientWidth
+      let lastSizeH = composition.clientHeight
+      /**
+       * Only the composition box drives a re-frame. Its height is the stable
+       * measured hero (`useStableLandingViewport`), so a toolbar collapse —
+       * a height-only window / visualViewport resize — never reaches here;
+       * a width or orientation change does.
+       */
+      const refreshIfResized = (force: boolean) => {
+        const width = composition.clientWidth
+        const height = composition.clientHeight
+        if (!force && width === lastSizeW && height === lastSizeH) return
+        lastSizeW = width
+        lastSizeH = height
+        refreshFramed()
+      }
       const handleResize = () => {
         if (settleTimer) window.clearTimeout(settleTimer)
         settleTimer = window.setTimeout(() => {
           settleTimer = 0
-          refreshFramed()
+          refreshIfResized(false)
         }, RESIZE_SETTLE_MS)
         if (resizeFrame) return
         resizeFrame = window.requestAnimationFrame(() => {
           resizeFrame = 0
-          refreshFramed()
+          refreshIfResized(false)
         })
       }
-      window.addEventListener("resize", handleResize)
-      window.addEventListener("orientationchange", handleResize)
-      const viewport = window.visualViewport
-      const handleVisualViewportResize = () => {
-        if ((viewport?.scale ?? 1) !== 1) return
-        handleResize()
-      }
-      viewport?.addEventListener("resize", handleVisualViewportResize)
       const stageObserver = new ResizeObserver(handleResize)
       stageObserver.observe(composition)
 
       return () => {
-        window.removeEventListener("resize", handleResize)
-        window.removeEventListener("orientationchange", handleResize)
-        viewport?.removeEventListener("resize", handleVisualViewportResize)
         stageObserver.disconnect()
         if (resizeFrame) window.cancelAnimationFrame(resizeFrame)
         if (settleTimer) window.clearTimeout(settleTimer)
@@ -579,19 +604,12 @@ export const useIpadZoom = ({
         refreshScene(false)
       })
     }
+    // No visualViewport listener: toolbar show/hide must not re-lay out the
+    // camera (the hero height is measured, not read from the viewport), and
+    // browser pinch would thrash ScrollTrigger. Real window resizes still
+    // arrive through `resize` and the stage observer.
     window.addEventListener("resize", handleResize)
     window.addEventListener("orientationchange", handleResize)
-    const viewport = window.visualViewport
-    /**
-     * iOS chrome show/hide still needs visualViewport. Browser pinch sets
-     * `visualViewport.scale !== 1` and would thrash ScrollTrigger + dvh
-     * camera math until the sticky hero locks up — ignore those.
-     */
-    const handleVisualViewportResize = () => {
-      if ((viewport?.scale ?? 1) !== 1) return
-      handleResize()
-    }
-    viewport?.addEventListener("resize", handleVisualViewportResize)
     // Gutter / :has() / overlay-scrollbar changes resize the stage without a
     // window resize — that is the “extra edge padding” flash on landing.
     const stageObserver = new ResizeObserver(handleResize)
@@ -600,7 +618,6 @@ export const useIpadZoom = ({
     return () => {
       window.removeEventListener("resize", handleResize)
       window.removeEventListener("orientationchange", handleResize)
-      viewport?.removeEventListener("resize", handleVisualViewportResize)
       stageObserver.disconnect()
       if (resizeFrame) window.cancelAnimationFrame(resizeFrame)
       if (settleTimer) window.clearTimeout(settleTimer)
@@ -632,6 +649,7 @@ export const useIpadZoom = ({
     phoneDollyRef,
     phoneDeepScaleRef,
     phoneFocusOriginRef,
+    phoneFreePanRef,
     phonePanRef,
     phonePoseRef,
     phoneArtworkRef,

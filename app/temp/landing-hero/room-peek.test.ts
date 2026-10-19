@@ -10,6 +10,7 @@ import {
   PHONE_DEEP_SCALE_GAIN,
   PHONE_ZOOM_OUT,
   clampPhonePanToArtwork,
+  phoneFreeZoomWeight,
   phonePanForGesture,
   phoneZoomFromPinch,
   phoneZoomToCamera,
@@ -172,5 +173,36 @@ describe("room-peek", () => {
       panX: peekPanLimit(1.85),
       panY: -peekPanLimit(1.85),
     })
+  })
+  it("starts the free pan at zero when a pinch leaves the path", () => {
+    // Fingers drifted 40px on the path side; crossing must not dump it.
+    const crossing = phonePanForGesture({
+      panX: 999,
+      panY: 999,
+      startScale: 1,
+      nextScale: 1.01,
+      originX: 100,
+      originY: 80,
+      startX: 140,
+      startY: 120,
+      nextX: 141,
+      nextY: 120,
+    })
+    assert.ok(Math.abs(crossing.x) < 2)
+    assert.ok(Math.abs(crossing.y) < 1)
+  })
+
+  it("fades free zoom in from the framed iPad without a step", () => {
+    assert.equal(phoneFreeZoomWeight(0.8), 0)
+    assert.equal(phoneFreeZoomWeight(1), 0)
+    assert.ok(phoneFreeZoomWeight(1.001) < 1e-4)
+    assert.equal(phoneFreeZoomWeight(3), 1)
+    let previous = 0
+    for (let scale = 1; scale <= 2; scale += 0.01) {
+      const weight = phoneFreeZoomWeight(scale)
+      assert.ok(weight >= previous)
+      assert.ok(weight - previous < 0.04)
+      previous = weight
+    }
   })
 })

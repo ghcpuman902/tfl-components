@@ -5,7 +5,6 @@ import {
   DEFAULT_PEEK,
   peekPanByPixels,
   peekScaleAboutPoint,
-  clampPhonePanToArtwork,
   phonePanForGesture,
   phoneZoomFromPinch,
   phoneZoomToCamera,
@@ -34,19 +33,14 @@ type UseParallaxInputArgs = {
    * cannot be scaled out of frame.
    */
   phoneDollyRef?: RefObject<number>
-  phonePanRef?: RefObject<{ x: number; y: number }>
+  /** Free-zoom pan (before the path blend) that each pinch move integrates. */
+  phoneFreePanRef?: RefObject<{ x: number; y: number }>
   phonePoseRef?: RefObject<{
     x: number
     y: number
     scale: number
     viewWidth: number
     viewHeight: number
-  }>
-  phoneArtworkRef?: RefObject<{
-    left: number
-    top: number
-    right: number
-    bottom: number
   }>
   phoneFocusOriginRef?: RefObject<{ x: number; y: number }>
   onPhoneDolly?: (zoom: number, pan?: { x: number; y: number }) => void
@@ -86,9 +80,8 @@ export const useParallaxInput = ({
   stageRef,
   enabled,
   phoneDollyRef,
-  phonePanRef,
+  phoneFreePanRef,
   phonePoseRef,
-  phoneArtworkRef,
   phoneFocusOriginRef,
   onPhoneDolly,
 }: UseParallaxInputArgs) => {
@@ -101,10 +94,10 @@ export const useParallaxInput = ({
     startDistance: number
     startScale: number
     startDolly: number
-    startPanX: number
-    startPanY: number
-    startLocalX: number
-    startLocalY: number
+    /** Previous move, so the phone pan integrates step by step. */
+    lastScale: number
+    lastLocalX: number
+    lastLocalY: number
   } | null>(null)
 
   useEffect(() => {
@@ -262,17 +255,16 @@ export const useParallaxInput = ({
               y: (mid.y - rect.top - pose.y) / pose.scale,
             }
           : { x: mid.x - rect.left, y: mid.y - rect.top }
-      const pan = phonePanRef?.current
+      const startScale = onPhoneDolly
+        ? phoneZoomToCamera(startDolly).scale
+        : peekRef.current.scale
       pinchRef.current = {
         startDistance: touchDistance(event.touches[0]!, event.touches[1]!),
-        startScale: onPhoneDolly
-          ? phoneZoomToCamera(startDolly).scale
-          : peekRef.current.scale,
+        startScale,
         startDolly,
-        startPanX: pan?.x ?? 0,
-        startPanY: pan?.y ?? 0,
-        startLocalX: local.x,
-        startLocalY: local.y,
+        lastScale: startScale,
+        lastLocalX: local.x,
+        lastLocalY: local.y,
       }
     }
 
@@ -296,53 +288,45 @@ export const useParallaxInput = ({
           )
           const nextScale = phoneZoomToCamera(zoom).scale
           const pose = phonePoseRef?.current
-          const art = phoneArtworkRef?.current
           const originPct = phoneFocusOriginRef?.current
-          if (
-            !pose ||
-            !art ||
-            !originPct ||
-            !(pose.scale > 0) ||
-            nextScale <= 1
-          ) {
+          if (!pose || !originPct || !(pose.scale > 0)) {
             onPhoneDolly(zoom)
             return
           }
+          // Camera-local midpoint in the framed-iPad pose, which is the pose
+          // whenever the free pan matters (scale > 1 ⇒ path progress 0).
           const mid = touchMidpoint(event.touches[0]!, event.touches[1]!)
           const localX = (mid.x - rect.left - pose.x) / pose.scale
           const localY = (mid.y - rect.top - pose.y) / pose.scale
-          const originX = (originPct.x / 100) * pose.viewWidth
-          const originY = (originPct.y / 100) * pose.viewHeight
-          const followed = phonePanForGesture({
-            panX: pinch.startPanX,
-            panY: pinch.startPanY,
-            startScale: Math.max(pinch.startScale, 1),
-            nextScale,
-            originX,
-            originY,
-            startX: pinch.startLocalX,
-            startY: pinch.startLocalY,
-            nextX: localX,
-            nextY: localY,
-          })
-          const viewLeft = -pose.x / pose.scale
-          const viewTop = -pose.y / pose.scale
+          const lastScale = pinch.lastScale
+          const lastX = pinch.lastLocalX
+          const lastY = pinch.lastLocalY
+          pinch.lastScale = nextScale
+          pinch.lastLocalX = localX
+          pinch.lastLocalY = localY
+          if (nextScale <= 1) {
+            // Path side: the camera follows the centred path, no free pan.
+            onPhoneDolly(zoom)
+            return
+          }
+          const free = phoneFreePanRef?.current ?? { x: 0, y: 0 }
+          // Step from the previous move. Leaving the path (lastScale ≤ 1)
+          // starts the free pan at zero, so drift on the path side never
+          // lands as one jump; `setPhoneDolly` clamps to the artwork and
+          // fades the free pan in over `PHONE_FREE_ZOOM_BLEND`.
           onPhoneDolly(
             zoom,
-            clampPhonePanToArtwork({
-              panX: followed.x,
-              panY: followed.y,
-              scale: nextScale,
-              originX,
-              originY,
-              viewLeft,
-              viewTop,
-              viewRight: (pose.viewWidth - pose.x) / pose.scale,
-              viewBottom: (pose.viewHeight - pose.y) / pose.scale,
-              artLeft: art.left,
-              artTop: art.top,
-              artRight: art.right,
-              artBottom: art.bottom,
+            phonePanForGesture({
+              panX: free.x,
+              panY: free.y,
+              startScale: lastScale,
+              nextScale,
+              originX: (originPct.x / 100) * pose.viewWidth,
+              originY: (originPct.y / 100) * pose.viewHeight,
+              startX: lastX,
+              startY: lastY,
+              nextX: localX,
+              nextY: localY,
             })
           )
           return
@@ -430,10 +414,9 @@ export const useParallaxInput = ({
   }, [
     enabled,
     onPhoneDolly,
-    phoneArtworkRef,
     phoneDollyRef,
     phoneFocusOriginRef,
-    phonePanRef,
+    phoneFreePanRef,
     phonePoseRef,
     stageRef,
   ])

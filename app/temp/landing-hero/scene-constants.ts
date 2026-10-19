@@ -1,3 +1,5 @@
+import { LANDING_HERO_HEIGHT } from "@/lib/landing/hero-viewport"
+
 export const CROP_SCALE = 1.06
 
 /** Matching landing-ipad case 125.7409×88.4773. */
@@ -18,10 +20,12 @@ export const HERO_COPY_BAND = "11.5rem"
 export const HERO_GROUP_BIAS = "1.25rem"
 
 /**
- * First-fold iPad: as large as the useful viewport allows, leaving the
- * copy band free. Same token at every width — height does the rest.
+ * First-fold iPad: as large as the hero allows, leaving the copy band free.
+ * Same token at every width — height does the rest. The height is the
+ * stable measured hero (never a viewport height unit), so the iPad does not
+ * move when a mobile toolbar collapses.
  */
-export const IPAD_FRAME_WIDTH = `min(${(1 - HERO_SIDE_INSET * 2) * 100}vw, calc((100dvh - var(--site-header-height) - ${HERO_TOP_INSET} - ${HERO_COPY_GAP} - ${HERO_COPY_BAND}) * ${IPAD_FRAME_ASPECT}))`
+export const IPAD_FRAME_WIDTH = `min(${(1 - HERO_SIDE_INSET * 2) * 100}vw, calc((${LANDING_HERO_HEIGHT} - ${HERO_TOP_INSET} - ${HERO_COPY_GAP} - ${HERO_COPY_BAND}) * ${IPAD_FRAME_ASPECT}))`
 
 /**
  * Pointer follow. L2 (iPad + mirror frame, 5 m) is the lock plane.
