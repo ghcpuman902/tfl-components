@@ -28,7 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { ChevronDownIcon, LocateIcon } from "lucide-react"
+import { ChevronDownIcon, LocateFixedIcon, LocateIcon } from "lucide-react"
 import { useLandingTrack } from "@/components/landing/landing-analytics"
 import { trackHeroEvent } from "@/lib/analytics/track"
 import { readExposedHeroVariant } from "@/lib/landing/hero-client"
@@ -280,6 +280,7 @@ export const BoardStagedBuilder = ({
   const [locateBusy, setLocateBusy] = useState(false)
   const [locateFailure, setLocateFailure] = useState<LocateFailure | null>(null)
   const [locateHelpOpen, setLocateHelpOpen] = useState(false)
+  const [locatedStopId, setLocatedStopId] = useState<string | null>(null)
   const locateRunRef = useRef(0)
   const locateWatchdogRef = useRef(0)
   const [advancedOpen, setAdvancedOpen] = useState(false)
@@ -462,6 +463,7 @@ export const BoardStagedBuilder = ({
     locateRunRef.current += 1
     setLocateBusy(false)
     setLocateFailure(failure)
+    setLocatedStopId(null)
     updateDraft((current) => {
       if (current.stopId || current.continueWithoutStop) return current
       const lineIds = (
@@ -515,6 +517,7 @@ export const BoardStagedBuilder = ({
           }
           window.clearTimeout(locateWatchdogRef.current)
           setLocateBusy(false)
+          setLocatedStopId(rail.id)
           const lineIds = (
             lookupBoardStationLines(stationLines, rail.id) ?? []
           ).map((line) => line.lineId)
@@ -601,6 +604,11 @@ export const BoardStagedBuilder = ({
 
   const previewProfile = draft.screenProfile
   const locateAction = locateFailure ? locateFailureAction(locateFailure) : null
+  const located =
+    !locateBusy &&
+    !draft.continueWithoutStop &&
+    locatedStopId != null &&
+    locatedStopId === draft.stopId
   const selectedStopLabel = draft.continueWithoutStop
     ? "Network status"
     : (draft.stopName ?? autoStopName)
@@ -640,16 +648,27 @@ export const BoardStagedBuilder = ({
                 </h2>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={located ? "secondary" : "outline"}
                   className="w-full"
                   onClick={handleLocate}
                   disabled={locateBusy}
                 >
-                  <LocateIcon data-icon="inline-start" aria-hidden />
-                  {locateBusy ? "Finding a stop…" : "Pick for me"}
+                  {located ? (
+                    <LocateFixedIcon data-icon="inline-start" aria-hidden />
+                  ) : (
+                    <LocateIcon data-icon="inline-start" aria-hidden />
+                  )}
+                  {locateBusy
+                    ? "Finding a stop…"
+                    : located
+                      ? `Near ${selectedStopLabel}`
+                      : "Pick for me"}
                 </Button>
                 {locateFailure ? (
-                  <p className="text-sm text-muted-foreground" role="status">
+                  <p
+                    className="text-sm text-balance text-muted-foreground"
+                    role="status"
+                  >
                     {locateFailureSentence(
                       locateFailure,
                       draft.stopId === HOME_RAIL_STOP.id
