@@ -15,7 +15,10 @@ import {
   BoardServingLineEditor,
 } from "@/components/board/board-status-line-editor"
 import { BoardPreview } from "@/components/board/board-preview"
-import { BoardBuilderOverrides } from "@/components/board/board-preview-mode"
+import {
+  BoardBuilderOverrides,
+  BoardPreviewModePills,
+} from "@/components/board/board-preview-mode"
 import { BoardShareCard } from "@/components/board/board-share-card"
 import { BoardStationSearch } from "@/components/board/board-station-search"
 import { Button } from "@/components/ui/button"
@@ -75,6 +78,7 @@ import {
   parseBoardSetupDraft,
   BOARD_SETUP_DRAFT_STORAGE_KEY,
   type BoardNearbyMode,
+  type BoardScreenProfile,
   type BoardSetupDraft,
   type BoardSetupStage,
 } from "@/lib/tfl/board-setup-state"
@@ -602,24 +606,11 @@ export const BoardStagedBuilder = ({
     })
   )
 
-  // Preview frame follows the builder viewport — not a user-facing choice.
-  useEffect(() => {
-    if (!ready) return
-    const syncPreview = () => {
-      const detected = detectScreenProfile(
-        window.innerWidth,
-        window.innerHeight
-      )
-      setDraft((current) =>
-        current.screenProfile === detected.profile
-          ? current
-          : { ...current, screenProfile: detected.profile }
-      )
-    }
-    syncPreview()
-    window.addEventListener("resize", syncPreview)
-    return () => window.removeEventListener("resize", syncPreview)
-  }, [ready])
+  const handlePreviewMode = (profile: BoardScreenProfile) => {
+    updateDraft((current) =>
+      startIfNeeded({ ...current, screenProfile: profile })
+    )
+  }
 
   const previewProfile = draft.screenProfile
   const locateAction = locateFailure ? locateFailureAction(locateFailure) : null
@@ -925,6 +916,10 @@ export const BoardStagedBuilder = ({
               href={href}
               hydrated={ready}
               screenProfile={previewProfile}
+            />
+            <BoardPreviewModePills
+              value={previewProfile}
+              onChange={handlePreviewMode}
             />
             <BoardBuilderOverrides
               unattended={config.behaviour === "unattended"}
