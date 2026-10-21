@@ -70,9 +70,15 @@ export const isBoardReady = (
   storedKey: string | null
 ): boolean => resolveBoardReadiness(config, storedKey).ready
 
-/** Previews with no usable hash still show the Oxford Circus demo board. */
+/** No usable stop still shows Oxford Circus, keeping the view and behaviour asked for. */
 export const withDemoBoardFallback = (config: BoardConfig): BoardConfig =>
-  isUsableBoardConfig(config) ? config : DEMO_BOARD_CONFIG
+  isUsableBoardConfig(config)
+    ? config
+    : {
+        ...DEMO_BOARD_CONFIG,
+        behaviour: config.behaviour,
+        ...(config.view ? { view: config.view } : {}),
+      }
 
 const boardViewPathname = (pathname: string): boolean => {
   if (pathname === BOARD_VIEW_PATH) return true

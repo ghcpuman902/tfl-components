@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { DEFAULT_BOARD_CONFIG } from "./board-url-state"
+import { DEFAULT_BOARD_CONFIG, parseBoardConfig } from "./board-url-state"
 import {
   DEMO_BOARD_CONFIG,
   isBoardReady,
@@ -134,6 +134,15 @@ describe("withDemoBoardFallback", () => {
     assert.equal(fallback.stop, DEMO_BOARD_CONFIG.stop)
     assert.equal(fallback.stopName, "Oxford Circus")
     assert.equal(isUsableBoardConfig(fallback), true)
+  })
+
+  it("keeps glance and unattended when falling back to Oxford Circus", () => {
+    const fallback = withDemoBoardFallback(
+      parseBoardConfig("#view=glance&behaviour=unattended")
+    )
+    assert.equal(fallback.stop, DEMO_BOARD_CONFIG.stop)
+    assert.equal(fallback.view, "glance")
+    assert.equal(fallback.behaviour, "unattended")
   })
 })
 

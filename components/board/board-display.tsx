@@ -18,7 +18,11 @@ import { BoardGlanceArrivals } from "@/components/board/board-glance-arrivals"
 import { BoardViewFooter } from "@/components/board/board-view-footer"
 import { BoardViewHomeScreenOffer } from "@/components/board/board-view-home-screen-offer"
 import { BoardViewRecovery } from "@/components/board/board-view-recovery"
-import { BoardViewSetupPrompt } from "@/components/board/board-view-setup-prompt"
+import {
+  BoardViewDemoNotice,
+  readDemoNoticeDismissed,
+  writeDemoNoticeDismissed,
+} from "@/components/board/board-view-demo-notice"
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
 import { RiverBusArrivalsBoard } from "@/components/tfl/arrivals/river-bus-arrivals-board"
@@ -286,29 +290,29 @@ export const BoardDisplay = ({
     [installedHash, stationNames]
   )
 
+  const usableInstalled =
+    fromHomeScreen && installedConfig && isUsableBoardConfig(installedConfig)
+      ? installedConfig
+      : null
+  // A visitor with no stop gets the Oxford Circus demo; Home Screen launches recover instead.
+  const demo =
+    !isPreview &&
+    !embedded &&
+    !fromHomeScreen &&
+    !isUsableBoardConfig(hashConfig)
+
   const config = useMemo(() => {
     if (previewConfig) return applyStopName(previewConfig, stationNames)
     if (isUsableBoardConfig(hashConfig)) return hashConfig
-    if (
-      fromHomeScreen &&
-      installedConfig &&
-      isUsableBoardConfig(installedConfig)
-    ) {
+    if (usableInstalled) {
       return {
-        ...installedConfig,
-        key: hashConfig.key ?? installedConfig.key,
+        ...usableInstalled,
+        key: hashConfig.key ?? usableInstalled.key,
       }
     }
-    if (embedded) return withDemoBoardFallback(hashConfig)
-    return hashConfig
-  }, [
-    embedded,
-    fromHomeScreen,
-    hashConfig,
-    installedConfig,
-    previewConfig,
-    stationNames,
-  ])
+    if (fromHomeScreen) return hashConfig
+    return withDemoBoardFallback(hashConfig)
+  }, [fromHomeScreen, hashConfig, previewConfig, stationNames, usableInstalled])
 
   const surfaceReady = ready && hydrated
   const boardReady = surfaceReady && isBoardReady(config, null)
@@ -665,6 +669,18 @@ export const BoardDisplay = ({
     setHomeScreenOfferOpen(false)
   }, [])
 
+  const [demoNoticeDismissed, setDemoNoticeDismissed] = useState(false)
+  const demoNoticeOpen =
+    demo && boardReady && !demoNoticeDismissed && !readDemoNoticeDismissed()
+  const handleDismissDemoNotice = useCallback(() => {
+    writeDemoNoticeDismissed()
+    setDemoNoticeDismissed(true)
+  }, [])
+  const demoSetupHref = `${BOARD_PATH}${boardHashFromConfig({
+    ...hashConfig,
+    key: undefined,
+  })}`
+
   const editHref = `${BOARD_PATH}${boardHashFromConfig({
     ...config,
     key: undefined,
@@ -1014,14 +1030,8 @@ export const BoardDisplay = ({
         className={shellClass}
         style={boardShellStyle}
       >
-        {fromHomeScreen ? (
-          <>
-            {isPreview ? null : <h1 className="sr-only">Live board</h1>}
-            <BoardViewRecovery onLoad={handleRecoveredBoard} />
-          </>
-        ) : (
-          <BoardViewSetupPrompt />
-        )}
+        {isPreview ? null : <h1 className="sr-only">Live board</h1>}
+        <BoardViewRecovery onLoad={handleRecoveredBoard} />
       </div>
     )
   }
@@ -1106,6 +1116,13 @@ export const BoardDisplay = ({
           }
         />
       )}
+      {demo ? (
+        <BoardViewDemoNotice
+          open={demoNoticeOpen}
+          setupHref={demoSetupHref}
+          onDismiss={handleDismissDemoNotice}
+        />
+      ) : null}
       {offerInstall && platform === "ios" && !isGlance ? (
         <BoardViewHomeScreenOffer
           open={homeScreenOfferOpen}
