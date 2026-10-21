@@ -973,10 +973,9 @@ export const BoardDisplay = ({
     )
   }
 
-  // Prefer `h-full` so builder iframes (1088×1088) and HomeView share one
-  // height chain; `html/body { height:100% }` is set for `.board-glance`.
+  // `h-svh` sizes the first paint; inline previews fill their frame instead.
   const shellClass = isGlance
-    ? `board-embed board-glance ${BOARD_SHELL_CONTAINER_CLASS} box-border flex h-full min-h-0 w-full flex-col overflow-hidden overscroll-none [touch-action:manipulation] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${embedded || isPreview ? "p-5" : ""}`
+    ? `board-embed board-glance ${BOARD_SHELL_CONTAINER_CLASS} box-border flex ${isPreview ? "h-full" : "h-svh"} min-h-0 w-full flex-col overflow-hidden overscroll-none [touch-action:manipulation] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${embedded || isPreview ? "p-5" : ""}`
     : isPreview
       ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-full w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
       : fillScreen

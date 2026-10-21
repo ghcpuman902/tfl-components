@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useLayoutEffect, useMemo, useRef, useState } from "react"
 import type { PredictionWithSharedTrackIdentity, RealtimePrediction } from "tfl-ts"
 import { LineBadge, LineBadgeGroup } from "@/components/tfl/brand/line-badge"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
@@ -201,7 +201,7 @@ export const BoardGlanceArrivals = ({
   const rootRef = useRef<HTMLDivElement>(null)
   const [aspect, setAspect] = useState<number | undefined>(undefined)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = rootRef.current
     if (!el || typeof ResizeObserver === "undefined") return
     const update = () => {
@@ -236,38 +236,7 @@ export const BoardGlanceArrivals = ({
   const TitleTag = `h${headingLevel}` as const
   const emptyCopy = emptyMessage ?? ARRIVALS_EMPTY_COPY.empty
 
-  if (loading && rows.length === 0 && !error) {
-    return (
-      <div
-        ref={rootRef}
-        data-slot="board-glance-arrivals"
-        className={cn(
-          "@container/glance-arrivals flex min-h-0 w-full flex-1 flex-col",
-          className
-        )}
-        aria-busy
-        aria-label="Loading arrivals"
-      >
-        <div className="flex shrink-0 items-center gap-x-5 pb-[clamp(1rem,2.5cqi,1.75rem)]">
-          <div className="size-[clamp(3.5rem,7cqi,4.5rem)] animate-pulse rounded-full bg-muted" />
-          <div className="h-[clamp(2.5rem,5cqi,3.25rem)] w-[min(70%,22rem)] animate-pulse rounded bg-muted" />
-        </div>
-        <ul className="flex min-h-0 flex-1 flex-col" aria-hidden>
-          {Array.from({ length: pageSize }).map((_, index) => (
-            <li
-              key={index}
-              className="flex min-h-0 flex-1 items-center gap-4 border-b border-border/60"
-            >
-              <div className="h-[70%] w-2 animate-pulse rounded-full bg-muted" />
-              <div className="h-12 w-16 animate-pulse rounded bg-muted" />
-              <div className="h-12 flex-1 animate-pulse rounded bg-muted" />
-              <div className="h-16 w-20 animate-pulse rounded bg-muted" />
-            </li>
-          ))}
-        </ul>
-      </div>
-    )
-  }
+  const showSkeleton = loading && rows.length === 0 && !error
 
   return (
     <div
@@ -277,6 +246,7 @@ export const BoardGlanceArrivals = ({
         "@container/glance-arrivals flex min-h-0 w-full flex-1 flex-col overflow-hidden",
         className
       )}
+      aria-busy={showSkeleton || undefined}
       onFocus={sequence.handleFocus}
       onBlur={sequence.handleBlur}
     >
@@ -295,7 +265,27 @@ export const BoardGlanceArrivals = ({
         )}
       </div>
 
-      {error ? (
+      {showSkeleton ? (
+        <ul
+          className="m-0 flex min-h-0 flex-1 basis-0 list-none flex-col p-0"
+          aria-label="Loading arrivals"
+        >
+          {Array.from({ length: pageSize }).map((_, index) => (
+            <li
+              key={index}
+              className={cn(
+                "flex min-h-0 flex-1 basis-0 items-center gap-x-[clamp(0.5rem,2cqi,1.25rem)] py-[clamp(0.35rem,1.5cqi,1rem)]",
+                index < pageSize - 1 && "border-b border-border/70"
+              )}
+            >
+              <div className="h-[68%] w-2 animate-pulse rounded-sm bg-muted" />
+              <div className="h-[clamp(2rem,6.5cqi,4rem)] w-16 animate-pulse rounded bg-muted" />
+              <div className="h-12 flex-1 animate-pulse rounded bg-muted" />
+              <div className="h-16 w-20 animate-pulse rounded bg-muted" />
+            </li>
+          ))}
+        </ul>
+      ) : error ? (
         <p
           className="flex min-h-0 flex-1 items-center text-[length:var(--glance-dest)] text-destructive"
           role="alert"
@@ -310,38 +300,37 @@ export const BoardGlanceArrivals = ({
           {emptyCopy}
         </p>
       ) : (
-        <>
-          <ul
-            data-slot="board-glance-rows"
-            className="m-0 flex min-h-0 flex-1 basis-0 list-none flex-col p-0"
-            role="list"
-          >
-            {(activeFrame?.rows ?? []).map((row, index, list) => (
-              <GlanceArrivalRow
-                key={row.key}
-                row={row}
-                showRule={index < list.length - 1}
-              />
-            ))}
-          </ul>
-          {frames.length > 1 ? (
-            <div
-              data-slot="board-glance-dwell"
-              className="relative mt-[clamp(0.75rem,1.8cqi,1.25rem)] h-2 w-full shrink-0 overflow-hidden rounded-full bg-muted"
-              aria-hidden
-            >
-              <div
-                className="absolute inset-y-0 left-0 bg-foreground/75 transition-[width] duration-200 ease-linear"
-                style={{
-                  width: sequence.started
-                    ? `${Math.round(sequence.progress * 100)}%`
-                    : "0%",
-                }}
-              />
-            </div>
-          ) : null}
-        </>
+        <ul
+          data-slot="board-glance-rows"
+          className="m-0 flex min-h-0 flex-1 basis-0 list-none flex-col p-0"
+          role="list"
+        >
+          {(activeFrame?.rows ?? []).map((row, index, list) => (
+            <GlanceArrivalRow
+              key={row.key}
+              row={row}
+              showRule={index < list.length - 1}
+            />
+          ))}
+        </ul>
       )}
+      <div
+        data-slot="board-glance-dwell"
+        className={cn(
+          "relative mt-[clamp(0.75rem,1.8cqi,1.25rem)] h-2 w-full shrink-0 overflow-hidden rounded-full bg-muted",
+          frames.length > 1 && !error ? undefined : "invisible"
+        )}
+        aria-hidden
+      >
+        <div
+          className="absolute inset-y-0 left-0 bg-foreground/75 transition-[width] duration-200 ease-linear"
+          style={{
+            width: sequence.started
+              ? `${Math.round(sequence.progress * 100)}%`
+              : "0%",
+          }}
+        />
+      </div>
     </div>
   )
 }

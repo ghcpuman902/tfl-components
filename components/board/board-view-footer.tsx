@@ -130,9 +130,20 @@ export const BoardViewFooter = ({
           <span>
             {stale ? "Last updated" : "Updated"} {formatUpdatedClock(fetchedAt)}
           </span>
+        ) : compact ? (
+          <span className="invisible" aria-hidden>
+            Updated 00:00
+          </span>
         ) : null}
         {!stale && remainingSec != null ? (
-          <span>Next in {remainingSec}s</span>
+          <span>
+            Next in{" "}
+            <span className="inline-block min-w-[3ch]">{remainingSec}s</span>
+          </span>
+        ) : compact && !stale ? (
+          <span className="invisible" aria-hidden>
+            Next in 00s
+          </span>
         ) : null}
         {onRefresh ? (
           <button

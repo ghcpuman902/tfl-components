@@ -22,14 +22,14 @@ import {
 import { cn } from "@/lib/utils"
 
 const SLOT_WIDE =
-  "w-full max-w-[calc(min(42dvh,22rem)*125.7409/88.4773)] md:w-[min(calc(min(50dvh,26rem)*125.7409/88.4773),calc(100vw-26rem))] md:max-w-none"
+  "w-full max-w-[calc(min(42svh,22rem)*125.7409/88.4773)] md:w-[min(calc(min(50svh,26rem)*125.7409/88.4773),calc(100vw-26rem))] md:max-w-none"
 const SLOT_NARROW =
-  "w-full max-w-[calc(min(42dvh,22rem)*75/154)] md:w-[min(calc(min(50dvh,26rem)*75/154),calc(100vw-26rem))] md:max-w-none"
+  "w-full max-w-[calc(min(42svh,22rem)*75/154)] md:w-[min(calc(min(50svh,26rem)*75/154),calc(100vw-26rem))] md:max-w-none"
 const SLOT_SQUARE =
-  "w-full max-w-[min(42dvh,22rem)] md:w-[min(50dvh,26rem)] md:max-w-none"
+  "w-full max-w-[min(42svh,22rem)] md:w-[min(50svh,26rem)] md:max-w-none"
 const SLOT_UNRESOLVED = cn(
-  "w-full max-w-[calc(min(42dvh,22rem)*75/154)]",
-  "md:w-[min(calc(min(50dvh,26rem)*125.7409/88.4773),calc(100vw-26rem))] md:max-w-none"
+  "w-full max-w-[calc(min(42svh,22rem)*75/154)]",
+  "md:w-[min(calc(min(50svh,26rem)*125.7409/88.4773),calc(100vw-26rem))] md:max-w-none"
 )
 
 /** Coalesce rapid slot/config edits so the iframe does not reload twice. */
@@ -186,7 +186,12 @@ export const BoardPreview = ({
   }, [frameWidth, frameHeight])
 
   return (
-    <div className={cn("flex w-full justify-center md:w-auto", className)}>
+    <div
+      className={cn(
+        "flex h-[min(42svh,22rem)] w-full items-center justify-center md:h-auto md:w-auto",
+        className
+      )}
+    >
       <div
         className={cn(
           "relative @container",
