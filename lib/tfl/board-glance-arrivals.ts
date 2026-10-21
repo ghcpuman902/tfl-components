@@ -298,6 +298,47 @@ export const formatGlanceCountdown = (
 }
 
 /** "then 4, 9" from the group's second and third trains (minutes, Due as 0). */
+/**
+ * Width a "then …" line needs, in em of its own (quiet) size, by how many
+ * numbers and digits it carries. Hammersmith One has no tabular figures, so
+ * each digit is charged at the widest figure (0.686em); "then " is 2.537em and
+ * ", " 0.548em. Bucketed to the container-query steps in globals.css.
+ */
+const GLANCE_THEN_NEED: Readonly<Record<string, string>> = {
+  "1:1": "3.25",
+  "1:2": "3.95",
+  "1:3": "4.6",
+  "2:2": "4.5",
+  "2:3": "5.2",
+  "2:4": "5.85",
+  "2:5": "6.55",
+  "2:6": "7.25",
+}
+
+export type GlanceThenTier = { text: string; need: string }
+
+/**
+ * "then 4, 9", then "then 4": the longest that fits the room beside the
+ * figure is shown (container query on the quiet column); none if neither fits.
+ * Text never scales down.
+ */
+export const glanceThenTiers = (
+  rows: readonly ArrivalsPreparedRow[]
+): GlanceThenTier[] => {
+  const rest = rows
+    .slice(1, 3)
+    .map((row) => row.arrival.timeToStation)
+    .filter((value): value is number => typeof value === "number" && value >= 0)
+    .map((value) => `${Math.floor(value / 60)}`)
+  const tiers: GlanceThenTier[] = []
+  for (let count = rest.length; count >= 1; count--) {
+    const parts = rest.slice(0, count)
+    const need = GLANCE_THEN_NEED[`${count}:${parts.join("").length}`] ?? null
+    if (need) tiers.push({ text: `then ${parts.join(", ")}`, need })
+  }
+  return tiers
+}
+
 export const formatGlanceThen = (
   rows: readonly ArrivalsPreparedRow[]
 ): string | null => {

@@ -564,9 +564,98 @@ html.board-glance .board-glance {
     calc(var(--glance-s) * 2 * -0.3);
 }
 
-/* Spare row height lands under the chip, so name, meta and time keep 1-step gaps on the row's bottom edge. */
+/* A tile's spare row height lands under the chip, so name, meta and time keep 1-step gaps on the row's bottom edge. */
 .glance-chip-row {
   margin-block-end: auto;
+}
+
+/*
+ * An anchor stands alone, so its spare height is spread over its three gaps
+ * instead (chip → name → meta → time stay equal to each other): no dead band
+ * under the chip, top and bottom still on the tiles' edges.
+ */
+.glance-stage-scale .glance-chip-row {
+  margin-block-end: 0;
+}
+.glance-stage-scale > .glance-col {
+  justify-content: space-between;
+}
+
+/*
+ * "then 4, 9" → "then 4" → nothing: the quiet column beside the figure is an
+ * inline-size container in its own em, and each tier carries the width it
+ * needs (data-need, see glanceThenTiers) and the width of the longer tier
+ * above it (data-next). Steps ascend, so "a longer one fits" wins.
+ */
+.glance-then {
+  container: glance-then / inline-size;
+}
+.glance-then-tier {
+  display: none;
+}
+@container glance-then (min-width: 3.25em) {
+  .glance-then-tier[data-need="3.25"] {
+    display: block;
+  }
+  .glance-then-tier[data-next="3.25"] {
+    display: none;
+  }
+}
+@container glance-then (min-width: 3.95em) {
+  .glance-then-tier[data-need="3.95"] {
+    display: block;
+  }
+  .glance-then-tier[data-next="3.95"] {
+    display: none;
+  }
+}
+@container glance-then (min-width: 4.5em) {
+  .glance-then-tier[data-need="4.5"] {
+    display: block;
+  }
+  .glance-then-tier[data-next="4.5"] {
+    display: none;
+  }
+}
+@container glance-then (min-width: 4.6em) {
+  .glance-then-tier[data-need="4.6"] {
+    display: block;
+  }
+  .glance-then-tier[data-next="4.6"] {
+    display: none;
+  }
+}
+@container glance-then (min-width: 5.2em) {
+  .glance-then-tier[data-need="5.2"] {
+    display: block;
+  }
+  .glance-then-tier[data-next="5.2"] {
+    display: none;
+  }
+}
+@container glance-then (min-width: 5.85em) {
+  .glance-then-tier[data-need="5.85"] {
+    display: block;
+  }
+  .glance-then-tier[data-next="5.85"] {
+    display: none;
+  }
+}
+@container glance-then (min-width: 6.55em) {
+  .glance-then-tier[data-need="6.55"] {
+    display: block;
+  }
+  .glance-then-tier[data-next="6.55"] {
+    display: none;
+  }
+}
+@container glance-then (min-width: 7.25em) {
+  .glance-then-tier[data-need="7.25"] {
+    display: block;
+  }
+  .glance-then-tier[data-next="7.25"] {
+    display: none;
+  }
 }
 
 /* The figures' ink rises ~0.045em over their cap-trimmed box (0.02em lift + digit overshoot); open the gap by that so meta → time reads as 1 step. */

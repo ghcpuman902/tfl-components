@@ -30,6 +30,7 @@ import {
   formatGlanceArrivalMeta,
   formatGlanceCountdown,
   formatGlanceThen,
+  glanceThenTiers,
   GLANCE_PAN_HOLD_MS,
   GLANCE_PAN_MOVE_MS,
   GLANCE_VISIBLE_TILES,
@@ -39,6 +40,7 @@ import {
   prepareGlanceArrivals,
   resolveGlanceLayout,
   type GlanceGroup,
+  type GlanceThenTier,
   type GlancePriorityItem,
 } from "@/lib/tfl/board-glance-arrivals"
 import {
@@ -79,7 +81,7 @@ const SLOT_CLASS =
   "glance-slot flex min-h-0 min-w-0 gap-x-[length:var(--glance-s)] text-left"
 /* Font size is the slot step, so the column's container queries read in steps. */
 const COL_CLASS =
-  "@container/glance-col flex min-w-0 flex-1 flex-col gap-y-[length:var(--glance-s)] text-[length:var(--glance-s)]"
+  "glance-col @container/glance-col flex min-w-0 flex-1 flex-col gap-y-[length:var(--glance-s)] text-[length:var(--glance-s)]"
 const CHIP_SIZE_CLASS =
   "h-[calc(var(--glance-s)*2.5)] text-[length:calc(var(--glance-s)*1.5)]"
 /* Board row weight (no synthetic bold, so canvas fit matches paint); leading matches StationName's multiline. */
@@ -159,7 +161,13 @@ const glanceIdentity = (arrival: RealtimePrediction): GlanceIdentity => {
   }
 }
 
-const TimeLockup = ({ time, then }: { time: string; then: string | null }) => {
+const TimeLockup = ({
+  time,
+  then,
+}: {
+  time: string
+  then: readonly GlanceThenTier[]
+}) => {
   const unit = time === "Due" ? "now" : /^\d+$/.test(time) ? "min" : null
   return (
     <span
@@ -170,20 +178,28 @@ const TimeLockup = ({ time, then }: { time: string; then: string | null }) => {
       {/* Hammersmith One's figures sit ~0.02em under the trimmed baseline; lift them so the ink ends where the rail does. */}
       <span
         className={cn(
-          "-translate-y-[0.02em] text-[length:calc(var(--glance-s)*var(--glance-time))]",
+          "shrink-0 -translate-y-[0.02em] text-[length:calc(var(--glance-s)*var(--glance-time))]",
           CHIP_CAP_TEXT_BOX_CLASS
         )}
       >
         {time}
       </span>
-      {unit || then ? (
-        <span className="flex flex-col gap-y-[calc(var(--glance-s)*0.5)]">
+      {unit || then.length ? (
+        /* The room beside the figure picks the longest "then" that fits (.glance-then in globals.css). */
+        <span className="glance-then flex min-w-0 flex-1 flex-col gap-y-[calc(var(--glance-s)*0.5)] text-[length:calc(var(--glance-s)*1.5)]">
           {unit ? (
             <span className={cn(QUIET_CLASS, "whitespace-nowrap")}>{unit}</span>
           ) : null}
-          {then ? (
-            <span className={cn(QUIET_CLASS, "whitespace-nowrap")}>{then}</span>
-          ) : null}
+          {then.map((tier, index) => (
+            <span
+              key={tier.text}
+              data-need={tier.need}
+              data-next={index > 0 ? then[index - 1]?.need : undefined}
+              className={cn(QUIET_CLASS, "glance-then-tier whitespace-nowrap")}
+            >
+              {tier.text}
+            </span>
+          ))}
         </span>
       ) : null}
     </span>
@@ -220,6 +236,7 @@ const GlanceSlot = ({
     arrival.platformName
   )
   const then = room ? null : formatGlanceThen(group.rows)
+  const thenTiers = room ? [] : glanceThenTiers(group.rows)
   // Across the room: the anchor keeps its shortest bound; a tile is chip, one-line destination, time.
   const roomTile = room && !stage
   const spoken = [
@@ -293,7 +310,7 @@ const GlanceSlot = ({
               : (identity.lineLabel ?? "Next train")}
           </span>
         )}
-        <TimeLockup time={time} then={then} />
+        <TimeLockup time={time} then={thenTiers} />
       </span>
     </Tag>
   )

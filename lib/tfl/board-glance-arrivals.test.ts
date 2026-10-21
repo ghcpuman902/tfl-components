@@ -5,6 +5,7 @@ import {
   buildGlancePanStrip,
   formatGlanceCountdown,
   formatGlanceThen,
+  glanceThenTiers,
   glanceBoundKey,
   glanceLineKey,
   glancePanColumns,
@@ -242,5 +243,32 @@ describe("glance time block", () => {
     })
     assert.equal(formatGlanceThen(rows), "then 4, 9")
     assert.equal(formatGlanceThen(rows.slice(0, 1)), null)
+  })
+})
+
+describe("glanceThenTiers", () => {
+  const row = (seconds: number) =>
+    ({ arrival: { timeToStation: seconds } }) as unknown as Parameters<
+      typeof glanceThenTiers
+    >[0][number]
+
+  it("offers both following trains, then only the next one", () => {
+    assert.deepEqual(glanceThenTiers([row(60), row(300), row(600)]), [
+      { text: "then 5, 10", need: "5.2" },
+      { text: "then 5", need: "3.25" },
+    ])
+  })
+
+  it("has one tier for a single following train and none without", () => {
+    assert.deepEqual(glanceThenTiers([row(0), row(720)]), [
+      { text: "then 12", need: "3.95" },
+    ])
+    assert.deepEqual(glanceThenTiers([row(0)]), [])
+  })
+
+  it("orders needs longest first", () => {
+    const tiers = glanceThenTiers([row(0), row(1500), row(2400)])
+    assert.equal(tiers.length, 2)
+    assert.ok(Number(tiers[0]!.need) > Number(tiers[1]!.need))
   })
 })
