@@ -58,9 +58,11 @@ const thenLine = (times: readonly number[]) => {
 }
 
 /* One left-aligned stack per slot, so every fact sits beside its own rail and
- * nothing floats toward a neighbour: chip, destination, meta, then the time. */
+ * nothing floats toward a neighbour: chip, destination, meta, then the time.
+ * Slots stretch to their row; the time sits on the slot's bottom edge, so rails
+ * and times of one row end on one line whatever the destination wraps to. */
 const SLOT_CLASS =
-  "ga-slot flex min-h-0 min-w-0 gap-x-[length:var(--s)] self-start text-left"
+  "ga-slot flex min-h-0 min-w-0 gap-x-[length:var(--s)] text-left"
 /* Font size is the slot step, so the column's container queries read in s. */
 const COL_CLASS =
   "@container/ga-col flex min-w-0 flex-1 flex-col gap-y-[length:var(--s)] text-[length:var(--s)]"
@@ -77,12 +79,13 @@ const META_TIER_CLASS = [
 
 const TimeLockup = ({ time, then }: { time: string; then: string | null }) => (
   <span
-    className="flex items-end gap-x-[length:var(--s)] font-semibold tabular-nums"
+    className="mt-auto flex items-end gap-x-[length:var(--s)] font-semibold tabular-nums"
     aria-hidden
   >
+    {/* Hammersmith One's figures sit ~0.02em under the trimmed baseline; lift them so the ink ends where the rail does. */}
     <span
       className={cn(
-        "text-[length:calc(var(--s)*var(--ga-time))]",
+        "-translate-y-[0.02em] text-[length:calc(var(--s)*var(--ga-time))]",
         CHIP_CAP_TEXT_BOX_CLASS
       )}
     >

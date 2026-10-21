@@ -148,7 +148,7 @@
   grid-template-rows: repeat(var(--ga-tile-rows), auto);
   grid-auto-columns: var(--ga-col-w);
   gap: var(--ga-gap);
-  /* First row on the top edge, last row on the bottom edge of the area. */
+  /* The area stretches to the anchor beside it: first row on its top edge, last row on its bottom edge. */
   align-content: space-between;
   transform: translateX(
     calc(var(--ga-offset, 0) * -1 * (var(--ga-col-w) + var(--ga-gap)))
