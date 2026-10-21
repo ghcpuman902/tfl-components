@@ -1,0 +1,86 @@
+/*
+ * Anchor glance mock. One unit `--u` from the shell, sized so the worst-case
+ * tile fits its grid cell; the anchor is the same ladder at `--k: 2` over
+ * 2×2 cells, so it is four tiles of area. Layout and orientation only change
+ * the cell grid, never the ladder.
+ */
+.glance-anchor {
+  container: ga-shell / size;
+}
+
+.ga-inner {
+  --ga-cols: 2;
+  --ga-rows: 4;
+  --ga-stage-cols: 2;
+  --ga-stage-rows: 1;
+  /* Worst-case tile in u: rail + gaps + an 8-letter word + "Due"; chip + 2-line destination + meta + then. */
+  --ga-tile-w: 17.5;
+  --ga-tile-h: 13.1;
+  --ga-roundel: clamp(4.5rem, 9.5cqi, 6.25rem);
+  /* Header tile and 48px footer; the segment bar and four 1u stack gaps are the +4.5u below. */
+  --ga-chrome: calc(var(--ga-roundel) + 3rem);
+  --u: min(
+    calc((100cqi - 2 * var(--ga-pad)) / var(--ga-cols) / var(--ga-tile-w)),
+    calc(
+      (100cqb - 2 * var(--ga-pad) - var(--ga-chrome)) /
+        (var(--ga-rows) * (var(--ga-tile-h) + 1.5) + 3)
+    )
+  );
+  --ga-title: min(calc(var(--ga-roundel) * 0.625), calc(var(--u) * 3));
+  --ga-foot: max(0.875rem, var(--u));
+}
+
+.ga-inner[data-layout="household"] {
+  --ga-rows: 6;
+}
+
+/*
+ * Across the room: the anchor gets the full width and three one-line tiles
+ * (chip, bound, minutes). Budgets are the whole column: anchor 34u wide,
+ * anchor 16.2u + three 5u tiles tall.
+ */
+.ga-inner[data-room] {
+  --ga-cols: 1;
+  --ga-rows: 1;
+  --ga-stage-cols: 1;
+  --ga-stage-rows: 1;
+  --ga-tile-w: 34;
+  --ga-tile-h: 35.7;
+}
+
+@container ga-shell (orientation: landscape) {
+  .ga-inner {
+    --ga-cols: 4;
+    --ga-rows: 2;
+    --ga-stage-rows: 2;
+  }
+  /* Two equal anchors side by side over a row of four tiles. */
+  .ga-inner[data-layout="household"] {
+    --ga-rows: 3;
+    --ga-stage-rows: 1;
+  }
+  /* Anchor 2 tile-widths of 15u over a row of three 5u tiles: 22.7u tall. */
+  .ga-inner[data-room] {
+    --ga-cols: 3;
+    --ga-rows: 1;
+    --ga-stage-cols: 3;
+    --ga-stage-rows: 1;
+    --ga-tile-w: 15;
+    --ga-tile-h: 22.7;
+  }
+}
+
+.ga-grid {
+  grid-template-columns: repeat(var(--ga-cols), minmax(0, 1fr));
+  /* Rows hug their text; the worst-case reserve becomes equal gaps, never a tall empty cell. */
+  align-content: space-evenly;
+}
+
+.ga-slot {
+  --s: calc(var(--u) * var(--k, 1));
+}
+
+.ga-slot[data-slot="ga-stage"] {
+  grid-column: span var(--ga-stage-cols);
+  grid-row: span var(--ga-stage-rows);
+}
