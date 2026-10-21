@@ -25,9 +25,10 @@ export const BOARD_GLANCE_TALL_PAGE_SIZE = 3
 export const BOARD_GLANCE_MAX_ROWS = 24
 /**
  * Height/width at or above this uses the tall page size.
- * Portrait phone (~2.1) and portrait iPad (~1.33) clear it; square does not.
+ * With room-distance type, only very tall frames get a third row;
+ * phone portrait (~2.16) and iPad portrait stay at two.
  */
-export const BOARD_GLANCE_TALL_ASPECT = 1.2
+export const BOARD_GLANCE_TALL_ASPECT = 2.4
 
 export const resolveGlanceArrivalsPageSize = (
   aspectHeightOverWidth?: number,

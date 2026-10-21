@@ -109,7 +109,7 @@ const GlanceArrivalRow = ({
     <LineBadge
       lineId={lineId}
       name={lineTiers.short}
-      className="h-[clamp(1.5rem,4.5cqi,2.75rem)] min-w-[4.5ch] justify-center px-2.5 text-[clamp(0.8125rem,2.4cqi,1.375rem)]"
+      className="h-[length:var(--glance-chip-h)] min-w-[5ch] justify-center px-3 text-[length:var(--glance-chip-text)]"
     />
   ) : null
 
@@ -157,7 +157,7 @@ const GlanceArrivalRow = ({
         />
         <p
           data-slot="board-glance-meta"
-          className="mt-[0.35em] truncate text-balance text-[length:var(--glance-meta)] leading-tight text-muted-foreground"
+          className="mt-[0.35em] truncate text-balance font-medium text-[length:var(--glance-meta)] leading-tight text-foreground/80"
         >
           {meta ?? lineTiers?.full ?? "Next train"}
         </p>
@@ -253,7 +253,7 @@ export const BoardGlanceArrivals = ({
       <div className="flex shrink-0 items-center gap-x-[clamp(0.875rem,2cqi,1.25rem)] pb-[clamp(0.75rem,2cqi,1.25rem)]">
         <TfLRoundel
           variant="underground"
-          className="size-[clamp(3.5rem,7cqi,4.5rem)] shrink-0"
+          className="size-[clamp(4.5rem,9.5cqi,6.25rem)] shrink-0"
           aria-hidden
         />
         {stopName ? (
@@ -280,9 +280,9 @@ export const BoardGlanceArrivals = ({
             >
               <div className="h-[68%] w-2 animate-pulse rounded-sm bg-muted" />
               <div className="flex min-w-0 flex-col gap-[0.35em]">
-                <div className="h-[clamp(1.5rem,4.5cqi,2.75rem)] w-20 animate-pulse rounded bg-muted" />
-                <div className="h-10 w-3/4 max-w-xs animate-pulse rounded bg-muted" />
-                <div className="h-6 w-40 animate-pulse rounded bg-muted" />
+                <div className="h-[length:var(--glance-chip-h)] w-24 animate-pulse rounded bg-muted" />
+                <div className="h-[1.2em] w-3/4 max-w-sm animate-pulse rounded bg-muted text-[length:var(--glance-dest)]" />
+                <div className="h-[1.1em] w-48 animate-pulse rounded bg-muted text-[length:var(--glance-meta)]" />
               </div>
               <div className="h-16 w-20 animate-pulse rounded bg-muted" />
             </li>

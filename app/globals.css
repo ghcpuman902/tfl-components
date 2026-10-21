@@ -292,12 +292,14 @@ html.board-glance .board-glance {
  * still fills via flex row growth (2 vs 3 rows from aspect).
  */
 [data-slot="board-glance-arrivals"] {
-  /* Floor stays small so phone (≈390cqi) doesn’t blow past the row; max holds wall size. */
-  --glance-title: clamp(1.375rem, 4.5cqi, 3rem);
-  --glance-meta: clamp(1rem, 3.8cqi, 2.5rem);
-  --glance-dest: clamp(1.125rem, 5cqi, 3.125rem);
-  --glance-time: clamp(2.25rem, 12cqi, 7rem);
-  --glance-unit: clamp(0.875rem, 3.2cqi, 2.375rem);
+  /* Room-distance type. Prefer fewer rows over shrinking; phone (~390cqi) floors keep wrap tidy. */
+  --glance-title: clamp(2rem, 6.75cqi, 4.5rem);
+  --glance-meta: clamp(1.375rem, 5.5cqi, 3.25rem);
+  --glance-dest: clamp(1.6875rem, 7.5cqi, 4.6875rem);
+  --glance-time: clamp(3.375rem, 18cqi, 10.5rem);
+  --glance-unit: clamp(1.3125rem, 4.8cqi, 3.5625rem);
+  --glance-chip-h: clamp(2.25rem, 6.75cqi, 4.125rem);
+  --glance-chip-text: clamp(1.21875rem, 3.6cqi, 2.0625rem);
 }
 
 /*
