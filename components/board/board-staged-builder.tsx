@@ -320,17 +320,16 @@ export const BoardStagedBuilder = ({
       : null
     const stored = importedDraft ? null : readDraft()
     const next = importedDraft ?? stored ?? createBoardSetupDraft(newId)
-    if (imported && importedDraft) {
-      persistDraft(importedDraft)
-      window.history.replaceState(
-        null,
-        "",
-        `${window.location.pathname}${window.location.search}`
-      )
-    }
     const frame = window.requestAnimationFrame(() => {
       const desktop = window.innerWidth >= 1024
       if (imported && importedDraft) {
+        // Clear the hash only once applied, so a re-run effect can still import it.
+        persistDraft(importedDraft)
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}${window.location.search}`
+        )
         setAdvancedConfig(leftoverBoardConfig(imported))
         setAdvancedOpen(true)
       }
