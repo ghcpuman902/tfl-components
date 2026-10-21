@@ -7,13 +7,7 @@ import { SITE_AUTHOR } from "@/lib/site"
 const TFL_TS_URL = "https://www.npmjs.com/package/tfl-ts"
 const TFL_OPEN_DATA_URL = "https://tfl.gov.uk/info-for/open-data-users/"
 
-const FooterLink = ({
-  href,
-  children,
-}: {
-  href: string
-  children: string
-}) => (
+const FooterLink = ({ href, children }: { href: string; children: string }) => (
   <a
     href={href}
     className="whitespace-nowrap underline-offset-4 hover:text-foreground hover:underline"
@@ -76,6 +70,82 @@ const nextRefreshAt = (sources: readonly BoardPollSource[]) => {
   return soonest
 }
 
+/**
+ * Glance footer: freshness only — when the board last updated, how far into
+ * the poll it is (the bar fills towards the next fetch), Refresh on touch
+ * boards, and the TfL credit. One fixed-height row so nothing moves.
+ */
+const GlanceFooter = ({
+  fetchedAt,
+  dueAt,
+  now,
+  stale,
+  onRefresh,
+  refreshing,
+  fullscreenError,
+}: {
+  fetchedAt: number | null
+  dueAt: number | null
+  now: number | null
+  stale: boolean
+  onRefresh?: () => void
+  refreshing: boolean
+  fullscreenError?: string | null
+}) => {
+  const span = fetchedAt != null && dueAt != null ? dueAt - fetchedAt : 0
+  const elapsed = stale
+    ? 1
+    : span > 0 && now != null && fetchedAt != null
+      ? Math.min(1, Math.max(0, (now - fetchedAt) / span))
+      : 0
+  return (
+    <footer
+      data-slot="board-glance-footer"
+      className="board-glance-scale @container/glance-foot flex h-12 shrink-0 items-center gap-x-[length:var(--glance-foot)] text-[length:var(--glance-foot)] whitespace-nowrap text-muted-foreground tabular-nums"
+    >
+      {/* Same width before and after the first fetch; stale shows as a full bar. */}
+      <span
+        className={fetchedAt != null ? undefined : "invisible"}
+        aria-hidden={fetchedAt == null || undefined}
+        aria-label={stale ? "Updating" : undefined}
+      >
+        Updated {fetchedAt != null ? formatUpdatedClock(fetchedAt) : "00:00"}
+      </span>
+      <span
+        className="relative h-1 w-[calc(var(--glance-foot)*3)] shrink-0 overflow-hidden bg-foreground/15"
+        aria-hidden
+      >
+        <span
+          className="absolute inset-0 origin-left bg-foreground/50"
+          style={{ transform: `scaleX(${elapsed})` }}
+        />
+      </span>
+      {onRefresh ? (
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={refreshing}
+          aria-busy={refreshing || undefined}
+          className="inline-flex min-h-12 items-center underline-offset-4 hover:text-foreground hover:underline disabled:cursor-progress disabled:no-underline"
+        >
+          Refresh
+        </button>
+      ) : null}
+      {fullscreenError ? (
+        <span className="min-w-0 truncate" role="alert">
+          {fullscreenError}
+        </span>
+      ) : null}
+      <span className="ml-auto">
+        <span className="hidden @min-[24rem]/glance-foot:inline">
+          Powered by{" "}
+        </span>
+        <FooterLink href={TFL_OPEN_DATA_URL}>TfL Open Data</FooterLink>.
+      </span>
+    </footer>
+  )
+}
+
 /** Page-level credit under the live board — not a status-board tile. */
 export const BoardViewFooter = ({
   sources = [],
@@ -106,29 +176,35 @@ export const BoardViewFooter = ({
 
   const ticking = fetchedAt != null || dueAt != null
   const remainingSec =
-    dueAt != null && ticking && now != null ? Math.max(0, Math.ceil((dueAt - now) / 1_000)) : null
+    dueAt != null && ticking && now != null
+      ? Math.max(0, Math.ceil((dueAt - now) / 1_000))
+      : null
 
-  const actionClass = compact
-    ? "inline-flex min-h-12 items-center underline-offset-4 hover:text-foreground hover:underline disabled:cursor-progress disabled:no-underline"
-    : "underline-offset-4 hover:text-foreground hover:underline disabled:cursor-progress disabled:no-underline"
+  if (compact) {
+    return (
+      <GlanceFooter
+        fetchedAt={fetchedAt}
+        dueAt={dueAt}
+        now={now}
+        stale={stale}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+        fullscreenError={fullscreenError}
+      />
+    )
+  }
+
+  const actionClass =
+    "underline-offset-4 hover:text-foreground hover:underline disabled:cursor-progress disabled:no-underline"
 
   return (
-    <footer
-      className={
-        compact
-          ? "mt-auto shrink-0 pt-3 text-[length:var(--glance-u)] tabular-nums text-muted-foreground"
-          : "mt-[calc(var(--arrivals-row)/2)] max-w-3xl text-sm text-muted-foreground"
-      }
-    >
-      <p
-        className={
-          compact
-            ? "flex flex-wrap items-center gap-x-[length:var(--glance-gutter)] gap-y-1"
-            : "flex flex-wrap items-center gap-x-3 gap-y-1"
-        }
-      >
+    <footer className="mt-[calc(var(--arrivals-row)/2)] max-w-3xl text-sm text-muted-foreground">
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {stale ? (
-          <span className="font-medium text-amber-600 dark:text-amber-400" role="status">
+          <span
+            className="font-medium text-amber-600 dark:text-amber-400"
+            role="status"
+          >
             Updating…
           </span>
         ) : null}
@@ -136,19 +212,11 @@ export const BoardViewFooter = ({
           <span>
             {stale ? "Last updated" : "Updated"} {formatUpdatedClock(fetchedAt)}
           </span>
-        ) : compact ? (
-          <span className="invisible" aria-hidden>
-            Updated 00:00
-          </span>
         ) : null}
         {!stale && remainingSec != null ? (
           <span>
             Next in{" "}
             <span className="inline-block min-w-[3ch]">{remainingSec}s</span>
-          </span>
-        ) : compact && !stale ? (
-          <span className="invisible" aria-hidden>
-            Next in 00s
           </span>
         ) : null}
         {onRefresh ? (
@@ -168,11 +236,7 @@ export const BoardViewFooter = ({
           </Link>
         ) : null}
         {onFullscreen && fullscreenLabel ? (
-          <button
-            type="button"
-            onClick={onFullscreen}
-            className={actionClass}
-          >
+          <button type="button" onClick={onFullscreen} className={actionClass}>
             {fullscreenLabel}
           </button>
         ) : null}
@@ -194,33 +258,23 @@ export const BoardViewFooter = ({
             Install
           </button>
         ) : null}
-        {compact ? (
-          <span>
-            Powered by{" "}
-            <FooterLink href={TFL_OPEN_DATA_URL}>TfL Open Data</FooterLink>.
-          </span>
-        ) : null}
       </p>
       {fullscreenError ? (
         <p className="mt-1" role="alert">
           {fullscreenError}
         </p>
       ) : null}
-      {compact ? null : (
-        <>
-          <p>
-            Powered by{" "}
-            <FooterLink href={TFL_OPEN_DATA_URL}>TfL Open Data</FooterLink>.
-            Contains OS data © Crown copyright and database rights.
-          </p>
-          <p>
-            Not affiliated with or endorsed by Transport for London. Built with{" "}
-            <FooterLink href={TFL_TS_URL}>tfl-ts</FooterLink>. Made by{" "}
-            <FooterLink href={SITE_AUTHOR.url}>{SITE_AUTHOR.name}</FooterLink>.{" "}
-            <FooterLink href={SITE_AUTHOR.coffeeUrl}>Buy me a coffee ☕</FooterLink>
-          </p>
-        </>
-      )}
+      <p>
+        Powered by{" "}
+        <FooterLink href={TFL_OPEN_DATA_URL}>TfL Open Data</FooterLink>.
+        Contains OS data © Crown copyright and database rights.
+      </p>
+      <p>
+        Not affiliated with or endorsed by Transport for London. Built with{" "}
+        <FooterLink href={TFL_TS_URL}>tfl-ts</FooterLink>. Made by{" "}
+        <FooterLink href={SITE_AUTHOR.url}>{SITE_AUTHOR.name}</FooterLink>.{" "}
+        <FooterLink href={SITE_AUTHOR.coffeeUrl}>Buy me a coffee ☕</FooterLink>
+      </p>
     </footer>
   )
 }

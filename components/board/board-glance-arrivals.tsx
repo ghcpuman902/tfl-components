@@ -1,7 +1,19 @@
 "use client"
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react"
-import type { PredictionWithSharedTrackIdentity, RealtimePrediction } from "tfl-ts"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type TransitionEvent,
+} from "react"
+import type {
+  PredictionWithSharedTrackIdentity,
+  RealtimePrediction,
+} from "tfl-ts"
 import {
   ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
   CHIP_CAP_TEXT_BOX_CLASS,
@@ -9,33 +21,49 @@ import {
 import { LineBadge, LineBadgeGroup } from "@/components/tfl/brand/line-badge"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
 import { StationName, StationNameTitle } from "@/components/tfl/station-name"
-import { useUnattendedSequence } from "@/hooks/use-unattended-sequence"
 import { resolveArrivalsDestinationText } from "@/lib/tfl/arrivals-destination-text"
 import type { ArrivalsEmptyKind } from "@/lib/tfl/arrivals-empty"
 import { ARRIVALS_EMPTY_COPY } from "@/lib/tfl/arrivals-empty"
-import { isUnknownArrivalsPlatform } from "@/lib/tfl/arrivals-bound-sort"
-import type { ArrivalsPreparedRow } from "@/lib/tfl/arrivals-prepare"
-import {
-  buildGlanceArrivalFrames,
-  formatGlanceArrivalMeta,
-  prepareGlanceArrivals,
-  resolveGlanceArrivalsPageSize,
-} from "@/lib/tfl/board-glance-arrivals"
-import { getLineNameTiers, joinLineNames } from "@/lib/tfl/line-names"
-import { usableTflText } from "@/lib/tfl/bus-stop-letter"
-import { arrivalsHeadingLadder } from "@/lib/tfl/station-abbreviations"
 import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort"
+import {
+  buildGlancePanStrip,
+  formatGlanceArrivalMeta,
+  formatGlanceCountdown,
+  formatGlanceThen,
+  GLANCE_PAN_HOLD_MS,
+  GLANCE_PAN_MOVE_MS,
+  GLANCE_VISIBLE_TILES,
+  glancePanColumns,
+  groupGlanceArrivals,
+  nextGlancePanOffset,
+  prepareGlanceArrivals,
+  resolveGlanceLayout,
+  type GlanceGroup,
+  type GlancePriorityItem,
+} from "@/lib/tfl/board-glance-arrivals"
+import {
+  readGlancePin,
+  writeGlancePin,
+} from "@/lib/tfl/board-glance-pin-storage"
+import { usableTflText } from "@/lib/tfl/bus-stop-letter"
+import { getLineNameTiers, joinLineNames } from "@/lib/tfl/line-names"
+import { arrivalsHeadingLadder } from "@/lib/tfl/station-abbreviations"
 import { cn } from "@/lib/utils"
 
 export type BoardGlanceArrivalsProps = {
   data?: readonly RealtimePrediction[]
   stopName?: string
   stopPointId?: string
-  /** Visible trains per frame. Omit to pick 2 or 3 from container aspect. */
-  pageSize?: number
-  pinFirst?: boolean
-  dwellMs?: number
-  startDelayMs?: number
+  /** Board priority (`a.priority`): line + direction, most important first. */
+  priority?: readonly GlancePriorityItem[]
+  /** Visible line order (`a.lines`), used after priority. */
+  lineOrder?: readonly string[]
+  /** Two equal anchors (`a.pair`) when there are two groups to show. */
+  pair?: boolean
+  /** Touch allowed: tap a tile to pin it as the anchor; overflow scrolls. Otherwise the strip pans. */
+  interactive?: boolean
+  /** Across the room, few trains: the anchor and the one or two tiles that fit, larger. */
+  room?: boolean
   now?: number
   loading?: boolean
   error?: string | null
@@ -45,67 +73,34 @@ export type BoardGlanceArrivalsProps = {
   headingLevel?: 1 | 2 | 3 | 4 | 5 | 6
 }
 
-/** Wall-board countdown: hero number + unit, or a single Due word. */
-const formatGlanceCountdown = (
-  seconds?: number,
-  platformName?: string
-): { primary: string; unit?: string } => {
-  if (isUnknownArrivalsPlatform(platformName)) {
-    return { primary: "Sched" }
-  }
-  if (seconds === undefined || seconds < 0) return { primary: "—" }
-  if (seconds < 60) return { primary: "Due" }
-  return { primary: `${Math.floor(seconds / 60)}`, unit: "min" }
-}
-
-/*
- * One grid for loaded and loading rows: rail spans the stack, chip /
- * destination / meta stack in 1u cap-trimmed gaps, "min" stacks under the
- * number so the time column stays narrow. Sizes are `--glance-*` steps (globals.css).
- */
-const ROW_CLASS =
-  "relative grid min-h-0 min-w-0 flex-1 basis-0 grid-cols-[auto_minmax(0,1fr)_auto] content-center gap-x-[length:var(--glance-u)] gap-y-[length:var(--glance-u)]"
-const ROW_RULE_CLASS =
-  "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/70"
-const RAIL_CLASS =
-  "col-start-1 row-span-3 row-start-1 w-[length:var(--glance-rail)]"
+/* One left-aligned stack per slot beside its rail: chip, destination, meta, time. Slots stretch to their row. */
+const SLOT_CLASS =
+  "glance-slot flex min-h-0 min-w-0 gap-x-[length:var(--glance-s)] text-left"
+/* Font size is the slot step, so the column's container queries read in steps. */
+const COL_CLASS =
+  "@container/glance-col flex min-w-0 flex-1 flex-col gap-y-[length:var(--glance-s)] text-[length:var(--glance-s)]"
 const CHIP_SIZE_CLASS =
-  "h-[length:var(--glance-chip-h)] text-[length:var(--glance-small)]"
+  "h-[calc(var(--glance-s)*2.5)] text-[length:calc(var(--glance-s)*1.5)]"
 /* Board row weight (no synthetic bold, so canvas fit matches paint); leading matches StationName's multiline. */
 const DEST_CLASS =
-  "font-medium text-[length:var(--glance-dest)] leading-[1.15]"
-const META_CLASS =
-  "col-span-2 col-start-2 row-start-3 m-0 font-medium text-[length:var(--glance-meta)] leading-tight text-muted-foreground [text-box:trim-both_cap_alphabetic]"
-const TIME_CLASS =
-  "col-start-3 row-span-2 row-start-1 flex flex-col items-end justify-center gap-y-[length:var(--glance-rail)] self-center pl-[length:var(--glance-rail)] font-semibold tabular-nums"
-const NUMBER_CLASS = cn(
-  "min-w-[2ch] text-right text-[length:var(--glance-time)]",
-  CHIP_CAP_TEXT_BOX_CLASS
-)
-const UNIT_CLASS = cn(
-  "font-medium text-[length:var(--glance-small)] text-muted-foreground",
-  CHIP_CAP_TEXT_BOX_CLASS
-)
-/* First heading tier that fits, by the widest form in meta em ("Southbound · Platform 10" ≈ 11.7em, "Outer Rail · Plat 10" ≈ 8.7em). */
+  "font-medium text-[length:calc(var(--glance-s)*2)] leading-[1.15]"
+const QUIET_CLASS =
+  "m-0 font-medium text-[length:calc(var(--glance-s)*1.5)] leading-tight text-muted-foreground [text-box:trim-both_cap_alphabetic]"
+/* First heading tier that fits, by the widest form in meta em. */
 const META_TIER_CLASS = [
-  "hidden @min-[12em]/glance-meta:inline",
-  "hidden @min-[8.75em]/glance-meta:inline @min-[12em]/glance-meta:hidden",
-  "@min-[8.75em]/glance-meta:hidden",
+  "hidden @min-[13em]/glance-meta:inline",
+  "hidden @min-[9.5em]/glance-meta:inline @min-[13em]/glance-meta:hidden",
+  "@min-[9.5em]/glance-meta:hidden",
 ] as const
 const SKELETON_FILL_CLASS = "animate-pulse bg-muted text-transparent"
 
-const GlanceArrivalRow = ({
-  row,
-  showRule,
-}: {
-  row: ArrivalsPreparedRow
-  showRule: boolean
-}) => {
-  const arrival = row.arrival
-  const rawDestination =
-    usableTflText(arrival.towards) ||
-    usableTflText(arrival.destinationName) ||
-    "Unknown"
+type GlanceIdentity = {
+  lineId: string
+  chip: ReactNode
+  lineLabel?: string
+}
+
+const glanceIdentity = (arrival: RealtimePrediction): GlanceIdentity => {
   const tagged = arrival as PredictionWithSharedTrackIdentity
   const rawLineId = arrival.lineId?.trim() || ""
   const identity = tagged.sharedTrackIdentity
@@ -127,123 +122,361 @@ const GlanceArrivalRow = ({
             )
           )
       : []
-  const lineTiers = lineId
+  if (sharedChipIds.length >= 2) {
+    return {
+      lineId: sharedChipIds[0] ?? lineId,
+      lineLabel: joinLineNames(
+        sharedChipIds.map((id) => getLineNameTiers(id).full)
+      ),
+      chip: (
+        <LineBadgeGroup
+          variant="codes"
+          lineIds={sharedChipIds}
+          className={CHIP_SIZE_CLASS}
+        />
+      ),
+    }
+  }
+  const tiers = lineId
     ? getLineNameTiers(lineId, remapped ? undefined : arrival.lineName)
     : null
-  const sharedChipLabel =
-    sharedChipIds.length >= 2
-      ? joinLineNames(sharedChipIds.map((id) => getLineNameTiers(id).full))
-      : null
+  return {
+    lineId,
+    lineLabel: tiers?.full,
+    chip:
+      tiers && lineId ? (
+        <LineBadge
+          lineId={lineId}
+          name={tiers.short}
+          className={cn(
+            "shrink-0 justify-center px-0",
+            CHIP_SIZE_CLASS,
+            ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS
+          )}
+        />
+      ) : null,
+  }
+}
+
+const TimeLockup = ({ time, then }: { time: string; then: string | null }) => {
+  const unit = time === "Due" ? "now" : /^\d+$/.test(time) ? "min" : null
+  return (
+    <span
+      data-slot="board-glance-time"
+      className="flex items-end gap-x-[length:var(--glance-s)] font-semibold tabular-nums"
+      aria-hidden
+    >
+      {/* Hammersmith One's figures sit ~0.02em under the trimmed baseline; lift them so the ink ends where the rail does. */}
+      <span
+        className={cn(
+          "-translate-y-[0.02em] text-[length:calc(var(--glance-s)*var(--glance-time))]",
+          CHIP_CAP_TEXT_BOX_CLASS
+        )}
+      >
+        {time}
+      </span>
+      {unit || then ? (
+        <span className="flex flex-col gap-y-[calc(var(--glance-s)*0.5)]">
+          {unit ? (
+            <span className={cn(QUIET_CLASS, "whitespace-nowrap")}>{unit}</span>
+          ) : null}
+          {then ? (
+            <span className={cn(QUIET_CLASS, "whitespace-nowrap")}>{then}</span>
+          ) : null}
+        </span>
+      ) : null}
+    </span>
+  )
+}
+
+const GlanceSlot = ({
+  group,
+  stage,
+  room,
+  onPin,
+}: {
+  group: GlanceGroup
+  stage: boolean
+  room: boolean
+  onPin?: (key: string) => void
+}) => {
+  const first = group.rows[0]
+  if (!first) return null
+  const arrival = first.arrival
+  const identity = glanceIdentity(arrival)
+  const rawDestination =
+    usableTflText(arrival.towards) ||
+    usableTflText(arrival.destinationName) ||
+    "Unknown"
   const destination = resolveArrivalsDestinationText({
     destination: rawDestination,
-    lineName: sharedChipLabel ?? lineTiers?.full,
+    lineName: identity.lineLabel,
     currentLocation: usableTflText(arrival.currentLocation),
   })
   const meta = formatGlanceArrivalMeta(arrival.platformName)
-  const countdown = formatGlanceCountdown(
+  const time = formatGlanceCountdown(
     arrival.timeToStation,
     arrival.platformName
   )
-  const lineChip = sharedChipLabel ? (
-    <LineBadgeGroup
-      variant="codes"
-      lineIds={sharedChipIds}
-      className={CHIP_SIZE_CLASS}
-    />
-  ) : lineTiers && lineId ? (
-    <LineBadge
-      lineId={lineId}
-      name={lineTiers.short}
-      className={cn(
-        "justify-center px-0",
-        CHIP_SIZE_CLASS,
-        ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS
-      )}
-    />
-  ) : null
-
-  const spokenTime = countdown.unit
-    ? `${countdown.primary} ${countdown.unit}`
-    : countdown.primary
-  const ariaLabel = [
-    sharedChipLabel ?? lineTiers?.full,
+  const then = room ? null : formatGlanceThen(group.rows)
+  // Across the room: the anchor keeps its shortest bound; a tile is chip, one-line destination, time.
+  const roomTile = room && !stage
+  const spoken = [
+    identity.lineLabel,
     meta,
     destination,
-    spokenTime,
+    /^\d+$/.test(time) ? `${time} min` : time,
+    then ? `${then} min` : null,
   ]
     .filter(Boolean)
     .join(", ")
+  const Tag = onPin ? "button" : "div"
 
   return (
-    <li
-      data-slot="board-glance-row"
-      aria-label={ariaLabel}
-      className={cn(ROW_CLASS, showRule && ROW_RULE_CLASS)}
+    <Tag
+      type={onPin ? "button" : undefined}
+      onClick={onPin ? () => onPin(group.key) : undefined}
+      data-slot={stage ? "board-glance-anchor" : "board-glance-tile"}
+      data-group={group.key}
+      role={onPin ? undefined : "group"}
+      aria-label={onPin ? `${spoken}. Show large` : spoken}
+      className={cn(
+        SLOT_CLASS,
+        stage ? "glance-stage-scale" : "glance-tile-scale",
+        onPin && "cursor-pointer"
+      )}
     >
       <span
-        data-line={lineId || undefined}
-        className={cn(RAIL_CLASS, lineId && "bg-[var(--line-color)]")}
+        data-line={identity.lineId || undefined}
+        className={cn(
+          "w-[calc(var(--glance-s)*0.5)] shrink-0",
+          identity.lineId ? "bg-[var(--line-color)]" : "bg-muted"
+        )}
         aria-hidden
       />
-      {lineChip ? (
-        <div className="col-start-2 row-start-1 flex" aria-hidden="true">
-          {lineChip}
-        </div>
-      ) : null}
-      <div
-        className="col-start-2 row-start-2 flex min-w-0 overflow-x-clip"
-        aria-hidden="true"
-      >
-        <StationName
-          name={destination}
-          layout="auto"
-          maxLines={2}
-          allowAbbreviation
-          abbreviationTier={3}
-          fitBeforePaint
-          allowScaleDown
+      <span className={COL_CLASS}>
+        <span
+          className="glance-chip-row flex items-center gap-x-[length:var(--glance-s)]"
+          aria-hidden
+        >
+          {identity.chip}
+        </span>
+        {/* The name's box is trimmed to cap top and last baseline by margins (.glance-dest), so its gaps read as 1 step; descenders hang free. */}
+        <span className="glance-dest flex min-w-0 overflow-x-clip" aria-hidden>
+          <StationName
+            name={destination}
+            layout="auto"
+            maxLines={roomTile ? 1 : 2}
+            allowAbbreviation
+            abbreviationTier={3}
+            fitBeforePaint
+            allowScaleDown={false}
+            nowrap={false}
+            className={cn("text-balance", DEST_CLASS)}
+          />
+        </span>
+        {roomTile ? null : (
+          <span
+            data-slot="board-glance-meta"
+            className={cn("@container/glance-meta text-balance", QUIET_CLASS)}
+            aria-hidden
+          >
+            {meta
+              ? room
+                ? arrivalsHeadingLadder(meta).at(-1)
+                : arrivalsHeadingLadder(meta).map((text, tier) => (
+                    <span key={tier} className={META_TIER_CLASS[tier]}>
+                      {text}
+                    </span>
+                  ))
+              : (identity.lineLabel ?? "Next train")}
+          </span>
+        )}
+        <TimeLockup time={time} then={then} />
+      </span>
+    </Tag>
+  )
+}
+
+const SkeletonSlot = ({ stage }: { stage: boolean }) => (
+  <div
+    className={cn(
+      SLOT_CLASS,
+      stage ? "glance-stage-scale" : "glance-tile-scale"
+    )}
+    aria-hidden
+  >
+    <span
+      className={cn(
+        "w-[calc(var(--glance-s)*0.5)] shrink-0",
+        SKELETON_FILL_CLASS
+      )}
+    />
+    <span className={COL_CLASS}>
+      <span className="glance-chip-row flex">
+        <span
           className={cn(
-            "text-balance [&>span>span]:[text-box:trim-both_cap_alphabetic]",
-            DEST_CLASS
+            CHIP_SIZE_CLASS,
+            ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
+            SKELETON_FILL_CLASS
           )}
         />
-      </div>
-      <p
-        data-slot="board-glance-meta"
-        className={cn("@container/glance-meta text-balance", META_CLASS)}
-        aria-hidden="true"
-      >
-        {meta ? (
-          arrivalsHeadingLadder(meta).map((text, tier) => (
-            <span key={tier} className={META_TIER_CLASS[tier]}>
-              {text}
-            </span>
-          ))
-        ) : (
-          lineTiers?.full ?? "Next train"
+      </span>
+      <span
+        className={cn(
+          "w-3/4 [text-box:trim-both_cap_alphabetic]",
+          DEST_CLASS,
+          SKELETON_FILL_CLASS
         )}
-      </p>
-      <div data-slot="board-glance-time" className={TIME_CLASS} aria-hidden="true">
-        <span className={NUMBER_CLASS}>{countdown.primary}</span>
-        {countdown.unit ? (
-          <span className={UNIT_CLASS}>{countdown.unit}</span>
-        ) : null}
+      >
+        {" "}
+      </span>
+      <span className={cn("w-1/2", QUIET_CLASS, SKELETON_FILL_CLASS)}> </span>
+      <span
+        className={cn(
+          "w-[2ch] text-[length:calc(var(--glance-s)*var(--glance-time))]",
+          CHIP_CAP_TEXT_BOX_CLASS,
+          SKELETON_FILL_CLASS
+        )}
+      >
+        0
+      </span>
+    </span>
+  </div>
+)
+
+/**
+ * Unattended overflow: hold each column, then pan one column; after the last
+ * real column the strip shows the cloned first page and snaps back to 0 with
+ * no transition. Reduced motion jumps a column instead of sliding. Rows come
+ * from the strip's own CSS (container queries), read only when it moves.
+ */
+const stripRows = (strip: Element | null) =>
+  (strip &&
+    Number.parseInt(
+      getComputedStyle(strip).getPropertyValue("--glance-tile-rows"),
+      10
+    )) ||
+  2
+
+const useGlancePan = (tileCount: number, enabled: boolean) => {
+  const stripRef = useRef<HTMLDivElement>(null)
+  const [pan, setPan] = useState({ offset: 0, animate: true })
+
+  useEffect(() => {
+    if (!enabled) return
+    const id = window.setInterval(() => {
+      const reduce = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches
+      const total = glancePanColumns(tileCount, stripRows(stripRef.current))
+      setPan((current) => {
+        const next = nextGlancePanOffset(current.offset, total)
+        const jumpHome = next.snap || (reduce && next.offset >= total)
+        return jumpHome
+          ? { offset: 0, animate: false }
+          : { offset: next.offset, animate: !reduce }
+      })
+    }, GLANCE_PAN_HOLD_MS + GLANCE_PAN_MOVE_MS)
+    return () => window.clearInterval(id)
+  }, [enabled, tileCount])
+
+  const onTransitionEnd = (event: TransitionEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return
+    const total = glancePanColumns(tileCount, stripRows(event.currentTarget))
+    if (pan.offset < total) return
+    setPan({ offset: 0, animate: false })
+  }
+
+  return { stripRef, offset: pan.offset, animate: pan.animate, onTransitionEnd }
+}
+
+const GlanceTileArea = ({
+  tiles,
+  room,
+  interactive,
+  onPin,
+}: {
+  tiles: readonly GlanceGroup[]
+  room: boolean
+  interactive: boolean
+  onPin: (key: string) => void
+}) => {
+  const overflow = !room && tiles.length > GLANCE_VISIBLE_TILES
+  const pans = overflow && !interactive
+  const { stripRef, offset, animate, onTransitionEnd } = useGlancePan(
+    tiles.length,
+    pans
+  )
+  const strip = pans ? buildGlancePanStrip(tiles) : tiles
+  const more = pans ? tiles.length - GLANCE_VISIBLE_TILES : 0
+
+  return (
+    <div className="glance-tile-area relative flex min-h-0 min-w-0">
+      <div
+        data-slot="board-glance-tiles"
+        data-overflow={overflow ? (interactive ? "scroll" : "pan") : undefined}
+        className="glance-tiles @container min-h-0 min-w-0 flex-1"
+      >
+        <div
+          ref={stripRef}
+          className="glance-strip"
+          style={
+            {
+              "--glance-offset": pans ? offset : 0,
+              transitionDuration:
+                pans && animate ? `${GLANCE_PAN_MOVE_MS}ms` : "0ms",
+            } as CSSProperties
+          }
+          onTransitionEnd={pans ? onTransitionEnd : undefined}
+        >
+          {strip.map((group, index) =>
+            group ? (
+              <GlanceSlot
+                key={`${group.key}-${index}`}
+                group={group}
+                stage={false}
+                room={room}
+                onPin={interactive ? onPin : undefined}
+              />
+            ) : (
+              <span key={`pad-${index}`} className="glance-pad" aria-hidden />
+            )
+          )}
+        </div>
       </div>
-    </li>
+      {/* Unattended overflow: the one hint, in words, under the strip it belongs to. */}
+      {more > 0 ? (
+        <span
+          data-slot="board-glance-more"
+          className={cn(
+            QUIET_CLASS,
+            "absolute top-[calc(100%+var(--glance-u)*1.5)] left-0 text-[length:calc(var(--glance-u)*1.5)] whitespace-nowrap tabular-nums"
+          )}
+        >
+          +{more} more
+        </span>
+      ) : null}
+    </div>
   )
 }
 
 /**
- * Room-distance glance Board arrivals: flat next trains, huge type, no scroll.
- * Works on any aspect ratio. Pages overflow with unattended pin-first frames.
+ * Room-distance glance Board: next trains grouped by line + direction in fixed
+ * positions. One anchor (priority first, or a tapped tile) beside quarter
+ * tiles; a pair board shows two equal anchors. Overflow tiles scroll on touch
+ * and pan on unattended screens. Sizes are container units only — no layout
+ * measuring after paint.
  */
 export const BoardGlanceArrivals = ({
   data,
   stopName,
-  pageSize: pageSizeProp,
-  pinFirst = true,
-  dwellMs = 10_000,
-  startDelayMs = 0,
+  stopPointId,
+  priority,
+  lineOrder,
+  pair = false,
+  interactive = false,
+  room = false,
   now,
   loading = false,
   error = null,
@@ -251,71 +484,58 @@ export const BoardGlanceArrivals = ({
   className,
   headingLevel = 2,
 }: BoardGlanceArrivalsProps) => {
-  const rootRef = useRef<HTMLDivElement>(null)
-  const [aspect, setAspect] = useState<number | undefined>(undefined)
-
-  useLayoutEffect(() => {
-    const el = rootRef.current
-    if (!el || typeof ResizeObserver === "undefined") return
-    // The shell sizes `--glance-u`; its box never depends on the row count.
-    const target =
-      el.closest<HTMLElement>(".board-embed.board-glance") ??
-      el.parentElement ??
-      el
-    const update = () => {
-      const box = target.getBoundingClientRect()
-      if (box.width > 0 && box.height > 0) setAspect(box.height / box.width)
-    }
-    update()
-    const observer = new ResizeObserver(update)
-    observer.observe(target)
-    return () => observer.disconnect()
-  }, [])
-
-  const pageSize = resolveGlanceArrivalsPageSize(aspect, pageSizeProp)
-  const rows = useMemo(
-    () => prepareGlanceArrivals({ data: data ?? [], now }),
-    [data, now]
+  // Glance mounts only after the board has hydrated, so the stored pin is read before first paint.
+  const [pinnedKey, setPinnedKey] = useState<string | null>(() =>
+    interactive && stopPointId ? readGlancePin(stopPointId) : null
   )
-  const frames = useMemo(
-    () => buildGlanceArrivalFrames(rows, pageSize, { pinFirst }),
-    [rows, pageSize, pinFirst]
+  const groups = useMemo(
+    () =>
+      groupGlanceArrivals(prepareGlanceArrivals({ data: data ?? [], now }), {
+        priority,
+        lineOrder,
+      }),
+    [data, lineOrder, now, priority]
   )
-  const frameIds = useMemo(() => frames.map((frame) => frame.id), [frames])
-  const sequence = useUnattendedSequence({
-    itemIds: frameIds,
-    dwellMs,
-    startDelayMs,
-    enabled: frames.length > 1,
+  const layout = resolveGlanceLayout(groups, {
+    pinnedKey: interactive ? pinnedKey : null,
+    pair,
   })
-  const activeFrame =
-    frames.find((frame) => frame.id === sequence.itemId) ?? frames[0]
+  const handlePin = useCallback(
+    (key: string) => {
+      setPinnedKey(key)
+      if (stopPointId) writeGlancePin(stopPointId, key)
+    },
+    [stopPointId]
+  )
+
   const TitleTag = `h${headingLevel}` as const
   const emptyCopy = emptyMessage ?? ARRIVALS_EMPTY_COPY.empty
-
-  const showSkeleton = loading && rows.length === 0 && !error
+  const showSkeleton = loading && groups.length === 0 && !error
+  const layoutName = showSkeleton ? (pair ? "pair" : "anchor") : layout.layout
 
   return (
     <div
-      ref={rootRef}
       data-slot="board-glance-arrivals"
-      data-glance-rows={pageSize}
+      data-glance-layout={layoutName}
+      data-glance-room={room || undefined}
+      data-glance-peek={
+        (interactive && !room && layout.tiles.length > GLANCE_VISIBLE_TILES) ||
+        undefined
+      }
       className={cn(
-        "flex min-h-0 w-full flex-1 flex-col overflow-hidden",
+        "board-glance-scale flex min-h-0 w-full flex-1 flex-col gap-y-[length:var(--glance-u)]",
         className
       )}
       aria-busy={showSkeleton || undefined}
-      onFocus={sequence.handleFocus}
-      onBlur={sequence.handleBlur}
     >
-      <div className="mb-[length:var(--glance-u)] box-border flex h-[length:var(--glance-roundel)] shrink-0 items-center gap-x-[length:var(--glance-gutter)] overflow-clip">
+      <div className="box-border flex h-[length:var(--glance-roundel)] shrink-0 items-center gap-x-[calc(var(--glance-u)*1.5)] overflow-clip">
         <TfLRoundel
           variant="underground"
-          className="size-[clamp(4.5rem,9.5cqi,6.25rem)] shrink-0"
+          className="size-[length:var(--glance-roundel)] shrink-0"
           aria-hidden
         />
         {stopName ? (
-          <TitleTag className="tfl-title min-w-0 flex-1 text-balance text-[length:var(--glance-title)] leading-tight [font-synthesis:none] [font-weight:var(--tfl-title-weight,400)]">
+          <TitleTag className="tfl-title min-w-0 flex-1 text-[length:var(--glance-title)] leading-tight [font-weight:var(--tfl-title-weight,400)] text-balance [font-synthesis:none]">
             <StationNameTitle name={stopName} />
           </TitleTag>
         ) : (
@@ -324,93 +544,62 @@ export const BoardGlanceArrivals = ({
       </div>
 
       {showSkeleton ? (
-        <ul
-          className="m-0 flex min-h-0 flex-1 basis-0 list-none flex-col p-0"
+        <div
+          className="glance-grid min-h-0 flex-1"
           aria-label="Loading arrivals"
         >
-          {Array.from({ length: pageSize }).map((_, index) => (
-            <li
-              key={index}
-              className={cn(ROW_CLASS, index < pageSize - 1 && ROW_RULE_CLASS)}
-            >
-              <span className={cn(RAIL_CLASS, "animate-pulse bg-muted")} />
-              <div className="col-start-2 row-start-1 flex">
-                <span
-                  className={cn(
-                    "font-bold",
-                    CHIP_SIZE_CLASS,
-                    ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
-                    SKELETON_FILL_CLASS
-                  )}
-                />
-              </div>
-              <div className="col-start-2 row-start-2 flex min-w-0">
-                <span
-                  className={cn(
-                    "w-3/4 max-w-sm [text-box:trim-both_cap_alphabetic]",
-                    DEST_CLASS,
-                    SKELETON_FILL_CLASS
-                  )}
-                >
-                  {" "}
-                </span>
-              </div>
-              <p className={cn("w-1/2 max-w-xs", META_CLASS, SKELETON_FILL_CLASS)}>
-                {" "}
-              </p>
-              <div className={TIME_CLASS}>
-                <span className={cn(NUMBER_CLASS, SKELETON_FILL_CLASS)}>00</span>
-                <span className={cn(UNIT_CLASS, SKELETON_FILL_CLASS)}>min</span>
-              </div>
-            </li>
+          {Array.from({ length: pair ? 2 : 1 }).map((_, index) => (
+            <SkeletonSlot key={`anchor-${index}`} stage />
           ))}
-        </ul>
+          <div className="glance-tile-area flex min-h-0 min-w-0">
+            <div className="glance-tiles @container min-h-0 min-w-0 flex-1">
+              <div className="glance-strip">
+                {Array.from({ length: GLANCE_VISIBLE_TILES }).map(
+                  (_, index) => (
+                    <SkeletonSlot key={`tile-${index}`} stage={false} />
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       ) : error ? (
         <p
-          className="flex min-h-0 flex-1 items-center text-[length:var(--glance-dest)] text-destructive"
+          className="flex min-h-0 flex-1 items-center text-[length:calc(var(--glance-u)*2)] text-destructive"
           role="alert"
         >
           {error}
         </p>
-      ) : rows.length === 0 ? (
+      ) : groups.length === 0 ? (
         <p
-          className="flex min-h-0 flex-1 items-center text-[length:var(--glance-dest)] text-muted-foreground"
+          className="flex min-h-0 flex-1 items-center text-[length:calc(var(--glance-u)*2)] text-muted-foreground"
           role="status"
         >
           {emptyCopy}
         </p>
       ) : (
-        <ul
-          data-slot="board-glance-rows"
-          className="m-0 flex min-h-0 flex-1 basis-0 list-none flex-col p-0"
-          role="list"
+        <div
+          data-slot="board-glance-grid"
+          className="glance-grid min-h-0 flex-1"
+          role="group"
+          aria-label="Next trains"
         >
-          {(activeFrame?.rows ?? []).map((row, index, list) => (
-            <GlanceArrivalRow
-              key={row.key}
-              row={row}
-              showRule={index < list.length - 1}
+          {layout.anchors.map((group) => (
+            <GlanceSlot
+              key={`anchor-${group.key}`}
+              group={group}
+              stage
+              room={room}
             />
           ))}
-        </ul>
+          <GlanceTileArea
+            tiles={layout.tiles}
+            room={room}
+            interactive={interactive}
+            onPin={handlePin}
+          />
+        </div>
       )}
-      <div
-        data-slot="board-glance-dwell"
-        className={cn(
-          "relative mt-[length:var(--glance-u)] h-1 w-full shrink-0 overflow-hidden bg-foreground/15",
-          frames.length > 1 && !error ? undefined : "invisible"
-        )}
-        aria-hidden
-      >
-        <div
-          className="absolute inset-y-0 left-0 bg-foreground/50 transition-[width] duration-200 ease-linear"
-          style={{
-            width: sequence.started
-              ? `${Math.round(sequence.progress * 100)}%`
-              : "0%",
-          }}
-        />
-      </div>
     </div>
   )
 }

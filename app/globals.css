@@ -287,41 +287,287 @@ html.board-glance .board-glance {
 }
 
 /*
- * Glance scale — the Board arrivals ladder on one container-relative unit.
- * `--glance-u` plays `--arrivals-unit`; steps keep the Board ratios
- * (bar 0.5, gap-x-2 1, gap-x-3 1.5, text-xs 1.5, text-base 2, h-5 chip 2.5)
- * plus the minutes figure at twice the destination.
- *
- * The shell is a size container so the unit fits the limiting side: a row
- * needs ~22u of width and 11.75u of height (chip, two-line destination,
- * 2u meta = 9.75u, plus 1u clear of each row rule).
- * Chrome is what it paints: one roundel tile + 1u, a 1u gap + h-1 dwell, and
- * a 48px footer line + pt-3 (4rem with the dwell). Rows come from the same
- * budget (`BOARD_GLANCE_TALL_ASPECT`).
+ * Glance anchor layout. One unit `--glance-u` from the shell (a size
+ * container), sized so the worst-case quarter tile fits its cell. Every slot
+ * is one master layout scaled by `--glance-k` alone: chip, type, rail, gaps
+ * and minutes are multiples of `--glance-s` (u × k). The anchor is the tile
+ * ×2 (×2.25 in landscape, filling two tile rows); a pair slot is ×1.5.
+ * Registered, so inner containers never rescale the unit.
  */
-.board-embed.board-glance {
-  container-type: size;
-  --glance-rows: 2;
-  --glance-roundel: clamp(4.5rem, 9.5cqi, 6.25rem);
-  --glance-u: min(
-    4.5cqi,
-    calc(
-      (100cqb - var(--glance-roundel) - 4rem) / (var(--glance-rows) * 11.75 + 2)
-    )
-  );
-  --glance-rail: calc(var(--glance-u) * 0.5);
-  --glance-gutter: calc(var(--glance-u) * 1.5);
-  --glance-small: calc(var(--glance-u) * 1.5);
-  --glance-dest: calc(var(--glance-u) * 2);
-  --glance-meta: var(--glance-dest);
-  --glance-chip-h: calc(var(--glance-u) * 2.5);
-  --glance-time: calc(var(--glance-u) * 4);
-  /* Board title tile: text-3xl beside a one-row roundel (0.625), never above the destination step. */
-  --glance-title: min(calc(var(--glance-roundel) * 0.625), var(--glance-dest));
+@property --glance-u {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
 }
 
-.board-embed.board-glance:has([data-glance-rows="3"]) {
-  --glance-rows: 3;
+@property --glance-s {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+.board-embed.board-glance:not(html) {
+  container-type: size;
+}
+
+/* The unit is computed inside the container (the glance root and its footer) so container queries can pick the budget. */
+.board-glance-scale {
+  --glance-cols: 2;
+  --glance-rows: 4;
+  /* Worst-case tile in u. Wide: rail + gap + "Due" lockup with its then line. Tall: chip + 2-line destination + meta + time, 1u apart. */
+  --glance-tile-w: 16.5;
+  --glance-tile-h: 14.1;
+  /* Between slots: three times a slot's own 1u gaps. */
+  --glance-gutter: 3;
+  --glance-roundel: clamp(4.5rem, 9.5cqi, 6.25rem);
+  /* Header tile and the 48px footer line with its 12px lead; +2 below is the two 1u stack gaps. */
+  --glance-chrome: calc(var(--glance-roundel) + 3.75rem);
+  --glance-u: min(
+    calc(
+      100cqi /
+        (
+          var(--glance-cols) * var(--glance-tile-w) + (var(--glance-cols) - 1) *
+            var(--glance-gutter)
+        )
+    ),
+    calc(
+      (100cqb - var(--glance-chrome)) /
+        (
+          var(--glance-rows) * var(--glance-tile-h) + (var(--glance-rows) - 1) *
+            var(--glance-gutter) + 2
+        )
+    )
+  );
+  --glance-title: min(
+    calc(var(--glance-roundel) * 0.625),
+    calc(var(--glance-u) * 3)
+  );
+  --glance-foot: max(0.875rem, var(--glance-u));
+}
+
+/* Two stacked ×1.5 anchors count as three tile rows, plus two rows of tiles. */
+.board-glance:has([data-glance-layout="pair"]) .board-glance-scale {
+  --glance-rows: 5;
+}
+
+/*
+ * Across the room, few trains: the anchor over the one tile up next. A tile
+ * is chip, one-line destination, time (9.6u); the column budget is the
+ * anchor (28u at ×2) + 3u + a tile.
+ */
+.board-glance:has([data-glance-room]) .board-glance-scale {
+  --glance-cols: 1;
+  --glance-rows: 1;
+  --glance-tile-w: 19;
+  --glance-tile-h: 40.6;
+}
+
+/* A peeking strip fits 2.3 tile columns where 2 were budgeted; charge the width so "Due · then" still fits. */
+.board-glance:has([data-glance-peek]:not([data-glance-room]))
+  .board-glance-scale {
+  --glance-cols: 2.4;
+}
+
+@container (orientation: landscape) {
+  .board-glance-scale {
+    --glance-cols: 4;
+    --glance-rows: 2;
+  }
+  .board-glance:has([data-glance-peek]:not([data-glance-room]))
+    .board-glance-scale {
+    --glance-cols: 4.6;
+  }
+  .board-glance:has([data-glance-layout="pair"]) .board-glance-scale {
+    --glance-rows: 2.5;
+  }
+  /* Anchor (28u wide at ×2) beside a column of two ×1.25 tiles. */
+  .board-glance:has([data-glance-room]) .board-glance-scale {
+    --glance-cols: 2;
+    --glance-rows: 1;
+    --glance-tile-w: 24.25;
+    --glance-tile-h: 28;
+  }
+}
+
+/* Tile cells: 2 × 2 beside or under the anchor; one row of four under a landscape pair; across the room 1 (portrait) or a column of 2. */
+[data-slot="board-glance-arrivals"] {
+  --glance-tile-cols: 2;
+  --glance-tile-rows: 2;
+}
+
+[data-slot="board-glance-arrivals"][data-glance-room] {
+  --glance-tile-cols: 1;
+  --glance-tile-rows: 1;
+}
+
+.glance-grid {
+  display: grid;
+  gap: calc(var(--glance-u) * var(--glance-gutter));
+  grid-template-columns: var(--glance-template, minmax(0, 1fr));
+  /* Slots start under the header; any worst-case reserve falls below the tiles, never between slots. */
+  align-content: start;
+}
+
+.glance-tile-area {
+  grid-column: 1 / -1;
+}
+
+@container (orientation: landscape) {
+  [data-slot="board-glance-arrivals"][data-glance-layout="pair"]:not(
+      [data-glance-room]
+    ) {
+    --glance-tile-cols: 4;
+    --glance-tile-rows: 1;
+  }
+  [data-slot="board-glance-arrivals"][data-glance-room] {
+    --glance-tile-rows: 2;
+  }
+  /* Anchor beside its 2 × 2 tiles; room anchor beside a column of two; a pair side by side over its row of four. */
+  [data-glance-layout="anchor"] .glance-grid,
+  [data-glance-layout="pair"] .glance-grid {
+    --glance-template: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  [data-glance-room] .glance-grid {
+    --glance-template: minmax(0, 28fr) minmax(0, 17.5fr);
+  }
+  [data-glance-layout="anchor"] .glance-tile-area,
+  [data-glance-room] .glance-tile-area {
+    grid-column: auto;
+  }
+}
+
+/*
+ * The tile area is a strip of columns. Extra tiles sit in further columns:
+ * touch scrolls to them with the next column peeking; unattended, the strip
+ * pans one column at a time (JS sets `--glance-offset`).
+ */
+.glance-tiles {
+  --glance-gap: calc(var(--glance-u) * var(--glance-gutter));
+  display: flex;
+  overflow: hidden;
+  /* Cap-trimmed text hangs its descenders (the comma in "then 7, 11") below the box; give the clip room so the bottom row keeps them. */
+  padding-block-end: calc(var(--glance-u) * 0.6);
+  margin-block-end: calc(var(--glance-u) * -0.6);
+}
+
+.glance-tiles[data-overflow="scroll"] {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+}
+
+.glance-tiles[data-overflow="scroll"]::-webkit-scrollbar {
+  display: none;
+}
+
+.glance-strip {
+  --glance-col-w: calc(
+    (100cqi - (var(--glance-tile-cols) - 1) * var(--glance-gap)) /
+      var(--glance-tile-cols)
+  );
+  display: grid;
+  flex: 1 0 auto;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(var(--glance-tile-rows), auto);
+  grid-auto-columns: var(--glance-col-w);
+  gap: var(--glance-gap);
+  /* The area stretches to the anchor beside it: first row on its top edge, last row on its bottom edge. */
+  align-content: space-between;
+  transform: translateX(
+    calc(
+      var(--glance-offset, 0) * -1 * (var(--glance-col-w) + var(--glance-gap))
+    )
+  );
+  transition-property: transform;
+  transition-timing-function: ease-in-out;
+}
+
+/* Touch: a third of the next column shows at the edge, so the strip reads as scrollable. */
+.glance-tiles[data-overflow="scroll"] .glance-strip {
+  --glance-col-w: calc(
+    (100cqi - var(--glance-tile-cols) * var(--glance-gap)) /
+      (var(--glance-tile-cols) + 0.3)
+  );
+}
+
+.glance-tiles[data-overflow="scroll"] .glance-slot {
+  scroll-snap-align: start;
+}
+
+/* Blanks pad the unattended loop to whole two-row columns; a one-row strip has no partial column to fill. */
+@container (orientation: landscape) {
+  [data-glance-layout="pair"]:not([data-glance-room]) .glance-pad {
+    display: none;
+  }
+}
+
+/* Across the room shows only the tiles that fit; it never pages. */
+[data-glance-room] .glance-strip > :nth-child(n + 2) {
+  display: none;
+}
+
+@container (orientation: landscape) {
+  [data-glance-room] .glance-strip > :nth-child(2) {
+    display: flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glance-strip {
+    transition-duration: 0ms !important;
+  }
+}
+
+.glance-slot {
+  --glance-s: calc(var(--glance-u) * var(--glance-k, 1));
+  --glance-time: 4;
+}
+
+.glance-tile-scale {
+  --glance-k: 1;
+}
+
+@container (orientation: landscape) {
+  [data-glance-room] .glance-tile-scale {
+    --glance-k: 1.25;
+  }
+}
+
+.glance-stage-scale {
+  --glance-k: 2;
+}
+
+[data-glance-layout="pair"] .glance-stage-scale {
+  --glance-k: 1.5;
+}
+
+@container (orientation: landscape) {
+  [data-glance-layout="anchor"]:not([data-glance-room]) .glance-stage-scale {
+    --glance-k: 2.25;
+  }
+}
+
+/*
+ * Hammersmith One at line-height 1.15: cap top sits 0.193em under the line
+ * top, the last baseline 0.3em above its bottom (ascent 0.9, cap 0.657).
+ * Trim the name to cap…baseline with margins, not text-box-trim plus a clip:
+ * the descender (0.36em) overhangs the line box, and a clip cuts it.
+ */
+.glance-dest {
+  margin-block: calc(var(--glance-s) * 2 * -0.193)
+    calc(var(--glance-s) * 2 * -0.3);
+}
+
+/* Spare row height lands under the chip, so name, meta and time keep 1-step gaps on the row's bottom edge. */
+.glance-chip-row {
+  margin-block-end: auto;
+}
+
+/* The figures' ink rises ~0.045em over their cap-trimmed box (0.02em lift + digit overshoot); open the gap by that so meta → time reads as 1 step. */
+[data-slot="board-glance-time"] {
+  margin-block-start: calc(var(--glance-s) * var(--glance-time) * 0.045);
 }
 
 /*

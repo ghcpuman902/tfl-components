@@ -2,16 +2,32 @@
 
 import { BoardGlanceArrivals } from "@/components/board/board-glance-arrivals"
 import { BoardViewFooter } from "@/components/board/board-view-footer"
-import { resolveGlanceArrivalsPageSize } from "@/lib/tfl/board-glance-arrivals"
 import { boardGlanceGutterCss } from "@/lib/tfl/board-layout"
 import { OXFORD_CIRCUS_ARRIVALS } from "@/lib/tfl/fixtures/arrivals-boards"
 
-const FRAMES = [
-  { label: "Square · 1088×1088", width: 1088, height: 1088 },
-  { label: "Landscape · 1366×1024", width: 1366, height: 1024 },
-  { label: "Portrait · 1024×1366", width: 1024, height: 1366 },
-  { label: "Phone · 390×844", width: 390, height: 844 },
-] as const
+type Frame = {
+  label: string
+  width: number
+  height: number
+  pair?: boolean
+  room?: boolean
+  interactive?: boolean
+}
+
+const FRAMES: readonly Frame[] = [
+  {
+    label: "Anchor · touch · 390×844",
+    width: 390,
+    height: 844,
+    interactive: true,
+  },
+  { label: "Anchor · unattended · 1366×1024", width: 1366, height: 1024 },
+  { label: "Anchor · unattended · 1024×1366", width: 1024, height: 1366 },
+  { label: "Pair · 390×844", width: 390, height: 844, pair: true },
+  { label: "Pair · 1440×900", width: 1440, height: 900, pair: true },
+  { label: "Across the room · 390×844", width: 390, height: 844, room: true },
+  { label: "Across the room · 1440×900", width: 1440, height: 900, room: true },
+]
 
 /**
  * Design sandbox: glance mode across key aspects with Oxford Circus fixtures.
@@ -34,10 +50,10 @@ export const BoardGlanceDraft = () => {
   )
 
   return (
-    <div className="min-h-svh bg-muted/40 p-4 md:p-6 dark">
+    <div className="min-h-svh bg-muted/40 p-4 md:p-6">
       <p className="mb-4 max-w-prose text-sm text-muted-foreground">
-        Glance mode — room-distance type, few next trains, no scroll. Same
-        fixtures at four aspect ratios.
+        Glance mode — one anchor (or an equal pair) beside quarter tiles,
+        grouped by line and direction. Same fixtures across layouts and aspects.
       </p>
       <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-10">
         {FRAMES.map((frame) => (
@@ -58,10 +74,9 @@ export const BoardGlanceDraft = () => {
                 <BoardGlanceArrivals
                   stopName="Oxford Circus"
                   data={OXFORD_CIRCUS_ARRIVALS}
-                  pageSize={resolveGlanceArrivalsPageSize(
-                    frame.height / frame.width
-                  )}
-                  pinFirst
+                  pair={frame.pair}
+                  room={frame.room}
+                  interactive={frame.interactive}
                   className="min-h-0 flex-1"
                 />
               </div>

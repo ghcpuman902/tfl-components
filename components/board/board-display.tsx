@@ -342,7 +342,9 @@ export const BoardDisplay = ({
     (next: BoardConfig, key: string | null) => {
       writeInstalledBoardConfig(next, Date.now())
       if (key) void save(key, "local")
-      replaceHashIfNeeded(boardHashFromConfig({ ...next, key: key ?? undefined }))
+      replaceHashIfNeeded(
+        boardHashFromConfig({ ...next, key: key ?? undefined })
+      )
       rereadInstalled()
     },
     [save]
@@ -354,19 +356,14 @@ export const BoardDisplay = ({
     const previousOverflow = html.style.overflow
     const hadEmbed = html.classList.contains("board-embed")
     const hadGlance = html.classList.contains("board-glance")
-    const hadDark = html.classList.contains("dark")
     html.style.overflow = "hidden"
     html.classList.add("board-embed")
-    if (isGlance) {
-      html.classList.add("board-glance", "dark")
-    }
+    // Glance follows the device's light / dark setting like every other surface.
+    if (isGlance) html.classList.add("board-glance")
     return () => {
       html.style.overflow = previousOverflow
       if (!hadEmbed) html.classList.remove("board-embed")
-      if (isGlance) {
-        if (!hadGlance) html.classList.remove("board-glance")
-        if (!hadDark) html.classList.remove("dark")
-      }
+      if (isGlance && !hadGlance) html.classList.remove("board-glance")
     }
   }, [fillScreen, isGlance])
 
@@ -716,6 +713,13 @@ export const BoardDisplay = ({
     ? OXFORD_CIRCUS_ARRIVALS
     : railData
   const glanceRailError = glanceFixtureFallback ? null : arrivalsError
+  // Across the room, few trains: an explicit one- or two-row `a.rows` on a glance board.
+  const glanceRows = config.arrivals.rows
+  const glanceRoom =
+    isGlance &&
+    typeof glanceRows === "number" &&
+    glanceRows > 0 &&
+    glanceRows <= 2
 
   const railEmpty = useMemo(() => {
     if (!arrivals.fetchedAt || arrivals.fetchError) {
@@ -779,8 +783,11 @@ export const BoardDisplay = ({
                 ? undefined
                 : (arrivals.fetchedAt ?? undefined)
             }
-            pinFirst={arrivalsProps.pinFirst ?? true}
-            startDelayMs={0}
+            priority={config.arrivals.priority}
+            lineOrder={config.arrivals.lineOrder}
+            pair={config.arrivals.pair}
+            interactive={config.behaviour !== "unattended"}
+            room={glanceRoom}
             loading={arrivals.loading && !glanceFixtureFallback}
             error={glanceRailError}
             emptyKind={railEmpty.kind}
@@ -1014,10 +1021,7 @@ export const BoardDisplay = ({
 
   if (!surfaceReady) {
     return (
-      <div
-        className={shellClass}
-        style={boardShellStyle}
-      >
+      <div className={shellClass} style={boardShellStyle}>
         {isPreview ? null : <h1 className="sr-only">Live board</h1>}
       </div>
     )
@@ -1025,10 +1029,7 @@ export const BoardDisplay = ({
 
   if (!boardReady) {
     return (
-      <div
-        className={shellClass}
-        style={boardShellStyle}
-      >
+      <div className={shellClass} style={boardShellStyle}>
         {isPreview ? null : <h1 className="sr-only">Live board</h1>}
         <BoardViewRecovery onLoad={handleRecoveredBoard} />
       </div>
@@ -1041,17 +1042,16 @@ export const BoardDisplay = ({
         className={`${shellClass} flex items-center justify-center`}
         style={boardShellStyle}
       >
-        <BoardRateLimitScreen onRetry={requestFreshData} retrying={refreshing} />
+        <BoardRateLimitScreen
+          onRetry={requestFreshData}
+          retrying={refreshing}
+        />
       </div>
     )
   }
 
   return (
-    <div
-      ref={boardRootRef}
-      className={shellClass}
-      style={boardShellStyle}
-    >
+    <div ref={boardRootRef} className={shellClass} style={boardShellStyle}>
       {isPreview ? null : <h1 className="sr-only">Live board</h1>}
       <div
         className={
@@ -1079,26 +1079,24 @@ export const BoardDisplay = ({
       {isPreview ? null : (
         <BoardViewFooter
           sources={pollSources}
-          onRefresh={requestFreshData}
+          onRefresh={
+            isGlance && config.behaviour === "unattended"
+              ? undefined
+              : requestFreshData
+          }
           refreshing={refreshing}
           stale={awaitingFresh}
           compact={isGlance}
           editHref={isGlance ? undefined : editHref}
           fullscreenLabel={
-            !isGlance &&
-            fullscreen.available &&
-            !fromHomeScreen &&
-            !embedded
+            !isGlance && fullscreen.available && !fromHomeScreen && !embedded
               ? fullscreen.active
                 ? "Exit full screen"
                 : "Full screen"
               : undefined
           }
           onFullscreen={
-            !isGlance &&
-            fullscreen.available &&
-            !fromHomeScreen &&
-            !embedded
+            !isGlance && fullscreen.available && !fromHomeScreen && !embedded
               ? fullscreen.toggle
               : undefined
           }
