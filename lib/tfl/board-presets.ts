@@ -145,10 +145,7 @@ export const applyBoardRecipe = (
   if (preset.id === "glance") {
     next.view = "glance"
     next.behaviour = "unattended"
-    if (next.arrivals.rows !== undefined) {
-      const { rows: _rows, ...rest } = next.arrivals
-      next.arrivals = rest
-    }
+    next.arrivals = { ...next.arrivals, rows: undefined }
   } else if (next.view === "glance") {
     delete next.view
   }
