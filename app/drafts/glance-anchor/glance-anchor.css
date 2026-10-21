@@ -4,6 +4,25 @@
  * 2×2 cells, so it is four tiles of area. Layout and orientation only change
  * the cell grid, never the ladder.
  */
+/* Registered, so the unit resolves against the shell once and inner containers never rescale it. */
+@property --u {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --s {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --c {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 .glance-anchor {
   container: ga-shell / size;
 }
@@ -13,17 +32,22 @@
   --ga-rows: 4;
   --ga-stage-cols: 2;
   --ga-stage-rows: 1;
-  /* Worst-case tile in u: rail + gaps + an 8-letter word + "Due"; chip + 2-line destination + meta + then. */
-  --ga-tile-w: 17.5;
-  --ga-tile-h: 13.1;
+  /* Worst-case tile in u. Wide: rail + gap + "Due" lockup with its then line. Tall: chip + 2-line destination + meta + time, 1u apart. */
+  --ga-tile-w: 16.5;
+  --ga-tile-h: 14.1;
+  /* Between slots: three times a slot's own 1u gaps, so every fact reads as its own slot's. */
+  --ga-gutter: 3;
   --ga-roundel: clamp(4.5rem, 9.5cqi, 6.25rem);
-  /* Header tile and 48px footer; the segment bar and four 1u stack gaps are the +4.5u below. */
+  /* Header tile and 48px footer; the +2 below is the two 1u stack gaps. */
   --ga-chrome: calc(var(--ga-roundel) + 3rem);
   --u: min(
-    calc((100cqi - 2 * var(--ga-pad)) / var(--ga-cols) / var(--ga-tile-w)),
+    calc(
+      (100cqi - 2 * var(--ga-pad)) /
+        (var(--ga-cols) * var(--ga-tile-w) + (var(--ga-cols) - 1) * var(--ga-gutter))
+    ),
     calc(
       (100cqb - 2 * var(--ga-pad) - var(--ga-chrome)) /
-        (var(--ga-rows) * (var(--ga-tile-h) + 1.5) + 3)
+        (var(--ga-rows) * var(--ga-tile-h) + (var(--ga-rows) - 1) * var(--ga-gutter) + 2)
     )
   );
   --ga-title: min(calc(var(--ga-roundel) * 0.625), calc(var(--u) * 3));
@@ -35,17 +59,17 @@
 }
 
 /*
- * Across the room: the anchor gets the full width and three one-line tiles
- * (chip, bound, minutes). Budgets are the whole column: anchor 34u wide,
- * anchor 16.2u + three 5u tiles tall.
+ * Across the room: the anchor over three two-line tiles (chip + bound, time).
+ * Budget is the whole column: anchor 22.6u (two-line destination at k 2) +
+ * three 6.3u tiles + four 3u gutters; 25.5u wide for "Walthamstow" at k 2.
  */
 .ga-inner[data-room] {
   --ga-cols: 1;
   --ga-rows: 1;
   --ga-stage-cols: 1;
   --ga-stage-rows: 1;
-  --ga-tile-w: 34;
-  --ga-tile-h: 35.7;
+  --ga-tile-w: 25.5;
+  --ga-tile-h: 50.5;
 }
 
 @container ga-shell (orientation: landscape) {
@@ -59,14 +83,14 @@
     --ga-rows: 3;
     --ga-stage-rows: 1;
   }
-  /* Anchor 2 tile-widths of 15u over a row of three 5u tiles: 22.7u tall. */
+  /* Anchor over two columns beside a column of three 6.3u tiles (24.9u tall); a tile is 16u wide with "Next". */
   .ga-inner[data-room] {
     --ga-cols: 3;
     --ga-rows: 1;
-    --ga-stage-cols: 3;
-    --ga-stage-rows: 1;
-    --ga-tile-w: 15;
-    --ga-tile-h: 22.7;
+    --ga-stage-cols: 2;
+    --ga-stage-rows: 3;
+    --ga-tile-w: 16;
+    --ga-tile-h: 24.9;
   }
 }
 
@@ -78,6 +102,7 @@
 
 .ga-slot {
   --s: calc(var(--u) * var(--k, 1));
+  --c: calc(var(--u) * var(--ck, 1));
 }
 
 .ga-slot[data-slot="ga-stage"] {

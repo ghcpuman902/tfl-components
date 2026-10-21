@@ -44,44 +44,79 @@ const minutes = (seconds: number) =>
 
 const thenLine = (times: readonly number[]) => {
   const rest = times.slice(1, 3).map(minutes)
-  return rest.length ? `then ${rest.join(", ")} min` : null
+  return rest.length ? `then ${rest.join(", ")}` : null
 }
 
+/* One left-aligned stack per slot, so every fact sits beside its own rail and
+ * nothing floats toward a neighbour: chip, destination, meta, then the time. */
 const SLOT_CLASS =
-  "ga-slot grid min-h-0 min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] content-center gap-x-[length:var(--s)] gap-y-[length:var(--s)] text-left"
-const RAIL_CLASS =
-  "col-start-1 row-start-1 w-[calc(var(--s)*0.5)] bg-[var(--line-color)]"
-/* The rail spans exactly the rows painted, so it never runs past the text. */
-const RAIL_SPAN = [
-  "",
-  "row-span-1",
-  "row-span-2",
-  "row-span-3",
-  "row-span-4",
-] as const
-const ROW_START = [
-  "",
-  "row-start-1",
-  "row-start-2",
-  "row-start-3",
-  "row-start-4",
-] as const
+  "ga-slot flex min-h-0 min-w-0 gap-x-[length:var(--s)] self-start text-left"
+/* Font size is the slot step, so the column's container queries read in s. */
+const COL_CLASS =
+  "@container/ga-col flex min-w-0 flex-1 flex-col gap-y-[length:var(--s)] text-[length:var(--s)]"
 const CHIP_SIZE_CLASS =
-  "h-[calc(var(--s)*2.5)] text-[length:calc(var(--s)*1.5)]"
+  "h-[calc(var(--c)*2.5)] text-[length:calc(var(--c)*1.5)]"
 const DEST_CLASS = "font-medium text-[length:calc(var(--s)*2)] leading-[1.15]"
 const QUIET_CLASS =
-  "col-start-2 m-0 font-medium text-[length:calc(var(--s)*1.5)] leading-tight text-muted-foreground [text-box:trim-both_cap_alphabetic]"
+  "m-0 font-medium text-[length:calc(var(--s)*1.5)] leading-tight text-muted-foreground [text-box:trim-both_cap_alphabetic]"
 const META_TIER_CLASS = [
   "hidden @min-[13em]/ga-meta:inline",
   "hidden @min-[9.5em]/ga-meta:inline @min-[13em]/ga-meta:hidden",
   "@min-[9.5em]/ga-meta:hidden",
 ] as const
 
+/** Place in the turn order: the stage says which of how many, the next tile says so. */
+export type SlotTurn =
+  | { kind: "stage"; ordinal: number; count: number; progress: number | null }
+  | { kind: "next" }
+  | null
+
+const TimeLockup = ({
+  time,
+  then,
+}: {
+  time: string
+  then: string | null
+}) => (
+  <span
+    className="flex items-end gap-x-[calc(var(--s)*0.75)] font-semibold tabular-nums"
+    aria-hidden
+  >
+    <span
+      className={cn("text-[length:calc(var(--s)*4)]", CHIP_CAP_TEXT_BOX_CLASS)}
+    >
+      {time}
+    </span>
+    <span className="flex flex-col gap-y-[calc(var(--s)*0.5)]">
+      {time === "Due" ? null : (
+        <span className={cn(QUIET_CLASS, "whitespace-nowrap")}>min</span>
+      )}
+      {then ? (
+        <span className={cn(QUIET_CLASS, "whitespace-nowrap")}>
+          {then}
+          {/* Tier: drop the repeated unit before anything shrinks. "Due" is the widest figure. */}
+          <span
+            className={
+              time === "Due"
+                ? "hidden @min-[17.75em]/ga-col:inline"
+                : "hidden @min-[15.25em]/ga-col:inline"
+            }
+          >
+            {" "}
+            min
+          </span>
+        </span>
+      ) : null}
+    </span>
+  </span>
+)
+
 const GlanceSlot = ({
   item,
   stage,
   room,
   reveal,
+  turn,
   onTap,
 }: {
   item: GlanceAnchorItem
@@ -89,6 +124,7 @@ const GlanceSlot = ({
   room: boolean
   /** Show following times: always unattended, on tap when touch is allowed. */
   reveal: boolean
+  turn: SlotTurn
   onTap?: () => void
 }) => {
   const [first = 0] = item.times
@@ -97,21 +133,24 @@ const GlanceSlot = ({
   const showThen = !room && (stage || reveal)
   const showMeta = !room || !stage
   const showDest = !(room && !stage)
-  const destRow = 2
-  const metaRow = showDest ? 3 : 2
-  const thenRow = metaRow + 1
-  const rows =
-    1 + Number(showDest) + Number(showMeta) + Number(showThen && Boolean(then))
-  // Quiet lines run under the minutes only when the minutes have their own two rows.
-  const quietSpan = showDest ? "col-span-2" : "col-span-1"
+  // Across the room a tile is two lines: chip with its shortest bound, then the time.
+  const inlineMeta = room && !stage
   const Tag = onTap ? "button" : "div"
+  const label =
+    turn?.kind === "stage"
+      ? `${turn.ordinal} of ${turn.count}`
+      : turn?.kind === "next"
+        ? "Next"
+        : item.owner
+  const progress = turn?.kind === "stage" ? turn.progress : null
   const spoken = [
     item.owner,
     getLineNameTiers(item.lineId).full,
     item.heading,
     item.destination,
     time === "Due" ? "Due" : `${time} min`,
-    showThen ? then : null,
+    showThen && then ? `${then} min` : null,
+    turn?.kind === "next" ? "next" : null,
   ]
     .filter(Boolean)
     .join(", ")
@@ -125,177 +164,92 @@ const GlanceSlot = ({
       aria-label={spoken}
       className={cn(
         SLOT_CLASS,
-        stage ? "[--k:2]" : "[--k:1]",
+        stage ? "[--ck:1.5] [--k:2]" : "[--ck:1] [--k:1]",
         onTap && "cursor-pointer"
       )}
     >
-      <span className={cn(RAIL_CLASS, RAIL_SPAN[rows])} aria-hidden />
+      {/* The rail is the turn's progress when the slot is on a timer. */}
       <span
-        className="col-start-2 row-start-1 flex items-center gap-x-[length:var(--s)]"
+        data-slot="ga-rail"
+        className={cn(
+          "relative w-[calc(var(--s)*0.5)] shrink-0 bg-[var(--line-color)]",
+          progress !== null && "bg-[color-mix(in_srgb,var(--line-color)_30%,transparent)]"
+        )}
         aria-hidden
       >
-        <LineBadge
-          lineId={item.lineId}
-          name={getLineNameTiers(item.lineId).short}
-          className={cn(
-            "shrink-0 justify-center px-0",
-            CHIP_SIZE_CLASS,
-            ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS
-          )}
-        />
-        {item.owner ? (
+        {progress !== null ? (
           <span
-            className={cn(
-              "text-[length:calc(var(--s)*1.5)] font-medium",
-              CHIP_CAP_TEXT_BOX_CLASS
-            )}
-          >
-            {item.owner}
-          </span>
+            className="absolute inset-x-0 top-0 bg-[var(--line-color)]"
+            style={{ height: `${Math.round(progress * 100)}%` }}
+          />
         ) : null}
       </span>
-      {showDest ? (
+      <span className={COL_CLASS}>
         <span
-          className={cn(
-            "col-start-2 flex min-w-0 overflow-x-clip",
-            ROW_START[destRow]
-          )}
+          className="flex items-center gap-x-[length:var(--s)]"
           aria-hidden
         >
-          <StationName
-            name={item.destination}
-            layout="auto"
-            maxLines={2}
-            allowAbbreviation
-            abbreviationTier={3}
-            fitBeforePaint
-            nowrap={false}
+          <LineBadge
+            lineId={item.lineId}
+            name={getLineNameTiers(item.lineId).short}
             className={cn(
-              "line-clamp-2 text-balance [&>span>span]:[text-box:trim-both_cap_alphabetic]",
-              DEST_CLASS
+              "shrink-0 justify-center px-0",
+              CHIP_SIZE_CLASS,
+              ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS
             )}
           />
-        </span>
-      ) : null}
-      {showMeta ? (
-        <span
-          className={cn(
-            "@container/ga-meta text-balance",
-            QUIET_CLASS,
-            quietSpan,
-            ROW_START[metaRow]
-          )}
-          aria-hidden
-        >
-          {arrivalsHeadingLadder(item.heading).map((text, tier) => (
-            <span key={tier} className={META_TIER_CLASS[tier]}>
-              {text}
+          {inlineMeta ? (
+            <span className={cn(QUIET_CLASS, "whitespace-nowrap")}>
+              {arrivalsHeadingLadder(item.heading).at(-1)}
             </span>
-          ))}
+          ) : null}
+          {label ? (
+            <span
+              data-slot="ga-turn"
+              className={cn(
+                "text-[length:calc(var(--c)*1.5)] font-medium whitespace-nowrap",
+                turn ? "text-muted-foreground" : null,
+                CHIP_CAP_TEXT_BOX_CLASS
+              )}
+            >
+              {label}
+            </span>
+          ) : null}
         </span>
-      ) : null}
-      {showThen && then ? (
-        <span
-          className={cn(QUIET_CLASS, quietSpan, ROW_START[thenRow])}
-          aria-hidden
-        >
-          {then}
-        </span>
-      ) : null}
-      <span
-        className="col-start-3 row-span-2 row-start-1 flex flex-col items-end justify-center gap-y-[calc(var(--s)*0.5)] self-center pl-[calc(var(--s)*0.5)] font-semibold tabular-nums"
-        aria-hidden
-      >
-        <span
-          className={cn(
-            "min-w-[2ch] text-right text-[length:calc(var(--s)*4)]",
-            CHIP_CAP_TEXT_BOX_CLASS
-          )}
-        >
-          {time}
-        </span>
-        {time === "Due" ? null : (
-          <span
-            className={cn(
-              "text-[length:calc(var(--s)*1.5)] font-medium text-muted-foreground",
-              CHIP_CAP_TEXT_BOX_CLASS
-            )}
-          >
-            min
+        {showDest ? (
+          <span className="flex min-w-0 overflow-x-clip" aria-hidden>
+            <StationName
+              name={item.destination}
+              layout="auto"
+              maxLines={2}
+              allowAbbreviation
+              abbreviationTier={3}
+              fitBeforePaint
+              nowrap={false}
+              className={cn(
+                "line-clamp-2 text-balance [&>span>span]:[text-box:trim-both_cap_alphabetic]",
+                DEST_CLASS
+              )}
+            />
           </span>
-        )}
+        ) : null}
+        {showMeta && !inlineMeta ? (
+          <span
+            className={cn("@container/ga-meta text-balance", QUIET_CLASS)}
+            aria-hidden
+          >
+            {arrivalsHeadingLadder(item.heading).map((text, tier) => (
+              <span key={tier} className={META_TIER_CLASS[tier]}>
+                {text}
+              </span>
+            ))}
+          </span>
+        ) : null}
+        <TimeLockup time={time} then={showThen ? then : null} />
       </span>
     </Tag>
   )
 }
-
-/** `weight` mirrors the slot: a named anchor's segment is twice a tile's. */
-type Segment = { item: GlanceAnchorItem; pinned: boolean; weight: 1 | 2 }
-
-/** Structure before detail: one segment per line + direction, in line colour. */
-const SegmentBar = ({
-  segments,
-  active,
-  progress,
-  touch,
-  onSkip,
-}: {
-  segments: readonly Segment[]
-  active: number
-  progress: number
-  touch: boolean
-  onSkip: (index: number) => void
-}) => (
-  <ol
-    data-slot="ga-segments"
-    className="m-0 flex h-[calc(var(--u)*0.5)] shrink-0 list-none gap-x-[calc(var(--u)*0.5)] p-0"
-    aria-label={`${segments.length} departures`}
-  >
-    {segments.map((segment, index) => {
-      const isActive = index === active
-      const fill = segment.pinned
-        ? 1
-        : isActive
-          ? progress
-          : index < active
-            ? 1
-            : 0
-      const Tag = touch && !segment.pinned ? "button" : "span"
-      return (
-        <li
-          key={segment.item.id}
-          data-line={segment.item.lineId}
-          className={cn(
-            "relative min-w-0 transition-[flex-grow] duration-300 ease-out",
-            isActive && !segment.pinned
-              ? "grow-[3]"
-              : segment.weight === 2
-                ? "grow-[2]"
-                : "grow"
-          )}
-          aria-current={isActive || undefined}
-        >
-          <Tag
-            type={Tag === "button" ? "button" : undefined}
-            onClick={Tag === "button" ? () => onSkip(index) : undefined}
-            aria-label={`${segment.item.owner ?? getLineNameTiers(segment.item.lineId).full} ${segment.item.heading}`}
-            className={cn(
-              "absolute inset-0 block overflow-hidden",
-              Tag === "button" &&
-                "after:absolute after:inset-x-0 after:-inset-y-5 after:content-['']"
-            )}
-          >
-            <span className="absolute inset-0 bg-[var(--line-color)] opacity-30" />
-            <span
-              className="absolute inset-y-0 left-0 bg-[var(--line-color)]"
-              style={{ width: `${Math.round(fill * 100)}%` }}
-            />
-          </Tag>
-        </li>
-      )
-    })}
-  </ol>
-)
 
 /** Freshness only: neutral, inline, short — never reads as the segment bar. */
 const GlanceFooter = ({ touch }: { touch: boolean }) => (
@@ -326,18 +280,17 @@ const GlanceFooter = ({ touch }: { touch: boolean }) => (
 )
 
 const useCycle = (
-  segments: readonly Segment[],
+  count: number,
   enabled: boolean,
   freeze?: { active: number; progress: number }
 ) => {
   const turns = useMemo(
     () =>
-      segments.flatMap((segment, index) =>
-        segment.pinned
-          ? []
-          : [{ index, ms: index === 0 ? ANCHOR_DWELL_MS : TURN_DWELL_MS }]
-      ),
-    [segments]
+      Array.from({ length: count }, (_, index) => ({
+        index,
+        ms: index === 0 ? ANCHOR_DWELL_MS : TURN_DWELL_MS,
+      })),
+    [count]
   )
   const [state, setState] = useState({ turn: 0, progress: 0 })
 
@@ -377,17 +330,7 @@ export const GlanceAnchorMock = ({
   freeze,
 }: GlanceAnchorMockProps) => {
   const items = layout === "household" ? HOUSEHOLD_ITEMS : ANCHOR_ITEMS
-  const segments = useMemo<Segment[]>(
-    () =>
-      items.map((item, index) => ({
-        item,
-        // Household fits every item on screen, so nothing takes turns.
-        pinned: layout === "household",
-        weight: layout === "household" && index < 2 ? 2 : 1,
-      })),
-    [items, layout]
-  )
-  const cycle = useCycle(segments, !touch, freeze)
+  const cycle = useCycle(items.length, layout === "anchor" && !touch, freeze)
   const [tapped, setTapped] = useState<number | null>(null)
   const active =
     layout === "household"
@@ -396,13 +339,21 @@ export const GlanceAnchorMock = ({
         ? (tapped ?? 0)
         : cycle.active
 
-  // Anchor layout: the active item takes the stage; tiles keep segment order.
-  const stageIndexes = layout === "household" ? [0, 1] : [Math.max(0, active)]
-  // Across the room only shows what is up next after the current turn.
+  const cycling = layout === "anchor"
+  // Anchor layout: the active item takes the stage; tiles follow in turn order.
+  const stageIndexes = cycling ? [Math.max(0, active)] : [0, 1]
   const tileIndexes = items
-    .map((_, index) => (room ? (active + 1 + index) % items.length : index))
+    .map((_, index) => (cycling ? (active + 1 + index) % items.length : index))
     .filter((index) => !stageIndexes.includes(index))
     .slice(0, room ? ROOM_TILES : undefined)
+  const stageTurn: SlotTurn = cycling
+    ? {
+        kind: "stage",
+        ordinal: Math.max(0, active) + 1,
+        count: items.length,
+        progress: touch ? null : cycle.progress,
+      }
+    : null
 
   return (
     <div
@@ -426,14 +377,7 @@ export const GlanceAnchorMock = ({
             <StationNameTitle name="Oxford Circus" />
           </h1>
         </header>
-        <SegmentBar
-          segments={segments}
-          active={active}
-          progress={touch ? 0 : cycle.progress}
-          touch={touch}
-          onSkip={setTapped}
-        />
-        <div className="ga-grid grid min-h-0 flex-1 grid-flow-row-dense gap-[calc(var(--u)*1.5)]">
+        <div className="ga-grid grid min-h-0 flex-1 grid-flow-row-dense gap-[calc(var(--u)*var(--ga-gutter))]">
           {stageIndexes.map((index) => {
             const item = items[index]
             return item ? (
@@ -443,10 +387,11 @@ export const GlanceAnchorMock = ({
                 stage
                 room={room}
                 reveal
+                turn={stageTurn}
               />
             ) : null
           })}
-          {tileIndexes.map((index) => {
+          {tileIndexes.map((index, order) => {
             const item = items[index]
             return item ? (
               <GlanceSlot
@@ -455,6 +400,7 @@ export const GlanceAnchorMock = ({
                 stage={false}
                 room={room}
                 reveal={!touch || index === tapped}
+                turn={cycling && !touch && order === 0 ? { kind: "next" } : null}
                 onTap={touch ? () => setTapped(index) : undefined}
               />
             ) : null
