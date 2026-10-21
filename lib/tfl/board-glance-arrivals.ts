@@ -25,7 +25,7 @@ export const BOARD_GLANCE_TALL_PAGE_SIZE = 3
 export const BOARD_GLANCE_MAX_ROWS = 24
 /**
  * Height/width of the glance shell at or above this uses the tall page size.
- * Same budget as `--glance-u` in globals.css: three rows (3 × 11.25u + 2u plus
+ * Same budget as `--glance-u` in globals.css: three rows (3 × 11.75u + 2u plus
  * the roundel tile and footer) fit at full width scale (4.5cqi) from ~1.6–1.9.
  * Phone portrait (~2.16) gets three rows; iPad portrait and short phones keep two.
  */

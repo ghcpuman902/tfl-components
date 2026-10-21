@@ -60,8 +60,8 @@ const formatGlanceCountdown = (
 
 /*
  * One grid for loaded and loading rows: rail spans the stack, chip /
- * destination / meta stack in 1u cap-trimmed gaps, minutes sit on the
- * destination baseline. Sizes are `--glance-*` steps (globals.css).
+ * destination / meta stack in 1u cap-trimmed gaps, "min" stacks under the
+ * number so the time column stays narrow. Sizes are `--glance-*` steps (globals.css).
  */
 const ROW_CLASS =
   "relative grid min-h-0 min-w-0 flex-1 basis-0 grid-cols-[auto_minmax(0,1fr)_auto] content-center gap-x-[length:var(--glance-u)] gap-y-[length:var(--glance-u)]"
@@ -75,22 +75,22 @@ const CHIP_SIZE_CLASS =
 const DEST_CLASS =
   "font-medium text-[length:var(--glance-dest)] leading-[1.15]"
 const META_CLASS =
-  "col-span-2 col-start-2 row-start-3 m-0 font-medium text-[length:var(--glance-small)] leading-tight text-muted-foreground [text-box:trim-both_cap_alphabetic]"
+  "col-span-2 col-start-2 row-start-3 m-0 font-medium text-[length:var(--glance-meta)] leading-tight text-muted-foreground [text-box:trim-both_cap_alphabetic]"
 const TIME_CLASS =
-  "col-start-3 row-span-2 row-start-1 flex items-baseline justify-end gap-x-[length:var(--glance-rail)] self-end pl-[length:var(--glance-rail)] font-semibold tabular-nums"
+  "col-start-3 row-span-2 row-start-1 flex flex-col items-end justify-center gap-y-[length:var(--glance-rail)] self-center pl-[length:var(--glance-rail)] font-semibold tabular-nums"
 const NUMBER_CLASS = cn(
   "min-w-[2ch] text-right text-[length:var(--glance-time)]",
   CHIP_CAP_TEXT_BOX_CLASS
 )
 const UNIT_CLASS = cn(
-  "font-medium text-[length:var(--glance-dest)] text-muted-foreground",
+  "font-medium text-[length:var(--glance-small)] text-muted-foreground",
   CHIP_CAP_TEXT_BOX_CLASS
 )
-/* First heading tier that fits, by the widest form in meta em ("Southbound · Platform 10" ≈ 11.7em, "Southbound · P10" ≈ 8.1em). */
+/* First heading tier that fits, by the widest form in meta em ("Southbound · Platform 10" ≈ 11.7em, "Outer Rail · Plat 10" ≈ 8.7em). */
 const META_TIER_CLASS = [
   "hidden @min-[12em]/glance-meta:inline",
-  "hidden @min-[8.25em]/glance-meta:inline @min-[12em]/glance-meta:hidden",
-  "@min-[8.25em]/glance-meta:hidden",
+  "hidden @min-[8.75em]/glance-meta:inline @min-[12em]/glance-meta:hidden",
+  "@min-[8.75em]/glance-meta:hidden",
 ] as const
 const SKELETON_FILL_CLASS = "animate-pulse bg-muted text-transparent"
 

@@ -66,16 +66,22 @@ export const STATION_ABBREVIATION_ENTRIES: readonly StationAbbreviationEntry[] =
   ] as const
 
 /**
- * Arrivals bound-heading shortening ("Northbound · Platform 6" → "NB · P6").
- * `Platform` joins its number (`P6`), the same form as `PlatformChip compact`.
+ * Arrivals bound-heading shortening, two tiers:
+ * "Northbound · Platform 6" → (2) "NBound · Plat 6" → (3) "NB · P6".
+ * Tier 3 `Platform N` joins its number (`P6`), the `PlatformChip compact` form.
  */
 export const ARRIVALS_HEADING_ABBREVIATION_ENTRIES: readonly StationAbbreviationEntry[] =
   [
-    { full: "Northbound", short: "NB", findCompletion: "" },
-    { full: "Southbound", short: "SB", findCompletion: "" },
-    { full: "Eastbound", short: "EB", findCompletion: "" },
-    { full: "Westbound", short: "WB", findCompletion: "" },
-    { full: "Platform", short: "P", findCompletion: "" },
+    { full: "Northbound", short: "NBound", findCompletion: "", tier: 2 },
+    { full: "Southbound", short: "SBound", findCompletion: "", tier: 2 },
+    { full: "Eastbound", short: "EBound", findCompletion: "", tier: 2 },
+    { full: "Westbound", short: "WBound", findCompletion: "", tier: 2 },
+    { full: "Platform", short: "Plat", findCompletion: "", tier: 2 },
+    { full: "Northbound", short: "NB", findCompletion: "", tier: 3 },
+    { full: "Southbound", short: "SB", findCompletion: "", tier: 3 },
+    { full: "Eastbound", short: "EB", findCompletion: "", tier: 3 },
+    { full: "Westbound", short: "WB", findCompletion: "", tier: 3 },
+    { full: "Platform", short: "P", findCompletion: "", tier: 3 },
   ] as const
 
 /** `and` → `&` (not a find-completion pair — handled via aliases). */
@@ -259,32 +265,22 @@ export const stationAbbreviationLadder = (
 }
 
 const headingPattern = (entry: StationAbbreviationEntry): RegExp =>
-  // `Platform 6` → `P6`: the short form joins its number.
-  entry.full === "Platform"
+  // `Platform 6` → `P6`: the one-letter form joins its number.
+  entry.full === "Platform" && entry.short === "P"
     ? /\bPlatform\s+/gi
     : new RegExp(`\\b${entry.full}\\b`, "gi")
 
-const applyHeadingEntries = (
-  heading: string,
-  entries: readonly StationAbbreviationEntry[]
-): string =>
-  entries.reduce(
+const headingAtTier = (heading: string, tier: StationAbbreviationTier): string =>
+  ARRIVALS_HEADING_ABBREVIATION_ENTRIES.filter(
+    (entry) => entryTier(entry) === tier
+  ).reduce(
     (next, entry) => next.replace(headingPattern(entry), entry.short),
     heading
   )
 
-/**
- * Bound-heading tiers: full → short platform → short direction too.
- * "Northbound · Platform 6" → "Northbound · P6" → "NB · P6".
- */
-export const arrivalsHeadingLadder = (heading: string): string[] => {
-  const platformOnly = applyHeadingEntries(
-    heading,
-    ARRIVALS_HEADING_ABBREVIATION_ENTRIES.filter((e) => e.full === "Platform")
-  )
-  return [
-    heading,
-    platformOnly,
-    applyHeadingEntries(heading, ARRIVALS_HEADING_ABBREVIATION_ENTRIES),
-  ]
-}
+/** Bound-heading tiers, full first: full → tier 2 → tier 3. */
+export const arrivalsHeadingLadder = (heading: string): string[] => [
+  heading,
+  headingAtTier(heading, 2),
+  headingAtTier(heading, 3),
+]

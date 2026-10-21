@@ -177,18 +177,19 @@ describe("abbreviation tiers", () => {
 })
 
 describe("arrivalsHeadingLadder", () => {
-  it("shortens the platform, then the direction", () => {
+  it("steps full → NBound · Plat → NB · P", () => {
     assert.deepEqual(arrivalsHeadingLadder("Northbound · Platform 6"), [
       "Northbound · Platform 6",
-      "Northbound · P6",
+      "NBound · Plat 6",
       "NB · P6",
     ])
+    assert.deepEqual(arrivalsHeadingLadder("Westbound · Platform 12")[1], "WBound · Plat 12")
   })
 
   it("leaves rail designations alone", () => {
     assert.deepEqual(arrivalsHeadingLadder("Inner Rail · Platform 1"), [
       "Inner Rail · Platform 1",
-      "Inner Rail · P1",
+      "Inner Rail · Plat 1",
       "Inner Rail · P1",
     ])
   })

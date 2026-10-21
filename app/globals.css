@@ -293,8 +293,8 @@ html.board-glance .board-glance {
  * plus the minutes figure at twice the destination.
  *
  * The shell is a size container so the unit fits the limiting side: a row
- * needs ~22u of width and 11.25u of height (chip, two-line destination,
- * meta = 9.25u, plus 1u clear of each row rule).
+ * needs ~22u of width and 11.75u of height (chip, two-line destination,
+ * 2u meta = 9.75u, plus 1u clear of each row rule).
  * Chrome is what it paints: one roundel tile + 1u, a 1u gap + h-1 dwell, and
  * a 48px footer line + pt-3 (4rem with the dwell). Rows come from the same
  * budget (`BOARD_GLANCE_TALL_ASPECT`).
@@ -306,13 +306,14 @@ html.board-glance .board-glance {
   --glance-u: min(
     4.5cqi,
     calc(
-      (100cqb - var(--glance-roundel) - 4rem) / (var(--glance-rows) * 11.25 + 2)
+      (100cqb - var(--glance-roundel) - 4rem) / (var(--glance-rows) * 11.75 + 2)
     )
   );
   --glance-rail: calc(var(--glance-u) * 0.5);
   --glance-gutter: calc(var(--glance-u) * 1.5);
   --glance-small: calc(var(--glance-u) * 1.5);
   --glance-dest: calc(var(--glance-u) * 2);
+  --glance-meta: var(--glance-dest);
   --glance-chip-h: calc(var(--glance-u) * 2.5);
   --glance-time: calc(var(--glance-u) * 4);
   /* Board title tile: text-3xl beside a one-row roundel (0.625), never above the destination step. */
