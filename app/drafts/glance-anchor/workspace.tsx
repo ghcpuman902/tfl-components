@@ -1,7 +1,12 @@
 "use client"
 
 import { RefreshCw } from "lucide-react"
-import { useEffect, useMemo, useState, type CSSProperties } from "react"
+import {
+  useEffect,
+  useState,
+  type CSSProperties,
+  type TransitionEvent,
+} from "react"
 import {
   ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
   CHIP_CAP_TEXT_BOX_CLASS,
@@ -14,31 +19,35 @@ import { arrivalsHeadingLadder } from "@/lib/tfl/station-abbreviations"
 import { cn } from "@/lib/utils"
 import {
   ANCHOR_ITEMS,
-  HOUSEHOLD_ITEMS,
+  OVERFLOW_ITEMS,
+  PAIR_ITEMS,
   type GlanceAnchorItem,
 } from "./fixtures"
 import "./glance-anchor.css"
 
-export type GlanceAnchorLayout = "anchor" | "household"
+export type GlanceAnchorLayout = "anchor" | "pair"
 
 export type GlanceAnchorMockProps = {
+  /** One anchor, or two equal anchors. */
   layout: GlanceAnchorLayout
   /** "Across the room": fewer facts, bigger unit. */
   room: boolean
-  /** Touch allowed: no auto-cycle; segments and tiles are tap targets. */
+  /** Touch allowed: tapping a tile pins it as the anchor; the tile strip scrolls. */
   touch: boolean
+  /** Seven line + directions, more than the tile slots. */
+  overflow: boolean
   width: number
   height: number
-  /** Freeze the cycle at segment `active` and `progress` (0–1) for screenshots. */
-  freeze?: { active: number; progress: number }
+  /** Item index pinned as the anchor (default: the first by board priority). */
+  pin?: number
+  /** Freeze the unattended pan at this column offset (e.g. 0.5 = mid-pan) for screenshots. */
+  pan?: number
 }
 
-/** Anchor dwells longest; every other item gets a short turn. */
-const ANCHOR_DWELL_MS = 12_000
-const TURN_DWELL_MS = 5_000
+/** Unattended overflow: hold each column of tiles, then pan one column. */
+const PAN_HOLD_MS = 10_000
+const PAN_MOVE_MS = 1_600
 const FRESHNESS = 0.4
-/** Across the room shows the two tiles up next; the rest wait for their turn. */
-const ROOM_TILES = 2
 
 const minutes = (seconds: number) =>
   seconds < 60 ? "Due" : `${Math.floor(seconds / 60)}`
@@ -65,41 +74,6 @@ const META_TIER_CLASS = [
   "hidden @min-[9.5em]/ga-meta:inline @min-[13em]/ga-meta:hidden",
   "@min-[9.5em]/ga-meta:hidden",
 ] as const
-
-/**
- * Turn order, as words: every line + direction keeps its own number. The stage
- * is "Now · 3 of 5"; the tile that takes over says "Next in 5s"; the rest "5 of 5".
- */
-export type SlotTurn = {
-  ordinal: number
-  count: number
-  role: "now" | "next" | "later"
-  /** Seconds until the next tile takes the stage; null when touch replaces the timer. */
-  nextInS: number | null
-} | null
-
-const TurnLabel = ({ turn }: { turn: NonNullable<SlotTurn> }) => {
-  const place = `${turn.ordinal} of ${turn.count}`
-  if (turn.role === "now")
-    return (
-      <>
-        <span className="hidden @min-[13em]/ga-col:inline">
-          Now showing {place}
-        </span>
-        <span className="@min-[13em]/ga-col:hidden">
-          Now · {turn.ordinal}/{turn.count}
-        </span>
-      </>
-    )
-  if (turn.role === "next" && turn.nextInS !== null)
-    return (
-      <>
-        Up next in {turn.nextInS}s
-        <span className="hidden @min-[21em]/ga-col:inline"> · {place}</span>
-      </>
-    )
-  return <>{place}</>
-}
 
 const TimeLockup = ({ time, then }: { time: string; then: string | null }) => (
   <span
@@ -129,38 +103,26 @@ const GlanceSlot = ({
   item,
   stage,
   room,
-  reveal,
-  turn,
   onTap,
 }: {
   item: GlanceAnchorItem
   stage: boolean
   room: boolean
-  /** Show following times: always unattended, on tap when touch is allowed. */
-  reveal: boolean
-  turn: SlotTurn
   onTap?: () => void
 }) => {
   const [first = 0] = item.times
   const time = minutes(first)
-  const then = thenLine(item.times)
-  const showThen = !room && (stage || reveal)
+  const then = room ? null : thenLine(item.times)
   // Across the room: the anchor keeps its shortest bound; a tile is chip, one-line destination, time.
   const roomMeta = room && stage
   const roomTile = room && !stage
   const Tag = onTap ? "button" : "div"
-
   const spoken = [
-    item.owner,
     getLineNameTiers(item.lineId).full,
     item.heading,
     item.destination,
     time === "Due" ? "Due" : `${time} min`,
-    showThen && then ? `${then} min` : null,
-    turn ? `${turn.ordinal} of ${turn.count}` : null,
-    turn?.role === "next" && turn.nextInS !== null
-      ? `takes over in ${turn.nextInS} seconds`
-      : null,
+    then ? `${then} min` : null,
   ]
     .filter(Boolean)
     .join(", ")
@@ -171,7 +133,7 @@ const GlanceSlot = ({
       onClick={onTap}
       data-line={item.lineId}
       data-slot={stage ? "ga-stage" : "ga-tile"}
-      aria-label={spoken}
+      aria-label={onTap ? `${spoken}. Show large` : spoken}
       className={cn(
         SLOT_CLASS,
         stage ? "ga-stage-scale" : "ga-tile-scale",
@@ -193,18 +155,6 @@ const GlanceSlot = ({
               ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS
             )}
           />
-          {turn || item.owner ? (
-            <span
-              data-slot="ga-turn"
-              className={cn(
-                "text-[length:calc(var(--c)*1.5)] font-medium whitespace-nowrap",
-                turn && "text-muted-foreground",
-                CHIP_CAP_TEXT_BOX_CLASS
-              )}
-            >
-              {turn ? <TurnLabel turn={turn} /> : item.owner}
-            </span>
-          ) : null}
         </span>
         {/* A wrapped name keeps its last line's descent below the baseline; pull it back so the next gap is 1 step. */}
         <span
@@ -242,7 +192,7 @@ const GlanceSlot = ({
             ))}
           </span>
         ) : null}
-        <TimeLockup time={time} then={showThen ? then : null} />
+        <TimeLockup time={time} then={then} />
       </span>
     </Tag>
   )
@@ -268,80 +218,138 @@ const GlanceFooter = () => (
   </footer>
 )
 
-const useCycle = (
-  count: number,
-  enabled: boolean,
-  freeze?: { active: number; progress: number }
-) => {
-  const turns = useMemo(
-    () =>
-      Array.from({ length: count }, (_, index) => ({
-        index,
-        ms: index === 0 ? ANCHOR_DWELL_MS : TURN_DWELL_MS,
-      })),
-    [count]
-  )
-  const [state, setState] = useState({ turn: 0, progress: 0 })
+/**
+ * Unattended overflow: hold, then pan one column; after the last column the
+ * strip shows clones of the first and snaps back to 0 with no transition.
+ */
+const usePan = (columns: number, enabled: boolean) => {
+  const [offset, setOffset] = useState(0)
+  const [animate, setAnimate] = useState(true)
 
   useEffect(() => {
-    if (!enabled || freeze || turns.length === 0) return
-    let raf = 0
-    let start = performance.now()
-    let turn = 0
-    const tick = (now: number) => {
-      const ms = turns[turn]?.ms ?? TURN_DWELL_MS
-      let progress = (now - start) / ms
-      if (progress >= 1) {
-        turn = (turn + 1) % turns.length
-        start = now
-        progress = 0
-      }
-      setState({ turn, progress })
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [enabled, freeze, turns])
+    if (!enabled) return
+    const id = window.setInterval(() => {
+      setAnimate(true)
+      setOffset((value) => value + 1)
+    }, PAN_HOLD_MS + PAN_MOVE_MS)
+    return () => window.clearInterval(id)
+  }, [enabled])
 
-  if (freeze) return { active: freeze.active, progress: freeze.progress }
-  return {
-    active: turns[state.turn]?.index ?? 0,
-    progress: enabled ? state.progress : 0,
+  const onTransitionEnd = (event: TransitionEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget || offset < columns) return
+    setAnimate(false)
+    setOffset(0)
   }
+  return { offset, animate, onTransitionEnd }
 }
+
+const TileArea = ({
+  tiles,
+  room,
+  touch,
+  visible,
+  rows,
+  pan,
+  onPin,
+}: {
+  tiles: readonly GlanceAnchorItem[]
+  room: boolean
+  touch: boolean
+  /** Whole tiles that fit (columns × rows). */
+  visible: number
+  rows: number
+  pan?: number
+  onPin: (id: string) => void
+}) => {
+  const overflow = tiles.length > visible
+  const columns = Math.ceil(tiles.length / rows)
+  const auto = overflow && !touch && pan === undefined
+  const cycle = usePan(columns, auto)
+  // The unattended strip repeats its first page so the pan can loop forward.
+  const strip =
+    overflow && !touch ? [...tiles, ...tiles.slice(0, visible)] : tiles
+  const offset = pan ?? cycle.offset
+
+  const more = overflow && !touch ? tiles.length - visible : 0
+
+  return (
+    <div className="ga-tile-area relative flex min-h-0 min-w-0">
+      <div
+        data-slot="ga-tiles"
+        data-overflow={overflow ? (touch ? "scroll" : "pan") : undefined}
+        className="ga-tiles @container/ga-tiles min-h-0 min-w-0 flex-1"
+      >
+        <div
+          className="ga-strip"
+          style={
+            {
+              "--ga-offset": offset,
+              transitionDuration:
+                auto && cycle.animate ? `${PAN_MOVE_MS}ms` : "0ms",
+            } as CSSProperties
+          }
+          onTransitionEnd={cycle.onTransitionEnd}
+        >
+          {strip.map((item, index) => (
+            <GlanceSlot
+              key={`${item.id}-${index}`}
+              item={item}
+              stage={false}
+              room={room}
+              onTap={touch ? () => onPin(item.id) : undefined}
+            />
+          ))}
+        </div>
+      </div>
+      {/* Unattended overflow: the one hint, in words, under the strip it belongs to. */}
+      {more > 0 ? (
+        <span
+          data-slot="ga-more"
+          className={cn(
+            QUIET_CLASS,
+            "absolute top-[calc(100%+var(--u)*1.5)] right-0 text-[length:calc(var(--u)*1.5)] whitespace-nowrap text-foreground tabular-nums"
+          )}
+        >
+          +{more} more
+        </span>
+      ) : null}
+    </div>
+  )
+}
+
+const ITEMS = { anchor: ANCHOR_ITEMS, pair: PAIR_ITEMS } as const
 
 export const GlanceAnchorMock = ({
   layout,
   room,
   touch,
+  overflow,
   width,
   height,
-  freeze,
+  pin,
+  pan,
 }: GlanceAnchorMockProps) => {
-  const items = layout === "household" ? HOUSEHOLD_ITEMS : ANCHOR_ITEMS
-  const cycle = useCycle(items.length, layout === "anchor" && !touch, freeze)
-  const [tapped, setTapped] = useState<number | null>(null)
-  const active =
-    layout === "household"
-      ? (tapped ?? -1)
-      : touch
-        ? (tapped ?? 0)
-        : cycle.active
-
-  const cycling = layout === "anchor"
-  // Anchor layout: the active item takes the stage; tiles follow in turn order.
-  const stageIndexes = cycling ? [Math.max(0, active)] : [0, 1]
-  const tileIndexes = items
-    .map((_, index) => (cycling ? (active + 1 + index) % items.length : index))
-    .filter((index) => !stageIndexes.includes(index))
-    .slice(0, room ? ROOM_TILES : undefined)
-  const stageAt = Math.max(0, active)
-  const dwellMs = stageAt === 0 ? ANCHOR_DWELL_MS : TURN_DWELL_MS
-  const nextInS = touch
-    ? null
-    : Math.max(1, Math.ceil(((1 - cycle.progress) * dwellMs) / 1000))
-  const turnOf = (index: number, role: "now" | "next" | "later"): SlotTurn =>
-    cycling ? { ordinal: index + 1, count: items.length, role, nextInS } : null
+  const items = overflow ? OVERFLOW_ITEMS : ITEMS[layout]
+  // Board settings order the items by priority; a tap pins one as the anchor until another tap.
+  const [pinned, setPinned] = useState<string | null>(
+    pin === undefined ? null : (items[pin]?.id ?? null)
+  )
+  const anchorIds =
+    layout === "pair"
+      ? items.slice(0, 2).map((item) => item.id)
+      : [pinned ?? items[0]?.id]
+  const anchors = items.filter((item) => anchorIds.includes(item.id))
+  const tiles = items.filter((item) => !anchorIds.includes(item.id))
+  const portrait = height > width
+  const rows = room
+    ? portrait
+      ? 1
+      : 2
+    : layout === "pair" && !portrait
+      ? 1
+      : 2
+  const cols = room ? 1 : layout === "pair" && !portrait ? 4 : 2
+  const visible = rows * cols
 
   return (
     <div
@@ -353,7 +361,13 @@ export const GlanceAnchorMock = ({
         className="ga-inner box-border flex h-full flex-col gap-y-[length:var(--u)] p-[length:var(--ga-pad)]"
         data-layout={layout}
         data-room={room || undefined}
-        style={{ "--ga-pad": width < 600 ? "20px" : "24px" } as CSSProperties}
+        style={
+          {
+            "--ga-pad": width < 600 ? "20px" : "24px",
+            "--ga-tile-cols": cols,
+            "--ga-tile-rows": rows,
+          } as CSSProperties
+        }
       >
         <header className="box-border flex h-[length:var(--ga-roundel)] shrink-0 items-center gap-x-[calc(var(--u)*1.5)] overflow-clip">
           <TfLRoundel
@@ -375,34 +389,24 @@ export const GlanceAnchorMock = ({
             </button>
           ) : null}
         </header>
-        <div className="ga-grid grid min-h-0 flex-1 grid-flow-row-dense gap-[calc(var(--u)*var(--ga-gutter))]">
-          {stageIndexes.map((index) => {
-            const item = items[index]
-            return item ? (
-              <GlanceSlot
-                key={`stage-${item.id}`}
-                item={item}
-                stage
-                room={room}
-                reveal
-                turn={turnOf(index, "now")}
-              />
-            ) : null
-          })}
-          {tileIndexes.map((index, order) => {
-            const item = items[index]
-            return item ? (
-              <GlanceSlot
-                key={item.id}
-                item={item}
-                stage={false}
-                room={room}
-                reveal={!touch || index === tapped}
-                turn={turnOf(index, order === 0 ? "next" : "later")}
-                onTap={touch ? () => setTapped(index) : undefined}
-              />
-            ) : null
-          })}
+        <div className="ga-grid grid min-h-0 flex-1 gap-[calc(var(--u)*var(--ga-gutter))]">
+          {anchors.map((item) => (
+            <GlanceSlot
+              key={`stage-${item.id}`}
+              item={item}
+              stage
+              room={room}
+            />
+          ))}
+          <TileArea
+            tiles={tiles}
+            room={room}
+            touch={touch}
+            visible={visible}
+            rows={rows}
+            pan={pan}
+            onPin={setPinned}
+          />
         </div>
         <GlanceFooter />
       </div>

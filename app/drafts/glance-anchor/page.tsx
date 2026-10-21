@@ -5,7 +5,7 @@ import { GlanceAnchorMock, type GlanceAnchorLayout } from "./workspace"
 export const metadata: Metadata = {
   title: "Draft: Glance anchor",
   description:
-    "One anchor departure, quarter tiles and a segment bar for the Board glance view.",
+    "One anchor departure and quarter tiles that scroll or pan when there are more, for the Board glance view.",
   robots: { index: false, follow: false },
 }
 
@@ -23,25 +23,20 @@ const int = (value: string | undefined, fallback: number) => {
 const MockBody = async ({ searchParams }: DraftPageProps) => {
   const query = await searchParams
   const layout: GlanceAnchorLayout =
-    one(query.layout) === "household" ? "household" : "anchor"
-  const active = one(query.active)
-  const progress = one(query.p)
+    one(query.layout) === "pair" ? "pair" : "anchor"
+  const pin = one(query.pin)
+  const pan = one(query.pan)
 
   return (
     <GlanceAnchorMock
       layout={layout}
       room={one(query.room) === "1"}
       touch={one(query.touch) === "1"}
+      overflow={one(query.overflow) === "1"}
       width={int(one(query.w), 390)}
       height={int(one(query.h), 844)}
-      freeze={
-        active === undefined
-          ? undefined
-          : {
-              active: Number.parseInt(active, 10) || 0,
-              progress: Math.min(1, Math.max(0, Number(progress ?? 0.6))),
-            }
-      }
+      pin={pin === undefined ? undefined : Number.parseInt(pin, 10) || 0}
+      pan={pan === undefined ? undefined : Math.max(0, Number(pan) || 0)}
     />
   )
 }

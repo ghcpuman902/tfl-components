@@ -12,7 +12,6 @@ export type GlanceAnchorItem = {
   destination: string
   /** Seconds to station: first is the hero, the rest are the "then" line. */
   times: readonly number[]
-  owner?: string
 }
 
 const item = (
@@ -20,9 +19,8 @@ const item = (
   lineId: string,
   heading: string,
   destination: string,
-  times: readonly number[],
-  owner?: string
-): GlanceAnchorItem => ({ id, lineId, heading, destination, times, owner })
+  times: readonly number[]
+): GlanceAnchorItem => ({ id, lineId, heading, destination, times })
 
 const VIC_NB = item(
   "vic-nb",
@@ -49,7 +47,7 @@ const CEN_WB = item(
   "cen-wb",
   "central",
   "Westbound · Platform 1",
-  "Ealing Broadway via Acton Town",
+  "Ealing Broadway",
   [45, 260, 390]
 )
 const BAK_SB = item(
@@ -67,7 +65,15 @@ const BAK_NB = item(
   [95, 380, 700]
 )
 
-/** One anchor (the user's commute) plus four quarter tiles. */
+const CEN_WB_RUISLIP = item(
+  "cen-wb-ruislip",
+  "central",
+  "Westbound · Platform 1",
+  "West Ruislip",
+  [170, 480, 790]
+)
+
+/** Board priority order: the first is the anchor unless a tap pins another. */
 export const ANCHOR_ITEMS: readonly GlanceAnchorItem[] = [
   VIC_NB,
   VIC_SB,
@@ -76,12 +82,26 @@ export const ANCHOR_ITEMS: readonly GlanceAnchorItem[] = [
   BAK_SB,
 ]
 
-/** Two equally important named commutes plus four tiles. */
-export const HOUSEHOLD_ITEMS: readonly GlanceAnchorItem[] = [
-  { ...VIC_SB, owner: "Mum" },
-  { ...CEN_EB, owner: "Dad" },
+/** Two equally important anchors plus four tiles. */
+export const PAIR_ITEMS: readonly GlanceAnchorItem[] = [
+  VIC_SB,
+  CEN_EB,
   VIC_NB,
   CEN_WB,
   BAK_SB,
   BAK_NB,
+]
+
+/**
+ * Every Oxford Circus line + direction (Central westbound split by branch, as
+ * the platform board does): one anchor, six tiles for four slots.
+ */
+export const OVERFLOW_ITEMS: readonly GlanceAnchorItem[] = [
+  VIC_NB,
+  VIC_SB,
+  CEN_EB,
+  CEN_WB,
+  BAK_SB,
+  BAK_NB,
+  CEN_WB_RUISLIP,
 ]

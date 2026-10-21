@@ -30,8 +30,6 @@
 .ga-inner {
   --ga-cols: 2;
   --ga-rows: 4;
-  --ga-stage-cols: 2;
-  --ga-stage-rows: 1;
   /* Worst-case tile in u. Wide: rail + gap + "Due" lockup with its then line. Tall: chip + 2-line destination + meta + time, 1u apart. */
   --ga-tile-w: 16.5;
   --ga-tile-h: 14.1;
@@ -60,8 +58,8 @@
   --ga-foot: max(0.875rem, var(--u));
 }
 
-/* Two ×1.5 anchors count as three tile rows, plus two rows of tiles. */
-.ga-inner[data-layout="household"] {
+/* Two stacked ×1.5 anchors count as three tile rows, plus two rows of tiles. */
+.ga-inner[data-layout="pair"] {
   --ga-rows: 5;
 }
 
@@ -74,34 +72,23 @@
 .ga-inner[data-room] {
   --ga-cols: 1;
   --ga-rows: 1;
-  --ga-stage-cols: 1;
-  --ga-stage-rows: 1;
   --ga-tile-w: 19;
   --ga-tile-h: 40.6;
-}
-
-.ga-inner[data-room] .ga-grid > :nth-child(n + 3) {
-  display: none;
 }
 
 @container ga-shell (orientation: landscape) {
   .ga-inner {
     --ga-cols: 4;
     --ga-rows: 2;
-    --ga-stage-rows: 2;
   }
   /* Two equal ×1.5 anchors side by side over a row of four tiles. */
-  .ga-inner[data-layout="household"] {
+  .ga-inner[data-layout="pair"] {
     --ga-rows: 2.5;
-    --ga-stage-rows: 1;
   }
   /* Anchor (28u wide at ×2) beside a column of two ×1.25 tiles (17.5u wide, 27u tall). */
   .ga-inner[data-room] {
     --ga-cols: 2;
     --ga-rows: 1;
-    --ga-template: minmax(0, 28fr) minmax(0, 17.5fr);
-    --ga-stage-cols: 1;
-    --ga-stage-rows: 2;
     --ga-tile-w: 24.25;
     --ga-tile-h: 28;
   }
@@ -109,18 +96,87 @@
     --k: 1.25;
     --ck: 1.25;
   }
-  .ga-inner[data-room] .ga-grid > :nth-child(n + 3) {
-    display: flex;
-  }
 }
 
 .ga-grid {
-  grid-template-columns: var(
-    --ga-template,
-    repeat(var(--ga-cols), minmax(0, 1fr))
+  grid-template-columns: var(--ga-template, minmax(0, 1fr));
+  /* Slots start under the header; any worst-case reserve falls below the tiles, never between slots. */
+  align-content: start;
+}
+
+/*
+ * The tile area is a strip of columns, `--ga-tile-cols` wide and
+ * `--ga-tile-rows` tall. Extra tiles sit in further columns: touch scrolls to
+ * them with the next column peeking; unattended, the strip pans one column at
+ * a time.
+ */
+.ga-tile-area {
+  grid-column: 1 / -1;
+}
+
+.ga-tiles {
+  --ga-gap: calc(var(--u) * var(--ga-gutter));
+  display: flex;
+  overflow: hidden;
+}
+
+.ga-tiles[data-overflow="scroll"] {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.ga-strip {
+  --ga-col-w: calc(
+    (100cqi - (var(--ga-tile-cols) - 1) * var(--ga-gap)) / var(--ga-tile-cols)
   );
-  /* Rows hug their text 3u apart; the worst-case reserve sits around the grid, never between slots. */
-  align-content: center;
+  display: grid;
+  flex: 1 0 auto;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(var(--ga-tile-rows), auto);
+  grid-auto-columns: var(--ga-col-w);
+  gap: var(--ga-gap);
+  /* First row on the top edge, last row on the bottom edge of the area. */
+  align-content: space-between;
+  transform: translateX(
+    calc(var(--ga-offset, 0) * -1 * (var(--ga-col-w) + var(--ga-gap)))
+  );
+  transition-property: transform;
+  transition-timing-function: ease-in-out;
+}
+
+/* Touch: a third of the next column shows at the edge, so the strip reads as scrollable. */
+.ga-tiles[data-overflow="scroll"] .ga-strip {
+  --ga-col-w: calc(
+    (100cqi - var(--ga-tile-cols) * var(--ga-gap)) / (var(--ga-tile-cols) + 0.3)
+  );
+}
+
+.ga-tiles[data-overflow="scroll"] .ga-slot {
+  scroll-snap-align: start;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ga-strip {
+    transition-duration: 0ms !important;
+  }
+}
+
+@container ga-shell (orientation: landscape) {
+  /* Anchor beside its 2 × 2 tiles; room anchor beside a column of two. */
+  .ga-inner[data-layout="anchor"] {
+    --ga-template: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .ga-inner[data-room] {
+    --ga-template: minmax(0, 28fr) minmax(0, 17.5fr);
+  }
+  .ga-inner[data-layout="pair"]:not([data-room]) {
+    --ga-template: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .ga-inner[data-layout="anchor"] .ga-tile-area,
+  .ga-inner[data-room] .ga-tile-area {
+    grid-column: auto;
+  }
 }
 
 .ga-slot {
@@ -142,7 +198,7 @@
 }
 
 /* Two anchors stacked on a phone: ×1.5, so the four tiles below stay legible. */
-.ga-inner[data-layout="household"] .ga-stage-scale {
+.ga-inner[data-layout="pair"] .ga-stage-scale {
   --k: 1.5;
 }
 
@@ -150,7 +206,7 @@
   .ga-inner:not([data-room]) .ga-stage-scale {
     --k: 2.25;
   }
-  .ga-inner[data-layout="household"] .ga-stage-scale {
+  .ga-inner[data-layout="pair"] .ga-stage-scale {
     --k: 1.5;
   }
 }
@@ -158,17 +214,4 @@
 /* Across the room the type carries the anchor; a lighter chip leaves the minutes heaviest. */
 .ga-inner[data-room] .ga-stage-scale {
   --ck: 1.25;
-}
-
-/* Where the anchor spans two tile rows, the second row sits on the anchor's bottom edge. */
-@container ga-shell (orientation: landscape) {
-  .ga-inner[data-layout="anchor"]:not([data-room]) .ga-grid > :nth-child(n + 4),
-  .ga-inner[data-room] .ga-grid > :nth-child(3) {
-    align-self: end;
-  }
-}
-
-.ga-slot[data-slot="ga-stage"] {
-  grid-column: span var(--ga-stage-cols);
-  grid-row: span var(--ga-stage-rows);
 }
