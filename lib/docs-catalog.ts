@@ -865,6 +865,18 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     excludeFromInstallLists: true,
   },
   {
+    slug: "hero-3d",
+    title: "3D hero prototype",
+    description:
+      "Experimental domestic interior for a future landing-page wall display.",
+    group: "drafts",
+    kind: "draft",
+    href: "/drafts/hero-3d",
+    sidebarSection: "hidden",
+    sidebarOrder: 1,
+    excludeFromInstallLists: true,
+  },
+  {
     slug: "drafts-index",
     title: "Drafts",
     description:
