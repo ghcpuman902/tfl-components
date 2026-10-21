@@ -36,8 +36,8 @@ export type GlanceAnchorMockProps = {
 const ANCHOR_DWELL_MS = 12_000
 const TURN_DWELL_MS = 5_000
 const FRESHNESS = 0.4
-/** Across the room shows three tiles; the rest wait for their turn. */
-const ROOM_TILES = 3
+/** Across the room shows the two tiles up next; the rest wait for their turn. */
+const ROOM_TILES = 2
 
 const minutes = (seconds: number) =>
   seconds < 60 ? "Due" : `${Math.floor(seconds / 60)}`
@@ -65,23 +65,45 @@ const META_TIER_CLASS = [
   "@min-[9.5em]/ga-meta:hidden",
 ] as const
 
-/** Every slot is numbered in turn order ("2 of 5"); the stage is "Now · 1 of 5" with its dwell bar. */
+/**
+ * Turn order, as words: every line + direction keeps its own number. The stage
+ * is "Now · 3 of 5"; the tile that takes over says "Next in 5s"; the rest "5 of 5".
+ */
 export type SlotTurn = {
   ordinal: number
   count: number
-  /** Stage only: dwell progress, or null when touch replaces the timer. */
-  progress?: number | null
+  role: "now" | "next" | "later"
+  /** Seconds until the next tile takes the stage; null when touch replaces the timer. */
+  nextInS: number | null
 } | null
+
+const TurnLabel = ({ turn }: { turn: NonNullable<SlotTurn> }) => {
+  const place = `${turn.ordinal} of ${turn.count}`
+  if (turn.role === "now")
+    return (
+      <>
+        <span className="hidden @min-[14.5em]/ga-col:inline">Now · </span>
+        {place}
+      </>
+    )
+  if (turn.role === "next" && turn.nextInS !== null)
+    return (
+      <>
+        Next in {turn.nextInS}s
+        <span className="hidden @min-[20em]/ga-col:inline"> · {place}</span>
+      </>
+    )
+  return <>{place}</>
+}
 
 const TimeLockup = ({ time, then }: { time: string; then: string | null }) => (
   <span
     className="flex items-end gap-x-[calc(var(--s)*0.75)] font-semibold tabular-nums"
     aria-hidden
   >
-    {/* A 1ch slot, so a lone bar-shaped "1" never sits against the rail. */}
     <span
       className={cn(
-        "min-w-[1ch] text-right text-[length:calc(var(--s)*var(--ga-time))]",
+        "text-[length:calc(var(--s)*var(--ga-time))]",
         CHIP_CAP_TEXT_BOX_CLASS
       )}
     >
@@ -92,20 +114,7 @@ const TimeLockup = ({ time, then }: { time: string; then: string | null }) => (
         {time === "Due" ? "now" : "min"}
       </span>
       {then ? (
-        <span className={cn(QUIET_CLASS, "whitespace-nowrap")}>
-          {then}
-          {/* Tier: drop the repeated unit before anything shrinks. "Due" is the widest figure. */}
-          <span
-            className={
-              time === "Due"
-                ? "hidden @min-[17.75em]/ga-col:inline"
-                : "hidden @min-[15.25em]/ga-col:inline"
-            }
-          >
-            {" "}
-            min
-          </span>
-        </span>
+        <span className={cn(QUIET_CLASS, "whitespace-nowrap")}>{then}</span>
       ) : null}
     </span>
   </span>
@@ -131,14 +140,11 @@ const GlanceSlot = ({
   const time = minutes(first)
   const then = thenLine(item.times)
   const showThen = !room && (stage || reveal)
-  const showDest = !(room && !stage)
-  // Across the room a tile is two lines: chip with its shortest bound, then the time.
-  const inlineMeta = room && !stage
-  // Across the room the anchor keeps its shortest bound under the destination.
+  // Across the room: the anchor keeps its shortest bound; a tile is chip, one-line destination, time.
   const roomMeta = room && stage
+  const roomTile = room && !stage
   const Tag = onTap ? "button" : "div"
-  const label = turn ? `${turn.ordinal} of ${turn.count}` : item.owner
-  const progress = stage ? (turn?.progress ?? null) : null
+
   const spoken = [
     item.owner,
     getLineNameTiers(item.lineId).full,
@@ -147,6 +153,9 @@ const GlanceSlot = ({
     time === "Due" ? "Due" : `${time} min`,
     showThen && then ? `${then} min` : null,
     turn ? `${turn.ordinal} of ${turn.count}` : null,
+    turn?.role === "next" && turn.nextInS !== null
+      ? `takes over in ${turn.nextInS} seconds`
+      : null,
   ]
     .filter(Boolean)
     .join(", ")
@@ -160,7 +169,7 @@ const GlanceSlot = ({
       aria-label={spoken}
       className={cn(
         SLOT_CLASS,
-        stage ? "ga-stage-scale" : "[--ck:1] [--ga-time:4] [--k:1]",
+        stage ? "ga-stage-scale" : "ga-tile-scale",
         onTap && "cursor-pointer"
       )}
     >
@@ -179,65 +188,40 @@ const GlanceSlot = ({
               ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS
             )}
           />
-          {inlineMeta ? (
-            <span className={cn(QUIET_CLASS, "whitespace-nowrap")}>
-              {arrivalsHeadingLadder(item.heading).at(-1)}
-            </span>
-          ) : null}
-          {label ? (
+          {turn || item.owner ? (
             <span
               data-slot="ga-turn"
               className={cn(
                 "text-[length:calc(var(--c)*1.5)] font-medium whitespace-nowrap",
-                turn ? "text-muted-foreground" : null,
+                turn && "text-muted-foreground",
                 CHIP_CAP_TEXT_BOX_CLASS
               )}
             >
-              {stage && turn ? (
-                <span className="hidden @min-[14.5em]/ga-col:inline">
-                  Now ·{" "}
-                </span>
-              ) : null}
-              {label}
-            </span>
-          ) : null}
-          {progress !== null ? (
-            /* Dwell: how long until the next turn takes the stage. Line colour, so it is never the neutral freshness bar. */
-            <span
-              data-slot="ga-dwell"
-              className="relative h-[calc(var(--c)*0.75)] w-[calc(var(--c)*4)] shrink-0 bg-[color-mix(in_srgb,var(--line-color)_30%,transparent)]"
-              aria-hidden
-            >
-              <span
-                className="absolute inset-y-0 left-0 bg-[var(--line-color)]"
-                style={{ width: `${Math.round(progress * 100)}%` }}
-              />
+              {turn ? <TurnLabel turn={turn} /> : item.owner}
             </span>
           ) : null}
         </span>
-        {showDest ? (
-          <span className="flex min-w-0 overflow-x-clip" aria-hidden>
-            <StationName
-              name={item.destination}
-              layout="auto"
-              maxLines={2}
-              allowAbbreviation
-              abbreviationTier={3}
-              fitBeforePaint
-              nowrap={false}
-              className={cn(
-                "line-clamp-2 text-balance [&>span>span]:[text-box:trim-both_cap_alphabetic]",
-                DEST_CLASS
-              )}
-            />
-          </span>
-        ) : null}
+        <span className="flex min-w-0 overflow-x-clip" aria-hidden>
+          <StationName
+            name={item.destination}
+            layout="auto"
+            maxLines={roomTile ? 1 : 2}
+            allowAbbreviation
+            abbreviationTier={3}
+            fitBeforePaint
+            nowrap={false}
+            className={cn(
+              "block text-balance [text-box:trim-both_cap_alphabetic]",
+              DEST_CLASS
+            )}
+          />
+        </span>
         {roomMeta ? (
           <span className={cn(QUIET_CLASS, "whitespace-nowrap")} aria-hidden>
             {arrivalsHeadingLadder(item.heading).at(-1)}
           </span>
         ) : null}
-        {!inlineMeta && !roomMeta ? (
+        {!roomTile && !roomMeta ? (
           <span
             className={cn("@container/ga-meta text-balance", QUIET_CLASS)}
             aria-hidden
@@ -255,7 +239,7 @@ const GlanceSlot = ({
   )
 }
 
-/** Freshness only: neutral, inline, short — never reads as the segment bar. */
+/** Freshness only: the one bar on screen, neutral and beside its own "Updated" time. */
 const GlanceFooter = ({ touch }: { touch: boolean }) => (
   <footer className="@container/ga-foot flex h-12 shrink-0 items-center gap-x-[length:var(--ga-foot)] text-[length:var(--ga-foot)] text-muted-foreground">
     <span className="whitespace-nowrap tabular-nums">Updated 11:50</span>
@@ -350,13 +334,13 @@ export const GlanceAnchorMock = ({
     .map((_, index) => (cycling ? (active + 1 + index) % items.length : index))
     .filter((index) => !stageIndexes.includes(index))
     .slice(0, room ? ROOM_TILES : undefined)
-  const stageTurn: SlotTurn = cycling
-    ? {
-        ordinal: Math.max(0, active) + 1,
-        count: items.length,
-        progress: touch ? null : cycle.progress,
-      }
-    : null
+  const stageAt = Math.max(0, active)
+  const dwellMs = stageAt === 0 ? ANCHOR_DWELL_MS : TURN_DWELL_MS
+  const nextInS = touch
+    ? null
+    : Math.max(1, Math.ceil(((1 - cycle.progress) * dwellMs) / 1000))
+  const turnOf = (index: number, role: "now" | "next" | "later"): SlotTurn =>
+    cycling ? { ordinal: index + 1, count: items.length, role, nextInS } : null
 
   return (
     <div
@@ -390,7 +374,7 @@ export const GlanceAnchorMock = ({
                 stage
                 room={room}
                 reveal
-                turn={stageTurn}
+                turn={turnOf(index, "now")}
               />
             ) : null
           })}
@@ -403,9 +387,7 @@ export const GlanceAnchorMock = ({
                 stage={false}
                 room={room}
                 reveal={!touch || index === tapped}
-                turn={
-                  cycling ? { ordinal: order + 2, count: items.length } : null
-                }
+                turn={turnOf(index, order === 0 ? "next" : "later")}
                 onTap={touch ? () => setTapped(index) : undefined}
               />
             ) : null

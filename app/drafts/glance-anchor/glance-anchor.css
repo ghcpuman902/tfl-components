@@ -66,17 +66,22 @@
 }
 
 /*
- * Across the room: the anchor over three two-line tiles (chip + bound, time).
- * Budget is the whole column: anchor 28u (two-line destination and its shortest bound at k 2) +
- * three 6.3u tiles + four 3u gutters (anchor minutes are 5 steps); 25.5u wide for "Walthamstow" at k 2.
+ * Across the room on a phone: the anchor over the one tile up next. A tile is
+ * chip, one-line destination, time (9.6u). Budget is the column: anchor 28u
+ * (two-line destination and its bound at ×2) + 3u + a tile. Width is not
+ * charged for "Walthamstow" at ×2; it takes the tiered short form.
  */
 .ga-inner[data-room] {
   --ga-cols: 1;
   --ga-rows: 1;
   --ga-stage-cols: 1;
   --ga-stage-rows: 1;
-  --ga-tile-w: 25.5;
-  --ga-tile-h: 56;
+  --ga-tile-w: 19;
+  --ga-tile-h: 40.6;
+}
+
+.ga-inner[data-room] .ga-grid > :nth-child(n + 3) {
+  display: none;
 }
 
 @container ga-shell (orientation: landscape) {
@@ -90,19 +95,30 @@
     --ga-rows: 2.5;
     --ga-stage-rows: 1;
   }
-  /* Anchor over two columns beside a column of three 6.3u tiles (anchor ×2.25 with its bound is 31u tall); a tile is 16u wide with "Next". */
+  /* Anchor (28u wide at ×2) beside a column of two ×1.25 tiles (17.5u wide, 27u tall). */
   .ga-inner[data-room] {
-    --ga-cols: 3;
+    --ga-cols: 2;
     --ga-rows: 1;
-    --ga-stage-cols: 2;
-    --ga-stage-rows: 3;
-    --ga-tile-w: 16;
-    --ga-tile-h: 31;
+    --ga-template: minmax(0, 28fr) minmax(0, 17.5fr);
+    --ga-stage-cols: 1;
+    --ga-stage-rows: 2;
+    --ga-tile-w: 24.25;
+    --ga-tile-h: 28;
+  }
+  .ga-inner[data-room] .ga-tile-scale {
+    --k: 1.25;
+    --ck: 1.25;
+  }
+  .ga-inner[data-room] .ga-grid > :nth-child(n + 3) {
+    display: flex;
   }
 }
 
 .ga-grid {
-  grid-template-columns: repeat(var(--ga-cols), minmax(0, 1fr));
+  grid-template-columns: var(
+    --ga-template,
+    repeat(var(--ga-cols), minmax(0, 1fr))
+  );
   /* Rows hug their text; the worst-case reserve becomes equal gaps, never a tall empty cell. */
   align-content: space-evenly;
 }
@@ -112,7 +128,13 @@
   --c: calc(var(--u) * var(--ck, 1));
 }
 
-/* The anchor: chip 1.5u, type ladder ×2 (×2.4 in landscape, to fill two tile rows), minutes 5 steps not 4 so time outweighs the destination. */
+.ga-tile-scale {
+  --ck: 1;
+  --k: 1;
+  --ga-time: 4;
+}
+
+/* The anchor: chip 1.5u, type ladder ×2 (×2.25 in landscape, to fill two tile rows), minutes 5 steps not 4 so time outweighs the destination. */
 .ga-stage-scale {
   --ck: 1.5;
   --k: 2;
@@ -125,7 +147,7 @@
 }
 
 @container ga-shell (orientation: landscape) {
-  .ga-inner .ga-stage-scale {
+  .ga-inner:not([data-room]) .ga-stage-scale {
     --k: 2.25;
   }
   .ga-inner[data-layout="household"] .ga-stage-scale {
