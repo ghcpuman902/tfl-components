@@ -76,10 +76,18 @@
   --ga-tile-h: 40.6;
 }
 
+/* A peeking strip fits 2.3 tile columns where 2 were budgeted; charge the width so "Due · then" still fits. */
+.ga-inner[data-peek]:not([data-room]) {
+  --ga-cols: 2.4;
+}
+
 @container ga-shell (orientation: landscape) {
   .ga-inner {
     --ga-cols: 4;
     --ga-rows: 2;
+  }
+  .ga-inner[data-peek]:not([data-room]) {
+    --ga-cols: 4.6;
   }
   /* Two equal ×1.5 anchors side by side over a row of four tiles. */
   .ga-inner[data-layout="pair"] {
@@ -118,6 +126,10 @@
   --ga-gap: calc(var(--u) * var(--ga-gutter));
   display: flex;
   overflow: hidden;
+  /* Cap-trimmed text hangs its descenders (the comma in "then 7, 11") below
+     the box; give the clip room so the bottom row keeps them. */
+  padding-block-end: calc(var(--u) * 0.6);
+  margin-block-end: calc(var(--u) * -0.6);
 }
 
 .ga-tiles[data-overflow="scroll"] {

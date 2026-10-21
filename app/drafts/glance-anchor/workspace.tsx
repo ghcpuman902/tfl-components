@@ -307,7 +307,7 @@ const TileArea = ({
           data-slot="ga-more"
           className={cn(
             QUIET_CLASS,
-            "absolute top-[calc(100%+var(--u)*1.5)] right-0 text-[length:calc(var(--u)*1.5)] whitespace-nowrap text-foreground tabular-nums"
+            "absolute top-[calc(100%+var(--u)*1.5)] left-0 text-[length:calc(var(--u)*1.5)] whitespace-nowrap tabular-nums"
           )}
         >
           +{more} more
@@ -361,6 +361,7 @@ export const GlanceAnchorMock = ({
         className="ga-inner box-border flex h-full flex-col gap-y-[length:var(--u)] p-[length:var(--ga-pad)]"
         data-layout={layout}
         data-room={room || undefined}
+        data-peek={(touch && tiles.length > visible) || undefined}
         style={
           {
             "--ga-pad": width < 600 ? "20px" : "24px",
