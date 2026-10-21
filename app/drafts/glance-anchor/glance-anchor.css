@@ -119,8 +119,8 @@
     --ga-template,
     repeat(var(--ga-cols), minmax(0, 1fr))
   );
-  /* Rows hug their text; the worst-case reserve becomes equal gaps, never a tall empty cell. */
-  align-content: space-evenly;
+  /* Rows hug their text 3u apart; the worst-case reserve sits around the grid, never between slots. */
+  align-content: center;
 }
 
 .ga-slot {
@@ -158,6 +158,14 @@
 /* Across the room the type carries the anchor; a lighter chip leaves the minutes heaviest. */
 .ga-inner[data-room] .ga-stage-scale {
   --ck: 1.25;
+}
+
+/* Where the anchor spans two tile rows, the second row sits on the anchor's bottom edge. */
+@container ga-shell (orientation: landscape) {
+  .ga-inner[data-layout="anchor"]:not([data-room]) .ga-grid > :nth-child(n + 4),
+  .ga-inner[data-room] .ga-grid > :nth-child(3) {
+    align-self: end;
+  }
 }
 
 .ga-slot[data-slot="ga-stage"] {

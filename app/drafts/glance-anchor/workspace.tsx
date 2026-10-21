@@ -1,5 +1,6 @@
 "use client"
 
+import { RefreshCw } from "lucide-react"
 import { useEffect, useMemo, useState, type CSSProperties } from "react"
 import {
   ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
@@ -82,15 +83,19 @@ const TurnLabel = ({ turn }: { turn: NonNullable<SlotTurn> }) => {
   if (turn.role === "now")
     return (
       <>
-        <span className="hidden @min-[14.5em]/ga-col:inline">Now · </span>
-        {place}
+        <span className="hidden @min-[13em]/ga-col:inline">
+          Now showing {place}
+        </span>
+        <span className="@min-[13em]/ga-col:hidden">
+          Now · {turn.ordinal}/{turn.count}
+        </span>
       </>
     )
   if (turn.role === "next" && turn.nextInS !== null)
     return (
       <>
-        Next in {turn.nextInS}s
-        <span className="hidden @min-[20em]/ga-col:inline"> · {place}</span>
+        Up next in {turn.nextInS}s
+        <span className="hidden @min-[21em]/ga-col:inline"> · {place}</span>
       </>
     )
   return <>{place}</>
@@ -98,7 +103,7 @@ const TurnLabel = ({ turn }: { turn: NonNullable<SlotTurn> }) => {
 
 const TimeLockup = ({ time, then }: { time: string; then: string | null }) => (
   <span
-    className="flex items-end gap-x-[calc(var(--s)*0.75)] font-semibold tabular-nums"
+    className="flex items-end gap-x-[length:var(--s)] font-semibold tabular-nums"
     aria-hidden
   >
     <span
@@ -244,7 +249,7 @@ const GlanceSlot = ({
 }
 
 /** Freshness only: the one bar on screen, neutral and beside its own "Updated" time. */
-const GlanceFooter = ({ touch }: { touch: boolean }) => (
+const GlanceFooter = () => (
   <footer className="@container/ga-foot flex h-12 shrink-0 items-center gap-x-[length:var(--ga-foot)] text-[length:var(--ga-foot)] text-muted-foreground">
     <span className="whitespace-nowrap tabular-nums">Updated 11:50</span>
     <span
@@ -256,14 +261,6 @@ const GlanceFooter = ({ touch }: { touch: boolean }) => (
         style={{ width: `${FRESHNESS * 100}%` }}
       />
     </span>
-    {touch ? (
-      <button
-        type="button"
-        className="h-12 whitespace-nowrap text-foreground underline-offset-4 hover:underline"
-      >
-        Refresh
-      </button>
-    ) : null}
     <span className="ml-auto whitespace-nowrap">
       <span className="hidden @min-[24rem]/ga-foot:inline">Powered by </span>
       TfL Open Data.
@@ -367,6 +364,16 @@ export const GlanceAnchorMock = ({
           <h1 className="tfl-title min-w-0 flex-1 text-[length:var(--ga-title)] leading-tight [font-weight:var(--tfl-title-weight,400)] text-balance [font-synthesis:none]">
             <StationNameTitle name="Oxford Circus" />
           </h1>
+          {/* Touch only: a manual refresh in the header, so the footer is just freshness and credit. */}
+          {touch ? (
+            <button
+              type="button"
+              className="inline-flex h-12 shrink-0 items-center gap-x-[calc(var(--ga-foot)*0.375)] text-[length:var(--ga-foot)] whitespace-nowrap underline-offset-4 hover:underline"
+            >
+              <RefreshCw className="size-[1em] shrink-0" aria-hidden />
+              Refresh
+            </button>
+          ) : null}
         </header>
         <div className="ga-grid grid min-h-0 flex-1 grid-flow-row-dense gap-[calc(var(--u)*var(--ga-gutter))]">
           {stageIndexes.map((index) => {
@@ -397,7 +404,7 @@ export const GlanceAnchorMock = ({
             ) : null
           })}
         </div>
-        <GlanceFooter touch={touch} />
+        <GlanceFooter />
       </div>
     </div>
   )
