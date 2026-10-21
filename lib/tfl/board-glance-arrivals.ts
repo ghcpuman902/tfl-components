@@ -1,11 +1,20 @@
 /**
- * Glance Board: flat next-departures prep for room-distance reading.
- * Few huge rows, not every line×bound group. Aspect-agnostic.
+ * Glance Board: room-distance next departures. Predictions group by
+ * line + direction into fixed positions (board priority, then line order,
+ * then canonical line and bound order — never by time). The first group is
+ * the anchor (or a pinned one); a "pair" board shows the first two as equals;
+ * the rest are quarter tiles that scroll (touch) or pan (unattended).
  */
 
-import type { RealtimePrediction } from "tfl-ts"
+import type {
+  PredictionWithSharedTrackIdentity,
+  RealtimePrediction,
+} from "tfl-ts"
 import {
+  ARRIVALS_BOUND_IDS,
+  compareArrivalsBounds,
   formatBoundHeading,
+  isUnknownArrivalsPlatform,
   parseArrivalsPlatformLabel,
   parseArrivalsRailDesignation,
   parseCompassBoundId,
@@ -15,35 +24,27 @@ import {
   isExpiredArrivalPrediction,
   type ArrivalsPreparedRow,
 } from "@/lib/tfl/arrivals-prepare"
-import { chunkWithFinalBackfill } from "@/lib/tfl/arrivals-unattended-frames"
+import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort"
+import { getLineNameTiers } from "@/lib/tfl/line-names"
+import type { GlancePriorityItem } from "@/lib/tfl/board-settings"
 
-/** Default glance page: two trains on square / landscape. */
-export const BOARD_GLANCE_PAGE_SIZE = 2
-/** Tall containers can hold a third huge row. */
-export const BOARD_GLANCE_TALL_PAGE_SIZE = 3
-/** Cap how many next trains enter the rotate pool. */
-export const BOARD_GLANCE_MAX_ROWS = 24
-/**
- * Height/width of the glance shell at or above this uses the tall page size.
- * Same budget as `--glance-u` in globals.css: three rows (3 × 11.75u + 2u plus
- * the roundel tile and footer) fit at full width scale (4.5cqi) from ~1.6–1.9.
- * Phone portrait (~2.16) gets three rows; iPad portrait and short phones keep two.
- */
-export const BOARD_GLANCE_TALL_ASPECT = 1.8
+export {
+  parseGlancePriorityItem,
+  serializeGlancePriorityItem,
+  type GlancePriorityItem,
+} from "@/lib/tfl/board-settings"
 
-export const resolveGlanceArrivalsPageSize = (
-  aspectHeightOverWidth?: number,
-  override?: number
-): number => {
-  if (typeof override === "number" && override > 0) return override
-  if (
-    typeof aspectHeightOverWidth === "number" &&
-    aspectHeightOverWidth >= BOARD_GLANCE_TALL_ASPECT
-  ) {
-    return BOARD_GLANCE_TALL_PAGE_SIZE
-  }
-  return BOARD_GLANCE_PAGE_SIZE
-}
+/** Cap how many predictions enter the glance grouping. */
+export const BOARD_GLANCE_MAX_ROWS = 48
+
+/** Unattended overflow: hold each column of tiles, then pan one column. */
+export const GLANCE_PAN_HOLD_MS = 10_000
+export const GLANCE_PAN_MOVE_MS = 1_600
+
+/** Whole tiles the anchor and pair layouts show at once (2 × 2, or 1 × 4 under a landscape pair). */
+export const GLANCE_VISIBLE_TILES = 4
+/** Tile rows the strip can use; clones are padded to whole columns of the larger. */
+export const GLANCE_MAX_TILE_ROWS = 2
 
 const arrivalIdentityKey = (arrival: RealtimePrediction, index: number) => {
   const parts = [
@@ -61,10 +62,7 @@ const arrivalIdentityKey = (arrival: RealtimePrediction, index: number) => {
   return base.replace(/\|+/g, "|").replace(/^\||\|$/g, "") || `row-${index}`
 }
 
-/**
- * Sort all predictions by time-to-station (soonest first). No line/bound
- * grouping — the glance board pages this flat list.
- */
+/** All live predictions by time-to-station (soonest first), before grouping. */
 export const prepareGlanceArrivals = ({
   data,
   now,
@@ -106,44 +104,207 @@ export const formatGlanceArrivalMeta = (
   })
 }
 
-export type GlanceArrivalFrame = {
-  id: string
+/** Line identity a glance group keys on: the exclusive shared-track line, else every shared line, else the raw line. */
+export const glanceLineKey = (arrival: RealtimePrediction): string => {
+  const tagged = arrival as PredictionWithSharedTrackIdentity
+  const identity = tagged.sharedTrackIdentity
+  if (identity?.confidence === "exclusive-segment") {
+    const canonical = identity.canonicalLineId.trim()
+    if (canonical) return canonical.toLowerCase()
+  }
+  if (identity?.confidence === "ambiguous" && identity.rawLineIds.length >= 2) {
+    return [...identity.rawLineIds]
+      .map((id) => id.trim().toLowerCase())
+      .filter(Boolean)
+      .sort()
+      .join("+")
+  }
+  return arrival.lineId?.trim().toLowerCase() || "unknown"
+}
+
+/** Direction a glance group keys on: compass bound, Inner / Outer Rail, else the platform, else unknown. */
+export const glanceBoundKey = (platformName?: string): string => {
+  const compass = parseCompassBoundId(platformName)
+  if (compass) return compass
+  const rail = parseArrivalsRailDesignation(platformName)
+  if (rail) return rail
+  const platform = parseArrivalsPlatformLabel(platformName)
+  if (platform) return `platform-${platform.toLowerCase()}`
+  return "unknown"
+}
+
+export type GlanceGroup = {
+  /** `line:bound`, e.g. `victoria:northbound`. Stable across polls. */
+  key: string
+  lineKey: string
+  boundKey: string
+  /** Soonest first; never empty. */
   rows: readonly ArrivalsPreparedRow[]
 }
 
-/**
- * Chunk the flat next-train list into unattended frames.
- * When `pinFirst`, the soonest train stays on every frame and the rest rotate.
- */
-export const buildGlanceArrivalFrames = (
+const priorityRank = (
+  group: Pick<GlanceGroup, "lineKey" | "boundKey">,
+  priority: readonly GlancePriorityItem[]
+): number => {
+  const index = priority.findIndex(
+    (item) =>
+      item.line === group.lineKey &&
+      (item.bound === undefined || item.bound === group.boundKey)
+  )
+  return index === -1 ? Number.POSITIVE_INFINITY : index
+}
+
+const lineOrderRank = (lineKey: string, lineOrder: readonly string[]) => {
+  const index = lineOrder.findIndex((id) => id.trim().toLowerCase() === lineKey)
+  return index === -1 ? Number.POSITIVE_INFINITY : index
+}
+
+const lineName = (lineKey: string) =>
+  lineKey.includes("+") ? lineKey : getLineNameTiers(lineKey).full
+
+const boundOrder = (boundKey: string): string | null =>
+  ARRIVALS_BOUND_IDS.includes(boundKey as (typeof ARRIVALS_BOUND_IDS)[number])
+    ? boundKey
+    : null
+
+/** Fixed position order: priority, then `a.lines`, then canonical line, then bound. Times never reorder groups. */
+export const compareGlanceGroups = (
+  a: Pick<GlanceGroup, "key" | "lineKey" | "boundKey">,
+  b: Pick<GlanceGroup, "key" | "lineKey" | "boundKey">,
+  priority: readonly GlancePriorityItem[] = [],
+  lineOrder: readonly string[] = []
+): number => {
+  const byPriority = priorityRank(a, priority) - priorityRank(b, priority)
+  if (byPriority !== 0 && !Number.isNaN(byPriority)) return byPriority
+  const byLineOrder =
+    lineOrderRank(a.lineKey, lineOrder) - lineOrderRank(b.lineKey, lineOrder)
+  if (byLineOrder !== 0 && !Number.isNaN(byLineOrder)) return byLineOrder
+  if (a.lineKey !== b.lineKey) {
+    const byLine = compareArrivalsLines(
+      { lineId: a.lineKey, lineName: lineName(a.lineKey) },
+      { lineId: b.lineKey, lineName: lineName(b.lineKey) }
+    )
+    if (byLine !== 0) return byLine
+  }
+  const byBound = compareArrivalsBounds(
+    boundOrder(a.boundKey),
+    boundOrder(b.boundKey)
+  )
+  if (byBound !== 0) return byBound
+  return a.key.localeCompare(b.key)
+}
+
+/** Group soonest-first rows by line + direction, in fixed position order. */
+export const groupGlanceArrivals = (
   rows: readonly ArrivalsPreparedRow[],
-  pageSize: number,
-  options?: { pinFirst?: boolean }
-): GlanceArrivalFrame[] => {
-  if (pageSize <= 0) {
-    return rows.length
-      ? [{ id: rows.map((r) => r.key).join("|"), rows: [...rows] }]
-      : []
+  options: {
+    priority?: readonly GlancePriorityItem[]
+    lineOrder?: readonly string[]
+  } = {}
+): GlanceGroup[] => {
+  const groups = new Map<
+    string,
+    { lineKey: string; boundKey: string; rows: ArrivalsPreparedRow[] }
+  >()
+  for (const row of rows) {
+    const lineKey = glanceLineKey(row.arrival)
+    const boundKey = glanceBoundKey(row.arrival.platformName)
+    const key = `${lineKey}:${boundKey}`
+    const group = groups.get(key)
+    if (group) group.rows.push(row)
+    else groups.set(key, { lineKey, boundKey, rows: [row] })
   }
-  if (rows.length === 0) return []
+  return [...groups.entries()]
+    .map(([key, group]) => ({ key, ...group }))
+    .sort((a, b) =>
+      compareGlanceGroups(a, b, options.priority, options.lineOrder)
+    )
+}
 
-  const pinFirst = options?.pinFirst !== false
-  if (!pinFirst || pageSize === 1 || rows.length <= pageSize) {
-    return chunkWithFinalBackfill(rows, pageSize).map((chunk) => ({
-      id: chunk.map((r) => r.key).join("|"),
-      rows: chunk,
-    }))
+export type GlanceLayout = {
+  layout: "anchor" | "pair"
+  anchors: readonly GlanceGroup[]
+  tiles: readonly GlanceGroup[]
+}
+
+/**
+ * The anchor is the first group by position, or the one a tap pinned.
+ * `pair` shows two equal anchors (the pinned or first, then the next).
+ */
+export const resolveGlanceLayout = (
+  groups: readonly GlanceGroup[],
+  options: { pinnedKey?: string | null; pair?: boolean } = {}
+): GlanceLayout => {
+  const pinned = options.pinnedKey
+    ? groups.find((group) => group.key === options.pinnedKey)
+    : undefined
+  const first = pinned ?? groups[0]
+  if (!first) return { layout: "anchor", anchors: [], tiles: [] }
+  const rest = groups.filter((group) => group !== first)
+  const pair = Boolean(options.pair) && rest.length > 0
+  const anchors = pair ? [first, rest[0]!] : [first]
+  return {
+    layout: pair ? "pair" : "anchor",
+    anchors,
+    tiles: rest.slice(pair ? 1 : 0),
   }
+}
 
-  const [first, ...rest] = rows
-  if (!first) return []
-  const windowSize = pageSize - 1
-  const windows = chunkWithFinalBackfill(rest, windowSize)
-  return windows.map((chunk) => {
-    const frameRows = [first, ...chunk]
-    return {
-      id: frameRows.map((r) => r.key).join("|"),
-      rows: frameRows,
-    }
-  })
+/**
+ * Unattended strip: real tiles, blanks to a whole column of the tallest strip,
+ * then the first page again so the pan can run forward and snap back unseen.
+ * `null` is a blank (CSS hides it where the strip has a single row).
+ */
+export const buildGlancePanStrip = <T>(
+  tiles: readonly T[],
+  visible = GLANCE_VISIBLE_TILES,
+  rows = GLANCE_MAX_TILE_ROWS
+): (T | null)[] => {
+  if (tiles.length <= visible) return [...tiles]
+  const pad = (rows - (tiles.length % rows)) % rows
+  return [
+    ...tiles,
+    ...Array.from({ length: pad }, () => null),
+    ...tiles.slice(0, visible),
+  ]
+}
+
+/** Columns the real tiles fill at this row count (the pan loops after the last). */
+export const glancePanColumns = (tileCount: number, rows: number): number =>
+  rows > 0 ? Math.ceil(tileCount / rows) : 0
+
+/**
+ * Next pan step. Past the last real column the strip shows the cloned first
+ * page; `snap` tells the caller to jump back to 0 without a transition.
+ */
+export const nextGlancePanOffset = (
+  offset: number,
+  columns: number
+): { offset: number; snap: boolean } => {
+  if (columns <= 0) return { offset: 0, snap: false }
+  if (offset >= columns) return { offset: 0, snap: true }
+  return { offset: offset + 1, snap: false }
+}
+
+/** "Due", minutes, or "Sched" for TfL's unknown platform rows. */
+export const formatGlanceCountdown = (
+  seconds?: number,
+  platformName?: string
+): string => {
+  if (isUnknownArrivalsPlatform(platformName)) return "Sched"
+  if (seconds === undefined || seconds < 0) return "—"
+  if (seconds < 60) return "Due"
+  return `${Math.floor(seconds / 60)}`
+}
+
+/** "then 4, 9" from the group's second and third trains (minutes, Due as 0). */
+export const formatGlanceThen = (
+  rows: readonly ArrivalsPreparedRow[]
+): string | null => {
+  const rest = rows
+    .slice(1, 3)
+    .map((row) => row.arrival.timeToStation)
+    .filter((value): value is number => typeof value === "number" && value >= 0)
+    .map((value) => `${Math.floor(value / 60)}`)
+  return rest.length ? `then ${rest.join(", ")}` : null
 }

@@ -525,3 +525,25 @@ describe("normalizeBoardHash", () => {
     assert.equal(normalizeBoardHash("#"), "")
   })
 })
+
+describe("glance priority and pair", () => {
+  it("parses the ordered priority and the pair flag", () => {
+    const config = parseBoardConfig(
+      "stop=940GZZLUOXC&view=glance&a.priority=victoria:sb,central&a.pair=true"
+    )
+    assert.deepEqual(config.arrivals.priority, [
+      { line: "victoria", bound: "southbound" },
+      { line: "central" },
+    ])
+    assert.equal(config.arrivals.pair, true)
+  })
+
+  it("normalises once and is then stable (no hash rewrite loop)", () => {
+    const once = normalizeBoardHash(
+      "#stop=940GZZLUOXC&view=glance&a.priority=victoria:sb&a.pair=1"
+    )
+    assert.equal(normalizeBoardHash(once), once)
+    assert.equal(once.match(/a\.pair=/g)?.length, 1)
+    assert.equal(once.match(/a\.priority=/g)?.length, 1)
+  })
+})

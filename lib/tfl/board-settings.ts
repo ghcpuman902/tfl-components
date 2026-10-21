@@ -211,6 +211,42 @@ export const parseLineIdItem = (raw: string): string | undefined => {
 export const serializeLineIdItem = (value: string): string => value
 
 /** Split a comma list; accepts literal commas and `%2C`-decoded forms. */
+/** One board priority entry: a line, optionally narrowed to one direction. */
+export type GlancePriorityItem = { line: string; bound?: string }
+
+const BOUND_SHORT: Record<string, string> = {
+  nb: "northbound",
+  sb: "southbound",
+  eb: "eastbound",
+  wb: "westbound",
+}
+
+/** Parse one `a.priority` item: `victoria:nb`, `central:westbound`, `circle:inner` or a bare line id. */
+export const parseGlancePriorityItem = (
+  raw: string
+): GlancePriorityItem | undefined => {
+  const [linePart = "", boundPart] = raw.trim().toLowerCase().split(":")
+  const line = linePart.trim()
+  if (!/^[a-z0-9][a-z0-9+-]*$/.test(line)) return undefined
+  if (boundPart === undefined || boundPart.trim() === "") return { line }
+  const short = boundPart.trim()
+  const bound =
+    BOUND_SHORT[short] ??
+    (["northbound", "southbound", "eastbound", "westbound"].includes(short)
+      ? short
+      : undefined) ??
+    (short === "inner" ||
+    short === "outer" ||
+    /^platform-[a-z0-9]+$/.test(short)
+      ? short
+      : undefined)
+  return bound ? { line, bound } : undefined
+}
+
+export const serializeGlancePriorityItem = (
+  item: GlancePriorityItem
+): string => (item.bound ? `${item.line}:${item.bound}` : item.line)
+
 export const splitCommaList = (raw: string): string[] =>
   raw.split(",").map((part) => part.trim())
 
@@ -541,6 +577,49 @@ export const BOARD_SETTINGS = {
     },
   } satisfies ScalarSetting<boolean>,
 
+  /**
+   * Glance priority: line + direction items (`victoria:nb`, `central`), most
+   * important first. The first is the anchor; the rest keep these positions
+   * ahead of `a.lines` order. URL only (tap-to-pin covers touch boards).
+   */
+  arrivalsPriority: {
+    kind: "list",
+    param: "a.priority",
+    scope: "arrivals",
+    defaultValue: [] as readonly GlancePriorityItem[],
+    parseItem: parseGlancePriorityItem,
+    serializeItem: serializeGlancePriorityItem,
+    isDefault: (value: readonly GlancePriorityItem[]) => value.length === 0,
+    url: true,
+    form: false,
+    ui: {
+      label: "Glance priority",
+      help: "Line or line:bound, most important first. The first is the large anchor.",
+      control: "text",
+    },
+  } satisfies ListSetting<readonly GlancePriorityItem[]>,
+
+  /** Glance: the first two priority entries are equally important — two equal large slots. */
+  arrivalsPair: {
+    kind: "scalar",
+    param: "a.pair",
+    scope: "arrivals",
+    defaultValue: false,
+    parse: parseBooleanFlag,
+    serialize: (value: boolean) => (value ? "true" : "false"),
+    isDefault: (value: boolean) => !value,
+    url: true,
+    form: false,
+    ui: {
+      label: "Two equal anchors",
+      control: "select",
+      options: [
+        { value: "false", label: "One anchor" },
+        { value: "true", label: "Pair" },
+      ],
+    },
+  } satisfies ScalarSetting<boolean>,
+
   statusSurface: {
     kind: "scalar",
     param: "s.surface",
@@ -708,4 +787,31 @@ export const serializeArrivalsLines = (
     ordered.push(id)
   }
   return ordered.length > 0 ? ordered.join(",") : undefined
+}
+
+/** Parse `a.priority`: ordered, de-duplicated line[:bound] items. */
+export const parseGlancePriority = (
+  raw: string | null
+): readonly GlancePriorityItem[] | undefined => {
+  if (raw === null) return undefined
+  const seen = new Set<string>()
+  const ordered: GlancePriorityItem[] = []
+  for (const part of splitCommaList(raw)) {
+    const item = parseGlancePriorityItem(part)
+    if (!item) continue
+    const id = serializeGlancePriorityItem(item)
+    if (seen.has(id)) continue
+    seen.add(id)
+    ordered.push(item)
+  }
+  return ordered.length > 0 ? ordered : undefined
+}
+
+export const serializeGlancePriority = (
+  value: readonly GlancePriorityItem[] | undefined
+): string | undefined => {
+  if (!value?.length) return undefined
+  return parseGlancePriority(value.map(serializeGlancePriorityItem).join(","))
+    ?.map(serializeGlancePriorityItem)
+    .join(",")
 }

@@ -10,6 +10,7 @@
 import {
   BOARD_SETTINGS,
   parseArrivalsLines,
+  parseGlancePriority,
   parseArrivalsRows,
   parseBehaviour,
   parseBooleanFlag,
@@ -22,6 +23,8 @@ import {
   parseStatusSurface,
   parseView,
   serializeArrivalsLines,
+  serializeGlancePriority,
+  type GlancePriorityItem,
   serializeArrivalsRows,
   type BoardBehaviour,
   type BoardCycleSurface,
@@ -65,6 +68,10 @@ export type BoardArrivalsConfig = {
    */
   lineOrder?: readonly string[]
   pinFirst?: boolean
+  /** Glance: line + direction priority; first is the anchor. */
+  priority?: readonly GlancePriorityItem[]
+  /** Glance: first two priority entries shown as two equal anchors. */
+  pair?: boolean
 }
 
 export type BoardSlotsConfig = {
@@ -165,6 +172,10 @@ export const parseBoardConfig = (
   if (lineOrder !== undefined) arrivals.lineOrder = lineOrder
   const pinFirst = parseBooleanFlag(params.get("a.pinFirst") ?? "")
   if (pinFirst !== undefined) arrivals.pinFirst = pinFirst
+  const priority = parseGlancePriority(params.get("a.priority"))
+  if (priority !== undefined) arrivals.priority = priority
+  const pair = parseBooleanFlag(params.get("a.pair") ?? "")
+  if (pair !== undefined) arrivals.pair = pair
 
   const slots: BoardSlotsConfig = {}
   const hasP1 = params.has("p1")
@@ -241,6 +252,8 @@ const KNOWN_HASH_PARAMS = new Set<string>([
   BOARD_SETTINGS.arrivalsRows.param,
   BOARD_SETTINGS.arrivalsLines.param,
   BOARD_SETTINGS.arrivalsPinFirst.param,
+  BOARD_SETTINGS.arrivalsPriority.param,
+  BOARD_SETTINGS.arrivalsPair.param,
   BOARD_SETTINGS.busStop.param,
   BOARD_SETTINGS.busRoutes.param,
   BOARD_SETTINGS.busRows.param,
@@ -260,7 +273,9 @@ const KNOWN_HASH_PARAMS = new Set<string>([
 ])
 
 /** True when the fragment has at least one known board param (not just junk). */
-export const hashHasBoardConfig = (input: string | URLSearchParams): boolean => {
+export const hashHasBoardConfig = (
+  input: string | URLSearchParams
+): boolean => {
   const params = paramsFromInput(input)
   for (const key of params.keys()) {
     if (KNOWN_HASH_PARAMS.has(key)) return true
@@ -405,6 +420,30 @@ export const describeBoardHrefSegments = (
     segments.push({
       setting: "arrivalsLines",
       text: encodeSegment(BOARD_SETTINGS.arrivalsLines.param, linesSerialized),
+    })
+  }
+
+  const prioritySerialized = serializeGlancePriority(merged.arrivals.priority)
+  if (prioritySerialized !== undefined) {
+    segments.push({
+      setting: "arrivalsPriority",
+      text: encodeSegment(
+        BOARD_SETTINGS.arrivalsPriority.param,
+        prioritySerialized
+      ),
+    })
+  }
+
+  if (
+    merged.arrivals.pair !== undefined &&
+    !BOARD_SETTINGS.arrivalsPair.isDefault(merged.arrivals.pair)
+  ) {
+    segments.push({
+      setting: "arrivalsPair",
+      text: encodeSegment(
+        BOARD_SETTINGS.arrivalsPair.param,
+        BOARD_SETTINGS.arrivalsPair.serialize(merged.arrivals.pair)
+      ),
     })
   }
 
