@@ -16,6 +16,7 @@ const STATIC_PATHS = [
   "/docs/ipad-dashboard",
   "/docs/tv",
   "/compare",
+  "/docs/apple-homeview",
   "/docs/explorer",
   "/licence",
   "/credits",

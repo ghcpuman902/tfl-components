@@ -43,6 +43,23 @@ describe("parseBoardConfig", () => {
     assert.equal(config.behaviour, "interactive")
   })
 
+  it("parses view=glance", () => {
+    const config = parseBoardConfig("view=glance")
+    assert.equal(config.view, "glance")
+  })
+
+  it("maps legacy layout=square to view=glance", () => {
+    const config = parseBoardConfig("layout=square&density=far")
+    assert.equal(config.view, "glance")
+    assert.equal("layout" in config, false)
+    assert.equal("density" in config, false)
+  })
+
+  it("ignores invalid view and legacy layout", () => {
+    const config = parseBoardConfig("view=wide&layout=near")
+    assert.equal(config.view, undefined)
+  })
+
   it("ignores retired a.pinAdvance", () => {
     const config = parseBoardConfig(
       "stop=940GZZLUOXC&a.pinAdvance=jump&a.pinFirst=false"
@@ -237,6 +254,24 @@ describe("buildBoardHref", () => {
     assert.equal(
       buildBoardHref({ behaviour: "interactive", stop: "940GZZLUOXC" }),
       `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`
+    )
+  })
+
+  it("serializes view=glance", () => {
+    assert.equal(
+      buildBoardHref({
+        stop: "940GZZLUOXC",
+        view: "glance",
+        behaviour: "unattended",
+      }),
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&behaviour=unattended&view=glance`
+    )
+  })
+
+  it("does not serialize legacy layout or density", () => {
+    assert.equal(
+      buildBoardHref({ stop: "940GZZLUOXC", view: "glance" }),
+      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&view=glance`
     )
   })
 

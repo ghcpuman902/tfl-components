@@ -36,6 +36,10 @@ type BoardViewFooterProps = {
   sources?: readonly BoardPollSource[]
   onRefresh?: () => void
   refreshing?: boolean
+  /** True after wake/visibility until a newer fetch lands. */
+  stale?: boolean
+  /** Square / room-distance chrome — larger tap targets, quieter credit. */
+  compact?: boolean
   editHref?: string
   fullscreenLabel?: "Full screen" | "Exit full screen"
   onFullscreen?: () => void
@@ -77,6 +81,8 @@ export const BoardViewFooter = ({
   sources = [],
   onRefresh,
   refreshing = false,
+  stale = false,
+  compact = false,
   editHref,
   fullscreenLabel,
   onFullscreen,
@@ -102,29 +108,45 @@ export const BoardViewFooter = ({
   const remainingSec =
     dueAt != null && ticking && now != null ? Math.max(0, Math.ceil((dueAt - now) / 1_000)) : null
 
+  const actionClass = compact
+    ? "inline-flex min-h-12 min-w-12 items-center justify-center px-3 underline-offset-4 hover:text-foreground hover:underline disabled:cursor-progress disabled:no-underline"
+    : "underline-offset-4 hover:text-foreground hover:underline disabled:cursor-progress disabled:no-underline"
+
   return (
-    <footer className="mt-[calc(var(--arrivals-row)/2)] max-w-3xl text-sm text-muted-foreground">
+    <footer
+      className={
+        compact
+          ? "mt-auto shrink-0 pt-3 text-xl tabular-nums text-muted-foreground"
+          : "mt-[calc(var(--arrivals-row)/2)] max-w-3xl text-sm text-muted-foreground"
+      }
+    >
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        {fetchedAt != null ? (
-          <span>Updated {formatUpdatedClock(fetchedAt)}</span>
+        {stale ? (
+          <span className="font-medium text-amber-600 dark:text-amber-400" role="status">
+            Updating…
+          </span>
         ) : null}
-        {remainingSec != null ? <span>Next in {remainingSec}s</span> : null}
+        {fetchedAt != null ? (
+          <span>
+            {stale ? "Last updated" : "Updated"} {formatUpdatedClock(fetchedAt)}
+          </span>
+        ) : null}
+        {!stale && remainingSec != null ? (
+          <span>Next in {remainingSec}s</span>
+        ) : null}
         {onRefresh ? (
           <button
             type="button"
             onClick={onRefresh}
             disabled={refreshing}
             aria-busy={refreshing || undefined}
-            className="underline-offset-4 hover:text-foreground hover:underline disabled:cursor-progress disabled:no-underline"
+            className={actionClass}
           >
             Refresh
           </button>
         ) : null}
         {editHref ? (
-          <Link
-            href={editHref}
-            className="underline-offset-4 hover:text-foreground hover:underline"
-          >
+          <Link href={editHref} className={actionClass}>
             Edit board
           </Link>
         ) : null}
@@ -132,7 +154,7 @@ export const BoardViewFooter = ({
           <button
             type="button"
             onClick={onFullscreen}
-            className="underline-offset-4 hover:text-foreground hover:underline"
+            className={actionClass}
           >
             {fullscreenLabel}
           </button>
@@ -141,7 +163,7 @@ export const BoardViewFooter = ({
           <button
             type="button"
             onClick={onAddToHomeScreen}
-            className="underline-offset-4 hover:text-foreground hover:underline"
+            className={actionClass}
           >
             Add to Home Screen
           </button>
@@ -150,7 +172,7 @@ export const BoardViewFooter = ({
           <button
             type="button"
             onClick={onChromiumInstall}
-            className="underline-offset-4 hover:text-foreground hover:underline"
+            className={actionClass}
           >
             Install
           </button>
@@ -161,17 +183,26 @@ export const BoardViewFooter = ({
           {fullscreenError}
         </p>
       ) : null}
-      <p>
-        Powered by{" "}
-        <FooterLink href={TFL_OPEN_DATA_URL}>TfL Open Data</FooterLink>. Contains
-        OS data © Crown copyright and database rights.
-      </p>
-      <p>
-        Not affiliated with or endorsed by Transport for London. Built with{" "}
-        <FooterLink href={TFL_TS_URL}>tfl-ts</FooterLink>. Made by{" "}
-        <FooterLink href={SITE_AUTHOR.url}>{SITE_AUTHOR.name}</FooterLink>.{" "}
-        <FooterLink href={SITE_AUTHOR.coffeeUrl}>Buy me a coffee ☕</FooterLink>
-      </p>
+      {compact ? (
+        <p className="mt-1 text-base">
+          Powered by{" "}
+          <FooterLink href={TFL_OPEN_DATA_URL}>TfL Open Data</FooterLink>.
+        </p>
+      ) : (
+        <>
+          <p>
+            Powered by{" "}
+            <FooterLink href={TFL_OPEN_DATA_URL}>TfL Open Data</FooterLink>.
+            Contains OS data © Crown copyright and database rights.
+          </p>
+          <p>
+            Not affiliated with or endorsed by Transport for London. Built with{" "}
+            <FooterLink href={TFL_TS_URL}>tfl-ts</FooterLink>. Made by{" "}
+            <FooterLink href={SITE_AUTHOR.url}>{SITE_AUTHOR.name}</FooterLink>.{" "}
+            <FooterLink href={SITE_AUTHOR.coffeeUrl}>Buy me a coffee ☕</FooterLink>
+          </p>
+        </>
+      )}
     </footer>
   )
 }

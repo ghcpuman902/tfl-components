@@ -40,7 +40,7 @@ export type AnalyticsReferrerCategory =
 export type AnalyticsKeyMode = "own" | "shared" | "skipped"
 export type AnalyticsLandingVariant = "room" | "simple" | "control"
 export type AnalyticsHeroVariant = HeroVariantId
-export type AnalyticsScreenProfile = "small" | "large"
+export type AnalyticsScreenProfile = "small" | "large" | "square"
 export type AnalyticsBoardStage = 1 | 2 | 3 | 4 | 5
 
 export const ANALYTICS_ALLOWED_KEYS = [

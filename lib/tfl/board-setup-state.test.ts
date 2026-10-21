@@ -87,17 +87,22 @@ describe("board setup draft", () => {
     assert.equal(detectScreenProfile(1280, 800).orientation, "landscape")
     assert.equal(detectScreenProfile(1280, 800).profile, "large")
     assert.equal(detectScreenProfile(768, 1024).profile, "large")
+    assert.equal(detectScreenProfile(1088, 1088).profile, "square")
   })
 
   it("maps screen profile to a fixed preview frame", () => {
     const small = previewFrameForProfile("small")
     const large = previewFrameForProfile("large")
+    const square = previewFrameForProfile("square")
     assert.equal(small.width, 390)
     assert.equal(small.height, 844)
     assert.equal(small.chrome, "phone")
     assert.equal(large.width, 1280)
     assert.equal(large.height, 953)
     assert.equal(large.density, "roomy")
+    assert.equal(square.width, 1088)
+    assert.equal(square.height, 1088)
+    assert.equal(square.density, "far")
   })
 
   it("maps a live board config into a completed Ready-stage draft", () => {

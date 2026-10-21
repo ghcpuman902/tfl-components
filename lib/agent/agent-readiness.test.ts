@@ -109,6 +109,8 @@ test("homepage and llms.txt contain substantial, task-oriented Markdown", () => 
   assert.match(LLMS_TEXT, /zero-install hosted web app/)
   assert.match(LLMS_TEXT, /\/board\/view/)
   assert.match(LLMS_TEXT, /\/docs\/ipad-dashboard/)
+  assert.match(LLMS_TEXT, /\/docs\/apple-homeview/)
+  assert.match(LLMS_TEXT, /HomeView/)
   assert.match(LLMS_TEXT, /Home Assistant/)
   assert.match(LLMS_TEXT, /Unified API/)
   assert.match(

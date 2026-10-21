@@ -50,6 +50,7 @@ The tfl-ts npm package installs the \`tfl\` CLI. After \`pnpm add tfl-ts\`, run 
 - [iPad wall display](${SITE_URL}/docs/ipad-dashboard): Use an old iPad as a London departure board. Safari, no native app.
 - [TV display](${SITE_URL}/docs/tv): Put the same Board on a spare TV or monitor through its web browser.
 - [Board compared](${SITE_URL}/compare): Board next to TfL Go, Stationly, TubeBoard, a Home Assistant kiosk, DAKboard, a DIY Raspberry Pi build and Desktop Departures, with sources.
+- [Board in HomeView Safari](${SITE_URL}/docs/apple-homeview): Glance mode Board for Apple HomeView's Safari tab. Not an always-on wall appliance.
 - [Hosted Board](${SITE_URL}/board): Configure a full-screen arrivals and status display. The rendered page is ${SITE_URL}/board/view.
 - [Get started](${SITE_URL}/docs): Installation and data-to-UI examples.
 - [Component catalogue](${SITE_URL}/docs/components): Boards, maps, line strips, labels, chips, and foundations.

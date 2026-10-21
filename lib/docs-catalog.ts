@@ -221,6 +221,17 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 186,
   },
   {
+    slug: "apple-homeview",
+    title: "Board in HomeView",
+    description:
+      "Open the hosted Board in glance mode on Apple HomeView's Safari tab. Not an always-on wall appliance.",
+    group: "start",
+    kind: "page",
+    href: "/docs/apple-homeview",
+    sidebarSection: "get-started",
+    sidebarOrder: 186,
+  },
+  {
     slug: "board-url",
     title: "Board URL",
     description:

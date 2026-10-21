@@ -15,7 +15,7 @@ import {
   BoardServingLineEditor,
 } from "@/components/board/board-status-line-editor"
 import { BoardPreview } from "@/components/board/board-preview"
-import { BoardPreviewModePills } from "@/components/board/board-preview-mode"
+import { BoardBuilderOverrides } from "@/components/board/board-preview-mode"
 import { BoardShareCard } from "@/components/board/board-share-card"
 import { BoardStationSearch } from "@/components/board/board-station-search"
 import { Button } from "@/components/ui/button"
@@ -27,7 +27,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { useIsMobile } from "@/hooks/use-mobile"
 import { ChevronDownIcon, LocateFixedIcon, LocateIcon } from "lucide-react"
 import { useLandingTrack } from "@/components/landing/landing-analytics"
 import { trackHeroEvent } from "@/lib/analytics/track"
@@ -76,7 +75,6 @@ import {
   parseBoardSetupDraft,
   BOARD_SETUP_DRAFT_STORAGE_KEY,
   type BoardNearbyMode,
-  type BoardScreenProfile,
   type BoardSetupDraft,
   type BoardSetupStage,
 } from "@/lib/tfl/board-setup-state"
@@ -124,7 +122,7 @@ const readDraft = (): BoardSetupDraft | null => {
 
 const formSettingsFromConfig = (config: BoardConfig): BoardSettingId[] => {
   const resolved = resolveBoardSlots(config.slots.p1, config.slots.p2)
-  const ids = new Set<BoardSettingId>(["behaviour"])
+  const ids = new Set<BoardSettingId>(["behaviour", "view"])
   if (boardSlotsInclude(resolved, "rail")) {
     ids.add("stop")
     ids.add("arrivalsLines")
@@ -171,6 +169,7 @@ const configFromDraft = (draft: BoardSetupDraft): BoardConfig => {
   if (draft.continueWithoutStop) {
     return {
       ...DEFAULT_BOARD_CONFIG,
+      behaviour: DEFAULT_BOARD_CONFIG.behaviour,
       slots: { p1: ["status"], p2: [] },
       status: statusConfigFromDraft(draft),
     }
@@ -187,6 +186,7 @@ const configFromDraft = (draft: BoardSetupDraft): BoardConfig => {
     ...DEFAULT_BOARD_CONFIG,
     stop,
     stopName: draft.stopName ?? undefined,
+    behaviour: DEFAULT_BOARD_CONFIG.behaviour,
     slots: { p1, p2: ["status"] },
     arrivals: {
       lineOrder: draft.lineIds.length > 0 ? draft.lineIds : undefined,
@@ -274,7 +274,6 @@ export const BoardStagedBuilder = ({
   analyticsContext = defaultAnalyticsContext("room"),
 }: BoardStagedBuilderProps) => {
   const track = useLandingTrack(analyticsContext)
-  const isMobile = useIsMobile()
   const [draft, setDraft] = useState<BoardSetupDraft>(createBoardSetupDraft)
   const [ready, setReady] = useState(false)
   const [locateBusy, setLocateBusy] = useState(false)
@@ -560,7 +559,17 @@ export const BoardStagedBuilder = ({
   }
 
   const handleConfigChange = (next: Partial<BoardConfig>) => {
-    setAdvancedConfig((current) => mergePartialBoardConfig(current, next))
+    setAdvancedConfig((current) => {
+      const merged = mergePartialBoardConfig(current, next)
+      // Glance owns row count — drop a.rows when enabling glance.
+      if (next.view === "glance" && merged.arrivals?.rows !== undefined) {
+        return {
+          ...merged,
+          arrivals: { ...merged.arrivals, rows: undefined },
+        }
+      }
+      return merged
+    })
     updateDraft((current) => ({
       ...current,
       stopId: next.stop !== undefined ? next.stop || null : current.stopId,
@@ -593,14 +602,24 @@ export const BoardStagedBuilder = ({
     })
   )
 
-  const handlePreviewMode = (profile: BoardScreenProfile) => {
-    updateDraft((current) =>
-      startIfNeeded({
-        ...current,
-        screenProfile: profile,
-      })
-    )
-  }
+  // Preview frame follows the builder viewport — not a user-facing choice.
+  useEffect(() => {
+    if (!ready) return
+    const syncPreview = () => {
+      const detected = detectScreenProfile(
+        window.innerWidth,
+        window.innerHeight
+      )
+      setDraft((current) =>
+        current.screenProfile === detected.profile
+          ? current
+          : { ...current, screenProfile: detected.profile }
+      )
+    }
+    syncPreview()
+    window.addEventListener("resize", syncPreview)
+    return () => window.removeEventListener("resize", syncPreview)
+  }, [ready])
 
   const previewProfile = draft.screenProfile
   const locateAction = locateFailure ? locateFailureAction(locateFailure) : null
@@ -907,9 +926,29 @@ export const BoardStagedBuilder = ({
               hydrated={ready}
               screenProfile={previewProfile}
             />
-            <BoardPreviewModePills
-              value={previewProfile ?? (isMobile ? "small" : "large")}
-              onChange={handlePreviewMode}
+            <BoardBuilderOverrides
+              unattended={config.behaviour === "unattended"}
+              onUnattendedChange={(next) => {
+                setAdvancedConfig((current) => ({
+                  ...current,
+                  behaviour: next ? "unattended" : "interactive",
+                }))
+              }}
+              glance={config.view === "glance"}
+              onGlanceChange={(next) => {
+                setAdvancedConfig((current) => {
+                  const merged = { ...current }
+                  if (next) {
+                    merged.view = "glance"
+                    if (merged.arrivals?.rows !== undefined) {
+                      merged.arrivals = { ...merged.arrivals, rows: undefined }
+                    }
+                  } else {
+                    delete merged.view
+                  }
+                  return merged
+                })
+              }}
             />
           </div>
         </div>
