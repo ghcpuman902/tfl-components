@@ -59,8 +59,9 @@ const thenLine = (times: readonly number[]) => {
 
 /* One left-aligned stack per slot, so every fact sits beside its own rail and
  * nothing floats toward a neighbour: chip, destination, meta, then the time.
- * Slots stretch to their row; the time sits on the slot's bottom edge, so rails
- * and times of one row end on one line whatever the destination wraps to. */
+ * Slots stretch to their row. Spare height goes between the chip and the name,
+ * so chips share the row's top edge and name, meta and time keep 1-step gaps
+ * and share its bottom: last name lines, metas and times line up across a row. */
 const SLOT_CLASS =
   "ga-slot flex min-h-0 min-w-0 gap-x-[length:var(--s)] text-left"
 /* Font size is the slot step, so the column's container queries read in s. */
@@ -79,7 +80,8 @@ const META_TIER_CLASS = [
 
 const TimeLockup = ({ time, then }: { time: string; then: string | null }) => (
   <span
-    className="mt-auto flex items-end gap-x-[length:var(--s)] font-semibold tabular-nums"
+    data-slot="ga-time"
+    className="flex items-end gap-x-[length:var(--s)] font-semibold tabular-nums"
     aria-hidden
   >
     {/* Hammersmith One's figures sit ~0.02em under the trimmed baseline; lift them so the ink ends where the rail does. */}
@@ -148,7 +150,10 @@ const GlanceSlot = ({
         aria-hidden
       />
       <span className={COL_CLASS}>
-        <span className="flex items-center gap-x-[length:var(--c)]" aria-hidden>
+        <span
+          className="ga-chip-row flex items-center gap-x-[length:var(--c)]"
+          aria-hidden
+        >
           <LineBadge
             lineId={item.lineId}
             name={getLineNameTiers(item.lineId).short}
@@ -159,11 +164,8 @@ const GlanceSlot = ({
             )}
           />
         </span>
-        {/* A wrapped name keeps its last line's descent below the baseline; pull it back so the next gap is 1 step. */}
-        <span
-          className="flex min-w-0 overflow-x-clip [&:has(br)]:mb-[calc(var(--s)*-0.56)]"
-          aria-hidden
-        >
+        {/* The name's box is trimmed to cap top and last baseline by margins (see .ga-dest), so its gaps read as 1 step; descenders hang free. */}
+        <span className="ga-dest flex min-w-0 overflow-x-clip" aria-hidden>
           <StationName
             name={item.destination}
             layout="auto"
@@ -172,10 +174,7 @@ const GlanceSlot = ({
             abbreviationTier={3}
             fitBeforePaint
             nowrap={false}
-            className={cn(
-              "line-clamp-2 text-balance [&>span>span]:[text-box:trim-both_cap_alphabetic]",
-              DEST_CLASS
-            )}
+            className={cn("text-balance", DEST_CLASS)}
           />
         </span>
         {roomMeta ? (

@@ -102,7 +102,6 @@
   }
   .ga-inner[data-room] .ga-tile-scale {
     --k: 1.25;
-    --ck: 1.25;
   }
 }
 
@@ -196,17 +195,42 @@
   --c: calc(var(--u) * var(--ck, 1));
 }
 
-.ga-tile-scale {
-  --ck: 1;
-  --k: 1;
+/*
+ * One master layout, scaled by k alone: chip, type, rail, gaps and minutes
+ * are all multiples of --s, so an anchor is a tile × k with every ratio kept.
+ */
+.ga-slot {
+  --ck: var(--k);
   --ga-time: 4;
 }
 
-/* The anchor: chip 1.5u, type ladder ×2 (×2.25 in landscape, to fill two tile rows), minutes 5 steps not 4 so time outweighs the destination. */
+.ga-tile-scale {
+  --k: 1;
+}
+
+/*
+ * Hammersmith One at line-height 1.15: cap top sits 0.193em under the line
+ * top, the last baseline 0.3em above its bottom (ascent 0.9, cap 0.657).
+ * Trim the name to cap…baseline with margins, not text-box-trim plus a clip:
+ * the descender (0.36em) overhangs the line box and a clip cut "Epping"'s g.
+ * Spare row height lands above the name.
+ */
+.ga-dest {
+  margin-block: calc(var(--s) * 2 * -0.193) calc(var(--s) * 2 * -0.3);
+}
+
+.ga-chip-row {
+  margin-block-end: auto;
+}
+
+/* The figures' ink rises ~0.045em over their cap-trimmed box (0.02em lift + digit overshoot); open the gap by that so meta → time reads as 1 step. */
+[data-slot="ga-time"] {
+  margin-block-start: calc(var(--s) * var(--ga-time) * 0.045);
+}
+
+/* The anchor: the tile ×2 (×2.25 in landscape, to fill two tile rows). */
 .ga-stage-scale {
-  --ck: 1.5;
   --k: 2;
-  --ga-time: 5;
 }
 
 /* Two anchors stacked on a phone: ×1.5, so the four tiles below stay legible. */
@@ -221,9 +245,4 @@
   .ga-inner[data-layout="pair"] .ga-stage-scale {
     --k: 1.5;
   }
-}
-
-/* Across the room the type carries the anchor; a lighter chip leaves the minutes heaviest. */
-.ga-inner[data-room] .ga-stage-scale {
-  --ck: 1.25;
 }
