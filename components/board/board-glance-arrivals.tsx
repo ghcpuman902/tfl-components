@@ -109,7 +109,7 @@ const GlanceArrivalRow = ({
     <LineBadge
       lineId={lineId}
       name={lineTiers.short}
-      className="h-[clamp(2rem,6.5cqi,4rem)] min-w-[4.5ch] justify-center px-2 text-[clamp(0.875rem,2.6cqi,1.5rem)] @min-[28rem]/glance-arrivals:min-w-[7.5ch] @min-[28rem]/glance-arrivals:px-3"
+      className="h-[clamp(1.5rem,4.5cqi,2.75rem)] min-w-[4.5ch] justify-center px-2.5 text-[clamp(0.8125rem,2.4cqi,1.375rem)]"
     />
   ) : null
 
@@ -130,7 +130,7 @@ const GlanceArrivalRow = ({
       data-slot="board-glance-row"
       aria-label={ariaLabel}
       className={cn(
-        "grid min-h-0 min-w-0 flex-1 basis-0 grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-[clamp(0.5rem,2cqi,1.25rem)] py-[clamp(0.35rem,1.5cqi,1rem)]",
+        "grid min-h-0 min-w-0 flex-1 basis-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-[clamp(0.5rem,2cqi,1.25rem)] py-[clamp(0.35rem,1.5cqi,1rem)]",
         showRule && "border-b border-border/70"
       )}
     >
@@ -143,21 +143,21 @@ const GlanceArrivalRow = ({
       ) : (
         <span className="w-2 shrink-0 @min-[28rem]/glance-arrivals:w-2.5" aria-hidden />
       )}
-      <div className="flex items-center" aria-hidden="true">
-        {lineChip}
-      </div>
       <div className="min-w-0 overflow-hidden" aria-hidden="true">
+        {lineChip ? (
+          <div className="mb-[0.35em] flex items-center">{lineChip}</div>
+        ) : null}
         <StationName
           name={destination}
           layout="auto"
           maxLines={2}
           allowAbbreviation
           allowScaleDown
-          className="font-semibold text-[length:var(--glance-dest)] leading-[1.1]"
+          className="text-balance font-semibold text-[length:var(--glance-dest)] leading-[1.1]"
         />
         <p
           data-slot="board-glance-meta"
-          className="mt-[0.35em] truncate text-[length:var(--glance-meta)] leading-tight text-muted-foreground"
+          className="mt-[0.35em] truncate text-balance text-[length:var(--glance-meta)] leading-tight text-muted-foreground"
         >
           {meta ?? lineTiers?.full ?? "Next train"}
         </p>
@@ -274,13 +274,16 @@ export const BoardGlanceArrivals = ({
             <li
               key={index}
               className={cn(
-                "flex min-h-0 flex-1 basis-0 items-center gap-x-[clamp(0.5rem,2cqi,1.25rem)] py-[clamp(0.35rem,1.5cqi,1rem)]",
+                "grid min-h-0 flex-1 basis-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-[clamp(0.5rem,2cqi,1.25rem)] py-[clamp(0.35rem,1.5cqi,1rem)]",
                 index < pageSize - 1 && "border-b border-border/70"
               )}
             >
               <div className="h-[68%] w-2 animate-pulse rounded-sm bg-muted" />
-              <div className="h-[clamp(2rem,6.5cqi,4rem)] w-16 animate-pulse rounded bg-muted" />
-              <div className="h-12 flex-1 animate-pulse rounded bg-muted" />
+              <div className="flex min-w-0 flex-col gap-[0.35em]">
+                <div className="h-[clamp(1.5rem,4.5cqi,2.75rem)] w-20 animate-pulse rounded bg-muted" />
+                <div className="h-10 w-3/4 max-w-xs animate-pulse rounded bg-muted" />
+                <div className="h-6 w-40 animate-pulse rounded bg-muted" />
+              </div>
               <div className="h-16 w-20 animate-pulse rounded bg-muted" />
             </li>
           ))}
