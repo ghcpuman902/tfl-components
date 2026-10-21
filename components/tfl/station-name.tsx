@@ -3,6 +3,7 @@
 import {
   Fragment,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -18,6 +19,7 @@ import {
   resolveSansFontFamily,
   type StationLabelFormatResult,
 } from "@/lib/tfl/station-typography"
+import type { StationAbbreviationTier } from "@/lib/tfl/station-abbreviations"
 import {
   formatStationName,
   splitStationPlaceQualifier,
@@ -55,6 +57,13 @@ export type StationNameProps = {
   fontSize?: number
   maxLines?: 1 | 2
   allowAbbreviation?: boolean
+  /** Deepest abbreviation tier `layout="auto"` may use (default 1). */
+  abbreviationTier?: StationAbbreviationTier
+  /**
+   * Fit in a layout effect when fonts are already loaded, so the first
+   * painted frame is the fitted one (no post-paint re-wrap).
+   */
+  fitBeforePaint?: boolean
   allowScaleDown?: boolean
   minScale?: number
   /**
@@ -128,6 +137,35 @@ const laidOutAncestor = (el: HTMLElement): HTMLElement => {
   }
   return el
 }
+
+const readStationBox = (
+  el: HTMLElement,
+  container: HTMLElement,
+  maxWidth: number | undefined,
+  fontSize: number | undefined
+): SizeState => {
+  // Prefer this element's used width (flex leftover). A `display: contents`
+  // parent reports 0, which used to freeze the unmeasured full-size paint.
+  const measuredWidth =
+    el.clientWidth > 4 ? el.clientWidth : container.clientWidth
+  const computed = getComputedStyle(el)
+  return {
+    width: maxWidth ?? measuredWidth,
+    fontSize: fontSize ?? (Number.parseFloat(computed.fontSize) || 16),
+    fontFamily: resolveSansFontFamily(el),
+    fontWeight: computed.fontWeight || FALLBACK_WEIGHT,
+    measured: true,
+  }
+}
+
+const keepSameSize = (prev: SizeState, next: SizeState): SizeState =>
+  prev.measured &&
+  Math.abs(prev.width - next.width) < WIDTH_EPSILON &&
+  Math.abs(prev.fontSize - next.fontSize) < FONT_EPSILON &&
+  prev.fontFamily === next.fontFamily &&
+  prev.fontWeight === next.fontWeight
+    ? prev
+    : next
 
 /**
  * Invisible inline completion (e.g. St + "reet" → Street) for engines that
@@ -227,6 +265,8 @@ export const StationName = ({
   fontSize: fontSizeProp,
   maxLines = 2,
   allowAbbreviation = false,
+  abbreviationTier = 1,
+  fitBeforePaint = false,
   allowScaleDown = true,
   minScale,
   forcedLines,
@@ -262,37 +302,8 @@ export const StationName = ({
 
     const readMetrics = () => {
       if (cancelled) return
-
-      // Prefer this element's used width (flex leftover). A `display: contents`
-      // parent reports 0, which used to freeze the unmeasured full-size paint.
-      const measuredWidth =
-        el.clientWidth > 4 ? el.clientWidth : container.clientWidth
-      const width = maxWidthProp ?? measuredWidth
-
-      const computed = getComputedStyle(el)
-      const measuredFont =
-        fontSizeProp ?? (Number.parseFloat(computed.fontSize) || 16)
-      const fontFamily = resolveSansFontFamily(el)
-      const fontWeight = computed.fontWeight || FALLBACK_WEIGHT
-
-      setSize((prev) => {
-        if (
-          prev.measured &&
-          Math.abs(prev.width - width) < WIDTH_EPSILON &&
-          Math.abs(prev.fontSize - measuredFont) < FONT_EPSILON &&
-          prev.fontFamily === fontFamily &&
-          prev.fontWeight === fontWeight
-        ) {
-          return prev
-        }
-        return {
-          width,
-          fontSize: measuredFont,
-          fontFamily,
-          fontWeight,
-          measured: true,
-        }
-      })
+      const box = readStationBox(el, container, maxWidthProp, fontSizeProp)
+      setSize((prev) => keepSameSize(prev, box))
     }
 
     const waitFonts = async () => {
@@ -316,6 +327,16 @@ export const StationName = ({
     }
   }, [fontSizeProp, maxWidthProp, name, useAuto])
 
+  // Opt-in first fit before paint (fonts already loaded), so the first
+  // painted frame is the fitted one. The effect above keeps it current.
+  useLayoutEffect(() => {
+    if (!fitBeforePaint || !useAuto) return
+    const el = ref.current
+    if (!el || document.fonts?.status !== "loaded") return
+    const box = readStationBox(el, laidOutAncestor(el), maxWidthProp, fontSizeProp)
+    setSize((prev) => keepSameSize(prev, box))
+  }, [fitBeforePaint, fontSizeProp, maxWidthProp, name, useAuto])
+
   const measure = useMemo(() => {
     if (!useAuto || !size.measured) return approximateStationMeasure
     return createCanvasStationMeasure(size.fontFamily, size.fontWeight)
@@ -327,12 +348,14 @@ export const StationName = ({
       fontSize: size.fontSize,
       maxLines,
       allowAbbreviation,
+      abbreviationTier,
       allowScaleDown,
       minScale,
       forcedLines: visualLines,
       detachPlaceQualifier: placeQualifier,
     }),
     [
+      abbreviationTier,
       allowAbbreviation,
       allowScaleDown,
       visualLines,

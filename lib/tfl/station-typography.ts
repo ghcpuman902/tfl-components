@@ -2,7 +2,10 @@ import {
   formatStationName,
   splitStationPlaceQualifier,
 } from "@/lib/tfl/diagram-station"
-import { applyStationAbbreviations } from "@/lib/tfl/station-abbreviations"
+import {
+  stationAbbreviationLadder,
+  type StationAbbreviationTier,
+} from "@/lib/tfl/station-abbreviations"
 
 export {
   STATION_ABBREVIATIONS,
@@ -21,6 +24,8 @@ export type StationLabelFormatOptions = {
   maxLines?: 1 | 2
   /** Apply conservative TfL-style abbreviations only when needed. */
   allowAbbreviation?: boolean
+  /** Deepest abbreviation tier to try, one tier at a time (default 1). */
+  abbreviationTier?: StationAbbreviationTier
   /** Shrink type as a last resort when still too wide. */
   allowScaleDown?: boolean
   /** Floor for scale-down (default 0.75). */
@@ -64,8 +69,6 @@ export const STATION_LABEL_MIN_SCALE = 0.75
 
 const tokenize = (name: string): string[] =>
   name.trim().split(/\s+/).filter(Boolean)
-
-const applyAbbreviations = applyStationAbbreviations
 
 const lineWidth = (
   text: string,
@@ -209,13 +212,13 @@ export const formatStationLabel = (
   let result = tryName(fitName, false, 1)
   if (result.fits) return result
 
-  // 2. Abbreviations at full size
-  if (allowAbbreviation) {
-    const abbreviatedName = applyAbbreviations(fitName)
-    if (abbreviatedName !== fitName) {
-      result = tryName(abbreviatedName, true, 1)
-      if (result.fits) return result
-    }
+  // 2. Abbreviations at full size, one tier at a time
+  const ladder = allowAbbreviation
+    ? stationAbbreviationLadder(fitName, options.abbreviationTier ?? 1)
+    : []
+  for (const abbreviatedName of ladder) {
+    result = tryName(abbreviatedName, true, 1)
+    if (result.fits) return result
   }
 
   // 3. Scale down (full name first, then abbreviated)
@@ -228,18 +231,15 @@ export const formatStationLabel = (
       if (full.fits) return full
       if (full.scale < smallest.scale) smallest = full
 
-      if (allowAbbreviation) {
-        const abbreviatedName = applyAbbreviations(fitName)
-        if (abbreviatedName !== fitName) {
-          const abbr = tryName(abbreviatedName, true, scale)
-          if (abbr.fits) return abbr
-          // Prefer the shorter visual when both overflow at the same scale.
-          if (
-            abbr.scale < smallest.scale ||
-            (abbr.scale === smallest.scale && abbr.abbreviated)
-          ) {
-            smallest = abbr
-          }
+      for (const abbreviatedName of ladder) {
+        const abbr = tryName(abbreviatedName, true, scale)
+        if (abbr.fits) return abbr
+        // Prefer the shorter visual when both overflow at the same scale.
+        if (
+          abbr.scale < smallest.scale ||
+          (abbr.scale === smallest.scale && abbr.abbreviated)
+        ) {
+          smallest = abbr
         }
       }
     }

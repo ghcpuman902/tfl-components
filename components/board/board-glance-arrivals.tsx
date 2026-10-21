@@ -23,6 +23,7 @@ import {
 } from "@/lib/tfl/board-glance-arrivals"
 import { getLineNameTiers, joinLineNames } from "@/lib/tfl/line-names"
 import { usableTflText } from "@/lib/tfl/bus-stop-letter"
+import { arrivalsHeadingLadder } from "@/lib/tfl/station-abbreviations"
 import { compareArrivalsLines } from "@/lib/tfl/arrivals-line-sort"
 import { cn } from "@/lib/utils"
 
@@ -85,6 +86,12 @@ const UNIT_CLASS = cn(
   "font-medium text-[length:var(--glance-dest)] text-muted-foreground",
   CHIP_CAP_TEXT_BOX_CLASS
 )
+/* First heading tier that fits, by the widest form in meta em ("Southbound · Platform 10" ≈ 11.7em, "Southbound · P10" ≈ 8.1em). */
+const META_TIER_CLASS = [
+  "hidden @min-[12em]/glance-meta:inline",
+  "hidden @min-[8.25em]/glance-meta:inline @min-[12em]/glance-meta:hidden",
+  "@min-[8.25em]/glance-meta:hidden",
+] as const
 const SKELETON_FILL_CLASS = "animate-pulse bg-muted text-transparent"
 
 const GlanceArrivalRow = ({
@@ -187,18 +194,14 @@ const GlanceArrivalRow = ({
         className="col-start-2 row-start-2 flex min-w-0 overflow-x-clip"
         aria-hidden="true"
       >
-        {/*
-          CSS-wraps before the fit measures, so the line count is right on
-          first paint; clamped to two lines (padding keeps descenders past the
-          cap trim, negative margin keeps the box).
-        */}
         <StationName
           name={destination}
           layout="auto"
           maxLines={2}
           allowAbbreviation
+          abbreviationTier={3}
+          fitBeforePaint
           allowScaleDown
-          nowrap={false}
           className={cn(
             "text-balance [&>span>span]:[text-box:trim-both_cap_alphabetic]",
             DEST_CLASS
@@ -207,10 +210,18 @@ const GlanceArrivalRow = ({
       </div>
       <p
         data-slot="board-glance-meta"
-        className={cn("text-balance", META_CLASS)}
+        className={cn("@container/glance-meta text-balance", META_CLASS)}
         aria-hidden="true"
       >
-        {meta ?? lineTiers?.full ?? "Next train"}
+        {meta ? (
+          arrivalsHeadingLadder(meta).map((text, tier) => (
+            <span key={tier} className={META_TIER_CLASS[tier]}>
+              {text}
+            </span>
+          ))
+        ) : (
+          lineTiers?.full ?? "Next train"
+        )}
       </p>
       <div data-slot="board-glance-time" className={TIME_CLASS} aria-hidden="true">
         <span className={NUMBER_CLASS}>{countdown.primary}</span>

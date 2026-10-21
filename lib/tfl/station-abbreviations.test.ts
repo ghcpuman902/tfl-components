@@ -1,7 +1,11 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { diagramAtomMetrics } from "./diagram-atoms.ts"
-import { applyStationAbbreviations } from "./station-abbreviations.ts"
+import {
+  applyStationAbbreviations,
+  arrivalsHeadingLadder,
+  stationAbbreviationLadder,
+} from "./station-abbreviations.ts"
 import {
   approximateStationMeasure,
   formatStationLabel,
@@ -127,5 +131,65 @@ describe("formatStationLabel", () => {
     )
     assert.ok(result.lines.join(" ").includes("ExCel"))
     assert.equal(result.qualifier, undefined)
+  })
+})
+
+describe("abbreviation tiers", () => {
+  it("steps word by word, then drops the via clause", () => {
+    assert.deepEqual(
+      stationAbbreviationLadder("Walthamstow Central via Highbury & Islington", 3),
+      [
+        "Walthamstow Ctrl via Highbury & Islington",
+        "W'stow Ctrl via Highbury & Islington",
+        "W'stow Ctrl",
+      ]
+    )
+    assert.deepEqual(
+      stationAbbreviationLadder("West Ruislip via Ealing Broadway", 3),
+      ["West Ruislip via Ealing Bdwy", "West Ruislip"]
+    )
+  })
+
+  it("keeps tier 1 as the default everywhere else", () => {
+    assert.equal(applyStationAbbreviations("Ealing Broadway"), "Ealing Broadway")
+    assert.equal(
+      applyStationAbbreviations("Walthamstow Central"),
+      "Walthamstow Ctrl"
+    )
+  })
+
+  it("only goes as deep as the width needs", () => {
+    const options = {
+      fontSize: 10,
+      maxLines: 1 as const,
+      allowAbbreviation: true,
+      allowScaleDown: false,
+      abbreviationTier: 3 as const,
+    }
+    const fit = (maxWidth: number) =>
+      formatStationLabel("Ealing Broadway", approximateStationMeasure, {
+        ...options,
+        maxWidth,
+      }).lines.join(" ")
+    assert.equal(fit(200), "Ealing Broadway")
+    assert.equal(fit(65), "Ealing Bdwy")
+  })
+})
+
+describe("arrivalsHeadingLadder", () => {
+  it("shortens the platform, then the direction", () => {
+    assert.deepEqual(arrivalsHeadingLadder("Northbound · Platform 6"), [
+      "Northbound · Platform 6",
+      "Northbound · P6",
+      "NB · P6",
+    ])
+  })
+
+  it("leaves rail designations alone", () => {
+    assert.deepEqual(arrivalsHeadingLadder("Inner Rail · Platform 1"), [
+      "Inner Rail · Platform 1",
+      "Inner Rail · P1",
+      "Inner Rail · P1",
+    ])
   })
 })

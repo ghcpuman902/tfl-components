@@ -13,7 +13,17 @@ export type StationAbbreviationEntry = {
    * (e.g. "reet" → "Street").
    */
   findCompletion: string
+  /**
+   * Shortening tier (default 1). Tier 1 is the diagram / board default.
+   * Tier 2 is a tighter word list, tier 3 drops a trailing clause (`via …`).
+   * Higher tiers apply only when a caller asks (`applyStationAbbreviations(name, tier)`).
+   */
+  tier?: StationAbbreviationTier
+  /** Drop this word and everything after it instead of replacing it. */
+  dropsClause?: boolean
 }
+
+export type StationAbbreviationTier = 1 | 2 | 3
 
 /**
  * Conservative abbreviations used on diagrams and arrivals boards.
@@ -48,6 +58,24 @@ export const STATION_ABBREVIATION_ENTRIES: readonly StationAbbreviationEntry[] =
      * `FindableText` copy still makes the full phrase findable.
      */
     { full: "Check Front of Train", short: "Check Front", findCompletion: "" },
+    /** Tight tier: room-distance glance rows, after tier 1 fails to fit. */
+    { full: "Broadway", short: "Bdwy", findCompletion: "", tier: 2 },
+    { full: "Walthamstow", short: "W'stow", findCompletion: "", tier: 2 },
+    /** Tightest tier: "Ealing Bdwy via Acton Town" → "Ealing Bdwy". */
+    { full: "via", short: "", findCompletion: "", tier: 3, dropsClause: true },
+  ] as const
+
+/**
+ * Arrivals bound-heading shortening ("Northbound · Platform 6" → "NB · P6").
+ * `Platform` joins its number (`P6`), the same form as `PlatformChip compact`.
+ */
+export const ARRIVALS_HEADING_ABBREVIATION_ENTRIES: readonly StationAbbreviationEntry[] =
+  [
+    { full: "Northbound", short: "NB", findCompletion: "" },
+    { full: "Southbound", short: "SB", findCompletion: "" },
+    { full: "Eastbound", short: "EB", findCompletion: "" },
+    { full: "Westbound", short: "WB", findCompletion: "" },
+    { full: "Platform", short: "P", findCompletion: "" },
   ] as const
 
 /** `and` → `&` (not a find-completion pair — handled via aliases). */
@@ -167,9 +195,17 @@ const abbreviationPattern = (full: string): string =>
     // ASCII or curly apostrophe, and the no-apostrophe form (`Kings Cross`).
     .replace(/'/g, "['’]?")
 
-/** RegExp pairs for applying abbreviations to a full name. */
+const entryTier = (entry: StationAbbreviationEntry): StationAbbreviationTier =>
+  entry.tier ?? 1
+
+const entryPattern = (entry: StationAbbreviationEntry): RegExp =>
+  entry.dropsClause
+    ? new RegExp(`\\s+\\b${abbreviationPattern(entry.full)}\\b.*$`, "i")
+    : new RegExp(`\\b${abbreviationPattern(entry.full)}\\b`, "gi")
+
+/** RegExp pairs for applying tier-1 abbreviations to a full name. */
 export const STATION_ABBREVIATIONS: ReadonlyArray<readonly [RegExp, string]> = [
-  ...STATION_ABBREVIATION_ENTRIES.map(
+  ...STATION_ABBREVIATION_ENTRIES.filter((entry) => entryTier(entry) === 1).map(
     (entry) =>
       [
         new RegExp(`\\b${abbreviationPattern(entry.full)}\\b`, "gi"),
@@ -188,10 +224,67 @@ export const STATION_ABBR_FIND_COMPLETIONS: Readonly<Record<string, string>> =
     ])
   )
 
-export const applyStationAbbreviations = (name: string): string => {
+const TIERED_ABBREVIATIONS: ReadonlyArray<
+  readonly [RegExp, string, StationAbbreviationTier]
+> = [
+  ...STATION_ABBREVIATIONS.map(([pattern, short]) => [pattern, short, 1] as const),
+  ...STATION_ABBREVIATION_ENTRIES.filter((entry) => entryTier(entry) > 1).map(
+    (entry) => [entryPattern(entry), entry.short, entryTier(entry)] as const
+  ),
+]
+
+/** Apply every entry up to `tier` (default 1, the diagram / board set). */
+export const applyStationAbbreviations = (
+  name: string,
+  tier: StationAbbreviationTier = 1
+): string => {
   let next = name
-  for (const [pattern, replacement] of STATION_ABBREVIATIONS) {
-    next = next.replace(pattern, replacement)
+  for (const [pattern, replacement, entry] of TIERED_ABBREVIATIONS) {
+    if (entry <= tier) next = next.replace(pattern, replacement)
   }
   return next.replace(/\s+/g, " ").trim()
+}
+
+/** Distinct shortenings of `name` from tier 1 up to `maxTier`, shortest last. */
+export const stationAbbreviationLadder = (
+  name: string,
+  maxTier: StationAbbreviationTier = 1
+): string[] => {
+  const ladder: string[] = []
+  for (let tier = 1; tier <= maxTier; tier += 1) {
+    const next = applyStationAbbreviations(name, tier as StationAbbreviationTier)
+    if (next && next !== name && !ladder.includes(next)) ladder.push(next)
+  }
+  return ladder
+}
+
+const headingPattern = (entry: StationAbbreviationEntry): RegExp =>
+  // `Platform 6` → `P6`: the short form joins its number.
+  entry.full === "Platform"
+    ? /\bPlatform\s+/gi
+    : new RegExp(`\\b${entry.full}\\b`, "gi")
+
+const applyHeadingEntries = (
+  heading: string,
+  entries: readonly StationAbbreviationEntry[]
+): string =>
+  entries.reduce(
+    (next, entry) => next.replace(headingPattern(entry), entry.short),
+    heading
+  )
+
+/**
+ * Bound-heading tiers: full → short platform → short direction too.
+ * "Northbound · Platform 6" → "Northbound · P6" → "NB · P6".
+ */
+export const arrivalsHeadingLadder = (heading: string): string[] => {
+  const platformOnly = applyHeadingEntries(
+    heading,
+    ARRIVALS_HEADING_ABBREVIATION_ENTRIES.filter((e) => e.full === "Platform")
+  )
+  return [
+    heading,
+    platformOnly,
+    applyHeadingEntries(heading, ARRIVALS_HEADING_ABBREVIATION_ENTRIES),
+  ]
 }
