@@ -201,7 +201,11 @@ const GlanceSlot = ({
             </span>
           ) : null}
         </span>
-        <span className="flex min-w-0 overflow-x-clip" aria-hidden>
+        {/* A wrapped name keeps its last line's descent below the baseline; pull it back so the next gap is 1 step. */}
+        <span
+          className="flex min-w-0 overflow-x-clip [&:has(br)]:mb-[calc(var(--s)*-0.56)]"
+          aria-hidden
+        >
           <StationName
             name={item.destination}
             layout="auto"
@@ -211,7 +215,7 @@ const GlanceSlot = ({
             fitBeforePaint
             nowrap={false}
             className={cn(
-              "block text-balance [text-box:trim-both_cap_alphabetic]",
+              "line-clamp-2 text-balance [&>span>span]:[text-box:trim-both_cap_alphabetic]",
               DEST_CLASS
             )}
           />
