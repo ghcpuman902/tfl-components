@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { SITE_AUTHOR } from "@/lib/site"
+import { useFontsReady } from "@/lib/use-fonts-ready"
+import { cn } from "@/lib/utils"
 
 const TFL_TS_URL = "https://www.npmjs.com/package/tfl-ts"
 const TFL_OPEN_DATA_URL = "https://tfl.gov.uk/info-for/open-data-users/"
@@ -92,6 +94,7 @@ const GlanceFooter = ({
   refreshing: boolean
   fullscreenError?: string | null
 }) => {
+  const fontsReady = useFontsReady()
   const span = fetchedAt != null && dueAt != null ? dueAt - fetchedAt : 0
   const elapsed = stale
     ? 1
@@ -101,7 +104,10 @@ const GlanceFooter = ({
   return (
     <footer
       data-slot="board-glance-footer"
-      className="board-glance-scale @container/glance-foot flex h-12 shrink-0 items-center gap-x-[length:var(--glance-foot)] text-[length:var(--glance-foot)] whitespace-nowrap text-muted-foreground tabular-nums"
+      className={cn(
+        "board-glance-scale @container/glance-foot flex h-12 shrink-0 items-center gap-x-[length:var(--glance-foot)] text-[length:var(--glance-foot)] whitespace-nowrap text-muted-foreground tabular-nums",
+        !fontsReady && "invisible"
+      )}
     >
       {/* Same width before and after the first fetch; stale shows as a full bar. */}
       <span
@@ -109,7 +115,10 @@ const GlanceFooter = ({
         aria-hidden={fetchedAt == null || undefined}
         aria-label={stale ? "Updating" : undefined}
       >
-        Updated {fetchedAt != null ? formatUpdatedClock(fetchedAt) : "00:00"}
+        Updated{" "}
+        <span className="inline-block w-[2.9em]">
+          {fetchedAt != null ? formatUpdatedClock(fetchedAt) : "00:00"}
+        </span>
       </span>
       <span
         className="relative h-1 w-[calc(var(--glance-foot)*3)] shrink-0 overflow-hidden bg-foreground/15"

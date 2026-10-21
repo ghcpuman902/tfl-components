@@ -362,8 +362,12 @@ html.board-glance .board-glance {
   --glance-tile-h: 40.6;
 }
 
-/* A peeking strip fits 2.3 tile columns where 2 were budgeted; charge the width so "Due · then" still fits. */
-.board-glance:has([data-glance-peek]:not([data-glance-room]))
+/*
+ * A touch board may peek (2.3 tile columns where 2 were budgeted); charge the
+ * width on every touch board, not only once the data overflows, so the unit
+ * is known from config before the first arrivals land.
+ */
+.board-glance:has([data-glance-touch]:not([data-glance-room]))
   .board-glance-scale {
   --glance-cols: 2.4;
 }
@@ -373,7 +377,7 @@ html.board-glance .board-glance {
     --glance-cols: 4;
     --glance-rows: 2;
   }
-  .board-glance:has([data-glance-peek]:not([data-glance-room]))
+  .board-glance:has([data-glance-touch]:not([data-glance-room]))
     .board-glance-scale {
     --glance-cols: 4.6;
   }

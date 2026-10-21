@@ -333,7 +333,12 @@ export const StationName = ({
     if (!fitBeforePaint || !useAuto) return
     const el = ref.current
     if (!el || document.fonts?.status !== "loaded") return
-    const box = readStationBox(el, laidOutAncestor(el), maxWidthProp, fontSizeProp)
+    const box = readStationBox(
+      el,
+      laidOutAncestor(el),
+      maxWidthProp,
+      fontSizeProp
+    )
     setSize((prev) => keepSameSize(prev, box))
   }, [fitBeforePaint, fontSizeProp, maxWidthProp, name, useAuto])
 
@@ -517,11 +522,14 @@ export const StationNameTitle = ({
   name,
   className,
   end,
+  fitBeforePaint = false,
 }: {
   name: string
   className?: string
   /** Sits after the name (e.g. disruption chips). The slot stays `flex-1` so auto-fit still measures leftover width. */
   end?: ReactNode
+  /** First fit before paint (fonts already loaded), for surfaces that must not shift. */
+  fitBeforePaint?: boolean
 }) => (
   <span
     className={cn(
@@ -539,6 +547,7 @@ export const StationNameTitle = ({
         allowScaleDown
         minScale={TITLE_MIN_SCALE}
         nowrap={false}
+        fitBeforePaint={fitBeforePaint}
         className={STATION_NAME_TITLE_CLASS}
       />
     </span>

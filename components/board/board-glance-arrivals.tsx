@@ -46,6 +46,7 @@ import {
   writeGlancePin,
 } from "@/lib/tfl/board-glance-pin-storage"
 import { usableTflText } from "@/lib/tfl/bus-stop-letter"
+import { useFontsReady } from "@/lib/use-fonts-ready"
 import { getLineNameTiers, joinLineNames } from "@/lib/tfl/line-names"
 import { arrivalsHeadingLadder } from "@/lib/tfl/station-abbreviations"
 import { cn } from "@/lib/utils"
@@ -508,6 +509,7 @@ export const BoardGlanceArrivals = ({
     [stopPointId]
   )
 
+  const fontsReady = useFontsReady()
   const TitleTag = `h${headingLevel}` as const
   const emptyCopy = emptyMessage ?? ARRIVALS_EMPTY_COPY.empty
   const showSkeleton = loading && groups.length === 0 && !error
@@ -518,12 +520,14 @@ export const BoardGlanceArrivals = ({
       data-slot="board-glance-arrivals"
       data-glance-layout={layoutName}
       data-glance-room={room || undefined}
+      data-glance-touch={interactive || undefined}
       data-glance-peek={
         (interactive && !room && layout.tiles.length > GLANCE_VISIBLE_TILES) ||
         undefined
       }
       className={cn(
         "board-glance-scale flex min-h-0 w-full flex-1 flex-col gap-y-[length:var(--glance-u)]",
+        !fontsReady && "invisible",
         className
       )}
       aria-busy={showSkeleton || undefined}
@@ -536,7 +540,7 @@ export const BoardGlanceArrivals = ({
         />
         {stopName ? (
           <TitleTag className="tfl-title min-w-0 flex-1 text-[length:var(--glance-title)] leading-tight [font-weight:var(--tfl-title-weight,400)] text-balance [font-synthesis:none]">
-            <StationNameTitle name={stopName} />
+            <StationNameTitle name={stopName} fitBeforePaint />
           </TitleTag>
         ) : (
           <TitleTag className="sr-only">Arrivals</TitleTag>
