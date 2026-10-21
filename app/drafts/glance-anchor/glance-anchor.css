@@ -43,25 +43,32 @@
   --u: min(
     calc(
       (100cqi - 2 * var(--ga-pad)) /
-        (var(--ga-cols) * var(--ga-tile-w) + (var(--ga-cols) - 1) * var(--ga-gutter))
+        (
+          var(--ga-cols) * var(--ga-tile-w) + (var(--ga-cols) - 1) *
+            var(--ga-gutter)
+        )
     ),
     calc(
       (100cqb - 2 * var(--ga-pad) - var(--ga-chrome)) /
-        (var(--ga-rows) * var(--ga-tile-h) + (var(--ga-rows) - 1) * var(--ga-gutter) + 2)
+        (
+          var(--ga-rows) * var(--ga-tile-h) + (var(--ga-rows) - 1) *
+            var(--ga-gutter) + 2
+        )
     )
   );
   --ga-title: min(calc(var(--ga-roundel) * 0.625), calc(var(--u) * 3));
   --ga-foot: max(0.875rem, var(--u));
 }
 
+/* Two ×1.5 anchors count as three tile rows, plus two rows of tiles. */
 .ga-inner[data-layout="household"] {
-  --ga-rows: 6;
+  --ga-rows: 5;
 }
 
 /*
  * Across the room: the anchor over three two-line tiles (chip + bound, time).
- * Budget is the whole column: anchor 22.6u (two-line destination at k 2) +
- * three 6.3u tiles + four 3u gutters; 25.5u wide for "Walthamstow" at k 2.
+ * Budget is the whole column: anchor 28u (two-line destination and its shortest bound at k 2) +
+ * three 6.3u tiles + four 3u gutters (anchor minutes are 5 steps); 25.5u wide for "Walthamstow" at k 2.
  */
 .ga-inner[data-room] {
   --ga-cols: 1;
@@ -69,7 +76,7 @@
   --ga-stage-cols: 1;
   --ga-stage-rows: 1;
   --ga-tile-w: 25.5;
-  --ga-tile-h: 50.5;
+  --ga-tile-h: 56;
 }
 
 @container ga-shell (orientation: landscape) {
@@ -78,19 +85,19 @@
     --ga-rows: 2;
     --ga-stage-rows: 2;
   }
-  /* Two equal anchors side by side over a row of four tiles. */
+  /* Two equal ×1.5 anchors side by side over a row of four tiles. */
   .ga-inner[data-layout="household"] {
-    --ga-rows: 3;
+    --ga-rows: 2.5;
     --ga-stage-rows: 1;
   }
-  /* Anchor over two columns beside a column of three 6.3u tiles (24.9u tall); a tile is 16u wide with "Next". */
+  /* Anchor over two columns beside a column of three 6.3u tiles (anchor ×2.25 with its bound is 31u tall); a tile is 16u wide with "Next". */
   .ga-inner[data-room] {
     --ga-cols: 3;
     --ga-rows: 1;
     --ga-stage-cols: 2;
     --ga-stage-rows: 3;
     --ga-tile-w: 16;
-    --ga-tile-h: 24.9;
+    --ga-tile-h: 31;
   }
 }
 
@@ -103,6 +110,32 @@
 .ga-slot {
   --s: calc(var(--u) * var(--k, 1));
   --c: calc(var(--u) * var(--ck, 1));
+}
+
+/* The anchor: chip 1.5u, type ladder ×2 (×2.4 in landscape, to fill two tile rows), minutes 5 steps not 4 so time outweighs the destination. */
+.ga-stage-scale {
+  --ck: 1.5;
+  --k: 2;
+  --ga-time: 5;
+}
+
+/* Two anchors stacked on a phone: ×1.5, so the four tiles below stay legible. */
+.ga-inner[data-layout="household"] .ga-stage-scale {
+  --k: 1.5;
+}
+
+@container ga-shell (orientation: landscape) {
+  .ga-inner .ga-stage-scale {
+    --k: 2.25;
+  }
+  .ga-inner[data-layout="household"] .ga-stage-scale {
+    --k: 1.5;
+  }
+}
+
+/* Across the room the type carries the anchor; a lighter chip leaves the minutes heaviest. */
+.ga-inner[data-room] .ga-stage-scale {
+  --ck: 1.25;
 }
 
 .ga-slot[data-slot="ga-stage"] {

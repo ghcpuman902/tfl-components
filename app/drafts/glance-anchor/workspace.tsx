@@ -65,32 +65,32 @@ const META_TIER_CLASS = [
   "@min-[9.5em]/ga-meta:hidden",
 ] as const
 
-/** Place in the turn order: the stage says which of how many, the next tile says so. */
-export type SlotTurn =
-  | { kind: "stage"; ordinal: number; count: number; progress: number | null }
-  | { kind: "next" }
-  | null
+/** Every slot is numbered in turn order ("2 of 5"); the stage is "Now · 1 of 5" with its dwell bar. */
+export type SlotTurn = {
+  ordinal: number
+  count: number
+  /** Stage only: dwell progress, or null when touch replaces the timer. */
+  progress?: number | null
+} | null
 
-const TimeLockup = ({
-  time,
-  then,
-}: {
-  time: string
-  then: string | null
-}) => (
+const TimeLockup = ({ time, then }: { time: string; then: string | null }) => (
   <span
     className="flex items-end gap-x-[calc(var(--s)*0.75)] font-semibold tabular-nums"
     aria-hidden
   >
+    {/* A 1ch slot, so a lone bar-shaped "1" never sits against the rail. */}
     <span
-      className={cn("text-[length:calc(var(--s)*4)]", CHIP_CAP_TEXT_BOX_CLASS)}
+      className={cn(
+        "min-w-[1ch] text-right text-[length:calc(var(--s)*var(--ga-time))]",
+        CHIP_CAP_TEXT_BOX_CLASS
+      )}
     >
       {time}
     </span>
     <span className="flex flex-col gap-y-[calc(var(--s)*0.5)]">
-      {time === "Due" ? null : (
-        <span className={cn(QUIET_CLASS, "whitespace-nowrap")}>min</span>
-      )}
+      <span className={cn(QUIET_CLASS, "whitespace-nowrap")}>
+        {time === "Due" ? "now" : "min"}
+      </span>
       {then ? (
         <span className={cn(QUIET_CLASS, "whitespace-nowrap")}>
           {then}
@@ -131,18 +131,14 @@ const GlanceSlot = ({
   const time = minutes(first)
   const then = thenLine(item.times)
   const showThen = !room && (stage || reveal)
-  const showMeta = !room || !stage
   const showDest = !(room && !stage)
   // Across the room a tile is two lines: chip with its shortest bound, then the time.
   const inlineMeta = room && !stage
+  // Across the room the anchor keeps its shortest bound under the destination.
+  const roomMeta = room && stage
   const Tag = onTap ? "button" : "div"
-  const label =
-    turn?.kind === "stage"
-      ? `${turn.ordinal} of ${turn.count}`
-      : turn?.kind === "next"
-        ? "Next"
-        : item.owner
-  const progress = turn?.kind === "stage" ? turn.progress : null
+  const label = turn ? `${turn.ordinal} of ${turn.count}` : item.owner
+  const progress = stage ? (turn?.progress ?? null) : null
   const spoken = [
     item.owner,
     getLineNameTiers(item.lineId).full,
@@ -150,7 +146,7 @@ const GlanceSlot = ({
     item.destination,
     time === "Due" ? "Due" : `${time} min`,
     showThen && then ? `${then} min` : null,
-    turn?.kind === "next" ? "next" : null,
+    turn ? `${turn.ordinal} of ${turn.count}` : null,
   ]
     .filter(Boolean)
     .join(", ")
@@ -164,31 +160,16 @@ const GlanceSlot = ({
       aria-label={spoken}
       className={cn(
         SLOT_CLASS,
-        stage ? "[--ck:1.5] [--k:2]" : "[--ck:1] [--k:1]",
+        stage ? "ga-stage-scale" : "[--ck:1] [--ga-time:4] [--k:1]",
         onTap && "cursor-pointer"
       )}
     >
-      {/* The rail is the turn's progress when the slot is on a timer. */}
       <span
-        data-slot="ga-rail"
-        className={cn(
-          "relative w-[calc(var(--s)*0.5)] shrink-0 bg-[var(--line-color)]",
-          progress !== null && "bg-[color-mix(in_srgb,var(--line-color)_30%,transparent)]"
-        )}
+        className="w-[calc(var(--s)*0.5)] shrink-0 bg-[var(--line-color)]"
         aria-hidden
-      >
-        {progress !== null ? (
-          <span
-            className="absolute inset-x-0 top-0 bg-[var(--line-color)]"
-            style={{ height: `${Math.round(progress * 100)}%` }}
-          />
-        ) : null}
-      </span>
+      />
       <span className={COL_CLASS}>
-        <span
-          className="flex items-center gap-x-[length:var(--s)]"
-          aria-hidden
-        >
+        <span className="flex items-center gap-x-[length:var(--c)]" aria-hidden>
           <LineBadge
             lineId={item.lineId}
             name={getLineNameTiers(item.lineId).short}
@@ -212,7 +193,25 @@ const GlanceSlot = ({
                 CHIP_CAP_TEXT_BOX_CLASS
               )}
             >
+              {stage && turn ? (
+                <span className="hidden @min-[14.5em]/ga-col:inline">
+                  Now ·{" "}
+                </span>
+              ) : null}
               {label}
+            </span>
+          ) : null}
+          {progress !== null ? (
+            /* Dwell: how long until the next turn takes the stage. Line colour, so it is never the neutral freshness bar. */
+            <span
+              data-slot="ga-dwell"
+              className="relative h-[calc(var(--c)*0.75)] w-[calc(var(--c)*4)] shrink-0 bg-[color-mix(in_srgb,var(--line-color)_30%,transparent)]"
+              aria-hidden
+            >
+              <span
+                className="absolute inset-y-0 left-0 bg-[var(--line-color)]"
+                style={{ width: `${Math.round(progress * 100)}%` }}
+              />
             </span>
           ) : null}
         </span>
@@ -233,7 +232,12 @@ const GlanceSlot = ({
             />
           </span>
         ) : null}
-        {showMeta && !inlineMeta ? (
+        {roomMeta ? (
+          <span className={cn(QUIET_CLASS, "whitespace-nowrap")} aria-hidden>
+            {arrivalsHeadingLadder(item.heading).at(-1)}
+          </span>
+        ) : null}
+        {!inlineMeta && !roomMeta ? (
           <span
             className={cn("@container/ga-meta text-balance", QUIET_CLASS)}
             aria-hidden
@@ -253,10 +257,10 @@ const GlanceSlot = ({
 
 /** Freshness only: neutral, inline, short — never reads as the segment bar. */
 const GlanceFooter = ({ touch }: { touch: boolean }) => (
-  <footer className="@container/ga-foot flex h-12 shrink-0 items-center gap-x-[calc(var(--u)*1.5)] text-[length:var(--ga-foot)] text-muted-foreground">
+  <footer className="@container/ga-foot flex h-12 shrink-0 items-center gap-x-[length:var(--ga-foot)] text-[length:var(--ga-foot)] text-muted-foreground">
     <span className="whitespace-nowrap tabular-nums">Updated 11:50</span>
     <span
-      className="relative h-1 w-[calc(var(--ga-foot)*4)] shrink-0 bg-foreground/15"
+      className="relative h-1 w-[calc(var(--ga-foot)*3)] shrink-0 bg-foreground/15"
       aria-hidden
     >
       <span
@@ -348,7 +352,6 @@ export const GlanceAnchorMock = ({
     .slice(0, room ? ROOM_TILES : undefined)
   const stageTurn: SlotTurn = cycling
     ? {
-        kind: "stage",
         ordinal: Math.max(0, active) + 1,
         count: items.length,
         progress: touch ? null : cycle.progress,
@@ -400,7 +403,9 @@ export const GlanceAnchorMock = ({
                 stage={false}
                 room={room}
                 reveal={!touch || index === tapped}
-                turn={cycling && !touch && order === 0 ? { kind: "next" } : null}
+                turn={
+                  cycling ? { ordinal: order + 2, count: items.length } : null
+                }
                 onTap={touch ? () => setTapped(index) : undefined}
               />
             ) : null
