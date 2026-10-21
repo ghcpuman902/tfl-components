@@ -16,18 +16,18 @@ describe("resolveGlanceArrivalsPageSize", () => {
     assert.equal(resolveGlanceArrivalsPageSize(), BOARD_GLANCE_PAGE_SIZE)
   })
 
-  it("uses three rows only on very tall portrait containers", () => {
+  it("uses three rows on phone portrait and taller containers", () => {
     assert.equal(
       resolveGlanceArrivalsPageSize(BOARD_GLANCE_TALL_ASPECT),
       BOARD_GLANCE_TALL_PAGE_SIZE
     )
-    assert.equal(resolveGlanceArrivalsPageSize(2.4), BOARD_GLANCE_TALL_PAGE_SIZE)
+    assert.equal(resolveGlanceArrivalsPageSize(2.16), BOARD_GLANCE_TALL_PAGE_SIZE)
     assert.equal(resolveGlanceArrivalsPageSize(2.5), BOARD_GLANCE_TALL_PAGE_SIZE)
   })
 
-  it("keeps two rows on phone and iPad portrait", () => {
+  it("keeps two rows on iPad portrait and short phones", () => {
     assert.equal(resolveGlanceArrivalsPageSize(1.33), BOARD_GLANCE_PAGE_SIZE)
-    assert.equal(resolveGlanceArrivalsPageSize(2.16), BOARD_GLANCE_PAGE_SIZE)
+    assert.equal(resolveGlanceArrivalsPageSize(1.78), BOARD_GLANCE_PAGE_SIZE)
   })
 
   it("honours a positive override over aspect", () => {

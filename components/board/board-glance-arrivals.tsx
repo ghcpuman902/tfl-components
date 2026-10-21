@@ -2,6 +2,10 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react"
 import type { PredictionWithSharedTrackIdentity, RealtimePrediction } from "tfl-ts"
+import {
+  ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
+  CHIP_CAP_TEXT_BOX_CLASS,
+} from "@/components/tfl/arrivals/chip-text"
 import { LineBadge, LineBadgeGroup } from "@/components/tfl/brand/line-badge"
 import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
 import { StationName, StationNameTitle } from "@/components/tfl/station-name"
@@ -52,6 +56,36 @@ const formatGlanceCountdown = (
   if (seconds < 60) return { primary: "Due" }
   return { primary: `${Math.floor(seconds / 60)}`, unit: "min" }
 }
+
+/*
+ * One grid for loaded and loading rows: rail spans the stack, chip /
+ * destination / meta stack in 1u cap-trimmed gaps, minutes sit on the
+ * destination baseline. Sizes are `--glance-*` steps (globals.css).
+ */
+const ROW_CLASS =
+  "relative grid min-h-0 min-w-0 flex-1 basis-0 grid-cols-[auto_minmax(0,1fr)_auto] content-center gap-x-[length:var(--glance-u)] gap-y-[length:var(--glance-u)]"
+const ROW_RULE_CLASS =
+  "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/70"
+const RAIL_CLASS =
+  "col-start-1 row-span-3 row-start-1 w-[length:var(--glance-rail)]"
+const CHIP_SIZE_CLASS =
+  "h-[length:var(--glance-chip-h)] text-[length:var(--glance-small)]"
+/* Board row weight (no synthetic bold, so canvas fit matches paint); leading matches StationName's multiline. */
+const DEST_CLASS =
+  "font-medium text-[length:var(--glance-dest)] leading-[1.15]"
+const META_CLASS =
+  "col-span-2 col-start-2 row-start-3 m-0 font-medium text-[length:var(--glance-small)] leading-tight text-muted-foreground [text-box:trim-both_cap_alphabetic]"
+const TIME_CLASS =
+  "col-start-3 row-span-2 row-start-1 flex items-baseline justify-end gap-x-[length:var(--glance-rail)] self-end pl-[length:var(--glance-rail)] font-semibold tabular-nums"
+const NUMBER_CLASS = cn(
+  "min-w-[2ch] text-right text-[length:var(--glance-time)]",
+  CHIP_CAP_TEXT_BOX_CLASS
+)
+const UNIT_CLASS = cn(
+  "font-medium text-[length:var(--glance-dest)] text-muted-foreground",
+  CHIP_CAP_TEXT_BOX_CLASS
+)
+const SKELETON_FILL_CLASS = "animate-pulse bg-muted text-transparent"
 
 const GlanceArrivalRow = ({
   row,
@@ -104,12 +138,20 @@ const GlanceArrivalRow = ({
     arrival.platformName
   )
   const lineChip = sharedChipLabel ? (
-    <LineBadgeGroup variant="codes" lineIds={sharedChipIds} />
+    <LineBadgeGroup
+      variant="codes"
+      lineIds={sharedChipIds}
+      className={CHIP_SIZE_CLASS}
+    />
   ) : lineTiers && lineId ? (
     <LineBadge
       lineId={lineId}
       name={lineTiers.short}
-      className="h-[length:var(--glance-chip-h)] min-w-[5ch] justify-center px-3 text-[length:var(--glance-chip-text)]"
+      className={cn(
+        "justify-center px-0",
+        CHIP_SIZE_CLASS,
+        ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS
+      )}
     />
   ) : null
 
@@ -129,51 +171,51 @@ const GlanceArrivalRow = ({
     <li
       data-slot="board-glance-row"
       aria-label={ariaLabel}
-      className={cn(
-        "grid min-h-0 min-w-0 flex-1 basis-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-[clamp(0.5rem,2cqi,1.25rem)] py-[clamp(0.35rem,1.5cqi,1rem)]",
-        showRule && "border-b border-border/70"
-      )}
+      className={cn(ROW_CLASS, showRule && ROW_RULE_CLASS)}
     >
-      {lineId ? (
-        <span
-          data-line={lineId}
-          className="box-border h-[68%] min-h-8 w-2 shrink-0 self-center rounded-sm bg-[var(--line-color)] @min-[28rem]/glance-arrivals:min-h-12 @min-[28rem]/glance-arrivals:w-2.5"
-          aria-hidden
-        />
-      ) : (
-        <span className="w-2 shrink-0 @min-[28rem]/glance-arrivals:w-2.5" aria-hidden />
-      )}
-      <div className="min-w-0 overflow-hidden" aria-hidden="true">
-        {lineChip ? (
-          <div className="mb-[0.35em] flex items-center">{lineChip}</div>
-        ) : null}
+      <span
+        data-line={lineId || undefined}
+        className={cn(RAIL_CLASS, lineId && "bg-[var(--line-color)]")}
+        aria-hidden
+      />
+      {lineChip ? (
+        <div className="col-start-2 row-start-1 flex" aria-hidden="true">
+          {lineChip}
+        </div>
+      ) : null}
+      <div
+        className="col-start-2 row-start-2 flex min-w-0 overflow-x-clip"
+        aria-hidden="true"
+      >
+        {/*
+          CSS-wraps before the fit measures, so the line count is right on
+          first paint; clamped to two lines (padding keeps descenders past the
+          cap trim, negative margin keeps the box).
+        */}
         <StationName
           name={destination}
           layout="auto"
           maxLines={2}
           allowAbbreviation
           allowScaleDown
-          className="text-balance font-semibold text-[length:var(--glance-dest)] leading-[1.1]"
+          nowrap={false}
+          className={cn(
+            "text-balance [&>span>span]:[text-box:trim-both_cap_alphabetic]",
+            DEST_CLASS
+          )}
         />
-        <p
-          data-slot="board-glance-meta"
-          className="mt-[0.35em] truncate text-balance font-medium text-[length:var(--glance-meta)] leading-tight text-foreground/80"
-        >
-          {meta ?? lineTiers?.full ?? "Next train"}
-        </p>
       </div>
-      <div
-        data-slot="board-glance-time"
-        className="flex w-[4.5ch] shrink-0 flex-col items-end justify-center tabular-nums tracking-tight @min-[28rem]/glance-arrivals:w-auto"
+      <p
+        data-slot="board-glance-meta"
+        className={cn("text-balance", META_CLASS)}
         aria-hidden="true"
       >
-        <span className="font-semibold leading-none text-[length:var(--glance-time)]">
-          {countdown.primary}
-        </span>
+        {meta ?? lineTiers?.full ?? "Next train"}
+      </p>
+      <div data-slot="board-glance-time" className={TIME_CLASS} aria-hidden="true">
+        <span className={NUMBER_CLASS}>{countdown.primary}</span>
         {countdown.unit ? (
-          <span className="mt-[0.15em] text-[length:var(--glance-unit)] font-medium leading-none text-muted-foreground">
-            {countdown.unit}
-          </span>
+          <span className={UNIT_CLASS}>{countdown.unit}</span>
         ) : null}
       </div>
     </li>
@@ -204,14 +246,18 @@ export const BoardGlanceArrivals = ({
   useLayoutEffect(() => {
     const el = rootRef.current
     if (!el || typeof ResizeObserver === "undefined") return
+    // The shell sizes `--glance-u`; its box never depends on the row count.
+    const target =
+      el.closest<HTMLElement>(".board-embed.board-glance") ??
+      el.parentElement ??
+      el
     const update = () => {
-      // Prefer the filled parent (aspect-ratio frame); the root can lag on first paint.
-      const box = (el.parentElement ?? el).getBoundingClientRect()
+      const box = target.getBoundingClientRect()
       if (box.width > 0 && box.height > 0) setAspect(box.height / box.width)
     }
     update()
     const observer = new ResizeObserver(update)
-    observer.observe(el.parentElement ?? el)
+    observer.observe(target)
     return () => observer.disconnect()
   }, [])
 
@@ -242,22 +288,23 @@ export const BoardGlanceArrivals = ({
     <div
       ref={rootRef}
       data-slot="board-glance-arrivals"
+      data-glance-rows={pageSize}
       className={cn(
-        "@container/glance-arrivals flex min-h-0 w-full flex-1 flex-col overflow-hidden",
+        "flex min-h-0 w-full flex-1 flex-col overflow-hidden",
         className
       )}
       aria-busy={showSkeleton || undefined}
       onFocus={sequence.handleFocus}
       onBlur={sequence.handleBlur}
     >
-      <div className="flex shrink-0 items-center gap-x-[clamp(0.875rem,2cqi,1.25rem)] pb-[clamp(0.75rem,2cqi,1.25rem)]">
+      <div className="mb-[length:var(--glance-u)] box-border flex h-[length:var(--glance-roundel)] shrink-0 items-center gap-x-[length:var(--glance-gutter)] overflow-clip">
         <TfLRoundel
           variant="underground"
           className="size-[clamp(4.5rem,9.5cqi,6.25rem)] shrink-0"
           aria-hidden
         />
         {stopName ? (
-          <TitleTag className="tfl-title min-w-0 flex-1 text-[length:var(--glance-title)] leading-tight [font-synthesis:none] [font-weight:var(--tfl-title-weight,400)]">
+          <TitleTag className="tfl-title min-w-0 flex-1 text-balance text-[length:var(--glance-title)] leading-tight [font-synthesis:none] [font-weight:var(--tfl-title-weight,400)]">
             <StationNameTitle name={stopName} />
           </TitleTag>
         ) : (
@@ -273,18 +320,37 @@ export const BoardGlanceArrivals = ({
           {Array.from({ length: pageSize }).map((_, index) => (
             <li
               key={index}
-              className={cn(
-                "grid min-h-0 flex-1 basis-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-[clamp(0.5rem,2cqi,1.25rem)] py-[clamp(0.35rem,1.5cqi,1rem)]",
-                index < pageSize - 1 && "border-b border-border/70"
-              )}
+              className={cn(ROW_CLASS, index < pageSize - 1 && ROW_RULE_CLASS)}
             >
-              <div className="h-[68%] w-2 animate-pulse rounded-sm bg-muted" />
-              <div className="flex min-w-0 flex-col gap-[0.35em]">
-                <div className="h-[length:var(--glance-chip-h)] w-24 animate-pulse rounded bg-muted" />
-                <div className="h-[1.2em] w-3/4 max-w-sm animate-pulse rounded bg-muted text-[length:var(--glance-dest)]" />
-                <div className="h-[1.1em] w-48 animate-pulse rounded bg-muted text-[length:var(--glance-meta)]" />
+              <span className={cn(RAIL_CLASS, "animate-pulse bg-muted")} />
+              <div className="col-start-2 row-start-1 flex">
+                <span
+                  className={cn(
+                    "font-bold",
+                    CHIP_SIZE_CLASS,
+                    ARRIVALS_IDENTITY_CHIP_WIDTH_CLASS,
+                    SKELETON_FILL_CLASS
+                  )}
+                />
               </div>
-              <div className="h-16 w-20 animate-pulse rounded bg-muted" />
+              <div className="col-start-2 row-start-2 flex min-w-0">
+                <span
+                  className={cn(
+                    "w-3/4 max-w-sm [text-box:trim-both_cap_alphabetic]",
+                    DEST_CLASS,
+                    SKELETON_FILL_CLASS
+                  )}
+                >
+                  {" "}
+                </span>
+              </div>
+              <p className={cn("w-1/2 max-w-xs", META_CLASS, SKELETON_FILL_CLASS)}>
+                {" "}
+              </p>
+              <div className={TIME_CLASS}>
+                <span className={cn(NUMBER_CLASS, SKELETON_FILL_CLASS)}>00</span>
+                <span className={cn(UNIT_CLASS, SKELETON_FILL_CLASS)}>min</span>
+              </div>
             </li>
           ))}
         </ul>
@@ -320,13 +386,13 @@ export const BoardGlanceArrivals = ({
       <div
         data-slot="board-glance-dwell"
         className={cn(
-          "relative mt-[clamp(0.75rem,1.8cqi,1.25rem)] h-2 w-full shrink-0 overflow-hidden rounded-full bg-muted",
+          "relative mt-[length:var(--glance-u)] h-1 w-full shrink-0 overflow-hidden bg-foreground/15",
           frames.length > 1 && !error ? undefined : "invisible"
         )}
         aria-hidden
       >
         <div
-          className="absolute inset-y-0 left-0 bg-foreground/75 transition-[width] duration-200 ease-linear"
+          className="absolute inset-y-0 left-0 bg-foreground/50 transition-[width] duration-200 ease-linear"
           style={{
             width: sequence.started
               ? `${Math.round(sequence.progress * 100)}%`

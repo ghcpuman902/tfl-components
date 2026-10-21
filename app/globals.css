@@ -287,19 +287,40 @@ html.board-glance .board-glance {
 }
 
 /*
- * Glance type — room-distance on any aspect. `cqi` tracks the container’s
- * inline size so landscape and square share the same scale; tall portrait
- * still fills via flex row growth (2 vs 3 rows from aspect).
+ * Glance scale — the Board arrivals ladder on one container-relative unit.
+ * `--glance-u` plays `--arrivals-unit`; steps keep the Board ratios
+ * (bar 0.5, gap-x-2 1, gap-x-3 1.5, text-xs 1.5, text-base 2, h-5 chip 2.5)
+ * plus the minutes figure at twice the destination.
+ *
+ * The shell is a size container so the unit fits the limiting side: a row
+ * needs ~22u of width and 11.25u of height (chip, two-line destination,
+ * meta = 9.25u, plus 1u clear of each row rule).
+ * Chrome is what it paints: one roundel tile + 1u, a 1u gap + h-1 dwell, and
+ * a 48px footer line + pt-3 (4rem with the dwell). Rows come from the same
+ * budget (`BOARD_GLANCE_TALL_ASPECT`).
  */
-[data-slot="board-glance-arrivals"] {
-  /* Room-distance type. Prefer fewer rows over shrinking; phone (~390cqi) floors keep wrap tidy. */
-  --glance-title: clamp(2rem, 6.75cqi, 4.5rem);
-  --glance-meta: clamp(1.375rem, 5.5cqi, 3.25rem);
-  --glance-dest: clamp(1.6875rem, 7.5cqi, 4.6875rem);
-  --glance-time: clamp(3.375rem, 18cqi, 10.5rem);
-  --glance-unit: clamp(1.3125rem, 4.8cqi, 3.5625rem);
-  --glance-chip-h: clamp(2.25rem, 6.75cqi, 4.125rem);
-  --glance-chip-text: clamp(1.21875rem, 3.6cqi, 2.0625rem);
+.board-embed.board-glance {
+  container-type: size;
+  --glance-rows: 2;
+  --glance-roundel: clamp(4.5rem, 9.5cqi, 6.25rem);
+  --glance-u: min(
+    4.5cqi,
+    calc(
+      (100cqb - var(--glance-roundel) - 4rem) / (var(--glance-rows) * 11.25 + 2)
+    )
+  );
+  --glance-rail: calc(var(--glance-u) * 0.5);
+  --glance-gutter: calc(var(--glance-u) * 1.5);
+  --glance-small: calc(var(--glance-u) * 1.5);
+  --glance-dest: calc(var(--glance-u) * 2);
+  --glance-chip-h: calc(var(--glance-u) * 2.5);
+  --glance-time: calc(var(--glance-u) * 4);
+  /* Board title tile: text-3xl beside a one-row roundel (0.625), never above the destination step. */
+  --glance-title: min(calc(var(--glance-roundel) * 0.625), var(--glance-dest));
+}
+
+.board-embed.board-glance:has([data-glance-rows="3"]) {
+  --glance-rows: 3;
 }
 
 /*

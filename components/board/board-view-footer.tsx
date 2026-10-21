@@ -109,18 +109,24 @@ export const BoardViewFooter = ({
     dueAt != null && ticking && now != null ? Math.max(0, Math.ceil((dueAt - now) / 1_000)) : null
 
   const actionClass = compact
-    ? "inline-flex min-h-12 min-w-12 items-center justify-center px-3 underline-offset-4 hover:text-foreground hover:underline disabled:cursor-progress disabled:no-underline"
+    ? "inline-flex min-h-12 items-center underline-offset-4 hover:text-foreground hover:underline disabled:cursor-progress disabled:no-underline"
     : "underline-offset-4 hover:text-foreground hover:underline disabled:cursor-progress disabled:no-underline"
 
   return (
     <footer
       className={
         compact
-          ? "mt-auto shrink-0 pt-3 text-xl tabular-nums text-muted-foreground"
+          ? "mt-auto shrink-0 pt-3 text-[length:var(--glance-u)] tabular-nums text-muted-foreground"
           : "mt-[calc(var(--arrivals-row)/2)] max-w-3xl text-sm text-muted-foreground"
       }
     >
-      <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <p
+        className={
+          compact
+            ? "flex flex-wrap items-center gap-x-[length:var(--glance-gutter)] gap-y-1"
+            : "flex flex-wrap items-center gap-x-3 gap-y-1"
+        }
+      >
         {stale ? (
           <span className="font-medium text-amber-600 dark:text-amber-400" role="status">
             Updating…
@@ -188,18 +194,19 @@ export const BoardViewFooter = ({
             Install
           </button>
         ) : null}
+        {compact ? (
+          <span>
+            Powered by{" "}
+            <FooterLink href={TFL_OPEN_DATA_URL}>TfL Open Data</FooterLink>.
+          </span>
+        ) : null}
       </p>
       {fullscreenError ? (
         <p className="mt-1" role="alert">
           {fullscreenError}
         </p>
       ) : null}
-      {compact ? (
-        <p className="mt-1 text-base">
-          Powered by{" "}
-          <FooterLink href={TFL_OPEN_DATA_URL}>TfL Open Data</FooterLink>.
-        </p>
-      ) : (
+      {compact ? null : (
         <>
           <p>
             Powered by{" "}
