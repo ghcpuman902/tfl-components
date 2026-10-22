@@ -3,6 +3,13 @@
 import * as React from "react"
 import { Combobox as ComboboxPrimitive } from "@base-ui/react"
 
+import {
+  isTap,
+  isTouchPointer,
+  needsSyntheticClick,
+  TAP_CLICK_GRACE_MS,
+  type TapPoint,
+} from "@/lib/touch-tap"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -137,11 +144,58 @@ function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
 function ComboboxItem({
   className,
   children,
+  onPointerDown,
+  onPointerUp,
+  onPointerCancel,
+  onClick,
   ...props
 }: ComboboxPrimitive.Item.Props) {
+  // See lib/touch-tap: WebKit drops the tap's click on these items.
+  const tapStart = React.useRef<TapPoint | null>(null)
+  const lastClickAt = React.useRef(0)
+
   return (
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
+      onPointerDown={(event) => {
+        tapStart.current = isTouchPointer(event.pointerType)
+          ? {
+              pointerId: event.pointerId,
+              x: event.clientX,
+              y: event.clientY,
+              t: event.timeStamp,
+            }
+          : null
+        onPointerDown?.(event)
+      }}
+      onPointerUp={(event) => {
+        const start = tapStart.current
+        tapStart.current = null
+        const end = {
+          pointerId: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+          t: event.timeStamp,
+        }
+        if (isTap(start, end)) {
+          const item = event.currentTarget
+          const endedAt = performance.now()
+          window.setTimeout(() => {
+            if (!item.isConnected) return
+            if (!needsSyntheticClick(endedAt, lastClickAt.current)) return
+            item.click()
+          }, TAP_CLICK_GRACE_MS)
+        }
+        onPointerUp?.(event)
+      }}
+      onPointerCancel={(event) => {
+        tapStart.current = null
+        onPointerCancel?.(event)
+      }}
+      onClick={(event) => {
+        lastClickAt.current = performance.now()
+        onClick?.(event)
+      }}
       className={cn(
         "relative flex w-full cursor-default items-center gap-2 rounded-md py-1 pr-8 pl-1.5 text-sm outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground not-data-[variant=destructive]:data-highlighted:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
