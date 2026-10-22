@@ -202,6 +202,37 @@ export const resolveBoardStationQuery = (
   return { status: "none" }
 }
 
+const foldStationText = (value: string): string =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[’']/g, "'")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+
+/**
+ * Typed text committed without tapping a list item (Enter, Go, blur).
+ * A Stop ID, a unique station name, or a query with one match resolves;
+ * a name several stations share stays unresolved so the visitor picks one.
+ */
+export const resolveBoardStationCommit = (
+  items: readonly BoardStationSearchItem[],
+  query: string
+): BoardStationSearchItem | undefined => {
+  const resolved = resolveBoardStationQuery(items, query)
+  if (resolved.status === "match") return resolved.item
+  if (resolved.status === "unknown-id") return undefined
+  const folded = foldStationText(query)
+  if (!folded) return undefined
+  const named = items.filter((item) => foldStationText(item.name) === folded)
+  if (named.length > 0) return named.length === 1 ? named[0] : undefined
+  const matches = items.filter((item) =>
+    matchBoardStationSearchQuery(item, query)
+  )
+  return matches.length === 1 ? matches[0] : undefined
+}
+
 /**
  * Combobox pick → Stop ID. Accepts a search item, a NaPTAN id, or the JSON
  * object Base UI serialises when `itemToStringLabel` is missing.

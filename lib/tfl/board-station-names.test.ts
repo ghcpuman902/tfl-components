@@ -11,6 +11,7 @@ import {
   matchBoardStationSearchItem,
   matchBoardStationSearchQuery,
   parseBoardStationPick,
+  resolveBoardStationCommit,
   resolveBoardStationQuery,
   resolveBoardStopNameOverride,
 } from "./board-station-names"
@@ -210,5 +211,30 @@ describe("resolveBoardStopNameOverride", () => {
 
   it("keeps a custom label", () => {
     assert.equal(resolveBoardStopNameOverride("Home", "Oxford Circus"), "Home")
+  })
+})
+
+describe("resolveBoardStationCommit", () => {
+  const items = buildBoardStationSearchIndex()
+  const nameCount = (name: string) =>
+    items.filter((item) => item.name.toLowerCase() === name.toLowerCase())
+      .length
+
+  it("resolves a typed station name without a list pick", () => {
+    assert.equal(resolveBoardStationCommit(items, "Tower Hill")?.id, "940GZZLUTWH")
+    assert.equal(resolveBoardStationCommit(items, "  tower hill ")?.id, "940GZZLUTWH")
+  })
+
+  it("resolves a Stop ID and a query with a single match", () => {
+    assert.equal(resolveBoardStationCommit(items, "940GZZLUTWH")?.name, "Tower Hill")
+    assert.equal(resolveBoardStationCommit(items, "Tower Hil")?.id, "940GZZLUTWH")
+  })
+
+  it("leaves shared names and broad queries for the visitor to pick", () => {
+    const shared = items.find((item) => nameCount(item.name) > 1)
+    assert.ok(shared)
+    assert.equal(resolveBoardStationCommit(items, shared.name), undefined)
+    assert.equal(resolveBoardStationCommit(items, "Tower"), undefined)
+    assert.equal(resolveBoardStationCommit(items, ""), undefined)
   })
 })

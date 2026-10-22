@@ -21,6 +21,7 @@ import {
 } from "@/components/board/board-preview-mode"
 import { BoardShareCard } from "@/components/board/board-share-card"
 import { BoardStationSearch } from "@/components/board/board-station-search"
+import { TflApiKeyField } from "@/components/tfl-api-key-field"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -892,6 +893,22 @@ export const BoardStagedBuilder = ({
                       onOpenChange={setAdvancedOpen}
                       hideTrigger
                     />
+                    <section aria-labelledby="board-key-heading" className="space-y-2">
+                      <h3
+                        id="board-key-heading"
+                        className="text-sm font-medium"
+                      >
+                        Your own TfL key
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Optional. Boards on this browser use it instead of the
+                        shared key. It stays here and is not in the link.
+                      </p>
+                      <TflApiKeyField
+                        id="board-tfl-key"
+                        labelledBy="board-key-heading"
+                      />
+                    </section>
                   </div>
                 ) : null}
               </section>

@@ -97,6 +97,7 @@ import {
 import {
   isBoardReady,
   isUsableBoardConfig,
+  boardFetchKey,
   withDemoBoardFallback,
 } from "@/lib/tfl/board-view-resolve"
 import {
@@ -257,7 +258,7 @@ export const BoardDisplay = ({
     stationNames,
     !isPreview
   )
-  const { hydrated, save } = useUserTflCredentials()
+  const { hydrated, getAppKey, save } = useUserTflCredentials()
   const frameEmbedded = useSyncExternalStore(
     subscribeNoop,
     getEmbedded,
@@ -315,6 +316,7 @@ export const BoardDisplay = ({
   }, [fromHomeScreen, hashConfig, previewConfig, stationNames, usableInstalled])
 
   const surfaceReady = ready && hydrated
+  const appKey = boardFetchKey(config.key, hydrated ? getAppKey() : null)
   const boardReady = surfaceReady && isBoardReady(config, null)
   const fullscreen = useBoardFullscreen(boardRootRef, {
     enabled: boardReady && !fromHomeScreen && !embedded,
@@ -388,7 +390,7 @@ export const BoardDisplay = ({
   const showStatus = !isGlance && boardSlotsInclude(slots, "status")
 
   const status = useBoardStatus({
-    appKey: null,
+    appKey,
     enabled: boardReady && showStatus,
   })
   const pollStopIds = useMemo(
@@ -406,7 +408,7 @@ export const BoardDisplay = ({
   const arrivals = useDualPathArrivals({
     stopPointId: boardReady && showRail ? stopId : "",
     stopPointIds: boardReady && showRail ? pollStopIds : [],
-    appKeyOverride: null,
+    appKeyOverride: boardReady ? appKey : null,
     sharedTrackLineIds: boardReady && showRail ? sharedTrackLineIds : undefined,
     sharedTrackFamilies:
       boardReady && showRail ? sharedTrackFamilies : undefined,
@@ -419,17 +421,17 @@ export const BoardDisplay = ({
 
   const busArrivals = useDualPathArrivals({
     stopPointId: boardReady && showBus ? busStopId : "",
-    appKeyOverride: null,
+    appKeyOverride: boardReady ? appKey : null,
     siteScope: "board",
   })
   const riverArrivals = useDualPathArrivals({
     stopPointId: boardReady && showRiver ? riverStopId : "",
-    appKeyOverride: null,
+    appKeyOverride: boardReady ? appKey : null,
     siteScope: "board",
   })
   const cyclePoints = useDualPathBikePoints({
     dockIds: cycleDockIds,
-    appKeyOverride: null,
+    appKeyOverride: boardReady ? appKey : null,
     enabled: boardReady && showCycle,
     siteScope: "board",
   })

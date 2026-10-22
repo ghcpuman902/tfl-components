@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState, type KeyboardEvent } from "react"
 import {
   Combobox,
   ComboboxContent,
@@ -14,9 +14,12 @@ import {
   matchBoardStationSearchItem,
   matchBoardStationSearchQuery,
   parseBoardStationPick,
+  resolveBoardStationCommit,
   resolveBoardStationQuery,
   type BoardStationSearchItem,
 } from "@/lib/tfl/board-station-names"
+
+const PICK_FROM_LIST = "Pick a station from the list."
 
 type BoardStationSearchProps = {
   stations: readonly BoardStationSearchItem[]
@@ -66,6 +69,24 @@ export const BoardStationSearch = ({
     setQuery(pick.name ?? "")
   }
 
+  const highlightedRef = useRef<BoardStationSearchItem | undefined>(undefined)
+
+  // Typed text the visitor did not pick from the list (Enter, Go, blur, close).
+  const commitTypedQuery = () => {
+    if (selected || !query.trim()) return
+    const item = resolveBoardStationCommit(stations, query)
+    if (item) {
+      handleResolvedStop(item.id)
+      setQuery(item.name)
+      return
+    }
+    if (!invalidMessage) setInvalidMessage(PICK_FROM_LIST)
+  }
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" && !highlightedRef.current) commitTypedQuery()
+  }
+
   const handleInputValueChange = (
     value: string,
     details?: { reason?: string }
@@ -85,6 +106,10 @@ export const BoardStationSearch = ({
       )
       return
     }
+
+    // Closing with nothing picked resets the input to the empty selection;
+    // keep the visitor's text so it can still be committed or corrected.
+    if (details?.reason === "input-clear" && !selected && query.trim()) return
 
     const trimmed = value.trim()
     setQuery(value)
@@ -113,12 +138,20 @@ export const BoardStationSearch = ({
         itemToStringValue={(item) => item.id}
         isItemEqualToValue={(item, value) => item.id === value.id}
         filter={null}
+        onItemHighlighted={(item) => {
+          highlightedRef.current = item ?? undefined
+        }}
+        onOpenChange={(open, details) => {
+          if (!open && details.reason !== "item-press") commitTypedQuery()
+        }}
       >
         <ComboboxInput
           id="board-station"
           placeholder="Station name or Stop ID"
           className="w-full"
           showClear={inputValue.length > 0}
+          onKeyDown={handleKeyDown}
+          onBlur={commitTypedQuery}
           aria-invalid={showError ? true : undefined}
           aria-describedby={showError ? "board-station-error" : undefined}
         />

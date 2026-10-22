@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { DEFAULT_BOARD_CONFIG, parseBoardConfig } from "./board-url-state"
 import {
+  boardFetchKey,
   DEMO_BOARD_CONFIG,
   isBoardReady,
   isUsableBoardConfig,
@@ -209,5 +210,20 @@ describe("parseBoardViewLink", () => {
     if (result.ok) {
       assert.equal(result.key, SAMPLE_KEY)
     }
+  })
+})
+
+describe("boardFetchKey", () => {
+  it("uses the key saved on this browser when the link has none", () => {
+    assert.equal(boardFetchKey(undefined, " saved123 "), "saved123")
+  })
+
+  it("prefers a legacy #key= link over the saved key", () => {
+    assert.equal(boardFetchKey("hashkey", "saved123"), "hashkey")
+  })
+
+  it("falls back to the shared project key with no visitor key", () => {
+    assert.equal(boardFetchKey(undefined, null), null)
+    assert.equal(boardFetchKey("  ", "  "), null)
   })
 })

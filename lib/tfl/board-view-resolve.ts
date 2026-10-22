@@ -70,6 +70,15 @@ export const isBoardReady = (
   storedKey: string | null
 ): boolean => resolveBoardReadiness(config, storedKey).ready
 
+/**
+ * Key the hosted Board fetches with: a legacy `#key=` link, else the key the
+ * visitor saved on this browser, else null for the shared project key.
+ */
+export const boardFetchKey = (
+  hashKey: string | undefined,
+  storedKey: string | null
+): string | null => hashKey?.trim() || storedKey?.trim() || null
+
 /** No usable stop still shows Oxford Circus, keeping the view and behaviour asked for. */
 export const withDemoBoardFallback = (config: BoardConfig): BoardConfig =>
   isUsableBoardConfig(config)
