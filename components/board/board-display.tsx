@@ -987,6 +987,7 @@ export const BoardDisplay = ({
           units={statusProps.tiles || 4}
           detailScope={statusProps.detailScope}
           detailLineIds={statusProps.detailLineIds}
+          lineOrder={config.status.lines}
           dwellMs={statusProps.dwellMs}
           startDelayMs={1500}
           error={status.error}
@@ -1001,6 +1002,7 @@ export const BoardDisplay = ({
           tiles={statusProps.tiles}
           detailScope={statusProps.detailScope}
           detailLineIds={statusProps.detailLineIds}
+          lineOrder={config.status.lines}
           dwellMs={statusProps.dwellMs}
           startDelayMs={1500}
           error={status.error}
@@ -1012,6 +1014,7 @@ export const BoardDisplay = ({
         data={statusData}
         now={status.fetchedAt ?? undefined}
         hideHeader
+        lineOrder={config.status.lines}
         priorityLineIds={
           statusProps.detailScope === "network"
             ? statusProps.detailLineIds

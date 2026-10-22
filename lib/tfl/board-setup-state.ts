@@ -127,6 +127,11 @@ export const parseBoardSetupDraft = (value: unknown): BoardSetupDraft | null => 
   }
 }
 
+/** `s.lines`: lines at this stop, then the extra lines, each in the order the user set. */
+export const statusLineOrderFromDraft = (
+  draft: Pick<BoardSetupDraft, "lineIds" | "statusLineIds">
+): readonly string[] => [...new Set([...draft.lineIds, ...draft.statusLineIds])]
+
 /** First Continue or a change from the recommended screen starts setup. */
 export const markBoardSetupStarted = (draft: BoardSetupDraft): BoardSetupDraft => {
   if (draft.setupStarted) return draft

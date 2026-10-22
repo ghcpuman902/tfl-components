@@ -78,6 +78,7 @@ import {
   markBoardSetupCompleted,
   markBoardSetupStarted,
   parseBoardSetupDraft,
+  statusLineOrderFromDraft,
   BOARD_SETUP_DRAFT_STORAGE_KEY,
   type BoardNearbyMode,
   type BoardScreenProfile,
@@ -151,16 +152,11 @@ const formSettingsFromConfig = (config: BoardConfig): BoardSettingId[] => {
   return [...ids]
 }
 
-const priorityLineIdsFromDraft = (draft: BoardSetupDraft): readonly string[] =>
-  LINE_ORDER.filter(
-    (id) => draft.lineIds.includes(id) || draft.statusLineIds.includes(id)
-  )
-
 const extraStatusLineIdsForServing = (servingIds: readonly string[]) =>
   BOARD_STATUS_CORE_LINE_IDS.filter((id) => !servingIds.includes(id))
 
 const statusConfigFromDraft = (draft: BoardSetupDraft) => {
-  const lines = priorityLineIdsFromDraft(draft)
+  const lines = statusLineOrderFromDraft(draft)
   return {
     lines: lines.length > 0 ? lines : undefined,
     overview: draft.statusOnlyThese

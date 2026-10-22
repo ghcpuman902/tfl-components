@@ -67,6 +67,8 @@ type Props = {
    * expand every line.
    */
   priorityLineIds?: readonly string[]
+  /** Show these lines in this order within each section; others keep their slot. */
+  lineOrder?: readonly string[]
 }
 
 /**
@@ -369,6 +371,7 @@ export const TubeStatusBoard = ({
   dedupe = true,
   rawReason = false,
   priorityLineIds,
+  lineOrder,
   children,
 }: Props) => {
   const { disruptions, goodService } = partitionStatusBoardLines(data ?? [], {
@@ -376,6 +379,7 @@ export const TubeStatusBoard = ({
     dedupe,
     rawReason,
     now,
+    lineOrder,
   })
   const disruptionSplit = splitByPriority(disruptions, priorityLineIds)
 
