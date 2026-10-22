@@ -53,8 +53,12 @@ import {
 import {
   getBoardNearbyPlaces,
   getBoardNearbyPlacesForStop,
-  type BoardNearbyResult,
 } from "@/lib/tfl/board-nearby-action"
+import {
+  applyNearbyIds,
+  createNearbyFillTracker,
+  nearbyFillKey,
+} from "@/lib/tfl/board-nearby-fill"
 import {
   LOCATE_HELP,
   LOCATE_WATCHDOG_MS,
@@ -214,32 +218,6 @@ const mergeBoardConfig = (
   status: { ...base.status, ...extra.status },
 })
 
-const draftNeedsNearbyIds = (draft: BoardSetupDraft): boolean => {
-  if (draft.continueWithoutStop) return false
-  return (
-    !draft.busStopId ||
-    (draft.nearbyModes.includes("river") && !draft.riverStopId) ||
-    (draft.nearbyModes.includes("cycle") && draft.cycleDockIds.length === 0)
-  )
-}
-
-const applyNearbyIds = (
-  current: BoardSetupDraft,
-  result: Extract<BoardNearbyResult, { ok: true }>
-): BoardSetupDraft => ({
-  ...current,
-  busStopId:
-    !current.busStopId ? (result.bus?.id ?? current.busStopId) : current.busStopId,
-  riverStopId:
-    current.nearbyModes.includes("river") && !current.riverStopId
-      ? (result.river?.id ?? current.riverStopId)
-      : current.riverStopId,
-  cycleDockIds:
-    current.nearbyModes.includes("cycle") && current.cycleDockIds.length === 0
-      ? result.docks
-      : current.cycleDockIds,
-})
-
 const nearbyModesFromSlots = (slots: BoardSlotsConfig): BoardNearbyMode[] => {
   const resolved = resolveBoardSlots(slots.p1, slots.p2)
   const modes: BoardNearbyMode[] = []
@@ -290,7 +268,7 @@ export const BoardStagedBuilder = ({
   )
   const searchWrapRef = useRef<HTMLDivElement | null>(null)
   const lastAnnounce = useRef("")
-  const nearbyFillKey = useRef<string | null>(null)
+  const [nearbyFill] = useState(createNearbyFillTracker)
 
   const focusSearch = () => {
     window.requestAnimationFrame(() => {
@@ -365,20 +343,20 @@ export const BoardStagedBuilder = ({
   }
 
   useEffect(() => {
-    if (!ready || draft.continueWithoutStop || !draftNeedsNearbyIds(draft))
-      return
+    if (!ready) return
+    const key = nearbyFillKey(draft, EXAMPLE_STOP.id)
+    if (!nearbyFill.claim(key)) return
     const stopId = draft.stopId ?? EXAMPLE_STOP.id
-    const key = `${stopId}:${[...draft.nearbyModes].sort().join(",")}`
-    if (nearbyFillKey.current === key) return
-    nearbyFillKey.current = key
     void getBoardNearbyPlacesForStop(stopId).then((result) => {
       if (!result.ok) {
-        nearbyFillKey.current = null
+        nearbyFill.reset()
         return
       }
-      updateDraft((current) => applyNearbyIds(current, result))
+      updateDraft((current) =>
+        applyNearbyIds(current, stopId, EXAMPLE_STOP.id, result)
+      )
     })
-  }, [draft, ready])
+  }, [draft, nearbyFill, ready])
 
   const startIfNeeded = (current: BoardSetupDraft) => {
     if (current.setupStarted) return current
@@ -775,6 +753,7 @@ export const BoardStagedBuilder = ({
                               station.id === stop ||
                               station.aliasIds.includes(stop)
                           )
+                          nearbyFill.reset()
                           updateDraft((current) => {
                             const lineIds = (
                               lookupBoardStationLines(stationLines, stop) ?? []
