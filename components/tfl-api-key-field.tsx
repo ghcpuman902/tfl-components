@@ -6,7 +6,13 @@ import {
   useState,
   type ClipboardEvent,
 } from "react"
-import { CheckIcon, CircleXIcon, CopyIcon } from "lucide-react"
+import {
+  CheckIcon,
+  CircleXIcon,
+  CopyIcon,
+  EyeIcon,
+  EyeOffIcon,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   InputGroup,
@@ -16,8 +22,8 @@ import {
 } from "@/components/ui/input-group"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
 import {
-  displayTflAppKey,
   isPlausibleTflAppKey,
+  tflKeyDraftChange,
 } from "@/lib/tfl/user-credentials-storage"
 import { TEXT_LINK_CLASS } from "@/lib/text-link"
 import { cn } from "@/lib/utils"
@@ -78,6 +84,7 @@ export const TflApiKeyField = ({
   const [keyCopied, setKeyCopied] = useState(false)
   const [keyFormatError, setKeyFormatError] = useState(false)
   const [keyFieldFocused, setKeyFieldFocused] = useState(false)
+  const [keyVisible, setKeyVisible] = useState(false)
   const lastKeyAttempt = useRef("")
   const keyInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -122,33 +129,23 @@ export const TflApiKeyField = ({
   }
 
   const handleKeyDraftChange = (next: string) => {
-    if (!next) {
+    const change = tflKeyDraftChange(next)
+    setEditDraft(change.draft)
+    setKeyFormatError(change.action === "invalid")
+    if (change.action === "clear") {
       lastKeyAttempt.current = ""
-      setKeyFormatError(false)
-      setEditDraft("")
       if (hasKey) clear()
       return
     }
-    if (/^[a-zA-Z0-9]+$/.test(next)) {
-      setEditDraft(next)
-      setKeyFormatError(false)
-      if (isPlausibleTflAppKey(next).ok) void handleSaveKey(next)
-      return
-    }
-    if (next.length < keyDraft.length) {
-      const shortened = keyDraft.slice(0, next.length)
-      setEditDraft(shortened)
-      setKeyFormatError(false)
-      if (!shortened && hasKey) clear()
-    }
+    if (change.action === "save") void handleSaveKey(change.draft)
   }
 
   const handleKeyPaste = (event: ClipboardEvent<HTMLInputElement>) => {
-    const pasted = event.clipboardData.getData("text").trim()
-    if (!pasted) return
+    // A paste replaces the whole key rather than splicing into it.
+    const pasted = event.clipboardData.getData("text")
+    if (!pasted.trim()) return
     event.preventDefault()
-    setEditDraft(pasted)
-    void handleSaveKey(pasted)
+    handleKeyDraftChange(pasted)
   }
 
   const handleClearKey = () => {
@@ -190,11 +187,17 @@ export const TflApiKeyField = ({
           <InputGroupInput
             ref={keyInputRef}
             id={id}
-            type="text"
+            type={keyVisible ? "text" : "password"}
             inputMode="text"
             autoComplete="off"
+            autoCapitalize="none"
+            autoCorrect="off"
             spellCheck={false}
-            value={displayTflAppKey(keyDraft)}
+            data-1p-ignore
+            data-lpignore="true"
+            data-bwignore
+            data-form-type="other"
+            value={keyDraft}
             onChange={(event) => {
               handleKeyDraftChange(event.target.value)
             }}
@@ -211,8 +214,17 @@ export const TflApiKeyField = ({
               keyDraft && !keyFieldFocused && "text-right"
             )}
           />
-          {keyDraft ? (
-            <InputGroupAddon align="inline-end">
+          <InputGroupAddon align="inline-end">
+            <InputGroupButton
+              size="icon-xs"
+              aria-label={keyVisible ? "Hide key" : "Show key"}
+              aria-pressed={keyVisible}
+              aria-controls={id}
+              onClick={() => setKeyVisible((visible) => !visible)}
+            >
+              {keyVisible ? <EyeOffIcon /> : <EyeIcon />}
+            </InputGroupButton>
+            {keyDraft ? (
               <InputGroupButton
                 size="icon-xs"
                 aria-label="Clear key"
@@ -220,8 +232,8 @@ export const TflApiKeyField = ({
               >
                 <CircleXIcon />
               </InputGroupButton>
-            </InputGroupAddon>
-          ) : null}
+            ) : null}
+          </InputGroupAddon>
         </InputGroup>
         {keyDraft ? (
           <Button

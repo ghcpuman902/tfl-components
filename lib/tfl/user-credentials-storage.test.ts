@@ -4,6 +4,7 @@ import {
   displayTflAppKey,
   isPlausibleTflAppKey,
   maskUserTflAppKey,
+  tflKeyDraftChange,
 } from "./user-credentials-storage"
 
 describe("isPlausibleTflAppKey", () => {
@@ -47,5 +48,45 @@ describe("displayTflAppKey", () => {
       displayTflAppKey("abcdef0123456789abcdef0123456789"),
       `${"•".repeat(28)}6789`
     )
+  })
+})
+
+describe("tflKeyDraftChange", () => {
+  const key = "abcdef0123456789abcdef0123456789"
+
+  it("keeps every character when a key is typed one at a time", () => {
+    // The field shows its draft as-is (masked by type="password"), so each
+    // keystroke appends to the whole key, not to a masked copy of it.
+    let draft = ""
+    const actions: string[] = []
+    for (const char of key) {
+      const change = tflKeyDraftChange(draft + char)
+      draft = change.draft
+      actions.push(change.action)
+    }
+    assert.equal(draft, key)
+    assert.deepEqual(actions.slice(0, -1), Array(key.length - 1).fill("edit"))
+    assert.equal(actions.at(-1), "save")
+  })
+
+  it("saves a pasted key, dropping spaces and line breaks", () => {
+    assert.deepEqual(
+      tflKeyDraftChange(` ${key.slice(0, 16)}\n${key.slice(16)} `),
+      {
+        draft: key,
+        action: "save",
+      }
+    )
+  })
+
+  it("keeps other characters so the field can say the format is wrong", () => {
+    assert.deepEqual(tflKeyDraftChange("abc-def"), {
+      draft: "abc-def",
+      action: "invalid",
+    })
+  })
+
+  it("clears when emptied", () => {
+    assert.deepEqual(tflKeyDraftChange("  "), { draft: "", action: "clear" })
   })
 })
