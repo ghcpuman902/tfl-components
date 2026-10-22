@@ -1,6 +1,7 @@
 import {
   getStatusKind,
   getWorstCurrentStatus,
+  normalizeLineId,
   sortLinesBySeverityAndOrder,
   type StatusKind,
 } from "tfl-ts"
@@ -71,13 +72,39 @@ const sortBoardLines = (
 }
 
 /**
+ * Listed lines follow `lineIds` order; unlisted rows keep their slot, so a
+ * list already in board order changes nothing.
+ */
+export const orderByLineIds = (
+  rows: StatusBoardLine[],
+  lineIds: readonly string[] | undefined
+): StatusBoardLine[] => {
+  if (!lineIds?.length || rows.length <= 1) return rows
+  const rank = new Map<string, number>()
+  for (const id of lineIds) {
+    const key = normalizeLineId(id)
+    if (!rank.has(key)) rank.set(key, rank.size)
+  }
+  const rankOf = (row: StatusBoardLine) =>
+    row.line.id ? rank.get(normalizeLineId(row.line.id)) : undefined
+  const listed = rows
+    .filter((row) => rankOf(row) !== undefined)
+    .sort((a, b) => (rankOf(a) ?? 0) - (rankOf(b) ?? 0))
+  let next = 0
+  return rows.map((row) => (rankOf(row) === undefined ? row : listed[next++]!))
+}
+
+/**
  * Live-board passenger layout. Ranking / “which row is current” stay in tfl-ts.
  * Two sections: disruptions (incident → plannedWork → closed) then good service.
  * Timetable-closed stays in Disruptions, sorted last — not a separate group.
  */
 export const partitionStatusBoardLines = (
   lines: readonly StatusLine[],
-  options: PrepareLineAnnouncementsOptions = {}
+  options: PrepareLineAnnouncementsOptions & {
+    /** The board's chosen line order (`s.lines`), applied within each section. */
+    lineOrder?: readonly string[]
+  } = {}
 ): StatusBoardSections => {
   const buckets: StatusBoardSections = {
     disruptions: [],
@@ -104,8 +131,14 @@ export const partitionStatusBoardLines = (
   }
 
   return {
-    disruptions: sortBoardLines(buckets.disruptions, options.now),
-    goodService: sortBoardLines(buckets.goodService, options.now),
+    disruptions: orderByLineIds(
+      sortBoardLines(buckets.disruptions, options.now),
+      options.lineOrder
+    ),
+    goodService: orderByLineIds(
+      sortBoardLines(buckets.goodService, options.now),
+      options.lineOrder
+    ),
   }
 }
 

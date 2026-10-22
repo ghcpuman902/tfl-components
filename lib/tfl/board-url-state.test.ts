@@ -547,3 +547,14 @@ describe("glance priority and pair", () => {
     assert.equal(once.match(/a\.priority=/g)?.length, 1)
   })
 })
+
+describe("s.lines order", () => {
+  it("survives a URL round trip in the chosen order", () => {
+    const lines = ["bakerloo", "central", "victoria", "northern", "circle"]
+    const href = buildBoardHref({ status: { lines } })
+    assert.match(href, /s\.lines=bakerloo,central,victoria,northern,circle(&|$)/)
+    const parsed = parseBoardConfig(href.slice(href.indexOf("#") + 1))
+    assert.deepEqual(parsed.status.lines, lines)
+    assert.equal(buildBoardHref({ status: parsed.status }), href)
+  })
+})

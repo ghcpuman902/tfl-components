@@ -10,6 +10,7 @@ import {
   markBoardSetupStarted,
   parseBoardSetupDraft,
   previewFrameForProfile,
+  statusLineOrderFromDraft,
 } from "./board-setup-state"
 import { parseBoardConfig } from "./board-url-state"
 
@@ -156,5 +157,27 @@ describe("board setup draft", () => {
     const draft = draftFromBoardConfig(config, { id: "watchlist" })
     assert.equal(draft.statusOnlyThese, true)
     assert.deepEqual(draft.statusLineIds, ["victoria"])
+  })
+})
+
+describe("statusLineOrderFromDraft", () => {
+  it("keeps the order the user set, not the network order", () => {
+    assert.deepEqual(
+      statusLineOrderFromDraft({
+        lineIds: ["bakerloo", "central", "victoria"],
+        statusLineIds: ["northern", "circle", "central"],
+      }),
+      ["bakerloo", "central", "victoria", "northern", "circle"]
+    )
+  })
+
+  it("keeps a board link's order when the builder reopens it", () => {
+    const lines = ["bakerloo", "central", "victoria", "northern", "circle"]
+    const draft = draftFromBoardConfig(
+      parseBoardConfig(
+        `stop=940GZZLUOXC&a.lines=bakerloo,central,victoria&s.lines=${lines.join(",")}`
+      )
+    )
+    assert.deepEqual(statusLineOrderFromDraft(draft), lines)
   })
 })
