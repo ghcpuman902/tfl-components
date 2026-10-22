@@ -21,6 +21,16 @@ import {
 } from "@/components/board/board-preview-mode"
 import { BoardShareCard } from "@/components/board/board-share-card"
 import { BoardStationSearch } from "@/components/board/board-station-search"
+import { CustomiseShell } from "@/components/board/customise/customise-shell"
+import { CustomiseDevSwitcher } from "@/components/board/customise/dev-switcher"
+import type {
+  CustomiseController,
+  PanelTarget,
+} from "@/components/board/customise/types"
+import { useCustomiseVariant } from "@/components/board/customise/use-customise-variant"
+import { CustomiseVariantC } from "@/components/board/customise/variant-c"
+import { CustomiseVariantD } from "@/components/board/customise/variant-d"
+import { CustomiseVariantR } from "@/components/board/customise/variant-r"
 import { TflApiKeyField } from "@/components/tfl-api-key-field"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
 import { Button } from "@/components/ui/button"
@@ -34,7 +44,30 @@ import {
 } from "@/components/ui/dialog"
 import { ChevronDownIcon, LocateFixedIcon, LocateIcon } from "lucide-react"
 import { useLandingTrack } from "@/components/landing/landing-analytics"
-import { trackHeroEvent } from "@/lib/analytics/track"
+import { trackCustomiseEvent, trackHeroEvent } from "@/lib/analytics/track"
+import {
+  createCustomiseEventLogger,
+  type CustomiseEvent,
+} from "@/lib/analytics/customise-events"
+import {
+  draftForStationPick,
+  draftWithLayout,
+  followStationStatusLines,
+  layoutSettingsAsOverrides,
+  nearbyModesForLayout,
+  panelHasTarget,
+  setPanelColumn as layoutSetPanelColumn,
+  setPanelHeight as layoutSetPanelHeight,
+  setPanelOn as layoutSetPanelOn,
+  statusStationPending,
+  toggleSoloPanel,
+  touchesLayoutSettings,
+  undoStationStatusLines,
+  withStatusOrder,
+  withoutLayoutSettings,
+  applyLayoutToConfig,
+  type StatusOrderUndo,
+} from "@/lib/tfl/board-customise"
 import { readExposedHeroVariant } from "@/lib/landing/hero-client"
 import type { AnalyticsContext } from "@/lib/analytics/context"
 import { defaultAnalyticsContext } from "@/lib/analytics/context"
@@ -68,7 +101,11 @@ import {
   locatePlatform,
   type LocateFailure,
 } from "@/lib/tfl/board-locate"
-import { boardSlotsInclude, resolveBoardSlots } from "@/lib/tfl/board-panels"
+import {
+  boardSlotsInclude,
+  resolveBoardSlots,
+  type BoardPanelKind,
+} from "@/lib/tfl/board-panels"
 import {
   BOARD_STATUS_CORE_LINE_IDS,
   type BoardSettingId,
@@ -87,6 +124,7 @@ import {
   type BoardNearbyMode,
   type BoardScreenProfile,
   type BoardSetupDraft,
+  type BoardCustomiseLayout,
   type BoardSetupStage,
 } from "@/lib/tfl/board-setup-state"
 import {
@@ -172,6 +210,25 @@ const statusConfigFromDraft = (draft: BoardSetupDraft) => {
 }
 
 const configFromDraft = (draft: BoardSetupDraft): BoardConfig => {
+  const config = configFromDraftSlots(draft)
+  return draft.layout && !draft.continueWithoutStop
+    ? applyLayoutToConfig(config, draft.layout)
+    : config
+}
+
+/** Test buffer and dev console for Customise events; analytics only sees split visits. */
+const localCustomiseEvent = (event: CustomiseEvent) => {
+  const target = window as Window & {
+    __boardCustomiseEvents?: CustomiseEvent[]
+  }
+  target.__boardCustomiseEvents = [
+    ...(target.__boardCustomiseEvents ?? []),
+    event,
+  ]
+  if (process.env.NODE_ENV !== "production") console.debug("[customise]", event)
+}
+
+const configFromDraftSlots = (draft: BoardSetupDraft): BoardConfig => {
   if (draft.continueWithoutStop) {
     return {
       ...DEFAULT_BOARD_CONFIG,
@@ -269,6 +326,9 @@ export const BoardStagedBuilder = ({
   const searchWrapRef = useRef<HTMLDivElement | null>(null)
   const lastAnnounce = useRef("")
   const [nearbyFill] = useState(createNearbyFillTracker)
+  const [nearbyDoneKey, setNearbyDoneKey] = useState<string | null>(null)
+  const [statusUndo, setStatusUndo] = useState<StatusOrderUndo | null>(null)
+  const customise = useCustomiseVariant()
 
   const focusSearch = () => {
     window.requestAnimationFrame(() => {
@@ -348,6 +408,7 @@ export const BoardStagedBuilder = ({
     if (!nearbyFill.claim(key)) return
     const stopId = draft.stopId ?? EXAMPLE_STOP.id
     void getBoardNearbyPlacesForStop(stopId).then((result) => {
+      setNearbyDoneKey(key)
       if (!result.ok) {
         nearbyFill.reset()
         return
@@ -388,7 +449,12 @@ export const BoardStagedBuilder = ({
   }
 
   const config = useMemo(
-    () => mergeBoardConfig(configFromDraft(draft), advancedConfig),
+    () =>
+      mergeBoardConfig(
+        configFromDraft(draft),
+        // A Customise variant's layout owns the slots and heights.
+        draft.layout ? withoutLayoutSettings(advancedConfig) : advancedConfig
+      ),
     [advancedConfig, draft]
   )
   const servingLines = lookupBoardStationLines(stationLines, config.stop) ?? []
@@ -546,8 +612,15 @@ export const BoardStagedBuilder = ({
   }
 
   const handleConfigChange = (next: Partial<BoardConfig>) => {
+    const handover =
+      draft.layout && touchesLayoutSettings(next)
+        ? layoutSettingsAsOverrides(config)
+        : null
     setAdvancedConfig((current) => {
-      const merged = mergePartialBoardConfig(current, next)
+      const merged = mergePartialBoardConfig(
+        handover ? mergePartialBoardConfig(current, handover) : current,
+        next
+      )
       // Glance owns row count — drop a.rows when enabling glance.
       if (next.view === "glance" && merged.arrivals?.rows !== undefined) {
         return {
@@ -559,6 +632,12 @@ export const BoardStagedBuilder = ({
     })
     updateDraft((current) => ({
       ...current,
+      layout: handover ? null : current.layout,
+      statusOrder:
+        next.arrivals?.lineOrder !== undefined ||
+        next.status?.lines !== undefined
+          ? null
+          : current.statusOrder,
       stopId: next.stop !== undefined ? next.stop || null : current.stopId,
       stopName:
         next.stopName !== undefined ? next.stopName || null : current.stopName,
@@ -615,11 +694,179 @@ export const BoardStagedBuilder = ({
     return item?.context ? ` · ${item.context}` : ""
   })()
 
+  const handleUnattended = (next: boolean) => {
+    setAdvancedConfig((current) => ({
+      ...current,
+      behaviour: next ? "unattended" : "interactive",
+    }))
+  }
+
+  const handleGlance = (next: boolean) => {
+    setAdvancedConfig((current) => {
+      const merged = { ...current }
+      if (next) {
+        merged.view = "glance"
+        if (merged.arrivals?.rows !== undefined) {
+          merged.arrivals = { ...merged.arrivals, rows: undefined }
+        }
+      } else {
+        delete merged.view
+      }
+      return merged
+    })
+  }
+
+  /** One station pick for every Customise surface. */
+  const pickStation = (stop: string, keepStatusOrder: boolean) => {
+    const item = stations.find(
+      (station) => station.id === stop || station.aliasIds.includes(stop)
+    )
+    nearbyFill.reset()
+    updateDraft((current) => {
+      const lineIds = (lookupBoardStationLines(stationLines, stop) ?? []).map(
+        (line) => line.lineId
+      )
+      return startIfNeeded(
+        draftForStationPick(current, {
+          stopId: stop,
+          stopName: item?.name ?? null,
+          lineIds,
+          extraStatusLineIds: extraStatusLineIdsForServing(lineIds),
+          keepStatusOrder,
+        })
+      )
+    })
+    if (stop) {
+      finishStage(2)
+      finishStage(3)
+    }
+  }
+
+  const variant = customise.variant
+  const customiseLog = useMemo(
+    () =>
+      createCustomiseEventLogger({
+        variant,
+        source: customise.source,
+        send: trackCustomiseEvent,
+        local: localCustomiseEvent,
+      }),
+    [customise.source, variant]
+  )
+
+  const displayLayout: BoardCustomiseLayout = draft.layout ??
+    draftWithLayout(draft, config).layout ?? {
+      panels: [],
+      heights: {},
+      solo: null,
+    }
+
+  const editLayout = (
+    edit: (layout: BoardCustomiseLayout) => BoardCustomiseLayout
+  ) => {
+    updateDraft((current) => {
+      const base = draftWithLayout(current, config)
+      const layout = edit(base.layout ?? displayLayout)
+      return startIfNeeded({
+        ...base,
+        layout,
+        nearbyModes: nearbyModesForLayout(base, layout),
+      })
+    })
+  }
+
+  const statusLines = statusLineOrderFromDraft(draft)
+  const nearbyKey = nearbyFillKey(draft, EXAMPLE_STOP.id)
+  const panelTarget = (kind: BoardPanelKind): PanelTarget => {
+    if (panelHasTarget(config, kind)) return "ready"
+    if (kind === "rail" || kind === "status") return "none"
+    return nearbyKey !== null && nearbyKey !== nearbyDoneKey
+      ? "loading"
+      : "none"
+  }
+
+  const controller: CustomiseController | null =
+    variant === "panel"
+      ? null
+      : {
+          variant,
+          log: customiseLog,
+          href,
+          stations,
+          stopId: draft.stopId,
+          stationName: selectedStopLabel ?? "your station",
+          stationContext: selectedStopContext,
+          servingLines,
+          lineGroups,
+          railLines: draft.lineIds,
+          pickStation: (stop) => {
+            setStatusUndo(null)
+            pickStation(stop, true)
+            // Clearing the field also reports a change ("" first); count real picks only.
+            if (stop && stop !== draft.stopId) {
+              customiseLog("customise_station_changed")
+            }
+          },
+          layout: displayLayout,
+          panelTarget,
+          setPanelOn: (kind, on) =>
+            editLayout((layout) => layoutSetPanelOn(layout, kind, on)),
+          toggleSolo: (kind) => {
+            if (displayLayout.solo !== kind) customiseLog("customise_solo_used")
+            editLayout((layout) => toggleSoloPanel(layout, kind))
+          },
+          setPanelColumn: (kind, column) =>
+            editLayout((layout) => layoutSetPanelColumn(layout, kind, column)),
+          setPanelHeight: (kind, height) =>
+            editLayout((layout) => layoutSetPanelHeight(layout, kind, height)),
+          setRailLines: (lineIds) => {
+            const reordered =
+              lineIds.length === draft.lineIds.length &&
+              lineIds.some((id, index) => id !== draft.lineIds[index])
+            updateDraft((current) => ({ ...current, lineIds: [...lineIds] }))
+            if (reordered) customiseLog("customise_reorder_saved")
+          },
+          statusLines,
+          setStatusLines: (lineIds, how) => {
+            setStatusUndo(null)
+            updateDraft((current) => withStatusOrder(current, lineIds))
+            if (how === "drag" || how === "top") {
+              customiseLog("customise_reorder_saved")
+            }
+          },
+          statusFollows: draft.statusOrder === null,
+          statusPending: statusStationPending(draft),
+          followStationLines: () => {
+            const { draft: next, undo } = followStationStatusLines(draft)
+            setStatusUndo(undo)
+            updateDraft(next)
+          },
+          undoStationLines: statusUndo
+            ? () => {
+                const undo = statusUndo
+                setStatusUndo(null)
+                updateDraft((current) => undoStationStatusLines(current, undo))
+              }
+            : null,
+          statusOnlyThese: draft.statusOnlyThese,
+          setStatusOnlyThese: (value) =>
+            updateDraft((current) => ({ ...current, statusOnlyThese: value })),
+          unattended: config.behaviour === "unattended",
+          setUnattended: handleUnattended,
+          glance: config.view === "glance",
+          setGlance: handleGlance,
+          done: () => {
+            customiseLog("customise_done")
+            setAdvancedOpen(false)
+          },
+        }
+
   return (
     <div className="space-y-4 md:flex md:min-h-[calc(100dvh-var(--site-header-height)-10.5rem)] md:flex-col md:justify-center">
       <p className="sr-only" aria-live="polite">
         {announce}
       </p>
+      <CustomiseDevSwitcher />
 
       <div
         className={cn(
@@ -741,40 +988,29 @@ export const BoardStagedBuilder = ({
                     />
                   </button>
                 </div>
-                {advancedOpen ? (
+                {advancedOpen && controller ? (
+                  <div className="pt-1">
+                    <CustomiseShell
+                      api={controller}
+                      label="Customise"
+                      onOpenBoard={() => completeSetup("open")}
+                    >
+                      {controller.variant === "c" ? (
+                        <CustomiseVariantC api={controller} />
+                      ) : controller.variant === "d" ? (
+                        <CustomiseVariantD api={controller} />
+                      ) : (
+                        <CustomiseVariantR api={controller} />
+                      )}
+                    </CustomiseShell>
+                  </div>
+                ) : advancedOpen ? (
                   <div className="space-y-4 pt-1">
                     <div ref={searchWrapRef}>
                       <BoardStationSearch
                         stations={stations}
                         stopId={draft.stopId ?? undefined}
-                        onStopChange={(stop) => {
-                          const item = stations.find(
-                            (station) =>
-                              station.id === stop ||
-                              station.aliasIds.includes(stop)
-                          )
-                          nearbyFill.reset()
-                          updateDraft((current) => {
-                            const lineIds = (
-                              lookupBoardStationLines(stationLines, stop) ?? []
-                            ).map((line) => line.lineId)
-                            return startIfNeeded({
-                              ...current,
-                              continueWithoutStop: false,
-                              stopId: stop,
-                              stopName: item?.name ?? null,
-                              lineIds,
-                              statusLineIds: extraStatusLineIdsForServing(lineIds),
-                              busStopId: null,
-                              riverStopId: null,
-                              cycleDockIds: [],
-                            })
-                          })
-                          if (stop) {
-                            finishStage(2)
-                            finishStage(3)
-                          }
-                        }}
+                        onStopChange={(stop) => pickStation(stop, false)}
                       />
                     </div>
                     <button
@@ -826,6 +1062,7 @@ export const BoardStagedBuilder = ({
                               updateDraft((current) => ({
                                 ...current,
                                 lineIds: [...lineOrder],
+                                statusOrder: null,
                               }))
                             }
                           />
@@ -857,6 +1094,7 @@ export const BoardStagedBuilder = ({
                               updateDraft((current) => ({
                                 ...current,
                                 statusLineIds: [...lineOrder],
+                                statusOrder: null,
                               }))
                             }
                           />
@@ -923,27 +1161,9 @@ export const BoardStagedBuilder = ({
             />
             <BoardBuilderOverrides
               unattended={config.behaviour === "unattended"}
-              onUnattendedChange={(next) => {
-                setAdvancedConfig((current) => ({
-                  ...current,
-                  behaviour: next ? "unattended" : "interactive",
-                }))
-              }}
+              onUnattendedChange={handleUnattended}
               glance={config.view === "glance"}
-              onGlanceChange={(next) => {
-                setAdvancedConfig((current) => {
-                  const merged = { ...current }
-                  if (next) {
-                    merged.view = "glance"
-                    if (merged.arrivals?.rows !== undefined) {
-                      merged.arrivals = { ...merged.arrivals, rows: undefined }
-                    }
-                  } else {
-                    delete merged.view
-                  }
-                  return merged
-                })
-              }}
+              onGlanceChange={handleGlance}
             />
           </div>
         </div>
