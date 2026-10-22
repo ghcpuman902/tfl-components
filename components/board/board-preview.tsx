@@ -19,6 +19,10 @@ import {
   previewFrameForProfile,
   type BoardScreenProfile,
 } from "@/lib/tfl/board-setup-state"
+import {
+  isPreviewReadyMessage,
+  previewHashMessage,
+} from "@/lib/tfl/board-preview-sync"
 import { cn } from "@/lib/utils"
 
 const SLOT_WIDE =
@@ -44,6 +48,10 @@ const withEmbedQuery = (href: string) => {
 const sameBoardDocument = (current: Location, next: URL) =>
   current.pathname === next.pathname && current.search === next.search
 
+const postPreviewHash = (win: Window, hash: string) => {
+  win.postMessage(previewHashMessage(hash), window.location.origin)
+}
+
 const applyBoardPreviewHref = (
   iframe: HTMLIFrameElement,
   href: string,
@@ -57,11 +65,10 @@ const applyBoardPreviewHref = (
       win.location.protocol !== "about:" &&
       sameBoardDocument(win.location, next)
     ) {
-      const currentHref = `${win.location.pathname}${win.location.search}${win.location.hash}`
-      const nextHref = `${next.pathname}${next.search}${next.hash}`
-      if (currentHref !== nextHref) {
-        win.location.replace(next.href)
-      }
+      // Not location.replace: the frame's router writes its old URL back.
+      // The board applies the hash itself; if it is still loading it asks
+      // again once ready (handled in BoardPreviewFrame).
+      postPreviewHash(win, next.hash)
       assignedHref.current = href
       return
     }
@@ -94,6 +101,21 @@ const BoardPreviewFrame = ({ href }: BoardPreviewFrameProps) => {
     applyBoardPreviewHref(iframe, embedHref, assignedHref)
   }, [embedHref])
 
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      const win = iframeRef.current?.contentWindow
+      if (!win || event.source !== win) return
+      if (event.origin !== window.location.origin) return
+      if (!isPreviewReadyMessage(event.data)) return
+      postPreviewHash(
+        win,
+        new URL(hrefRef.current, window.location.origin).hash
+      )
+    }
+    window.addEventListener("message", onMessage)
+    return () => window.removeEventListener("message", onMessage)
+  }, [])
+
   const handleLoad = () => {
     const iframe = iframeRef.current
     if (!iframe) return
@@ -106,7 +128,7 @@ const BoardPreviewFrame = ({ href }: BoardPreviewFrameProps) => {
       title="Board preview"
       src={initialSrc}
       onLoad={handleLoad}
-      className="h-full w-full overflow-auto border-0 bg-background [touch-action:pan-y]"
+      className="h-full w-full [touch-action:pan-y] overflow-auto border-0 bg-background"
     />
   )
 }
@@ -194,7 +216,7 @@ export const BoardPreview = ({
     >
       <div
         className={cn(
-          "relative @container",
+          "@container relative",
           profile === "small"
             ? SLOT_NARROW
             : profile === "square"
@@ -229,11 +251,15 @@ export const BoardPreview = ({
         {profile && frame ? (
           <div
             className={cn(
-              "absolute inset-0 drop-shadow-md transition-opacity duration-300 motion-reduce:transition-none motion-reduce:opacity-100",
+              "absolute inset-0 drop-shadow-md transition-opacity duration-300 motion-reduce:opacity-100 motion-reduce:transition-none",
               reveal ? "opacity-100" : "opacity-0"
             )}
           >
-            {isSquare ? null : isPhone ? <IphoneDeviceSvg /> : <IpadDeviceSvg />}
+            {isSquare ? null : isPhone ? (
+              <IphoneDeviceSvg />
+            ) : (
+              <IpadDeviceSvg />
+            )}
             <div
               ref={screenRef}
               className={cn(

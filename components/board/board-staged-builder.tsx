@@ -22,6 +22,7 @@ import {
 import { BoardShareCard } from "@/components/board/board-share-card"
 import { BoardStationSearch } from "@/components/board/board-station-search"
 import { TflApiKeyField } from "@/components/tfl-api-key-field"
+import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -348,6 +349,14 @@ export const BoardStagedBuilder = ({
     if (!ready) return
     persistDraft(draft)
   }, [draft, ready])
+
+  // An older link with #key= keeps working: save that key on this browser
+  // (validated first) so the preview and later boards use it.
+  const importedKey = advancedConfig.key?.trim()
+  const { save: saveKey } = useUserTflCredentials()
+  useEffect(() => {
+    if (importedKey) void saveKey(importedKey, "local")
+  }, [importedKey, saveKey])
 
   useEffect(() => () => window.clearTimeout(locateWatchdogRef.current), [])
 

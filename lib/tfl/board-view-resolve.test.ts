@@ -3,6 +3,8 @@ import { describe, it } from "node:test"
 import { DEFAULT_BOARD_CONFIG, parseBoardConfig } from "./board-url-state"
 import {
   boardFetchKey,
+  feedHealth,
+  visitorKeyRejected,
   DEMO_BOARD_CONFIG,
   isBoardReady,
   isUsableBoardConfig,
@@ -225,5 +227,39 @@ describe("boardFetchKey", () => {
   it("falls back to the shared project key with no visitor key", () => {
     assert.equal(boardFetchKey(undefined, null), null)
     assert.equal(boardFetchKey("  ", "  "), null)
+  })
+})
+
+describe("visitorKeyRejected", () => {
+  const ok = { enabled: true, hasData: true, rateLimited: false, failed: false }
+
+  it("keeps the visitor key while feeds load data", () => {
+    assert.equal(visitorKeyRejected([ok, { ...ok, hasData: false }]), false)
+  })
+
+  it("drops a key TfL refuses (429 Invalid app_key, 401, 403)", () => {
+    assert.equal(
+      visitorKeyRejected([ok, { ...ok, hasData: false, rateLimited: true }]),
+      true
+    )
+    assert.equal(
+      visitorKeyRejected([{ ...ok, hasData: false, failed: true }]),
+      true
+    )
+  })
+
+  it("ignores feeds the board does not show", () => {
+    assert.equal(
+      visitorKeyRejected([{ ...ok, enabled: false, hasData: false, failed: true }]),
+      false
+    )
+  })
+
+  it("reads hook state into feed health", () => {
+    assert.deepEqual(feedHealth([], true, null), {
+      hasData: false,
+      rateLimited: true,
+      failed: false,
+    })
   })
 })

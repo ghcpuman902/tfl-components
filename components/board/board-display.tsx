@@ -98,8 +98,14 @@ import {
   isBoardReady,
   isUsableBoardConfig,
   boardFetchKey,
+  feedHealth,
+  visitorKeyRejected,
   withDemoBoardFallback,
 } from "@/lib/tfl/board-view-resolve"
+import {
+  previewReadyMessage,
+  readPreviewHashMessage,
+} from "@/lib/tfl/board-preview-sync"
 import {
   BOARD_PATH,
   BOARD_VIEW_PATH,
@@ -200,6 +206,23 @@ const useBoardConfigFromHash = (
     const stopName = resolveBoardStopNameOverride(parsed.stopName, autoName)
     return { ...parsed, stopName }
   }, [hash, stationNames])
+
+  useEffect(() => {
+    if (!enabled || window.parent === window) return
+    // In the builder's preview frame the builder sends each change here: a
+    // hash set from outside is undone by this frame's router (see
+    // board-preview-sync). Say we are listening only once hydrated, after the
+    // router's first history write, so the builder resends the latest hash.
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== window.parent) return
+      if (event.origin !== window.location.origin) return
+      const nextHash = readPreviewHashMessage(event.data)
+      if (nextHash !== null) replaceHashIfNeeded(nextHash)
+    }
+    window.addEventListener("message", onMessage)
+    window.parent.postMessage(previewReadyMessage(), window.location.origin)
+    return () => window.removeEventListener("message", onMessage)
+  }, [enabled])
 
   useEffect(() => {
     if (!enabled) return
@@ -316,7 +339,11 @@ export const BoardDisplay = ({
   }, [fromHomeScreen, hashConfig, previewConfig, stationNames, usableInstalled])
 
   const surfaceReady = ready && hydrated
-  const appKey = boardFetchKey(config.key, hydrated ? getAppKey() : null)
+  const visitorKey = boardFetchKey(config.key, hydrated ? getAppKey() : null)
+  // A visitor key TfL refuses (revoked, mistyped, over quota) must not blank
+  // the board: drop it for this page and use the shared key instead.
+  const [rejectedKey, setRejectedKey] = useState<string | null>(null)
+  const appKey = visitorKey && visitorKey !== rejectedKey ? visitorKey : null
   const boardReady = surfaceReady && isBoardReady(config, null)
   const fullscreen = useBoardFullscreen(boardRootRef, {
     enabled: boardReady && !fromHomeScreen && !embedded,
@@ -435,6 +462,44 @@ export const BoardDisplay = ({
     enabled: boardReady && showCycle,
     siteScope: "board",
   })
+
+  const keyRejected =
+    appKey !== null &&
+    visitorKeyRejected([
+      {
+        enabled: showRail,
+        ...feedHealth(arrivals.data, arrivals.rateLimited, arrivals.fetchError),
+      },
+      {
+        enabled: showBus,
+        ...feedHealth(
+          busArrivals.data,
+          busArrivals.rateLimited,
+          busArrivals.fetchError
+        ),
+      },
+      {
+        enabled: showRiver,
+        ...feedHealth(
+          riverArrivals.data,
+          riverArrivals.rateLimited,
+          riverArrivals.fetchError
+        ),
+      },
+      {
+        enabled: showCycle,
+        ...feedHealth(
+          cyclePoints.data,
+          cyclePoints.rateLimited,
+          cyclePoints.fetchError
+        ),
+      },
+      {
+        enabled: showStatus,
+        ...feedHealth(status.data, status.rateLimited, status.error),
+      },
+    ])
+  if (keyRejected && rejectedKey !== appKey) setRejectedKey(appKey)
 
   const { refresh: refreshArrivals } = arrivals
   const { refresh: refreshBus } = busArrivals
@@ -1019,7 +1084,12 @@ export const BoardDisplay = ({
     (showCycle && cyclePoints.loading && !cyclePoints.rateLimited) ||
     (showStatus && status.loading && !status.rateLimited)
   const showRateLimitScreen =
-    boardReady && !isPreview && rateLimited && !hasLiveData && !waitingOnLive
+    boardReady &&
+    !isPreview &&
+    !keyRejected &&
+    rateLimited &&
+    !hasLiveData &&
+    !waitingOnLive
 
   if (!surfaceReady) {
     return (

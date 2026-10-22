@@ -79,6 +79,35 @@ export const boardFetchKey = (
   storedKey: string | null
 ): string | null => hashKey?.trim() || storedKey?.trim() || null
 
+export type BoardFeedHealth = {
+  enabled: boolean
+  hasData: boolean
+  rateLimited: boolean
+  failed: boolean
+}
+
+export const feedHealth = (
+  data: readonly unknown[],
+  rateLimited: boolean,
+  error: string | null | undefined
+): Omit<BoardFeedHealth, "enabled"> => ({
+  hasData: data.length > 0,
+  rateLimited,
+  failed: Boolean(error),
+})
+
+/**
+ * TfL answers a bad visitor key with 401/403, or 429 "Invalid app_key is
+ * provided", so any keyed feed that fails or is refused without data means
+ * the Board should fall back to the shared key.
+ */
+export const visitorKeyRejected = (
+  feeds: readonly BoardFeedHealth[]
+): boolean =>
+  feeds.some(
+    (feed) => feed.enabled && !feed.hasData && (feed.rateLimited || feed.failed)
+  )
+
 /** No usable stop still shows Oxford Circus, keeping the view and behaviour asked for. */
 export const withDemoBoardFallback = (config: BoardConfig): BoardConfig =>
   isUsableBoardConfig(config)
