@@ -93,6 +93,34 @@ export const canStepHeight = (
   direction: -1 | 1
 ): boolean => stepHeight(kind, height, direction) !== height
 
+/**
+ * How many `--arrivals-row` tiles a panel takes on the board at this Height.
+ * Each title, header, direction label and row is one tile. In the wide column
+ * a line's two directions sit side by side and Line status runs three across;
+ * in the narrow column directions stack and status runs two across. The
+ * interactive Line status board shows every line whatever the Height. Full
+ * has no fixed count, so it reads as the tallest step. `lines` is rail lines
+ * for rail, status lines for status.
+ */
+export const panelRowTiles = (
+  kind: BoardPanelKind,
+  height: number,
+  board: { column: BoardPanelColumn; lines: number; unattended: boolean }
+): number => {
+  const rows = height || HEIGHT_MAX[kind]
+  const wide = board.column === "p1"
+  if (kind === "cycle") return Math.max(1, height)
+  if (kind === "status") {
+    if (board.unattended && height > 0) return height
+    return 1 + Math.ceil(board.lines / (wide ? 3 : 2))
+  }
+  if (kind === "rail") {
+    return 1 + Math.max(1, board.lines) * (1 + (wide ? 1 : 2) * (1 + rows))
+  }
+  // Title, then one route header over its rows.
+  return 2 + rows
+}
+
 const defaultColumn = (kind: BoardPanelKind): BoardPanelColumn =>
   kind === "status" ? "p2" : "p1"
 

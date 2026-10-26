@@ -15,6 +15,7 @@ import {
   moveLineToTop,
   nearbyModesForLayout,
   placeLine,
+  panelRowTiles,
   placePanel,
   setPanelColumn,
   setPanelHeight,
@@ -144,6 +145,23 @@ describe("customise layout", () => {
       layout.panels.map((p) => p.kind)
     )
     assert.deepEqual(placePanel(layout, "status", 3), layout)
+  })
+
+  it("counts the board's own tiles for a Height, so taller settings draw taller", () => {
+    const wide = { column: "p1" as const, lines: 2, unattended: false }
+    const narrow = { ...wide, column: "p2" as const }
+    // Title, then per line: header, one direction row of label + 3 rows.
+    assert.equal(panelRowTiles("rail", 3, wide), 11)
+    assert.equal(panelRowTiles("rail", 3, narrow), 19)
+    assert.equal(panelRowTiles("rail", 4, wide), 13)
+    assert.equal(panelRowTiles("bus", 3, wide), 5)
+    assert.equal(panelRowTiles("bus", 0, wide), panelRowTiles("bus", 8, wide))
+    assert.equal(panelRowTiles("cycle", 6, wide), 6)
+    // The interactive status board lists every line; unattended uses Height.
+    const status = { column: "p2" as const, lines: 11, unattended: false }
+    assert.equal(panelRowTiles("status", 2, status), 7)
+    assert.equal(panelRowTiles("status", 5, status), 7)
+    assert.equal(panelRowTiles("status", 2, { ...status, unattended: true }), 2)
   })
 
   it("heights: Full is the top end and writes 0; glance keeps owning rail rows", () => {

@@ -17,26 +17,36 @@ import {
   StationPicker,
 } from "@/components/board/customise/sections"
 import type { CustomiseController } from "@/components/board/customise/types"
+import { ARRIVALS_RHYTHM_VARS } from "@/components/tfl/arrivals/arrivals-board-view"
 import {
   CUSTOMISE_PANEL_LABEL,
   layoutSections,
   panelHeight,
+  panelRowTiles,
   panelShown,
 } from "@/lib/tfl/board-customise"
 import type { BoardPanelKind } from "@/lib/tfl/board-panels"
+import type { BoardPanelColumn } from "@/lib/tfl/board-setup-state"
 import { cn } from "@/lib/utils"
-
-/** Taller tiles for taller panels; Full reads as the tallest. */
-const tileHeight = (height: number) =>
-  `${2.75 + Math.min(height || 8, 8) * 0.375}rem`
+import { LINE_ORDER } from "tfl-ts"
 
 /** C: the board's own layout is the menu. Tap a layer to edit it below. */
 export const CustomiseVariantC = ({ api }: { api: CustomiseController }) => {
   const [selected, setSelected] = useState<BoardPanelKind | null>(null)
   const sections = layoutSections(api.layout)
 
-  const tile = (kind: BoardPanelKind) => {
+  const tile = (kind: BoardPanelKind, column: BoardPanelColumn) => {
     const shown = panelShown(api.layout, kind)
+    const tiles = panelRowTiles(kind, panelHeight(api.layout, kind), {
+      column,
+      lines:
+        kind === "rail"
+          ? api.railLines.length || api.servingLines.length
+          : api.statusOnlyThese
+            ? api.statusLines.length
+            : LINE_ORDER.length,
+      unattended: api.unattended,
+    })
     return (
       <button
         key={kind}
@@ -49,7 +59,10 @@ export const CustomiseVariantC = ({ api }: { api: CustomiseController }) => {
             "border-foreground shadow-[inset_0_0_0_1px_var(--foreground)]",
           !shown && "border-dashed text-muted-foreground"
         )}
-        style={{ minHeight: tileHeight(panelHeight(api.layout, kind)) }}
+        // A quarter-scale board, never under a 44px target.
+        style={{
+          height: `max(2.75rem, calc(var(--arrivals-row) * ${tiles} / 4))`,
+        }}
         onClick={() => setSelected(selected === kind ? null : kind)}
       >
         <PanelRoundel kind={kind} />
@@ -69,16 +82,19 @@ export const CustomiseVariantC = ({ api }: { api: CustomiseController }) => {
           Your board · tap a part to change it
         </SectionHeading>
         <SoloLine api={api} title={false} />
-        <div className="grid grid-cols-3 gap-1.5">
+        <div
+          className="grid grid-cols-3 gap-1.5"
+          style={ARRIVALS_RHYTHM_VARS}
+        >
           <div
             className="col-span-2 space-y-1.5"
             aria-label="Wide column"
             role="group"
           >
-            {sections.wide.map((panel) => tile(panel.kind))}
+            {sections.wide.map((panel) => tile(panel.kind, "p1"))}
           </div>
           <div className="space-y-1.5" aria-label="Narrow column" role="group">
-            {sections.narrow.map((panel) => tile(panel.kind))}
+            {sections.narrow.map((panel) => tile(panel.kind, "p2"))}
           </div>
         </div>
         {sections.off.length > 0 ? (
