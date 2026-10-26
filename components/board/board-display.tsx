@@ -1053,8 +1053,8 @@ export const BoardDisplay = ({
     : isPreview
       ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-full w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
       : fillScreen
-        ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
-        : `${BOARD_SHELL_CONTAINER_CLASS} box-border min-h-dvh w-full ${BOARD_SHELL_PADDING_CLASS}`
+        ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-svh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
+        : `${BOARD_SHELL_CONTAINER_CLASS} box-border min-h-svh w-full ${BOARD_SHELL_PADDING_CLASS}`
 
   const boardShellStyle: CSSProperties = {
     ...(isGlance ? {} : ARRIVALS_RHYTHM_VARS),
