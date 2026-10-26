@@ -193,6 +193,54 @@ describe("arrivals board layout API", () => {
     assert.equal(html.match(/Try again</g)?.length, 1)
   })
 
+  it("holds every line's last loaded directions and height when a later fetch fails", () => {
+    const train = (lineId: string, platformName: string) =>
+      prediction({
+        id: `${lineId}-${platformName}`,
+        lineId,
+        lineName: lineId,
+        modeName: "tube",
+        platformName,
+        timeToStation: 60,
+      })
+    // Bakerloo loads empty, Victoria one direction, Central two, Northern three.
+    const loaded = [
+      train("victoria", "Northbound - Platform 4"),
+      ...railData,
+      train("northern", "Northbound - Platform 7"),
+      train("northern", "Southbound - Platform 8"),
+      train("northern", "Platform Unknown"),
+    ]
+    const lines = ["bakerloo", "victoria", "central", "northern"].map(
+      (lineId) => ({ lineId, lineName: lineId, modeName: "tube" })
+    )
+    const board = (error: string | null) =>
+      renderToStaticMarkup(
+        createElement(RailArrivalsBoard, {
+          data: loaded,
+          lines,
+          now: SAT_0836,
+          stopName: "Somewhere",
+          error,
+          onRetry: () => {},
+        })
+      )
+    const tiles = (html: string) =>
+      html.match(/h-\[var\(--arrivals-row\)\]/g)?.length
+    const failed = board("Failed to load arrivals.")
+    assert.equal(tiles(failed), tiles(board(null)))
+    assert.equal(slotCount(failed, "arrivals-subgroup"), 1 + 1 + 2 + 3)
+    for (const label of [
+      "Northbound",
+      "Westbound",
+      "Eastbound",
+      "Southbound",
+    ]) {
+      assert.ok(failed.includes(label), label)
+    }
+    assert.equal(failed.includes("Ealing Broadway"), false)
+  })
+
   it("holds the loading shell when the first fetch fails with no station lines", () => {
     const board = (loading: boolean) =>
       renderToStaticMarkup(

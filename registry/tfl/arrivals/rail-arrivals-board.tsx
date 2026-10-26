@@ -61,6 +61,8 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
    * Refetch after `error`. The board then keeps its line and direction tiles
    * (or, with no `lines`, the loading shell) around a short note and a Try
    * again control. Without it, an error with no `lines` is one tile.
+   * When a later fetch fails, keep passing the last loaded `data` and its
+   * `now`: the board holds that shape and never paints those rows.
    */
   onRetry?: () => void
   /** Arrival order within each bound. Default `timeToStation`. */
@@ -169,7 +171,11 @@ export const RailArrivalsBoard = ({
   const rows = data ?? []
   const heading = resolveArrivalsHeading(chrome.stopName, rows)
   // Seeded lines paint their loaded footprint; without them, the shell holds.
-  if (!lines?.length && rows.length === 0 && (error ? onRetry : loading)) {
+  if (
+    !lines?.length &&
+    rows.length === 0 &&
+    (error ? onRetry && now === undefined : loading)
+  ) {
     return (
       <ArrivalsBoardSkeleton
         mode="rail"

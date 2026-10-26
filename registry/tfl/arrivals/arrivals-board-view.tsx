@@ -20,6 +20,7 @@ import {
   resolveArrivalsHold,
   resolveArrivalsLeftoverStatus,
   resolveArrivalsStatusChip,
+  resolveHeldBounds,
   resolveLineArrivalsEmptyKind,
   type ArrivalsEmptyKind,
   type ArrivalsHeldTile,
@@ -36,6 +37,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import {
   ArrivalsBoundGroup,
   ArrivalsGroupHeader,
+  BoundHeadingLabel,
   ArrivalsPagedGroup,
   ArrivalsPagedList,
   type ArrivalsBoardClassNames,
@@ -305,33 +307,28 @@ export const ArrivalsBoardSkeleton = ({
   )
 }
 
-/** Bounds to hold for a line whose directions only arrive with the first fetch. */
-const PENDING_BOUND_COUNT = 2
-
 /**
- * First fetch in flight, or a fetch failed: the seeded line's final
- * footprint — a label tile plus `pageSize` row tiles per bound — so arrivals
- * land, and failures show, without moving anything below.
+ * First fetch in flight, or a fetch failed: the line's loaded footprint
+ * (`resolveHeldBounds`), so arrivals land, and failures show, without moving
+ * anything below.
  */
 const HeldGroupBody = ({
   group,
   hold,
+  loaded,
   pageSize,
   classNames,
   retry,
 }: {
   group: ArrivalsPreparedGroup
   hold: Exclude<ArrivalsHold, null>
+  loaded: boolean
   pageSize?: number
   classNames?: ArrivalsBoardClassNames
   /** Shown once, on the board's first bound. */
   retry?: ArrivalsRetry
 }) => {
-  const labels = group.bounds.flatMap((bound) =>
-    bound.label ? [bound.label] : []
-  )
-  const bounds =
-    labels.length > 0 ? labels : Array.from({ length: PENDING_BOUND_COUNT })
+  const bounds = resolveHeldBounds(group, { loaded, pageSize })
   return (
     <ul
       data-slot="arrivals-subgroups"
@@ -342,26 +339,28 @@ const HeldGroupBody = ({
       )}
       role="list"
     >
-      {bounds.map((label, index) => (
+      {bounds.map(({ heading, rows }, index) => (
         <li
           key={index}
           data-slot="arrivals-subgroup"
           className={cn("min-w-0", classNames?.subgroup)}
         >
-          <div
-            className={cn(
-              "flex items-center text-xl leading-7 font-semibold text-muted-foreground",
-              ARRIVALS_TILE_CLASS
-            )}
-          >
-            {typeof label === "string" ? (
-              label
-            ) : hold === "loading" ? (
-              <Skeleton className="h-5 w-32" />
-            ) : null}
-          </div>
+          {heading ? (
+            <div
+              className={cn(
+                "flex items-center text-xl leading-7 font-semibold text-muted-foreground",
+                ARRIVALS_TILE_CLASS
+              )}
+            >
+              {heading !== "pending" ? (
+                <BoundHeadingLabel bound={heading} />
+              ) : hold === "loading" ? (
+                <Skeleton className="h-5 w-32" />
+              ) : null}
+            </div>
+          ) : null}
           <div className={classNames?.rows}>
-            {arrivalsHeldTiles(hold, pageSize).map((tile, row) => (
+            {arrivalsHeldTiles(hold, rows).map((tile, row) => (
               <HeldRowTile
                 key={row}
                 tile={tile}
@@ -379,6 +378,7 @@ const GroupBody = ({
   group,
   mode,
   hold = null,
+  loaded = false,
   retry,
   pageSize,
   classNames,
@@ -394,6 +394,7 @@ const GroupBody = ({
   group: ArrivalsPreparedGroup
   mode: ArrivalsBoardMode
   hold?: ArrivalsHold
+  loaded?: boolean
   retry?: ArrivalsRetry
   pageSize?: number
   classNames?: ArrivalsBoardClassNames
@@ -411,6 +412,7 @@ const GroupBody = ({
       <HeldGroupBody
         group={group}
         hold={hold}
+        loaded={loaded}
         pageSize={pageSize}
         classNames={classNames}
         retry={retry}
@@ -647,11 +649,13 @@ export const ArrivalsBoardView = ({
     prepared.groups.length === 0
   // Rail lines keep their loaded footprint while loading and after a failure.
   const railGroups = mode === "rail" && prepared.groups.length > 0
+  const loaded = now !== undefined || prepared.rows.length > 0
   const hold = railGroups
     ? resolveArrivalsHold({
         loading,
         failed: Boolean(error),
         rowCount: prepared.rows.length,
+        loaded,
       })
     : null
   const retry = onRetry ? { onRetry, retrying: loading } : undefined
@@ -804,6 +808,7 @@ export const ArrivalsBoardView = ({
                   group={group}
                   mode={mode}
                   hold={hold}
+                  loaded={loaded}
                   retry={groupIndex === 0 ? retry : undefined}
                   pageSize={resolveGroupPageSize(
                     group.lineId,

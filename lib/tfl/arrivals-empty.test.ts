@@ -19,6 +19,7 @@ import {
   resolveArrivalsHold,
   resolveArrivalsLeftoverStatus,
   resolveArrivalsStatusChip,
+  resolveHeldBounds,
   resolveLineArrivalsEmptyKind,
   stationIdentityIdsForStop,
   statusAffectsStation,
@@ -26,6 +27,7 @@ import {
   type ArrivalsEmptyState,
   type ArrivalsStatusSignal,
 } from "@/lib/tfl/arrivals-empty"
+import type { ArrivalsPreparedBound } from "@/lib/tfl/arrivals-prepare"
 import { londonDayStartMs } from "@/lib/tfl/london-dates"
 
 /**
@@ -1348,6 +1350,61 @@ describe("held rail board", () => {
         "failed"
       )
     }
+  })
+
+  it("does not fall back to the loading guess once a fetch has loaded", () => {
+    assert.equal(
+      resolveArrivalsHold({
+        loading: true,
+        failed: false,
+        rowCount: 0,
+        loaded: true,
+      }),
+      null
+    )
+  })
+
+  it("holds a failed line in its last loaded shape, whatever its direction count", () => {
+    const bound = (label: string | null, rows = 0) =>
+      ({
+        key: label ?? "none",
+        label,
+        rows: Array(rows),
+      }) as ArrivalsPreparedBound
+    for (const labels of [
+      ["Northbound"],
+      ["Westbound", "Eastbound"],
+      ["Northbound", "Southbound", "Platform to be confirmed"],
+    ]) {
+      const held = resolveHeldBounds(
+        {
+          hasInformation: true,
+          bounds: labels.map((label) => bound(label, 1)),
+        },
+        { loaded: true, pageSize: 3 }
+      )
+      assert.deepEqual(
+        held.map(({ heading, rows }) => [
+          typeof heading === "object" ? heading?.label : heading,
+          rows,
+        ]),
+        labels.map((label) => [label, 3])
+      )
+    }
+  })
+
+  it("guesses two directions only before anything has loaded", () => {
+    const emptyLine = { hasInformation: false, bounds: [] }
+    assert.deepEqual(
+      resolveHeldBounds(emptyLine, { loaded: true, pageSize: 3 }),
+      [{ heading: null, rows: 3 }]
+    )
+    assert.deepEqual(
+      resolveHeldBounds(emptyLine, { loaded: false, pageSize: 3 }).map(
+        ({ heading }) => heading
+      ),
+      ["pending", "pending"]
+    )
   })
 
   it("fills the same number of row tiles loading and failed", () => {
