@@ -642,13 +642,15 @@ export const BoardDisplay = ({
     return Object.keys(map).length > 0 ? map : undefined
   }, [lineGroups])
 
+  // Through a failed poll the board holds the last loaded lines and directions.
+  const railRows = arrivals.loadedData
   const dataLineIds = useMemo(() => {
     const ids = new Set<string>()
-    for (const row of arrivals.data) {
+    for (const row of railRows) {
       if (row.lineId) ids.add(row.lineId)
     }
     return [...ids]
-  }, [arrivals.data])
+  }, [railRows])
 
   const arrivalsProps = useMemo(
     () => resolveArrivalsProps(config, servingLines, dataLineIds, lineGroups),
@@ -751,18 +753,16 @@ export const BoardDisplay = ({
   })}`
 
   const railData = useMemo(() => {
-    if (!config.arrivals.lineOrder?.length) return arrivals.data
+    if (!config.arrivals.lineOrder?.length) return railRows
     const keep = new Set(
       (arrivalsProps.lines ?? []).map((line) => normalizeLineId(line.lineId))
     )
     for (const id of arrivalsProps.lineOrder ?? []) {
       keep.add(normalizeLineId(id))
     }
-    return arrivals.data.filter((row) =>
-      keep.has(normalizeLineId(row.lineId ?? ""))
-    )
+    return railRows.filter((row) => keep.has(normalizeLineId(row.lineId ?? "")))
   }, [
-    arrivals.data,
+    railRows,
     arrivalsProps.lineOrder,
     arrivalsProps.lines,
     config.arrivals.lineOrder,
