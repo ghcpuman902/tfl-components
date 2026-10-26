@@ -31,6 +31,8 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
    * render an empty row in canonical `LINE_ORDER` (“No arrivals right now.”
    * or overnight ended). Order in this array is ignored unless
    * `lineSortBy="source"` — use `lineOrder` for an explicit section order.
+   * While `loading` with no data, these lines hold their loaded height
+   * (two bounds when `bounds` is unknown) instead of the generic skeleton.
    */
   lines?: readonly RailArrivalsLine[]
   /**
@@ -159,7 +161,8 @@ export const RailArrivalsBoard = ({
 }: RailArrivalsBoardProps) => {
   const rows = data ?? []
   const heading = resolveArrivalsHeading(chrome.stopName, rows)
-  if (loading && rows.length === 0 && !error) {
+  // Seeded lines paint their loaded footprint while the first fetch is out.
+  if (loading && rows.length === 0 && !error && !lines?.length) {
     return (
       <RailArrivalsBoardSkeleton className={className} stopName={heading} />
     )

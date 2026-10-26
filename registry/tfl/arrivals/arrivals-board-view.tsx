@@ -222,9 +222,76 @@ export const ArrivalsBoardSkeleton = ({
   </div>
 )
 
+/** Bounds to hold for a line whose directions only arrive with the first fetch. */
+const PENDING_BOUND_COUNT = 2
+
+/**
+ * First fetch in flight: the seeded line's final footprint — a label tile
+ * plus `pageSize` row tiles per bound — so arrivals land without moving
+ * anything below.
+ */
+const PendingGroupBody = ({
+  group,
+  pageSize,
+  classNames,
+}: {
+  group: ArrivalsPreparedGroup
+  pageSize?: number
+  classNames?: ArrivalsBoardClassNames
+}) => {
+  const labels = group.bounds.flatMap((bound) =>
+    bound.label ? [bound.label] : []
+  )
+  const bounds =
+    labels.length > 0 ? labels : Array.from({ length: PENDING_BOUND_COUNT })
+  return (
+    <ul
+      data-slot="arrivals-subgroups"
+      className={cn(
+        LIST_RESET_CLASS,
+        "grid min-w-0 grid-cols-1",
+        classNames?.subgroups
+      )}
+      role="list"
+    >
+      {bounds.map((label, index) => (
+        <li
+          key={index}
+          data-slot="arrivals-subgroup"
+          className={cn("min-w-0", classNames?.subgroup)}
+        >
+          <div
+            className={cn(
+              "flex items-center text-xl leading-7 font-semibold text-muted-foreground",
+              ARRIVALS_TILE_CLASS
+            )}
+          >
+            {typeof label === "string" ? (
+              label
+            ) : (
+              <Skeleton className="h-5 w-32" />
+            )}
+          </div>
+          <div className={classNames?.rows}>
+            {Array.from({ length: Math.max(1, pageSize ?? 1) }, (_, row) => (
+              <div
+                key={row}
+                className={cn("flex items-center", ARRIVALS_TILE_CLASS)}
+              >
+                <Skeleton className="h-5 w-full" />
+              </div>
+            ))}
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 const GroupBody = ({
   group,
   mode,
+  pending = false,
   pageSize,
   classNames,
   behaviour,
@@ -238,6 +305,7 @@ const GroupBody = ({
 }: {
   group: ArrivalsPreparedGroup
   mode: ArrivalsBoardMode
+  pending?: boolean
   pageSize?: number
   classNames?: ArrivalsBoardClassNames
   behaviour?: DisplayBehaviour
@@ -249,6 +317,15 @@ const GroupBody = ({
   lineStatus?: readonly ArrivalsStatusSignal[]
   stopPointId?: string
 }) => {
+  if (pending) {
+    return (
+      <PendingGroupBody
+        group={group}
+        pageSize={pageSize}
+        classNames={classNames}
+      />
+    )
+  }
   const labeledBounds = group.bounds.filter((bound) => bound.label)
   const emptyState =
     mode === "rail"
@@ -471,6 +548,8 @@ export const ArrivalsBoardView = ({
     !loading &&
     prepared.rows.length === 0 &&
     prepared.groups.length === 0
+  const pending =
+    mode === "rail" && loading && !error && prepared.rows.length === 0
   const showStopDisruptions = mode === "bus" || mode === "river"
   const hasStopDisruptionChips = showStopDisruptions && disruptions.length > 0
 
@@ -479,6 +558,7 @@ export const ArrivalsBoardView = ({
       data-slot="arrivals-board"
       className={cn("@container/arrivals w-full min-w-0", className)}
       style={ARRIVALS_RHYTHM_VARS}
+      aria-busy={pending || undefined}
     >
       <BusStopDisruptionBoundary
         disruptions={showStopDisruptions ? disruptions : []}
@@ -601,6 +681,7 @@ export const ArrivalsBoardView = ({
                 }
                 className={cn(
                   "@container/arrivals-group min-w-0",
+                  pending && "saturate-0",
                   classNames?.group
                 )}
               >
@@ -612,6 +693,7 @@ export const ArrivalsBoardView = ({
                 <GroupBody
                   group={group}
                   mode={mode}
+                  pending={pending}
                   pageSize={resolveGroupPageSize(
                     group.lineId,
                     pageSize,
