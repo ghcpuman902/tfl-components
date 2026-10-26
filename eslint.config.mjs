@@ -16,6 +16,9 @@ const eslintConfig = defineConfig([
     "_agent/**",
     // Gitignored throwaway probes (.gitignore: scratch/), not app code.
     "scripts/scratch/**",
+    // Playwright is not installed here yet (@playwright/test).
+    "e2e/**",
+    "playwright.config.ts",
   ]),
 ]);
 
