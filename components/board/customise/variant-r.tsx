@@ -1,6 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type ReactNode, type Ref } from "react"
+import {
+  DragGrip,
+  DropMarker,
+  useDragOrder,
+} from "@/components/board/customise/drag-order"
 import {
   PanelEye,
   PanelMenu,
@@ -23,21 +28,38 @@ import {
 import type { BoardPanelKind } from "@/lib/tfl/board-panels"
 import { cn } from "@/lib/utils"
 
-/** One layer: roundel · name and summary · eye · ⋯. Tap the name to open it. */
+/**
+ * One layer: grip · roundel · name and summary · eye · ⋯. Tap the name to
+ * open it. Parts that are off have no stack place, so no grip.
+ */
 const LayerRow = ({
   api,
   kind,
+  rowRef,
+  grip,
+  dragging = false,
 }: {
   api: CustomiseController
   kind: BoardPanelKind
+  rowRef?: Ref<HTMLLIElement>
+  grip?: ReactNode
+  dragging?: boolean
 }) => {
   const [open, setOpen] = useState(false)
   const label = CUSTOMISE_PANEL_LABEL[kind]
   const shown = panelShown(api.layout, kind)
   const bodyId = `customise-r-${kind}`
   return (
-    <li className="border-b border-border last:border-b-0" data-panel={kind}>
+    <li
+      ref={rowRef}
+      className={cn(
+        "border-b border-border last:border-b-0",
+        dragging && "opacity-40"
+      )}
+      data-panel={kind}
+    >
       <div className="flex items-center">
+        {grip ?? <span aria-hidden className="w-11 shrink-0" />}
         <button
           type="button"
           aria-expanded={open}
@@ -63,11 +85,48 @@ const LayerRow = ({
         <PanelMenu api={api} kind={kind} />
       </div>
       {open ? (
-        <div id={bodyId} className="pb-4 pl-6">
+        <div id={bodyId} className="pb-4 pl-17">
           <PanelBody api={api} kind={kind} />
         </div>
       ) : null}
     </li>
+  )
+}
+
+const LayerList = ({
+  api,
+  panels,
+  orderable,
+}: {
+  api: CustomiseController
+  panels: readonly { kind: BoardPanelKind }[]
+  orderable: boolean
+}) => {
+  const { listRef, row, grip, dragging, marker } =
+    useDragOrder<HTMLUListElement>({
+      ids: panels.map((panel) => panel.kind),
+      onPlace: (kind, index) => api.placePanel(kind as BoardPanelKind, index),
+    })
+  return (
+    <ul ref={listRef} className="relative border-y border-border">
+      {panels.map(({ kind }) =>
+        orderable ? (
+          <LayerRow
+            key={kind}
+            api={api}
+            kind={kind}
+            rowRef={row(kind)}
+            grip={
+              <DragGrip name={CUSTOMISE_PANEL_LABEL[kind]} {...grip(kind)} />
+            }
+            dragging={dragging === kind}
+          />
+        ) : (
+          <LayerRow key={kind} api={api} kind={kind} />
+        )
+      )}
+      {marker ? <DropMarker top={marker.top} /> : null}
+    </ul>
   )
 }
 
@@ -95,11 +154,11 @@ export const CustomiseVariantR = ({ api }: { api: CustomiseController }) => {
           <SectionHeading id={`customise-r-${group.id}`}>
             {group.title}
           </SectionHeading>
-          <ul className="border-y border-border">
-            {group.panels.map((panel) => (
-              <LayerRow key={panel.kind} api={api} kind={panel.kind} />
-            ))}
-          </ul>
+          <LayerList
+            api={api}
+            panels={group.panels}
+            orderable={group.id !== "off"}
+          />
         </section>
       ))}
       <section aria-label="Display" className="space-y-1">

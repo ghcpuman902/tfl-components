@@ -15,6 +15,7 @@ import {
   moveLineToTop,
   nearbyModesForLayout,
   placeLine,
+  placePanel,
   setPanelColumn,
   setPanelHeight,
   setPanelOn,
@@ -132,6 +133,17 @@ describe("customise layout", () => {
       sections.off.map((p) => p.kind),
       ["river", "cycle"]
     )
+  })
+
+  it("a dragged part moves within its column, and the board stacks it there", () => {
+    const layout = placePanel(layoutFromConfig(base), "bus", 0)
+    const config = applyLayoutToConfig(base, layout)
+    assert.deepEqual(config.slots, { p1: ["bus", "rail"], p2: ["status"] })
+    assert.deepEqual(
+      layoutFromConfig(config).panels.map((p) => p.kind),
+      layout.panels.map((p) => p.kind)
+    )
+    assert.deepEqual(placePanel(layout, "status", 3), layout)
   })
 
   it("heights: Full is the top end and writes 0; glance keeps owning rail rows", () => {

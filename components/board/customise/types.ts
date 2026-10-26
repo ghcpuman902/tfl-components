@@ -31,6 +31,7 @@ export type CustomiseController = {
   setPanelOn: (kind: BoardPanelKind, on: boolean) => void
   toggleSolo: (kind: BoardPanelKind) => void
   setPanelColumn: (kind: BoardPanelKind, column: BoardPanelColumn) => void
+  placePanel: (kind: BoardPanelKind, index: number) => void
   setPanelHeight: (kind: BoardPanelKind, height: number) => void
   setRailLines: (lineIds: readonly string[]) => void
   statusLines: readonly string[]

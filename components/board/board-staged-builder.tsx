@@ -56,6 +56,7 @@ import {
   layoutSettingsAsOverrides,
   nearbyModesForLayout,
   panelHasTarget,
+  placePanel as layoutPlacePanel,
   setPanelColumn as layoutSetPanelColumn,
   setPanelHeight as layoutSetPanelHeight,
   setPanelOn as layoutSetPanelOn,
@@ -817,6 +818,10 @@ export const BoardStagedBuilder = ({
           },
           setPanelColumn: (kind, column) =>
             editLayout((layout) => layoutSetPanelColumn(layout, kind, column)),
+          placePanel: (kind, index) => {
+            editLayout((layout) => layoutPlacePanel(layout, kind, index))
+            customiseLog("customise_reorder_saved")
+          },
           setPanelHeight: (kind, height) =>
             editLayout((layout) => layoutSetPanelHeight(layout, kind, height)),
           setRailLines: (lineIds) => {

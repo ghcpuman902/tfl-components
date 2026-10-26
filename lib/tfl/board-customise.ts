@@ -270,6 +270,33 @@ export const setPanelColumn = (
   ),
 })
 
+/** Move a shown panel to `index` in its column; the board stacks it there. */
+export const placePanel = (
+  layout: BoardCustomiseLayout,
+  kind: BoardPanelKind,
+  index: number
+): BoardCustomiseLayout => {
+  const moving = layout.panels.find((panel) => panel.kind === kind)
+  if (!moving?.on) return layout
+  const sameGroup = (panel: BoardCustomisePanel) =>
+    panel.on && panel.column === moving.column
+  const order = placeLine(
+    layout.panels.filter(sameGroup).map((panel) => panel.kind),
+    kind,
+    index
+  )
+  const byKind = new Map(layout.panels.map((panel) => [panel.kind, panel]))
+  let next = 0
+  return {
+    ...layout,
+    panels: layout.panels.map((panel) => {
+      if (!sameGroup(panel)) return panel
+      const at = order[next++] as BoardPanelKind
+      return byKind.get(at) ?? panel
+    }),
+  }
+}
+
 export const setPanelHeight = (
   layout: BoardCustomiseLayout,
   kind: BoardPanelKind,
