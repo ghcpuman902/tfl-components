@@ -57,6 +57,12 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
    * not painted here. Omit on docs/live boards that do not already have status.
    */
   lineStatus?: readonly ArrivalsStatusSignal[]
+  /**
+   * Refetch after `error`. The board then keeps its line and direction tiles
+   * (or, with no `lines`, the loading shell) around a short note and a Try
+   * again control. Without it, an error with no `lines` is one tile.
+   */
+  onRetry?: () => void
   /** Arrival order within each bound. Default `timeToStation`. */
   sortBy?: RailArrivalsSortBy
   /** Line section order. Default `canonical` (`LINE_ORDER`). */
@@ -153,6 +159,7 @@ export const RailArrivalsBoard = ({
   dwellMs,
   startDelayMs,
   idleReturnMs,
+  onRetry,
   loading = false,
   error = null,
   className,
@@ -161,10 +168,16 @@ export const RailArrivalsBoard = ({
 }: RailArrivalsBoardProps) => {
   const rows = data ?? []
   const heading = resolveArrivalsHeading(chrome.stopName, rows)
-  // Seeded lines paint their loaded footprint while the first fetch is out.
-  if (loading && rows.length === 0 && !error && !lines?.length) {
+  // Seeded lines paint their loaded footprint; without them, the shell holds.
+  if (!lines?.length && rows.length === 0 && (error ? onRetry : loading)) {
     return (
-      <RailArrivalsBoardSkeleton className={className} stopName={heading} />
+      <ArrivalsBoardSkeleton
+        mode="rail"
+        className={className}
+        stopName={heading}
+        error={error}
+        retry={onRetry ? { onRetry, retrying: loading } : undefined}
+      />
     )
   }
 
@@ -195,6 +208,7 @@ export const RailArrivalsBoard = ({
       idleReturnMs={idleReturnMs}
       now={now}
       lineStatus={lineStatus}
+      onRetry={onRetry}
       className={className}
       classNames={classNames}
       {...chrome}

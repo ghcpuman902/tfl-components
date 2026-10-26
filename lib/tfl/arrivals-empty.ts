@@ -60,6 +60,40 @@ export const RIVER_ARRIVALS_EMPTY_COPY = "No live departure times available."
 /** Per-route fallback when a bus/river group is empty. Rail uses {@link arrivalsLineEmptyCopy}. */
 export const ARRIVALS_LINE_EMPTY_COPY = "No information"
 
+/** Per-direction note when the arrivals request failed. */
+export const ARRIVALS_ERROR_COPY = "Couldn't load arrivals."
+
+/**
+ * A rail board holds its loaded footprint instead of collapsing: `loading`
+ * while the first fetch is out, `failed` after a fetch fails (also while a
+ * retry is out). Null paints the arrivals.
+ */
+export type ArrivalsHold = "loading" | "failed" | null
+
+export const resolveArrivalsHold = ({
+  loading,
+  failed,
+  rowCount,
+}: {
+  loading: boolean
+  failed: boolean
+  rowCount: number
+}): ArrivalsHold => {
+  if (failed) return "failed"
+  return loading && rowCount === 0 ? "loading" : null
+}
+
+export type ArrivalsHeldTile = "skeleton" | "note" | "dash"
+
+/** Row tiles in a held bound: one per `pageSize` row, so arrivals land in place. */
+export const arrivalsHeldTiles = (
+  hold: Exclude<ArrivalsHold, null>,
+  pageSize?: number
+): ArrivalsHeldTile[] =>
+  Array.from({ length: Math.max(1, pageSize ?? 1) }, (_, index) =>
+    hold === "loading" ? "skeleton" : index === 0 ? "note" : "dash"
+  )
+
 /** Last spare tile on a short page that still has arrivals. */
 export const ARRIVALS_END_COPY = "No more arrivals"
 

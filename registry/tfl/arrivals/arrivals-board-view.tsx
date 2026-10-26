@@ -10,14 +10,20 @@ import {
   BusStopDisruptionCover,
 } from "@/components/tfl/arrivals/bus-stop-disruptions"
 import type { BusStopDisruption } from "@/lib/tfl/prepare-bus-stop-disruptions"
+import { RotateCw } from "lucide-react"
 import {
   ARRIVALS_EMPTY_COPY,
+  ARRIVALS_ERROR_COPY,
   ARRIVALS_LINE_EMPTY_COPY,
+  arrivalsHeldTiles,
   arrivalsLineEmptyCopy,
+  resolveArrivalsHold,
   resolveArrivalsLeftoverStatus,
   resolveArrivalsStatusChip,
   resolveLineArrivalsEmptyKind,
   type ArrivalsEmptyKind,
+  type ArrivalsHeldTile,
+  type ArrivalsHold,
   type ArrivalsStatusSignal,
 } from "@/lib/tfl/arrivals-empty"
 import type {
@@ -140,75 +146,130 @@ export const resolveArrivalsHeading = (
 
 export { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
 
+export type ArrivalsRetry = {
+  onRetry: () => void
+  /** A retry is in flight. The control stays put; only its icon spins. */
+  retrying?: boolean
+}
+
+const RetryButton = ({ onRetry, retrying = false }: ArrivalsRetry) => (
+  <button
+    type="button"
+    onClick={onRetry}
+    disabled={retrying}
+    aria-busy={retrying || undefined}
+    className="-mr-2 inline-flex min-h-11 min-w-11 shrink-0 [touch-action:manipulation] items-center justify-center gap-1.5 px-2 text-sm text-foreground underline-offset-4 hover:underline disabled:cursor-progress disabled:no-underline"
+  >
+    <RotateCw
+      className={cn("size-4", retrying && "motion-safe:animate-spin")}
+      aria-hidden
+    />
+    Try again
+  </button>
+)
+
+/** One row tile of a held bound: skeleton bar, failure note, or quiet dash. */
+const HeldRowTile = ({
+  tile,
+  retry,
+}: {
+  tile: ArrivalsHeldTile
+  retry?: ArrivalsRetry
+}) => {
+  if (tile === "skeleton") {
+    return (
+      <div className={cn("flex items-center", ARRIVALS_TILE_CLASS)}>
+        <Skeleton className="h-5 w-full" />
+      </div>
+    )
+  }
+  if (tile === "dash") {
+    return (
+      <div
+        aria-hidden
+        className={cn(
+          "flex items-center text-base text-muted-foreground/50",
+          ARRIVALS_TILE_CLASS
+        )}
+      >
+        —
+      </div>
+    )
+  }
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-x-3 text-base text-muted-foreground",
+        ARRIVALS_TILE_CLASS
+      )}
+    >
+      <p className="min-w-0 flex-1 truncate">{ARRIVALS_ERROR_COPY}</p>
+      {retry ? <RetryButton {...retry} /> : null}
+    </div>
+  )
+}
+
 export const ArrivalsBoardSkeleton = ({
   mode = "rail",
   className,
   stopName,
   stopLetter,
+  error,
+  retry,
 }: {
   mode?: ArrivalsBoardMode
   className?: string
   /** Known stop identity — paint immediately; do not wait on predictions. */
   stopName?: string
   stopLetter?: string
-}) => (
-  <div
-    data-slot="arrivals-board"
-    className={cn("@container/arrivals w-full min-w-0", className)}
-    style={ARRIVALS_RHYTHM_VARS}
-    aria-busy
-    aria-label="Loading arrivals"
-  >
+  /** Rail: the first fetch failed. The shell keeps its height around the note. */
+  error?: string | null
+  retry?: ArrivalsRetry
+}) => {
+  const failed = mode === "rail" && Boolean(error)
+  return (
     <div
-      className={cn(
-        "flex min-w-0 items-center gap-x-3 text-3xl",
-        ARRIVALS_TILE_CLASS
-      )}
+      data-slot="arrivals-board"
+      className={cn("@container/arrivals w-full min-w-0", className)}
+      style={ARRIVALS_RHYTHM_VARS}
+      aria-busy={!failed || retry?.retrying || undefined}
+      aria-label={failed ? undefined : "Loading arrivals"}
     >
-      {stopName ? (
-        <>
-          <TfLRoundel
-            variant={arrivalsRoundelVariant(mode)}
-            className="size-[var(--arrivals-row)] shrink-0"
-            aria-hidden
-          />
-          <p
-            className={cn(
-              "flex h-full min-w-0 flex-1 items-center text-3xl",
-              TITLE_CLASS
-            )}
-          >
-            <StationNameTitle name={stopName} />
-          </p>
-          {stopLetter ? <StopLetterBadge letter={stopLetter} /> : null}
-        </>
-      ) : (
-        <Skeleton className="h-8 w-56 max-w-full" />
-      )}
-    </div>
-    {isRouteArrivalsMode(mode) ? (
-      <div>
-        {Array.from({ length: 6 }).map((_, rowIndex) => (
-          <div
-            key={rowIndex}
-            className={cn("flex items-center", ARRIVALS_TILE_CLASS)}
-          >
-            <Skeleton className="h-5 w-full" />
-          </div>
-        ))}
+      {failed ? (
+        <p className="sr-only" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <div
+        className={cn(
+          "flex min-w-0 items-center gap-x-3 text-3xl",
+          ARRIVALS_TILE_CLASS
+        )}
+      >
+        {stopName ? (
+          <>
+            <TfLRoundel
+              variant={arrivalsRoundelVariant(mode)}
+              className="size-[var(--arrivals-row)] shrink-0"
+              aria-hidden
+            />
+            <p
+              className={cn(
+                "flex h-full min-w-0 flex-1 items-center text-3xl",
+                TITLE_CLASS
+              )}
+            >
+              <StationNameTitle name={stopName} />
+            </p>
+            {stopLetter ? <StopLetterBadge letter={stopLetter} /> : null}
+          </>
+        ) : (
+          <Skeleton className="h-8 w-56 max-w-full" />
+        )}
       </div>
-    ) : (
-      Array.from({ length: 2 }).map((_, sectionIndex) => (
-        <div key={sectionIndex}>
-          <div
-            className={cn(
-              "flex items-center border-b-4 border-border",
-              ARRIVALS_TILE_CLASS
-            )}
-          >
-            <Skeleton className="h-6 w-28" />
-          </div>
-          {Array.from({ length: 4 }).map((_, rowIndex) => (
+      {isRouteArrivalsMode(mode) ? (
+        <div>
+          {Array.from({ length: 6 }).map((_, rowIndex) => (
             <div
               key={rowIndex}
               className={cn("flex items-center", ARRIVALS_TILE_CLASS)}
@@ -217,27 +278,54 @@ export const ArrivalsBoardSkeleton = ({
             </div>
           ))}
         </div>
-      ))
-    )}
-  </div>
-)
+      ) : (
+        Array.from({ length: 2 }).map((_, sectionIndex) => (
+          <div key={sectionIndex}>
+            <div
+              className={cn(
+                "flex items-center border-b-4 border-border",
+                ARRIVALS_TILE_CLASS
+              )}
+            >
+              {failed ? null : <Skeleton className="h-6 w-28" />}
+            </div>
+            {arrivalsHeldTiles(failed ? "failed" : "loading", 4).map(
+              (tile, rowIndex) => (
+                <HeldRowTile
+                  key={rowIndex}
+                  tile={tile === "note" && sectionIndex > 0 ? "dash" : tile}
+                  retry={retry}
+                />
+              )
+            )}
+          </div>
+        ))
+      )}
+    </div>
+  )
+}
 
 /** Bounds to hold for a line whose directions only arrive with the first fetch. */
 const PENDING_BOUND_COUNT = 2
 
 /**
- * First fetch in flight: the seeded line's final footprint — a label tile
- * plus `pageSize` row tiles per bound — so arrivals land without moving
- * anything below.
+ * First fetch in flight, or a fetch failed: the seeded line's final
+ * footprint — a label tile plus `pageSize` row tiles per bound — so arrivals
+ * land, and failures show, without moving anything below.
  */
-const PendingGroupBody = ({
+const HeldGroupBody = ({
   group,
+  hold,
   pageSize,
   classNames,
+  retry,
 }: {
   group: ArrivalsPreparedGroup
+  hold: Exclude<ArrivalsHold, null>
   pageSize?: number
   classNames?: ArrivalsBoardClassNames
+  /** Shown once, on the board's first bound. */
+  retry?: ArrivalsRetry
 }) => {
   const labels = group.bounds.flatMap((bound) =>
     bound.label ? [bound.label] : []
@@ -268,18 +356,17 @@ const PendingGroupBody = ({
           >
             {typeof label === "string" ? (
               label
-            ) : (
+            ) : hold === "loading" ? (
               <Skeleton className="h-5 w-32" />
-            )}
+            ) : null}
           </div>
           <div className={classNames?.rows}>
-            {Array.from({ length: Math.max(1, pageSize ?? 1) }, (_, row) => (
-              <div
+            {arrivalsHeldTiles(hold, pageSize).map((tile, row) => (
+              <HeldRowTile
                 key={row}
-                className={cn("flex items-center", ARRIVALS_TILE_CLASS)}
-              >
-                <Skeleton className="h-5 w-full" />
-              </div>
+                tile={tile}
+                retry={index === 0 ? retry : undefined}
+              />
             ))}
           </div>
         </li>
@@ -291,7 +378,8 @@ const PendingGroupBody = ({
 const GroupBody = ({
   group,
   mode,
-  pending = false,
+  hold = null,
+  retry,
   pageSize,
   classNames,
   behaviour,
@@ -305,7 +393,8 @@ const GroupBody = ({
 }: {
   group: ArrivalsPreparedGroup
   mode: ArrivalsBoardMode
-  pending?: boolean
+  hold?: ArrivalsHold
+  retry?: ArrivalsRetry
   pageSize?: number
   classNames?: ArrivalsBoardClassNames
   behaviour?: DisplayBehaviour
@@ -317,12 +406,14 @@ const GroupBody = ({
   lineStatus?: readonly ArrivalsStatusSignal[]
   stopPointId?: string
 }) => {
-  if (pending) {
+  if (hold) {
     return (
-      <PendingGroupBody
+      <HeldGroupBody
         group={group}
+        hold={hold}
         pageSize={pageSize}
         classNames={classNames}
+        retry={retry}
       />
     )
   }
@@ -498,6 +589,11 @@ export type ArrivalsBoardViewProps = ArrivalsBoardChromeProps & {
    */
   lineStatus?: readonly ArrivalsStatusSignal[]
   /**
+   * Rail: refetch after `error`. Shows a Try again control on the first bound;
+   * `loading` while `error` is set spins its icon.
+   */
+  onRetry?: () => void
+  /**
    * Root classes, merged over the board container (`data-slot="arrivals-board"`).
    * The root *is* the `arrivals` container, so container-query variants here
    * query an outer context — put board-width arrangements on `classNames.groups`
@@ -538,6 +634,7 @@ export const ArrivalsBoardView = ({
   idleReturnMs,
   now,
   lineStatus,
+  onRetry,
   className,
   classNames,
 }: ArrivalsBoardViewProps) => {
@@ -548,8 +645,16 @@ export const ArrivalsBoardView = ({
     !loading &&
     prepared.rows.length === 0 &&
     prepared.groups.length === 0
-  const pending =
-    mode === "rail" && loading && !error && prepared.rows.length === 0
+  // Rail lines keep their loaded footprint while loading and after a failure.
+  const railGroups = mode === "rail" && prepared.groups.length > 0
+  const hold = railGroups
+    ? resolveArrivalsHold({
+        loading,
+        failed: Boolean(error),
+        rowCount: prepared.rows.length,
+      })
+    : null
+  const retry = onRetry ? { onRetry, retrying: loading } : undefined
   const showStopDisruptions = mode === "bus" || mode === "river"
   const hasStopDisruptionChips = showStopDisruptions && disruptions.length > 0
 
@@ -558,7 +663,7 @@ export const ArrivalsBoardView = ({
       data-slot="arrivals-board"
       className={cn("@container/arrivals w-full min-w-0", className)}
       style={ARRIVALS_RHYTHM_VARS}
-      aria-busy={pending || undefined}
+      aria-busy={(hold !== null && loading) || undefined}
     >
       <BusStopDisruptionBoundary
         disruptions={showStopDisruptions ? disruptions : []}
@@ -611,7 +716,12 @@ export const ArrivalsBoardView = ({
         </div>
         <BusStopDisruptionCover />
 
-        {error ? (
+        {hold === "failed" ? (
+          <p className="sr-only" role="alert">
+            {error}
+          </p>
+        ) : null}
+        {error && hold !== "failed" ? (
           <p
             className={cn(
               "flex items-center truncate text-base text-destructive",
@@ -670,7 +780,7 @@ export const ArrivalsBoardView = ({
             data-slot="arrivals-groups"
             className={cn("grid min-w-0 grid-cols-1", classNames?.groups)}
           >
-            {prepared.groups.map((group) => (
+            {prepared.groups.map((group, groupIndex) => (
               <section
                 key={group.key}
                 data-slot="arrivals-group"
@@ -681,7 +791,7 @@ export const ArrivalsBoardView = ({
                 }
                 className={cn(
                   "@container/arrivals-group min-w-0",
-                  pending && "saturate-0",
+                  hold && "saturate-0",
                   classNames?.group
                 )}
               >
@@ -693,7 +803,8 @@ export const ArrivalsBoardView = ({
                 <GroupBody
                   group={group}
                   mode={mode}
-                  pending={pending}
+                  hold={hold}
+                  retry={groupIndex === 0 ? retry : undefined}
                   pageSize={resolveGroupPageSize(
                     group.lineId,
                     pageSize,

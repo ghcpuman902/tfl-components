@@ -175,20 +175,38 @@ describe("arrivals board layout API", () => {
     assert.equal(html.includes("No arrivals right now."), false)
   })
 
-  it("does not paint empty-line copy under a fetch error", () => {
+  it("keeps the line sections under a fetch error, without empty-line copy", () => {
     const html = renderToStaticMarkup(
       createElement(RailArrivalsBoard, {
         data: [],
         lines: railLines,
         stopName: "Oxford Circus",
-        error: "Couldn't load arrivals.",
+        error: "Live updates are paused. Try again in a moment.",
+        onRetry: () => {},
       })
     )
     assert.ok(html.includes("Couldn") && html.includes("load arrivals."))
+    assert.ok(html.includes("Live updates are paused."))
     assert.equal(html.includes("No arrivals right now."), false)
     assert.equal(html.includes("Service has ended for tonight."), false)
-    assert.equal(slotCount(html, "arrivals-group"), 0)
-    assert.equal(slotCount(html, "arrivals-board"), 1)
+    assert.equal(slotCount(html, "arrivals-group"), railLines.length)
+    assert.equal(html.match(/Try again</g)?.length, 1)
+  })
+
+  it("holds the loading shell when the first fetch fails with no station lines", () => {
+    const board = (loading: boolean) =>
+      renderToStaticMarkup(
+        createElement(RailArrivalsBoard, {
+          data: [],
+          stopName: "Oxford Circus",
+          loading,
+          error: loading ? null : "Failed to load arrivals.",
+          onRetry: () => {},
+        })
+      )
+    const tiles = (html: string) => html.match(/h-\[var\(--arrivals-row\)\]/g)
+    assert.equal(tiles(board(false))?.length, tiles(board(true))?.length)
+    assert.ok(board(false).includes("Try again<"))
   })
 
   it("keeps a live line visible when its partner has finished overnight", () => {

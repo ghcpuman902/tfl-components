@@ -881,6 +881,7 @@ export const BoardDisplay = ({
           startDelayMs={unattended ? 0 : undefined}
           loading={arrivals.loading}
           error={arrivalsError}
+          onRetry={stopId ? refreshArrivals : undefined}
           emptyKind={railEmpty.kind}
           emptyMessage={arrivalsLineEmptyCopy(railEmpty)}
           classNames={BOUND_COLUMNS_CLASS_NAMES}

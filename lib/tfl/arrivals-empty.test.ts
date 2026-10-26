@@ -5,6 +5,7 @@ import {
   ARRIVALS_EMPTY_COPY,
   ARRIVALS_LEFTOVER_SENTENCE,
   NIGHT_TUBE_LINE_IDS,
+  arrivalsHeldTiles,
   arrivalsLineEmptyCopy,
   formatLondonClockTime,
   indexArrivalsStatusKinds,
@@ -15,6 +16,7 @@ import {
   lineLikelyFinishedOvernight,
   overlappingValidityToDateMs,
   resolveArrivalsEmptyKind,
+  resolveArrivalsHold,
   resolveArrivalsLeftoverStatus,
   resolveArrivalsStatusChip,
   resolveLineArrivalsEmptyKind,
@@ -1327,5 +1329,34 @@ describe("station-relevant arrivals status", () => {
     const ids = stationIdentityIdsForStop(KINGS_CROSS)
     assert.ok(ids.includes(KINGS_CROSS))
     assert.ok(ids.length >= 1)
+  })
+})
+
+describe("held rail board", () => {
+  it("holds while the first fetch is out, then paints arrivals", () => {
+    const hold = (loading: boolean, rowCount: number) =>
+      resolveArrivalsHold({ loading, failed: false, rowCount })
+    assert.equal(hold(true, 0), "loading")
+    assert.equal(hold(true, 4), null)
+    assert.equal(hold(false, 0), null)
+  })
+
+  it("stays failed while a retry is out, so the retry does not reshape the board", () => {
+    for (const loading of [false, true]) {
+      assert.equal(
+        resolveArrivalsHold({ loading, failed: true, rowCount: 0 }),
+        "failed"
+      )
+    }
+  })
+
+  it("fills the same number of row tiles loading and failed", () => {
+    assert.deepEqual(arrivalsHeldTiles("loading", 3), [
+      "skeleton",
+      "skeleton",
+      "skeleton",
+    ])
+    assert.deepEqual(arrivalsHeldTiles("failed", 3), ["note", "dash", "dash"])
+    assert.deepEqual(arrivalsHeldTiles("failed", 0), ["note"])
   })
 })
