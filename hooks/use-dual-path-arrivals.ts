@@ -57,7 +57,10 @@ type UseDualPathArrivalsOptions = {
 }
 
 type UseDualPathArrivalsResult = {
+  /** Cleared when a fetch fails. */
   data: RealtimePrediction[]
+  /** Last successful fetch, kept through failures to hold a board's shape. */
+  loadedData: RealtimePrediction[]
   loading: boolean
   fetchError: string | null
   fetchedAt: number | null
@@ -122,6 +125,7 @@ export const useDualPathArrivals = ({
   const familyKey = familyKeys.join("|")
 
   const [data, setData] = useState<RealtimePrediction[]>([])
+  const [loadedData, setLoadedData] = useState<RealtimePrediction[]>([])
   const [pollError, setPollError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [fetchedAt, setFetchedAt] = useState<number | null>(null)
@@ -135,6 +139,7 @@ export const useDualPathArrivals = ({
   if (appliedStopIdentity !== stopIdentity) {
     setAppliedStopIdentity(stopIdentity)
     setData([])
+    setLoadedData([])
     setPollError(null)
     setFetchedAt(null)
     setRateLimited(false)
@@ -181,6 +186,7 @@ export const useDualPathArrivals = ({
       setPollError(null)
       setRateLimited(false)
       setData(arrivals)
+      setLoadedData(arrivals)
       setFetchedAt(Date.now())
       setLoading(false)
     }
@@ -379,6 +385,7 @@ export const useDualPathArrivals = ({
   if (isInvalid) {
     return {
       data: [],
+      loadedData,
       loading: false,
       fetchError: credentialError?.message ?? INVALID_KEY_FALLBACK,
       fetchedAt,
@@ -391,6 +398,7 @@ export const useDualPathArrivals = ({
   if (!trimmedStop) {
     return {
       data: [],
+      loadedData: [],
       loading: false,
       fetchError: null,
       fetchedAt,
@@ -402,6 +410,7 @@ export const useDualPathArrivals = ({
 
   return {
     data,
+    loadedData,
     loading,
     fetchError: pollError,
     fetchedAt,

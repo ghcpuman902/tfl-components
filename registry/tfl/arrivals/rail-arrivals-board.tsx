@@ -31,6 +31,8 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
    * render an empty row in canonical `LINE_ORDER` (“No arrivals right now.”
    * or overnight ended). Order in this array is ignored unless
    * `lineSortBy="source"` — use `lineOrder` for an explicit section order.
+   * While `loading` with no data, these lines hold their loaded height
+   * (two bounds when `bounds` is unknown) instead of the generic skeleton.
    */
   lines?: readonly RailArrivalsLine[]
   /**
@@ -55,6 +57,14 @@ export type RailArrivalsBoardProps = ArrivalsBoardChromeProps & {
    * not painted here. Omit on docs/live boards that do not already have status.
    */
   lineStatus?: readonly ArrivalsStatusSignal[]
+  /**
+   * Refetch after `error`. The board then keeps its line and direction tiles
+   * (or, with no `lines`, the loading shell) around a short note and a Try
+   * again control. Without it, an error with no `lines` is one tile.
+   * When a later fetch fails, keep passing the last loaded `data` and its
+   * `now`: the board holds that shape and never paints those rows.
+   */
+  onRetry?: () => void
   /** Arrival order within each bound. Default `timeToStation`. */
   sortBy?: RailArrivalsSortBy
   /** Line section order. Default `canonical` (`LINE_ORDER`). */
@@ -151,6 +161,7 @@ export const RailArrivalsBoard = ({
   dwellMs,
   startDelayMs,
   idleReturnMs,
+  onRetry,
   loading = false,
   error = null,
   className,
@@ -159,9 +170,20 @@ export const RailArrivalsBoard = ({
 }: RailArrivalsBoardProps) => {
   const rows = data ?? []
   const heading = resolveArrivalsHeading(chrome.stopName, rows)
-  if (loading && rows.length === 0 && !error) {
+  // Seeded lines paint their loaded footprint; without them, the shell holds.
+  if (
+    !lines?.length &&
+    rows.length === 0 &&
+    (error ? onRetry && now === undefined : loading)
+  ) {
     return (
-      <RailArrivalsBoardSkeleton className={className} stopName={heading} />
+      <ArrivalsBoardSkeleton
+        mode="rail"
+        className={className}
+        stopName={heading}
+        error={error}
+        retry={onRetry ? { onRetry, retrying: loading } : undefined}
+      />
     )
   }
 
@@ -192,6 +214,7 @@ export const RailArrivalsBoard = ({
       idleReturnMs={idleReturnMs}
       now={now}
       lineStatus={lineStatus}
+      onRetry={onRetry}
       className={className}
       classNames={classNames}
       {...chrome}

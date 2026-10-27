@@ -642,13 +642,15 @@ export const BoardDisplay = ({
     return Object.keys(map).length > 0 ? map : undefined
   }, [lineGroups])
 
+  // Through a failed poll the board holds the last loaded lines and directions.
+  const railRows = arrivals.loadedData
   const dataLineIds = useMemo(() => {
     const ids = new Set<string>()
-    for (const row of arrivals.data) {
+    for (const row of railRows) {
       if (row.lineId) ids.add(row.lineId)
     }
     return [...ids]
-  }, [arrivals.data])
+  }, [railRows])
 
   const arrivalsProps = useMemo(
     () => resolveArrivalsProps(config, servingLines, dataLineIds, lineGroups),
@@ -751,18 +753,16 @@ export const BoardDisplay = ({
   })}`
 
   const railData = useMemo(() => {
-    if (!config.arrivals.lineOrder?.length) return arrivals.data
+    if (!config.arrivals.lineOrder?.length) return railRows
     const keep = new Set(
       (arrivalsProps.lines ?? []).map((line) => normalizeLineId(line.lineId))
     )
     for (const id of arrivalsProps.lineOrder ?? []) {
       keep.add(normalizeLineId(id))
     }
-    return arrivals.data.filter((row) =>
-      keep.has(normalizeLineId(row.lineId ?? ""))
-    )
+    return railRows.filter((row) => keep.has(normalizeLineId(row.lineId ?? "")))
   }, [
-    arrivals.data,
+    railRows,
     arrivalsProps.lineOrder,
     arrivalsProps.lines,
     config.arrivals.lineOrder,
@@ -881,6 +881,7 @@ export const BoardDisplay = ({
           startDelayMs={unattended ? 0 : undefined}
           loading={arrivals.loading}
           error={arrivalsError}
+          onRetry={stopId ? refreshArrivals : undefined}
           emptyKind={railEmpty.kind}
           emptyMessage={arrivalsLineEmptyCopy(railEmpty)}
           classNames={BOUND_COLUMNS_CLASS_NAMES}
@@ -1056,8 +1057,8 @@ export const BoardDisplay = ({
     : isPreview
       ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-full w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
       : fillScreen
-        ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
-        : `${BOARD_SHELL_CONTAINER_CLASS} box-border min-h-dvh w-full ${BOARD_SHELL_PADDING_CLASS}`
+        ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-svh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
+        : `${BOARD_SHELL_CONTAINER_CLASS} box-border min-h-svh w-full ${BOARD_SHELL_PADDING_CLASS}`
 
   const boardShellStyle: CSSProperties = {
     ...(isGlance ? {} : ARRIVALS_RHYTHM_VARS),

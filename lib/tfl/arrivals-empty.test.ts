@@ -5,6 +5,7 @@ import {
   ARRIVALS_EMPTY_COPY,
   ARRIVALS_LEFTOVER_SENTENCE,
   NIGHT_TUBE_LINE_IDS,
+  arrivalsHeldTiles,
   arrivalsLineEmptyCopy,
   formatLondonClockTime,
   indexArrivalsStatusKinds,
@@ -15,8 +16,10 @@ import {
   lineLikelyFinishedOvernight,
   overlappingValidityToDateMs,
   resolveArrivalsEmptyKind,
+  resolveArrivalsHold,
   resolveArrivalsLeftoverStatus,
   resolveArrivalsStatusChip,
+  resolveHeldBounds,
   resolveLineArrivalsEmptyKind,
   stationIdentityIdsForStop,
   statusAffectsStation,
@@ -24,6 +27,7 @@ import {
   type ArrivalsEmptyState,
   type ArrivalsStatusSignal,
 } from "@/lib/tfl/arrivals-empty"
+import type { ArrivalsPreparedBound } from "@/lib/tfl/arrivals-prepare"
 import { londonDayStartMs } from "@/lib/tfl/london-dates"
 
 /**
@@ -1327,5 +1331,89 @@ describe("station-relevant arrivals status", () => {
     const ids = stationIdentityIdsForStop(KINGS_CROSS)
     assert.ok(ids.includes(KINGS_CROSS))
     assert.ok(ids.length >= 1)
+  })
+})
+
+describe("held rail board", () => {
+  it("holds while the first fetch is out, then paints arrivals", () => {
+    const hold = (loading: boolean, rowCount: number) =>
+      resolveArrivalsHold({ loading, failed: false, rowCount })
+    assert.equal(hold(true, 0), "loading")
+    assert.equal(hold(true, 4), null)
+    assert.equal(hold(false, 0), null)
+  })
+
+  it("stays failed while a retry is out, so the retry does not reshape the board", () => {
+    for (const loading of [false, true]) {
+      assert.equal(
+        resolveArrivalsHold({ loading, failed: true, rowCount: 0 }),
+        "failed"
+      )
+    }
+  })
+
+  it("does not fall back to the loading guess once a fetch has loaded", () => {
+    assert.equal(
+      resolveArrivalsHold({
+        loading: true,
+        failed: false,
+        rowCount: 0,
+        loaded: true,
+      }),
+      null
+    )
+  })
+
+  it("holds a failed line in its last loaded shape, whatever its direction count", () => {
+    const bound = (label: string | null, rows = 0) =>
+      ({
+        key: label ?? "none",
+        label,
+        rows: Array(rows),
+      }) as ArrivalsPreparedBound
+    for (const labels of [
+      ["Northbound"],
+      ["Westbound", "Eastbound"],
+      ["Northbound", "Southbound", "Platform to be confirmed"],
+    ]) {
+      const held = resolveHeldBounds(
+        {
+          hasInformation: true,
+          bounds: labels.map((label) => bound(label, 1)),
+        },
+        { loaded: true, pageSize: 3 }
+      )
+      assert.deepEqual(
+        held.map(({ heading, rows }) => [
+          typeof heading === "object" ? heading?.label : heading,
+          rows,
+        ]),
+        labels.map((label) => [label, 3])
+      )
+    }
+  })
+
+  it("guesses two directions only before anything has loaded", () => {
+    const emptyLine = { hasInformation: false, bounds: [] }
+    assert.deepEqual(
+      resolveHeldBounds(emptyLine, { loaded: true, pageSize: 3 }),
+      [{ heading: null, rows: 3 }]
+    )
+    assert.deepEqual(
+      resolveHeldBounds(emptyLine, { loaded: false, pageSize: 3 }).map(
+        ({ heading }) => heading
+      ),
+      ["pending", "pending"]
+    )
+  })
+
+  it("fills the same number of row tiles loading and failed", () => {
+    assert.deepEqual(arrivalsHeldTiles("loading", 3), [
+      "skeleton",
+      "skeleton",
+      "skeleton",
+    ])
+    assert.deepEqual(arrivalsHeldTiles("failed", 3), ["note", "dash", "dash"])
+    assert.deepEqual(arrivalsHeldTiles("failed", 0), ["note"])
   })
 })

@@ -19,6 +19,10 @@ import {
   londonDateKey,
   londonWeekdayLong,
 } from "@/lib/tfl/london-dates"
+import type {
+  ArrivalsPreparedBound,
+  ArrivalsPreparedGroup,
+} from "@/lib/tfl/arrivals-prepare"
 import { isCurrentAnnouncement } from "@/lib/tfl/status-reason"
 import type { StatusLine } from "@/lib/tfl/status-types"
 
@@ -59,6 +63,76 @@ export const RIVER_ARRIVALS_EMPTY_COPY = "No live departure times available."
 
 /** Per-route fallback when a bus/river group is empty. Rail uses {@link arrivalsLineEmptyCopy}. */
 export const ARRIVALS_LINE_EMPTY_COPY = "No information"
+
+/** Per-direction note when the arrivals request failed. */
+export const ARRIVALS_ERROR_COPY = "Couldn't load arrivals."
+
+/**
+ * A rail board holds its loaded footprint instead of collapsing: `loading`
+ * while the first fetch is out, `failed` after a fetch fails (also while a
+ * retry is out). Null paints the arrivals.
+ */
+export type ArrivalsHold = "loading" | "failed" | null
+
+export const resolveArrivalsHold = ({
+  loading,
+  failed,
+  rowCount,
+  loaded = false,
+}: {
+  loading: boolean
+  failed: boolean
+  rowCount: number
+  /** A fetch has succeeded, so its (possibly empty) lines are the real shape. */
+  loaded?: boolean
+}): ArrivalsHold => {
+  if (failed) return "failed"
+  return loading && rowCount === 0 && !loaded ? "loading" : null
+}
+
+export type ArrivalsHeldTile = "skeleton" | "note" | "dash"
+
+/** Row tiles in a held bound: one per `pageSize` row, so arrivals land in place. */
+export const arrivalsHeldTiles = (
+  hold: Exclude<ArrivalsHold, null>,
+  pageSize?: number
+): ArrivalsHeldTile[] =>
+  Array.from({ length: Math.max(1, pageSize ?? 1) }, (_, index) =>
+    hold === "loading" ? "skeleton" : index === 0 ? "note" : "dash"
+  )
+
+/** Bounds to hold for a line whose directions only arrive with the first fetch. */
+const PENDING_BOUND_COUNT = 2
+
+export type ArrivalsHeldBound = {
+  /** The bound's own label tile; `pending` holds a blank one; null has none. */
+  heading: ArrivalsPreparedBound | "pending" | null
+  rows: number
+}
+
+/**
+ * A held line's bounds, tile for tile what it paints when loaded: its loaded
+ * or curated bounds, one unlabelled bound for a line that loaded empty, and
+ * a two-bound guess only before anything has loaded.
+ */
+export const resolveHeldBounds = (
+  group: Pick<ArrivalsPreparedGroup, "bounds" | "hasInformation">,
+  { loaded, pageSize = 0 }: { loaded: boolean; pageSize?: number }
+): ArrivalsHeldBound[] => {
+  const pageRows = Math.max(1, pageSize)
+  if (group.hasInformation || group.bounds.some((bound) => bound.label)) {
+    return group.bounds.map((bound) => ({
+      heading: bound.label ? bound : null,
+      rows:
+        bound.label && pageSize > 0 ? pageSize : Math.max(1, bound.rows.length),
+    }))
+  }
+  if (loaded) return [{ heading: null, rows: pageRows }]
+  return Array.from({ length: PENDING_BOUND_COUNT }, () => ({
+    heading: "pending" as const,
+    rows: pageRows,
+  }))
+}
 
 /** Last spare tile on a short page that still has arrivals. */
 export const ARRIVALS_END_COPY = "No more arrivals"
@@ -282,10 +356,7 @@ const isOvernightContinuation = (
   return londonHour(endMs) < 5
 }
 
-const continuesRun = (
-  endMs: number,
-  period: ParsedValidityPeriod
-): boolean =>
+const continuesRun = (endMs: number, period: ParsedValidityPeriod): boolean =>
   period.fromMs <= endMs || isOvernightContinuation(endMs, period.fromMs)
 
 /**

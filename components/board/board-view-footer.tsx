@@ -217,15 +217,23 @@ export const BoardViewFooter = ({
             Updating…
           </span>
         ) : null}
-        {fetchedAt != null ? (
-          <span>
-            {stale ? "Last updated" : "Updated"} {formatUpdatedClock(fetchedAt)}
-          </span>
-        ) : null}
-        {!stale && remainingSec != null ? (
-          <span>
+        {/* Held from first paint so the first fetch does not rewrap the line. */}
+        <span
+          className={fetchedAt != null ? undefined : "invisible"}
+          aria-hidden={fetchedAt == null || undefined}
+        >
+          {stale ? "Last updated" : "Updated"}{" "}
+          {fetchedAt != null ? formatUpdatedClock(fetchedAt) : "00:00"}
+        </span>
+        {!stale ? (
+          <span
+            className={remainingSec != null ? undefined : "invisible"}
+            aria-hidden={remainingSec == null || undefined}
+          >
             Next in{" "}
-            <span className="inline-block min-w-[3ch]">{remainingSec}s</span>
+            <span className="inline-block min-w-[3ch]">
+              {remainingSec ?? 0}s
+            </span>
           </span>
         ) : null}
         {onRefresh ? (
