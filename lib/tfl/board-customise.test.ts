@@ -154,8 +154,14 @@ describe("customise layout", () => {
     assert.equal(panelRowTiles("rail", 3, wide), 11)
     assert.equal(panelRowTiles("rail", 3, narrow), 19)
     assert.equal(panelRowTiles("rail", 4, wide), 13)
-    assert.equal(panelRowTiles("bus", 3, wide), 5)
+    // Title, then four routes of header + 3 rows; two across halves that.
+    assert.equal(panelRowTiles("bus", 3, wide), 17)
+    const columns = { ...wide, busLayout: "columns" as const }
+    assert.equal(panelRowTiles("bus", 3, columns), 9)
+    assert.equal(panelRowTiles("bus", 3, { ...columns, column: "p2" }), 17)
     assert.equal(panelRowTiles("bus", 0, wide), panelRowTiles("bus", 8, wide))
+    // The board stops at 16 arrivals, so Full is not 8 rows on every route.
+    assert.equal(panelRowTiles("bus", 0, wide), 21)
     assert.equal(panelRowTiles("cycle", 6, wide), 6)
     // The interactive status board lists every line; unattended uses Height.
     const status = { column: "p2" as const, lines: 11, unattended: false }

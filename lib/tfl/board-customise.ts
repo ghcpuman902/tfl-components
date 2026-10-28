@@ -5,6 +5,7 @@
  * others. The default panel does not use the layout unless a variant set it.
  */
 
+import type { BusLayout } from "@/lib/tfl/board-bus-layout"
 import { resolveBoardSlots, type BoardPanelKind } from "@/lib/tfl/board-panels"
 import type {
   BoardCustomiseLayout,
@@ -57,6 +58,10 @@ const HEIGHT_MAX: Record<BoardPanelKind, number> = {
   status: 8,
 }
 
+const BUS_ROUTES = 4
+/** `BusArrivalsBoard`'s `maxRows`. */
+const BUS_MAX_ROWS = 16
+
 /** Cycle tiles have no "show all" value, so their stepper tops out at 12. */
 const hasFull = (kind: BoardPanelKind) => kind !== "cycle"
 
@@ -100,12 +105,18 @@ export const canStepHeight = (
  * in the narrow column directions stack and status runs two across. The
  * interactive Line status board shows every line whatever the Height. Full
  * has no fixed count, so it reads as the tallest step. `lines` is rail lines
- * for rail, status lines for status.
+ * for rail, status lines for status. Buses draw a typical stop's routes (the
+ * board shows 16 arrivals at most), two across in a wide `columns` layout.
  */
 export const panelRowTiles = (
   kind: BoardPanelKind,
   height: number,
-  board: { column: BoardPanelColumn; lines: number; unattended: boolean }
+  board: {
+    column: BoardPanelColumn
+    lines: number
+    unattended: boolean
+    busLayout?: BusLayout
+  }
 ): number => {
   const rows = height || HEIGHT_MAX[kind]
   const wide = board.column === "p1"
@@ -116,6 +127,11 @@ export const panelRowTiles = (
   }
   if (kind === "rail") {
     return 1 + Math.max(1, board.lines) * (1 + (wide ? 1 : 2) * (1 + rows))
+  }
+  if (kind === "bus") {
+    const across = wide && board.busLayout === "columns" ? 2 : 1
+    const perRoute = Math.min(rows, Math.floor(BUS_MAX_ROWS / BUS_ROUTES))
+    return 1 + Math.ceil(BUS_ROUTES / across) * (1 + perRoute)
   }
   // Title, then one route header over its rows.
   return 2 + rows
