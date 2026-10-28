@@ -81,6 +81,7 @@ import { useUserTflCredentials } from "@/components/user-tfl-credentials-provide
 import { useBoardFullscreen } from "@/hooks/use-board-fullscreen"
 import { useBoardHomeScreen } from "@/hooks/use-board-home-screen"
 import { useBoardWakeLock } from "@/hooks/use-board-wake-lock"
+import { useBusLayout } from "@/components/board/use-bus-layout"
 import { boardGlanceGutterCss } from "@/lib/tfl/board-layout"
 import { OXFORD_CIRCUS_ARRIVALS } from "@/lib/tfl/fixtures/arrivals-boards"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
@@ -127,6 +128,12 @@ const CycleHireDocksMap = dynamic(
 const BOUND_COLUMNS_CLASS_NAMES = {
   subgroups:
     "@min-[30rem]/arrivals-group:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @min-[30rem]/arrivals-group:gap-x-6",
+} as const
+
+/** `?busLayout=columns`: routes two across, as wide as a bound column. */
+const BUS_COLUMNS_CLASS_NAMES = {
+  groups:
+    "@min-[30rem]/arrivals:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @min-[30rem]/arrivals:gap-x-6",
 } as const
 
 /** Half-tile — `gap-8` (32px) is off the 24px baseline. */
@@ -297,6 +304,7 @@ export const BoardDisplay = ({
     nativePromptAvailable,
     promptNativeInstall,
   } = useBoardHomeScreen()
+  const busLayout = useBusLayout()
   const [homeScreenOfferOpen, setHomeScreenOfferOpen] = useState(false)
   const boardRootRef = useRef<HTMLDivElement>(null)
 
@@ -903,6 +911,9 @@ export const BoardDisplay = ({
           startDelayMs={unattended ? 400 : undefined}
           loading={busArrivals.loading}
           error={busError}
+          classNames={
+            busLayout === "columns" ? BUS_COLUMNS_CLASS_NAMES : undefined
+          }
         />
       )
     }

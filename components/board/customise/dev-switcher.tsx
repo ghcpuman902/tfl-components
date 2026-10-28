@@ -8,7 +8,7 @@ import {
 import { CUSTOMISE_VARIANTS } from "@/lib/tfl/board-customise-variant"
 import { cn } from "@/lib/utils"
 
-const NON_PRODUCTION =
+export const NON_PRODUCTION =
   process.env.NODE_ENV !== "production" ||
   (process.env.NEXT_PUBLIC_VERCEL_ENV !== undefined &&
     process.env.NEXT_PUBLIC_VERCEL_ENV !== "production")

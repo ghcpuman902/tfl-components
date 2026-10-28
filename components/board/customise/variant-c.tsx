@@ -17,6 +17,7 @@ import {
   StationPicker,
 } from "@/components/board/customise/sections"
 import type { CustomiseController } from "@/components/board/customise/types"
+import { useBusLayout } from "@/components/board/use-bus-layout"
 import { ARRIVALS_RHYTHM_VARS } from "@/components/tfl/arrivals/arrivals-board-view"
 import {
   CUSTOMISE_PANEL_LABEL,
@@ -34,6 +35,7 @@ import { LINE_ORDER } from "tfl-ts"
 export const CustomiseVariantC = ({ api }: { api: CustomiseController }) => {
   const [selected, setSelected] = useState<BoardPanelKind | null>(null)
   const sections = layoutSections(api.layout)
+  const busLayout = useBusLayout()
 
   const tile = (kind: BoardPanelKind, column: BoardPanelColumn) => {
     const shown = panelShown(api.layout, kind)
@@ -46,6 +48,7 @@ export const CustomiseVariantC = ({ api }: { api: CustomiseController }) => {
             ? api.statusLines.length
             : LINE_ORDER.length,
       unattended: api.unattended,
+      busLayout,
     })
     return (
       <button

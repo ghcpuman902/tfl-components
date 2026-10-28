@@ -1,9 +1,11 @@
 "use client"
 
-import { useState, type ReactNode, type Ref } from "react"
+import { useState, type DOMAttributes, type ReactNode, type Ref } from "react"
 import {
   DragGrip,
   DropMarker,
+  GRIP_SLOT,
+  PRESS_SURFACE,
   useDragOrder,
 } from "@/components/board/customise/drag-order"
 import {
@@ -30,18 +32,21 @@ import { cn } from "@/lib/utils"
 
 /**
  * One layer: grip · roundel · name and summary · eye · ⋯. Tap the name to
- * open it. Parts that are off have no stack place, so no grip.
+ * open it; on touch, hold the row to drag it. Parts that are off have no
+ * stack place, so no grip.
  */
 const LayerRow = ({
   api,
   kind,
   rowRef,
+  press,
   grip,
   dragging = false,
 }: {
   api: CustomiseController
   kind: BoardPanelKind
   rowRef?: Ref<HTMLLIElement>
+  press?: DOMAttributes<HTMLDivElement>
   grip?: ReactNode
   dragging?: boolean
 }) => {
@@ -58,8 +63,8 @@ const LayerRow = ({
       )}
       data-panel={kind}
     >
-      <div className="flex items-center">
-        {grip ?? <span aria-hidden className="w-11 shrink-0" />}
+      <div className={cn("flex items-center", PRESS_SURFACE)} {...press}>
+        {grip ?? <span aria-hidden className={GRIP_SLOT} />}
         <button
           type="button"
           aria-expanded={open}
@@ -85,7 +90,7 @@ const LayerRow = ({
         <PanelMenu api={api} kind={kind} />
       </div>
       {open ? (
-        <div id={bodyId} className="pb-4 pl-17">
+        <div id={bodyId} className="pb-4 pl-15 pointer-coarse:pl-9">
           <PanelBody api={api} kind={kind} />
         </div>
       ) : null}
@@ -102,7 +107,7 @@ const LayerList = ({
   panels: readonly { kind: BoardPanelKind }[]
   orderable: boolean
 }) => {
-  const { listRef, row, grip, dragging, marker } =
+  const { listRef, row, press, grip, dragging, marker } =
     useDragOrder<HTMLUListElement>({
       ids: panels.map((panel) => panel.kind),
       onPlace: (kind, index) => api.placePanel(kind as BoardPanelKind, index),
@@ -116,6 +121,7 @@ const LayerList = ({
             api={api}
             kind={kind}
             rowRef={row(kind)}
+            press={press(kind)}
             grip={
               <DragGrip name={CUSTOMISE_PANEL_LABEL[kind]} {...grip(kind)} />
             }
