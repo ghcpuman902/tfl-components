@@ -130,7 +130,7 @@ const BOUND_COLUMNS_CLASS_NAMES = {
     "@min-[30rem]/arrivals-group:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @min-[30rem]/arrivals-group:gap-x-6",
 } as const
 
-/** `?busLayout=columns`: routes two across, as wide as a bound column. */
+/** Two-across bus routes (landscape default or `?busLayout=columns`). */
 const BUS_COLUMNS_CLASS_NAMES = {
   groups:
     "@min-[30rem]/arrivals:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @min-[30rem]/arrivals:gap-x-6",

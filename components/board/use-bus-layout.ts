@@ -1,21 +1,34 @@
 "use client"
 
 import { useSyncExternalStore } from "react"
-import { NON_PRODUCTION } from "@/components/board/customise/dev-switcher"
 import {
+  BUS_COLUMNS_MEDIA,
   BUS_LAYOUT_PARAM,
-  parseBusLayout,
+  resolveBusLayout,
   type BusLayout,
 } from "@/lib/tfl/board-bus-layout"
 
-const noop = () => () => undefined
+const isLandscapeWide = () => window.matchMedia(BUS_COLUMNS_MEDIA).matches
+
+const subscribe = (onStoreChange: () => void) => {
+  const mq = window.matchMedia(BUS_COLUMNS_MEDIA)
+  mq.addEventListener("change", onStoreChange)
+  return () => mq.removeEventListener("change", onStoreChange)
+}
+
 const getBusLayout = () =>
-  parseBusLayout(
+  resolveBusLayout(
     new URLSearchParams(window.location.search).get(BUS_LAYOUT_PARAM),
-    NON_PRODUCTION
+    isLandscapeWide()
   )
+
+/** Server snapshot; panels wait for hydration before they paint. */
 const getServerBusLayout = (): BusLayout => "stack"
 
-/** The board paints panels only once hydrated, so this never moves a panel. */
+/**
+ * Effective bus layout for this viewport. Panels only paint once hydrated,
+ * so the media-query default is fixed before the first panel paint and does
+ * not flip afterwards (rotation updates via the media-query subscription).
+ */
 export const useBusLayout = () =>
-  useSyncExternalStore(noop, getBusLayout, getServerBusLayout)
+  useSyncExternalStore(subscribe, getBusLayout, getServerBusLayout)
