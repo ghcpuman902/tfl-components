@@ -4,6 +4,7 @@ import { ArrowUpToLineIcon, XIcon } from "lucide-react"
 import {
   DragGrip,
   DropMarker,
+  PRESS_SURFACE,
   useDragOrder,
 } from "@/components/board/customise/drag-order"
 import { ICON_BUTTON, lineName } from "@/components/board/customise/parts"
@@ -11,8 +12,9 @@ import { LineBadge } from "@/components/tfl/brand/line-badge"
 import { cn } from "@/lib/utils"
 
 /**
- * Vertical priority list. Drag the grip, or use ⤒ to move a line to the top,
- * or arrow keys on the grip. ✕ takes a line out.
+ * Vertical priority list. Drag the grip (on touch, hold a row then drag),
+ * or use ⤒ to move a line to the top, or arrow keys on the grip. ✕ takes a
+ * line out.
  */
 export const OrderedLineList = ({
   label,
@@ -27,7 +29,7 @@ export const OrderedLineList = ({
   onTop: (lineId: string) => void
   onRemove?: (lineId: string) => void
 }) => {
-  const { listRef, row, grip, dragging, marker } =
+  const { listRef, row, press, grip, dragging, marker } =
     useDragOrder<HTMLOListElement>({ ids, onPlace })
 
   return (
@@ -43,8 +45,10 @@ export const OrderedLineList = ({
           <li
             key={id}
             ref={row(id)}
+            {...press(id)}
             className={cn(
               "flex min-h-11 items-center gap-1 border-b border-border last:border-b-0",
+              PRESS_SURFACE,
               dragging === id && "opacity-40"
             )}
           >
