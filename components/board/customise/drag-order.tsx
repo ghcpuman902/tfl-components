@@ -63,6 +63,19 @@ export const useDragOrder = <T extends HTMLElement>({
   )
   const orderable = ids.length > 1
 
+  // Registered up front: Chrome only lets a touchmove listener cancel
+  // scrolling if it was there when the touch started.
+  useEffect(() => {
+    const list = listRef.current
+    if (!list) return
+    const holdPage = (event: TouchEvent) => {
+      if (drag.current && pressHoldsPage(drag.current.press))
+        event.preventDefault()
+    }
+    list.addEventListener("touchmove", holdPage, { passive: false })
+    return () => list.removeEventListener("touchmove", holdPage)
+  }, [])
+
   useEffect(() => {
     const id = refocus.current
     if (!id) return
@@ -112,8 +125,7 @@ export const useDragOrder = <T extends HTMLElement>({
       window.removeEventListener("pointermove", move)
       window.removeEventListener("pointerup", up)
       window.removeEventListener("pointercancel", up)
-      window.removeEventListener("touchmove", holdPage)
-      window.removeEventListener("contextmenu", holdPage)
+      window.removeEventListener("contextmenu", holdMenu)
       drag.current = null
       if (session.touch && pressHoldsPage(session.press)) {
         swallowClick.current = true
@@ -146,9 +158,9 @@ export const useDragOrder = <T extends HTMLElement>({
           : null
       )
     }
-    // Only an armed press holds the page: until then a swipe scrolls.
-    const holdPage = (holdEvent: Event) => {
-      if (pressHoldsPage(session.press)) holdEvent.preventDefault()
+    // Android opens a context menu on a long press.
+    const holdMenu = (menuEvent: Event) => {
+      if (pressHoldsPage(session.press)) menuEvent.preventDefault()
     }
 
     if (press === "pending") {
@@ -162,8 +174,7 @@ export const useDragOrder = <T extends HTMLElement>({
     window.addEventListener("pointermove", move)
     window.addEventListener("pointerup", up)
     window.addEventListener("pointercancel", up)
-    window.addEventListener("touchmove", holdPage, { passive: false })
-    window.addEventListener("contextmenu", holdPage)
+    window.addEventListener("contextmenu", holdMenu)
   }
 
   const handleKey = (event: KeyboardEvent<HTMLButtonElement>, id: string) => {
