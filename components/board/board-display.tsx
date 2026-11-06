@@ -9,6 +9,7 @@ import {
   useState,
   useSyncExternalStore,
   type CSSProperties,
+  type ReactNode,
 } from "react"
 import dynamic from "next/dynamic"
 import { normalizeLineId } from "tfl-ts"
@@ -53,6 +54,14 @@ import {
   resolveBoardSlots,
   type BoardPanelKind,
 } from "@/lib/tfl/board-panels"
+import {
+  BOARD_PANEL_HEIGHTS_STORAGE_KEY,
+  boardPanelHoldKey,
+  parseBoardPanelHeights,
+  planBoardPanelHold,
+  rememberBoardPanelHeight,
+  type BoardPanelHeights,
+} from "@/lib/tfl/board-panel-hold"
 import {
   resolveArrivalsProps,
   resolveStatusProps,
@@ -115,6 +124,71 @@ import {
   parseBoardConfig,
   type BoardConfig,
 } from "@/lib/tfl/board-url-state"
+
+const readBoardPanelHeights = (): BoardPanelHeights => {
+  try {
+    const raw = window.localStorage.getItem(BOARD_PANEL_HEIGHTS_STORAGE_KEY)
+    return raw ? parseBoardPanelHeights(JSON.parse(raw) as unknown) : {}
+  } catch {
+    return {}
+  }
+}
+
+const writeBoardPanelHeights = (heights: BoardPanelHeights) => {
+  try {
+    window.localStorage.setItem(
+      BOARD_PANEL_HEIGHTS_STORAGE_KEY,
+      JSON.stringify(heights)
+    )
+  } catch {
+    // Soft-fail: the board still works, it just cannot hold a height.
+  }
+}
+
+const subscribeViewportWidth = (onChange: () => void) => {
+  window.addEventListener("resize", onChange)
+  return () => window.removeEventListener("resize", onChange)
+}
+const getViewportWidth = () => window.innerWidth
+const getServerViewportWidth = () => 0
+
+/**
+ * Holds `minHeight` while its panel's first fetch is out, and reports the
+ * panel's height once it has settled so the next load can hold it.
+ */
+const BoardHeldPanel = ({
+  holdKey,
+  minHeight,
+  settled,
+  onSettledHeight,
+  children,
+}: {
+  holdKey: string
+  minHeight: number | undefined
+  settled: boolean
+  onSettledHeight: (key: string, height: number) => void
+  children: ReactNode
+}) => {
+  const ref = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const node = ref.current
+    if (!settled || !node || typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(() => {
+      onSettledHeight(holdKey, node.getBoundingClientRect().height)
+    })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [holdKey, onSettledHeight, settled])
+  return (
+    <div
+      ref={ref}
+      className="min-w-0"
+      style={minHeight ? { minHeight } : undefined}
+    >
+      {children}
+    </div>
+  )
+}
 
 const CycleHireDocksMap = dynamic(
   () =>
@@ -844,6 +918,90 @@ export const BoardDisplay = ({
 
   const twoColumns = !isGlance && slots.p1.length > 0 && slots.p2.length > 0
 
+  // Panel height hold: see lib/tfl/board-panel-hold.ts.
+  // Panels only render after hydration, so reading storage here is safe.
+  const [panelHeights, setPanelHeights] = useState<BoardPanelHeights>(() =>
+    typeof window === "undefined" ? {} : readBoardPanelHeights()
+  )
+  const viewportWidth = useSyncExternalStore(
+    subscribeViewportWidth,
+    getViewportWidth,
+    getServerViewportWidth
+  )
+  const holdLayout = `${slots.p1.join(",")}|${slots.p2.join(",")}|${busLayout}|${config.arrivals.rows ?? ""}|${config.bus.rows ?? ""}|${config.river.rows ?? ""}|${config.cycle.tiles ?? ""}|${config.status.tiles ?? ""}`
+  const panelSource: Record<BoardPanelKind, string> = {
+    rail: stopId,
+    bus: busStopId,
+    river: riverStopId,
+    cycle: (config.cycle.docks ?? []).join(","),
+    status: (config.status.lines ?? []).join(","),
+  }
+  const panelLive: Record<
+    BoardPanelKind,
+    { loading: boolean; count: number; error: unknown; fetchedAt: unknown }
+  > = {
+    rail: {
+      loading: arrivals.loading,
+      count: railData.length,
+      error: arrivalsError,
+      fetchedAt: arrivals.fetchedAt,
+    },
+    bus: {
+      loading: busArrivals.loading,
+      count: busData.length,
+      error: busError,
+      fetchedAt: busArrivals.fetchedAt,
+    },
+    river: {
+      loading: riverArrivals.loading,
+      count: riverArrivals.data.length,
+      error: riverError,
+      fetchedAt: riverArrivals.fetchedAt,
+    },
+    cycle: {
+      loading: cyclePoints.loading,
+      count: cyclePoints.data.length,
+      error: cycleError,
+      fetchedAt: cyclePoints.fetchedAt,
+    },
+    status: {
+      loading: status.loading,
+      count: status.data.length,
+      error: status.error,
+      fetchedAt: status.fetchedAt,
+    },
+  }
+  const holdKeyFor = (kind: BoardPanelKind) =>
+    boardPanelHoldKey(
+      kind,
+      `${panelSource[kind]}|${holdLayout}`,
+      viewportWidth
+    )
+  // First fetch only: a refresh with data (or after an empty answer) never waits.
+  const panelPending = (kind: BoardPanelKind) => {
+    const live = panelLive[kind]
+    return live.loading && live.fetchedAt == null && live.count === 0 && !live.error
+  }
+  const holdPlan = new Map(
+    planBoardPanelHold(
+      [...slots.p1, ...slots.p2].map((kind) => ({
+        kind,
+        pending: panelPending(kind),
+        held: viewportWidth > 0 ? panelHeights[holdKeyFor(kind)] : undefined,
+      }))
+    ).map((plan) => [plan.kind, plan])
+  )
+  const firstWaiting = [...slots.p1, ...slots.p2].find(
+    (kind) => holdPlan.get(kind)?.waiting
+  )
+  const rememberPanelHeight = useCallback((key: string, height: number) => {
+    setPanelHeights((current) => {
+      const next = rememberBoardPanelHeight(current, key, height)
+      if (next !== current) writeBoardPanelHeights(next)
+      return next
+    })
+  }, [])
+
   const renderPanel = (kind: BoardPanelKind) => {
     if (kind === "rail") {
       if (isGlance) {
@@ -1051,11 +1209,29 @@ export const BoardDisplay = ({
         aria-label={label}
       >
         <div className={`grid min-w-0 grid-cols-1 ${BOARD_RHYTHM_GAP_CLASS}`}>
-          {kinds.map((kind) => (
-            <div key={kind} className="min-w-0">
-              {renderPanel(kind)}
-            </div>
-          ))}
+          {kinds.map((kind) => {
+            const plan = holdPlan.get(kind)
+            if (plan?.waiting) {
+              // Fill the screen below the loading panel so nothing visible
+              // moves when it lands; the panel paints in its place after.
+              return kind === firstWaiting ? (
+                <div key={kind} className="min-h-svh min-w-0" aria-busy />
+              ) : null
+            }
+            return (
+              <BoardHeldPanel
+                key={kind}
+                holdKey={holdKeyFor(kind)}
+                minHeight={plan?.minHeight}
+                settled={
+                  !panelLive[kind].loading && panelLive[kind].count > 0
+                }
+                onSettledHeight={rememberPanelHeight}
+              >
+                {renderPanel(kind)}
+              </BoardHeldPanel>
+            )
+          })}
         </div>
       </section>
     )
