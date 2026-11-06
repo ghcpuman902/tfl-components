@@ -204,18 +204,23 @@ export const ROUTE_PAGE_META = {
 export type BoardViewMetaInput = {
   stop?: string | null
   stopName?: string | null
+  /** Optional curated arrivals line order (`a.lines`). */
+  lines?: string | null
 }
 
 /** Social image for a shared board; falls back to the site card when bare. */
 export const boardViewSocialImage = ({
   stop,
   stopName,
+  lines,
 }: BoardViewMetaInput = {}) => {
   const params = new URLSearchParams()
   const id = stop?.trim()
   const name = stopName?.trim()
+  const lineOrder = lines?.trim()
   if (id) params.set("stop", id)
   if (name) params.set("stopName", name)
+  if (lineOrder) params.set("a.lines", lineOrder)
   const query = params.toString()
   const path = query ? `/board/view/og?${query}` : OG_IMAGE.path
   const alt = name

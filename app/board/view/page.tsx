@@ -10,7 +10,11 @@ import { boardViewPageMetadata } from "@/lib/site-metadata"
 import { BOARD_VIEW_VIEWPORT } from "@/lib/tfl/board-view-manifest"
 
 type BoardViewPageProps = {
-  searchParams: Promise<{ stop?: string | string[]; stopName?: string | string[] }>
+  searchParams: Promise<{
+    stop?: string | string[]
+    stopName?: string | string[]
+    "a.lines"?: string | string[]
+  }>
 }
 
 const first = (value: string | string[] | undefined): string | undefined => {
@@ -24,12 +28,13 @@ export const generateMetadata = async ({
   const params = await searchParams
   const stop = first(params.stop)?.trim() || undefined
   const named = first(params.stopName)?.trim() || undefined
+  const lines = first(params["a.lines"])?.trim() || undefined
   const stopName =
     named ||
     (stop
       ? lookupBoardStationName(getBoardStationNamesIndex(), stop)
       : undefined)
-  return boardViewPageMetadata({ stop, stopName })
+  return boardViewPageMetadata({ stop, stopName, lines })
 }
 
 export const viewport: Viewport = BOARD_VIEW_VIEWPORT
