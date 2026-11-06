@@ -1,7 +1,9 @@
 /**
- * Stable hash-fragment state for `/board/view`.
+ * Stable hash-fragment state for `/board/view`, plus a small query for OG.
  * Invalid params fall back safely — never throw.
  * The TfL key lives in the hash only (never query) so it is not sent to our origin.
+ * `stop` / `stopName` are also mirrored into the query so crawlers and
+ * `generateMetadata` can title the share card — a hash never reaches the server.
  *
  * Setting definitions live in `board-settings.ts`. This module is the codec:
  * parse / serialize / omit defaults. Unknown params are ignored (forward-compatible).
@@ -607,17 +609,56 @@ export const describeBoardHrefSegments = (
 }
 
 /**
- * Build a shareable `/board/view#…` href.
- * Omits default behaviour/arrivals/status. Empty config yields the bare path.
- * Key is always serialized last when present.
+ * Query string crawlers can see: stop id and optional display name.
+ * Hash still carries the full board (including stop) for the client.
+ */
+export const boardShareQueryFromConfig = (
+  next: Partial<BoardConfig> = {},
+  base: BoardConfig = DEFAULT_BOARD_CONFIG
+): string => {
+  const merged = mergeBoardConfig(next, base)
+  const parts: string[] = []
+  if (merged.stop) {
+    parts.push(encodeSegment(BOARD_SETTINGS.stop.param, merged.stop))
+  }
+  if (merged.stopName) {
+    parts.push(encodeSegment(BOARD_SETTINGS.stopName.param, merged.stopName))
+  }
+  const linesSerialized = serializeArrivalsLines(merged.arrivals.lineOrder)
+  if (linesSerialized) {
+    parts.push(
+      encodeSegment(BOARD_SETTINGS.arrivalsLines.param, linesSerialized)
+    )
+  }
+  return parts.join("&")
+}
+
+/** Hash portion of a Board href (`#stop=…`), or `""` when none. */
+export const boardHashFromHref = (href: string): string => {
+  const index = href.indexOf("#")
+  return index === -1 ? "" : href.slice(index)
+}
+
+/**
+ * Build a shareable `/board/view` href.
+ * When a stop is set: `?stop=…&stopName=…#stop=…&…` so OG/metadata see the
+ * station while the client keeps reading the hash. Omits default
+ * behaviour/arrivals/status. Empty config yields the bare path. Key stays
+ * in the hash only, always last when present.
  */
 export const buildBoardHref = (
   next: Partial<BoardConfig> = {},
   base: BoardConfig = DEFAULT_BOARD_CONFIG
 ): string => {
   const segments = describeBoardHrefSegments(next, base)
-  if (segments.length === 0) return BOARD_VIEW_PATH
-  return `${BOARD_VIEW_PATH}#${segments.map((segment) => segment.text).join("&")}`
+  const query = boardShareQueryFromConfig(next, base)
+  const hash =
+    segments.length === 0
+      ? ""
+      : `#${segments.map((segment) => segment.text).join("&")}`
+  if (!query && !hash) return BOARD_VIEW_PATH
+  if (!query) return `${BOARD_VIEW_PATH}${hash}`
+  return `${BOARD_VIEW_PATH}?${query}${hash}`
 }
 
 /** Hash fragment for a config (`#stop=…`), or `""` when the path is bare. */

@@ -4,8 +4,10 @@
  */
 
 import {
+  BOARD_PANEL_KINDS,
   boardSlotsInclude,
   resolveBoardSlots,
+  type BoardPanelKind,
 } from "@/lib/tfl/board-panels"
 import type { BoardConfig } from "@/lib/tfl/board-url-state"
 
@@ -38,6 +40,32 @@ export type BoardSetupDraft = {
   setupStarted: boolean
   completedStages: readonly BoardSetupStage[]
   setupCompleted: boolean
+  /**
+   * Status priority set in a Customise variant, in the user's order. `null`
+   * follows the station (`lineIds` then `statusLineIds`).
+   */
+  statusOrder: readonly string[] | null
+  /** Station the custom `statusOrder` was made under. */
+  statusOrderStopId: string | null
+  /** Panel layout set in a Customise variant; `null` keeps the builder's default panels. */
+  layout: BoardCustomiseLayout | null
+}
+
+export type BoardPanelColumn = "p1" | "p2"
+
+export type BoardCustomisePanel = {
+  kind: BoardPanelKind
+  column: BoardPanelColumn
+  on: boolean
+}
+
+export type BoardCustomiseLayout = {
+  /** Every panel kind once, in stack order within its column. */
+  panels: readonly BoardCustomisePanel[]
+  /** Rows / tiles per panel; 0 is Full. Missing means the board default. */
+  heights: Partial<Record<BoardPanelKind, number>>
+  /** "Only show this": the one panel on the board, others keep their state. */
+  solo: BoardPanelKind | null
 }
 
 export const BOARD_STAGE_LABELS: Record<BoardSetupStage, string> = {
@@ -79,33 +107,116 @@ export const createBoardSetupDraft = (id = "pending"): BoardSetupDraft => ({
   setupStarted: false,
   completedStages: [],
   setupCompleted: false,
+  statusOrder: null,
+  statusOrderStopId: null,
+  layout: null,
 })
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null
 
+const isPanelKind = (value: unknown): value is BoardPanelKind =>
+  (BOARD_PANEL_KINDS as readonly unknown[]).includes(value)
+
+const stringList = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : []
+
+export const parseBoardCustomiseLayout = (
+  value: unknown
+): BoardCustomiseLayout | null => {
+  if (!isRecord(value) || !Array.isArray(value.panels)) return null
+  const seen = new Set<BoardPanelKind>()
+  const panels: BoardCustomisePanel[] = []
+  for (const raw of value.panels) {
+    if (!isRecord(raw) || !isPanelKind(raw.kind) || seen.has(raw.kind)) continue
+    seen.add(raw.kind)
+    panels.push({
+      kind: raw.kind,
+      column: raw.column === "p2" ? "p2" : "p1",
+      on: raw.on === true,
+    })
+  }
+  for (const kind of BOARD_PANEL_KINDS) {
+    if (!seen.has(kind)) {
+      panels.push({ kind, column: kind === "status" ? "p2" : "p1", on: false })
+    }
+  }
+  const heights: Partial<Record<BoardPanelKind, number>> = {}
+  if (isRecord(value.heights)) {
+    for (const kind of BOARD_PANEL_KINDS) {
+      const height = value.heights[kind]
+      if (
+        typeof height === "number" &&
+        Number.isInteger(height) &&
+        height >= 0
+      ) {
+        heights[kind] = height
+      }
+    }
+  }
+  return {
+    panels,
+    heights,
+    solo: isPanelKind(value.solo) ? value.solo : null,
+  }
+}
+
+/** Older drafts may store the stage as a string or past 5; read what we can. */
+const migrateStage = (
+  value: unknown,
+  completedStages: readonly BoardSetupStage[]
+): BoardSetupStage | null => {
+  const number =
+    typeof value === "string" && value.trim() !== "" ? Number(value) : value
+  if (isStage(number)) return number
+  if (completedStages.length > 0) {
+    return Math.min(5, Math.max(...completedStages) + 1) as BoardSetupStage
+  }
+  return null
+}
+
+const LEGACY_DRAFT_ID = "draft-local"
+
 export const parseBoardSetupDraft = (value: unknown): BoardSetupDraft | null => {
   if (!isRecord(value)) return null
-  if (typeof value.id !== "string" || !value.id) return null
-  if (!isStage(value.stage)) return null
+  const stopId =
+    typeof value.stopId === "string" && value.stopId.trim()
+      ? value.stopId.trim()
+      : null
 
   const completedStages = Array.isArray(value.completedStages)
     ? value.completedStages.filter(isStage)
     : []
+  // A draft that holds a station is never thrown away for a missing id or an
+  // unreadable stage: the returning visitor keeps their stop.
+  const stage =
+    migrateStage(value.stage, completedStages) ??
+    (stopId ? (value.setupCompleted === true ? 5 : 2) : null)
+  if (stage === null) return null
+  const id =
+    typeof value.id === "string" && value.id
+      ? value.id
+      : stopId
+        ? LEGACY_DRAFT_ID
+        : null
+  if (id === null) return null
 
   return {
-    id: value.id,
-    stage: value.stage,
+    id,
+    stage,
     screenProfile: isScreenProfile(value.screenProfile)
       ? value.screenProfile
       : null,
-    stopId: typeof value.stopId === "string" ? value.stopId : null,
-    stopName: typeof value.stopName === "string" ? value.stopName : null,
+    stopId,
+    stopName:
+      typeof value.stopName === "string" && value.stopName.trim()
+        ? value.stopName
+        : null,
     continueWithoutStop: value.continueWithoutStop === true,
     locationUsed: value.locationUsed === true,
-    lineIds: Array.isArray(value.lineIds)
-      ? value.lineIds.filter((item): item is string => typeof item === "string")
-      : [],
+    lineIds: [...new Set(stringList(value.lineIds))],
     nearbyModes: Array.isArray(value.nearbyModes)
       ? value.nearbyModes.filter(isNearbyMode)
       : [],
@@ -124,8 +235,28 @@ export const parseBoardSetupDraft = (value: unknown): BoardSetupDraft | null => 
     setupStarted: value.setupStarted === true,
     completedStages,
     setupCompleted: value.setupCompleted === true,
+    statusOrder: Array.isArray(value.statusOrder)
+      ? stringList(value.statusOrder)
+      : null,
+    statusOrderStopId:
+      typeof value.statusOrderStopId === "string"
+        ? value.statusOrderStopId
+        : null,
+    layout: parseBoardCustomiseLayout(value.layout),
   }
 }
+
+/**
+ * `s.lines`: the status priority the user set in a Customise variant, else the
+ * lines at this stop then the extra lines, each in the order the user set.
+ */
+export const statusLineOrderFromDraft = (
+  draft: Pick<BoardSetupDraft, "lineIds" | "statusLineIds"> &
+    Partial<Pick<BoardSetupDraft, "statusOrder">>
+): readonly string[] =>
+  draft.statusOrder
+    ? [...new Set(draft.statusOrder)]
+    : [...new Set([...draft.lineIds, ...draft.statusLineIds])]
 
 /** First Continue or a change from the recommended screen starts setup. */
 export const markBoardSetupStarted = (draft: BoardSetupDraft): BoardSetupDraft => {
@@ -216,6 +347,20 @@ export const previewFrameForProfile = (
 const IMPORTED_COMPLETED_STAGES: readonly BoardSetupStage[] = [1, 2, 3, 4]
 
 /** Map a live board URL into a completed Ready-stage draft. */
+/**
+ * A link whose `s.lines` does not start with its `a.lines` (a status order set
+ * in a Customise variant) keeps that order when the builder reopens it.
+ */
+const importedStatusOrder = (config: BoardConfig): string[] | null => {
+  const lines = config.status.lines
+  if (!lines?.length) return null
+  const derived = [...new Set([...(config.arrivals.lineOrder ?? []), ...lines])]
+  const same =
+    derived.length === lines.length &&
+    derived.every((id, index) => id === lines[index])
+  return same ? null : [...lines]
+}
+
 export const draftFromBoardConfig = (
   config: BoardConfig,
   options?: { id?: string; screenProfile?: BoardScreenProfile | null }
@@ -255,6 +400,9 @@ export const draftFromBoardConfig = (
     setupStarted: true,
     completedStages: IMPORTED_COMPLETED_STAGES,
     setupCompleted: true,
+    statusOrder: importedStatusOrder(config),
+    statusOrderStopId: importedStatusOrder(config) ? stopId : null,
+    layout: null,
   }
 }
 

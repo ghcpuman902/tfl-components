@@ -9,6 +9,7 @@ import {
   useState,
   useSyncExternalStore,
   type CSSProperties,
+  type ReactNode,
 } from "react"
 import dynamic from "next/dynamic"
 import { normalizeLineId } from "tfl-ts"
@@ -54,6 +55,14 @@ import {
   type BoardPanelKind,
 } from "@/lib/tfl/board-panels"
 import {
+  BOARD_PANEL_HEIGHTS_STORAGE_KEY,
+  boardPanelHoldKey,
+  parseBoardPanelHeights,
+  planBoardPanelHold,
+  rememberBoardPanelHeight,
+  type BoardPanelHeights,
+} from "@/lib/tfl/board-panel-hold"
+import {
   resolveArrivalsProps,
   resolveStatusProps,
 } from "@/lib/tfl/board-config-resolve"
@@ -81,6 +90,7 @@ import { useUserTflCredentials } from "@/components/user-tfl-credentials-provide
 import { useBoardFullscreen } from "@/hooks/use-board-fullscreen"
 import { useBoardHomeScreen } from "@/hooks/use-board-home-screen"
 import { useBoardWakeLock } from "@/hooks/use-board-wake-lock"
+import { useBusLayout } from "@/components/board/use-bus-layout"
 import { boardGlanceGutterCss } from "@/lib/tfl/board-layout"
 import { OXFORD_CIRCUS_ARRIVALS } from "@/lib/tfl/fixtures/arrivals-boards"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
@@ -115,6 +125,71 @@ import {
   type BoardConfig,
 } from "@/lib/tfl/board-url-state"
 
+const readBoardPanelHeights = (): BoardPanelHeights => {
+  try {
+    const raw = window.localStorage.getItem(BOARD_PANEL_HEIGHTS_STORAGE_KEY)
+    return raw ? parseBoardPanelHeights(JSON.parse(raw) as unknown) : {}
+  } catch {
+    return {}
+  }
+}
+
+const writeBoardPanelHeights = (heights: BoardPanelHeights) => {
+  try {
+    window.localStorage.setItem(
+      BOARD_PANEL_HEIGHTS_STORAGE_KEY,
+      JSON.stringify(heights)
+    )
+  } catch {
+    // Soft-fail: the board still works, it just cannot hold a height.
+  }
+}
+
+const subscribeViewportWidth = (onChange: () => void) => {
+  window.addEventListener("resize", onChange)
+  return () => window.removeEventListener("resize", onChange)
+}
+const getViewportWidth = () => window.innerWidth
+const getServerViewportWidth = () => 0
+
+/**
+ * Holds `minHeight` while its panel's first fetch is out, and reports the
+ * panel's height once it has settled so the next load can hold it.
+ */
+const BoardHeldPanel = ({
+  holdKey,
+  minHeight,
+  settled,
+  onSettledHeight,
+  children,
+}: {
+  holdKey: string
+  minHeight: number | undefined
+  settled: boolean
+  onSettledHeight: (key: string, height: number) => void
+  children: ReactNode
+}) => {
+  const ref = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const node = ref.current
+    if (!settled || !node || typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(() => {
+      onSettledHeight(holdKey, node.getBoundingClientRect().height)
+    })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [holdKey, onSettledHeight, settled])
+  return (
+    <div
+      ref={ref}
+      className="min-w-0"
+      style={minHeight ? { minHeight } : undefined}
+    >
+      {children}
+    </div>
+  )
+}
+
 const CycleHireDocksMap = dynamic(
   () =>
     import("@/components/tfl/cycle-hire/cycle-hire-docks").then(
@@ -127,6 +202,12 @@ const CycleHireDocksMap = dynamic(
 const BOUND_COLUMNS_CLASS_NAMES = {
   subgroups:
     "@min-[30rem]/arrivals-group:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @min-[30rem]/arrivals-group:gap-x-6",
+} as const
+
+/** Two-across bus routes (landscape default or `?busLayout=columns`). */
+const BUS_COLUMNS_CLASS_NAMES = {
+  groups:
+    "@min-[30rem]/arrivals:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @min-[30rem]/arrivals:gap-x-6",
 } as const
 
 /** Half-tile — `gap-8` (32px) is off the 24px baseline. */
@@ -297,6 +378,7 @@ export const BoardDisplay = ({
     nativePromptAvailable,
     promptNativeInstall,
   } = useBoardHomeScreen()
+  const busLayout = useBusLayout()
   const [homeScreenOfferOpen, setHomeScreenOfferOpen] = useState(false)
   const boardRootRef = useRef<HTMLDivElement>(null)
 
@@ -642,13 +724,15 @@ export const BoardDisplay = ({
     return Object.keys(map).length > 0 ? map : undefined
   }, [lineGroups])
 
+  // Through a failed poll the board holds the last loaded lines and directions.
+  const railRows = arrivals.loadedData
   const dataLineIds = useMemo(() => {
     const ids = new Set<string>()
-    for (const row of arrivals.data) {
+    for (const row of railRows) {
       if (row.lineId) ids.add(row.lineId)
     }
     return [...ids]
-  }, [arrivals.data])
+  }, [railRows])
 
   const arrivalsProps = useMemo(
     () => resolveArrivalsProps(config, servingLines, dataLineIds, lineGroups),
@@ -751,18 +835,16 @@ export const BoardDisplay = ({
   })}`
 
   const railData = useMemo(() => {
-    if (!config.arrivals.lineOrder?.length) return arrivals.data
+    if (!config.arrivals.lineOrder?.length) return railRows
     const keep = new Set(
       (arrivalsProps.lines ?? []).map((line) => normalizeLineId(line.lineId))
     )
     for (const id of arrivalsProps.lineOrder ?? []) {
       keep.add(normalizeLineId(id))
     }
-    return arrivals.data.filter((row) =>
-      keep.has(normalizeLineId(row.lineId ?? ""))
-    )
+    return railRows.filter((row) => keep.has(normalizeLineId(row.lineId ?? "")))
   }, [
-    arrivals.data,
+    railRows,
     arrivalsProps.lineOrder,
     arrivalsProps.lines,
     config.arrivals.lineOrder,
@@ -836,6 +918,90 @@ export const BoardDisplay = ({
 
   const twoColumns = !isGlance && slots.p1.length > 0 && slots.p2.length > 0
 
+  // Panel height hold: see lib/tfl/board-panel-hold.ts.
+  // Panels only render after hydration, so reading storage here is safe.
+  const [panelHeights, setPanelHeights] = useState<BoardPanelHeights>(() =>
+    typeof window === "undefined" ? {} : readBoardPanelHeights()
+  )
+  const viewportWidth = useSyncExternalStore(
+    subscribeViewportWidth,
+    getViewportWidth,
+    getServerViewportWidth
+  )
+  const holdLayout = `${slots.p1.join(",")}|${slots.p2.join(",")}|${busLayout}|${config.arrivals.rows ?? ""}|${config.bus.rows ?? ""}|${config.river.rows ?? ""}|${config.cycle.tiles ?? ""}|${config.status.tiles ?? ""}`
+  const panelSource: Record<BoardPanelKind, string> = {
+    rail: stopId,
+    bus: busStopId,
+    river: riverStopId,
+    cycle: (config.cycle.docks ?? []).join(","),
+    status: (config.status.lines ?? []).join(","),
+  }
+  const panelLive: Record<
+    BoardPanelKind,
+    { loading: boolean; count: number; error: unknown; fetchedAt: unknown }
+  > = {
+    rail: {
+      loading: arrivals.loading,
+      count: railData.length,
+      error: arrivalsError,
+      fetchedAt: arrivals.fetchedAt,
+    },
+    bus: {
+      loading: busArrivals.loading,
+      count: busData.length,
+      error: busError,
+      fetchedAt: busArrivals.fetchedAt,
+    },
+    river: {
+      loading: riverArrivals.loading,
+      count: riverArrivals.data.length,
+      error: riverError,
+      fetchedAt: riverArrivals.fetchedAt,
+    },
+    cycle: {
+      loading: cyclePoints.loading,
+      count: cyclePoints.data.length,
+      error: cycleError,
+      fetchedAt: cyclePoints.fetchedAt,
+    },
+    status: {
+      loading: status.loading,
+      count: status.data.length,
+      error: status.error,
+      fetchedAt: status.fetchedAt,
+    },
+  }
+  const holdKeyFor = (kind: BoardPanelKind) =>
+    boardPanelHoldKey(
+      kind,
+      `${panelSource[kind]}|${holdLayout}`,
+      viewportWidth
+    )
+  // First fetch only: a refresh with data (or after an empty answer) never waits.
+  const panelPending = (kind: BoardPanelKind) => {
+    const live = panelLive[kind]
+    return live.loading && live.fetchedAt == null && live.count === 0 && !live.error
+  }
+  const holdPlan = new Map(
+    planBoardPanelHold(
+      [...slots.p1, ...slots.p2].map((kind) => ({
+        kind,
+        pending: panelPending(kind),
+        held: viewportWidth > 0 ? panelHeights[holdKeyFor(kind)] : undefined,
+      }))
+    ).map((plan) => [plan.kind, plan])
+  )
+  const firstWaiting = [...slots.p1, ...slots.p2].find(
+    (kind) => holdPlan.get(kind)?.waiting
+  )
+  const rememberPanelHeight = useCallback((key: string, height: number) => {
+    setPanelHeights((current) => {
+      const next = rememberBoardPanelHeight(current, key, height)
+      if (next !== current) writeBoardPanelHeights(next)
+      return next
+    })
+  }, [])
+
   const renderPanel = (kind: BoardPanelKind) => {
     if (kind === "rail") {
       if (isGlance) {
@@ -881,6 +1047,7 @@ export const BoardDisplay = ({
           startDelayMs={unattended ? 0 : undefined}
           loading={arrivals.loading}
           error={arrivalsError}
+          onRetry={stopId ? refreshArrivals : undefined}
           emptyKind={railEmpty.kind}
           emptyMessage={arrivalsLineEmptyCopy(railEmpty)}
           classNames={BOUND_COLUMNS_CLASS_NAMES}
@@ -902,6 +1069,9 @@ export const BoardDisplay = ({
           startDelayMs={unattended ? 400 : undefined}
           loading={busArrivals.loading}
           error={busError}
+          classNames={
+            busLayout === "columns" ? BUS_COLUMNS_CLASS_NAMES : undefined
+          }
         />
       )
     }
@@ -987,6 +1157,7 @@ export const BoardDisplay = ({
           units={statusProps.tiles || 4}
           detailScope={statusProps.detailScope}
           detailLineIds={statusProps.detailLineIds}
+          lineOrder={config.status.lines}
           dwellMs={statusProps.dwellMs}
           startDelayMs={1500}
           error={status.error}
@@ -1001,6 +1172,7 @@ export const BoardDisplay = ({
           tiles={statusProps.tiles}
           detailScope={statusProps.detailScope}
           detailLineIds={statusProps.detailLineIds}
+          lineOrder={config.status.lines}
           dwellMs={statusProps.dwellMs}
           startDelayMs={1500}
           error={status.error}
@@ -1012,6 +1184,7 @@ export const BoardDisplay = ({
         data={statusData}
         now={status.fetchedAt ?? undefined}
         hideHeader
+        lineOrder={config.status.lines}
         priorityLineIds={
           statusProps.detailScope === "network"
             ? statusProps.detailLineIds
@@ -1037,11 +1210,29 @@ export const BoardDisplay = ({
         aria-label={label}
       >
         <div className={`grid min-w-0 grid-cols-1 ${BOARD_RHYTHM_GAP_CLASS}`}>
-          {kinds.map((kind) => (
-            <div key={kind} className="min-w-0">
-              {renderPanel(kind)}
-            </div>
-          ))}
+          {kinds.map((kind) => {
+            const plan = holdPlan.get(kind)
+            if (plan?.waiting) {
+              // Fill the screen below the loading panel so nothing visible
+              // moves when it lands; the panel paints in its place after.
+              return kind === firstWaiting ? (
+                <div key={kind} className="min-h-svh min-w-0" aria-busy />
+              ) : null
+            }
+            return (
+              <BoardHeldPanel
+                key={kind}
+                holdKey={holdKeyFor(kind)}
+                minHeight={plan?.minHeight}
+                settled={
+                  !panelLive[kind].loading && panelLive[kind].count > 0
+                }
+                onSettledHeight={rememberPanelHeight}
+              >
+                {renderPanel(kind)}
+              </BoardHeldPanel>
+            )
+          })}
         </div>
       </section>
     )
@@ -1053,8 +1244,8 @@ export const BoardDisplay = ({
     : isPreview
       ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-full w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
       : fillScreen
-        ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-dvh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
-        : `${BOARD_SHELL_CONTAINER_CLASS} box-border min-h-dvh w-full ${BOARD_SHELL_PADDING_CLASS}`
+        ? `board-embed ${BOARD_SHELL_CONTAINER_CLASS} box-border h-svh w-full [touch-action:pan-y] [scrollbar-width:none] overflow-y-auto overscroll-y-contain ${BOARD_SHELL_PADDING_CLASS} [&::-webkit-scrollbar]:hidden`
+        : `${BOARD_SHELL_CONTAINER_CLASS} box-border min-h-svh w-full ${BOARD_SHELL_PADDING_CLASS}`
 
   const boardShellStyle: CSSProperties = {
     ...(isGlance ? {} : ARRIVALS_RHYTHM_VARS),

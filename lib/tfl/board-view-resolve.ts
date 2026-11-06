@@ -46,14 +46,18 @@ const panelHasRequiredTarget = (
   return (config.cycle.docks?.length ?? 0) > 0
 }
 
-/** A layout that can render without a per-panel missing-state cascade. */
+/**
+ * A layout that can show at least one real panel. Extra bus/river/cycle slots
+ * without a target keep their empty hints — they must not replace a shared
+ * rail stop with the Oxford Circus demo.
+ */
 export const isUsableBoardConfig = (config: BoardConfig): boolean => {
   const slots = resolveBoardSlots(config.slots.p1, config.slots.p2)
   const kinds = new Set([...slots.p1, ...slots.p2])
   if (kinds.size === 0) return false
   const nonStatusKinds = [...kinds].filter((kind) => kind !== "status")
   if (nonStatusKinds.length === 0) return true
-  return nonStatusKinds.every((kind) => panelHasRequiredTarget(kind, config))
+  return nonStatusKinds.some((kind) => panelHasRequiredTarget(kind, config))
 }
 
 export const resolveBoardReadiness = (

@@ -201,12 +201,73 @@ export const ROUTE_PAGE_META = {
   },
 } as const satisfies Record<string, PageMetaInput>
 
+export type BoardViewMetaInput = {
+  stop?: string | null
+  stopName?: string | null
+  /** Optional curated arrivals line order (`a.lines`). */
+  lines?: string | null
+}
+
+/** Social image for a shared board; falls back to the site card when bare. */
+export const boardViewSocialImage = ({
+  stop,
+  stopName,
+  lines,
+}: BoardViewMetaInput = {}) => {
+  const params = new URLSearchParams()
+  const id = stop?.trim()
+  const name = stopName?.trim()
+  const lineOrder = lines?.trim()
+  if (id) params.set("stop", id)
+  if (name) params.set("stopName", name)
+  if (lineOrder) params.set("a.lines", lineOrder)
+  const query = params.toString()
+  const path = query ? `/board/view/og?${query}` : OG_IMAGE.path
+  const alt = name
+    ? `Board on a spare screen showing live departures at ${name}.`
+    : OG_IMAGE.alt
+  return {
+    url: `${SITE_URL}${path}`,
+    width: OG_IMAGE.width,
+    height: OG_IMAGE.height,
+    alt,
+    type: "image/png" as const,
+  }
+}
+
 /** Board display: chromeless page plus home-screen fullscreen install. */
-export const boardViewPageMetadata = (): Metadata => ({
-  ...pageMetadata(ROUTE_PAGE_META.boardView),
-  manifest: BOARD_VIEW_MANIFEST_PATH,
-  appleWebApp: BOARD_VIEW_APPLE_WEB_APP,
-  other: {
-    "mobile-web-app-capable": "yes",
-  },
-})
+export const boardViewPageMetadata = (
+  input: BoardViewMetaInput = {}
+): Metadata => {
+  const name = input.stopName?.trim() || null
+  const title = name ? `${name} · Board display` : ROUTE_PAGE_META.boardView.title
+  const description = name
+    ? `Live TfL arrivals and status for ${name}. Configuration stays in the page URL.`
+    : ROUTE_PAGE_META.boardView.description
+  const image = boardViewSocialImage(input)
+  const base = pageMetadata({
+    ...ROUTE_PAGE_META.boardView,
+    title,
+    description,
+  })
+  return {
+    ...base,
+    openGraph: {
+      ...base.openGraph,
+      title,
+      description,
+      images: [image],
+    },
+    twitter: {
+      ...base.twitter,
+      title,
+      description,
+      images: [{ url: image.url, alt: image.alt }],
+    },
+    manifest: BOARD_VIEW_MANIFEST_PATH,
+    appleWebApp: BOARD_VIEW_APPLE_WEB_APP,
+    other: {
+      "mobile-web-app-capable": "yes",
+    },
+  }
+}

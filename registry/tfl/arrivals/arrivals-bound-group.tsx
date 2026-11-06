@@ -1023,7 +1023,11 @@ const RAIL_DESIGNATION_ICON: Record<ArrivalsRailDesignation, typeof RotateCcw> =
  * font-semibold` (worst case "Southbound · Platform 12") plus this row's
  * `pr-2` (8px) buffer. Aria keeps the full `bound.label`.
  */
-const BoundHeadingLabel = ({ bound }: { bound: ArrivalsPreparedBound }) => {
+export const BoundHeadingLabel = ({
+  bound,
+}: {
+  bound: ArrivalsPreparedBound
+}) => {
   if (!bound.label) return null
   if (!bound.platformLabel) {
     return <span className="min-w-0 flex-1 truncate pr-2">{bound.label}</span>

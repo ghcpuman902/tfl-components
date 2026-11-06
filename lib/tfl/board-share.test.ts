@@ -47,8 +47,9 @@ describe("board key modes", () => {
       SAMPLE,
       "portable"
     )
-    assert.match(href, /^\/board\/view#/)
+    assert.match(href, /^\/board\/view(?:\?[^#]*)?#/)
     assert.match(href, /key=/)
+    assert.doesNotMatch(href.split("#")[0] ?? "", /key=/)
     assert.equal(shareUrlIncludesKey(url), true)
     assert.equal(shareUrlKeyIsOnlyInHash(url), true)
     assert.doesNotMatch(url.split("#")[0] ?? "", /key=/)

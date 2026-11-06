@@ -25,6 +25,8 @@ export type TubeStatusStripProps = {
   units?: number
   detailScope?: StatusDetailScope
   detailLineIds?: readonly string[]
+  /** Show these lines in this order within each section; others keep their slot. */
+  lineOrder?: readonly string[]
   now?: number
   currentOnly?: boolean
   dedupe?: boolean
@@ -64,6 +66,7 @@ export const TubeStatusStrip = ({
   units = 4,
   detailScope = "network",
   detailLineIds,
+  lineOrder,
   now,
   currentOnly = true,
   dedupe = true,
@@ -81,7 +84,10 @@ export const TubeStatusStrip = ({
     dedupe,
     rawReason,
   }
-  const sections = partitionStatusBoardLines(data ?? [], prepareOptions)
+  const sections = partitionStatusBoardLines(data ?? [], {
+    ...prepareOptions,
+    lineOrder,
+  })
   const frames = buildStatusDisplayFrames(sections, {
     tiles: Math.max(2, regions.reasonUnits + 1),
     detailScope,

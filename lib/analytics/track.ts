@@ -6,6 +6,7 @@ import {
   type AnalyticsEventName,
   type AnalyticsEventProps,
 } from "@/lib/analytics/events"
+import type { CustomiseEvent } from "@/lib/analytics/customise-events"
 import type {
   HeroEventName,
   HeroVariantId,
@@ -37,3 +38,7 @@ export const trackSiteEvent = (
  */
 export const trackHeroEvent = (name: HeroEventName, variant: HeroVariantId) =>
   dispatch(name, { variant })
+
+/** Customise variant task events; `variant` is the only prop sent. */
+export const trackCustomiseEvent = (event: CustomiseEvent) =>
+  dispatch(event.name, { variant: event.variant })

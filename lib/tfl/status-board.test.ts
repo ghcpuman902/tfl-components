@@ -284,3 +284,34 @@ describe("splitByPriority", () => {
     assert.deepEqual(ids(split.other), ["jubilee"])
   })
 })
+
+describe("status line order", () => {
+  const good = (id: string): StatusLine => ({
+    id,
+    name: id,
+    modeName: "tube",
+    lineStatuses: [{ statusSeverity: 10, statusSeverityDescription: "Good Service" }],
+  })
+  const lines = ["central", "northern", "jubilee", "victoria", "bakerloo"].map(good)
+
+  it("shows the chosen lines in the chosen order", () => {
+    const { goodService } = partitionStatusBoardLines(lines, {
+      lineOrder: ["bakerloo", "central", "victoria", "northern"],
+    })
+    assert.deepEqual(ids(goodService), [
+      "bakerloo",
+      "central",
+      "jubilee",
+      "victoria",
+      "northern",
+    ])
+  })
+
+  it("changes nothing for a list already in board order", () => {
+    const plain = partitionStatusBoardLines(lines)
+    const listed = partitionStatusBoardLines(lines, {
+      lineOrder: ["central", "northern", "victoria"],
+    })
+    assert.deepEqual(ids(listed.goodService), ids(plain.goodService))
+  })
+})

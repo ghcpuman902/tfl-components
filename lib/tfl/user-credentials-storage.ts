@@ -47,6 +47,23 @@ export const maskUserTflAppKey = (appKey: string): string => {
 }
 
 /** Password-style field value: bullets for the secret, last four visible. */
+export type TflKeyDraftChange = {
+  /** What the field now holds: the input with any whitespace removed. */
+  draft: string
+  action: "clear" | "edit" | "invalid" | "save"
+}
+
+/**
+ * What the key field does with its new value. The field holds the raw key
+ * (masked by `type="password"`), so each keystroke or paste arrives whole.
+ */
+export const tflKeyDraftChange = (input: string): TflKeyDraftChange => {
+  const draft = input.replace(/\s+/g, "")
+  if (!draft) return { draft, action: "clear" }
+  if (!/^[a-zA-Z0-9]+$/.test(draft)) return { draft, action: "invalid" }
+  return { draft, action: isPlausibleTflAppKey(draft).ok ? "save" : "edit" }
+}
+
 export const displayTflAppKey = (appKey: string): string => {
   const trimmed = appKey.trim()
   if (!trimmed) return ""

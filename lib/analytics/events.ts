@@ -21,6 +21,12 @@ export const ANALYTICS_EVENT_NAMES = [
   "hero_view",
   "hero_cta",
   "board_made",
+  // Customise variants (split OFF; see lib/analytics/customise-events.ts).
+  // Only prop is `variant`: "panel" | "c" | "d" | "r".
+  "customise_station_changed",
+  "customise_solo_used",
+  "customise_reorder_saved",
+  "customise_done",
 ] as const
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENT_NAMES)[number]
