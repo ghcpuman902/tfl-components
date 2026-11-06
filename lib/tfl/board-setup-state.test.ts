@@ -56,6 +56,89 @@ describe("board setup draft", () => {
     assert.equal(parsed?.statusOnlyThese, false)
   })
 
+  describe("returning visitor with an older Tower Hill draft", () => {
+    // Shape saved by the first staged builder (b76e4ef): no busStopId,
+    // riverStopId, cycleDockIds, statusOnlyThese, statusOrder or layout, and
+    // the since-removed "this" screen profile.
+    const OLD_TOWER_HILL_DRAFT = {
+      id: "3f0c6a8e-old",
+      stage: 5,
+      screenProfile: "this",
+      stopId: "940GZZLUTWH",
+      stopName: "Tower Hill",
+      continueWithoutStop: false,
+      locationUsed: false,
+      lineIds: ["district", "circle"],
+      nearbyModes: ["bus"],
+      statusLineIds: ["central"],
+      keyMode: "skipped",
+      setupStarted: true,
+      completedStages: [1, 2, 3, 4],
+      setupCompleted: true,
+    }
+
+    const reload = (stored: unknown) =>
+      parseBoardSetupDraft(JSON.parse(JSON.stringify(stored)) as unknown)
+
+    it("keeps the stop, name and lines and fills the newer fields", () => {
+      const parsed = reload(OLD_TOWER_HILL_DRAFT)
+      assert.ok(parsed)
+      assert.equal(parsed.stopId, "940GZZLUTWH")
+      assert.equal(parsed.stopName, "Tower Hill")
+      assert.deepEqual(parsed.lineIds, ["district", "circle"])
+      assert.equal(parsed.stage, 5)
+      assert.equal(parsed.screenProfile, null)
+      assert.equal(parsed.busStopId, null)
+      assert.equal(parsed.statusOnlyThese, false)
+      assert.equal(parsed.statusOrder, null)
+      assert.equal(parsed.layout, null)
+    })
+
+    it("survives a save and reload round trip", () => {
+      const first = reload(OLD_TOWER_HILL_DRAFT)
+      const second = reload(first)
+      assert.deepEqual(second, first)
+      assert.equal(second?.stopId, "940GZZLUTWH")
+    })
+
+    it("keeps the stop when the stage was saved as a string", () => {
+      const parsed = reload({ ...OLD_TOWER_HILL_DRAFT, stage: "5" })
+      assert.equal(parsed?.stage, 5)
+      assert.equal(parsed?.stopId, "940GZZLUTWH")
+    })
+
+    it("keeps the stop when the stage is missing or out of range", () => {
+      const { stage: _stage, ...noStage } = OLD_TOWER_HILL_DRAFT
+      void _stage
+      assert.equal(reload(noStage)?.stage, 5)
+      assert.equal(reload({ ...OLD_TOWER_HILL_DRAFT, stage: 7 })?.stage, 5)
+      const early = reload({
+        ...OLD_TOWER_HILL_DRAFT,
+        stage: undefined,
+        completedStages: [],
+        setupCompleted: false,
+      })
+      assert.equal(early?.stage, 2)
+      assert.equal(early?.stopId, "940GZZLUTWH")
+    })
+
+    it("keeps the stop when the draft has no id", () => {
+      const { id: _id, ...noId } = OLD_TOWER_HILL_DRAFT
+      void _id
+      const parsed = reload(noId)
+      assert.equal(parsed?.stopId, "940GZZLUTWH")
+      assert.ok(parsed?.id)
+    })
+
+    it("dedupes repeated lines", () => {
+      const parsed = reload({
+        ...OLD_TOWER_HILL_DRAFT,
+        lineIds: ["district", "circle", "district", 4],
+      })
+      assert.deepEqual(parsed?.lineIds, ["district", "circle"])
+    })
+  })
+
   it("keeps an explicit only-these-lines flag", () => {
     const parsed = parseBoardSetupDraft({
       id: "ok",
