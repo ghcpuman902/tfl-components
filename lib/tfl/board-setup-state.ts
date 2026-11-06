@@ -163,28 +163,60 @@ export const parseBoardCustomiseLayout = (
   }
 }
 
+/** Older drafts may store the stage as a string or past 5; read what we can. */
+const migrateStage = (
+  value: unknown,
+  completedStages: readonly BoardSetupStage[]
+): BoardSetupStage | null => {
+  const number =
+    typeof value === "string" && value.trim() !== "" ? Number(value) : value
+  if (isStage(number)) return number
+  if (completedStages.length > 0) {
+    return Math.min(5, Math.max(...completedStages) + 1) as BoardSetupStage
+  }
+  return null
+}
+
+const LEGACY_DRAFT_ID = "draft-local"
+
 export const parseBoardSetupDraft = (value: unknown): BoardSetupDraft | null => {
   if (!isRecord(value)) return null
-  if (typeof value.id !== "string" || !value.id) return null
-  if (!isStage(value.stage)) return null
+  const stopId =
+    typeof value.stopId === "string" && value.stopId.trim()
+      ? value.stopId.trim()
+      : null
 
   const completedStages = Array.isArray(value.completedStages)
     ? value.completedStages.filter(isStage)
     : []
+  // A draft that holds a station is never thrown away for a missing id or an
+  // unreadable stage: the returning visitor keeps their stop.
+  const stage =
+    migrateStage(value.stage, completedStages) ??
+    (stopId ? (value.setupCompleted === true ? 5 : 2) : null)
+  if (stage === null) return null
+  const id =
+    typeof value.id === "string" && value.id
+      ? value.id
+      : stopId
+        ? LEGACY_DRAFT_ID
+        : null
+  if (id === null) return null
 
   return {
-    id: value.id,
-    stage: value.stage,
+    id,
+    stage,
     screenProfile: isScreenProfile(value.screenProfile)
       ? value.screenProfile
       : null,
-    stopId: typeof value.stopId === "string" ? value.stopId : null,
-    stopName: typeof value.stopName === "string" ? value.stopName : null,
+    stopId,
+    stopName:
+      typeof value.stopName === "string" && value.stopName.trim()
+        ? value.stopName
+        : null,
     continueWithoutStop: value.continueWithoutStop === true,
     locationUsed: value.locationUsed === true,
-    lineIds: Array.isArray(value.lineIds)
-      ? value.lineIds.filter((item): item is string => typeof item === "string")
-      : [],
+    lineIds: [...new Set(stringList(value.lineIds))],
     nearbyModes: Array.isArray(value.nearbyModes)
       ? value.nearbyModes.filter(isNearbyMode)
       : [],
