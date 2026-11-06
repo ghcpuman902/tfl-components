@@ -95,6 +95,28 @@ describe("isUsableBoardConfig", () => {
       false
     )
   })
+
+  it("keeps a rail stop usable when bus is also listed but has no stop yet", () => {
+    assert.equal(
+      isUsableBoardConfig({
+        ...DEFAULT_BOARD_CONFIG,
+        stop: "940GZZLUTWH",
+        stopName: "Tower Hill",
+        slots: { p1: ["rail", "bus"], p2: ["status"] },
+      }),
+      true
+    )
+  })
+
+  it("still rejects rail+bus when neither rail nor bus has a target", () => {
+    assert.equal(
+      isUsableBoardConfig({
+        ...DEFAULT_BOARD_CONFIG,
+        slots: { p1: ["rail", "bus"], p2: ["status"] },
+      }),
+      false
+    )
+  })
 })
 
 describe("isBoardReady", () => {
@@ -130,6 +152,16 @@ describe("withDemoBoardFallback", () => {
   it("keeps a usable layout", () => {
     const withStop = { ...DEFAULT_BOARD_CONFIG, stop: "940GZZLUOXC" }
     assert.equal(withDemoBoardFallback(withStop), withStop)
+  })
+
+  it("does not replace a shared Tower Hill rail+bus hash with Oxford Circus", () => {
+    const shared = parseBoardConfig(
+      "#stop=940GZZLUTWH&stopName=Tower%20Hill&p1=rail,bus&p2=status&a.lines=district,circle"
+    )
+    const kept = withDemoBoardFallback(shared)
+    assert.equal(kept.stop, "940GZZLUTWH")
+    assert.equal(kept.stopName, "Tower Hill")
+    assert.notEqual(kept.stop, DEMO_BOARD_CONFIG.stop)
   })
 
   it("fills an empty hash with Oxford Circus", () => {
@@ -188,6 +220,20 @@ describe("parseBoardViewLink", () => {
         error: "This link is missing the Board setup.",
       }
     )
+  })
+
+
+  it("accepts a shared rail+bus link even when the bus stop is not in the hash", () => {
+    const result = parseBoardViewLink(
+      `${ORIGIN}/board/view#stop=940GZZLUTWH&stopName=Tower%20Hill&p1=rail,bus&p2=status&a.lines=district,circle`,
+      ORIGIN
+    )
+    assert.equal(result.ok, true)
+    if (result.ok) {
+      assert.equal(result.config.stop, "940GZZLUTWH")
+      assert.equal(result.config.stopName, "Tower Hill")
+      assert.deepEqual(result.config.slots.p1, ["rail", "bus"])
+    }
   })
 
   it("accepts a complete portable /board/view link", () => {
