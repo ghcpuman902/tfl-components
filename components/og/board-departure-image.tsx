@@ -201,11 +201,19 @@ const BoardColumn = ({
   </div>
 )
 
-/** Static Board card: rail and bus columns, same tile height as the arrivals board. */
-export const BoardDepartureImage = () => {
+export type BoardDepartureImageProps = {
+  /** Rail column title. Defaults to the site-wide King's Cross sample. */
+  stationName?: string
+}
+
+/** Board card: rail and bus columns, same tile height as the arrivals board. */
+export const BoardDepartureImage = ({
+  stationName = "King's Cross St. Pancras",
+}: BoardDepartureImageProps = {}) => {
   const victoria = UNDERGROUND_LINE_COLOURS.victoria.hex
   const piccadilly = UNDERGROUND_LINE_COLOURS.piccadilly.hex
   const buses = TFL_MODAL_COLOURS.buses.hex
+  const railTitle = stationName.trim() || "King's Cross St. Pancras"
 
   return (
     <div
@@ -228,7 +236,7 @@ export const BoardDepartureImage = () => {
         }}
       >
         <BoardColumn
-          title="King's Cross St. Pancras"
+          title={railTitle}
           disc={UNDERGROUND_RING_RED}
           bar={TFL_BLUE}
           sections={[
