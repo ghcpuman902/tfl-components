@@ -202,7 +202,7 @@ describe("buildBoardHref", () => {
         stop: "940GZZLUOXC",
         slots: { p1: ["rail"], p2: ["status"] },
       }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`
+      `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC`
     )
   })
 
@@ -212,7 +212,7 @@ describe("buildBoardHref", () => {
         stop: "940GZZLUOXC",
         slots: { p1: ["rail"], p2: [] },
       }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&p1=rail`
+      `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&p1=rail`
     )
   })
 
@@ -224,7 +224,7 @@ describe("buildBoardHref", () => {
         bus: { stop: "490000091G" },
         cycle: { docks: ["BikePoints_237", "BikePoints_46"] },
       }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLIVST&p1=rail,bus,cycle&p2=status&b.stop=490000091G&c.docks=BikePoints_237,BikePoints_46`
+      `${BOARD_VIEW_PATH}?stop=940GZZLIVST#stop=940GZZLIVST&p1=rail,bus,cycle&p2=status&b.stop=490000091G&c.docks=BikePoints_237,BikePoints_46`
     )
   })
 
@@ -235,7 +235,7 @@ describe("buildBoardHref", () => {
         slots: { p1: ["cycle"], p2: [] },
         cycle: { docks: ["BikePoints_237"], surface: "map", tiles: 6 },
       }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLIVST&p1=cycle&c.docks=BikePoints_237`
+      `${BOARD_VIEW_PATH}?stop=940GZZLIVST#stop=940GZZLIVST&p1=cycle&c.docks=BikePoints_237`
     )
   })
 
@@ -246,14 +246,14 @@ describe("buildBoardHref", () => {
         slots: { p1: ["cycle"], p2: [] },
         cycle: { docks: ["BikePoints_237"], surface: "display", tiles: 2 },
       }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLIVST&p1=cycle&c.docks=BikePoints_237&c.surface=display&c.tiles=2`
+      `${BOARD_VIEW_PATH}?stop=940GZZLIVST#stop=940GZZLIVST&p1=cycle&c.docks=BikePoints_237&c.surface=display&c.tiles=2`
     )
   })
 
   it("omits default behaviour", () => {
     assert.equal(
       buildBoardHref({ behaviour: "interactive", stop: "940GZZLUOXC" }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`
+      `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC`
     )
   })
 
@@ -264,25 +264,25 @@ describe("buildBoardHref", () => {
         view: "glance",
         behaviour: "unattended",
       }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&behaviour=unattended&view=glance`
+      `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&behaviour=unattended&view=glance`
     )
   })
 
   it("does not serialize legacy layout or density", () => {
     assert.equal(
       buildBoardHref({ stop: "940GZZLUOXC", view: "glance" }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&view=glance`
+      `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&view=glance`
     )
   })
 
   it("omits stopName when unset — the board resolves the heading", () => {
     assert.equal(
       buildBoardHref({ stop: "940GZZLUOXC" }),
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC`
+      `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC`
     )
   })
 
-  it("includes non-default values and the key", () => {
+  it("mirrors stop and stopName into the query for OG, keeps the key in the hash", () => {
     const href = buildBoardHref({
       stop: "940GZZLUOXC",
       stopName: "Oxford Circus",
@@ -291,8 +291,9 @@ describe("buildBoardHref", () => {
     })
     assert.equal(
       href,
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&stopName=Oxford+Circus&behaviour=unattended&key=abc123`
+      `${BOARD_VIEW_PATH}?stop=940GZZLUOXC&stopName=Oxford+Circus#stop=940GZZLUOXC&stopName=Oxford+Circus&behaviour=unattended&key=abc123`
     )
+    assert.doesNotMatch(href.slice(0, href.indexOf("#")), /key=/)
   })
 
   it("serializes scalar a.rows=3 as a broadcast, not as omitted", () => {
@@ -300,7 +301,7 @@ describe("buildBoardHref", () => {
       stop: "940GZZLUOXC",
       arrivals: { rows: 3 },
     })
-    assert.equal(href, `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&a.rows=3`)
+    assert.equal(href, `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&a.rows=3`)
   })
 
   it("keeps a trailing comma so a.rows=3, is first-slot only", () => {
@@ -308,7 +309,7 @@ describe("buildBoardHref", () => {
       stop: "940GZZLUOXC",
       arrivals: { rows: [3, undefined] },
     })
-    assert.equal(href, `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&a.rows=3,`)
+    assert.equal(href, `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&a.rows=3,`)
   })
 
   it("serializes non-default scalar a.rows", () => {
@@ -316,7 +317,7 @@ describe("buildBoardHref", () => {
       stop: "940GZZLUOXC",
       arrivals: { rows: 6 },
     })
-    assert.equal(href, `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&a.rows=6`)
+    assert.equal(href, `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&a.rows=6`)
   })
 
   it("serializes positional a.rows with literal commas", () => {
@@ -329,7 +330,7 @@ describe("buildBoardHref", () => {
     })
     assert.equal(
       href,
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&a.rows=6,2,2&a.lines=victoria,central,bakerloo`
+      `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&a.rows=6,2,2&a.lines=victoria,central,bakerloo`
     )
   })
 
@@ -342,7 +343,7 @@ describe("buildBoardHref", () => {
     })
     assert.equal(
       href,
-      `${BOARD_VIEW_PATH}#stop=940GZZLUOXC&behaviour=unattended&a.rows=0&key=abc123`
+      `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&behaviour=unattended&a.rows=0&key=abc123`
     )
   })
 
@@ -360,9 +361,10 @@ describe("buildBoardHref", () => {
       status: {},
     }
     const href = buildBoardHref(original)
-    const hash = href.slice(BOARD_VIEW_PATH.length)
+    const hash = href.slice(href.indexOf("#"))
     const parsed = parseBoardConfig(hash)
     assert.deepEqual(parsed, original)
+    assert.match(href, /^\/board\/view\?stop=940GZZLUOXC&stopName=Oxford\+Circus#/)
   })
 
   it("round-trips arrivals settings", () => {
@@ -375,7 +377,7 @@ describe("buildBoardHref", () => {
       },
     }
     const href = buildBoardHref(original)
-    const hash = href.slice(BOARD_VIEW_PATH.length)
+    const hash = href.slice(href.indexOf("#"))
     const parsed = parseBoardConfig(hash)
     assert.equal(parsed.stop, original.stop)
     assert.deepEqual(parsed.arrivals.rows, [6, undefined, 2])
@@ -453,17 +455,17 @@ describe("describeBoardHrefSegments", () => {
     )
   })
 
-  it("matches buildBoardHref hash exactly", () => {
+  it("matches the hash portion of buildBoardHref exactly", () => {
     const next = {
       stop: "940GZZLUOXC",
       arrivals: { rows: 0 as const, lineOrder: ["central"] as const },
       key: "secret",
     }
     const segments = describeBoardHrefSegments(next)
-    const fromSegments = `${BOARD_VIEW_PATH}#${segments
-      .map((segment) => segment.text)
-      .join("&")}`
-    assert.equal(fromSegments, buildBoardHref(next))
+    const fromSegments = `#${segments.map((segment) => segment.text).join("&")}`
+    const href = buildBoardHref(next)
+    assert.equal(fromSegments, href.slice(href.indexOf("#")))
+    assert.match(href, /^\/board\/view\?stop=940GZZLUOXC#/)
   })
 })
 

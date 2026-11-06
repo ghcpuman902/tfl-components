@@ -7,6 +7,7 @@ import {
 } from "./site"
 import {
   boardViewPageMetadata,
+  boardViewSocialImage,
   docsEntryMetadata,
   pageMetadata,
   ROUTE_PAGE_META,
@@ -116,6 +117,34 @@ describe("route metadata", () => {
     assert.equal(apple?.capable, true)
     assert.equal(apple?.statusBarStyle, "black-translucent")
     assert.equal(meta.other?.["mobile-web-app-capable"], "yes")
+  })
+
+
+  it("titles a shared board from stopName and points OG at /board/view/og", () => {
+    const meta = boardViewPageMetadata({
+      stop: "940GZZLUTWH",
+      stopName: "Tower Hill",
+    })
+    assert.equal(meta.openGraph?.title, "Tower Hill · Board display")
+    const image = boardViewSocialImage({
+      stop: "940GZZLUTWH",
+      stopName: "Tower Hill",
+    })
+    assert.match(image.url, /\/board\/view\/og\?/)
+    assert.match(image.url, /stop=940GZZLUTWH/)
+    assert.match(image.url, /stopName=Tower\+Hill/)
+    assert.match(image.alt, /Tower Hill/)
+    const images = meta.openGraph?.images
+    const first = Array.isArray(images) ? images[0] : images
+    assert.equal(
+      typeof first === "object" && first && "url" in first ? first.url : null,
+      image.url
+    )
+  })
+
+  it("keeps the bare Board display on the site social card", () => {
+    const image = boardViewSocialImage({})
+    assert.equal(image.url, `${SITE_URL}/opengraph-image`)
   })
 
   it("does not reuse one title as every page's Open Graph title", () => {

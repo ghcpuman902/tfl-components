@@ -13,7 +13,7 @@ import {
 
 type Snapshot = Omit<CustomiseResolution, "stored">
 
-const SERVER: Snapshot = { variant: "panel", source: "default" }
+const SERVER: Snapshot = { variant: "r", source: "default" }
 let current: Snapshot | null = null
 const listeners = new Set<() => void>()
 
@@ -64,8 +64,8 @@ const subscribe = (listener: () => void) => {
 
 /**
  * Variant-assignment hook: sticky per visitor in localStorage, `?customise=`
- * overrides (and is remembered until `?customise=panel`). The server and the
- * first client render use the current panel; the variant only matters once
+ * overrides (and is remembered until `?customise=panel`, which returns to R).
+ * The server and the first client render use R; the variant only matters once
  * Customise opens, so nothing on the page moves.
  */
 export const useCustomiseVariant = (): Snapshot =>

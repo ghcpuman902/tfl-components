@@ -14,7 +14,7 @@ const never = () => {
 }
 
 describe("customise variant assignment", () => {
-  it("ships with the split OFF: everyone gets the current panel", () => {
+  it("ships with the split OFF: everyone gets R", () => {
     assert.equal(CUSTOMISE_SPLIT, null)
     const result = resolveCustomiseVariant({
       param: null,
@@ -22,10 +22,22 @@ describe("customise variant assignment", () => {
       roll: never,
     })
     assert.deepEqual(result, {
-      variant: "panel",
+      variant: "r",
       source: "default",
       stored: {},
     })
+  })
+
+  it("keeps C and D reachable via ?customise= when the default is R", () => {
+    for (const variant of ["c", "d"] as const) {
+      const result = resolveCustomiseVariant({
+        param: variant,
+        stored: {},
+        roll: never,
+      })
+      assert.equal(result.variant, variant)
+      assert.equal(result.source, "param")
+    }
   })
 
   it("the URL param wins and is remembered", () => {
@@ -48,13 +60,14 @@ describe("customise variant assignment", () => {
     assert.equal(later.source, "override")
   })
 
-  it("?customise=panel clears the override", () => {
+  it("?customise=panel clears the override back to the R default", () => {
     const result = resolveCustomiseVariant({
       param: "panel",
       stored: { override: "d" },
       roll: never,
     })
-    assert.equal(result.variant, "panel")
+    assert.equal(result.variant, "r")
+    assert.equal(result.source, "default")
     assert.equal(result.stored.override, undefined)
   })
 

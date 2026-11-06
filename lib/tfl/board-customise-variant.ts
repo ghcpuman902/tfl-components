@@ -1,8 +1,9 @@
 /**
  * Which Customise panel a visitor sees: the current panel, or variant C
  * (board as layers), D (task tabs) or R (recommended full page).
- * Pure: no React / browser APIs. The A/B split is OFF: everyone gets the
- * current panel unless `?customise=c|d|r` asks for a variant.
+ * Pure: no React / browser APIs. The A/B split is OFF: everyone gets R
+ * (recommended full page) unless `?customise=c|d` asks for another
+ * variant, or `?customise=panel` clears a remembered choice back to R.
  */
 
 export const CUSTOMISE_VARIANTS = ["panel", "c", "d", "r"] as const
@@ -88,7 +89,7 @@ export type CustomiseResolution = {
 
 /**
  * URL param first (and remembered), then a remembered param, then a sticky
- * split assignment, then the current panel.
+ * split assignment, then R (the default Customise layout).
  */
 export const resolveCustomiseVariant = ({
   param,
@@ -123,5 +124,5 @@ export const resolveCustomiseVariant = ({
     next = { ...next, assigned: { variant, split: split.version } }
     return { variant, source: "assigned", stored: next }
   }
-  return { variant: "panel", source: "default", stored: next }
+  return { variant: "r", source: "default", stored: next }
 }
