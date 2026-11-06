@@ -5,7 +5,6 @@ import { BoardDepartureImage } from "@/components/og/board-departure-image"
 import { OG_IMAGE } from "@/lib/og/image"
 import { getBoardStationNamesIndex, lookupBoardStationName } from "@/lib/tfl/board-station-names"
 
-export const runtime = "nodejs"
 
 const hammersmith = readFileSync(
   join(process.cwd(), "assets/fonts/hammersmith-one/HammersmithOne-Regular.ttf")
