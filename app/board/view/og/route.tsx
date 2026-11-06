@@ -1,30 +1,30 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { ImageResponse } from "@takumi-rs/image-response"
-import { BoardDepartureImage } from "@/components/og/board-departure-image"
+import { BoardShareOgImage } from "@/components/og/board-share-og-image"
+import { resolveBoardShareOg } from "@/lib/og/board-share-og"
 import { OG_IMAGE } from "@/lib/og/image"
-import { getBoardStationNamesIndex, lookupBoardStationName } from "@/lib/tfl/board-station-names"
-
+import { parseArrivalsLines } from "@/lib/tfl/board-settings"
 
 const hammersmith = readFileSync(
   join(process.cwd(), "assets/fonts/hammersmith-one/HammersmithOne-Regular.ttf")
 )
 
-const stationFromRequest = (request: Request): string => {
+const modelFromRequest = (request: Request) => {
   const url = new URL(request.url)
-  const named = url.searchParams.get("stopName")?.trim()
-  if (named) return named
-  const stop = url.searchParams.get("stop")?.trim()
-  if (!stop) return "King's Cross St. Pancras"
-  return (
-    lookupBoardStationName(getBoardStationNamesIndex(), stop) ??
-    "King's Cross St. Pancras"
-  )
+  const stop = url.searchParams.get("stop")
+  const stopName = url.searchParams.get("stopName")
+  const lineIds = parseArrivalsLines(url.searchParams.get("a.lines") ?? "")
+  return resolveBoardShareOg({
+    stop,
+    stopName,
+    lineIds: lineIds ?? undefined,
+  })
 }
 
 export const GET = async (request: Request) => {
-  const stationName = stationFromRequest(request)
-  return new ImageResponse(<BoardDepartureImage stationName={stationName} />, {
+  const model = modelFromRequest(request)
+  return new ImageResponse(<BoardShareOgImage model={model} />, {
     width: OG_IMAGE.width,
     height: OG_IMAGE.height,
     fonts: [

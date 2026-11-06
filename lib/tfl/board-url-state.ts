@@ -617,10 +617,20 @@ export const boardShareQueryFromConfig = (
   base: BoardConfig = DEFAULT_BOARD_CONFIG
 ): string => {
   const merged = mergeBoardConfig(next, base)
-  const params = new URLSearchParams()
-  if (merged.stop) params.set(BOARD_SETTINGS.stop.param, merged.stop)
-  if (merged.stopName) params.set(BOARD_SETTINGS.stopName.param, merged.stopName)
-  return params.toString()
+  const parts: string[] = []
+  if (merged.stop) {
+    parts.push(encodeSegment(BOARD_SETTINGS.stop.param, merged.stop))
+  }
+  if (merged.stopName) {
+    parts.push(encodeSegment(BOARD_SETTINGS.stopName.param, merged.stopName))
+  }
+  const linesSerialized = serializeArrivalsLines(merged.arrivals.lineOrder)
+  if (linesSerialized) {
+    parts.push(
+      encodeSegment(BOARD_SETTINGS.arrivalsLines.param, linesSerialized)
+    )
+  }
+  return parts.join("&")
 }
 
 /** Hash portion of a Board href (`#stop=…`), or `""` when none. */

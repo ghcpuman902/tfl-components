@@ -330,7 +330,7 @@ describe("buildBoardHref", () => {
     })
     assert.equal(
       href,
-      `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&a.rows=6,2,2&a.lines=victoria,central,bakerloo`
+      `${BOARD_VIEW_PATH}?stop=940GZZLUOXC&a.lines=victoria,central,bakerloo#stop=940GZZLUOXC&a.rows=6,2,2&a.lines=victoria,central,bakerloo`
     )
   })
 
@@ -465,7 +465,7 @@ describe("describeBoardHrefSegments", () => {
     const fromSegments = `#${segments.map((segment) => segment.text).join("&")}`
     const href = buildBoardHref(next)
     assert.equal(fromSegments, href.slice(href.indexOf("#")))
-    assert.match(href, /^\/board\/view\?stop=940GZZLUOXC#/)
+    assert.match(href, /^\/board\/view\?stop=940GZZLUOXC(?:&a\.lines=[^#]+)?#/)
   })
 })
 
