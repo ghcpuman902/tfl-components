@@ -142,7 +142,10 @@ export default function AppleHomeviewPage() {
           </h2>
           <p className="max-w-prose text-muted-foreground">
             For an iPad on a stand, see{" "}
-            <TextLink href="/docs/ipad-dashboard">iPad wall display</TextLink>.
+            <TextLink href="/docs/tfl-dashboard#ipad">
+              Set it up on an iPad
+            </TextLink>
+            .
             For every Board URL parameter, see the{" "}
             <TextLink href="/docs/board-url">Board URL</TextLink> page.
           </p>

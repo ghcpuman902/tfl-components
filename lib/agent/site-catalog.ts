@@ -64,7 +64,8 @@ export const getPublicCatalog = () => ({
     })),
     resources: {
       documentation: `${SITE_URL}/docs`,
-      ipadDashboard: `${SITE_URL}/docs/ipad-dashboard`,
+      tflDashboard: `${SITE_URL}/docs/tfl-dashboard`,
+      ipadDashboard: `${SITE_URL}/docs/tfl-dashboard#ipad`,
       boardView: `${SITE_URL}/board/view`,
       llms: `${SITE_URL}/llms.txt`,
       openapi: `${SITE_URL}/openapi.json`,

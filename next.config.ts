@@ -332,7 +332,18 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/docs/wall-display",
-        destination: "/docs/ipad-dashboard",
+        destination: "/docs/tfl-dashboard#ipad",
+        permanent: true,
+      },
+      // iPad and TV guides folded into the TfL dashboard landing page.
+      {
+        source: "/docs/ipad-dashboard",
+        destination: "/docs/tfl-dashboard#ipad",
+        permanent: true,
+      },
+      {
+        source: "/docs/tv",
+        destination: "/docs/tfl-dashboard#tv",
         permanent: true,
       },
       // `/docs/components/<slug>` guesses — every component page actually lives

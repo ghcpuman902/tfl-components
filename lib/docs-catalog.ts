@@ -169,7 +169,9 @@ const SLUG_ALIASES: Record<string, string> = {
   colors: "colours",
   installation: "troubleshoot",
   "branch-strip": "branch-strip-horizontal",
-  "wall-display": "ipad-dashboard",
+  "wall-display": "tfl-dashboard",
+  "ipad-dashboard": "tfl-dashboard",
+  tv: "tfl-dashboard",
 }
 
 /**
@@ -199,26 +201,15 @@ export const DOCS_ENTRIES: readonly DocsEntry[] = [
     sidebarOrder: 10,
   },
   {
-    slug: "ipad-dashboard",
-    title: "iPad wall display",
+    slug: "tfl-dashboard",
+    title: "Build a TfL dashboard",
     description:
-      "Put Tube status, rail departures, and bus arrivals on an old iPad in Safari. Prefer Board over a custom Unified API dashboard.",
+      "Use Board as a live Tube and bus departure board on an iPad or TV, with no app and no API key. Or build your own dashboard with tfl-ts and React components.",
     group: "start",
     kind: "page",
-    href: "/docs/ipad-dashboard",
+    href: "/docs/tfl-dashboard",
     sidebarSection: "get-started",
     sidebarOrder: 185,
-  },
-  {
-    slug: "tv",
-    title: "TV display",
-    description:
-      "Show live TfL arrivals and line status on a spare TV or monitor through its web browser. No app and no API key.",
-    group: "start",
-    kind: "page",
-    href: "/docs/tv",
-    sidebarSection: "get-started",
-    sidebarOrder: 186,
   },
   {
     slug: "apple-homeview",
@@ -993,7 +984,7 @@ export const getCatalogueEntries = (): DocsEntry[] =>
     (entry) => entry.sidebarSection === "components" && !entry.comingSoon
   ).sort((a, b) => a.sidebarOrder - b.sidebarOrder)
 
-/** Matches DocsSidebar: get-started top → components → iPad wall display / Board URL / Troubleshoot / data model / line topology / drawing the line / licensing tail → primitives. */
+/** Matches DocsSidebar: get-started top → components → TfL dashboard / Board URL / Troubleshoot / data model / line topology / drawing the line / licensing tail → primitives. */
 export const GET_STARTED_BOTTOM_FROM = 185
 
 /** Tools and Drafts — footer / search in development only (J8). */

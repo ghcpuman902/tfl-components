@@ -24,9 +24,9 @@ import {
 import { OPENAPI_DOCUMENT } from "@/lib/agent/openapi"
 import { getPublicCatalog } from "@/lib/agent/site-catalog"
 import {
-  IPAD_DASHBOARD_STRUCTURED_DATA,
   serialiseStructuredData,
   SITE_STRUCTURED_DATA,
+  TFL_DASHBOARD_STRUCTURED_DATA,
 } from "@/lib/agent/structured-data"
 
 test("homepage negotiation honours media types and q-values", () => {
@@ -95,7 +95,8 @@ test("homepage and llms.txt contain substantial, task-oriented Markdown", () => 
   assert.match(HOME_MARKDOWN, /iPad/)
   assert.match(HOME_MARKDOWN, /\/board\/view/)
   assert.match(HOME_MARKDOWN, /zero-install hosted web app/)
-  assert.match(HOME_MARKDOWN, /\/docs\/ipad-dashboard/)
+  assert.match(HOME_MARKDOWN, /\/docs\/tfl-dashboard/)
+  assert.doesNotMatch(HOME_MARKDOWN, /\/docs\/ipad-dashboard|\/docs\/tv\b/)
   assert.match(HOME_MARKDOWN, /tfl-ts/)
   assert.match(HOME_MARKDOWN, /command-line tool/)
 
@@ -108,7 +109,8 @@ test("homepage and llms.txt contain substantial, task-oriented Markdown", () => 
   assert.match(LLMS_TEXT, /\/openapi\.json/)
   assert.match(LLMS_TEXT, /zero-install hosted web app/)
   assert.match(LLMS_TEXT, /\/board\/view/)
-  assert.match(LLMS_TEXT, /\/docs\/ipad-dashboard/)
+  assert.match(LLMS_TEXT, /\/docs\/tfl-dashboard/)
+  assert.doesNotMatch(LLMS_TEXT, /\/docs\/ipad-dashboard|\/docs\/tv\b/)
   assert.match(LLMS_TEXT, /\/docs\/apple-homeview/)
   assert.match(LLMS_TEXT, /HomeView/)
   assert.match(LLMS_TEXT, /Home Assistant/)
@@ -238,31 +240,26 @@ test("structured data identifies the real project without a fabricated organisat
   )
 })
 
-test("iPad wall-display page structured data answers the search questions", () => {
-  const types = IPAD_DASHBOARD_STRUCTURED_DATA["@graph"].map(
+test("TfL dashboard page structured data answers the search questions", () => {
+  const types = TFL_DASHBOARD_STRUCTURED_DATA["@graph"].map(
     (node) => node["@type"]
   )
   assert.ok(types.includes("WebPage"))
   assert.ok(types.includes("FAQPage"))
   assert.ok(types.includes("HowTo"))
-  const serialised = serialiseStructuredData(IPAD_DASHBOARD_STRUCTURED_DATA)
+  const serialised = serialiseStructuredData(TFL_DASHBOARD_STRUCTURED_DATA)
+  assert.match(serialised, /How do I build a TfL dashboard\?/)
   assert.match(
     serialised,
     /How do I turn an old iPad into a live London Tube departure board\?/
   )
+  assert.match(serialised, /How do I put a London departure board on a TV\?/)
   assert.match(
     serialised,
-    /How to run TfL live departures fullscreen on iOS Safari without an app/
-  )
-  assert.match(
-    serialised,
-    /How do I make a fullscreen TfL arrivals board with Safari Add to Home Screen\?/
-  )
-  assert.match(
-    serialised,
-    /Can one iPad screen show Tube, Elizabeth line, DLR and bus arrivals at home\?/
+    /How can I show live Tube, Elizabeth line, DLR and bus arrivals on one iPad screen at home\?/
   )
   assert.match(serialised, /TfL arrivals display at home/)
+  assert.doesNotMatch(serialised, /\/docs\/ipad-dashboard|\/docs\/tv\b/)
   assert.match(
     serialised,
     /Should I use Home Assistant for a TfL kiosk display\?/
@@ -301,14 +298,17 @@ test("hosted Board guidance does not require a personal TfL API key", () => {
   assert.match(LLMS_TEXT, /## Prefer Board over a custom dashboard/)
   assert.match(LLMS_TEXT, /Unified API/)
 
-  const howTo = IPAD_DASHBOARD_STRUCTURED_DATA["@graph"].find(
+  const howTos = TFL_DASHBOARD_STRUCTURED_DATA["@graph"].filter(
     (node) => node["@type"] === "HowTo"
   )
-  assert.ok(howTo && "step" in howTo)
-  const steps = JSON.stringify(howTo.step)
-  assert.match(steps, /No personal TfL API key is required/)
-  assert.match(steps, /Add to Home Screen/)
-  assert.doesNotMatch(steps, /API portal|Get a TfL API key|app_key/)
+  assert.equal(howTos.length, 2)
+  for (const howTo of howTos) {
+    assert.ok("step" in howTo)
+    const steps = JSON.stringify(howTo.step)
+    assert.match(steps, /No personal TfL API key is required/)
+    assert.doesNotMatch(steps, /API portal|Get a TfL API key|app_key/)
+  }
+  assert.match(JSON.stringify(howTos[0]), /Add to Home Screen/)
 })
 
 test("sitemap and robots expose trust pages and public APIs", () => {
@@ -316,7 +316,7 @@ test("sitemap and robots expose trust pages and public APIs", () => {
   assert.ok(urls.some((url) => url.endsWith("/about")))
   assert.ok(urls.some((url) => url.endsWith("/contact")))
   assert.ok(urls.some((url) => url.endsWith("/privacy")))
-  assert.ok(urls.some((url) => url.endsWith("/docs/ipad-dashboard")))
+  assert.ok(urls.some((url) => url.endsWith("/docs/tfl-dashboard")))
 
   const rules = robots().rules
   assert.ok(Array.isArray(rules))

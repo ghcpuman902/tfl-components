@@ -26,6 +26,8 @@ const AI_USER_AGENTS = [
   "GPTBot",
   "ChatGPT-User",
   "OAI-SearchBot",
+  // ChatGPT ads landing-page checks; same access as OAI-SearchBot.
+  "OAI-AdsBot",
   "ClaudeBot",
   "anthropic-ai",
   "Google-Extended",

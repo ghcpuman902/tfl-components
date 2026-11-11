@@ -88,13 +88,13 @@ export default function ComparePage() {
       <section className="space-y-2">
         <h2 className="text-lg font-semibold text-foreground">Set one up</h2>
         <p>
-          For an old iPad, see the{" "}
-          <Link href="/docs/ipad-dashboard" className={LINK_CLASS}>
-            iPad wall display
-          </Link>{" "}
-          guide. For a television or monitor, see{" "}
-          <Link href="/docs/tv" className={LINK_CLASS}>
-            Board on a TV
+          For an old iPad, see{" "}
+          <Link href="/docs/tfl-dashboard#ipad" className={LINK_CLASS}>
+            Set it up on an iPad
+          </Link>
+          . For a television or monitor, see{" "}
+          <Link href="/docs/tfl-dashboard#tv" className={LINK_CLASS}>
+            Set it up on a TV or monitor
           </Link>
           . Spotted something out of date?{" "}
           <Link href="/contact" className={LINK_CLASS}>

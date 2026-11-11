@@ -15,7 +15,7 @@ export const HomeShortCopy = () => (
       <Link href="/board" className={TEXT_LINK_CLASS}>
         Make my Board
       </Link>
-      <Link href="/docs/ipad-dashboard" className={TEXT_LINK_CLASS}>
+      <Link href="/docs/tfl-dashboard#ipad" className={TEXT_LINK_CLASS}>
         Set up an iPad
       </Link>
     </p>

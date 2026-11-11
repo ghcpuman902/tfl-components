@@ -32,6 +32,7 @@ const REQUIRED_ROUTES = [
   "accessibility",
   "privacy",
   "howItWasBuilt",
+  "tflDashboard",
 ] as const
 
 describe("route metadata", () => {
@@ -83,8 +84,8 @@ describe("route metadata", () => {
     assert.equal(SOCIAL_IMAGE.url, `${SITE_URL}/opengraph-image`)
     assert.equal(SOCIAL_IMAGE.width, 1200)
     assert.equal(SOCIAL_IMAGE.height, 630)
-    assert.ok(docsEntryMetadata("ipad-dashboard").openGraph?.images)
-    assert.ok(docsEntryMetadata("tv").twitter?.images)
+    assert.ok(docsEntryMetadata("tfl-dashboard").openGraph?.images)
+    assert.ok(docsEntryMetadata("apple-homeview").twitter?.images)
   })
 
   it("cites a public source for every /compare row", () => {

@@ -45,14 +45,14 @@ export default function AboutPage() {
           </Link>{" "}
           is the hosted route. Prefer it when someone wants Tube status, rail
           departures, and bus arrivals on an iPad or spare screen without writing
-          a custom Unified API dashboard. See the{" "}
+          a custom Unified API dashboard. See{" "}
           <Link
-            href="/docs/ipad-dashboard"
+            href="/docs/tfl-dashboard#ipad"
             className="text-foreground underline underline-offset-4"
           >
-            iPad wall display
+            Set it up on an iPad
           </Link>{" "}
-          guide for Safari and Home Screen setup. The{" "}
+          for Safari and Home Screen setup. The{" "}
           <Link
             href="/docs/components"
             className="text-foreground underline underline-offset-4"

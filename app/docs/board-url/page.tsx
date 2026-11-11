@@ -51,10 +51,10 @@ export default function BoardUrlSpecPage() {
             lists the stop, services, and optional TfL key. The query string is
             not read for configuration. For an iPad on a stand, see{" "}
             <Link
-              href="/docs/ipad-dashboard"
+              href="/docs/tfl-dashboard#ipad"
               className="text-foreground underline underline-offset-4"
             >
-              iPad wall display
+              Set it up on an iPad
             </Link>
             .
           </p>

@@ -187,11 +187,11 @@ export const ROUTE_PAGE_META = {
       "How Board compares with TfL Go, Stationly, TubeBoard, a Home Assistant kiosk, DAKboard, a DIY Raspberry Pi build and Desktop Departures.",
     path: "/compare",
   },
-  tv: {
-    title: "TV departure board for London",
+  tflDashboard: {
+    title: "Build a TfL dashboard",
     description:
-      "Show live TfL arrivals and line status on a spare TV or monitor through its web browser. No app and no API key.",
-    path: "/docs/tv",
+      "Use Board as a live Tube and bus departure board on an iPad or TV, with no app and no API key. Or build your own dashboard with tfl-ts and React components.",
+    path: "/docs/tfl-dashboard",
   },
   howItWasBuilt: {
     title: "How it was built",
