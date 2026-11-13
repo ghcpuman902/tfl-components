@@ -155,6 +155,7 @@ export const trainRoutes = (lineId: string): TrainRoute[] => {
                 fromStopId: stations[i - 1],
                 toStopId: stations[i],
                 canonical: graph.canonical,
+                straightFallback: true,
               }) * 1000
             : 1000
         metres.push(metres[i - 1]! + Math.max(50, m))
@@ -184,6 +185,14 @@ export const routeDistanceIndex = (
   while (i < route.metres.length - 1 && route.metres[i]! < distance) i++
   return i
 }
+
+export type RouteChooser = (input: {
+  lineId: string
+  rows: RealtimePrediction[]
+  evidence?: LocationEvidence
+  previous?: TrainRoute
+  receivedAt: number
+}) => { route: TrainRoute; evidence?: LocationEvidence } | undefined
 
 const chooseRoute = (
   lineId: string,
@@ -336,6 +345,8 @@ export const placeTrainMotion = (
     fromStopId,
     toStopId: nextStopId,
     canonical: hopGraphForRailLine(route.lineId).canonical,
+    fromStop: coords.get(fromStopId),
+    straightFallback: true,
   })
   return {
     vehicleId: "",
@@ -361,6 +372,8 @@ export class RailTrainTracker {
     (lineId) => hopGraphForRailLine(lineId).canonical,
     predictionArrivalTime
   )
+  /** `chooser` replaces the route scoring; it also returns the evidence as it applies to that route. */
+  constructor(private readonly chooser?: RouteChooser) {}
   private hopSeconds(route: TrainRoute, i: number): number {
     const key = `${route.lineId}:${route.stations[i - 1]}>${route.stations[i]}`
     const learned = this.runTimes.get(key) ?? []
@@ -396,9 +409,22 @@ export class RailTrainTracker {
         ) ?? rows[0]!
       const lineId = newest.lineId!
       const sourceAt = predictionSourceTime(newest, receivedAt)
-      const evidence = parseTrainLocation(lineId, newest.currentLocation ?? "")
+      let evidence = parseTrainLocation(lineId, newest.currentLocation ?? "")
       const previous = this.tracks.get(key)
-      const route = chooseRoute(lineId, rows, evidence, previous?.motion.route)
+      let route: TrainRoute | undefined
+      if (this.chooser) {
+        const chosen = this.chooser({
+          lineId,
+          rows,
+          evidence,
+          previous: previous?.motion.route,
+          receivedAt,
+        })
+        route = chosen?.route
+        evidence = chosen?.evidence
+      } else {
+        route = chooseRoute(lineId, rows, evidence, previous?.motion.route)
+      }
       if (!route || route.stations.length < 2 || receivedAt - sourceAt > 180000)
         continue
       const signature = `${sourceAt}:${newest.currentLocation}:${rows

@@ -92,7 +92,17 @@ export const railStationsById = (): Map<string, StationCoord> => {
       if (memberId) map.set(memberId, coord)
     }
   }
+  for (const [arrivalsId, featureId] of Object.entries(STATION_ID_ALIASES)) {
+    const coord = map.get(featureId)
+    if (coord && !map.has(arrivalsId)) map.set(arrivalsId, coord)
+  }
   return map
+}
+
+/** Ids the Arrivals and Route/Sequence APIs use that the stations file spells differently. */
+const STATION_ID_ALIASES: Readonly<Record<string, string>> = {
+  // Centrale tram stop
+  "940GZZCRCEN": "940GZZCRCTR",
 }
 
 const OVERGROUND_LINE_IDS = new Set([

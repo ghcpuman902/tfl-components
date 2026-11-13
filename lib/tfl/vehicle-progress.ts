@@ -328,6 +328,8 @@ export const positionBehindStop = ({
   fromStopId,
   toStopId,
   canonical,
+  fromStop,
+  straightFallback,
 }: {
   nextStop: StationCoord
   followingStop?: StationCoord
@@ -337,6 +339,9 @@ export const positionBehindStop = ({
   fromStopId?: string
   toStopId?: string
   canonical?: (id: string) => string
+  /** With `straightFallback`, a hop without its own polyline is the straight segment from this stop. */
+  fromStop?: StationCoord
+  straightFallback?: boolean
 }): RoutePoint => {
   const nextPos: Position = [nextStop.lon, nextStop.lat]
   const followingPos: Position | undefined = followingStop
@@ -352,6 +357,18 @@ export const positionBehindStop = ({
   const preferred = lineId ? rows.filter((row) => row.lineId === lineId) : rows
   const pool = preferred.length > 0 ? preferred : rows
   const hop = pickHopPolyline(pool, fromStopId, toStopId, canonical)
+  if (!hop && straightFallback && fromStop) {
+    // Walking back along a whole-line polyline can land kilometres away on another branch.
+    const start: Position = [fromStop.lon, fromStop.lat]
+    const km = segmentLengthKm(start, nextPos)
+    const t = km > 0 ? 1 - Math.min(1, Math.max(0, remainingKm) / km) : 1
+    const at = lerpPosition(start, nextPos, t)
+    return {
+      lon: at[0] ?? nextStop.lon,
+      lat: at[1] ?? nextStop.lat,
+      bearingDeg: bearingDeg(start, nextPos),
+    }
+  }
   const line =
     hop?.line ??
     pickPolyline(
@@ -404,6 +421,7 @@ export const hopLengthKm = ({
   fromStopId,
   toStopId,
   canonical,
+  straightFallback,
 }: {
   from: StationCoord
   to: StationCoord
@@ -412,6 +430,8 @@ export const hopLengthKm = ({
   fromStopId?: string
   toStopId?: string
   canonical?: (id: string) => string
+  /** A hop without its own polyline is as long as the straight segment, not a slice of the whole line. */
+  straightFallback?: boolean
 }): number => {
   const rows = asRoutePolylines(polylines).filter(
     (row) => row.line.coordinates.length >= 2
@@ -425,6 +445,7 @@ export const hopLengthKm = ({
   }
   const start: Position = [from.lon, from.lat]
   const end: Position = [to.lon, to.lat]
+  if (straightFallback) return segmentLengthKm(start, end)
   const line = pickPolyline(
     pool.map((row) => row.line),
     start,
