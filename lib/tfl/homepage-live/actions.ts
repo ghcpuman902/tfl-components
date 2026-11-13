@@ -1,6 +1,7 @@
 "use server"
 
-import { getBusArrivals, searchBusStops } from "@/lib/tfl/actions"
+import { headers } from "next/headers"
+import { searchBusStops } from "@/lib/tfl/actions"
 import { getCachedBusRouteGeometry } from "@/lib/tfl/bus-route-geometry"
 import { isBoardableBusStopId, mapStopPoint } from "@/lib/tfl/bus-stop-shape"
 import { getTflClient } from "@/lib/tfl/client"
@@ -13,6 +14,18 @@ import {
   replayBusArrivalsRound,
   replaySearchData,
 } from "@/lib/tfl/homepage-live/fixture"
+import { admitVisitorStop } from "@/lib/tfl/homepage-live/bus-quota"
+import {
+  boardOutcome,
+  BUS_BUSY,
+  unavailableOutcome,
+  type BusBoardRow,
+} from "@/lib/tfl/homepage-live/bus-stop-arrivals"
+import {
+  getCachedBusStop,
+  getQuotaStore,
+  visitorKeyFrom,
+} from "@/lib/tfl/homepage-live/bus-stop-cache"
 import { toBusHit, type BusHit } from "@/lib/tfl/homepage-live/search"
 import { getCachedNetworkRound } from "@/lib/tfl/homepage-live/network-arrivals"
 import {
@@ -21,6 +34,8 @@ import {
   replayRoundsFor,
   type ReplayFixtureName,
 } from "@/lib/tfl/homepage-live/replay-params"
+
+export type { BusBoardRow }
 
 export type NetworkRoundResult =
   | { ok: true; rounds: CompactRound[] }
@@ -231,19 +246,16 @@ export async function getBusStopOverlayAction(
   }
 }
 
-export type BusBoardRow = {
-  route: string
-  destination: string
-  towards?: string
-  etaSec: number
-  vehicleId?: string
-}
-
 export type BusStopBoardResult =
-  | { ok: true; rows: BusBoardRow[] }
-  | { ok: false; error: string }
+  | { ok: true; rows: BusBoardRow[]; updatedSecAgo?: number; stale?: boolean }
+  | { ok: false; error: string; kind?: "busy" | "failed" }
 
-/** Arrivals for one bus stop: the recording under `?replay=`, otherwise the site-key allowlist. */
+/**
+ * Arrivals for any bus stop: the recording under `?replay=`, otherwise the
+ * shared per-stop cache on the site key. Each visitor may open 20 new stops a
+ * minute; past that, or when the site's TfL budget is spent, the last rows are
+ * served with how old they are.
+ */
 export async function getBusStopBoardAction(
   stopId: string,
   replay?: { fixture: string; round: number }
@@ -268,18 +280,21 @@ export async function getBusStopBoardAction(
         .sort((a, b) => a.etaSec - b.etaSec),
     }
   }
-  const result = await getBusArrivals(stopId)
-  if (!result.ok) return { ok: false, error: result.error }
-  return {
-    ok: true,
-    rows: result.arrivals
-      .map((row) => ({
-        route: row.lineName ?? "",
-        destination: row.destinationName ?? "",
-        towards: row.towards,
-        etaSec: row.timeToStation ?? 0,
-        vehicleId: row.vehicleId,
-      }))
-      .sort((a, b) => a.etaSec - b.etaSec),
+  const id = stopId.trim()
+  if (!isBoardableBusStopId(id)) return { ok: false, error: "That is not a bus stop." }
+  try {
+    const requestHeaders = await headers()
+    const visitor = visitorKeyFrom(
+      requestHeaders.get("x-forwarded-for"),
+      requestHeaders.get("user-agent")
+    )
+    const store = await getQuotaStore()
+    if (!(await admitVisitorStop(store, visitor, id, Date.now())))
+      return { ok: false, kind: "busy", error: BUS_BUSY }
+    const outcome = boardOutcome(await getCachedBusStop(id), Date.now())
+    return { ...outcome, rows: [...outcome.rows].sort((a, b) => a.etaSec - b.etaSec) }
+  } catch (error) {
+    return unavailableOutcome(error)
   }
 }
+

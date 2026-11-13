@@ -42,6 +42,10 @@ type Loadable<T> =
   | { status: "error"; message: string }
 
 const FETCH_TIMEOUT_MS = 8_000
+const BUS_POLL_MS = 20_000
+const BUS_ARRIVALS_FAILED = "Bus arrivals are unavailable right now."
+
+type BusRowsValue = { rows: BusBoardRow[]; updatedSecAgo?: number }
 
 const raceTimeout = <T,>(promise: Promise<T>): Promise<T> =>
   new Promise((resolve, reject) => {
@@ -81,11 +85,11 @@ export const HomeProduct = ({
 
   // Results are tagged with the stop they belong to, so a previous stop's rows never sit under a new title.
   const [overlayFor, setOverlayFor] = useState<{ id: string; state: Loadable<BusStopOverlay> } | null>(null)
-  const [rowsFor, setRowsFor] = useState<{ id: string; state: Loadable<BusBoardRow[]> } | null>(null)
+  const [rowsFor, setRowsFor] = useState<{ id: string; state: Loadable<BusRowsValue> } | null>(null)
   const busId = selection.kind === "bus" ? selection.id : undefined
   const overlay: Loadable<BusStopOverlay> =
     overlayFor && overlayFor.id === busId ? overlayFor.state : { status: "loading" }
-  const busRows: Loadable<BusBoardRow[]> =
+  const busRows: Loadable<BusRowsValue> =
     rowsFor && rowsFor.id === busId ? rowsFor.state : { status: "loading" }
 
   useEffect(() => {
@@ -108,25 +112,53 @@ export const HomeProduct = ({
             state: { status: "error", message: "That stop could not be loaded right now." },
           })
       })
-    raceTimeout(getBusStopBoardAction(busId, replayArg))
-      .then((result) => {
-        if (!alive) return
-        setRowsFor({
-          id: busId,
-          state: result.ok
-            ? { status: "ok", value: result.rows }
-            : { status: "error", message: result.error },
-        })
-      })
-      .catch(() => {
-        if (alive)
-          setRowsFor({
-            id: busId,
-            state: { status: "error", message: "Bus arrivals are unavailable right now." },
-          })
-      })
     return () => {
       alive = false
+    }
+    // The replay request is stable for the page's life.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busId])
+
+  // Bus times follow the shared 20 s cache; a failed refresh keeps the rows already shown.
+  useEffect(() => {
+    if (!busId) return
+    let alive = true
+    const load = () =>
+      raceTimeout(getBusStopBoardAction(busId, replayArg))
+        .then((result) => {
+          if (!alive) return
+          if (result.ok) {
+            setRowsFor({
+              id: busId,
+              state: {
+                status: "ok",
+                value: {
+                  rows: result.rows,
+                  updatedSecAgo: result.stale ? result.updatedSecAgo : undefined,
+                },
+              },
+            })
+            return
+          }
+          setRowsFor((held) =>
+            held?.id === busId && held.state.status === "ok"
+              ? held
+              : { id: busId, state: { status: "error", message: result.error } }
+          )
+        })
+        .catch(() => {
+          if (!alive) return
+          setRowsFor((held) =>
+            held?.id === busId && held.state.status === "ok"
+              ? held
+              : { id: busId, state: { status: "error", message: BUS_ARRIVALS_FAILED } }
+          )
+        })
+    void load()
+    const timer = replay ? undefined : setInterval(load, BUS_POLL_MS)
+    return () => {
+      alive = false
+      clearInterval(timer)
     }
     // The replay request is stable for the page's life.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -221,7 +253,8 @@ export const HomeProduct = ({
               stopLetter={busHit?.stopLetter ?? selection.stopLetter}
               towards={busHit?.towards ?? selection.towards}
               routes={busHit?.routes ?? selection.routes}
-              rows={busRows.status === "ok" ? busRows.value : []}
+              rows={busRows.status === "ok" ? busRows.value.rows : []}
+              updatedSecAgo={busRows.status === "ok" ? busRows.value.updatedSecAgo : undefined}
               status={busRows.status}
               error={busRows.status === "error" ? busRows.message : undefined}
             />
@@ -240,7 +273,7 @@ export const HomeProduct = ({
               onSelectTrain={setSelectedKey}
               still={Boolean(replay)}
               subject={selection.kind}
-              busesDue={busRows.status === "ok" ? busesDueWithin(busRows.value) : undefined}
+              busesDue={busRows.status === "ok" ? busesDueWithin(busRows.value.rows) : undefined}
               caption={
                 selection.kind === "bus"
                   ? overlay.status === "error"

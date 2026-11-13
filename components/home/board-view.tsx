@@ -197,6 +197,8 @@ export type BusBoardViewProps = {
   rows: readonly BusBoardRow[]
   status: "loading" | "ok" | "error"
   error?: string
+  /** Set only when the rows are the last good ones, served while TfL could not be asked. */
+  updatedSecAgo?: number
 }
 
 export const BusBoardView = ({
@@ -207,6 +209,7 @@ export const BusBoardView = ({
   rows,
   status,
   error,
+  updatedSecAgo,
 }: BusBoardViewProps) => (
   <section aria-label={`${title} bus arrivals`} className="min-w-0">
     <div className="flex items-center gap-3">
@@ -242,6 +245,11 @@ export const BusBoardView = ({
         <p className="text-base text-balance text-muted-foreground">No buses are due at this stop.</p>
       ) : (
         <ul>
+          {updatedSecAgo != null ? (
+            <li role="status" className="min-h-8 px-1 pb-1 text-sm text-muted-foreground">
+              Updated {updatedSecAgo < 90 ? `${updatedSecAgo} s` : `${Math.round(updatedSecAgo / 60)} min`} ago.
+            </li>
+          ) : null}
           {rows.slice(0, 10).map((row, index) => (
             <li
               key={`${row.route}-${row.vehicleId ?? index}`}
