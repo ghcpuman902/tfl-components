@@ -6,6 +6,7 @@ import type {
   BoardEntry,
   BoardSection,
 } from "@/lib/tfl/homepage-live/station-board"
+import { formatUpdatedAgo } from "@/lib/tfl/homepage-live/data-age"
 import { getLineNameTiers } from "@/lib/tfl/line-names"
 import { cn } from "@/lib/utils"
 
@@ -93,6 +94,8 @@ export type StationBoardViewProps = {
   sections: readonly BoardSection[]
   status: "loading" | "ok" | "error"
   error?: string
+  /** The poll is older than 90 s: the times stay, dimmed, and the line under the search says how old. */
+  stale?: boolean
   activeKey: string | null
   selectedKey: string | null
   onActive: (key: string | null) => void
@@ -120,6 +123,7 @@ export const StationBoardView = ({
   sections,
   status,
   error,
+  stale = false,
   activeKey,
   selectedKey,
   onActive,
@@ -143,7 +147,7 @@ export const StationBoardView = ({
           {error}
         </p>
       ) : null}
-      <div className="pt-4">
+      <div className={cn("pt-4", stale && "opacity-60")} data-stale={stale || undefined}>
         {status === "loading" ? (
           <BoardSkeleton />
         ) : sections.length === 0 ? (
@@ -241,13 +245,14 @@ export const BusBoardView = ({
         <p role="status" className="text-sm text-balance text-muted-foreground">
           {error ?? "Bus arrivals are unavailable for this stop right now."}
         </p>
-      ) : rows.length === 0 ? (
+      ) : rows.length === 0 && updatedSecAgo == null ? (
         <p className="text-base text-balance text-muted-foreground">No buses are due at this stop.</p>
       ) : (
-        <ul>
+        <ul className={cn(updatedSecAgo != null && "text-muted-foreground")}>
           {updatedSecAgo != null ? (
             <li role="status" className="min-h-8 px-1 pb-1 text-sm text-muted-foreground">
-              Updated {updatedSecAgo < 90 ? `${updatedSecAgo} s` : `${Math.round(updatedSecAgo / 60)} min`} ago.
+              {formatUpdatedAgo(updatedSecAgo)}
+              {rows.length === 0 ? " Refreshing." : ""}
             </li>
           ) : null}
           {rows.slice(0, 10).map((row, index) => (

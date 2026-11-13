@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import type { CompactRound } from "@/lib/tfl/homepage-live/compact"
+import { elapsedSec } from "@/lib/tfl/homepage-live/data-age"
 import type { LiveFrame } from "@/lib/tfl/homepage-live/replay-frame"
 import type { ReplayRequest } from "@/lib/tfl/homepage-live/replay-params"
 import {
@@ -15,14 +16,29 @@ export const LIVE_POLL_MS = 30_000
 /** A request that has not answered by now is abandoned, and the next poll tries again. */
 export const LIVE_TIMEOUT_MS = 8_000
 
-export type HomeLive = {
+type HomeLiveState = {
   frame?: LiveFrame
   status: "loading" | "ok" | "error"
   /** One sentence for the person looking, set when the latest poll failed. */
   error?: string
-  /** Epoch ms when the shown frame arrived. */
-  updatedAt?: number
+  /** Age of the frame (its TfL read to the server answering) and the client-clock instant it arrived. */
+  ageAtApplySec?: number
+  appliedAt?: number
 }
+
+export type HomeLive = Omit<HomeLiveState, "ageAtApplySec" | "appliedAt"> & {
+  /**
+   * Seconds since the shown frame was read from TfL, ticking between polls and
+   * through a failed refresh. Never the time the client applied it. Undefined
+   * for a recorded frame (it stands still) and before the first frame.
+   */
+  ageSec?: number
+  /** Client clock, repainted every `LIVE_TICK_MS`; 0 until the first tick and for a recorded frame. */
+  now: number
+}
+
+/** How often the ages and countdowns repaint. */
+export const LIVE_TICK_MS = 5_000
 
 const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
   new Promise((resolve, reject) => {
@@ -48,9 +64,17 @@ const DOWN = "Live trains are unavailable right now. The map will retry."
  * rounds up to the chosen frame, once, no network.
  */
 export const useHomeLive = (replay?: ReplayRequest): HomeLive => {
-  const [state, setState] = useState<HomeLive>({ status: "loading" })
+  const [state, setState] = useState<HomeLiveState>({ status: "loading" })
+  const [now, setNow] = useState(0)
   const fixture = replay?.fixture
   const round = replay?.round
+  const recorded = fixture !== undefined && round !== undefined
+
+  useEffect(() => {
+    if (recorded) return
+    const timer = setInterval(() => setNow(Date.now()), LIVE_TICK_MS)
+    return () => clearInterval(timer)
+  }, [recorded])
 
   useEffect(() => {
     let cancelled = false
@@ -64,7 +88,7 @@ export const useHomeLive = (replay?: ReplayRequest): HomeLive => {
 
       const apply = (rounds: readonly CompactRound[]) => {
         const frame = computeFrame(rounds)
-        setState({ frame, status: "ok", updatedAt: Date.now() })
+        setState({ frame, status: "ok" })
       }
 
       if (fixture !== undefined && round !== undefined) {
@@ -101,7 +125,9 @@ export const useHomeLive = (replay?: ReplayRequest): HomeLive => {
           setState({
             frame: { receivedAt: received.at, rows, snapshot },
             status: "ok",
-            updatedAt: Date.now(),
+            // Age by the server's own clocks (TfL read to answer), so the client clock cannot skew it.
+            ageAtApplySec: Math.max(0, (result.servedAt - received.at) / 1000),
+            appliedAt: Date.now(),
           })
         } else {
           setState((prev) => ({ ...prev, status: "error", error: result.error }))
@@ -118,5 +144,10 @@ export const useHomeLive = (replay?: ReplayRequest): HomeLive => {
     }
   }, [fixture, round])
 
-  return state
+  const { ageAtApplySec, appliedAt, ...shown } = state
+  const ageSec =
+    ageAtApplySec != null && appliedAt != null
+      ? Math.round(ageAtApplySec + elapsedSec(appliedAt, now))
+      : undefined
+  return { ...shown, ageSec, now }
 }

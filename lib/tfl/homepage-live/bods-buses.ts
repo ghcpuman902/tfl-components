@@ -3,6 +3,7 @@ import {
   matchBodsLine,
   type BodsVehicleActivity,
 } from "@/lib/tfl/bods-siri-vm"
+import { STALE_AFTER_SEC } from "@/lib/tfl/homepage-live/data-age"
 
 /** A bus with a GPS fix, as the homepage map draws it. */
 export type MapBus = {
@@ -18,7 +19,7 @@ export type MapBus = {
   stale: boolean
 }
 
-export const BUS_FIX_STALE_MS = 90_000
+export const BUS_FIX_STALE_MS = STALE_AFTER_SEC * 1000
 export const BUS_MAP_RADIUS_M = 2_000
 export const MAX_MAP_BUSES = 150
 

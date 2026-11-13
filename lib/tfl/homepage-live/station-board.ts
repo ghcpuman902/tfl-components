@@ -52,18 +52,22 @@ const sectionId = (lineId: string) => (SUBSURFACE.has(lineId) ? "subsurface" : l
 /**
  * The Board for one station, from the same poll the map draws. Each entry
  * carries the train's key so a row and its train can find each other.
+ * `receivedAt` is the TfL read; `ageSec` is how long ago that was, so the
+ * countdowns keep running between polls (0 for a recorded frame).
  */
 export const buildStationBoard = ({
   rows,
   trains,
   stopIds,
   receivedAt,
+  ageSec = 0,
   lineOrder = [],
 }: {
   rows: readonly RealtimePrediction[]
   trains: readonly LiveTrain[]
   stopIds: readonly string[]
   receivedAt: number
+  ageSec?: number
   lineOrder?: readonly string[]
 }): BoardSection[] => {
   const here = new Set(stopIds.map(stationHubCanonical))
@@ -73,7 +77,9 @@ export const buildStationBoard = ({
   const ordered = rows
     .filter((row) => row.lineId && row.naptanId && here.has(stationHubCanonical(row.naptanId)))
     .map((row) => ({ row, eta: Date.parse(row.expectedArrival ?? "") }))
-    .filter(({ eta }) => Number.isFinite(eta) && (eta - receivedAt) / 1000 >= -LEFT_AFTER_S)
+    .filter(
+      ({ eta }) => Number.isFinite(eta) && (eta - receivedAt) / 1000 - ageSec >= -LEFT_AFTER_S
+    )
     .sort((a, b) => a.eta - b.eta)
   for (const { row, eta } of ordered) {
     const lineId = row.lineId!
@@ -89,7 +95,7 @@ export const buildStationBoard = ({
       key,
       lineId,
       destination: tidyDestination(row),
-      etaSec: Math.max(0, Math.round((eta - receivedAt) / 1000)),
+      etaSec: Math.max(0, Math.round((eta - receivedAt) / 1000 - ageSec)),
       link: train && train.status !== "hidden" ? train.status : "none",
     })
     columns.set(label, entries)

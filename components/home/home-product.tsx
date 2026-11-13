@@ -18,6 +18,12 @@ import {
   REPLAY_FIXTURES,
   type ReplayRequest,
 } from "@/lib/tfl/homepage-live/replay-params"
+import {
+  countDownRows,
+  elapsedSec,
+  isStale,
+  liveStatusLine,
+} from "@/lib/tfl/homepage-live/data-age"
 import { stationHitOf, type PlaceHit } from "@/lib/tfl/homepage-live/search"
 import {
   buildStationBoard,
@@ -48,7 +54,13 @@ const BUS_POLL_MS = 20_000
 const BUS_GPS_POLL_MS = 15_000
 const BUS_ARRIVALS_FAILED = "Bus arrivals are unavailable right now."
 
-type BusRowsValue = { rows: BusBoardRow[]; updatedSecAgo?: number }
+/** Rows as the server gave them: their age then (undefined for a recording), the server's own stale flag, and when they arrived on this clock. */
+type BusRowsValue = {
+  rows: BusBoardRow[]
+  ageAtApplySec?: number
+  stale: boolean
+  appliedAt: number
+}
 
 const raceTimeout = <T,>(promise: Promise<T>): Promise<T> =>
   new Promise((resolve, reject) => {
@@ -137,7 +149,9 @@ export const HomeProduct = ({
                 status: "ok",
                 value: {
                   rows: result.rows,
-                  updatedSecAgo: result.stale ? result.updatedSecAgo : undefined,
+                  ageAtApplySec: result.updatedSecAgo,
+                  stale: Boolean(result.stale),
+                  appliedAt: Date.now(),
                 },
               },
             })
@@ -198,8 +212,26 @@ export const HomeProduct = ({
   }, [busId, overlayRouteKey, stopLat, stopLon])
   const mapBuses = busesFor && busesFor.id === busId ? busesFor : undefined
 
+  // Countdowns run from the TfL read, not from when this page applied it, and keep running between polls.
+  const busRowsAge =
+    busRows.status === "ok" && busRows.value.ageAtApplySec != null
+      ? busRows.value.ageAtApplySec + elapsedSec(busRows.value.appliedAt, live.now)
+      : undefined
+  const busRowsShown =
+    busRows.status === "ok"
+      ? countDownRows(
+          busRows.value.rows,
+          busRows.value.ageAtApplySec != null ? elapsedSec(busRows.value.appliedAt, live.now) : 0
+        )
+      : []
+  const busStaleAge =
+    busRows.status === "ok" && busRowsAge != null && (busRows.value.stale || isStale(busRowsAge))
+      ? Math.round(busRowsAge)
+      : undefined
+
   const station = selection.kind === "station" ? selection : undefined
   const frame = live.frame
+  const ageSec = live.ageSec ?? 0
   const sections = useMemo(
     () =>
       frame && station
@@ -208,10 +240,11 @@ export const HomeProduct = ({
             trains: frame.snapshot.trains,
             stopIds: station.stopIds,
             receivedAt: frame.receivedAt,
+            ageSec,
             lineOrder: station.lines,
           })
         : [],
-    [frame, station]
+    [frame, station, ageSec]
   )
   const around = useMemo(
     () =>
@@ -259,9 +292,10 @@ export const HomeProduct = ({
       <p className="pt-2 text-sm text-balance text-muted-foreground" aria-live="polite">
         {replay
           ? `Recorded frame: ${REPLAY_FIXTURES[replay.fixture]}, ${replay.round * 30} s in.`
-          : live.status === "error" && live.error
-            ? live.error
-            : "Live from TfL, about a minute behind."}
+          : liveStatusLine({
+              error: live.status === "error" ? live.error : undefined,
+              ageSec: live.ageSec,
+            })}
       </p>
       <div
         className={cn(
@@ -276,6 +310,7 @@ export const HomeProduct = ({
               sections={sections}
               status={live.status === "loading" ? "loading" : frame ? "ok" : "error"}
               error={live.error}
+              stale={isStale(live.ageSec)}
               activeKey={activeKey}
               selectedKey={selectedKey}
               onActive={setActiveKey}
@@ -287,8 +322,8 @@ export const HomeProduct = ({
               stopLetter={busHit?.stopLetter ?? selection.stopLetter}
               towards={busHit?.towards ?? selection.towards}
               routes={busHit?.routes ?? selection.routes}
-              rows={busRows.status === "ok" ? busRows.value.rows : []}
-              updatedSecAgo={busRows.status === "ok" ? busRows.value.updatedSecAgo : undefined}
+              rows={busRowsShown}
+              updatedSecAgo={busStaleAge}
               status={busRows.status}
               error={busRows.status === "error" ? busRows.message : undefined}
             />
@@ -308,7 +343,7 @@ export const HomeProduct = ({
               onSelectTrain={setSelectedKey}
               still={Boolean(replay)}
               subject={selection.kind}
-              busesDue={busRows.status === "ok" ? busesDueWithin(busRows.value.rows) : undefined}
+              busesDue={busRows.status === "ok" ? busesDueWithin(busRowsShown) : undefined}
               caption={
                 selection.kind === "bus"
                   ? overlay.status === "error"

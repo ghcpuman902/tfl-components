@@ -42,7 +42,8 @@ import {
 export type { BusBoardRow, MapBus }
 
 export type NetworkRoundResult =
-  | { ok: true; rounds: CompactRound[] }
+  /** `servedAt` is the server clock now; with `round.at` (the TfL read) it gives the data's age with no client clock involved. */
+  | { ok: true; rounds: CompactRound[]; servedAt: number }
   | { ok: false; error: string; rateLimited: boolean }
 
 /** The live network poll, shared and cached on the server. */
@@ -55,7 +56,7 @@ export async function getNetworkRoundAction(): Promise<NetworkRoundResult> {
         rateLimited: true,
         error: "TfL is busy right now. The map will retry.",
       }
-    return { ok: true, rounds: [state.round] }
+    return { ok: true, rounds: [state.round], servedAt: Date.now() }
   } catch {
     return {
       ok: false,
@@ -80,7 +81,7 @@ export async function getReplayRoundsAction(
     const recorded = replayArrivalsRound(index)
     return compactRound(recorded.rows, recorded.receivedAt)
   })
-  return { ok: true, rounds }
+  return { ok: true, rounds, servedAt: rounds[rounds.length - 1]?.at ?? 0 }
 }
 
 const replayOk = (replay?: { fixture: string; round: number }) =>

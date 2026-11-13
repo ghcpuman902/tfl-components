@@ -109,4 +109,30 @@ describe("King's Cross Board at 300 s of the recording", () => {
     })
     assert.deepEqual(rebuilt, board)
   })
+
+  it("counts every ETA down by the age of the poll and drops rows that have left", () => {
+    const entriesOf = (sections: typeof board) =>
+      new Map(sections.flatMap((s) => s.columns.flatMap((c) => c.entries)).map((e) => [e.key, e.etaSec]))
+    const at = (ageSec: number) =>
+      buildStationBoard({
+        rows: frame.rows,
+        trains: frame.snapshot.trains,
+        stopIds: KX,
+        receivedAt: frame.receivedAt,
+        ageSec,
+        lineOrder: [],
+      })
+    const now = entriesOf(at(0))
+    const later = entriesOf(at(60))
+    let counted = 0
+    for (const [key, eta] of later) {
+      const before = now.get(key)
+      if (before == null) continue
+      assert.equal(eta, Math.max(0, before - 60), key)
+      counted += 1
+    }
+    assert.ok(counted > 5, `only ${counted} rows could be compared`)
+    const gone = [...now.keys()].filter((key) => !later.has(key))
+    assert.ok(gone.length > 0, "rows 60 s past their ETA at the start have left by now")
+  })
 })

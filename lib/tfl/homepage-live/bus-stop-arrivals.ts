@@ -7,6 +7,7 @@ import {
   rowsKey,
   type QuotaStore,
 } from "@/lib/tfl/homepage-live/bus-quota"
+import { isStale } from "@/lib/tfl/homepage-live/data-age"
 
 export type BusBoardRow = {
   route: string
@@ -100,9 +101,6 @@ export type BusStopBoardOk = {
 export type BusStopBoardFailed = { ok: false; kind: "busy" | "failed"; error: string }
 export type BusStopBoardOutcome = BusStopBoardOk | BusStopBoardFailed
 
-/** Rows older than this are shown as stale ("Updated Ns ago") even from a fresh cache entry. */
-export const STALE_AFTER_SEC = 90
-
 /** What the visitor sees for a snapshot: the rows, and how old they are. */
 export const boardOutcome = (snapshot: BusStopSnapshot, now: number): BusStopBoardOk => {
   const ageSec = Math.max(0, Math.round((now - snapshot.fetchedAt) / 1000))
@@ -111,7 +109,8 @@ export const boardOutcome = (snapshot: BusStopSnapshot, now: number): BusStopBoa
     // Counted down from the read, so a row served 40 s late is not 40 s too generous.
     rows: snapshot.rows.map((row) => ({ ...row, etaSec: Math.max(0, row.etaSec - ageSec) })),
     updatedSecAgo: ageSec,
-    stale: snapshot.state === "stale" || ageSec > STALE_AFTER_SEC,
+    // Older than 90 s is stale even from a fresh cache entry ("Updated Ns ago").
+    stale: snapshot.state === "stale" || isStale(ageSec),
   }
 }
 
