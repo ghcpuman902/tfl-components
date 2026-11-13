@@ -7,6 +7,8 @@
 import { readdirSync, readFileSync, writeFileSync, mkdirSync } from "node:fs"
 import path from "node:path"
 import { brotliCompressSync, constants } from "node:zlib"
+import { parseTflLineStrings } from "../lib/tfl/bus-route-geometry.ts"
+import { mapStopPoint } from "../lib/tfl/bus-stop-shape.ts"
 
 const ROOT = path.resolve(import.meta.dirname, "..")
 const REPLAYS = path.join(ROOT, "_agent/replays")
@@ -96,6 +98,55 @@ const fixture = {
 }
 
 mkdirSync(OUT, { recursive: true })
+
+/** Recorded TfL place searches and the bus stops within 400 m of King's Cross, for search tests. */
+const staticBody = (kind: string, name: string) => {
+  const dir = path.join(REPLAYS, "static", kind)
+  const file = readdirSync(dir).find((f) => f.endsWith(`-${name}.json`))
+  if (!file) throw new Error(`missing ${kind}/${name}`)
+  return JSON.parse(
+    (JSON.parse(readFileSync(path.join(dir, file), "utf8")) as { body: string }).body
+  ) as Record<string, unknown>
+}
+const searches: Record<string, unknown[]> = {}
+for (const name of ["kings-cross", "tow", "angel", "euston-road"]) {
+  const matches = (staticBody("search", name).matches ?? []) as Record<string, unknown>[]
+  searches[name] = matches.map((m) => ({
+    id: m.id,
+    name: m.name,
+    modes: m.modes,
+    towards: m.towards,
+    lat: m.lat,
+    lon: m.lon,
+  }))
+}
+const radius = (staticBody("stoppoint-radius", "kx-bus-400m").stopPoints ?? []) as Parameters<
+  typeof mapStopPoint
+>[0][]
+const busRoutes: Record<string, number[][][]> = {}
+const routeDir = path.join(REPLAYS, "static", "bus-route-sequence")
+for (const file of readdirSync(routeDir)) {
+  const match = file.match(/-(\w+)-(inbound|outbound)\.json$/)
+  if (!match) continue
+  const body = JSON.parse(
+    (JSON.parse(readFileSync(path.join(routeDir, file), "utf8")) as { body: string }).body
+  ) as { lineStrings?: string[] }
+  busRoutes[`${match[1]}-${match[2]}`] = parseTflLineStrings(body.lineStrings ?? []).map(
+    (line) =>
+      line.coordinates.map(([lon, lat]) => [
+        Math.round(lon! * 1e5) / 1e5,
+        Math.round(lat! * 1e5) / 1e5,
+      ])
+  )
+}
+writeFileSync(
+  path.join(OUT, "search.json"),
+  JSON.stringify({
+    searches,
+    kxBusStops: radius.map((stop) => mapStopPoint(stop)).filter(Boolean),
+    busRoutes,
+  })
+)
 const json = JSON.stringify(fixture)
 const packed = brotliCompressSync(Buffer.from(json), {
   params: {

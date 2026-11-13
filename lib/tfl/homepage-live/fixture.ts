@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import { brotliDecompressSync } from "node:zlib"
 import type { RealtimePrediction } from "tfl-ts"
+import type { NearbyBusStop } from "@/lib/tfl/bus-stop-shape"
 
 type TrimmedRow = Record<string, unknown> & { read?: string }
 
@@ -51,6 +52,28 @@ const toRound = (round: Round, index: number): ReplayRound => {
     rows.push(...predictions)
   }
   return { index, receivedAt: round.receivedAt, rows, byLine }
+}
+
+export type ReplaySearchData = {
+  searches: Record<
+    string,
+    { id: string; name: string; modes?: string[]; towards?: string; lat?: number; lon?: number }[]
+  >
+  /** Bus stops within 400 m of King's Cross, with letters and routes. */
+  kxBusStops: NearbyBusStop[]
+  /** `<route>-<direction>` to line strings as [lon, lat] arrays. */
+  busRoutes: Record<string, number[][][]>
+}
+
+let cachedSearch: ReplaySearchData | undefined
+export const replaySearchData = (): ReplaySearchData => {
+  cachedSearch ??= JSON.parse(
+    readFileSync(
+      path.join(process.cwd(), "lib/tfl/fixtures/homepage-live/search.json"),
+      "utf8"
+    )
+  ) as ReplaySearchData
+  return cachedSearch
 }
 
 export const replayRoundCount = () => load().arrivals.length

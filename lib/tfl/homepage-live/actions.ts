@@ -1,6 +1,9 @@
 "use server"
 
-import { getBusArrivals } from "@/lib/tfl/actions"
+import { getBusArrivals, searchBusStops } from "@/lib/tfl/actions"
+import { getCachedBusRouteGeometry } from "@/lib/tfl/bus-route-geometry"
+import { isBoardableBusStopId, mapStopPoint } from "@/lib/tfl/bus-stop-shape"
+import { getTflClient } from "@/lib/tfl/client"
 import {
   compactRound,
   type CompactRound,
@@ -8,7 +11,9 @@ import {
 import {
   replayArrivalsRound,
   replayBusArrivalsRound,
+  replaySearchData,
 } from "@/lib/tfl/homepage-live/fixture"
+import { toBusHit, type BusHit } from "@/lib/tfl/homepage-live/search"
 import { getCachedNetworkRound } from "@/lib/tfl/homepage-live/network-arrivals"
 import {
   REPLAY_FIXTURES,
@@ -57,6 +62,125 @@ export async function getReplayRoundsAction(
     return compactRound(recorded.rows, recorded.receivedAt)
   })
   return { ok: true, rounds }
+}
+
+const replayOk = (replay?: { fixture: string; round: number }) =>
+  !replay || replay.fixture in REPLAY_FIXTURES
+
+export type BusSearchResult =
+  | { ok: true; hits: BusHit[] }
+  | { ok: false; error: string }
+
+const foldQuery = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+
+/** Bus stops matching a typed query: TfL's search live, the recorded searches under `?replay=`. */
+export async function searchBusStopsAction(
+  query: string,
+  replay?: { fixture: string; round: number }
+): Promise<BusSearchResult> {
+  if (!replayOk(replay)) return { ok: false, error: "Unknown replay." }
+  if (replay) {
+    const q = foldQuery(query)
+    const data = replaySearchData()
+    const key = Object.keys(data.searches).find((k) => {
+      const name = k.replaceAll("-", " ")
+      return q.length >= 2 && (name.startsWith(q) || q.startsWith(name))
+    })
+    return {
+      ok: true,
+      hits: (key ? data.searches[key]! : [])
+        .filter((m) => m.modes?.includes("bus") && !m.modes.includes("tube"))
+        .map((m) => ({
+          kind: "bus" as const,
+          id: m.id,
+          name: m.name,
+          towards: m.towards,
+          routes: [],
+          lat: m.lat,
+          lon: m.lon,
+        })),
+    }
+  }
+  const result = await searchBusStops(query)
+  if (!result.ok) return { ok: false, error: result.error }
+  return { ok: true, hits: result.stops.map(toBusHit) }
+}
+
+export type BusStopOverlay = {
+  stop: BusHit
+  /** One entry per route that serves the stop; `lines` are [lon, lat] strings, both directions. */
+  routes: { routeId: string; lines: number[][][] }[]
+}
+
+export type BusStopOverlayResult =
+  | { ok: true; overlay: BusStopOverlay }
+  | { ok: false; error: string }
+
+const MAX_OVERLAY_ROUTES = 8
+
+/** The painted letter, routes and route geometry of one bus stop (a hit from search only has its name). */
+export async function getBusStopOverlayAction(
+  stopId: string,
+  replay?: { fixture: string; round: number }
+): Promise<BusStopOverlayResult> {
+  const id = stopId.trim()
+  if (!id || !isBoardableBusStopId(id))
+    return { ok: false, error: "That is not a bus stop." }
+  if (!replayOk(replay)) return { ok: false, error: "Unknown replay." }
+  try {
+    if (replay) {
+      const data = replaySearchData()
+      const found = data.kxBusStops.find((s) => s.id === id)
+      if (!found) return { ok: false, error: "This stop is not in the recording." }
+      return {
+        ok: true,
+        overlay: {
+          stop: toBusHit(found),
+          routes: (found.lines ?? [])
+            .map((routeId) => ({
+              routeId,
+              lines: ["outbound", "inbound"].flatMap(
+                (dir) => data.busRoutes[`${routeId.toLowerCase()}-${dir}`] ?? []
+              ),
+            }))
+            .filter((r) => r.lines.length > 0),
+        },
+      }
+    }
+    const details = await getTflClient().stopPoint.get([id])
+    const detail = Array.isArray(details) ? details[0] : details
+    const stop = detail ? mapStopPoint(detail) : null
+    if (!stop) return { ok: false, error: "That stop could not be found." }
+    const routeIds = [...new Set(stop.lines ?? [])]
+      .filter((r) => !/^n\d/i.test(r))
+      .slice(0, MAX_OVERLAY_ROUTES)
+    const routes = await Promise.all(
+      routeIds.map(async (routeId) => {
+        const both = await Promise.all(
+          (["outbound", "inbound"] as const).map((dir) =>
+            getCachedBusRouteGeometry(routeId.toLowerCase(), dir).catch(() => null)
+          )
+        )
+        return {
+          routeId,
+          lines: both.flatMap((g) =>
+            (g?.segments ?? []).map((s) => s.line.coordinates as number[][])
+          ),
+        }
+      })
+    )
+    return {
+      ok: true,
+      overlay: { stop: toBusHit(stop), routes: routes.filter((r) => r.lines.length > 0) },
+    }
+  } catch {
+    return { ok: false, error: "That stop could not be loaded right now." }
+  }
 }
 
 export type BusBoardRow = {
