@@ -139,3 +139,18 @@ export const trainsAroundStation = ({
     (train) => train.status !== "hidden" && near.has(train.key)
   )
 }
+
+/** Buses due at one stop within `windowSec`; a bus listed twice for the stop counts once. */
+export const busesDueWithin = (
+  rows: readonly { route: string; vehicleId?: string; etaSec: number }[],
+  windowSec = 600
+): number => {
+  const seen = new Set<string>()
+  let anonymous = 0
+  for (const row of rows) {
+    if (row.etaSec > windowSec || row.etaSec < 0) continue
+    if (row.vehicleId) seen.add(`${row.route}|${row.vehicleId}`)
+    else anonymous += 1
+  }
+  return seen.size + anonymous
+}

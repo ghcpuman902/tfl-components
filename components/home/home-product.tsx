@@ -19,6 +19,7 @@ import {
 import { stationHitOf, type PlaceHit } from "@/lib/tfl/homepage-live/search"
 import {
   buildStationBoard,
+  busesDueWithin,
   trainsAroundStation,
 } from "@/lib/tfl/homepage-live/station-board"
 import { cn } from "@/lib/utils"
@@ -238,6 +239,8 @@ export const HomeProduct = ({
               selectedKey={selectedKey}
               onSelectTrain={setSelectedKey}
               still={Boolean(replay)}
+              subject={selection.kind}
+              busesDue={busRows.status === "ok" ? busesDueWithin(busRows.value) : undefined}
               caption={
                 selection.kind === "bus"
                   ? overlay.status === "error"

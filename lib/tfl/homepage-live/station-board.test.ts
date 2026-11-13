@@ -7,8 +7,23 @@ import { replayRoundsFor } from "@/lib/tfl/homepage-live/replay-params"
 import {
   BOARD_ROWS_PER_COLUMN,
   buildStationBoard,
+  busesDueWithin,
   trainsAroundStation,
 } from "@/lib/tfl/homepage-live/station-board"
+
+describe("buses due at a stop", () => {
+  it("counts distinct buses inside the window, not trains", () => {
+    const rows = [
+      { route: "73", vehicleId: "A", etaSec: 60 },
+      { route: "73", vehicleId: "A", etaSec: 65 },
+      { route: "30", vehicleId: "B", etaSec: 599 },
+      { route: "205", vehicleId: "C", etaSec: 601 },
+      { route: "214", etaSec: 120 },
+    ]
+    assert.equal(busesDueWithin(rows), 3)
+    assert.equal(busesDueWithin([]), 0)
+  })
+})
 
 const KX = ["940GZZLUKSX"]
 const frameAt = (round: number) =>

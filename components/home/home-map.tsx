@@ -27,6 +27,9 @@ export type HomeMapProps = {
   /** A recorded frame is still: nothing coasts between polls. */
   still: boolean
   caption?: string
+  /** A bus stop is the subject: show buses due, never a train count. `undefined` hides the chip until known. */
+  busesDue?: number
+  subject: "station" | "bus"
   className?: string
 }
 
@@ -34,6 +37,7 @@ const OVERLAY = {
   pins: "home-pins",
   busRoutes: "home-bus-routes",
   halo: "home-train-halo",
+  betaTags: "home-beta-tags",
 } as const
 
 const ALL_TRANSIT_CORES = [
@@ -102,6 +106,8 @@ export const HomeMap = ({
   onSelectTrain,
   still,
   caption,
+  busesDue,
+  subject,
   className,
 }: HomeMapProps) => {
   const reduce = usePrefersReducedMotion()
@@ -116,7 +122,13 @@ export const HomeMap = ({
     () =>
       trains.flatMap((train) =>
         train.position
-          ? [{ ...train.position, color: railVehicleColor(train.lineId) }]
+          ? [
+              {
+                ...train.position,
+                color: railVehicleColor(train.lineId),
+                ...(train.status === "beta" ? { beta: true } : {}),
+              },
+            ]
           : []
       ),
     [trains]
@@ -171,6 +183,34 @@ export const HomeMap = ({
         },
         "rail-vehicles-outline"
       )
+    }
+    // Every estimated train carries its own tag, not only the count in the corner.
+    if (!map.getLayer(OVERLAY.betaTags)) {
+      map.addLayer({
+        id: OVERLAY.betaTags,
+        type: "symbol",
+        source: "rail-vehicles",
+        filter: [
+          "all",
+          ["==", ["get", "part"], "body"],
+          ["==", ["get", "beta"], true],
+        ],
+        layout: {
+          "symbol-placement": "line-center",
+          "text-field": "Beta",
+          "text-font": ["Noto Sans Regular"],
+          "text-size": 11,
+          "text-offset": [0, -1.4],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+          "text-rotation-alignment": "viewport",
+        },
+        paint: {
+          "text-color": "#374151",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 2,
+        },
+      })
     }
     if (!map.getSource(OVERLAY.pins)) {
       map.addSource(OVERLAY.pins, {
@@ -304,10 +344,16 @@ export const HomeMap = ({
         onMapReady={handleReady}
       />
       <div className="pointer-events-none absolute top-3 left-3 max-w-[calc(100%-4rem)] space-y-1 text-sm">
-        <p className="inline-block bg-background/90 px-3 py-1.5 text-foreground">
-          {trains.length} {trains.length === 1 ? "train" : "trains"} within 10 min
-          {betaCount ? ` · ${betaCount} Beta` : ""}
-        </p>
+        {subject === "station" ? (
+          <p className="inline-block bg-background/90 px-3 py-1.5 text-foreground">
+            {trains.length} {trains.length === 1 ? "train" : "trains"} within 10 min
+            {betaCount ? ` · ${betaCount} Beta` : ""}
+          </p>
+        ) : busesDue != null ? (
+          <p className="inline-block bg-background/90 px-3 py-1.5 text-foreground">
+            {busesDue} {busesDue === 1 ? "bus" : "buses"} due within 10 min
+          </p>
+        ) : null}
         {betaCount ? (
           <p className="block w-fit bg-background/90 px-3 py-1 text-xs text-muted-foreground">
             Beta trains are estimated from arrival times.

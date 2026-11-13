@@ -1,6 +1,15 @@
 "use client"
 
-import { useEffect, useId, useMemo, useReducer, useRef, useState } from "react"
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type RefObject,
+} from "react"
 import { LocateFixed, Search } from "lucide-react"
 import type { ExplorerTubeRailPoint } from "@/lib/tfl/explorer/common"
 import {
@@ -66,6 +75,38 @@ const rowLabel = (row: StopRow) =>
   row.kind === "station"
     ? `${row.name}, station`
     : `${row.name}${row.letter ? `, stop ${row.letter}` : ""}${row.towards ? `, towards ${row.towards}` : ""}, bus stop`
+
+const MIN_FIT_PX = 18
+let measureContext: CanvasRenderingContext2D | null | undefined
+
+/**
+ * The big search text keeps its full name by shrinking to fit the box, never
+ * below 18 px (16 px or more keeps iOS from zooming). The input has a fixed
+ * height, so changing the size moves nothing.
+ */
+const useFitFontSize = (ref: RefObject<HTMLInputElement | null>, text: string) => {
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const fit = () => {
+      measureContext ??= document.createElement("canvas").getContext("2d")
+      if (!measureContext) return
+      const max = matchMedia("(min-width: 640px)").matches ? 48 : 30
+      const style = getComputedStyle(el)
+      measureContext.font = `${style.fontWeight} ${max}px ${style.fontFamily}`
+      const width = measureContext.measureText(text || el.placeholder).width
+      const room = el.clientWidth
+      el.style.fontSize =
+        room > 0 && width > room
+          ? `${Math.max(MIN_FIT_PX, Math.floor((max * room) / width))}px`
+          : ""
+    }
+    fit()
+    const observer = new ResizeObserver(fit)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [ref, text])
+}
 
 const sleep = (ms: number, signal: AbortSignal) =>
   new Promise<void>((resolve) => {
@@ -182,6 +223,8 @@ export const PlaceSearch = ({
     return () => clearTimeout(timer)
   }, [])
   useEffect(() => () => clearTimeout(blurTimer.current), [])
+
+  useFitFontSize(inputRef, editing ? state.query : valueLabel)
 
   const rows = state.rows
   const open = editing && state.query.trim().length > 0
@@ -312,7 +355,7 @@ export const PlaceSearch = ({
               }
             }
           }}
-          className="min-w-0 flex-1 bg-transparent text-3xl leading-tight text-foreground outline-none placeholder:text-muted-foreground sm:text-5xl"
+          className="h-12 min-w-0 flex-1 bg-transparent text-3xl leading-none text-foreground outline-none placeholder:text-muted-foreground sm:h-16 sm:text-5xl"
         />
         <button
           type="button"
@@ -334,7 +377,7 @@ export const PlaceSearch = ({
           id={listId}
           role="listbox"
           aria-label="Matching stations and bus stops"
-          className="absolute inset-x-0 top-full z-30 max-h-[60svh] overflow-y-auto bg-background"
+          className="absolute inset-x-0 top-full z-30 max-h-[60svh] overflow-y-auto overscroll-contain bg-background shadow-none"
         >
           {rows.map((row, index) => (
             <li
