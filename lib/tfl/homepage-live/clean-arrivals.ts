@@ -1,4 +1,5 @@
 import type { RealtimePrediction } from "tfl-ts"
+import { isForeignStation } from "@/lib/tfl/homepage-live/foreign-stations"
 import {
   predictionArrivalTime,
   predictionSourceTime,
@@ -25,6 +26,8 @@ export type CleanStats = {
   dedupedStops: number
   nextWorkingRows: number
   staleReads: number
+  /** Rows at stations the shared-track line does not call at (see `foreign-stations.ts`). */
+  foreignRows: number
 }
 
 const canonicalStation = (lineId: string, id: string | undefined) =>
@@ -47,6 +50,7 @@ export const cleanArrivalRows = (
     dedupedStops: 0,
     nextWorkingRows: 0,
     staleReads: 0,
+    foreignRows: 0,
   }
   const groups = new Map<string, RealtimePrediction[]>()
   const output: RealtimePrediction[] = []
@@ -80,6 +84,11 @@ export const cleanArrivalRows = (
         at: predictionArrivalTime(row, receivedAt),
         station: canonicalStation(lineId, row.naptanId),
       }))
+      .filter((entry) => {
+        if (!isForeignStation(lineId, entry.station)) return true
+        stats.foreignRows++
+        return false
+      })
       .sort((a, b) => a.at - b.at)
     const seen = new Map<string, number>()
     const kept: typeof ordered = []

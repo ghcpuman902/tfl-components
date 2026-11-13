@@ -52,6 +52,7 @@ export const PLACED_LINES: ReadonlySet<string> = new Set([
   "central",
   "district",
   "jubilee",
+  "metropolitan",
   "northern",
   "piccadilly",
   "victoria",

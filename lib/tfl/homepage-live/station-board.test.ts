@@ -76,11 +76,12 @@ describe("King's Cross Board at 300 s of the recording", () => {
     assert.ok(linked > 5, `only ${linked} rows link to a map train`)
   })
 
-  it("draws Victoria, Piccadilly and Northern trains as placed and shared-track trains as Beta", () => {
+  it("draws Victoria, Piccadilly, Northern and Metropolitan trains as placed and Circle and H&C trains as Beta", () => {
     const entries = board.flatMap((s) => s.columns.flatMap((c) => c.entries))
-    for (const e of entries.filter((x) => ["circle", "hammersmith-city", "metropolitan"].includes(x.lineId)))
+    for (const e of entries.filter((x) => ["circle", "hammersmith-city"].includes(x.lineId)))
       assert.notEqual(e.link, "placed")
     assert.ok(entries.some((e) => e.link === "placed"))
+    assert.ok(entries.some((e) => e.lineId === "metropolitan" && e.link === "placed"))
   })
 
   it("draws the trains within ten minutes, each also on the Board or hidden, and keeps both views on one key", () => {

@@ -5,10 +5,13 @@ import {
   isAnonymousVehicle,
   trainKey,
 } from "@/lib/tfl/homepage-live/clean-arrivals"
+import { bestRouteFit } from "@/lib/tfl/homepage-live/choose-route"
+import { isForeignStation } from "@/lib/tfl/homepage-live/foreign-stations"
 import { replayArrivalsRound } from "@/lib/tfl/homepage-live/fixture"
 import {
   predictionArrivalTime,
   predictionSourceTime,
+  trainRoutes,
 } from "@/lib/tfl/rail-train-tracker"
 import {
   hopGraphForRailLine,
@@ -68,5 +71,35 @@ describe("cleanArrivalRows on a recorded poll", () => {
       (r) => round.receivedAt - predictionSourceTime(r, round.receivedAt) > 180_000
     )
     assert.equal(old.length, 0)
+  })
+})
+
+describe("Jubilee platforms in the Metropolitan feed", () => {
+  const met = round.byLine.get("metropolitan")!
+  const WILLESDEN_GREEN = "940GZZLUWIG"
+  const NEASDEN = "940GZZLUNDN"
+
+  it("drops rows at stations the Metropolitan line does not call at, so train 434 is one train", () => {
+    const raw434 = met.filter((r) => r.vehicleId === "434")
+    assert.ok(raw434.some((r) => r.naptanId === WILLESDEN_GREEN), "the recording has the stray row")
+    const cleaned = cleanArrivalRows(raw434, round.receivedAt)
+    assert.ok(cleaned.rows.every((r) => r.naptanId !== WILLESDEN_GREEN))
+    assert.ok(cleaned.stats.foreignRows >= 1)
+    assert.ok(cleaned.rows.some((r) => r.naptanId === "940GZZLUALD"), "its real stops stay")
+    assert.equal(bestRouteFit("metropolitan", cleaned.rows)?.violations, 0)
+    assert.ok((bestRouteFit("metropolitan", raw434)?.violations ?? 0) > 0)
+  })
+
+  it("only judges the three shared-track lines", () => {
+    assert.equal(isForeignStation("metropolitan", stationHubCanonical(NEASDEN)), true)
+    assert.equal(isForeignStation("jubilee", stationHubCanonical(NEASDEN)), false)
+    assert.equal(isForeignStation("metropolitan", stationHubCanonical("940GZZLUKSX")), false)
+    for (const route of trainRoutes("metropolitan"))
+      for (const id of [route.stations[0]!, route.stations.at(-1)!])
+        assert.equal(
+          isForeignStation("metropolitan", stationHubCanonical(hopGraphForRailLine("metropolitan").canonical(id))),
+          false,
+          `${id} is a branch end of a Metropolitan route`
+        )
   })
 })
