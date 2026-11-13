@@ -10,7 +10,14 @@ export const REPLAY_LAST_ROUND = 20
 /** Rounds fed to the engine before the chosen one, so a replay frame is the same however it is reached. */
 export const REPLAY_WARMUP_ROUNDS = 4
 
-export type ReplayRequest = { fixture: ReplayFixtureName; round: number }
+export type ReplayRequest = {
+  fixture: ReplayFixtureName
+  round: number
+  /** Holds TfL's search answer back, so a screenshot can catch the index rows before the merge. */
+  searchDelayMs?: number
+}
+
+export const MAX_SEARCH_DELAY_MS = 10_000
 
 type Params = Record<string, string | string[] | undefined>
 
@@ -25,9 +32,13 @@ export const parseReplayParams = (params: Params): ReplayRequest | undefined => 
   const round = Number.isFinite(seconds)
     ? Math.round(seconds / REPLAY_ROUND_SECONDS)
     : 0
+  const delay = Number(first(params.searchDelay))
   return {
     fixture: name as ReplayFixtureName,
     round: Math.min(REPLAY_LAST_ROUND, Math.max(0, round)),
+    ...(Number.isFinite(delay) && delay > 0
+      ? { searchDelayMs: Math.min(MAX_SEARCH_DELAY_MS, Math.round(delay)) }
+      : {}),
   }
 }
 

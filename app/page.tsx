@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Suspense } from "react"
 import { HomeProduct } from "@/components/home/home-product"
 import { getExplorerTubeRailPoints } from "@/lib/tfl/explorer/points-tube-rail"
+import { buildHubStationIds } from "@/lib/tfl/homepage-live/hub-stations"
 import { parseReplayParams } from "@/lib/tfl/homepage-live/replay-params"
 import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 
@@ -17,9 +18,11 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
 const HomeFromParams = async ({ searchParams }: { searchParams: SearchParams }) => {
   const replay = parseReplayParams(await searchParams)
+  const stations = getExplorerTubeRailPoints()
   return (
     <HomeProduct
-      stations={getExplorerTubeRailPoints()}
+      stations={stations}
+      hubStationIds={buildHubStationIds(stations)}
       defaultStationId={DEFAULT_STATION_ID}
       replay={replay}
     />

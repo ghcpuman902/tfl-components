@@ -4,6 +4,7 @@ import { createTflMetadataFetcher } from "@/lib/tfl/observatory/fetch"
 import { runObservatoryPass } from "@/lib/tfl/observatory/observe"
 import { createRedisObservatoryRepository } from "@/lib/tfl/observatory/store"
 import { getRedis } from "@/lib/redis"
+import { refreshServedStopIndex } from "@/lib/tfl/stop-index-refresh"
 
 export const maxDuration = 300
 
@@ -27,10 +28,13 @@ export async function GET(request: Request) {
     notify: sendObservatoryAlerts,
   })
 
+  const stopIndex = await refreshServedStopIndex(redis)
+
   return Response.json({
     ok: true,
     ran: result.ran,
     skipped: result.skipped ?? null,
     notable: result.notableEvents.length,
+    stopIndex,
   })
 }

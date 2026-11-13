@@ -1,8 +1,7 @@
 import type { NearbyBusStop } from "@/lib/tfl/bus-stop-shape"
 import { isBusStopAreaId } from "@/lib/tfl/bus-stop-shape"
 import type { ExplorerTubeRailPoint } from "@/lib/tfl/explorer/common"
-import { normaliseRailPoint } from "@/lib/tfl/explorer-point-normalise"
-import { filterExplorerPoints } from "@/lib/tfl/explorer-point-search"
+import type { LiveStopHit, StopRow } from "@/lib/tfl/stop-index"
 
 export type StationHit = {
   kind: "station"
@@ -28,11 +27,66 @@ export type BusHit = {
 
 export type PlaceHit = StationHit | BusHit
 
-export const placeKey = (hit: PlaceHit) => `${hit.kind}:${hit.id}`
-
-export const STATION_RESULT_LIMIT = 6
 export const BUS_RESULT_LIMIT = 8
-export const MIN_BUS_QUERY = 2
+
+export const stationHitOf = (point: ExplorerTubeRailPoint): StationHit => ({
+  kind: "station",
+  id: point.id,
+  name: point.displayName,
+  lines: point.lines,
+  lat: point.lat,
+  lon: point.lon,
+  stopIds: point.arrivalsStopIds?.length ? point.arrivalsStopIds : [point.id],
+})
+
+/**
+ * A row of the shared stop index as something the page can select. Stations
+ * resolve through the explorer points, which know which sibling StopPoints
+ * carry the arrivals (the index row for King's Cross is the hub `HUBKGX`).
+ */
+export const placeHitOfRow = (
+  row: StopRow,
+  stations: readonly ExplorerTubeRailPoint[],
+  hubStationIds: Readonly<Record<string, string>> = {}
+): PlaceHit => {
+  if (row.kind === "bus")
+    return {
+      kind: "bus",
+      id: row.id,
+      name: row.name,
+      stopLetter: row.letter,
+      towards: row.towards,
+      routes: [...row.lines],
+      lat: row.lat,
+      lon: row.lon,
+    }
+  const point =
+    stations.find((p) => p.id === row.id) ??
+    stations.find((p) => p.id === hubStationIds[row.id]) ??
+    stations.find((p) => p.hubId === row.id)
+  if (point) return stationHitOf(point)
+  return {
+    kind: "station",
+    id: row.id,
+    name: row.name,
+    lines: [...row.lines],
+    lat: row.lat,
+    lon: row.lon,
+    stopIds: [row.id],
+  }
+}
+
+/** A bus hit from the TfL search action, in the shape the stop index merges. */
+export const liveHitOfBus = (hit: BusHit): LiveStopHit => ({
+  id: hit.id,
+  name: hit.name,
+  stopLetter: hit.stopLetter,
+  towards: hit.towards,
+  lat: hit.lat,
+  lon: hit.lon,
+  modes: ["bus"],
+  lines: hit.routes,
+})
 
 const fold = (text: string) =>
   text
@@ -42,34 +96,6 @@ const fold = (text: string) =>
     .replace(/[^a-z0-9 ]/g, "")
     .replace(/\s+/g, " ")
     .trim()
-
-/** Stations rank offline, instantly, with the explorer's ranking (name, id, line, mode). */
-export const searchStations = (
-  points: readonly ExplorerTubeRailPoint[],
-  query: string,
-  limit = STATION_RESULT_LIMIT
-): StationHit[] => {
-  const byId = new Map(points.map((point) => [point.id, point]))
-  return filterExplorerPoints(points.map(normaliseRailPoint), query)
-    .slice(0, limit)
-    .flatMap((hit) => {
-      const point = byId.get(hit.id)
-      if (!point) return []
-      return [
-        {
-          kind: "station" as const,
-          id: point.id,
-          name: point.displayName,
-          lines: point.lines,
-          lat: point.lat,
-          lon: point.lon,
-          stopIds: point.arrivalsStopIds?.length
-            ? point.arrivalsStopIds
-            : [point.id],
-        },
-      ]
-    })
-}
 
 export const toBusHit = (stop: NearbyBusStop): BusHit => ({
   kind: "bus",
@@ -132,87 +158,6 @@ export const rankBusHits = (
       return (a.stopLetter ?? "~").localeCompare(b.stopLetter ?? "~", "en-GB")
     })
     .slice(0, BUS_RESULT_LIMIT)
-}
-
-/** Stations first, then bus stops; neither list reorders under the other. */
-export const mergePlaces = (
-  stations: readonly StationHit[],
-  buses: readonly BusHit[]
-): PlaceHit[] => [...stations, ...buses]
-
-export type BusSearchStatus =
-  | "idle"
-  | "pending"
-  | "slow"
-  | "ok"
-  | "empty"
-  | "failed"
-
-export type SearchState = {
-  query: string
-  attempt: number
-  status: BusSearchStatus
-  hits: BusHit[]
-  message?: string
-}
-
-export const initialSearchState: SearchState = {
-  query: "",
-  attempt: 0,
-  status: "idle",
-  hits: [],
-}
-
-export type SearchAction =
-  | { type: "typed"; query: string }
-  | { type: "slow"; attempt: number }
-  | { type: "result"; attempt: number; hits: BusHit[] }
-  | { type: "failed"; attempt: number }
-  | { type: "timeout"; attempt: number }
-  | { type: "enriched"; attempt: number; details: Record<string, Partial<BusHit>> }
-
-export const BUS_SEARCH_FAILED = "Bus stop search is unavailable right now. Stations still work."
-export const BUS_SEARCH_TIMEOUT = "Bus stop search took too long. Stations still work."
-export const NO_PLACES = "No stations or bus stops match that."
-
-/**
- * Bus stops come from a server round trip. Each keystroke starts a new attempt;
- * results, failures and timeouts of an older attempt are ignored, and the
- * previous hits stay on screen until the new ones replace them, so rows do not jump.
- */
-export const searchReducer = (
-  state: SearchState,
-  action: SearchAction
-): SearchState => {
-  if (action.type === "typed") {
-    const query = action.query
-    const attempt = state.attempt + 1
-    if (fold(query).length < MIN_BUS_QUERY)
-      return { query, attempt, status: "idle", hits: [] }
-    return { ...state, query, attempt, status: "pending", message: undefined }
-  }
-  if (action.attempt !== state.attempt) return state
-  switch (action.type) {
-    case "slow":
-      return state.status === "pending" ? { ...state, status: "slow" } : state
-    case "result":
-      return {
-        ...state,
-        status: action.hits.length ? "ok" : "empty",
-        hits: rankBusHits(action.hits, state.query),
-      }
-    case "failed":
-      return { ...state, status: "failed", hits: [], message: BUS_SEARCH_FAILED }
-    case "timeout":
-      return state.status === "pending" || state.status === "slow"
-        ? { ...state, status: "failed", hits: [], message: BUS_SEARCH_TIMEOUT }
-        : state
-    case "enriched":
-      return {
-        ...state,
-        hits: state.hits.map((hit) => ({ ...hit, ...action.details[hit.id] })),
-      }
-  }
 }
 
 /** Combobox keyboard: arrows wrap, Home and End jump. */

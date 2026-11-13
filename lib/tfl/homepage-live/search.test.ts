@@ -4,17 +4,15 @@ import path from "node:path"
 import { describe, it } from "node:test"
 import type { NearbyBusStop } from "@/lib/tfl/bus-stop-shape"
 import { getExplorerTubeRailPoints } from "@/lib/tfl/explorer/points-tube-rail"
+import { buildHubStationIds } from "@/lib/tfl/homepage-live/hub-stations"
 import {
-  BUS_SEARCH_FAILED,
-  BUS_SEARCH_TIMEOUT,
-  initialSearchState,
   nextActiveIndex,
+  placeHitOfRow,
   rankBusHits,
-  searchReducer,
-  searchStations,
   toBusHit,
   type BusHit,
 } from "@/lib/tfl/homepage-live/search"
+import { loadStopSearch } from "@/lib/tfl/stop-index"
 
 type Recorded = {
   searches: Record<string, { id: string; name: string; towards?: string; lat?: number; lon?: number }[]>
@@ -34,23 +32,6 @@ const asBus = (m: Recorded["searches"][string][number]): BusHit => ({
   routes: [],
   lat: m.lat,
   lon: m.lon,
-})
-
-describe("station search", () => {
-  it("finds King's Cross St. Pancras for the ways people type it", () => {
-    for (const q of ["kings cross", "king's cross", "kings", "KINGS CROSS"])
-      assert.equal(searchStations(points, q)[0]?.id, "940GZZLUKSX", q)
-  })
-
-  it("puts Tower Hill and Tower Gateway first for 'tow', with their lines", () => {
-    const hits = searchStations(points, "tow")
-    assert.deepEqual(hits.slice(0, 2).map((h) => h.name).sort(), ["Tower Gateway", "Tower Hill"])
-    assert.ok(hits.find((h) => h.name === "Tower Hill")!.lines.includes("district"))
-  })
-
-  it("returns nothing for gibberish", () => {
-    assert.deepEqual(searchStations(points, "zzzzqq"), [])
-  })
 })
 
 describe("bus stop ranking", () => {
@@ -83,53 +64,6 @@ describe("bus stop ranking", () => {
   })
 })
 
-describe("search state", () => {
-  const typed = (q: string) => searchReducer(initialSearchState, { type: "typed", query: q })
-
-  it("keeps old bus stops visible while a new attempt is pending", () => {
-    let s = typed("king")
-    s = searchReducer(s, { type: "result", attempt: s.attempt, hits: recorded.searches["kings-cross"]!.map(asBus) })
-    const shown = s.hits.length
-    assert.ok(shown > 0)
-    s = searchReducer(s, { type: "typed", query: "kings" })
-    assert.equal(s.status, "pending")
-    assert.equal(s.hits.length, shown)
-  })
-
-  it("ignores a result that belongs to an older keystroke", () => {
-    let s = typed("to")
-    const old = s.attempt
-    s = searchReducer(s, { type: "typed", query: "tow" })
-    s = searchReducer(s, { type: "result", attempt: old, hits: recorded.searches["angel"]!.map(asBus) })
-    assert.equal(s.status, "pending")
-    assert.deepEqual(s.hits, [])
-  })
-
-  it("fails with one sentence and no stale stops, then recovers on the next keystroke", () => {
-    let s = typed("tow")
-    s = searchReducer(s, { type: "timeout", attempt: s.attempt })
-    assert.equal(s.status, "failed")
-    assert.equal(s.message, BUS_SEARCH_TIMEOUT)
-    s = searchReducer(typed("tower"), { type: "failed", attempt: 1 })
-    assert.equal(s.message, BUS_SEARCH_FAILED)
-    s = searchReducer(s, { type: "typed", query: "tower h" })
-    assert.equal(s.status, "pending")
-    assert.equal(s.message, undefined)
-  })
-
-  it("does not search for one character", () => {
-    assert.equal(typed("k").status, "idle")
-  })
-
-  it("a late timeout cannot undo a result", () => {
-    let s = typed("angel")
-    const attempt = s.attempt
-    s = searchReducer(s, { type: "result", attempt, hits: recorded.searches["angel"]!.map(asBus) })
-    s = searchReducer(s, { type: "timeout", attempt })
-    assert.equal(s.status, "ok")
-  })
-})
-
 describe("combobox keys", () => {
   it("wraps and jumps", () => {
     assert.equal(nextActiveIndex(-1, "ArrowDown", 3), 0)
@@ -138,5 +72,22 @@ describe("combobox keys", () => {
     assert.equal(nextActiveIndex(1, "End", 3), 2)
     assert.equal(nextActiveIndex(1, "Home", 3), 0)
     assert.equal(nextActiveIndex(0, "ArrowDown", 0), -1)
+  })
+})
+
+describe("index rows as selections", () => {
+  it("resolves the King's Cross hub row to the stops that carry its arrivals", async () => {
+    const kit = await loadStopSearch()
+    const row = kit.searchStops(kit.index, "kings cross")[0]!
+    const hit = placeHitOfRow(row, points, buildHubStationIds(points))
+    assert.equal(hit.kind, "station")
+    assert.ok(hit.kind === "station" && hit.stopIds.includes("940GZZLUKSX"))
+  })
+
+  it("keeps the painted letter and routes of a bus stop row", async () => {
+    const kit = await loadStopSearch()
+    const row = kit.index.byId("490000129E")!
+    const hit = placeHitOfRow(row, points)
+    assert.ok(hit.kind === "bus" && hit.stopLetter === "E" && hit.routes.includes("73"))
   })
 })

@@ -1,14 +1,6 @@
 "use client"
 
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-} from "react"
+import { useEffect, useId, useMemo, useReducer, useRef, useState } from "react"
 import { LocateFixed, Search } from "lucide-react"
 import type { ExplorerTubeRailPoint } from "@/lib/tfl/explorer/common"
 import {
@@ -16,25 +8,32 @@ import {
   searchBusStopsAction,
 } from "@/lib/tfl/homepage-live/actions"
 import {
-  initialSearchState,
-  mergePlaces,
-  nextActiveIndex,
+  appendLiveOnly,
+  combinedReducer,
+  createLiveSearch,
+  initialCombinedState,
   NO_PLACES,
-  placeKey,
+  type LiveSearch,
+} from "@/lib/tfl/homepage-live/combined-search"
+import {
+  liveHitOfBus,
+  nextActiveIndex,
+  placeHitOfRow,
   rankBusHits,
-  searchReducer,
-  searchStations,
-  type BusHit,
+  stationHitOf,
   type PlaceHit,
-  type StationHit,
 } from "@/lib/tfl/homepage-live/search"
 import { nearbyExplorerPoints } from "@/lib/tfl/explorer-point-search"
 import { normaliseRailPoint } from "@/lib/tfl/explorer-point-normalise"
+import {
+  adoptServedStopIndex,
+  loadStopSearch,
+  type StopRow,
+  type StopSearchKit,
+} from "@/lib/tfl/stop-index"
 import { cn } from "@/lib/utils"
 
-const DEBOUNCE_MS = 180
-const SLOW_MS = 120
-const WATCHDOG_MS = 8_000
+const INSTANT_LIMIT = 14
 
 type Replay = { fixture: string; round: number } | undefined
 
@@ -60,17 +59,33 @@ const StopRoundel = ({ letter }: { letter?: string }) => (
   </span>
 )
 
-const rowLabel = (hit: PlaceHit) =>
-  hit.kind === "station"
-    ? `${hit.name}, station`
-    : `${hit.name}${hit.stopLetter ? `, stop ${hit.stopLetter}` : ""}${hit.towards ? `, towards ${hit.towards}` : ""}, bus stop`
+const dayRoutes = (lines: readonly string[]) =>
+  lines.filter((line) => !/^n\d/i.test(line))
+
+const rowLabel = (row: StopRow) =>
+  row.kind === "station"
+    ? `${row.name}, station`
+    : `${row.name}${row.letter ? `, stop ${row.letter}` : ""}${row.towards ? `, towards ${row.towards}` : ""}, bus stop`
+
+const sleep = (ms: number, signal: AbortSignal) =>
+  new Promise<void>((resolve) => {
+    const timer = setTimeout(resolve, ms)
+    signal.addEventListener("abort", () => {
+      clearTimeout(timer)
+      resolve()
+    })
+  })
 
 export type PlaceSearchProps = {
+  /** Resolves a chosen station to the StopPoints that carry its arrivals; also feeds "Near me". */
   stations: readonly ExplorerTubeRailPoint[]
+  hubStationIds: Readonly<Record<string, string>>
   /** What the box shows when nothing is being typed. */
   valueLabel: string
   anchor?: { lat?: number; lon?: number }
   replay?: Replay
+  /** Replay only: holds TfL's answer back so the index rows can be seen before the merge. */
+  searchDelayMs?: number
   onSelect: (hit: PlaceHit) => void
   /** The highlighted result, so the map can preview it; null when nothing is highlighted. */
   onPreview: (hit: PlaceHit | null) => void
@@ -78,100 +93,125 @@ export type PlaceSearchProps = {
 
 export const PlaceSearch = ({
   stations,
+  hubStationIds,
   valueLabel,
   anchor,
   replay,
+  searchDelayMs,
   onSelect,
   onPreview,
 }: PlaceSearchProps) => {
-  const [state, dispatch] = useReducer(searchReducer, initialSearchState)
+  const [state, dispatch] = useReducer(combinedReducer, initialCombinedState)
   const [editing, setEditing] = useState(false)
-  const [active, setActive] = useState(-1)
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [indexReady, setIndexReady] = useState(false)
   const [locateNote, setLocateNote] = useState<string | undefined>()
   const inputRef = useRef<HTMLInputElement>(null)
   const listId = useId()
-  const optionId = (index: number) => `${listId}-${index}`
+  const optionId = (id: string) => `${listId}-${id}`
 
-  const stationHits = useMemo(
-    () => (editing ? searchStations(stations, state.query) : []),
-    [editing, stations, state.query]
-  )
-  const places = useMemo(
-    () =>
-      mergePlaces(
-        stationHits,
-        editing ? rankBusHits(state.hits, state.query, anchor) : []
-      ),
-    [stationHits, editing, state.hits, state.query, anchor]
-  )
-  const open = editing && state.query.trim().length > 0
-  const latest = useRef({ query: state.query, replay })
+  const kitRef = useRef<StopSearchKit | null>(null)
+  const searchRef = useRef<LiveSearch | null>(null)
   const blurTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const latest = useRef({ anchor, replay, searchDelayMs })
   useEffect(() => {
-    latest.current = { query: state.query, replay }
+    latest.current = { anchor, replay, searchDelayMs }
   })
+
+  useEffect(() => {
+    const search = createLiveSearch({
+      dispatch,
+      instantFor: (query) => {
+        const kit = kitRef.current
+        const near = latest.current.anchor
+        return kit && query.trim()
+          ? kit.searchStops(kit.index, query, {
+              limit: INSTANT_LIMIT,
+              near: near?.lat != null && near.lon != null ? { lat: near.lat, lon: near.lon } : undefined,
+            })
+          : []
+      },
+      merge: () => kitRef.current?.mergeLiveResults ?? appendLiveOnly,
+      fetchLive: async (query, signal) => {
+        const { replay: request, searchDelayMs: delay, anchor: near } = latest.current
+        if (request && delay) await sleep(delay, signal)
+        const result = await searchBusStopsAction(query, request)
+        if (!result.ok) throw new Error(result.error)
+        return rankBusHits(result.hits, query, near).map(liveHitOfBus)
+      },
+      enrich: async (ids) => {
+        const result = await enrichBusStopsAction(ids, latest.current.replay)
+        if (!result.ok) throw new Error(result.error)
+        return Object.fromEntries(
+          Object.entries(result.details).map(([id, d]) => [
+            id,
+            { letter: d.stopLetter, towards: d.towards, lines: d.routes },
+          ])
+        )
+      },
+    })
+    searchRef.current = search
+    return () => {
+      search.dispose()
+      searchRef.current = null
+    }
+  }, [])
+
+  // The index is a big static chunk: fetched when the browser is idle or the box is focused.
+  const ensureIndex = () => {
+    if (kitRef.current) return
+    loadStopSearch().then(
+      (kit) => {
+        kitRef.current = kit
+        setIndexReady(true)
+        searchRef.current?.indexReady()
+        void adoptServedStopIndex(kit).then(
+          (changed) => changed && searchRef.current?.indexReady()
+        )
+      },
+      () => undefined
+    )
+  }
+  useEffect(() => {
+    const start = () => ensureIndex()
+    if (typeof requestIdleCallback === "function") {
+      const handle = requestIdleCallback(start)
+      return () => cancelIdleCallback(handle)
+    }
+    const timer = setTimeout(start, 400)
+    return () => clearTimeout(timer)
+  }, [])
   useEffect(() => () => clearTimeout(blurTimer.current), [])
 
-  // One bus-stop search per keystroke attempt; anything older is abandoned.
-  useEffect(() => {
-    if (state.status !== "pending") return
-    const attempt = state.attempt
-    let live = true
-    const timers: ReturnType<typeof setTimeout>[] = []
-    timers.push(
-      setTimeout(async () => {
-        const { query, replay: replayRequest } = latest.current
-        timers.push(setTimeout(() => live && dispatch({ type: "slow", attempt }), SLOW_MS))
-        timers.push(setTimeout(() => live && dispatch({ type: "timeout", attempt }), WATCHDOG_MS))
-        try {
-          const result = await searchBusStopsAction(query, replayRequest)
-          if (!live) return
-          if (!result.ok) {
-            dispatch({ type: "failed", attempt })
-            return
-          }
-          dispatch({ type: "result", attempt, hits: result.hits })
-          const ids = result.hits.slice(0, 8).map((hit) => hit.id)
-          if (ids.length === 0) return
-          const enriched = await enrichBusStopsAction(ids, replayRequest)
-          if (live && enriched.ok)
-            dispatch({ type: "enriched", attempt, details: enriched.details as Record<string, Partial<BusHit>> })
-        } catch {
-          if (live) dispatch({ type: "failed", attempt })
-        }
-      }, DEBOUNCE_MS)
-    )
-    return () => {
-      live = false
-      timers.forEach(clearTimeout)
-    }
-    // Keyed on the attempt: status changes within an attempt must not restart it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.attempt])
-
-  const highlight = useCallback(
-    (index: number) => {
-      setActive(index)
-      onPreview(index >= 0 ? (places[index] ?? null) : null)
-    },
-    [onPreview, places]
+  const rows = state.rows
+  const open = editing && state.query.trim().length > 0
+  const active = useMemo(
+    () => (activeId ? rows.findIndex((row) => row.id === activeId) : -1),
+    [rows, activeId]
   )
 
-  const choose = (hit: PlaceHit) => {
-    clearTimeout(blurTimer.current)
-    setEditing(false)
-    setActive(-1)
-    dispatch({ type: "typed", query: "" })
-    onPreview(null)
-    onSelect(hit)
-    inputRef.current?.blur()
+  const hitOf = (row: StopRow | undefined) =>
+    row ? placeHitOfRow(row, stations, hubStationIds) : null
+
+  const highlight = (index: number) => {
+    const row = index >= 0 ? rows[index] : undefined
+    setActiveId(row?.id ?? null)
+    onPreview(hitOf(row))
   }
 
-  const close = () => {
+  const reset = () => {
     setEditing(false)
-    setActive(-1)
-    dispatch({ type: "typed", query: "" })
+    setActiveId(null)
+    searchRef.current?.type("")
     onPreview(null)
+  }
+
+  const choose = (row: StopRow) => {
+    clearTimeout(blurTimer.current)
+    const hit = hitOf(row)!
+    reset()
+    onSelect(hit)
+    inputRef.current?.blur()
   }
 
   const locate = () => {
@@ -193,19 +233,25 @@ export const PlaceSearch = ({
           setLocateNote("No station within 2 km of you.")
           return
         }
-        choose(searchStations(stations, point.displayName, 1)[0] ?? stationOf(point))
+        clearTimeout(blurTimer.current)
+        reset()
+        onSelect(stationHitOf(point))
+        inputRef.current?.blur()
       },
       () => setLocateNote("Location is off. Type a station instead."),
       { timeout: 8_000, maximumAge: 60_000 }
     )
   }
 
-  const empty =
-    open &&
-    places.length === 0 &&
-    state.status !== "pending" &&
-    state.status !== "slow" &&
-    state.status !== "failed"
+  const empty = open && rows.length === 0 && indexReady && (state.status === "ok" || state.status === "idle")
+  const footer =
+    state.status === "slow"
+      ? "Searching bus stops…"
+      : state.status === "failed"
+        ? state.message
+        : empty
+          ? NO_PLACES
+          : null
 
   return (
     <div className="relative">
@@ -219,7 +265,7 @@ export const PlaceSearch = ({
           aria-expanded={open}
           aria-controls={listId}
           aria-autocomplete="list"
-          aria-activedescendant={active >= 0 ? optionId(active) : undefined}
+          aria-activedescendant={active >= 0 ? optionId(rows[active]!.id) : undefined}
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
@@ -228,21 +274,22 @@ export const PlaceSearch = ({
           value={editing ? state.query : valueLabel}
           onFocus={(event) => {
             clearTimeout(blurTimer.current)
+            ensureIndex()
             setEditing(true)
             event.currentTarget.select()
           }}
           onChange={(event) => {
-            setActive(-1)
+            setActiveId(null)
             onPreview(null)
-            dispatch({ type: "typed", query: event.target.value })
+            searchRef.current?.type(event.target.value)
           }}
           onBlur={() => {
             // A tap on a row can blur first on touch browsers; give its click time to land.
-            blurTimer.current = setTimeout(close, 200)
+            blurTimer.current = setTimeout(reset, 200)
           }}
           onKeyDown={(event) => {
             if (event.key === "Escape") {
-              close()
+              reset()
               event.currentTarget.blur()
               return
             }
@@ -252,16 +299,16 @@ export const PlaceSearch = ({
               event.key === "Home" ||
               event.key === "End"
             ) {
-              if (!open || places.length === 0) return
+              if (!open || rows.length === 0) return
               event.preventDefault()
-              highlight(nextActiveIndex(active, event.key, places.length))
+              highlight(nextActiveIndex(active, event.key, rows.length))
               return
             }
             if (event.key === "Enter") {
-              const hit = places[active] ?? places[0]
-              if (hit) {
+              const row = rows[active] ?? rows[0]
+              if (row) {
                 event.preventDefault()
-                choose(hit)
+                choose(row)
               }
             }
           }}
@@ -289,62 +336,54 @@ export const PlaceSearch = ({
           aria-label="Matching stations and bus stops"
           className="absolute inset-x-0 top-full z-30 max-h-[60svh] overflow-y-auto bg-background"
         >
-          {places.map((hit, index) => (
+          {rows.map((row, index) => (
             <li
-              key={placeKey(hit)}
-              id={optionId(index)}
+              key={row.id}
+              id={optionId(row.id)}
               role="option"
               aria-selected={index === active}
-              aria-label={rowLabel(hit)}
+              aria-label={rowLabel(row)}
               onMouseDown={(event) => event.preventDefault()}
-              onClick={() => choose(hit)}
+              onClick={() => choose(row)}
               onMouseEnter={() => highlight(index)}
               className={cn(
                 "flex min-h-14 cursor-pointer items-center gap-3 border-b border-border/60 px-1 py-2",
                 index === active && "bg-muted"
               )}
             >
-              {hit.kind === "bus" ? <StopRoundel letter={hit.stopLetter} /> : null}
+              {row.kind === "bus" ? <StopRoundel letter={row.letter} /> : null}
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-lg">{hit.name}</span>
-                {hit.kind === "bus" && hit.towards ? (
+                <span className="block truncate text-lg">{row.name}</span>
+                {row.kind === "bus" && row.towards ? (
                   <span className="block truncate text-sm text-muted-foreground">
-                    towards {hit.towards}
+                    towards {row.towards}
                   </span>
                 ) : null}
               </span>
-              {hit.kind === "station" ? (
-                <LineDots lines={(hit as StationHit).lines} />
-              ) : (
-                <span className="flex max-w-[40%] flex-wrap justify-end gap-x-2 text-sm text-muted-foreground">
-                  {hit.routes.slice(0, 6).map((route) => (
-                    <span key={route}>{route}</span>
-                  ))}
-                </span>
-              )}
+              <span className="flex min-h-6 w-[40%] max-w-60 shrink-0 flex-wrap items-center justify-end gap-x-2">
+                {row.kind === "station" ? (
+                  <LineDots lines={row.lines} />
+                ) : (
+                  dayRoutes(row.lines)
+                    .slice(0, 6)
+                    .map((route) => (
+                      <span key={route} className="text-sm text-muted-foreground">
+                        {route}
+                      </span>
+                    ))
+                )}
+              </span>
             </li>
           ))}
-          <li className="min-h-11 px-1 py-2 text-sm text-balance text-muted-foreground" role="presentation" aria-live="polite">
-            {state.status === "slow"
-              ? "Searching bus stops…"
-              : state.status === "failed"
-                ? state.message
-                : empty
-                  ? NO_PLACES
-                  : null}
+          <li
+            className="min-h-11 px-1 py-2 text-sm text-balance text-muted-foreground"
+            role="presentation"
+            aria-live="polite"
+          >
+            {footer}
           </li>
         </ul>
       ) : null}
     </div>
   )
 }
-
-const stationOf = (point: ExplorerTubeRailPoint): StationHit => ({
-  kind: "station",
-  id: point.id,
-  name: point.displayName,
-  lines: point.lines,
-  lat: point.lat,
-  lon: point.lon,
-  stopIds: point.arrivalsStopIds?.length ? point.arrivalsStopIds : [point.id],
-})

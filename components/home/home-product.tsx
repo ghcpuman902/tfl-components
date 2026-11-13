@@ -16,7 +16,7 @@ import {
   REPLAY_FIXTURES,
   type ReplayRequest,
 } from "@/lib/tfl/homepage-live/replay-params"
-import type { PlaceHit, StationHit } from "@/lib/tfl/homepage-live/search"
+import { stationHitOf, type PlaceHit } from "@/lib/tfl/homepage-live/search"
 import {
   buildStationBoard,
   trainsAroundStation,
@@ -57,23 +57,19 @@ const raceTimeout = <T,>(promise: Promise<T>): Promise<T> =>
     )
   })
 
-export const stationHitOf = (point: ExplorerTubeRailPoint): StationHit => ({
-  kind: "station",
-  id: point.id,
-  name: point.displayName,
-  lines: point.lines,
-  lat: point.lat,
-  lon: point.lon,
-  stopIds: point.arrivalsStopIds?.length ? point.arrivalsStopIds : [point.id],
-})
-
 export type HomeProductProps = {
   stations: readonly ExplorerTubeRailPoint[]
+  hubStationIds: Readonly<Record<string, string>>
   defaultStationId: string
   replay?: ReplayRequest
 }
 
-export const HomeProduct = ({ stations, defaultStationId, replay }: HomeProductProps) => {
+export const HomeProduct = ({
+  stations,
+  hubStationIds,
+  defaultStationId,
+  replay,
+}: HomeProductProps) => {
   const fallback = stations.find((s) => s.id === defaultStationId) ?? stations[0]!
   const [selection, setSelection] = useState<PlaceHit>(() => stationHitOf(fallback))
   const [preview, setPreview] = useState<PlaceHit | null>(null)
@@ -185,9 +181,11 @@ export const HomeProduct = ({ stations, defaultStationId, replay }: HomeProductP
       <h1 className="sr-only">Live Tube, rail and bus arrivals for London</h1>
       <PlaceSearch
         stations={stations}
+        hubStationIds={hubStationIds}
         valueLabel={label}
         anchor={station ?? busHit}
         replay={replayArg}
+        searchDelayMs={replay?.searchDelayMs}
         onSelect={select}
         onPreview={setPreview}
       />
