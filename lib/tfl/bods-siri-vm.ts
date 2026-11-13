@@ -9,7 +9,7 @@ export const BODS_DATAFEED_URL =
   "https://data.bus-data.dft.gov.uk/api/v1/datafeed/"
 
 /** Drop GPS older than this — BODS keeps stale VehicleActivity rows. */
-export const BODS_STALE_MS = 180_000
+export const BODS_STALE_MS = 120_000
 
 const BBOX_PAD_DEG = 0.01
 

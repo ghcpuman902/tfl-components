@@ -92,7 +92,7 @@ const busCollection = (buses: readonly MapBus[] | undefined) => ({
   type: "FeatureCollection" as const,
   features: (buses ?? []).map((bus) => ({
     type: "Feature" as const,
-    properties: { route: bus.route, id: bus.id },
+    properties: { route: bus.route, id: bus.id, stale: bus.stale },
     geometry: { type: "Point" as const, coordinates: [bus.lon, bus.lat] },
   })),
 })
@@ -206,8 +206,10 @@ export const HomeMap = ({
         paint: {
           "circle-radius": 6,
           "circle-color": "#dc241f",
+          "circle-opacity": ["case", ["get", "stale"], 0.4, 1],
           "circle-stroke-color": "#ffffff",
           "circle-stroke-width": 2,
+          "circle-stroke-opacity": ["case", ["get", "stale"], 0.4, 1],
         },
       })
       map.addLayer({

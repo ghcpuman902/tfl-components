@@ -18,8 +18,9 @@ const uniqueSortedIds = (lineIds: readonly string[]): string[] =>
 const inFlight = new Map<string, Promise<LineVehicleArrivals>>()
 
 /**
- * Live vehicle positions for the site key. Deliberately uncached: one batched
- * `getArrivals` covers every id in the set.
+ * Live vehicle positions for the site key: one batched `getArrivals` covers
+ * every id in the set. Not cached here; `getCachedLiveVehiclesSnapshot` holds
+ * the shared 15 s entry above it.
  */
 export const fetchBatchedLineArrivals = (
   lineIds: readonly string[]

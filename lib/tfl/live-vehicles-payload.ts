@@ -3,12 +3,11 @@ import type { BusRouteGeometry } from "@/lib/tfl/bus-geography-types"
 import { getCachedBusRouteGeometries } from "@/lib/tfl/bus-route-geometry"
 import {
   BODS_STALE_MS,
-  boundingBoxFromGeometries,
-  fetchBodsVehicleActivities,
   isBodsConfigured,
   matchBodsLine,
   type BodsVehicleActivity,
 } from "@/lib/tfl/bods-siri-vm"
+import { getCachedBodsActivities } from "@/lib/tfl/homepage-live/bods-cache"
 import { fetchBatchedLineArrivals } from "@/lib/tfl/line-vehicle-arrivals"
 import {
   TRACKED_BUS_DIRECTION,
@@ -56,20 +55,18 @@ export async function buildLiveVehiclesSnapshot({
   const fetchedAt = Math.max(rail.fetchedAt, bus.fetchedAt, Date.now())
   let bodsActivities: BodsVehicleActivity[] = []
   if (bodsConfigured && busIds.length > 0) {
-    const boundingBox = boundingBoxFromGeometries(busGeometries)
-    if (boundingBox) {
-      try {
-        const raw = await fetchBodsVehicleActivities({ boundingBox })
-        bodsActivities = raw.filter((activity) => {
-          if (!busIds.some((id) => matchBodsLine(activity, id))) return false
-          const recorded = Date.parse(activity.recordedAtTime)
-          return (
-            !Number.isFinite(recorded) || fetchedAt - recorded <= BODS_STALE_MS
-          )
-        })
-      } catch {
-        bodsActivities = []
-      }
+    try {
+      // The one shared all-London read (15 s), not a BODS call per snapshot.
+      const raw = await getCachedBodsActivities()
+      bodsActivities = raw.filter((activity) => {
+        if (!busIds.some((id) => matchBodsLine(activity, id))) return false
+        const recorded = Date.parse(activity.recordedAtTime)
+        return (
+          !Number.isFinite(recorded) || fetchedAt - recorded <= BODS_STALE_MS
+        )
+      })
+    } catch {
+      bodsActivities = []
     }
   }
   return {

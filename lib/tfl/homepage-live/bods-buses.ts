@@ -14,8 +14,11 @@ export type MapBus = {
   destination: string
   /** Epoch ms of the fix. */
   at: number
+  /** The fix is older than 90 s: still drawn (until `BODS_STALE_MS`), but dimmed. */
+  stale: boolean
 }
 
+export const BUS_FIX_STALE_MS = 90_000
 export const BUS_MAP_RADIUS_M = 2_000
 export const MAX_MAP_BUSES = 150
 
@@ -35,7 +38,7 @@ const metres = (
 /**
  * The one all-London BODS read, narrowed to what the map shows: buses on the
  * routes that serve the selected stop, within 2 km of it, with a fix no older
- * than three minutes (BODS keeps old rows). Nearest first, capped.
+ * than `BODS_STALE_MS` (BODS keeps old rows). Nearest first, capped.
  */
 export const busesNearStop = (
   activities: readonly BodsVehicleActivity[],
@@ -62,6 +65,7 @@ export const busesNearStop = (
         bearingDeg: activity.bearing ?? 0,
         destination: activity.destinationName,
         at,
+        stale: asOf - at > BUS_FIX_STALE_MS,
       },
       away,
     })

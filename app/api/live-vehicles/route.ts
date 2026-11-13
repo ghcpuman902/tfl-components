@@ -1,6 +1,9 @@
 import { connection } from "next/server"
 import { SITE_MAX_LIVE_RAIL_LINES } from "@/lib/tfl/live-rail-line-ids"
-import { buildLiveVehiclesSnapshot } from "@/lib/tfl/live-vehicles-payload"
+import {
+  getCachedLiveVehiclesSnapshot,
+  liveVehiclesKey,
+} from "@/lib/tfl/live-vehicles-cache"
 import {
   TRACKED_BUS_ROUTE_ID,
   TRACKED_RAIL_LINE_ID,
@@ -18,10 +21,15 @@ const splitIds = (value: string | null): string[] =>
       ]
     : []
 
+/** A line or route id: letters, digits and hyphens, so a request cannot invent cache keys. */
+const VALID_ID = /^[A-Za-z0-9-]{1,40}$/
+
 /**
- * Site-key fallback for visitors without a personal TfL key. Uncached: every
- * request reads TfL. Without `rail` or `bus`, serves the tracked defaults;
- * with either, the other is empty. `predictions=0` skips TfL arrivals.
+ * Site-key fallback for visitors without a personal TfL key. The snapshot is
+ * built behind a shared 15 s cache (`getCachedLiveVehiclesSnapshot`), so a set
+ * of lines costs the key at most 4 TfL calls a minute however many tabs poll
+ * it. Without `rail` or `bus`, serves the tracked defaults; with either, the
+ * other is empty. `predictions=0` skips TfL arrivals.
  * Rail line count is capped so the shared key cannot pull the whole network.
  */
 export async function GET(request: Request) {
@@ -34,6 +42,12 @@ export async function GET(request: Request) {
   const busRouteIds = hasIds
     ? splitIds(searchParams.get("bus"))
     : [TRACKED_BUS_ROUTE_ID]
+  if (![...railLineIds, ...busRouteIds].every((id) => VALID_ID.test(id))) {
+    return Response.json(
+      { ok: false, error: "Those line or route ids are not valid." },
+      { status: 400, headers: { "Cache-Control": "no-store" } }
+    )
+  }
   if (railLineIds.length > SITE_MAX_LIVE_RAIL_LINES) {
     return Response.json(
       {
@@ -44,11 +58,11 @@ export async function GET(request: Request) {
     )
   }
   try {
-    const data = await buildLiveVehiclesSnapshot({
-      railLineIds,
-      busRouteIds,
-      predictions: searchParams.get("predictions") !== "0",
-    })
+    const data = await getCachedLiveVehiclesSnapshot(
+      liveVehiclesKey(railLineIds),
+      liveVehiclesKey(busRouteIds),
+      searchParams.get("predictions") !== "0"
+    )
     return Response.json(
       { ok: true, data },
       { headers: { "Cache-Control": "no-store" } }

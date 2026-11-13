@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { parseSiriVm } from "@/lib/tfl/bods-siri-vm"
+import { BODS_STALE_MS, parseSiriVm } from "@/lib/tfl/bods-siri-vm"
 import { busesNearStop, MAX_MAP_BUSES } from "@/lib/tfl/homepage-live/bods-buses"
 
 const NOW = Date.parse("2026-11-13T09:00:00Z")
@@ -48,6 +48,26 @@ describe("buses on the map for a selected stop", () => {
     const buses = busesNearStop(many, ["73"], KX, NOW)
     assert.equal(buses.length, MAX_MAP_BUSES)
     assert.equal(buses[0]!.id, "b0")
+  })
+
+  it("hides a fix older than 120 s and keeps one just inside", () => {
+    const edge = feed([
+      activity("inside", "73", 51.531, -0.124, "2026-11-13T08:58:10Z"),
+      activity("outside", "73", 51.531, -0.124, "2026-11-13T08:57:59Z"),
+    ])
+    assert.equal(BODS_STALE_MS, 120_000)
+    assert.deepEqual(busesNearStop(edge, ["73"], KX, NOW).map((b) => b.id), ["inside"])
+  })
+
+  it("marks a fix older than 90 s as stale and a newer one as fresh", () => {
+    const mixed = feed([
+      activity("fresh", "73", 51.531, -0.124, "2026-11-13T08:58:40Z"),
+      activity("old", "73", 51.531, -0.124, "2026-11-13T08:58:20Z"),
+    ])
+    const stale = Object.fromEntries(
+      busesNearStop(mixed, ["73"], KX, NOW).map((b) => [b.id, b.stale])
+    )
+    assert.deepEqual(stale, { fresh: false, old: true })
   })
 
   it("is empty for a stop with no routes", () => {
