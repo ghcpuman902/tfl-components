@@ -33,11 +33,14 @@ export type NetworkRoundState =
 
 /**
  * One TfL call (`GET /Line/{all}/Arrivals`) shared by every visitor for about
- * 20 s, then compacted. Two TfL calls a minute however many people look.
+ * 20 s, then compacted. Three TfL calls a minute however many people look.
+ * `remote`, so every function instance reads one entry and live arrivals are
+ * never part of a build. Only call it at request time (a server action).
+ * `round.at` is stamped here, at the TfL read, not when a client applies it.
  */
 export async function getCachedNetworkRound(): Promise<NetworkRoundState> {
-  "use cache"
-  cacheLife({ stale: 20, revalidate: 20, expire: 29 })
+  "use cache: remote"
+  cacheLife({ stale: 20, revalidate: 20, expire: 120 })
   cacheTag("tfl-network-arrivals")
 
   try {

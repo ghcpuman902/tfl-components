@@ -16,11 +16,31 @@ import {
 
 const memory = createMemoryStore()
 
-/** Redis when `REDIS_URL` is set, so every instance counts against one budget; otherwise this instance alone. */
-export const getQuotaStore = async (): Promise<QuotaStore> => {
-  const redis = await getRedis()
-  return redis ? createRedisStore(redis as unknown as RedisLike) : memory
+/**
+ * Redis when it is configured, so every instance counts against one budget;
+ * otherwise this instance alone. Says so once per instance in the server log
+ * (never the address, never to visitors).
+ */
+export const pickQuotaStore = (
+  redis: unknown,
+  log: (message: string) => void = console.warn
+): QuotaStore => {
+  if (redis) return createRedisStore(redis as RedisLike)
+  if (!memoryStoreAnnounced) {
+    memoryStoreAnnounced = true
+    log("Bus quota: no Redis, counting the 250/min site budget per instance in memory.")
+  }
+  return memory
 }
+
+let memoryStoreAnnounced = false
+
+export const resetMemoryStoreAnnouncement = () => {
+  memoryStoreAnnounced = false
+}
+
+export const getQuotaStore = async (): Promise<QuotaStore> =>
+  pickQuotaStore(await getRedis())
 
 const fetchStopRows = async (stopId: string): Promise<BusBoardRow[]> => {
   const arrivals = await getTflClient().stopPoint.getArrivals({

@@ -21,8 +21,7 @@ import {
 } from "@/lib/tfl/homepage-live/bods-cache"
 import { admitVisitorStop } from "@/lib/tfl/homepage-live/bus-quota"
 import {
-  boardOutcome,
-  BUS_BUSY,
+  serveBusStopBoard,
   unavailableOutcome,
   type BusBoardRow,
 } from "@/lib/tfl/homepage-live/bus-stop-arrivals"
@@ -325,10 +324,15 @@ export async function getBusStopBoardAction(
       requestHeaders.get("user-agent")
     )
     const store = await getQuotaStore()
-    if (!(await admitVisitorStop(store, visitor, id, Date.now())))
-      return { ok: false, kind: "busy", error: BUS_BUSY }
-    const outcome = boardOutcome(await getCachedBusStop(id), Date.now())
-    return { ...outcome, rows: [...outcome.rows].sort((a, b) => a.etaSec - b.etaSec) }
+    const outcome = await serveBusStopBoard(id, {
+      store,
+      admitVisitor: () => admitVisitorStop(store, visitor, id, Date.now()),
+      snapshot: () => getCachedBusStop(id),
+      now: Date.now,
+    })
+    return outcome.ok
+      ? { ...outcome, rows: [...outcome.rows].sort((a, b) => a.etaSec - b.etaSec) }
+      : outcome
   } catch (error) {
     return unavailableOutcome(error)
   }

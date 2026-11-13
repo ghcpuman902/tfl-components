@@ -46,9 +46,9 @@ export type BusRefreshDeps = {
 
 const lastGood = async (
   stopId: string,
-  deps: BusRefreshDeps
+  store: QuotaStore
 ): Promise<BusStopSnapshot | undefined> => {
-  const raw = await deps.store.get(rowsKey(stopId))
+  const raw = await store.get(rowsKey(stopId))
   if (!raw) return undefined
   try {
     const held = JSON.parse(raw) as { rows: BusBoardRow[]; fetchedAt: number }
@@ -69,7 +69,7 @@ export const refreshBusStop = async (
   stopId: string,
   deps: BusRefreshDeps
 ): Promise<BusStopSnapshot> => {
-  const held = () => lastGood(stopId, deps)
+  const held = () => lastGood(stopId, deps.store)
   const serveHeld = async (kind: "busy" | "failed"): Promise<BusStopSnapshot> => {
     const rows = await held()
     if (rows) return rows
@@ -100,17 +100,20 @@ export type BusStopBoardOk = {
 export type BusStopBoardFailed = { ok: false; kind: "busy" | "failed"; error: string }
 export type BusStopBoardOutcome = BusStopBoardOk | BusStopBoardFailed
 
+/** Rows older than this are shown as stale ("Updated Ns ago") even from a fresh cache entry. */
+export const STALE_AFTER_SEC = 90
+
 /** What the visitor sees for a snapshot: the rows, and how old they are. */
-export const boardOutcome = (snapshot: BusStopSnapshot, now: number): BusStopBoardOk => ({
-  ok: true,
-  rows: snapshot.rows.map((row) => ({
-    ...row,
+export const boardOutcome = (snapshot: BusStopSnapshot, now: number): BusStopBoardOk => {
+  const ageSec = Math.max(0, Math.round((now - snapshot.fetchedAt) / 1000))
+  return {
+    ok: true,
     // Counted down from the read, so a row served 40 s late is not 40 s too generous.
-    etaSec: Math.max(0, row.etaSec - Math.round((now - snapshot.fetchedAt) / 1000)),
-  })),
-  updatedSecAgo: Math.max(0, Math.round((now - snapshot.fetchedAt) / 1000)),
-  stale: snapshot.state === "stale",
-})
+    rows: snapshot.rows.map((row) => ({ ...row, etaSec: Math.max(0, row.etaSec - ageSec) })),
+    updatedSecAgo: ageSec,
+    stale: snapshot.state === "stale" || ageSec > STALE_AFTER_SEC,
+  }
+}
 
 export const unavailableOutcome = (error: unknown): BusStopBoardFailed => {
   // The class may not survive the cache boundary; its message does.
@@ -119,4 +122,35 @@ export const unavailableOutcome = (error: unknown): BusStopBoardFailed => {
     (error instanceof Error && error.message === BUS_BUSY)
   const kind = busy ? "busy" : "failed"
   return { ok: false, kind, error: kind === "busy" ? BUS_BUSY : BUS_FAILED }
+}
+
+export type ServeBusBoardDeps = {
+  store: QuotaStore
+  /** Whether this visitor may open this stop now (their new-stops-a-minute cap). */
+  admitVisitor: () => Promise<boolean>
+  /** The shared per-stop cache entry. */
+  snapshot: () => Promise<BusStopSnapshot>
+  now: () => number
+}
+
+/**
+ * The board for one visitor opening one stop. Over their own cap they still get
+ * the last good rows, labelled with their age; the busy sentence is only for a
+ * stop with nothing to show. Never an empty list standing in for "limited".
+ */
+export const serveBusStopBoard = async (
+  stopId: string,
+  deps: ServeBusBoardDeps
+): Promise<BusStopBoardOk | BusStopBoardFailed> => {
+  try {
+    if (!(await deps.admitVisitor())) {
+      const held = await lastGood(stopId, deps.store)
+      return held
+        ? boardOutcome(held, deps.now())
+        : unavailableOutcome(new BusStopUnavailable("busy"))
+    }
+    return boardOutcome(await deps.snapshot(), deps.now())
+  } catch (error) {
+    return unavailableOutcome(error)
+  }
 }

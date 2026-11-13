@@ -14,9 +14,14 @@ import {
   BUS_BUSY,
   BusStopUnavailable,
   refreshBusStop,
+  serveBusStopBoard,
   unavailableOutcome,
   type BusBoardRow,
 } from "@/lib/tfl/homepage-live/bus-stop-arrivals"
+import {
+  pickQuotaStore,
+  resetMemoryStoreAnnouncement,
+} from "@/lib/tfl/homepage-live/bus-stop-cache"
 
 const STOP = "490000129E"
 const rows = (eta: number): BusBoardRow[] => [
@@ -133,5 +138,79 @@ describe("rows served late", () => {
     )
     assert.equal(outcome.rows[0]!.etaSec, 60)
     assert.equal(outcome.stale, true)
+  })
+
+  it("flag a fresh entry as stale once it is older than 90 s", () => {
+    const entry = { state: "fresh" as const, rows: rows(300), fetchedAt: 1_000_000 }
+    assert.equal(boardOutcome(entry, 1_000_000 + 30_000).stale, false)
+    assert.equal(boardOutcome(entry, 1_000_000 + 91_000).stale, true)
+  })
+})
+
+describe("a visitor over their own cap", () => {
+  const serve = (t: ReturnType<typeof setup>, admit: boolean) =>
+    serveBusStopBoard(STOP, {
+      store: t.store,
+      admitVisitor: async () => admit,
+      snapshot: () => refreshBusStop(STOP, t.deps),
+      now: t.deps.now,
+    })
+
+  it("still gets the last rows, labelled with their age, not an immediate busy", async () => {
+    const t = setup()
+    await refreshBusStop(STOP, t.deps)
+    t.advance(35_000)
+    const outcome = await serve(t, false)
+    assert.equal(outcome.ok, true)
+    if (!outcome.ok) return
+    assert.equal(outcome.stale, true)
+    assert.equal(outcome.updatedSecAgo, 35)
+    assert.equal(outcome.rows[0]!.etaSec, 85)
+    assert.equal(t.calls(), 1, "no TfL call for a visitor over their cap")
+  })
+
+  it("gets the busy sentence only when the stop has nothing to show", async () => {
+    const t = setup()
+    const outcome = await serve(t, false)
+    assert.deepEqual(outcome, { ok: false, kind: "busy", error: BUS_BUSY })
+    assert.equal(t.calls(), 0)
+  })
+
+  it("is served rows, never an empty list, while the stop is backed off after a 429", async () => {
+    const t = setup()
+    await refreshBusStop(STOP, t.deps)
+    t.advance(25_000)
+    t.failWith(new Error("TfL answered 429 Too Many Requests"))
+    const outcome = await serve(t, true)
+    assert.equal(outcome.ok && outcome.stale, true)
+    assert.equal(outcome.ok && outcome.rows.length, 1)
+  })
+
+  it("serves the busy sentence, not zero rows, when a 429 leaves nothing held", async () => {
+    const t = setup()
+    t.failWith(new Error("TfL answered 429 Too Many Requests"))
+    const outcome = await serve(t, true)
+    assert.deepEqual(outcome, { ok: false, kind: "busy", error: BUS_BUSY })
+  })
+})
+
+describe("the quota store", () => {
+  it("is memory when Redis is unset, and says so once in the log", () => {
+    resetMemoryStoreAnnouncement()
+    const lines: string[] = []
+    const first = pickQuotaStore(null, (line) => lines.push(line))
+    const second = pickQuotaStore(null, (line) => lines.push(line))
+    assert.equal(first, second)
+    assert.equal(lines.length, 1)
+    assert.doesNotMatch(lines[0]!, /redis:\/\//i)
+  })
+
+  it("is Redis when a client is present, without logging", () => {
+    resetMemoryStoreAnnouncement()
+    const lines: string[] = []
+    const redis = { get: async () => null }
+    const store = pickQuotaStore(redis, (line) => lines.push(line))
+    assert.notEqual(store, pickQuotaStore(null, () => {}))
+    assert.equal(lines.length, 0)
   })
 })
