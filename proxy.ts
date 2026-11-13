@@ -23,6 +23,9 @@ import {
   legacyExplorerRedirectHref,
 } from "@/lib/tfl/explorer-url-state"
 
+/** Serve `app/page.tsx` (the product) at `/` instead of rewriting to `/hero-ab/<code>`. Set false to restore the experiment. */
+const PRODUCT_HOMEPAGE = true
+
 const continueAsHtml = (includeHomepageDiscovery = false) => {
   const response = NextResponse.next()
   response.headers.set(
@@ -118,6 +121,8 @@ export async function proxy(request: NextRequest) {
     if (request.method !== "GET" && request.method !== "HEAD") {
       return NextResponse.next()
     }
+    // Preview branch: `/` serves the product page, not a hero A/B permutation.
+    if (PRODUCT_HOMEPAGE) return continueAsHtml(isRepresentation)
     return rewriteHomepage(request, isRepresentation)
   }
 

@@ -148,23 +148,16 @@ describe("proxy homepage rewrite", () => {
   const visitorId = (response: Response) =>
     /tfl_hero_vid=([\w-]+)/.exec(response.headers.get("set-cookie") ?? "")?.[1]
 
-  it("rewrites an HTML visit to a permutation and sets the visitor cookie once", async () => {
+  // The preview branch serves the product page at `/` (PRODUCT_HOMEPAGE in proxy.ts).
+  it("serves the product page at / with no hero rewrite and no visitor cookie", async () => {
     const response = await get("http://localhost/", { accept: "text/html" })
-    assert.match(target(response), /\/hero-ab\/[\w.-]+$/)
-    assert.match(response.headers.get("set-cookie") ?? "", /HttpOnly/i)
+    assert.equal(target(response), "")
+    assert.equal(visitorId(response), undefined)
+    assert.equal(response.headers.get("set-cookie"), null)
     assert.match(response.headers.get("link") ?? "", /text\/markdown/)
-
-    const id = visitorId(response)
-    assert.ok(id)
-    const again = await get("http://localhost/", {
-      accept: "text/html",
-      cookie: `tfl_hero_vid=${id}`,
-    })
-    assert.equal(target(again), target(response))
-    assert.equal(again.headers.get("set-cookie"), null)
   })
 
-  it("also rewrites client navigation (RSC), to the same permutation", async () => {
+  it("treats client navigation (RSC) to / the same way", async () => {
     const html = await get("http://localhost/", {
       accept: "text/html",
       cookie: "tfl_hero_vid=abc",
@@ -181,7 +174,6 @@ describe("proxy homepage rewrite", () => {
     const response = await get("http://localhost/?hero=b", {
       accept: "text/html",
     })
-    assert.match(target(response), /\/hero-ab\//)
     assert.equal(response.headers.get("set-cookie"), null)
   })
 

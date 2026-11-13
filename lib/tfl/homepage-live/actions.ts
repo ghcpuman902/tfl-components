@@ -107,8 +107,56 @@ export async function searchBusStopsAction(
     }
   }
   const result = await searchBusStops(query)
-  if (!result.ok) return { ok: false, error: result.error }
+  if (!result.ok) {
+    // "No match" is an answer, not a failure.
+    return /^No bus stops matched/i.test(result.error)
+      ? { ok: true, hits: [] }
+      : { ok: false, error: result.error }
+  }
   return { ok: true, hits: result.stops.map(toBusHit) }
+}
+
+const MAX_ENRICH_STOPS = 8
+
+/** Painted letter and routes for a handful of search hits: a hit from TfL's search has neither. */
+export async function enrichBusStopsAction(
+  stopIds: readonly string[],
+  replay?: { fixture: string; round: number }
+): Promise<
+  | { ok: true; details: Record<string, Pick<BusHit, "stopLetter" | "routes" | "towards">> }
+  | { ok: false; error: string }
+> {
+  const ids = [...new Set(stopIds.map((id) => id.trim()))]
+    .filter((id) => isBoardableBusStopId(id))
+    .slice(0, MAX_ENRICH_STOPS)
+  if (ids.length === 0) return { ok: true, details: {} }
+  if (!replayOk(replay)) return { ok: false, error: "Unknown replay." }
+  const details: Record<string, Pick<BusHit, "stopLetter" | "routes" | "towards">> = {}
+  try {
+    if (replay) {
+      for (const stop of replaySearchData().kxBusStops)
+        if (ids.includes(stop.id))
+          details[stop.id] = {
+            stopLetter: stop.stopLetter,
+            routes: stop.lines ?? [],
+            towards: stop.towards,
+          }
+      return { ok: true, details }
+    }
+    const result = await getTflClient().stopPoint.get(ids)
+    for (const raw of Array.isArray(result) ? result : [result]) {
+      const stop = raw ? mapStopPoint(raw) : null
+      if (stop)
+        details[stop.id] = {
+          stopLetter: stop.stopLetter,
+          routes: [...new Set(stop.lines ?? [])],
+          towards: stop.towards,
+        }
+    }
+    return { ok: true, details }
+  } catch {
+    return { ok: false, error: "Stop details are unavailable right now." }
+  }
 }
 
 export type BusStopOverlay = {

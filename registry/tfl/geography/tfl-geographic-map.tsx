@@ -90,6 +90,8 @@ type TflGeographicMapProps = {
   showLines?: boolean
   /** Show zoom/pan controls. Default true. */
   showNavigation?: boolean
+  /** Called once the basemap and track layers are in, so a caller can add its own overlays. */
+  onMapReady?: (map: maplibregl.Map) => void
   /** Initial center [lng, lat]. Default London. */
   center?: [number, number]
   /** Initial zoom level. Default 10.2. */
@@ -551,10 +553,15 @@ export const TflGeographicMap = ({
   showStations = true,
   showLines = true,
   showNavigation = true,
+  onMapReady,
   center = LONDON_CENTER,
   zoom = LONDON_ZOOM,
   className,
 }: TflGeographicMapProps) => {
+  const onMapReadyRef = useRef(onMapReady)
+  useLayoutEffect(() => {
+    onMapReadyRef.current = onMapReady
+  })
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const bundlesRef = useRef<
@@ -694,6 +701,7 @@ export const TflGeographicMap = ({
           fittedRef.current = true
         }
         setStatus("ready")
+        onMapReadyRef.current?.(map)
       } catch {
         if (!cancelled) setStatus("error")
       }
