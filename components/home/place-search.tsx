@@ -297,7 +297,8 @@ export const PlaceSearch = ({
           : null
 
   return (
-    <div className="relative">
+    // Its own stacking context above the map/Board grid that follows it in the DOM, so the open list paints over both.
+    <div className="relative z-40">
       <div className="flex items-center gap-3 border-b-2 border-foreground pb-3">
         <Search className="size-7 shrink-0" aria-hidden />
         <input
@@ -377,7 +378,7 @@ export const PlaceSearch = ({
           id={listId}
           role="listbox"
           aria-label="Matching stations and bus stops"
-          className="absolute inset-x-0 top-full z-30 max-h-[60svh] overflow-y-auto overscroll-contain bg-background shadow-none"
+          className="absolute inset-x-0 top-full z-10 max-h-[60svh] overflow-y-auto overscroll-contain bg-background shadow-none"
         >
           {rows.map((row, index) => (
             <li
