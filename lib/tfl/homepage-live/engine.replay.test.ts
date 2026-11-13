@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
+import { compactRound, expandRound } from "@/lib/tfl/homepage-live/compact"
 import {
   ETA_ONLY_LINES,
   HomepageLiveEngine,
@@ -21,6 +22,29 @@ const rounds: ReplayRound[] = Array.from(
 )
 const lines = [...rounds[0]!.byLine.keys()].sort()
 const replay = measureReplay(rounds, lines)
+
+describe("the compact wire format", () => {
+  const compacted = measureReplay(
+    rounds.map((round) => ({
+      ...round,
+      rows: expandRound(compactRound(round.rows, round.receivedAt)),
+    })),
+    lines
+  )
+
+  it("gives the same placed lines as the full poll", () => {
+    const passing = lines.filter(
+      (line) => lineGate(compacted.lines.get(line)!).length === 0
+    )
+    assert.deepEqual(passing.sort(), [...PLACED_LINES].sort())
+  })
+
+  it("is a fraction of the size of the raw poll", () => {
+    const round = rounds[4]!
+    const packed = JSON.stringify(compactRound(round.rows, round.receivedAt))
+    assert.ok(packed.length < JSON.stringify(round.rows).length / 6)
+  })
+})
 
 describe("recorded 13 Nov 2026 06:44-06:54, all 20 lines", () => {
   it("has 21 rounds of every line", () => {

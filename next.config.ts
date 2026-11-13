@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   // Takumi's native binding must stay external so Next does not bundle it.
   serverExternalPackages: ["@takumi-rs/core"],
+  // `?replay=` reads the recorded fixture from disk at request time.
+  outputFileTracingIncludes: {
+    "/": ["./lib/tfl/fixtures/homepage-live/**"],
+  },
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   experimental: {
     mdxRs: {
