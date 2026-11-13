@@ -14,6 +14,11 @@ import {
   replayBusArrivalsRound,
   replaySearchData,
 } from "@/lib/tfl/homepage-live/fixture"
+import { busesNearStop, type MapBus } from "@/lib/tfl/homepage-live/bods-buses"
+import {
+  getCachedBodsActivities,
+  isBodsConfigured,
+} from "@/lib/tfl/homepage-live/bods-cache"
 import { admitVisitorStop } from "@/lib/tfl/homepage-live/bus-quota"
 import {
   boardOutcome,
@@ -35,7 +40,7 @@ import {
   type ReplayFixtureName,
 } from "@/lib/tfl/homepage-live/replay-params"
 
-export type { BusBoardRow }
+export type { BusBoardRow, MapBus }
 
 export type NetworkRoundResult =
   | { ok: true; rounds: CompactRound[] }
@@ -243,6 +248,37 @@ export async function getBusStopOverlayAction(
     }
   } catch {
     return { ok: false, error: "That stop could not be loaded right now." }
+  }
+}
+
+export type BusVehiclesResult =
+  | { ok: true; source: "gps"; buses: MapBus[] }
+  | { ok: true; source: "none"; buses: [] }
+  | { ok: false; error: string }
+
+const ROUTE_ID = /^[A-Za-z]{0,2}\d{1,3}[A-Za-z]?$/
+
+/**
+ * GPS buses on the routes of one stop, from the single all-London BODS read.
+ * Without `BODS_API_KEY` (or under `?replay=`) the answer is "none": buses are
+ * not drawn, never guessed.
+ */
+export async function getBusVehiclesAction(
+  routeIds: readonly string[],
+  stop: { lat: number; lon: number },
+  replay?: { fixture: string; round: number }
+): Promise<BusVehiclesResult> {
+  if (replay || !isBodsConfigured()) return { ok: true, source: "none", buses: [] }
+  const routes = [...new Set(routeIds.map((id) => id.trim()))]
+    .filter((id) => ROUTE_ID.test(id))
+    .slice(0, MAX_OVERLAY_ROUTES)
+  if (routes.length === 0 || !Number.isFinite(stop.lat) || !Number.isFinite(stop.lon))
+    return { ok: true, source: "none", buses: [] }
+  try {
+    const activities = await getCachedBodsActivities()
+    return { ok: true, source: "gps", buses: busesNearStop(activities, routes, stop, Date.now()) }
+  } catch {
+    return { ok: false, error: "Bus positions are unavailable right now." }
   }
 }
 

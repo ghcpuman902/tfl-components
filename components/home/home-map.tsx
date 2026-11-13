@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type maplibregl from "maplibre-gl"
 import { TflGeographicMap } from "@/components/tfl/geography/tfl-geographic-map"
 import type { LiveTrain } from "@/lib/tfl/homepage-live/engine"
-import type { BusStopOverlay } from "@/lib/tfl/homepage-live/actions"
+import type { BusStopOverlay, MapBus } from "@/lib/tfl/homepage-live/actions"
 import { advanceTrainDisplay } from "@/lib/tfl/rail-train-tracker"
 import {
   railPolylinesForLines,
@@ -19,6 +19,8 @@ export type HomeMapProps = {
   trains: readonly LiveTrain[]
   station?: LngLat & { name: string }
   busStop?: BusStopOverlay
+  /** Buses with a GPS fix on the selected stop's routes. Never estimated. */
+  buses?: readonly MapBus[]
   /** A search result being looked at, before it is chosen. */
   preview?: LngLat | null
   activeKey: string | null
@@ -34,6 +36,7 @@ export type HomeMapProps = {
 }
 
 const OVERLAY = {
+  buses: "home-buses",
   pins: "home-pins",
   busRoutes: "home-bus-routes",
   halo: "home-train-halo",
@@ -85,6 +88,15 @@ const pinCollection = (
   }
 }
 
+const busCollection = (buses: readonly MapBus[] | undefined) => ({
+  type: "FeatureCollection" as const,
+  features: (buses ?? []).map((bus) => ({
+    type: "Feature" as const,
+    properties: { route: bus.route, id: bus.id },
+    geometry: { type: "Point" as const, coordinates: [bus.lon, bus.lat] },
+  })),
+})
+
 const busRouteCollection = (busStop: BusStopOverlay | undefined) => ({
   type: "FeatureCollection" as const,
   features: (busStop?.routes ?? []).flatMap((route) =>
@@ -100,6 +112,7 @@ export const HomeMap = ({
   trains,
   station,
   busStop,
+  buses,
   preview,
   activeKey,
   selectedKey,
@@ -113,9 +126,9 @@ export const HomeMap = ({
   const reduce = usePrefersReducedMotion()
   const mapRef = useRef<maplibregl.Map | null>(null)
   const [ready, setReady] = useState(false)
-  const latest = useRef({ station, busStop, preview, activeKey, selectedKey, onSelectTrain })
+  const latest = useRef({ station, busStop, buses, preview, activeKey, selectedKey, onSelectTrain })
   useEffect(() => {
-    latest.current = { station, busStop, preview, activeKey, selectedKey, onSelectTrain }
+    latest.current = { station, busStop, buses, preview, activeKey, selectedKey, onSelectTrain }
   })
 
   const vehicles = useMemo<VehiclePosition[]>(
@@ -183,6 +196,39 @@ export const HomeMap = ({
         },
         "rail-vehicles-outline"
       )
+    }
+    if (!map.getSource(OVERLAY.buses)) {
+      map.addSource(OVERLAY.buses, { type: "geojson", data: busCollection(now.buses) })
+      map.addLayer({
+        id: OVERLAY.buses,
+        type: "circle",
+        source: OVERLAY.buses,
+        paint: {
+          "circle-radius": 6,
+          "circle-color": "#dc241f",
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 2,
+        },
+      })
+      map.addLayer({
+        id: `${OVERLAY.buses}-route`,
+        type: "symbol",
+        source: OVERLAY.buses,
+        minzoom: 13,
+        layout: {
+          "text-field": ["get", "route"],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": 11,
+          "text-offset": [0, -1.2],
+          "text-allow-overlap": false,
+          "text-optional": true,
+        },
+        paint: {
+          "text-color": "#7f1d1d",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 2,
+        },
+      })
     }
     // Every estimated train carries its own tag, not only the count in the corner.
     if (!map.getLayer(OVERLAY.betaTags)) {
@@ -280,11 +326,14 @@ export const HomeMap = ({
     ;(map.getSource(OVERLAY.busRoutes) as maplibregl.GeoJSONSource | undefined)?.setData(
       busRouteCollection(busStop)
     )
+    ;(map.getSource(OVERLAY.buses) as maplibregl.GeoJSONSource | undefined)?.setData(
+      busCollection(buses)
+    )
     // Tube and rail tracks step back while a bus stop is the subject.
     for (const id of ALL_TRANSIT_CORES)
       if (map.getLayer(id))
         map.setPaintProperty(id, "line-opacity", busStop ? 0.22 : 1)
-  }, [ready, station, busStop, preview, ensureOverlays])
+  }, [ready, station, busStop, buses, preview, ensureOverlays])
 
   // A train on the Board and its train on the map are the same highlighted thing.
   const highlighted = selectedKey ?? activeKey

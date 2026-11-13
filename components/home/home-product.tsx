@@ -9,7 +9,9 @@ import type { ExplorerTubeRailPoint } from "@/lib/tfl/explorer/common"
 import {
   getBusStopBoardAction,
   getBusStopOverlayAction,
+  getBusVehiclesAction,
   type BusBoardRow,
+  type MapBus,
   type BusStopOverlay,
 } from "@/lib/tfl/homepage-live/actions"
 import {
@@ -43,6 +45,7 @@ type Loadable<T> =
 
 const FETCH_TIMEOUT_MS = 8_000
 const BUS_POLL_MS = 20_000
+const BUS_GPS_POLL_MS = 15_000
 const BUS_ARRIVALS_FAILED = "Bus arrivals are unavailable right now."
 
 type BusRowsValue = { rows: BusBoardRow[]; updatedSecAgo?: number }
@@ -164,6 +167,37 @@ export const HomeProduct = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busId])
 
+  // GPS buses (BODS) for the stop's routes; with no key the answer is "none" and nothing is drawn.
+  const [busesFor, setBusesFor] = useState<{ id: string; buses: MapBus[]; gps: boolean } | null>(null)
+  const overlayStop = overlay.status === "ok" ? overlay.value.stop : undefined
+  const overlayRouteKey =
+    overlay.status === "ok" ? overlay.value.routes.map((r) => r.routeId).join(",") : ""
+  const stopLat = overlayStop?.lat
+  const stopLon = overlayStop?.lon
+  useEffect(() => {
+    if (!busId || !overlayRouteKey || stopLat == null || stopLon == null) return
+    let alive = true
+    const load = () =>
+      raceTimeout(
+        getBusVehiclesAction(overlayRouteKey.split(","), { lat: stopLat, lon: stopLon }, replayArg)
+      )
+        .then((result) => {
+          if (!alive) return
+          if (result.ok) setBusesFor({ id: busId, buses: result.buses, gps: result.source === "gps" })
+          // A failed refresh keeps the buses already drawn.
+        })
+        .catch(() => undefined)
+    void load()
+    const timer = replay ? undefined : setInterval(load, BUS_GPS_POLL_MS)
+    return () => {
+      alive = false
+      clearInterval(timer)
+    }
+    // The replay request is stable for the page's life.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busId, overlayRouteKey, stopLat, stopLon])
+  const mapBuses = busesFor && busesFor.id === busId ? busesFor : undefined
+
   const station = selection.kind === "station" ? selection : undefined
   const frame = live.frame
   const sections = useMemo(
@@ -267,6 +301,7 @@ export const HomeProduct = ({
               trains={selection.kind === "station" ? around : []}
               station={station && station.lat != null && station.lon != null ? { lat: station.lat, lon: station.lon, name: station.name } : undefined}
               busStop={busOverlay}
+              buses={mapBuses?.buses}
               preview={previewPoint}
               activeKey={activeKey}
               selectedKey={selectedKey}
@@ -278,7 +313,11 @@ export const HomeProduct = ({
                 selection.kind === "bus"
                   ? overlay.status === "error"
                     ? overlay.message
-                    : "Bus routes are drawn; buses themselves are not placed yet."
+                    : mapBuses?.gps
+                      ? mapBuses.buses.length > 0
+                        ? "Buses are drawn at their last GPS fix."
+                        : "No buses with a GPS fix on these routes nearby."
+                      : "Bus routes are drawn; buses themselves are not placed yet."
                   : undefined
               }
             />
