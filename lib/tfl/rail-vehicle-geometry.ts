@@ -2,6 +2,7 @@ import type { LineString } from "geojson"
 import { getLineColor, STATION_HUBS } from "tfl-ts"
 import allStations from "@/data/geography/all-stations.json"
 import hopTimesJson from "@/data/geography/line-hop-times.json"
+import hopTrackPatches from "@/data/geography/hop-track-patches.json"
 import tubeStops from "@/data/geography/osm-cache/tube-route-stops.json"
 import overgroundStops from "@/data/geography/osm-cache/overground-route-stops.json"
 import elizabethStops from "@/data/geography/osm-cache/elizabeth-route-stops.json"
@@ -25,8 +26,17 @@ import {
   mergeOsmStationPositions,
   type OsmRouteStopsFile,
 } from "@/lib/tfl/geometry/osm-route-stops"
-import type { LineHopTimesSnapshot } from "@/lib/tfl/geometry/line-hop-times"
-import type { RoutePolyline, StationCoord } from "@/lib/tfl/vehicle-progress"
+import {
+  minutesForHop,
+  type LineHopTimesSnapshot,
+} from "@/lib/tfl/geometry/line-hop-times"
+import { correctHopMinutes } from "@/lib/tfl/geometry/hop-minutes-outliers"
+import { hopGraphForRailLine } from "@/lib/tfl/vehicle-hop-graph"
+import {
+  pickHopPolyline,
+  type RoutePolyline,
+  type StationCoord,
+} from "@/lib/tfl/vehicle-progress"
 
 type StationRow = {
   id?: string | number
@@ -53,6 +63,10 @@ const OSM_STOPS: Record<TransitMode, OsmRouteStopsFile> = {
 }
 
 const hopTimes = (hopTimesJson as LineHopTimesSnapshot).lines
+
+type HopPatchRow = { from: string; to: string; line: [number, number][] }
+/** Built by `scripts/build-hop-track-patches.ts`. */
+const HOP_PATCHES = hopTrackPatches as unknown as Record<string, HopPatchRow[]>
 
 const hopPolylineCache = new Map<string, RoutePolyline[]>()
 
@@ -141,11 +155,8 @@ const uniqueTrackFallback = (lineId: string): RoutePolyline[] => {
     .map((feature) => ({ lineId, line: feature.geometry }))
 }
 
-/** Unique-track hop between adjacent stops, or the line's centreline if a hop is missing. */
-export const railPolylinesForLine = (lineId: string): RoutePolyline[] => {
-  const cached = hopPolylineCache.get(lineId)
-  if (cached) return cached
-
+/** Hops the unique-track build connected, before any patch. The patch builder reads this. */
+export const railHopPolylinesUnpatched = (lineId: string): RoutePolyline[] => {
   const mode = railModeForLineId(lineId)
   const bundle = UNIQUE_TRACK[mode]
   const tflStations = stationsFromBundleForLine(bundle, lineId)
@@ -157,7 +168,36 @@ export const railPolylinesForLine = (lineId: string): RoutePolyline[] => {
     hopMinutes: hopTimes[lineId]?.hops,
     stations: stationsForLine,
   })
-  const hops = hopSegmentsToPolylines(segments)
+  return hopSegmentsToPolylines(segments)
+}
+
+/** Patch hops for a line that the unique-track build left without track (see `hop-track-patch.ts`). */
+const patchedHops = (lineId: string, hops: RoutePolyline[]): RoutePolyline[] => {
+  const canonical = hopGraphForRailLine(lineId).canonical
+  const added: RoutePolyline[] = []
+  for (const patch of HOP_PATCHES[lineId] ?? []) {
+    if (pickHopPolyline([...hops, ...added], patch.from, patch.to, canonical)) continue
+    added.push({
+      lineId,
+      line: { type: "LineString", coordinates: patch.line },
+      fromStationId: patch.from,
+      toStationId: patch.to,
+      hopMinutes: minutesForHop(hopTimes[lineId]?.hops, patch.from, patch.to, canonical),
+    })
+  }
+  return added
+}
+
+/** Unique-track hop between adjacent stops, or the line's centreline if a hop is missing. */
+export const railPolylinesForLine = (lineId: string): RoutePolyline[] => {
+  const cached = hopPolylineCache.get(lineId)
+  if (cached) return cached
+
+  const unpatched = railHopPolylinesUnpatched(lineId)
+  const hops = correctHopMinutes(
+    [...unpatched, ...patchedHops(lineId, unpatched)],
+    railModeForLineId(lineId)
+  ).polylines
   const fallback = uniqueTrackFallback(lineId)
   const polylines = hops.length > 0 ? [...hops, ...fallback] : fallback
   hopPolylineCache.set(lineId, polylines)
