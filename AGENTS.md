@@ -12,6 +12,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 See [docs/agent-workflow.md](./docs/agent-workflow.md) for collaboration patterns, branch strategy, and validation steps.
 
+Before finishing, check every line in _agent/COMPLAINTS.md still holds.
+
 # Design system
 
 See [docs/design-system.md](./docs/design-system.md) for Tailwind and shadcn/ui conventions.
