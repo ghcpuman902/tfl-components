@@ -673,6 +673,20 @@ html.board-glance .board-glance {
   margin-left: calc(50% - 50vw);
 }
 
+/*
+ * The same scene as the /docs showcase. From `md` the docs sidebar (and at
+ * `xl` the table of contents) sits beside the content column, so `50% - 50vw`
+ * centres the 100vw box on the column, not the viewport: it lands off-centre
+ * and leaves a strip at its left edge. There the stage fills the column. On a
+ * phone the column is centred in the viewport, so the full bleed stays.
+ */
+@media (min-width: 48rem) {
+  .docs-showcase .landing-hero-stage {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
 @media (max-width: 47.99rem) {
   /*
    * Phone canvas: keep one-finger vertical scroll, and stop pinch-out at

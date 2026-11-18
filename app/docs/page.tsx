@@ -419,7 +419,8 @@ export default function DocsGetStartedPage() {
         </article>
       </DocsReadableWidth>
       {/* The showcase that used to be the homepage; `/` is now search plus the live Board. Uncounted: the hero test has ended. */}
-      <section aria-label="Showcase" className="pt-16">
+      {/* `docs-showcase` fits the scene's full-bleed stage to this column (app/globals.css). */}
+      <section aria-label="Showcase" className="docs-showcase min-w-0 pt-16">
         <HomeContent hero={{ variant: "a", counted: false }} />
       </section>
     </>
