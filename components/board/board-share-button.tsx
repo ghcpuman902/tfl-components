@@ -6,6 +6,8 @@ import {
   CopyIcon,
   MailIcon,
   MessageCircleIcon,
+  MessageSquareTextIcon,
+  PhoneIcon,
   QrCodeIcon,
   ShareIcon,
 } from "lucide-react"
@@ -34,7 +36,14 @@ const TILE_STYLE: Record<string, string> = {
 const TileIcon = ({ id }: { id: string }) => {
   if (id === "mail") return <MailIcon className="size-6" />
   if (id === "x") return <span className="text-xl font-semibold">X</span>
-  return <MessageCircleIcon className="size-6" />
+  if (id === "messages") return <MessageSquareTextIcon className="size-6" />
+  // WhatsApp's mark: a phone inside a round speech bubble.
+  return (
+    <span className="relative flex size-7 items-center justify-center">
+      <MessageCircleIcon className="absolute inset-0 size-7" />
+      <PhoneIcon className="size-3 fill-current" />
+    </span>
+  )
 }
 
 type BoardShareButtonProps = {
@@ -110,7 +119,7 @@ export const BoardShareButton = ({
           side="bottom"
           className="mx-auto max-w-lg rounded-t-2xl pb-[max(1.25rem,env(safe-area-inset-bottom))]"
         >
-          <SheetHeader className="flex-row items-center gap-3 border-b pb-3 text-left">
+          <SheetHeader className="flex-row items-center gap-3 border-b pr-12 pb-3 text-left">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`${url}/og`}
