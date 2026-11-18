@@ -87,8 +87,12 @@ import {
   resolveBoardStopNameOverride,
   type BoardStationNamesIndex,
 } from "@/lib/tfl/board-station-names"
-import { boardShortPath, encodeBoardShortSlug } from "@/lib/tfl/board-short-link"
 import {
+  boardShortPath,
+  encodeBoardShortSlug,
+} from "@/lib/tfl/board-short-link"
+import {
+  boardTopCardParts,
   isSharedArrival,
   readSharedStripDismissed,
   writeSharedStripDismissed,
@@ -809,15 +813,13 @@ export const BoardDisplay = ({
       jsFullscreenActive,
     })
 
-  if (
-    !homeScreenOfferOpen &&
+  const [homeScreenTipClosed, setHomeScreenTipClosed] = useState(false)
+  const homeScreenTip =
     boardReady &&
     offerInstall &&
     platform === "ios" &&
+    !homeScreenTipClosed &&
     !readHomeScreenOfferDismissed()
-  ) {
-    setHomeScreenOfferOpen(true)
-  }
 
   const handleDismissHomeScreenOffer = useCallback(() => {
     writeHomeScreenOfferDismissed()
@@ -861,10 +863,21 @@ export const BoardDisplay = ({
       isSharedArrival(window.location.search) && !readSharedStripDismissed()
     )
   }, [isPreview])
-  const handleDismissShared = useCallback(() => {
-    writeSharedStripDismissed()
-    setSharedArrival(false)
-  }, [])
+  const topCardParts = boardTopCardParts({
+    glance: isGlance,
+    sharedArrival,
+    homeScreenTip,
+  })
+  const handleDismissTopCard = () => {
+    if (topCardParts?.shared) {
+      writeSharedStripDismissed()
+      setSharedArrival(false)
+    }
+    if (topCardParts?.homeScreen) {
+      writeHomeScreenOfferDismissed()
+      setHomeScreenTipClosed(true)
+    }
+  }
 
   const railData = useMemo(() => {
     if (!config.arrivals.lineOrder?.length) return railRows
@@ -1004,15 +1017,13 @@ export const BoardDisplay = ({
     },
   }
   const holdKeyFor = (kind: BoardPanelKind) =>
-    boardPanelHoldKey(
-      kind,
-      `${panelSource[kind]}|${holdLayout}`,
-      viewportWidth
-    )
+    boardPanelHoldKey(kind, `${panelSource[kind]}|${holdLayout}`, viewportWidth)
   // First fetch only: a refresh with data (or after an empty answer) never waits.
   const panelPending = (kind: BoardPanelKind) => {
     const live = panelLive[kind]
-    return live.loading && live.fetchedAt == null && live.count === 0 && !live.error
+    return (
+      live.loading && live.fetchedAt == null && live.count === 0 && !live.error
+    )
   }
   const holdPlan = new Map(
     planBoardPanelHold(
@@ -1256,9 +1267,7 @@ export const BoardDisplay = ({
                 key={kind}
                 holdKey={holdKeyFor(kind)}
                 minHeight={plan?.minHeight}
-                settled={
-                  !panelLive[kind].loading && panelLive[kind].count > 0
-                }
+                settled={!panelLive[kind].loading && panelLive[kind].count > 0}
                 onSettledHeight={rememberPanelHeight}
               >
                 {renderPanel(kind)}
@@ -1348,8 +1357,12 @@ export const BoardDisplay = ({
   return (
     <div ref={boardRootRef} className={shellClass} style={boardShellStyle}>
       {isPreview ? null : <h1 className="sr-only">Live board</h1>}
-      {sharedArrival && !isGlance ? (
-        <BoardSharedStrip editHref={editHref} onDismiss={handleDismissShared} />
+      {topCardParts ? (
+        <BoardSharedStrip
+          parts={topCardParts}
+          editHref={editHref}
+          onDismiss={handleDismissTopCard}
+        />
       ) : null}
       <div
         className={
@@ -1386,7 +1399,9 @@ export const BoardDisplay = ({
           stale={awaitingFresh}
           compact={isGlance}
           editHref={isGlance ? undefined : editHref}
-          sharePath={isGlance || embedded ? undefined : (sharePath ?? undefined)}
+          sharePath={
+            isGlance || embedded ? undefined : (sharePath ?? undefined)
+          }
           shareTitle={shareTitle}
           fullscreenLabel={
             !isGlance && fullscreen.available && !fromHomeScreen && !embedded
