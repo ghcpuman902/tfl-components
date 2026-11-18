@@ -1,0 +1,23 @@
+/** Every line the homepage draws: Tube, DLR, Elizabeth, the six Overground lines and the tram. */
+export const HOMEPAGE_LINE_IDS = [
+  "bakerloo",
+  "central",
+  "circle",
+  "district",
+  "dlr",
+  "elizabeth",
+  "hammersmith-city",
+  "jubilee",
+  "liberty",
+  "lioness",
+  "metropolitan",
+  "mildmay",
+  "northern",
+  "piccadilly",
+  "suffragette",
+  "tram",
+  "victoria",
+  "waterloo-city",
+  "weaver",
+  "windrush",
+] as const

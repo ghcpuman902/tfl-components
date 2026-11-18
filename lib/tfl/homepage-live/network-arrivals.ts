@@ -2,30 +2,10 @@ import { cacheLife, cacheTag } from "next/cache"
 import { isTflRateLimitError } from "@/lib/tfl/board-rate-limit"
 import { getTflClient } from "@/lib/tfl/client"
 import { compactRound, type CompactRound } from "@/lib/tfl/homepage-live/compact"
+import { HOMEPAGE_LINE_IDS } from "@/lib/tfl/homepage-live/line-ids"
 
-/** Every line the homepage draws: Tube, DLR, Elizabeth, the six Overground lines and the tram. */
-export const HOMEPAGE_LINE_IDS = [
-  "bakerloo",
-  "central",
-  "circle",
-  "district",
-  "dlr",
-  "elizabeth",
-  "hammersmith-city",
-  "jubilee",
-  "liberty",
-  "lioness",
-  "metropolitan",
-  "mildmay",
-  "northern",
-  "piccadilly",
-  "suffragette",
-  "tram",
-  "victoria",
-  "waterloo-city",
-  "weaver",
-  "windrush",
-] as const
+/** Moved to line-ids.ts so client code can read it without this server module. */
+export { HOMEPAGE_LINE_IDS }
 
 export type NetworkRoundState =
   | { ok: true; round: CompactRound }

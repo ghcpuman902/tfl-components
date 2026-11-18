@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { BusBoardView, StationBoardView } from "@/components/home/board-view"
+import { ARRIVALS_RHYTHM_VARS } from "@/components/tfl/arrivals/arrivals-board-view"
+import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
+import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
 import { PlaceSearch } from "@/components/home/place-search"
 import { useHomeLive } from "@/components/home/use-home-live"
 import type { ExplorerTubeRailPoint } from "@/lib/tfl/explorer/common"
@@ -26,11 +28,25 @@ import {
 import {
   countDownRows,
   elapsedSec,
+  formatUpdatedAgo,
   isStale,
   liveStatusLine,
 } from "@/lib/tfl/homepage-live/data-age"
+import {
+  busArrivalsFromRows,
+  homepageServingLines,
+  stationArrivalsFromSnapshot,
+} from "@/lib/tfl/homepage-live/board-arrivals"
 import { stationHitOf, type PlaceHit } from "@/lib/tfl/homepage-live/search"
-import { buildStationBoard } from "@/lib/tfl/homepage-live/station-board"
+import {
+  arrivalsLineEmptyCopy,
+  resolveArrivalsEmptyKind,
+} from "@/lib/tfl/arrivals-empty"
+import {
+  lookupBoardStationLineGroups,
+  lookupBoardStationLines,
+  type BoardStationLinesIndex,
+} from "@/lib/tfl/board-station-lines"
 import { BOARD_PATH, boardHashFromConfig } from "@/lib/tfl/board-url-state"
 import { TEXT_LINK_CLASS } from "@/lib/text-link"
 import { cn } from "@/lib/utils"
@@ -39,6 +55,12 @@ type Loadable<T> =
   | { status: "loading" }
   | { status: "ok"; value: T }
   | { status: "error"; message: string }
+
+/** Same bound-columns arrangement as the live Board's rail panel (components/board/board-display.tsx). */
+const BOUND_COLUMNS_CLASS_NAMES = {
+  subgroups:
+    "@min-[30rem]/arrivals-group:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @min-[30rem]/arrivals-group:gap-x-6",
+} as const
 
 const BUS_POLL_MS = 20_000
 const BUS_ARRIVALS_FAILED = "Bus arrivals are unavailable right now."
@@ -54,6 +76,8 @@ type BusRowsValue = {
 export type HomeProductProps = {
   stations: readonly ExplorerTubeRailPoint[]
   hubStationIds: Readonly<Record<string, string>>
+  /** The live Board's serving-lines index (same one /board passes to BoardDisplay). */
+  stationLines: BoardStationLinesIndex
   defaultStationId: string
   replay?: ReplayRequest
 }
@@ -61,6 +85,7 @@ export type HomeProductProps = {
 export const HomeProduct = ({
   stations,
   hubStationIds,
+  stationLines,
   defaultStationId,
   replay,
 }: HomeProductProps) => {
@@ -69,8 +94,6 @@ export const HomeProduct = ({
   const [selection, setSelection] = useState<PlaceHit>(() =>
     stationHitOf(fallback)
   )
-  const [activeKey, setActiveKey] = useState<string | null>(null)
-  const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const live = useHomeLive(replay)
   const replayArg = replay && { fixture: replay.fixture, round: replay.round }
 
@@ -212,19 +235,52 @@ export const HomeProduct = ({
   const station = selection.kind === "station" ? selection : undefined
   const frame = live.frame
   const ageSec = live.ageSec ?? 0
-  const sections = useMemo(
+  // The live Board's rail panel, fed from the shared network poll (see lib/tfl/homepage-live/board-arrivals.ts).
+  const stationId = station?.id
+  const railData = useMemo(
     () =>
       frame && station
-        ? buildStationBoard({
+        ? stationArrivalsFromSnapshot({
             rows: frame.rows,
-            trains: frame.snapshot.trains,
             stopIds: station.stopIds,
             receivedAt: frame.receivedAt,
             ageSec,
-            lineOrder: station.lines,
+            stationName: station.name,
           })
         : [],
     [frame, station, ageSec]
+  )
+  const servingLines = useMemo(
+    () => homepageServingLines(lookupBoardStationLines(stationLines, stationId)),
+    [stationLines, stationId]
+  )
+  const lineGroups = useMemo(
+    () => lookupBoardStationLineGroups(stationId),
+    [stationId]
+  )
+  // As the Board does: curated groups may set rows per bound for their lines.
+  const pageSizeByLine = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const group of lineGroups ?? []) {
+      if (typeof group.pageSize !== "number") continue
+      for (const lineId of group.lines) map[lineId] = group.pageSize
+    }
+    return Object.keys(map).length > 0 ? map : undefined
+  }, [lineGroups])
+  const railNow = frame ? frame.receivedAt + ageSec * 1000 : undefined
+  const railError = !frame && live.status === "error" ? (live.error ?? null) : null
+  const railEmpty = useMemo(
+    () =>
+      railNow == null
+        ? { kind: "empty" as const }
+        : (resolveArrivalsEmptyKind({
+            rowCount: railData.length,
+            domain: "rail",
+            nowMs: railNow,
+            lineIds: servingLines?.map((line) => line.lineId),
+            stopPointId: stationId,
+          }) ?? { kind: "empty" as const }),
+    [railData.length, railNow, servingLines, stationId]
   )
   const busOverlay = overlay.status === "ok" ? overlay.value : undefined
   const busHit =
@@ -233,11 +289,19 @@ export const HomeProduct = ({
     selection.kind === "bus"
       ? `${selection.name}${(busHit?.stopLetter ?? selection.stopLetter) ? ` · Stop ${busHit?.stopLetter ?? selection.stopLetter}` : ""}`
       : selection.name
-  const select = (hit: PlaceHit) => {
-    setSelection(hit)
-    setSelectedKey(null)
-    setActiveKey(null)
-  }
+  const select = (hit: PlaceHit) => setSelection(hit)
+  const busStopLetter = busHit?.stopLetter ?? (selection.kind === "bus" ? selection.stopLetter : undefined)
+  // The live Board's bus panel, fed from the homepage's bus read (quota and stale handling stay as they are).
+  const busData =
+    selection.kind === "bus" && busRows.status === "ok"
+      ? busArrivalsFromRows({
+          rows: busRowsShown,
+          stopId: selection.id,
+          stopName: selection.name,
+          stopLetter: busStopLetter,
+          at: Math.max(busRows.value.appliedAt, live.now),
+        })
+      : []
 
   const customiseHref = `${BOARD_PATH}${boardHashFromConfig(
     selection.kind === "station"
@@ -269,36 +333,46 @@ export const HomeProduct = ({
               ageSec: live.ageSec,
             })}
       </p>
-      <div className="min-w-0 pt-6">
+      {/* Same shell as the Board: the container its arrivals panels query, and its row rhythm. */}
+      <div className="@container/board min-w-0 pt-6" style={ARRIVALS_RHYTHM_VARS}>
         {selection.kind === "station" ? (
-          <StationBoardView
-            title={selection.name}
-            subtitle={`${selection.lines.length} ${selection.lines.length === 1 ? "line" : "lines"}`}
-            sections={sections}
-            status={
-              live.status === "loading" ? "loading" : frame ? "ok" : "error"
-            }
-            error={live.error}
-            stale={isStale(live.ageSec)}
-            activeKey={activeKey}
-            selectedKey={selectedKey}
-            onActive={setActiveKey}
-            onSelect={(key) =>
-              setSelectedKey((prev) => (prev === key ? null : key))
-            }
-          />
+          // An old poll keeps its times, dimmed; the line under the search says how old.
+          <div className={cn(isStale(live.ageSec) && "opacity-60")} data-stale={isStale(live.ageSec) || undefined}>
+            <RailArrivalsBoard
+              stopName={selection.name}
+              stopPointId={selection.id}
+              headingLevel={2}
+              data={railData}
+              now={railNow}
+              lines={servingLines}
+              lineGroups={lineGroups}
+              pageSizeByLine={pageSizeByLine}
+              loading={live.status === "loading"}
+              error={railError}
+              emptyKind={railEmpty.kind}
+              emptyMessage={arrivalsLineEmptyCopy(railEmpty)}
+              classNames={BOUND_COLUMNS_CLASS_NAMES}
+            />
+          </div>
         ) : (
-          <BusBoardView
-            title={selection.name}
-            stopLetter={busHit?.stopLetter ?? selection.stopLetter}
-            towards={busHit?.towards ?? selection.towards}
-            // The search hit carries the stop's own routes; TfL's stop detail can list its whole hub's.
-            routes={selection.routes.length > 0 ? selection.routes : (busHit?.routes ?? [])}
-            rows={busRowsShown}
-            updatedSecAgo={busStaleAge}
-            status={busRows.status}
-            error={busRows.status === "error" ? busRows.message : undefined}
-          />
+          <>
+            {busStaleAge != null ? (
+              <p role="status" className="pb-2 text-sm text-muted-foreground">
+                {formatUpdatedAgo(busStaleAge)}
+                {busRowsShown.length === 0 ? " Refreshing." : ""}
+              </p>
+            ) : null}
+            <BusArrivalsBoard
+              stopName={selection.name}
+              stopPointId={selection.id}
+              stopLetter={busStopLetter}
+              headingLevel={2}
+              data={busData}
+              groupBy="route"
+              loading={busRows.status === "loading"}
+              error={busRows.status === "error" ? busRows.message : null}
+            />
+          </>
         )}
       </div>
       <p className="pt-6 text-sm">

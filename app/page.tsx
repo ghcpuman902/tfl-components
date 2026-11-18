@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
 import { HomeProduct } from "@/components/home/home-product"
+import { getBoardStationLinesIndex } from "@/lib/tfl/board-station-lines"
 import { getExplorerTubeRailPoints } from "@/lib/tfl/explorer/points-tube-rail"
 import { buildHubStationIds } from "@/lib/tfl/homepage-live/hub-stations"
 import { parseReplayParams } from "@/lib/tfl/homepage-live/replay-params"
@@ -27,6 +28,7 @@ const HomeFromParams = async ({
     <HomeProduct
       stations={stations}
       hubStationIds={buildHubStationIds(stations)}
+      stationLines={getBoardStationLinesIndex()}
       defaultStationId={DEFAULT_STATION_ID}
       replay={replay}
     />
@@ -39,7 +41,7 @@ const HomeFallback = () => (
     className="mx-auto w-full max-w-3xl px-4 pt-6 pb-10 sm:px-8 lg:pt-10"
     aria-hidden
   >
-    <div className="h-16 rounded-[14px] bg-muted" />
+    <div className="h-16 border border-input" />
     <div className="space-y-3 pt-12">
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="h-11 animate-pulse bg-muted/40" />
