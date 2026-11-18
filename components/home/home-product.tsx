@@ -13,6 +13,13 @@ import {
   type BusStopOverlay,
 } from "@/lib/tfl/homepage-live/actions"
 import {
+  busReadPlan,
+  FIRST_READ_TIMEOUT_MS,
+  keepHeldOnFailure,
+  readWithRetry,
+  withTimeout,
+} from "@/lib/tfl/homepage-live/bus-board-read"
+import {
   REPLAY_FIXTURES,
   type ReplayRequest,
 } from "@/lib/tfl/homepage-live/replay-params"
@@ -33,7 +40,6 @@ type Loadable<T> =
   | { status: "ok"; value: T }
   | { status: "error"; message: string }
 
-const FETCH_TIMEOUT_MS = 8_000
 const BUS_POLL_MS = 20_000
 const BUS_ARRIVALS_FAILED = "Bus arrivals are unavailable right now."
 
@@ -44,24 +50,6 @@ type BusRowsValue = {
   stale: boolean
   appliedAt: number
 }
-
-const raceTimeout = <T,>(promise: Promise<T>): Promise<T> =>
-  new Promise((resolve, reject) => {
-    const timer = setTimeout(
-      () => reject(new Error("timeout")),
-      FETCH_TIMEOUT_MS
-    )
-    promise.then(
-      (v) => {
-        clearTimeout(timer)
-        resolve(v)
-      },
-      (e: unknown) => {
-        clearTimeout(timer)
-        reject(e)
-      }
-    )
-  })
 
 export type HomeProductProps = {
   stations: readonly ExplorerTubeRailPoint[]
@@ -103,10 +91,76 @@ export const HomeProduct = ({
   const busRows: Loadable<BusRowsValue> =
     rowsFor && rowsFor.id === busId ? rowsFor.state : { status: "loading" }
 
+  // Bus times follow the shared 20 s cache; a failed refresh keeps the rows already shown.
+  // Until this stop has rows, a read waits longer and a timeout is retried once (a cold
+  // server's first TfL read is slow), so only a real failure shows "unavailable".
+  // Declared before the overlay effect: Next runs server actions one at a time, so the
+  // arrivals read is sent first.
   useEffect(() => {
     if (!busId) return
     let alive = true
-    raceTimeout(getBusStopOverlayAction(busId, replayArg))
+    let holdsRows = false
+    let inFlight = false
+    const load = () => {
+      // A slow first read (with its retry) can outlast the poll interval; never stack reads.
+      if (inFlight) return
+      inFlight = true
+      void readWithRetry(
+        () => getBusStopBoardAction(busId, replayArg),
+        busReadPlan(holdsRows)
+      )
+        .then((result) => {
+          if (!alive) return
+          if (result.ok) {
+            holdsRows = true
+            setRowsFor({
+              id: busId,
+              state: {
+                status: "ok",
+                value: {
+                  rows: result.rows,
+                  ageAtApplySec: result.updatedSecAgo,
+                  stale: Boolean(result.stale),
+                  appliedAt: Date.now(),
+                },
+              },
+            })
+            return
+          }
+          setRowsFor((held) =>
+            keepHeldOnFailure(held, busId, {
+              id: busId,
+              state: { status: "error", message: result.error },
+            })
+          )
+        })
+        .catch(() => {
+          if (!alive) return
+          setRowsFor((held) =>
+            keepHeldOnFailure(held, busId, {
+              id: busId,
+              state: { status: "error", message: BUS_ARRIVALS_FAILED },
+            })
+          )
+        })
+        .finally(() => {
+          inFlight = false
+        })
+    }
+    load()
+    const timer = replay ? undefined : setInterval(load, BUS_POLL_MS)
+    return () => {
+      alive = false
+      clearInterval(timer)
+    }
+    // The replay request is stable for the page's life.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busId])
+
+  useEffect(() => {
+    if (!busId) return
+    let alive = true
+    withTimeout(getBusStopOverlayAction(busId, replayArg), FIRST_READ_TIMEOUT_MS)
       .then((result) => {
         if (!alive) return
         setOverlayFor({
@@ -128,56 +182,6 @@ export const HomeProduct = ({
       })
     return () => {
       alive = false
-    }
-    // The replay request is stable for the page's life.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [busId])
-
-  // Bus times follow the shared 20 s cache; a failed refresh keeps the rows already shown.
-  useEffect(() => {
-    if (!busId) return
-    let alive = true
-    const load = () =>
-      raceTimeout(getBusStopBoardAction(busId, replayArg))
-        .then((result) => {
-          if (!alive) return
-          if (result.ok) {
-            setRowsFor({
-              id: busId,
-              state: {
-                status: "ok",
-                value: {
-                  rows: result.rows,
-                  ageAtApplySec: result.updatedSecAgo,
-                  stale: Boolean(result.stale),
-                  appliedAt: Date.now(),
-                },
-              },
-            })
-            return
-          }
-          setRowsFor((held) =>
-            held?.id === busId && held.state.status === "ok"
-              ? held
-              : { id: busId, state: { status: "error", message: result.error } }
-          )
-        })
-        .catch(() => {
-          if (!alive) return
-          setRowsFor((held) =>
-            held?.id === busId && held.state.status === "ok"
-              ? held
-              : {
-                  id: busId,
-                  state: { status: "error", message: BUS_ARRIVALS_FAILED },
-                }
-          )
-        })
-    void load()
-    const timer = replay ? undefined : setInterval(load, BUS_POLL_MS)
-    return () => {
-      alive = false
-      clearInterval(timer)
     }
     // The replay request is stable for the page's life.
     // eslint-disable-next-line react-hooks/exhaustive-deps
