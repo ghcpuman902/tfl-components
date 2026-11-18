@@ -361,7 +361,7 @@ export const PlaceSearch = ({
           id={listId}
           role="listbox"
           aria-label="Matching stations and bus stops"
-          className="absolute inset-x-0 top-full z-10 max-h-[60svh] overflow-y-auto overscroll-contain bg-background shadow-none"
+          className="absolute inset-x-0 top-full z-10 max-h-[calc(100svh-9.5rem)] overflow-y-auto overscroll-contain bg-background shadow-none"
         >
           {rows.map((row, index) => (
             <li
