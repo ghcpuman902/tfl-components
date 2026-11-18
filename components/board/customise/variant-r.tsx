@@ -7,16 +7,15 @@ import {
   type ReactNode,
   type Ref,
 } from "react"
+import { PlusIcon } from "lucide-react"
 import {
   DragGrip,
-  DropMarker,
   GRIP_SLOT,
   PRESS_SURFACE,
-  ReorderHandle,
-  ReorderToggle,
   useDragOrder,
 } from "@/components/board/customise/drag-order"
 import {
+  ICON_BUTTON,
   PanelEye,
   PanelMenu,
   PanelRoundel,
@@ -40,8 +39,8 @@ import { cn } from "@/lib/utils"
 
 /**
  * One layer: grip · roundel · name and summary · eye · ⋯. Tap the name to
- * open it; on touch, hold the row to drag it. Parts that are off have no
- * stack place, so no grip.
+ * open it; on touch, hold the row to drag it. A part that is off has no
+ * stack place, so no grip, and only + to put it on the board.
  */
 const LayerRow = ({
   api,
@@ -49,19 +48,16 @@ const LayerRow = ({
   rowRef,
   press,
   grip,
-  handle,
   motion,
-  dragging = false,
+  off = false,
 }: {
   api: CustomiseController
   kind: BoardPanelKind
   rowRef?: Ref<HTMLLIElement>
   press?: DOMAttributes<HTMLDivElement>
   grip?: ReactNode
-  /** B's Reorder mode: the ≡ handle replaces the eye and ⋯. */
-  handle?: ReactNode
   motion?: { className?: string; style?: CSSProperties }
-  dragging?: boolean
+  off?: boolean
 }) => {
   const [open, setOpen] = useState(false)
   const label = CUSTOMISE_PANEL_LABEL[kind]
@@ -72,7 +68,6 @@ const LayerRow = ({
       ref={rowRef}
       className={cn(
         "border-b border-border last:border-b-0",
-        dragging && "opacity-40",
         motion?.className
       )}
       style={motion?.style}
@@ -101,7 +96,16 @@ const LayerRow = ({
             </span>
           </span>
         </button>
-        {handle ?? (
+        {off ? (
+          <button
+            type="button"
+            aria-label={`Add ${label} to the board`}
+            className={ICON_BUTTON}
+            onClick={() => api.setPanelOn(kind, true)}
+          >
+            <PlusIcon className="size-5" aria-hidden />
+          </button>
+        ) : (
           <>
             <PanelEye api={api} kind={kind} />
             <PanelMenu api={api} kind={kind} />
@@ -119,71 +123,30 @@ const LayerRow = ({
 
 const LayerList = ({
   api,
-  title,
-  headingId,
   panels,
-  orderable,
 }: {
   api: CustomiseController
-  title: string
-  headingId: string
   panels: readonly { kind: BoardPanelKind }[]
-  orderable: boolean
 }) => {
-  const {
-    listRef,
-    row,
-    press,
-    grip,
-    dragging,
-    marker,
-    variant,
-    editing,
-    setEditing,
-    rowMotion,
-  } = useDragOrder<HTMLUListElement>({
-    ids: panels.map((panel) => panel.kind),
-    onPlace: (kind, index) => api.placePanel(kind as BoardPanelKind, index),
-  })
-  const toggle = variant === "b" && orderable && panels.length > 1
+  const { listRef, row, press, grip, rowMotion } =
+    useDragOrder<HTMLUListElement>({
+      ids: panels.map((panel) => panel.kind),
+      onPlace: (kind, index) => api.placePanel(kind as BoardPanelKind, index),
+    })
   return (
-    <>
-      {toggle ? (
-        <div className="flex items-end justify-between gap-3">
-          <SectionHeading id={headingId}>{title}</SectionHeading>
-          <ReorderToggle
-            editing={editing}
-            onToggle={() => setEditing((value) => !value)}
-          />
-        </div>
-      ) : (
-        <SectionHeading id={headingId}>{title}</SectionHeading>
-      )}
-      <ul ref={listRef} className="relative border-y border-border">
-        {panels.map(({ kind }) => {
-          if (!orderable) return <LayerRow key={kind} api={api} kind={kind} />
-          const name = CUSTOMISE_PANEL_LABEL[kind]
-          return (
-            <LayerRow
-              key={kind}
-              api={api}
-              kind={kind}
-              rowRef={row(kind)}
-              press={press(kind)}
-              grip={
-                editing ? undefined : <DragGrip name={name} {...grip(kind)} />
-              }
-              handle={
-                editing ? <ReorderHandle name={name} {...grip(kind)} /> : null
-              }
-              motion={rowMotion(kind)}
-              dragging={dragging === kind}
-            />
-          )
-        })}
-        {marker ? <DropMarker top={marker.top} /> : null}
-      </ul>
-    </>
+    <ul ref={listRef} className="relative border-y border-border">
+      {panels.map(({ kind }) => (
+        <LayerRow
+          key={kind}
+          api={api}
+          kind={kind}
+          rowRef={row(kind)}
+          press={press(kind)}
+          grip={<DragGrip name={CUSTOMISE_PANEL_LABEL[kind]} {...grip(kind)} />}
+          motion={rowMotion(kind)}
+        />
+      ))}
+    </ul>
   )
 }
 
@@ -193,7 +156,6 @@ export const CustomiseVariantR = ({ api }: { api: CustomiseController }) => {
   const groups = [
     { id: "wide", title: "Wide column", panels: sections.wide },
     { id: "narrow", title: "Narrow column", panels: sections.narrow },
-    { id: "off", title: "Not on the board", panels: sections.off },
   ].filter((group) => group.panels.length > 0)
   return (
     <>
@@ -208,15 +170,22 @@ export const CustomiseVariantR = ({ api }: { api: CustomiseController }) => {
           aria-labelledby={`customise-r-${group.id}`}
           className="space-y-1"
         >
-          <LayerList
-            api={api}
-            title={group.title}
-            headingId={`customise-r-${group.id}`}
-            panels={group.panels}
-            orderable={group.id !== "off"}
-          />
+          <SectionHeading id={`customise-r-${group.id}`}>
+            {group.title}
+          </SectionHeading>
+          <LayerList api={api} panels={group.panels} />
         </section>
       ))}
+      {sections.off.length > 0 ? (
+        // No heading: a blank band sets these apart, and + says what they are.
+        <div className="pt-5">
+          <ul aria-label="Not on the board" className="border-y border-border">
+            {sections.off.map(({ kind }) => (
+              <LayerRow key={kind} api={api} kind={kind} off />
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <section aria-label="Display" className="space-y-1">
         <SectionHeading>Display</SectionHeading>
         <DisplayRows api={api} />
