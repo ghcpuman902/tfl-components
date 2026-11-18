@@ -40,31 +40,19 @@ import {
   type StopRow,
   type StopSearchKit,
 } from "@/lib/tfl/stop-index"
+import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
 import { cn } from "@/lib/utils"
 
 const INSTANT_LIMIT = 14
 
 type Replay = { fixture: string; round: number } | undefined
 
-/** Line colours as dots; `data-line` supplies `--line-color`. */
-const LineDots = ({ lines }: { lines: readonly string[] }) => (
+/** Line colours as square marks; `data-line` supplies `--line-color`. */
+const LineMarks = ({ lines }: { lines: readonly string[] }) => (
   <span className="flex flex-wrap items-center gap-1" aria-hidden>
     {lines.slice(0, 8).map((line) => (
-      <span
-        key={line}
-        data-line={line}
-        className="h-1.5 w-4 rounded-full bg-(--line-color)"
-      />
+      <span key={line} data-line={line} className="h-1.5 w-4 bg-(--line-color)" />
     ))}
-  </span>
-)
-
-const StopRoundel = ({ letter }: { letter?: string }) => (
-  <span
-    className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#dc241f] text-sm leading-none text-white"
-    aria-hidden
-  >
-    {letter ?? "•"}
   </span>
 )
 
@@ -292,9 +280,10 @@ export const PlaceSearch = ({
           : null
 
   return (
-    // Its own stacking context above the Board that follows it in the DOM, so the open list paints over it.
-    <div className="relative z-40">
-      <div className="flex items-center gap-3 rounded-[14px] bg-muted px-4 py-3">
+    // Its own stacking context above the Board that follows it in the DOM, so the open list paints over it,
+    // and below the sticky site header (z-30), so scrolling never lifts the field or its list over the nav.
+    <div className="relative z-20">
+      <div className="flex items-center gap-3 border border-input bg-transparent px-4 py-3 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
         <Search className="size-7 shrink-0" aria-hidden />
         <input
           ref={inputRef}
@@ -355,7 +344,7 @@ export const PlaceSearch = ({
         <button
           type="button"
           onClick={locate}
-          className="flex min-h-11 shrink-0 items-center gap-2 px-1 text-base text-muted-foreground hover:text-foreground"
+          className="flex min-h-11 shrink-0 items-center gap-2 border-0 bg-transparent px-1 text-base text-muted-foreground hover:text-foreground"
         >
           <LocateFixed className="size-5" aria-hidden />
           <span className="hidden sm:inline">Near me</span>
@@ -389,7 +378,11 @@ export const PlaceSearch = ({
                 index === active && "bg-muted"
               )}
             >
-              {row.kind === "bus" ? <StopRoundel letter={row.letter} /> : null}
+              {row.kind === "bus" ? (
+                <span className="flex w-7 shrink-0 justify-center">
+                  {row.letter ? <StopLetterBadge letter={row.letter} /> : null}
+                </span>
+              ) : null}
               <span className="min-w-0 flex-1">
                 <span className="block text-lg leading-snug text-pretty">{row.name}</span>
                 {row.kind === "bus" && row.towards ? (
@@ -400,7 +393,7 @@ export const PlaceSearch = ({
               </span>
               <span className="flex min-h-6 max-w-[30%] shrink-0 flex-wrap items-center justify-end gap-x-2 sm:max-w-60">
                 {row.kind === "station" ? (
-                  <LineDots lines={row.lines} />
+                  <LineMarks lines={row.lines} />
                 ) : (
                   dayRoutes(row.lines)
                     .slice(0, 6)
