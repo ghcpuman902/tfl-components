@@ -41,6 +41,7 @@ import {
   type StopSearchKit,
 } from "@/lib/tfl/stop-index"
 import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
+import { listHeightToScreenBottom } from "@/lib/tfl/homepage-live/list-fit"
 import { cn } from "@/lib/utils"
 
 const INSTANT_LIMIT = 14
@@ -213,6 +214,33 @@ export const PlaceSearch = ({
 
   const rows = state.rows
   const open = editing && state.query.trim().length > 0
+
+  // The open list overlays the Board, so its bottom edge sits on the bottom of the screen at every scroll
+  // position; a fixed max-height ended mid-screen once scrolled and left Board rows showing under it.
+  const listRef = useRef<HTMLUListElement>(null)
+  useLayoutEffect(() => {
+    if (!open) return
+    const list = listRef.current
+    if (!list) return
+    let frame = 0
+    const fit = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const viewport = window.visualViewport?.height ?? window.innerHeight
+        list.style.height = `${listHeightToScreenBottom(viewport, list.getBoundingClientRect().top)}px`
+      })
+    }
+    fit()
+    window.addEventListener("scroll", fit, { passive: true })
+    window.addEventListener("resize", fit)
+    window.visualViewport?.addEventListener("resize", fit)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener("scroll", fit)
+      window.removeEventListener("resize", fit)
+      window.visualViewport?.removeEventListener("resize", fit)
+    }
+  }, [open])
   const active = useMemo(
     () => (activeId ? rows.findIndex((row) => row.id === activeId) : -1),
     [rows, activeId]
@@ -358,10 +386,11 @@ export const PlaceSearch = ({
       ) : null}
       {open ? (
         <ul
+          ref={listRef}
           id={listId}
           role="listbox"
           aria-label="Matching stations and bus stops"
-          className="absolute inset-x-0 top-full z-10 max-h-[calc(100svh-9.5rem)] overflow-y-auto overscroll-contain bg-background shadow-none"
+          className="absolute inset-x-0 top-full z-10 h-[calc(100svh-9.5rem)] overflow-y-auto overscroll-contain bg-background shadow-none"
         >
           {rows.map((row, index) => (
             <li
