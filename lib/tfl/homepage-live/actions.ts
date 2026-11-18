@@ -2,7 +2,6 @@
 
 import { headers } from "next/headers"
 import { searchBusStops } from "@/lib/tfl/actions"
-import { getCachedBusRouteGeometry } from "@/lib/tfl/bus-route-geometry"
 import { isBoardableBusStopId, mapStopPoint } from "@/lib/tfl/bus-stop-shape"
 import { getTflClient } from "@/lib/tfl/client"
 import {
@@ -181,8 +180,6 @@ export async function enrichBusStopsAction(
 
 export type BusStopOverlay = {
   stop: BusHit
-  /** One entry per route that serves the stop; `lines` are [lon, lat] strings, both directions. */
-  routes: { routeId: string; lines: number[][][] }[]
 }
 
 export type BusStopOverlayResult =
@@ -191,7 +188,7 @@ export type BusStopOverlayResult =
 
 const MAX_OVERLAY_ROUTES = 8
 
-/** The painted letter, routes and route geometry of one bus stop (a hit from search only has its name). */
+/** The painted letter, towards and routes of one bus stop (a hit from search only has its name). */
 export async function getBusStopOverlayAction(
   stopId: string,
   replay?: { fixture: string; round: number }
@@ -202,50 +199,15 @@ export async function getBusStopOverlayAction(
   if (!replayOk(replay)) return { ok: false, error: "Unknown replay." }
   try {
     if (replay) {
-      const data = replaySearchData()
-      const found = data.kxBusStops.find((s) => s.id === id)
+      const found = replaySearchData().kxBusStops.find((s) => s.id === id)
       if (!found) return { ok: false, error: "This stop is not in the recording." }
-      return {
-        ok: true,
-        overlay: {
-          stop: toBusHit(found),
-          routes: (found.lines ?? [])
-            .map((routeId) => ({
-              routeId,
-              lines: ["outbound", "inbound"].flatMap(
-                (dir) => data.busRoutes[`${routeId.toLowerCase()}-${dir}`] ?? []
-              ),
-            }))
-            .filter((r) => r.lines.length > 0),
-        },
-      }
+      return { ok: true, overlay: { stop: toBusHit(found) } }
     }
     const details = await getTflClient().stopPoint.get([id])
     const detail = Array.isArray(details) ? details[0] : details
     const stop = detail ? mapStopPoint(detail) : null
     if (!stop) return { ok: false, error: "That stop could not be found." }
-    const routeIds = [...new Set(stop.lines ?? [])]
-      .filter((r) => !/^n\d/i.test(r))
-      .slice(0, MAX_OVERLAY_ROUTES)
-    const routes = await Promise.all(
-      routeIds.map(async (routeId) => {
-        const both = await Promise.all(
-          (["outbound", "inbound"] as const).map((dir) =>
-            getCachedBusRouteGeometry(routeId.toLowerCase(), dir).catch(() => null)
-          )
-        )
-        return {
-          routeId,
-          lines: both.flatMap((g) =>
-            (g?.segments ?? []).map((s) => s.line.coordinates as number[][])
-          ),
-        }
-      })
-    )
-    return {
-      ok: true,
-      overlay: { stop: toBusHit(stop), routes: routes.filter((r) => r.lines.length > 0) },
-    }
+    return { ok: true, overlay: { stop: toBusHit(stop) } }
   } catch {
     return { ok: false, error: "That stop could not be loaded right now." }
   }
