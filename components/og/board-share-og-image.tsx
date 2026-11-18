@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react"
 import { TFL_BLUE, UNDERGROUND_RING_RED } from "@/lib/tfl/brand-colours"
 import type { BoardShareOgLine, BoardShareOgModel } from "@/lib/og/board-share-og"
+import { SITE_HOST } from "@/lib/site"
 
 const INK = "#171717"
 const PAPER = "#FFFFFF"
@@ -124,7 +125,7 @@ export const BoardShareOgImage = ({ model }: { model: BoardShareOgModel }) => (
     >
       <BoldWord text="Board" />
       <div style={{ ...brandFace(CHIP), marginLeft: 12, marginRight: 12 }}>·</div>
-      <div style={brandFace(CHIP)}>tfl.manglekuo.com</div>
+      <div style={brandFace(CHIP)}>{SITE_HOST}</div>
     </div>
   </div>
 )

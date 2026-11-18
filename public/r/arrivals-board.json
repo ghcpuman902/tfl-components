@@ -8,9 +8,9 @@
     "lucide-react"
   ],
   "registryDependencies": [
-    "https://tfl.manglekuo.com/r/tfl-colours.json",
-    "https://tfl.manglekuo.com/r/rail-arrivals-board.json",
-    "https://tfl.manglekuo.com/r/bus-arrivals-board.json"
+    "https://tfl-ts.dev/r/tfl-colours.json",
+    "https://tfl-ts.dev/r/rail-arrivals-board.json",
+    "https://tfl-ts.dev/r/bus-arrivals-board.json"
   ],
   "files": [
     {

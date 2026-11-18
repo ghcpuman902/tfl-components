@@ -8,9 +8,9 @@
     "lucide-react"
   ],
   "registryDependencies": [
-    "https://tfl.manglekuo.com/r/tfl-colours.json",
-    "https://tfl.manglekuo.com/r/line-badge.json",
-    "https://tfl.manglekuo.com/r/tfl-roundel.json"
+    "https://tfl-ts.dev/r/tfl-colours.json",
+    "https://tfl-ts.dev/r/line-badge.json",
+    "https://tfl-ts.dev/r/tfl-roundel.json"
   ],
   "files": [
     {

@@ -3,6 +3,7 @@ import {
   buildBoardHref,
   type BoardConfig,
 } from "@/lib/tfl/board-url-state"
+import { SITE_URL } from "@/lib/site"
 
 export type BoardKeyMode = "browser" | "portable"
 
@@ -57,7 +58,7 @@ export const shareUrlIncludesKey = (url: string): boolean => {
 
 export const shareUrlKeyIsOnlyInHash = (url: string): boolean => {
   try {
-    const parsed = new URL(url, "https://tfl.manglekuo.com")
+    const parsed = new URL(url, SITE_URL)
     if (parsed.searchParams.has("key")) return false
     return shareUrlIncludesKey(url)
   } catch {
