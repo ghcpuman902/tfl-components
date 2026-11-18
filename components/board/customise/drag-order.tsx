@@ -9,8 +9,7 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react"
-import { GripVerticalIcon, MenuIcon } from "lucide-react"
-import { useReorderVariant } from "@/components/board/customise/use-reorder-variant"
+import { GripVerticalIcon } from "lucide-react"
 import { clampDrag, shiftFor, targetIndexFor } from "@/lib/drag-order-geometry"
 import {
   LONG_PRESS_MS,
@@ -28,12 +27,12 @@ type Drag = {
   press: Press
   touch: boolean
   timer?: number
-  /** Resting layout, measured when the row lifts (variants A and B). */
+  /** Resting layout, measured when the row lifts. */
   lifted?: { offsets: number[]; heights: number[]; from: number }
   target?: number
 }
 
-/** The lifted row in variants A and B, for rendering. */
+/** The lifted row, for rendering. */
 type Lift = {
   id: string
   from: number
@@ -61,15 +60,12 @@ export const PRESS_SURFACE =
   "pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]"
 
 /**
- * Vertical drag-to-reorder for a list: `<DragGrip {...grip(id)} />` in each
- * row, `ref={row(id)}` on each row, `{...press(id)}` on the part of the row a
- * finger long-presses, and `listRef` on the `relative` list that holds
- * `<DropMarker />`. Mouse drags the grip; touch holds a row, then drags (a
- * quick swipe still scrolls); arrow keys on the grip move one place.
- *
- * `?reorder=a|b` instead lifts the row to follow the pointer while the others
- * slide aside: spread `rowMotion(id)` on each row. A shows a press cue during
- * the hold; B only drags from `<ReorderHandle />` while `editing`.
+ * Vertical drag-to-reorder for a list: `<DragGrip {...grip(id)} />`,
+ * `ref={row(id)}` and `{...rowMotion(id)}` on each row, `{...press(id)}` on
+ * the part of the row a finger long-presses, and `listRef` on the list. The
+ * row lifts and follows the pointer while the others slide aside. Mouse drags
+ * the grip; touch holds a row (shaded while it builds), then drags, and a
+ * quick swipe still scrolls; arrow keys on the grip move one place.
  */
 export const useDragOrder = <T extends HTMLElement>({
   ids,
@@ -83,15 +79,8 @@ export const useDragOrder = <T extends HTMLElement>({
   const drag = useRef<Drag | null>(null)
   const swallowClick = useRef(false)
   const refocus = useRef<string | null>(null)
-  const [dragging, setDragging] = useState<string | null>(null)
-  const [marker, setMarker] = useState<{ index: number; top: number } | null>(
-    null
-  )
-  const variant = useReorderVariant()
-  const follows = variant !== "default"
   const [lift, setLift] = useState<Lift | null>(null)
   const [pressing, setPressing] = useState<string | null>(null)
-  const [editing, setEditing] = useState(false)
   const orderable = ids.length > 1
 
   // Registered up front: Chrome only lets a touchmove listener cancel
@@ -116,24 +105,6 @@ export const useDragOrder = <T extends HTMLElement>({
       ?.querySelector<HTMLElement>("[data-drag-grip]")
       ?.focus()
   })
-
-  const dropAt = (id: string, y: number) => {
-    const list = listRef.current
-    if (!list) return null
-    const others = ids.filter((item) => item !== id)
-    const rects = others.map((item) =>
-      rowRefs.current.get(item)?.getBoundingClientRect()
-    )
-    let index = 0
-    for (const rect of rects) {
-      if (rect && rect.top + rect.height / 2 < y) index += 1
-    }
-    const listTop = list.getBoundingClientRect().top
-    const at = rects[index]
-    const before = rects[index - 1]
-    const top = at ? at.top - listTop : before ? before.bottom - listTop : 0
-    return { index, top }
-  }
 
   const begin = (
     id: string,
@@ -178,7 +149,7 @@ export const useDragOrder = <T extends HTMLElement>({
       setLift({ id: session.id, from, target, dy, height: heights[from] ?? 0 })
     }
 
-    const finish = (dropY: number | null) => {
+    const finish = (commit: boolean) => {
       if (drag.current !== session) return
       window.clearTimeout(session.timer)
       window.removeEventListener("pointermove", move)
@@ -189,48 +160,27 @@ export const useDragOrder = <T extends HTMLElement>({
       if (session.touch && pressHoldsPage(session.press)) {
         swallowClick.current = true
       }
-      setDragging(null)
-      setMarker(null)
-      if (follows) {
-        // Same commit as the reorder below: the row lands with no jump.
-        setLift(null)
-        setPressing(null)
-      }
-      if (dropY === null) return
-      if (session.lifted) {
-        const { target = session.lifted.from } = session
-        if (target !== session.lifted.from) onPlace(session.id, target)
-        return
-      }
-      const drop = dropAt(session.id, dropY)
-      if (drop && drop.index !== ids.indexOf(session.id))
-        onPlace(session.id, drop.index)
+      // Same commit as the reorder below: the row lands with no jump.
+      setLift(null)
+      setPressing(null)
+      const { lifted, target } = session
+      if (commit && lifted && target !== undefined && target !== lifted.from)
+        onPlace(session.id, target)
     }
     const move = (moveEvent: PointerEvent) => {
       if (moveEvent.pointerId !== session.pointerId) return
-      const was = session.press
-      session.press = nextPress(was, {
+      session.press = nextPress(session.press, {
         kind: "move",
         dx: moveEvent.clientX - session.startX,
         dy: moveEvent.clientY - session.startY,
       })
-      if (session.press === "released") return finish(null)
-      if (follows) {
-        if (session.press === "dragging") liftRow()
-        return follow(moveEvent.clientY)
-      }
-      if (session.press !== "dragging") return
-      if (was !== "dragging") setDragging(session.id)
-      setMarker(dropAt(session.id, moveEvent.clientY))
+      if (session.press === "released") return finish(false)
+      if (session.press === "dragging") liftRow()
+      follow(moveEvent.clientY)
     }
     const up = (upEvent: PointerEvent) => {
       if (upEvent.pointerId !== session.pointerId) return
-      finish(
-        upEvent.type === "pointerup" &&
-          (session.press === "dragging" || session.lifted !== undefined)
-          ? upEvent.clientY
-          : null
-      )
+      finish(upEvent.type === "pointerup")
     }
     // Android opens a context menu on a long press.
     const holdMenu = (menuEvent: Event) => {
@@ -241,13 +191,10 @@ export const useDragOrder = <T extends HTMLElement>({
       session.timer = window.setTimeout(() => {
         session.press = nextPress(session.press, { kind: "timer" })
         if (drag.current !== session || session.press !== "armed") return
-        if (follows) liftRow()
-        else setDragging(session.id)
+        liftRow()
         navigator.vibrate?.(10)
       }, LONG_PRESS_MS)
     }
-    // B's handle: a finger lifts the row at once; a mouse once it moves.
-    if (follows && press === "armed" && session.touch) liftRow()
     window.addEventListener("pointermove", move)
     window.addEventListener("pointerup", up)
     window.addEventListener("pointercancel", up)
@@ -268,7 +215,6 @@ export const useDragOrder = <T extends HTMLElement>({
   const rowMotion = (
     id: string
   ): { className?: string; style?: CSSProperties } => {
-    if (!follows) return {}
     if (lift?.id === id)
       return {
         className: LIFTED,
@@ -291,12 +237,6 @@ export const useDragOrder = <T extends HTMLElement>({
 
   return {
     listRef,
-    dragging,
-    marker,
-    variant,
-    /** B: Reorder mode, where handles drag. */
-    editing: variant === "b" && orderable && editing,
-    setEditing,
     rowMotion,
     row: (id: string) => (node: HTMLElement | null) => {
       if (node) rowRefs.current.set(id, node)
@@ -306,10 +246,8 @@ export const useDragOrder = <T extends HTMLElement>({
       onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
         swallowClick.current = false
         if (!orderable || event.pointerType !== "touch" || drag.current) return
-        // B never drags a row by touch outside its handle.
-        if (variant === "b") return
         begin(id, event, "pending")
-        if (variant === "a") setPressing(id)
+        setPressing(id)
       },
       // A long press that armed is not also a tap on what it started on.
       onClickCapture: (event: ReactMouseEvent<HTMLElement>) => {
@@ -371,52 +309,4 @@ export const DragGrip = ({
       </button>
     )}
   </span>
-)
-
-/** B: Reorder / Save order, at the right of a list heading. Hit area runs past it. */
-export const ReorderToggle = ({
-  editing,
-  onToggle,
-}: {
-  editing: boolean
-  onToggle: () => void
-}) => (
-  <button
-    type="button"
-    aria-pressed={editing}
-    className="relative text-sm font-medium text-foreground outline-none after:absolute after:-inset-x-2 after:-inset-y-3 focus-visible:ring-3 focus-visible:ring-ring/50"
-    onClick={onToggle}
-  >
-    {editing ? "Save order" : "Reorder"}
-  </button>
-)
-
-/** B: the ≡ grip at the right of a row in Reorder mode; drags at once. */
-export const ReorderHandle = ({
-  name,
-  onPointerDown,
-  onKeyDown,
-}: {
-  name: string
-  onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void
-  onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void
-}) => (
-  <button
-    type="button"
-    data-drag-grip
-    aria-label={`Drag ${name} to reorder (or use arrow keys)`}
-    className="inline-flex size-11 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 active:cursor-grabbing"
-    onPointerDown={onPointerDown}
-    onKeyDown={onKeyDown}
-  >
-    <MenuIcon className="size-5" aria-hidden />
-  </button>
-)
-
-export const DropMarker = ({ top }: { top: number }) => (
-  <li
-    aria-hidden
-    className="pointer-events-none absolute inset-x-0 h-0.5 -translate-y-1/2 bg-foreground"
-    style={{ top }}
-  />
 )
