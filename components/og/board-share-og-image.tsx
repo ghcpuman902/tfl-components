@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react"
+import { ogChipTextColor } from "@/lib/og/chip-text"
 import { TFL_BLUE, UNDERGROUND_RING_RED } from "@/lib/tfl/brand-colours"
 import type { BoardShareOgLine, BoardShareOgModel } from "@/lib/og/board-share-og"
 
@@ -40,11 +41,10 @@ const BoldWord = ({ text }: { text: string }) => (
 )
 
 const LinePill = ({ line }: { line: BoardShareOgLine }) => {
-  const onDark = line.id === "northern" || line.id === "piccadilly" || line.id === "bakerloo"
   return (
     <div
       style={{
-        ...face(28, onDark ? PAPER : INK),
+        ...face(28, ogChipTextColor(line.color, INK, PAPER)),
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

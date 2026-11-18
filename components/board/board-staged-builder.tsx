@@ -20,6 +20,7 @@ import {
   BoardPreviewModePills,
 } from "@/components/board/board-preview-mode"
 import { BoardShareCard } from "@/components/board/board-share-card"
+import { boardShortPath, encodeBoardShortSlug } from "@/lib/tfl/board-short-link"
 import { BoardStationSearch } from "@/components/board/board-station-search"
 import { CustomiseShell } from "@/components/board/customise/customise-shell"
 import { CustomiseDevSwitcher } from "@/components/board/customise/dev-switcher"
@@ -480,6 +481,13 @@ export const BoardStagedBuilder = ({
     [shareConfig]
   )
   const absoluteUrl = origin ? `${origin}${href}` : href
+  const shortSlug = useMemo(
+    () =>
+      encodeBoardShortSlug(forUrl, (id) =>
+        lookupBoardStationName(stationNames, id)
+      ),
+    [forUrl, stationNames]
+  )
   const legendPath = origin ? `${origin}${BOARD_VIEW_PATH}` : BOARD_VIEW_PATH
   const announce = draft.continueWithoutStop
     ? "Network status"
@@ -1144,6 +1152,8 @@ export const BoardStagedBuilder = ({
 
           <div className="[grid-area:share] min-w-0 md:[grid-area:auto]">
             <BoardShareCard
+              shortPath={shortSlug ? boardShortPath(shortSlug) : undefined}
+              shareTitle={`${forUrl.stopName ?? autoStopName ?? "Live board"} · Board`}
               url={absoluteUrl}
               href={href}
               onOpen={() => completeSetup("open")}
