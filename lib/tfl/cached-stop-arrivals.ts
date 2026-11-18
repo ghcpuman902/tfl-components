@@ -34,12 +34,14 @@ export const isDemoStopArrivalsId = (stopPointId: string): boolean =>
   DEMO_STOP_ARRIVALS_IDS.has(stopPointId.trim())
 
 /**
- * Boards poll every 20 s (`ARRIVALS_POLL_MS`). `expire` sits just under that,
- * so a lone viewer waits for a fresh TfL read instead of getting the entry
- * from their previous poll. Concurrent viewers share an entry for up to 15 s.
- * Per stop: 3 TfL calls/min for one viewer, at most 4/min under load.
+ * Boards poll every 20 s (`ARRIVALS_POLL_MS`). An entry is fresh for 20 s, so
+ * one stop costs at most 3 TfL calls a minute however many people watch it.
+ * Past that the next request refreshes it while the old entry is served; the
+ * entry is kept for 2 minutes so a refresh that fails (429, TfL down) still
+ * has something to show. Live arrivals use the remote cache: one entry shared
+ * by every function instance, and never baked into a build.
  */
-const ARRIVALS_CACHE_LIFE = { stale: 15, revalidate: 15, expire: 19 }
+const ARRIVALS_CACHE_LIFE = { stale: 20, revalidate: 20, expire: 120 }
 
 export type CachedArrivalsState = {
   arrivals: RealtimePrediction[]
@@ -55,7 +57,10 @@ const rateLimitedArrivals = (): CachedArrivalsState => ({
  * Shared cache for arrivals polling.
  * Many concurrent viewers collapse to a few TfL calls per stop per minute.
  * A rate-limit result is cached too, so quota exhaustion does not retry TfL
- * on every board poll.
+ * on every board poll. It is never an empty list: `rateLimited` is set and
+ * `getCachedStopArrivals` throws, so a Board shows its rate-limit state (and
+ * keeps the rows it already has) instead of "0 trains".
+ * Call at request time only (server actions), never from a prerendered render.
  */
 export async function getCachedStopArrivals(
   stopPointId: string
@@ -74,14 +79,14 @@ export async function getCachedStopArrivalsState(
 }
 
 /**
- * Inner `"use cache"` so the trimmed id is the only argument — and therefore
- * the cache key. A shared entry across stops would paint the previous station
- * for `cacheLife.stale` (15 s) after the Board URL changes.
+ * Inner `"use cache: remote"` so the trimmed id is the only argument — and
+ * therefore the cache key. A shared entry across stops would paint the previous
+ * station for `cacheLife.stale` (20 s) after the Board URL changes.
  */
 async function getCachedStopArrivalsById(
   stopPointId: string
 ): Promise<CachedArrivalsState> {
-  "use cache"
+  "use cache: remote"
   cacheLife(ARRIVALS_CACHE_LIFE)
   cacheTag("tfl-stop-arrivals", `tfl-stop-arrivals-${stopPointId}`)
 
@@ -129,7 +134,7 @@ export async function getCachedLineArrivals(
 async function getCachedLineArrivalsByKey(
   key: string
 ): Promise<CachedArrivalsState> {
-  "use cache"
+  "use cache: remote"
   cacheLife(ARRIVALS_CACHE_LIFE)
   cacheTag("tfl-line-arrivals", `tfl-line-arrivals-${key}`)
 

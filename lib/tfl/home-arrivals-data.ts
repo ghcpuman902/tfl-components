@@ -23,12 +23,25 @@ export type CachedArrivalsPayload = {
 }
 
 /**
+ * Marketing demo, not a live Board: it prints how old the rows are. Fresh for
+ * 2 minutes (as before, so it adds no TfL load); `expire` stops a quiet site
+ * serving hours-old rows. Remote, so it is one shared entry and never baked
+ * into a build (the callers below await `connection()` first).
+ */
+const HOME_DEMO_CACHE_LIFE = { stale: 60, revalidate: 120, expire: 600 }
+
+/**
  * Site/demo fetch for homepage arrivals — keep out of the reusable board.
- * Revalidates about every two minutes.
+ * Request time only; revalidates about every two minutes.
  */
 export async function getCachedHomeRailArrivals(): Promise<CachedArrivalsPayload> {
-  "use cache"
-  cacheLife({ revalidate: 120 })
+  await connection()
+  return readHomeRailArrivals()
+}
+
+async function readHomeRailArrivals(): Promise<CachedArrivalsPayload> {
+  "use cache: remote"
+  cacheLife(HOME_DEMO_CACHE_LIFE)
   cacheTag("tfl-home-rail-arrivals")
 
   const fetchedAt = Date.now()
@@ -61,8 +74,13 @@ export async function getCachedHomeRailArrivals(): Promise<CachedArrivalsPayload
  * Compact bus board for the homepage — fixed Trafalgar Square stop, cached.
  */
 export async function getCachedHomeBusArrivals(): Promise<CachedArrivalsPayload> {
-  "use cache"
-  cacheLife({ revalidate: 120 })
+  await connection()
+  return readHomeBusArrivals()
+}
+
+async function readHomeBusArrivals(): Promise<CachedArrivalsPayload> {
+  "use cache: remote"
+  cacheLife(HOME_DEMO_CACHE_LIFE)
   cacheTag("tfl-home-bus-arrivals")
 
   const fetchedAt = Date.now()
