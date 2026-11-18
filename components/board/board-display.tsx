@@ -16,6 +16,7 @@ import { normalizeLineId } from "tfl-ts"
 import { ARRIVALS_RHYTHM_VARS } from "@/components/tfl/arrivals/arrivals-board-view"
 import { BoardRateLimitScreen } from "@/components/board/board-rate-limit"
 import { BoardGlanceArrivals } from "@/components/board/board-glance-arrivals"
+import { BoardSharedStrip } from "@/components/board/board-shared-strip"
 import { BoardViewFooter } from "@/components/board/board-view-footer"
 import { BoardViewHomeScreenOffer } from "@/components/board/board-view-home-screen-offer"
 import { BoardViewRecovery } from "@/components/board/board-view-recovery"
@@ -86,6 +87,12 @@ import {
   resolveBoardStopNameOverride,
   type BoardStationNamesIndex,
 } from "@/lib/tfl/board-station-names"
+import { boardShortPath, encodeBoardShortSlug } from "@/lib/tfl/board-short-link"
+import {
+  isSharedArrival,
+  readSharedStripDismissed,
+  writeSharedStripDismissed,
+} from "@/lib/tfl/board-shared-arrival"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
 import { useBoardFullscreen } from "@/hooks/use-board-fullscreen"
 import { useBoardHomeScreen } from "@/hooks/use-board-home-screen"
@@ -834,6 +841,31 @@ export const BoardDisplay = ({
     key: undefined,
   })}`
 
+  const shortSlug = useMemo(
+    () =>
+      demo
+        ? null
+        : encodeBoardShortSlug(config, (id) =>
+            lookupBoardStationName(stationNames, id)
+          ),
+    [config, demo, stationNames]
+  )
+  const sharePath = shortSlug ? boardShortPath(shortSlug) : null
+  const shareTitle = `${config.stopName ?? lookupBoardStationName(stationNames, config.stop) ?? "Live board"} · Board`
+
+  const [sharedArrival, setSharedArrival] = useState(false)
+  useEffect(() => {
+    if (isPreview) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads the URL once after hydration
+    setSharedArrival(
+      isSharedArrival(window.location.search) && !readSharedStripDismissed()
+    )
+  }, [isPreview])
+  const handleDismissShared = useCallback(() => {
+    writeSharedStripDismissed()
+    setSharedArrival(false)
+  }, [])
+
   const railData = useMemo(() => {
     if (!config.arrivals.lineOrder?.length) return railRows
     const keep = new Set(
@@ -1316,6 +1348,9 @@ export const BoardDisplay = ({
   return (
     <div ref={boardRootRef} className={shellClass} style={boardShellStyle}>
       {isPreview ? null : <h1 className="sr-only">Live board</h1>}
+      {sharedArrival && !isGlance ? (
+        <BoardSharedStrip editHref={editHref} onDismiss={handleDismissShared} />
+      ) : null}
       <div
         className={
           isGlance
@@ -1351,6 +1386,8 @@ export const BoardDisplay = ({
           stale={awaitingFresh}
           compact={isGlance}
           editHref={isGlance ? undefined : editHref}
+          sharePath={isGlance || embedded ? undefined : (sharePath ?? undefined)}
+          shareTitle={shareTitle}
           fullscreenLabel={
             !isGlance && fullscreen.available && !fromHomeScreen && !embedded
               ? fullscreen.active
