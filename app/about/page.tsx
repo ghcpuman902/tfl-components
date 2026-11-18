@@ -2,14 +2,10 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { SiteMoreAbout } from "@/components/site-more-about"
 import { SiteProsePage } from "@/components/site-prose-page"
-import { SITE_AUTHOR, SITE_INDEPENDENCE, SITE_URL } from "@/lib/site"
+import { SITE_AUTHOR, SITE_INDEPENDENCE } from "@/lib/site"
+import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
-  title: "About",
-  description:
-    "What tfl-components contains, who makes it, and how Board, the React registry, and tfl-ts fit together.",
-  alternates: { canonical: `${SITE_URL}/about` },
-}
+export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.about)
 
 export default function AboutPage() {
   return (

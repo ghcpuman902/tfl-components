@@ -33,6 +33,7 @@ const REQUIRED_ROUTES = [
   "privacy",
   "howItWasBuilt",
   "tflDashboard",
+  "about",
 ] as const
 
 describe("route metadata", () => {

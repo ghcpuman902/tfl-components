@@ -230,11 +230,33 @@ test("structured data identifies the real project without a fabricated organisat
       "alternateName" in board &&
       board.alternateName.includes("tfl-components")
   )
-  const tflTs = SITE_STRUCTURED_DATA["@graph"].find(
-    (node) => node["@id"] === `${SITE_URL}/#tfl-ts`
+  const tflTsId = "https://github.com/ghcpuman902/tfl-ts#software"
+  const tflTsNodes = SITE_STRUCTURED_DATA["@graph"].filter(
+    (node) => node.name === "tfl-ts"
   )
-  assert.ok(tflTs && "url" in tflTs)
-  assert.equal(tflTs.url, "https://www.npmjs.com/package/tfl-ts")
+  assert.equal(tflTsNodes.length, 1)
+  const tflTs = tflTsNodes[0]
+  assert.equal(tflTs["@id"], tflTsId)
+  assert.ok("url" in tflTs && "sameAs" in tflTs)
+  assert.equal(tflTs.url, "https://github.com/ghcpuman902/tfl-ts")
+  assert.deepEqual(
+    [...tflTs.sameAs],
+    [
+      "https://www.npmjs.com/package/tfl-ts",
+      "https://registry.modelcontextprotocol.io/v0.1/servers/io.github.ghcpuman902%2Ftfl-ts/versions/latest",
+      "https://glama.ai/mcp/servers/ghcpuman902/tfl-ts",
+    ]
+  )
+  // Every reference to tfl-ts uses the same id.
+  const serialisedGraphs = [
+    serialiseStructuredData(SITE_STRUCTURED_DATA),
+    serialiseStructuredData(TFL_DASHBOARD_STRUCTURED_DATA),
+  ].join("")
+  assert.doesNotMatch(serialisedGraphs, /#tfl-ts"/)
+  assert.match(
+    serialiseStructuredData(TFL_DASHBOARD_STRUCTURED_DATA),
+    /"mentions":\{"@id":"https:\/\/github\.com\/ghcpuman902\/tfl-ts#software"\}/
+  )
   assert.doesNotThrow(() =>
     JSON.parse(serialiseStructuredData(SITE_STRUCTURED_DATA))
   )

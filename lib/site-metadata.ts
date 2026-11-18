@@ -193,6 +193,12 @@ export const ROUTE_PAGE_META = {
       "Use Board as a live Tube and bus departure board on an iPad or TV, with no app and no API key. Or build your own dashboard with tfl-ts and React components.",
     path: "/docs/tfl-dashboard",
   },
+  about: {
+    title: "About",
+    description:
+      "What tfl-components contains, who makes it, and how Board, the React registry, and tfl-ts fit together.",
+    path: "/about",
+  },
   howItWasBuilt: {
     title: "How it was built",
     description:
