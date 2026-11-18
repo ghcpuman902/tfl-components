@@ -199,6 +199,12 @@ export const ROUTE_PAGE_META = {
       "What tfl-components contains, who makes it, and how Board, the React registry, and tfl-ts fit together.",
     path: "/about",
   },
+  contact: {
+    title: "Contact",
+    description:
+      "Report a tfl-components bug, suggest a component, or ask about the project through its public issue tracker.",
+    path: "/contact",
+  },
   howItWasBuilt: {
     title: "How it was built",
     description:

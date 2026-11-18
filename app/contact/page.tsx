@@ -1,14 +1,9 @@
 import type { Metadata } from "next"
 import { SiteProsePage } from "@/components/site-prose-page"
 import { GITHUB_ISSUES_NEW, GITHUB_REPO } from "@/lib/feedback/constants"
-import { SITE_URL } from "@/lib/site"
+import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 
-export const metadata: Metadata = {
-  title: "Contact",
-  description:
-    "Report a tfl-components bug, suggest a component, or ask about the project through its public issue tracker.",
-  alternates: { canonical: `${SITE_URL}/contact` },
-}
+export const metadata: Metadata = pageMetadata(ROUTE_PAGE_META.contact)
 
 export default function ContactPage() {
   return (
