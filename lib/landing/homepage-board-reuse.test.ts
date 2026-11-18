@@ -32,7 +32,7 @@ describe("homepage reuses the live Board", () => {
 
   it("no longer has the homepage-only Board view", () => {
     assert.equal(existsSync(join(root, "components/home/board-view.tsx")), false)
-    assert.doesNotMatch(product, /board-view"|StationBoardView|BusBoardView/)
+    assert.doesNotMatch(product, /components\/home\/board-view|StationBoardView|BusBoardView/)
   })
 })
 
