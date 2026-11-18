@@ -6,7 +6,7 @@ import { SITE_AUTHOR } from "@/lib/site"
 import { useFontsReady } from "@/lib/use-fonts-ready"
 import { cn } from "@/lib/utils"
 
-const TFL_TS_URL = "https://www.npmjs.com/package/tfl-ts"
+const TFL_TS_URL = "https://github.com/ghcpuman902/tfl-ts"
 const TFL_OPEN_DATA_URL = "https://tfl.gov.uk/info-for/open-data-users/"
 
 const FooterLink = ({ href, children }: { href: string; children: string }) => (

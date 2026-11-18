@@ -8,6 +8,17 @@ import {
 
 export const TFL_TS_NPM_URL = "https://www.npmjs.com/package/tfl-ts"
 export const TFL_TS_REPO_URL = "https://github.com/ghcpuman902/tfl-ts"
+/** Official MCP Registry entry (`io.github.ghcpuman902/tfl-ts`), latest version. */
+export const TFL_TS_MCP_REGISTRY_URL =
+  "https://registry.modelcontextprotocol.io/v0.1/servers/io.github.ghcpuman902%2Ftfl-ts/versions/latest"
+export const TFL_TS_GLAMA_URL = "https://glama.ai/mcp/servers/ghcpuman902/tfl-ts"
+
+/**
+ * The one JSON-LD id for tfl-ts. The GitHub repo is the package's canonical
+ * home, so the id hangs off the repo URL, not this site. Every node that
+ * refers to tfl-ts points at this id.
+ */
+export const TFL_TS_ENTITY_ID = `${TFL_TS_REPO_URL}#software`
 
 export const SITE_STRUCTURED_DATA = {
   "@context": "https://schema.org",
@@ -46,16 +57,17 @@ export const SITE_STRUCTURED_DATA = {
         price: "0",
         priceCurrency: "GBP",
       },
-      isBasedOn: { "@id": `${SITE_URL}/#tfl-ts` },
+      isBasedOn: { "@id": TFL_TS_ENTITY_ID },
       author: { "@id": `${SITE_URL}/#author` },
     },
     {
       "@type": "SoftwareSourceCode",
-      "@id": `${SITE_URL}/#tfl-ts`,
+      "@id": TFL_TS_ENTITY_ID,
       name: "tfl-ts",
       description:
         "Typed TypeScript client for the TfL Unified API. Board and the React components fetch with it.",
-      url: TFL_TS_NPM_URL,
+      url: TFL_TS_REPO_URL,
+      sameAs: [TFL_TS_NPM_URL, TFL_TS_MCP_REGISTRY_URL, TFL_TS_GLAMA_URL],
       codeRepository: TFL_TS_REPO_URL,
       programmingLanguage: "TypeScript",
       author: { "@id": `${SITE_URL}/#author` },
@@ -150,6 +162,7 @@ export const TFL_DASHBOARD_STRUCTURED_DATA = {
       inLanguage: "en-GB",
       isPartOf: { "@id": `${SITE_URL}/#website` },
       about: { "@id": `${SITE_URL}/#board` },
+      mentions: { "@id": TFL_TS_ENTITY_ID },
     },
     {
       "@type": "FAQPage",
