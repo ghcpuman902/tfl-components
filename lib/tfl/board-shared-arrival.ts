@@ -21,6 +21,19 @@ export const writeSharedStripDismissed = (): void => {
   }
 }
 
+export type BoardTopCardParts = { shared: boolean; homeScreen: boolean }
+
+/** What the one top card shows; null when there is nothing to show. */
+export const boardTopCardParts = (input: {
+  glance: boolean
+  sharedArrival: boolean
+  homeScreenTip: boolean
+}): BoardTopCardParts | null => {
+  if (input.glance) return null
+  if (!input.sharedArrival && !input.homeScreenTip) return null
+  return { shared: input.sharedArrival, homeScreen: input.homeScreenTip }
+}
+
 /** Short-link share targets for the fallback sheet. */
 export const shareTargets = (url: string, title: string) => {
   const text = `${title} ${url}`
