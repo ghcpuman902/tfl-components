@@ -373,7 +373,7 @@ export const DragGrip = ({
   </span>
 )
 
-/** B: Reorder / Done, at the right of a list heading. Hit area runs past it. */
+/** B: Reorder / Save order, at the right of a list heading. Hit area runs past it. */
 export const ReorderToggle = ({
   editing,
   onToggle,
@@ -387,7 +387,7 @@ export const ReorderToggle = ({
     className="relative text-sm font-medium text-foreground outline-none after:absolute after:-inset-x-2 after:-inset-y-3 focus-visible:ring-3 focus-visible:ring-ring/50"
     onClick={onToggle}
   >
-    {editing ? "Done" : "Reorder"}
+    {editing ? "Save order" : "Reorder"}
   </button>
 )
 

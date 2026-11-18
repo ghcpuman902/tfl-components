@@ -1,6 +1,6 @@
 /**
  * How Customise lists reorder. `?reorder=a` lifts a held row that follows the
- * finger; `?reorder=b` adds a Reorder / Done button with grips. Anything else
+ * finger; `?reorder=b` adds a Reorder / Save order button with grips. Anything else
  * keeps the current long-press and drop line. Not remembered.
  */
 
