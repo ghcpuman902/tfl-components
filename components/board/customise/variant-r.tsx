@@ -63,6 +63,7 @@ const LayerRow = ({
   const label = CUSTOMISE_PANEL_LABEL[kind]
   const shown = panelShown(api.layout, kind)
   const bodyId = `customise-r-${kind}`
+  const summary = panelSummary(api, kind, { hiddenRow: off })
   return (
     <li
       ref={rowRef}
@@ -91,9 +92,11 @@ const LayerRow = ({
               {label}
               {api.layout.solo === kind ? " · only this" : ""}
             </span>
-            <span className="block truncate text-sm text-muted-foreground">
-              {panelSummary(api, kind)}
-            </span>
+            {summary ? (
+              <span className="block truncate text-sm text-muted-foreground">
+                {summary}
+              </span>
+            ) : null}
           </span>
         </button>
         {off ? (

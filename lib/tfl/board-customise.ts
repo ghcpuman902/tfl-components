@@ -355,6 +355,42 @@ export const panelHeight = (
   kind: BoardPanelKind
 ): number => layout.heights[kind] ?? CUSTOMISE_HEIGHT_DEFAULT[kind]
 
+/** What a panel's target stop or line set is, as the customise row reads it. */
+export type PanelSummaryTarget = "ready" | "loading" | "none"
+
+/**
+ * One line, no wrapping: what this panel shows. A hidden row in the full-page
+ * list (`hiddenRow`) reads the subtitle it would have on the board, or nothing
+ * when it has no target; other lists keep "Not on the board".
+ */
+export const panelSummaryText = (input: {
+  kind: BoardPanelKind
+  shown: boolean
+  target: PanelSummaryTarget
+  height: number
+  stationName: string
+  railLineNames: readonly string[]
+  firstStatusLineName: string | null
+  hiddenRow?: boolean
+}): string | null => {
+  const { kind, target, stationName } = input
+  if (!input.shown) {
+    if (!input.hiddenRow) return "Not on the board"
+    if (target === "none") return null
+  }
+  if (target === "loading") return "Finding the nearest stop…"
+  if (target === "none") {
+    return kind === "rail" ? "Pick a station" : `None near ${stationName}`
+  }
+  const height = heightLabel(kind, input.height)
+  if (kind === "rail") return `${input.railLineNames.join(", ")} · ${height}`
+  if (kind === "status") {
+    const first = input.firstStatusLineName
+    return `${first ? `${first} first` : "Whole network"} · ${height}`
+  }
+  return `Nearest to ${stationName} · ${height}`
+}
+
 /** Wide column, Narrow column, Not on the board: each in stack order. */
 export const layoutSections = (layout: BoardCustomiseLayout) => ({
   wide: layout.panels.filter((panel) => panel.on && panel.column === "p1"),

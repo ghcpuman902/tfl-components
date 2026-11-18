@@ -12,6 +12,7 @@ import {
   layoutFromConfig,
   layoutSections,
   layoutSettingsAsOverrides,
+  panelSummaryText,
   moveLineToTop,
   nearbyModesForLayout,
   placeLine,
@@ -341,5 +342,61 @@ describe("customise shared state", () => {
       "bakerloo",
     ])
     assert.equal(hashOf(applyLayoutToConfig(parsed, read)), hashOf(parsed))
+  })
+})
+
+describe("panelSummaryText", () => {
+  const base = {
+    shown: true,
+    target: "ready" as const,
+    stationName: "King's Cross St. Pancras",
+    railLineNames: ["Northern", "Victoria"],
+    firstStatusLineName: null,
+  }
+
+  it("reads what a visible panel shows", () => {
+    assert.equal(
+      panelSummaryText({ ...base, kind: "bus", height: 3 }),
+      "Nearest to King's Cross St. Pancras · " + heightLabel("bus", 3)
+    )
+    assert.equal(
+      panelSummaryText({ ...base, kind: "rail", height: 3 }),
+      "Northern, Victoria · " + heightLabel("rail", 3)
+    )
+  })
+
+  it("a hidden row in the full-page list reads its visible subtitle, never 'Not on the board'", () => {
+    for (const kind of ["rail", "bus", "status", "river", "cycle"] as const) {
+      const hidden = panelSummaryText({
+        ...base,
+        kind,
+        height: 3,
+        shown: false,
+        hiddenRow: true,
+      })
+      assert.equal(hidden, panelSummaryText({ ...base, kind, height: 3 }))
+      assert.notEqual(hidden, "Not on the board")
+    }
+  })
+
+  it("a hidden row with no target shows just the name", () => {
+    assert.equal(
+      panelSummaryText({
+        ...base,
+        kind: "river",
+        height: 3,
+        shown: false,
+        target: "none",
+        hiddenRow: true,
+      }),
+      null
+    )
+  })
+
+  it("other lists still say 'Not on the board' for a hidden panel", () => {
+    assert.equal(
+      panelSummaryText({ ...base, kind: "bus", height: 3, shown: false }),
+      "Not on the board"
+    )
   })
 })

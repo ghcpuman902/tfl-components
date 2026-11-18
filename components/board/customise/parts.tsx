@@ -18,6 +18,7 @@ import {
   heightLabel,
   panelHeight,
   panelShown,
+  panelSummaryText,
   stepHeight,
 } from "@/lib/tfl/board-customise"
 import type { BoardPanelKind } from "@/lib/tfl/board-panels"
@@ -52,32 +53,27 @@ export const PanelRoundel = ({ kind }: { kind: BoardPanelKind }) => (
 
 export const lineName = (lineId: string) => getLineNameTiers(lineId).full
 
-/** One line, no wrapping: what this panel shows. */
+/** One line, no wrapping: what this panel shows (see panelSummaryText). */
 export const panelSummary = (
   api: CustomiseController,
-  kind: BoardPanelKind
-): string => {
-  if (!panelShown(api.layout, kind)) return "Not on the board"
-  const target = api.panelTarget(kind)
-  if (target === "loading") return "Finding the nearest stop…"
-  if (target === "none") {
-    return kind === "rail" ? "Pick a station" : `None near ${api.stationName}`
-  }
-  const height = heightLabel(kind, panelHeight(api.layout, kind))
-  if (kind === "rail") {
-    const names = (
-      api.railLines.length > 0
-        ? api.railLines
-        : api.servingLines.map((line) => line.lineId)
-    ).map(lineName)
-    return `${names.join(", ")} · ${height}`
-  }
-  if (kind === "status") {
-    const first = api.statusLines[0]
-    return `${first ? `${lineName(first)} first` : "Whole network"} · ${height}`
-  }
-  return `Nearest to ${api.stationName} · ${height}`
-}
+  kind: BoardPanelKind,
+  options: { hiddenRow?: boolean } = {}
+): string | null =>
+  panelSummaryText({
+    kind,
+    shown: panelShown(api.layout, kind),
+    target: api.panelTarget(kind),
+    height: panelHeight(api.layout, kind),
+    stationName: api.stationName,
+    railLineNames: (api.railLines.length > 0
+      ? api.railLines
+      : api.servingLines.map((line) => line.lineId)
+    ).map(lineName),
+    firstStatusLineName: api.statusLines[0]
+      ? lineName(api.statusLines[0])
+      : null,
+    hiddenRow: options.hiddenRow,
+  })
 
 /** Eye = on the board or not. While "Only show this" is on, others read as off. */
 export const PanelEye = ({
