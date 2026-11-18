@@ -4,7 +4,10 @@ import { ArrowUpToLineIcon, XIcon } from "lucide-react"
 import {
   DragGrip,
   DropMarker,
+  GRIP_SLOT,
   PRESS_SURFACE,
+  ReorderHandle,
+  ReorderToggle,
   useDragOrder,
 } from "@/components/board/customise/drag-order"
 import { ICON_BUTTON, lineName } from "@/components/board/customise/parts"
@@ -29,10 +32,20 @@ export const OrderedLineList = ({
   onTop: (lineId: string) => void
   onRemove?: (lineId: string) => void
 }) => {
-  const { listRef, row, press, grip, dragging, marker } =
-    useDragOrder<HTMLOListElement>({ ids, onPlace })
+  const {
+    listRef,
+    row,
+    press,
+    grip,
+    dragging,
+    marker,
+    variant,
+    editing,
+    setEditing,
+    rowMotion,
+  } = useDragOrder<HTMLOListElement>({ ids, onPlace })
 
-  return (
+  const list = (
     <ol
       ref={listRef}
       role="list"
@@ -41,6 +54,7 @@ export const OrderedLineList = ({
     >
       {ids.map((id, index) => {
         const name = lineName(id)
+        const motion = rowMotion(id)
         return (
           <li
             key={id}
@@ -49,39 +63,64 @@ export const OrderedLineList = ({
             className={cn(
               "flex min-h-11 items-center gap-1 border-b border-border last:border-b-0",
               PRESS_SURFACE,
-              dragging === id && "opacity-40"
+              dragging === id && "opacity-40",
+              motion.className
             )}
+            style={motion.style}
           >
-            <DragGrip name={name} {...grip(id)} />
+            {editing ? (
+              <span aria-hidden className={GRIP_SLOT} />
+            ) : (
+              <DragGrip name={name} {...grip(id)} />
+            )}
             <span className="w-6 shrink-0 text-right text-sm text-muted-foreground tabular-nums">
               {index + 1}
             </span>
             <span className="min-w-0 flex-1 px-1">
               <LineBadge lineId={id} name={name} />
             </span>
-            <button
-              type="button"
-              aria-label={`Move ${name} to top`}
-              disabled={index === 0}
-              className={ICON_BUTTON}
-              onClick={() => onTop(id)}
-            >
-              <ArrowUpToLineIcon className="size-5" aria-hidden />
-            </button>
-            {onRemove ? (
-              <button
-                type="button"
-                aria-label={`Take ${name} out`}
-                className={ICON_BUTTON}
-                onClick={() => onRemove(id)}
-              >
-                <XIcon className="size-5" aria-hidden />
-              </button>
-            ) : null}
+            {editing ? (
+              <ReorderHandle name={name} {...grip(id)} />
+            ) : (
+              <>
+                <button
+                  type="button"
+                  aria-label={`Move ${name} to top`}
+                  disabled={index === 0}
+                  className={ICON_BUTTON}
+                  onClick={() => onTop(id)}
+                >
+                  <ArrowUpToLineIcon className="size-5" aria-hidden />
+                </button>
+                {onRemove ? (
+                  <button
+                    type="button"
+                    aria-label={`Take ${name} out`}
+                    className={ICON_BUTTON}
+                    onClick={() => onRemove(id)}
+                  >
+                    <XIcon className="size-5" aria-hidden />
+                  </button>
+                ) : null}
+              </>
+            )}
           </li>
         )
       })}
       {marker ? <DropMarker top={marker.top} /> : null}
     </ol>
+  )
+
+  if (variant !== "b" || ids.length < 2) return list
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-end">
+        <ReorderToggle
+          editing={editing}
+          onToggle={() => setEditing((value) => !value)}
+        />
+      </div>
+      {list}
+    </div>
   )
 }

@@ -1,11 +1,19 @@
 "use client"
 
-import { useState, type DOMAttributes, type ReactNode, type Ref } from "react"
+import {
+  useState,
+  type CSSProperties,
+  type DOMAttributes,
+  type ReactNode,
+  type Ref,
+} from "react"
 import {
   DragGrip,
   DropMarker,
   GRIP_SLOT,
   PRESS_SURFACE,
+  ReorderHandle,
+  ReorderToggle,
   useDragOrder,
 } from "@/components/board/customise/drag-order"
 import {
@@ -41,6 +49,8 @@ const LayerRow = ({
   rowRef,
   press,
   grip,
+  handle,
+  motion,
   dragging = false,
 }: {
   api: CustomiseController
@@ -48,6 +58,9 @@ const LayerRow = ({
   rowRef?: Ref<HTMLLIElement>
   press?: DOMAttributes<HTMLDivElement>
   grip?: ReactNode
+  /** B's Reorder mode: the ≡ handle replaces the eye and ⋯. */
+  handle?: ReactNode
+  motion?: { className?: string; style?: CSSProperties }
   dragging?: boolean
 }) => {
   const [open, setOpen] = useState(false)
@@ -59,8 +72,10 @@ const LayerRow = ({
       ref={rowRef}
       className={cn(
         "border-b border-border last:border-b-0",
-        dragging && "opacity-40"
+        dragging && "opacity-40",
+        motion?.className
       )}
+      style={motion?.style}
       data-panel={kind}
     >
       <div className={cn("flex items-center", PRESS_SURFACE)} {...press}>
@@ -86,8 +101,12 @@ const LayerRow = ({
             </span>
           </span>
         </button>
-        <PanelEye api={api} kind={kind} />
-        <PanelMenu api={api} kind={kind} />
+        {handle ?? (
+          <>
+            <PanelEye api={api} kind={kind} />
+            <PanelMenu api={api} kind={kind} />
+          </>
+        )}
       </div>
       {open ? (
         <div id={bodyId} className="pb-4 pl-15 pointer-coarse:pl-9">
@@ -100,39 +119,71 @@ const LayerRow = ({
 
 const LayerList = ({
   api,
+  title,
+  headingId,
   panels,
   orderable,
 }: {
   api: CustomiseController
+  title: string
+  headingId: string
   panels: readonly { kind: BoardPanelKind }[]
   orderable: boolean
 }) => {
-  const { listRef, row, press, grip, dragging, marker } =
-    useDragOrder<HTMLUListElement>({
-      ids: panels.map((panel) => panel.kind),
-      onPlace: (kind, index) => api.placePanel(kind as BoardPanelKind, index),
-    })
+  const {
+    listRef,
+    row,
+    press,
+    grip,
+    dragging,
+    marker,
+    variant,
+    editing,
+    setEditing,
+    rowMotion,
+  } = useDragOrder<HTMLUListElement>({
+    ids: panels.map((panel) => panel.kind),
+    onPlace: (kind, index) => api.placePanel(kind as BoardPanelKind, index),
+  })
+  const toggle = variant === "b" && orderable && panels.length > 1
   return (
-    <ul ref={listRef} className="relative border-y border-border">
-      {panels.map(({ kind }) =>
-        orderable ? (
-          <LayerRow
-            key={kind}
-            api={api}
-            kind={kind}
-            rowRef={row(kind)}
-            press={press(kind)}
-            grip={
-              <DragGrip name={CUSTOMISE_PANEL_LABEL[kind]} {...grip(kind)} />
-            }
-            dragging={dragging === kind}
+    <>
+      {toggle ? (
+        <div className="flex items-end justify-between gap-3">
+          <SectionHeading id={headingId}>{title}</SectionHeading>
+          <ReorderToggle
+            editing={editing}
+            onToggle={() => setEditing((value) => !value)}
           />
-        ) : (
-          <LayerRow key={kind} api={api} kind={kind} />
-        )
+        </div>
+      ) : (
+        <SectionHeading id={headingId}>{title}</SectionHeading>
       )}
-      {marker ? <DropMarker top={marker.top} /> : null}
-    </ul>
+      <ul ref={listRef} className="relative border-y border-border">
+        {panels.map(({ kind }) => {
+          if (!orderable) return <LayerRow key={kind} api={api} kind={kind} />
+          const name = CUSTOMISE_PANEL_LABEL[kind]
+          return (
+            <LayerRow
+              key={kind}
+              api={api}
+              kind={kind}
+              rowRef={row(kind)}
+              press={press(kind)}
+              grip={
+                editing ? undefined : <DragGrip name={name} {...grip(kind)} />
+              }
+              handle={
+                editing ? <ReorderHandle name={name} {...grip(kind)} /> : null
+              }
+              motion={rowMotion(kind)}
+              dragging={dragging === kind}
+            />
+          )
+        })}
+        {marker ? <DropMarker top={marker.top} /> : null}
+      </ul>
+    </>
   )
 }
 
@@ -157,11 +208,10 @@ export const CustomiseVariantR = ({ api }: { api: CustomiseController }) => {
           aria-labelledby={`customise-r-${group.id}`}
           className="space-y-1"
         >
-          <SectionHeading id={`customise-r-${group.id}`}>
-            {group.title}
-          </SectionHeading>
           <LayerList
             api={api}
+            title={group.title}
+            headingId={`customise-r-${group.id}`}
             panels={group.panels}
             orderable={group.id !== "off"}
           />
