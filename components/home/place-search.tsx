@@ -164,7 +164,7 @@ const localStore = () => {
   }
 }
 
-type Option = { id: string; label: string; act: () => void; expanded?: boolean }
+type Option = { id: string; label: string; expanded?: boolean }
 type Entry = { option: Option; row?: StopRow; cluster?: SearchCluster; nested?: boolean }
 
 export type PlaceSearchProps = {
@@ -354,7 +354,7 @@ export const PlaceSearch = ({
   const entries: Entry[] = []
   const pushRow = (row: StopRow, nested = false) =>
     entries.push({
-      option: { id: nested ? `${row.id}:in-cluster` : row.id, label: rowLabel(row), act: () => choose(row) },
+      option: { id: nested ? `${row.id}:in-cluster` : row.id, label: rowLabel(row) },
       row,
       nested,
     })
@@ -369,7 +369,6 @@ export const PlaceSearch = ({
       option: {
         id: item.id,
         label: `${item.name}, ${item.stops.length} bus stops`,
-        act: () => toggleCluster(item),
         expanded: isOpen,
       },
       cluster: item,
@@ -378,6 +377,10 @@ export const PlaceSearch = ({
   }
   const options = entries.map((entry) => entry.option)
   const active = activeId ? options.findIndex((option) => option.id === activeId) : -1
+  const activate = (entry: Entry | undefined) => {
+    if (entry?.row) choose(entry.row)
+    else if (entry?.cluster) toggleCluster(entry.cluster)
+  }
   const rowById = new Map(rows.map((row) => [row.id, row]))
   const mapSelectedId = entries[active]?.row?.id ?? best?.id
 
@@ -425,7 +428,6 @@ export const PlaceSearch = ({
     "aria-label": option.label,
     "aria-expanded": option.expanded,
     onMouseDown: (event: MouseEvent) => event.preventDefault(),
-    onClick: option.act,
     onMouseEnter: () => setActiveId(option.id),
   })
 
@@ -517,10 +519,10 @@ export const PlaceSearch = ({
                     return
                   }
                   if (event.key === "Enter") {
-                    const option = options[active] ?? options[0]
-                    if (option) {
+                    const entry = entries[active] ?? entries[0]
+                    if (entry) {
                       event.preventDefault()
-                      option.act()
+                      activate(entry)
                     }
                   }
                 }}
@@ -571,6 +573,7 @@ export const PlaceSearch = ({
                     best && "cursor-pointer bg-muted"
                   )}
                   {...(best ? optionProps(entries[0]!.option, 0) : { role: "presentation" })}
+                  onClick={() => activate(best ? entries[0] : undefined)}
                 >
                   {best ? rowBody(best) : null}
                 </div>
@@ -586,6 +589,7 @@ export const PlaceSearch = ({
                         key={entry.option.id}
                         className={cn(listRow, entry.nested && "pl-4", at === active && "bg-muted")}
                         {...optionProps(entry.option, at)}
+                        onClick={() => activate(entry)}
                       >
                         {entry.row ? (
                           rowBody(entry.row)
