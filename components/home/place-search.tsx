@@ -51,6 +51,16 @@ import {
 import { nearbyExplorerPoints } from "@/lib/tfl/explorer-point-search"
 import { normaliseRailPoint } from "@/lib/tfl/explorer-point-normalise"
 import {
+  NEAREST_LIMIT,
+  nearestBusRows,
+  noMatchFor,
+  rowsForMode,
+  searchesBusStops,
+  type SearchMode,
+} from "@/lib/tfl/homepage-live/search-mode"
+import { searchBoardCycleDocks } from "@/lib/tfl/board-place-search-action"
+import { CycleHireDockMarker } from "@/components/tfl/cycle-hire/cycle-hire-dock-marker"
+import {
   adoptServedStopIndex,
   loadStopSearch,
   type StopRow,
@@ -183,7 +193,80 @@ const localStore = () => {
 }
 
 type Option = { id: string; label: string; expanded?: boolean }
-type Entry = { option: Option; row?: StopRow; cluster?: SearchCluster; nested?: boolean }
+type Entry = {
+  option: Option
+  row?: StopRow
+  cluster?: SearchCluster
+  dock?: ExplorerPoint
+  nested?: boolean
+}
+
+const dockCounts = (dock: ExplorerPoint) =>
+  `${Math.max(0, (dock.bikes ?? 0) - (dock.eBikes ?? 0))} bikes · ${dock.eBikes ?? 0} e-bikes · ${dock.spaces ?? 0} spaces`
+
+const DockMarker = ({ dock }: { dock: ExplorerPoint }) => {
+  const bikes = dock.bikes ?? 0
+  const eBikes = dock.eBikes ?? 0
+  const spaces = dock.spaces ?? 0
+  return (
+    <CycleHireDockMarker
+      dock={{
+        id: dock.id,
+        name: dock.name,
+        bikes,
+        eBikes,
+        spaces,
+        docks: bikes + spaces,
+        brokenDocks: 0,
+        standardBikes: Math.max(0, bikes - eBikes),
+        lat: dock.lat,
+        lon: dock.lon,
+      }}
+      size={32}
+      className="shrink-0 self-center"
+    />
+  )
+}
+
+const MODE_COPY: Record<SearchMode, { label: string; list: string; all: string }> = {
+  rail: { label: "Search a station", list: "Matching stations", all: "stations" },
+  bus: { label: "Search a bus stop", list: "Matching bus stops", all: "stops" },
+  cycle: { label: "Search a dock", list: "Matching docks", all: "docks" },
+}
+
+/** Cycle mode: docks by name, or nearest the anchor while the field is empty. */
+const useDockSearch = (
+  on: boolean,
+  query: string,
+  near: { lat: number; lon: number } | undefined
+) => {
+  const [found, setFound] = useState<{ key: string; docks: ExplorerPoint[]; error?: string }>({
+    key: "",
+    docks: [],
+  })
+  const key = on ? `${query.trim()}|${near?.lat},${near?.lon}` : ""
+  useEffect(() => {
+    if (!key) return
+    let live = true
+    const timer = setTimeout(() => {
+      void searchBoardCycleDocks(query, near).then((result) => {
+        if (!live) return
+        setFound(
+          result.ok
+            ? { key, docks: result.docks }
+            : { key, docks: [], error: result.error }
+        )
+      })
+    }, query.trim() ? 250 : 0)
+    return () => {
+      live = false
+      clearTimeout(timer)
+    }
+    // `key` carries the query and the anchor.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
+  return { docks: found.docks, error: found.error, pending: Boolean(key) && found.key !== key }
+}
 
 export type PlaceSearchProps = {
   /** Resolves a chosen station to the StopPoints that carry its arrivals; also feeds "Near me". */
@@ -194,6 +277,16 @@ export type PlaceSearchProps = {
   /** Replay only: holds TfL's answer back so the index rows can be seen before the merge. */
   searchDelayMs?: number
   onSelect: (hit: PlaceHit) => void
+  /**
+   * A Board editor's search: one kind of place, and with an empty field the
+   * nearest ones to `anchor`. Left out, the search is the homepage's.
+   */
+  mode?: SearchMode
+  placeholder?: string
+  /** Ids already on the board; their rows say so. */
+  chosenIds?: readonly string[]
+  /** Cycle mode: a dock was picked. */
+  onSelectDock?: (dock: ExplorerPoint) => void
 }
 
 /**
@@ -209,6 +302,10 @@ export const PlaceSearch = ({
   replay,
   searchDelayMs,
   onSelect,
+  mode,
+  placeholder = "Station, stop or postcode",
+  chosenIds,
+  onSelectDock,
 }: PlaceSearchProps) => {
   const [state, dispatch] = useReducer(combinedReducer, initialCombinedState)
   const [open, setOpen] = useState(false)
@@ -228,26 +325,59 @@ export const PlaceSearch = ({
 
   const kitRef = useRef<StopSearchKit | null>(null)
   const searchRef = useRef<LiveSearch | null>(null)
-  const latest = useRef({ anchor, replay, searchDelayMs })
+  const latest = useRef({ anchor, replay, searchDelayMs, mode, stations })
   useEffect(() => {
-    latest.current = { anchor, replay, searchDelayMs }
+    latest.current = { anchor, replay, searchDelayMs, mode, stations }
   })
 
   useEffect(() => {
+    const nearestFor = (near: { lat: number; lon: number }): StopRow[] => {
+      const { mode: kind, stations: all } = latest.current
+      if (kind === "bus") {
+        const kit = kitRef.current
+        return kit ? nearestBusRows(kit.index, near) : []
+      }
+      if (kind !== "rail") return []
+      return nearbyExplorerPoints(all.map(normaliseRailPoint), near, 2_000, NEAREST_LIMIT).flatMap(
+        (point) => {
+          const station = all.find((s) => s.id === point.id)
+          return station
+            ? [
+                {
+                  id: station.id,
+                  name: station.displayName,
+                  kind: "station" as const,
+                  lat: station.lat,
+                  lon: station.lon,
+                  lines: station.lines,
+                  modes: station.modes ?? [],
+                },
+              ]
+            : []
+        }
+      )
+    }
     const search = createLiveSearch({
       dispatch,
       instantFor: (query) => {
         const kit = kitRef.current
-        const near = latest.current.anchor
+        const { anchor: near, mode: kind } = latest.current
+        const at = near?.lat != null && near.lon != null ? { lat: near.lat, lon: near.lon } : undefined
+        if (kind && !query.trim()) return at ? nearestFor(at) : []
         return kit && query.trim()
-          ? kit.searchStops(kit.index, query, {
-              limit: INSTANT_LIMIT,
-              near: near?.lat != null && near.lon != null ? { lat: near.lat, lon: near.lon } : undefined,
-            })
+          ? rowsForMode(
+              kit.searchStops(kit.index, query, { limit: INSTANT_LIMIT, near: at }),
+              kind
+            )
           : []
       },
-      merge: () => kitRef.current?.mergeLiveResults ?? appendLiveOnly,
+      merge: () => {
+        const merge = kitRef.current?.mergeLiveResults ?? appendLiveOnly
+        const kind = latest.current.mode
+        return kind ? (instant, live) => rowsForMode(merge(instant, live), kind) : merge
+      },
       fetchLive: async (query, signal) => {
+        if (!searchesBusStops(latest.current.mode)) return []
         const { replay: request, searchDelayMs: delay, anchor: near } = latest.current
         if (request && delay) await sleep(delay, signal)
         const result = await searchBusStopsAction(query, request)
@@ -331,18 +461,28 @@ export const PlaceSearch = ({
     keyboardRef.current = px
     setKeyboardPx(px)
     setOpen(true)
+    // An editor opens on the nearest places, before anything is typed.
+    if (mode) searchRef.current?.type("")
   }
+
+  const near = anchor?.lat != null && anchor.lon != null ? { lat: anchor.lat, lon: anchor.lon } : undefined
+  const dockSearch = useDockSearch(open && mode === "cycle", state.query, near)
+  const docks = dockSearch.docks
+  const chosen = new Set(chosenIds ?? [])
 
   const rows = state.rows
   const groups = useMemo(() => groupSearchRows(rows), [rows])
-  const best = groups.best
+  const best = mode === "cycle" ? undefined : groups.best
   const shown: { clusters: string[]; all: boolean } =
     expanded.query === state.query ? expanded : { clusters: [], all: false }
-  const items = shown.all ? groups.items : groups.items.slice(0, COLLAPSED_ITEMS)
-  const hasMore = !shown.all && groups.items.length > COLLAPSED_ITEMS
+  const items = mode === "cycle" ? [] : shown.all ? groups.items : groups.items.slice(0, COLLAPSED_ITEMS)
+  const hasMore = mode !== "cycle" && !shown.all && groups.items.length > COLLAPSED_ITEMS
   const points = useMemo(
-    () => rows.filter((row) => row.lat != null && row.lon != null).map(pointOfRow),
-    [rows]
+    () =>
+      mode === "cycle"
+        ? docks.filter((dock) => dock.lat != null && dock.lon != null)
+        : rows.filter((row) => row.lat != null && row.lon != null).map(pointOfRow),
+    [docks, mode, rows]
   )
 
   const close = () => {
@@ -377,6 +517,8 @@ export const PlaceSearch = ({
       nested,
     })
   if (best) pushRow(best)
+  for (const dock of mode === "cycle" ? docks : [])
+    entries.push({ option: { id: dock.id, label: `${dock.name}, dock` }, dock })
   for (const item of items) {
     if (item.kind === "row") {
       pushRow(item.row)
@@ -395,12 +537,20 @@ export const PlaceSearch = ({
   }
   const options = entries.map((entry) => entry.option)
   const active = activeId ? options.findIndex((option) => option.id === activeId) : -1
+  const chooseDock = (dock: ExplorerPoint) => {
+    close()
+    onSelectDock?.(dock)
+  }
   const activate = (entry: Entry | undefined) => {
     if (entry?.row) choose(entry.row)
+    else if (entry?.dock) chooseDock(entry.dock)
     else if (entry?.cluster) toggleCluster(entry.cluster)
   }
   const rowById = new Map(rows.map((row) => [row.id, row]))
-  const mapSelectedId = entries[active]?.row?.id ?? best?.id
+  const dockById = new Map(docks.map((dock) => [dock.id, dock]))
+  // The sticky row holds the best match; in cycle mode, the first dock.
+  const head = best ? entries[0] : mode === "cycle" ? entries[0] : undefined
+  const mapSelectedId = entries[active]?.row?.id ?? entries[active]?.dock?.id ?? head?.row?.id ?? head?.dock?.id
 
   const locate = () => {
     if (!("geolocation" in navigator)) {
@@ -429,15 +579,23 @@ export const PlaceSearch = ({
     )
   }
 
-  const empty = state.query.trim() && rows.length === 0 && indexReady && (state.status === "ok" || state.status === "idle")
+  const empty =
+    mode === "cycle"
+      ? !dockSearch.pending && !dockSearch.error && docks.length === 0 && Boolean(state.query.trim())
+      : state.query.trim() && rows.length === 0 && indexReady && (state.status === "ok" || state.status === "idle")
+  const nearestNote = mode && !state.query.trim() && entries.length > 0 ? "Nearest first." : null
   const footer =
-    state.status === "slow"
-      ? "Searching bus stops…"
-      : state.status === "failed"
-        ? state.message
-        : empty
-          ? NO_PLACES
-          : null
+    mode === "cycle"
+      ? (dockSearch.error ?? (empty ? noMatchFor(mode) : nearestNote))
+      : state.status === "slow"
+        ? "Searching bus stops…"
+        : state.status === "failed"
+          ? state.message
+          : empty
+            ? mode
+              ? noMatchFor(mode)
+              : NO_PLACES
+            : nearestNote
 
   const optionProps = (option: Option, index: number) => ({
     id: optionId(option.id),
@@ -452,8 +610,9 @@ export const PlaceSearch = ({
   const rowBody = (row: StopRow) => {
     const station = row.kind === "station" ? stationPointOfRow(row, stations, hubStationIds) : undefined
     const modes: readonly string[] = station?.modes ?? row.modes
-    const detail =
-      row.kind === "station"
+    const detail = chosen.has(row.id)
+      ? "On the board"
+      : row.kind === "station"
         ? [
             ...modes.flatMap((mode) => (MODE_LABELS[mode] ? [MODE_LABELS[mode]] : [])),
             station?.zone ? `Zone ${station.zone}` : null,
@@ -487,6 +646,20 @@ export const PlaceSearch = ({
     )
   }
 
+  const dockBody = (dock: ExplorerPoint) => (
+    <>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-lg leading-snug">{dock.name}</span>
+        <span className="block truncate text-sm text-muted-foreground">
+          {chosen.has(dock.id) ? "On the board" : dockCounts(dock)}
+        </span>
+      </span>
+      <DockMarker dock={dock} />
+    </>
+  )
+  const entryBody = (entry: Entry) =>
+    entry.row ? rowBody(entry.row) : entry.dock ? dockBody(entry.dock) : null
+
   const listRow = "flex min-h-14 cursor-pointer items-start gap-3 border-b border-border py-2.5"
 
   return (
@@ -501,7 +674,7 @@ export const PlaceSearch = ({
                 ref={inputRef}
                 type="text"
                 role="combobox"
-                aria-label="Search a station or bus stop"
+                aria-label={mode ? MODE_COPY[mode].label : "Search a station or bus stop"}
                 aria-expanded={open && options.length > 0}
                 aria-controls={listId}
                 aria-autocomplete="list"
@@ -510,7 +683,7 @@ export const PlaceSearch = ({
                 autoCorrect="off"
                 spellCheck={false}
                 enterKeyHint="go"
-                placeholder="Station, stop or postcode"
+                placeholder={placeholder}
                 value={open ? state.query : ""}
                 onFocus={() => {
                   ensureIndex()
@@ -546,14 +719,17 @@ export const PlaceSearch = ({
                 }}
                 className="h-12 min-w-0 flex-1 bg-transparent text-3xl leading-none text-foreground outline-none placeholder:text-muted-foreground placeholder:[font-size:var(--placeholder-size,inherit)] sm:h-16 sm:text-5xl"
               />
-              <button
-                type="button"
-                onClick={locate}
-                className="flex min-h-11 shrink-0 items-center border-0 bg-transparent px-1 text-muted-foreground hover:text-foreground"
-              >
-                <LocateFixed className="size-5" aria-hidden />
-                <span className="sr-only">Near me</span>
-              </button>
+              {/* "Near me" finds a station; bus stops and docks already open on the nearest. */}
+              {mode === "bus" || mode === "cycle" ? null : (
+                <button
+                  type="button"
+                  onClick={locate}
+                  className="flex min-h-11 shrink-0 items-center border-0 bg-transparent px-1 text-muted-foreground hover:text-foreground"
+                >
+                  <LocateFixed className="size-5" aria-hidden />
+                  <span className="sr-only">Near me</span>
+                </button>
+              )}
               {open ? (
                 <button
                   type="button"
@@ -578,23 +754,30 @@ export const PlaceSearch = ({
                   selectedId={mapSelectedId}
                   onSelect={(point) => {
                     const row = rowById.get(point.id)
+                    const dock = dockById.get(point.id)
                     if (row) choose(row)
+                    else if (dock) chooseDock(dock)
                   }}
                   cooperativeGestures={false}
                   busStopLabels={false}
                   className="min-h-0 rounded-none border-0"
                 />
               </div>
-              <div id={listId} role="listbox" aria-label="Matching stations and bus stops" className="shrink-0">
+              <div
+                id={listId}
+                role="listbox"
+                aria-label={mode ? MODE_COPY[mode].list : "Matching stations and bus stops"}
+                className="shrink-0"
+              >
                 <div
                   className={cn(
                     "flex h-16 items-center gap-3 overflow-hidden px-4 sm:px-8",
-                    best && "cursor-pointer bg-muted"
+                    head && "cursor-pointer bg-muted"
                   )}
-                  {...(best ? optionProps(entries[0]!.option, 0) : { role: "presentation" })}
-                  onClick={() => activate(best ? entries[0] : undefined)}
+                  {...(head ? optionProps(head.option, 0) : { role: "presentation" })}
+                  onClick={() => activate(head)}
                 >
-                  {best ? rowBody(best) : null}
+                  {head ? entryBody(head) : null}
                 </div>
                 <ul
                   role="group"
@@ -603,15 +786,20 @@ export const PlaceSearch = ({
                   style={{ height: keyboardPx }}
                 >
                   {entries.map((entry, at) =>
-                    at === 0 && best ? null : (
+                    at === 0 && head ? null : (
                       <li
                         key={entry.option.id}
-                        className={cn(listRow, entry.nested && "pl-4", at === active && "bg-muted")}
+                        className={cn(
+                          listRow,
+                          entry.dock && "items-center",
+                          entry.nested && "pl-4",
+                          at === active && "bg-muted"
+                        )}
                         {...optionProps(entry.option, at)}
                         onClick={() => activate(entry)}
                       >
-                        {entry.row ? (
-                          rowBody(entry.row)
+                        {entry.row || entry.dock ? (
+                          entryBody(entry)
                         ) : entry.cluster ? (
                           <>
                             <span className="min-w-0 flex-1">
@@ -643,7 +831,9 @@ export const PlaceSearch = ({
                           onClick={() => setExpanded({ query: state.query, clusters: shown.clusters, all: true })}
                           className="shrink-0 border-0 bg-transparent p-0 text-foreground underline underline-offset-4"
                         >
-                          All {groups.busCount} stops
+                          {mode === "rail"
+                            ? `All ${groups.items.length + (best ? 1 : 0)} stations`
+                            : `All ${groups.busCount} stops`}
                         </button>
                       ) : null}
                     </li>
