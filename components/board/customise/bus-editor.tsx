@@ -1,14 +1,13 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { PlusIcon, XIcon } from "lucide-react"
-import { BoardPlaceSearch } from "@/components/board/board-place-search"
+import { XIcon } from "lucide-react"
+import { EditorSearch } from "@/components/board/customise/editors"
+import { OrderedLineList } from "@/components/board/customise/ordered-line-list"
 import {
   HeightStepper,
   ICON_BUTTON,
   PanelTargetNote,
-  SQUARE_BUTTON,
-  SQUARE_CHECK,
   SectionHeading,
   TEXT_LINK,
 } from "@/components/board/customise/parts"
@@ -17,27 +16,24 @@ import {
   useBusStops,
   type BusStopInfo,
 } from "@/components/board/customise/use-bus-stops"
-import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
 import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
 import { useDualPathArrivals } from "@/hooks/use-dual-path-arrivals"
-import { busArrivalsRequest, filterBusRoutes } from "@/lib/tfl/board-bus-stops"
-import { cn } from "@/lib/utils"
+import { busArrivalsRequest } from "@/lib/tfl/board-bus-stops"
+import {
+  addLine,
+  moveLineToTop,
+  panelShown,
+  placeLine,
+  removeLine,
+} from "@/lib/tfl/board-customise"
+import { dayRoutes } from "@/lib/tfl/homepage-live/search-groups"
 
 const sameRoute = (row: { lineId?: string; lineName?: string }, route: string) =>
   (row.lineId ?? "").toLowerCase() === route.toLowerCase() ||
   (row.lineName ?? "").toLowerCase() === route.toLowerCase()
 
-/** Which of the listed stops a route calls at, in words. */
-const stopsNote = (route: string, stops: readonly (BusStopInfo | undefined)[]) => {
-  if (stops.length < 2) return null
-  const at = stops.filter((stop) => stop?.routes.includes(route))
-  if (at.length === stops.length) return stops.length === 2 ? "both stops" : "all stops"
-  const letters = at.flatMap((stop) => (stop?.letter ? [stop.letter] : []))
-  if (letters.length === 0) return null
-  return `${letters.length === 1 ? "stop" : "stops"} ${letters.join(", ")}`
-}
-
+/** A stop as the search lists it: name, letter, towards, routes, ✕. */
 const StopRow = ({
   id,
   stop,
@@ -47,22 +43,33 @@ const StopRow = ({
   stop: BusStopInfo | undefined
   onRemove: () => void
 }) => (
-  <li className="flex items-center border-b border-border last:border-b-0">
-    <span className="flex min-h-12 min-w-0 flex-1 flex-col justify-center py-1">
-      <span className="flex items-center gap-1.5 text-sm font-medium">
-        <span className="truncate">{stop?.name ?? id}</span>
-        {stop?.letter ? <StopLetterBadge letter={stop.letter} size="sm" /> : null}
-      </span>
-      {stop?.context ? (
-        <span className="truncate text-sm text-muted-foreground">
-          {stop.context}
+  <li className="flex min-h-14 items-start gap-1 border-b border-border py-2.5 last:border-b-0">
+    <span className="flex min-w-0 flex-1 items-start gap-3">
+      <span className="min-w-0 flex-1">
+        <span className="flex min-w-0 items-center text-lg leading-snug">
+          <span className="truncate">{stop?.name ?? " "}</span>
+          {stop?.letter ? (
+            <StopLetterBadge
+              letter={stop.letter}
+              size="sm"
+              className="ml-2 -translate-y-px"
+            />
+          ) : null}
         </span>
-      ) : null}
+        <span className="block truncate text-sm text-muted-foreground">
+          {stop?.context ?? " "}
+        </span>
+      </span>
+      <span className="flex max-w-[45%] shrink-0 flex-wrap justify-end gap-1">
+        {dayRoutes(stop?.routes ?? []).slice(0, 6).map((route) => (
+          <BusNumberChip key={route} label={route} />
+        ))}
+      </span>
     </span>
     <button
       type="button"
       aria-label={`Remove ${stop?.name ?? id}${stop?.letter ? ` stop ${stop.letter}` : ""}`}
-      className={ICON_BUTTON}
+      className={`${ICON_BUTTON} -my-1.5 -mr-2.5`}
       onClick={onRemove}
     >
       <XIcon className="size-5" aria-hidden />
@@ -71,22 +78,18 @@ const StopRow = ({
 )
 
 /**
- * Buses: the live board for the chosen stops, the stops (nearest to the
- * default place until the user changes them), the routes at them, Height.
+ * Buses: add a stop (the homepage search, bus stops only), the stops
+ * (nearest to the Trains station until the user changes them), the routes in
+ * board order with a Hidden zone, Height.
  */
 export const BusEditor = ({ api }: { api: CustomiseController }) => {
   const ids = api.busStops
   const { stops, routes, ready } = useBusStops(ids)
+  // Only for each route's destination.
   const arrivals = useDualPathArrivals({
     ...busArrivalsRequest(ids.join(",")),
     siteScope: "board",
   })
-  // The live board above is tall; bring the search field up under the header.
-  const addRef = useRef<HTMLElement | null>(null)
-  useEffect(() => {
-    if (api.busAdding) addRef.current?.scrollIntoView({ block: "start" })
-  }, [api.busAdding])
-  const shown = filterBusRoutes(arrivals.data, api.busRoutes)
 
   // A filter lists the routes to show; routes a new stop brings join it.
   // Counted only once every stop is read, so a slow read adds nothing.
@@ -103,58 +106,44 @@ export const BusEditor = ({ api }: { api: CustomiseController }) => {
     if (fresh.length > 0) setBusRoutes([...busRoutes, ...fresh])
   }, [ready, routesKey, busRoutes, setBusRoutes])
 
-  const isOn = (route: string) => !busRoutes || busRoutes.includes(route)
-  const onCount = routes.filter(isOn).length
-  const toggleRoute = (route: string, on: boolean) => {
-    const next = on
-      ? [...(busRoutes ?? routes), route]
-      : (busRoutes ?? routes).filter((item) => item !== route)
-    setBusRoutes(routes.every((item) => next.includes(item)) ? undefined : next)
-  }
-
-  const preview = (
-    <section aria-labelledby="customise-bus-board" className="space-y-1">
-      <SectionHeading id="customise-bus-board">On the board</SectionHeading>
-      <div className="border-y border-border py-2">
-        <BusArrivalsBoard
-          stopName={arrivals.data[0]?.stationName ?? stops[0]?.name ?? "Bus"}
-          stopPointId={ids[0]}
-          headingLevel={2}
-          data={shown}
-          now={arrivals.fetchedAt ?? undefined}
-          groupBy={api.busRoutes?.length ? "none" : "route"}
-          pageSize={api.layout.heights.bus}
-          loading={ids.length > 0 && arrivals.loading}
-          error={arrivals.fetchError}
-        />
-      </div>
-    </section>
-  )
-
-  if (api.busAdding) {
-    return (
-      <>
-        {preview}
-        <section ref={addRef} className="min-h-[80svh] scroll-mt-4 space-y-1">
-          <SectionHeading>
-            <label htmlFor="customise-bus-add">Add a bus stop</label>
-          </SectionHeading>
-          <BoardPlaceSearch
-            kind="bus"
-            inputId="customise-bus-add"
-            placeholder="Stop name or street"
-            emptyMessage="No bus stops matched that search."
-            addedIds={ids}
-            onSelect={(place) => api.setBusStops([...ids, place.id])}
-          />
-        </section>
-      </>
+  const on = busRoutes
+    ? busRoutes.filter((route) => routes.includes(route))
+    : routes
+  const hidden = routes.filter((route) => !on.includes(route))
+  // Every route in the usual order is no filter at all (the URL stays short).
+  const save = (next: readonly string[]) =>
+    setBusRoutes(
+      next.length === routes.length &&
+        next.every((route, index) => route === routes[index])
+        ? undefined
+        : [...next]
     )
-  }
+  const item = (route: string) => ({
+    name: `route ${route}`,
+    body: (
+      <>
+        <BusNumberChip label={route} />
+        <span className="min-w-0 truncate text-sm text-muted-foreground">
+          {arrivals.data.find((row) => sameRoute(row, route))?.destinationName}
+        </span>
+      </>
+    ),
+  })
 
   return (
     <>
-      {preview}
+      <div className="-mt-4">
+        <EditorSearch
+          api={api}
+          mode="bus"
+          placeholder="Add a bus stop"
+          chosenIds={ids}
+          onSelect={(hit) => {
+            if (hit.kind === "bus" && !ids.includes(hit.id))
+              api.setBusStops([...ids, hit.id])
+          }}
+        />
+      </div>
       <section aria-labelledby="customise-bus-stops" className="space-y-1">
         <div className="flex items-center justify-between gap-3">
           <SectionHeading id="customise-bus-stops">Stops</SectionHeading>
@@ -168,11 +157,7 @@ export const BusEditor = ({ api }: { api: CustomiseController }) => {
             </button>
           ) : null}
         </div>
-        {api.busStopsCustom ? null : api.panelTarget("bus") === "ready" ? (
-          <p className="text-sm text-muted-foreground">
-            Nearest to {api.stationName}. Remove or add to make your own.
-          </p>
-        ) : (
+        {api.busStopsCustom || api.panelTarget("bus") === "ready" ? null : (
           <PanelTargetNote api={api} kind="bus" />
         )}
         {ids.length > 0 ? (
@@ -189,68 +174,34 @@ export const BusEditor = ({ api }: { api: CustomiseController }) => {
             ))}
           </ul>
         ) : api.busStopsCustom ? (
-          <p className="text-sm text-muted-foreground">No bus stop yet</p>
+          <p className="text-sm text-muted-foreground">No bus stop yet.</p>
         ) : null}
-        <div className="pt-2">
-          <button
-            type="button"
-            className={cn(SQUARE_BUTTON, "w-full justify-start")}
-            onClick={() => api.setBusAdding(true)}
-          >
-            <PlusIcon className="size-4" aria-hidden />
-            Add a bus stop
-          </button>
-        </div>
       </section>
       {routes.length > 0 ? (
         <section aria-labelledby="customise-bus-routes" className="space-y-1">
           <SectionHeading id="customise-bus-routes">
-            Routes at these stops
+            Routes, in board order
           </SectionHeading>
-          <ul className="border-y border-border">
-            {routes.map((route) => {
-              const on = isOn(route)
-              const destination = arrivals.data.find((row) =>
-                sameRoute(row, route)
-              )?.destinationName
-              const note = on
-                ? [destination, stopsNote(route, stops)]
-                    .filter(Boolean)
-                    .join(" · ")
-                : "Not shown"
-              return (
-                <li key={route} className="border-b border-border last:border-b-0">
-                  <label className="flex min-h-12 items-center gap-3">
-                    <input
-                      type="checkbox"
-                      className={SQUARE_CHECK}
-                      checked={on}
-                      disabled={on && onCount === 1}
-                      aria-label={`Show route ${route}`}
-                      onChange={(event) =>
-                        toggleRoute(route, event.target.checked)
-                      }
-                    />
-                    <BusNumberChip
-                      label={route}
-                      className={cn(!on && "opacity-30")}
-                    />
-                    <span
-                      className={cn(
-                        "min-w-0 flex-1 truncate text-sm",
-                        !on && "text-muted-foreground"
-                      )}
-                    >
-                      {note}
-                    </span>
-                  </label>
-                </li>
-              )
-            })}
-          </ul>
+          <OrderedLineList
+            label="Routes, in board order"
+            ids={on}
+            flush
+            item={item}
+            onPlace={(route, index) => save(placeLine(on, route, index))}
+            onTop={(route) => save(moveLineToTop(on, route))}
+            hidden={{
+              hint: "Drag a route here to hide it",
+              ids: hidden,
+              canHide: () => on.length > 1,
+              onHide: (route) => save(removeLine(on, route)),
+              onShow: (route) => save(addLine(on, route)),
+            }}
+          />
         </section>
       ) : null}
-      <HeightStepper api={api} kind="bus" />
+      {panelShown(api.layout, "bus") ? (
+        <HeightStepper api={api} kind="bus" />
+      ) : null}
     </>
   )
 }

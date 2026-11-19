@@ -16,26 +16,31 @@ import {
   useDragOrder,
 } from "@/components/board/customise/drag-order"
 import {
+  CycleEditor,
+  StatusEditor,
+  TrainsEditor,
+} from "@/components/board/customise/editors"
+import {
   ICON_BUTTON,
   PanelMenu,
   PanelRoundel,
   SectionHeading,
   SoloLine,
+  StatusDots,
   lineName,
   panelSummary,
+  statusOnBoard,
 } from "@/components/board/customise/parts"
-import {
-  DisplayRows,
-  PanelBody,
-  StationPicker,
-} from "@/components/board/customise/sections"
+import { DisplayRows, PanelBody } from "@/components/board/customise/sections"
 import type { CustomiseController } from "@/components/board/customise/types"
 import {
   stopsByName,
   useBusStops,
 } from "@/components/board/customise/use-bus-stops"
+import { useCycleDocks } from "@/components/board/customise/use-cycle-docks"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
 import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
+import { LineBadge } from "@/components/tfl/brand/line-badge"
 import {
   CUSTOMISE_PANEL_LABEL,
   canHidePanel,
@@ -47,27 +52,38 @@ import { cn } from "@/lib/utils"
 
 const SUB = "flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground"
 
-/** Trains: the station, then its lines ("Northern, Piccadilly +3"). */
+/** Trains: the station, then its line chips in board order. */
 const TrainsSummary = ({ api }: { api: CustomiseController }) => {
   const ids =
     api.railLines.length > 0
       ? api.railLines
       : api.servingLines.map((line) => line.lineId)
-  const names = ids.slice(0, 2).map(lineName).join(", ")
   return (
     <>
       <span className={SUB}>
         <span className="truncate">{api.stationName}</span>
       </span>
       {ids.length > 0 ? (
-        <span className={cn(SUB, "mt-1 mb-1")}>
-          <span className="truncate">
-            {names}
-            {ids.length > 2 ? ` +${ids.length - 2}` : ""}
-          </span>
+        <span className="mb-1 flex flex-wrap gap-1">
+          {ids.map((id) => (
+            <LineBadge key={id} lineId={id} name={lineName(id)} />
+          ))}
         </span>
       ) : null}
     </>
+  )
+}
+
+/** Cycle hire: the docks' names, in board order. */
+const CycleSummary = ({ api }: { api: CustomiseController }) => {
+  const { docks, ready } = useCycleDocks(api.cycleDocks)
+  const names = docks.flatMap((dock) => (dock ? [dock.name] : []))
+  return (
+    <span className={SUB}>
+      <span className="truncate">
+        {ready && names.length > 0 ? names.join(", ") : " "}
+      </span>
+    </span>
   )
 }
 
@@ -129,6 +145,14 @@ const RowSummary = ({
   if (!off && ready && kind === "rail") return <TrainsSummary api={api} />
   if (!off && ready && kind === "bus" && api.busStops.length > 0)
     return <BusesSummary api={api} />
+  if (!off && ready && kind === "cycle" && api.cycleDocks.length > 0)
+    return <CycleSummary api={api} />
+  if (!off && kind === "status")
+    return (
+      <span className="mt-1 mb-1 block">
+        <StatusDots lines={statusOnBoard(api)} />
+      </span>
+    )
   const summary = panelSummary(api, kind, { hiddenRow: off })
   return summary ? (
     <span className={SUB}>
@@ -241,7 +265,11 @@ const BoardParts = ({ api }: { api: CustomiseController }) => {
               rowRef={row(kind)}
               press={press(kind)}
               grip={
-                <DragGrip name={CUSTOMISE_PANEL_LABEL[kind]} {...grip(kind)} />
+                <DragGrip
+                  name={CUSTOMISE_PANEL_LABEL[kind]}
+                  {...grip(kind)}
+                  className="pointer-coarse:w-0"
+                />
               }
               motion={rowMotion(kind)}
             />
@@ -274,19 +302,18 @@ const BoardParts = ({ api }: { api: CustomiseController }) => {
 }
 
 /**
- * R: the default place, the parts on the board as one list, the parts off
- * it, and Display, in a full page with Done. A part's editor is its own page.
+ * R: the parts on the board as one list, the parts off it, and Display, in a
+ * full page with Done. A part's editor is its own page, opening on a search.
  */
 export const CustomiseVariantR = ({ api }: { api: CustomiseController }) => {
+  if (api.editing === "rail") return <TrainsEditor api={api} />
   if (api.editing === "bus") return <BusEditor api={api} />
+  if (api.editing === "cycle") return <CycleEditor api={api} />
+  if (api.editing === "status") return <StatusEditor api={api} />
   if (api.editing) return <PanelBody api={api} kind={api.editing} />
   return (
     <>
       {api.layout.solo ? <SoloLine api={api} /> : null}
-      <section aria-labelledby="customise-r-station" className="space-y-1">
-        <SectionHeading id="customise-r-station">Default place</SectionHeading>
-        <StationPicker api={api} collapsible />
-      </section>
       <BoardParts api={api} />
       <section aria-label="Display" className="space-y-1">
         <SectionHeading>Display</SectionHeading>
