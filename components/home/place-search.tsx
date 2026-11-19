@@ -52,10 +52,12 @@ import {
   browseRows,
   fitFor,
   frameMatches,
+  frameWins,
   inFrame,
   leadWith,
   provisionalFrame,
   searchInFrame,
+  strongestRows,
   type Frame,
 } from "@/lib/tfl/homepage-live/search-frame"
 import { MAP_SEARCH_RADIUS_METERS, MAP_SELECTED_ZOOM, distanceMeters } from "@/lib/tfl/geo"
@@ -385,10 +387,11 @@ export const PlaceSearch = ({
     const nearest = rows.reduce<StopRow | undefined>((best, row) => (!best || away(row) < away(best) ? row : best), undefined)
     return leadWith(rows, (row) => row === nearest)
   }, [open, typed, index, frame, currentId, anchorLat, anchorLon, stations, hubStationIds])
-  const inFrameMatches = useMemo(
-    () => (index ? searchInFrame(index.kit, state.query, range, state.rows) : frameMatches(state.rows, range)),
-    [index, state.query, state.rows, range]
-  )
+  // Match quality first, then in view: a strong match outside beats a weak one in view.
+  const inFrameMatches = useMemo(() => {
+    const found = index ? searchInFrame(index.kit, state.query, range, state.rows) : frameMatches(state.rows, range)
+    return state.status !== "pending" && !frameWins(state.query, found, state.rows, range) ? [] : found
+  }, [index, state.query, state.rows, state.status, range])
   // Typed: matches in the frame; with none there, the wider search, and the map fits to it once.
   // After our fit the map shows the best match's area: list what is in view there, so pins and list stay one set.
   const inViewMatches = useMemo(
@@ -404,7 +407,7 @@ export const PlaceSearch = ({
         : state.rows
   const wideFit =
     open && typed && state.status !== "pending" && inFrameMatches.length === 0 && fit.attempt !== state.attempt
-      ? fitFor(state.rows)
+      ? fitFor(strongestRows(state.rows, state.query))
       : null
   if (wideFit) {
     setFit({ attempt: state.attempt, ...wideFit, key: fit.key + 1 })

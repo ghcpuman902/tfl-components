@@ -66,6 +66,46 @@ export const leadWith = (rows: readonly StopRow[], isLead: (row: StopRow) => boo
   return at <= 0 ? [...rows] : [rows[at]!, ...rows.slice(0, at), ...rows.slice(at + 1)]
 }
 
+/** 0 exact, 1 prefix, 2 anything else the search found (contains / word / fuzzy). */
+export const matchStrength = (name: string, query: string): 0 | 1 | 2 => {
+  const norm = (text: string) =>
+    text
+      .toLowerCase()
+      .replace(/\s*\((?:[^)]*)\)\s*$/, "")
+      .replace(/\s+(?:underground|dlr|rail|tram|overground|elizabeth line)?\s*station$/, "")
+      .replace(/[^\p{L}\p{N}]+/gu, " ")
+      .trim()
+  const n = norm(name)
+  const q = norm(query)
+  if (!q) return 2
+  return n === q ? 0 : n.startsWith(q) ? 1 : 2
+}
+
+const bestStrength = (rows: readonly StopRow[], query: string) =>
+  rows.reduce<number>((best, row) => Math.min(best, matchStrength(row.name, query)), 3)
+
+/**
+ * Match quality first, then in view: the frame's matches win unless a row
+ * outside it matches strictly better (a prefix outside beats a contains inside;
+ * exact inside still beats exact outside, and contains inside beats contains outside).
+ */
+export const frameWins = (
+  query: string,
+  inFrameRows: readonly StopRow[],
+  allRows: readonly StopRow[],
+  frame: Frame
+): boolean => {
+  if (inFrameRows.length === 0) return false
+  const outside = allRows.filter((row) => row.lat != null && row.lon != null && !inFrame(row, frame))
+  return bestStrength(inFrameRows, query) <= bestStrength(outside, query)
+}
+
+/** The rows of the strongest match quality, ranked order kept: what the map fits to. */
+export const strongestRows = (rows: readonly StopRow[], query: string): StopRow[] => {
+  const best = bestStrength(rows, query)
+  return rows.filter((row) => matchStrength(row.name, query) === best)
+}
+
 /** Typed matches inside the frame, in their ranked order. */
 export const frameMatches = (rows: readonly StopRow[], frame: Frame): StopRow[] =>
   rows.filter((row) => inFrame(row, frame))

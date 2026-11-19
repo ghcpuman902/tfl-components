@@ -7,6 +7,9 @@ import {
   BROWSE_CAP,
   browseRows,
   fitFor,
+  frameWins,
+  matchStrength,
+  strongestRows,
   frameMatches,
   searchInFrame,
   inFrame,
@@ -88,5 +91,35 @@ describe("search frame", () => {
     const wide = fitFor([row("a", 51.4, -0.1), row("none"), row("b", 51.408, -0.1), row("far", 51.6, -0.1)])
     assert.ok(Math.abs(wide!.origin.lat - 51.404) < 1e-9 && Math.abs(wide!.origin.lon + 0.1) < 1e-9)
     assert.ok(wide!.radiusMeters > 400 && wide!.radiusMeters < 500, "a far namesake is left out of the fit")
+  })
+
+  describe("ranking: match quality first, then in view", () => {
+    const frame = provisionalFrame(KINGS_CROSS)
+    const named = (name: string, inside: boolean): StopRow => ({
+      ...row(`${name}-${inside}`, inside ? 51.5308 : 51.51, inside ? -0.1238 : -0.09),
+      name,
+    })
+    it("grades exact, prefix and contains", () => {
+      assert.equal(matchStrength("Bank Underground Station", "bank"), 0)
+      assert.equal(matchStrength("Bank Road", "Bank"), 1)
+      assert.equal(matchStrength("Park Bank Road", "Bank"), 2)
+    })
+    it("exact in view beats exact outside", () => {
+      const a = named("Bank", true)
+      assert.ok(frameWins("Bank", [a], [named("Bank", false), a], frame))
+    })
+    it("a prefix outside beats a contains in view, and the fit uses the strong rows", () => {
+      const weak = named("Old Bank Lane", true)
+      const strong = named("Bank Road", false)
+      assert.ok(!frameWins("Bank", [weak], [weak, strong], frame))
+      assert.deepEqual(strongestRows([weak, strong], "Bank").map((r) => r.id), [strong.id])
+    })
+    it("contains in view beats contains outside", () => {
+      const a = named("Old Bank Lane", true)
+      assert.ok(frameWins("Bank", [a], [a, named("Far Bank Lane", false)], frame))
+    })
+    it("nothing in view never wins", () => {
+      assert.ok(!frameWins("Bank", [], [named("Bank", false)], frame))
+    })
   })
 })
