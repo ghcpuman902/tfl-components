@@ -341,6 +341,49 @@ export const placePanel = (
   }
 }
 
+/** Parts on the board in reading order: the wide column, then the narrow one. */
+export const onBoardPanels = (layout: BoardCustomiseLayout) => {
+  const { wide, narrow } = layoutSections(layout)
+  return [...wide, ...narrow]
+}
+
+/**
+ * Move a shown panel to `index` in the one "On the board" list. It joins the
+ * column of the part it lands under (or over, at the top), so the list keeps
+ * reading wide column first and the board stacks it where it was dropped.
+ */
+export const placeOnBoard = (
+  layout: BoardCustomiseLayout,
+  kind: BoardPanelKind,
+  index: number
+): BoardCustomiseLayout => {
+  const moving = layout.panels.find((panel) => panel.kind === kind)
+  if (!moving?.on) return layout
+  const order = placeLine(
+    onBoardPanels(layout).map((panel) => panel.kind),
+    kind,
+    index
+  ) as BoardPanelKind[]
+  const at = order.indexOf(kind)
+  const neighbour = order[at - 1] ?? order[at + 1]
+  const column =
+    layout.panels.find((panel) => panel.kind === neighbour)?.column ??
+    moving.column
+  const byKind = new Map(
+    layout.panels.map((panel) => [
+      panel.kind,
+      panel.kind === kind ? { ...panel, column } : panel,
+    ])
+  )
+  let next = 0
+  return {
+    ...layout,
+    panels: layout.panels.map((panel) =>
+      panel.on ? (byKind.get(order[next++] as BoardPanelKind) ?? panel) : panel
+    ),
+  }
+}
+
 export const setPanelHeight = (
   layout: BoardCustomiseLayout,
   kind: BoardPanelKind,
@@ -462,7 +505,8 @@ export const undoStationStatusLines = (
 /**
  * A station pick. The default panel replaces the status order (today's
  * behaviour); the variants keep the user's order (Q4) and offer "Use the lines
- * at X". Either way the nearby ids are cleared for a fresh lookup.
+ * at X". Either way the nearby ids are cleared for a fresh lookup, except
+ * bus stops the user chose, which stay.
  */
 export const draftForStationPick = (
   current: BoardSetupDraft,
@@ -480,7 +524,7 @@ export const draftForStationPick = (
   stopName: pick.stopName,
   lineIds: [...pick.lineIds],
   statusLineIds: [...pick.extraStatusLineIds],
-  busStopId: null,
+  busStopId: current.busStopsCustom ? current.busStopId : null,
   riverStopId: null,
   cycleDockIds: [],
   statusOrder: pick.keepStatusOrder ? current.statusOrder : null,

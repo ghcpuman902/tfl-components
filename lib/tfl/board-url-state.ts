@@ -35,6 +35,7 @@ import {
   type BoardStatusSurface,
   type BoardView,
 } from "@/lib/tfl/board-settings"
+import { serializeBusStopIds } from "@/lib/tfl/board-bus-stops"
 import {
   isDefaultBoardSlots,
   parseBoardPanels,
@@ -82,6 +83,7 @@ export type BoardSlotsConfig = {
 }
 
 export type BoardBusConfig = {
+  /** One stop id, or several comma-separated (see `board-bus-stops.ts`). */
   stop?: string
   routes?: readonly string[]
   rows?: number
@@ -186,7 +188,7 @@ export const parseBoardConfig = (
   if (hasP2) slots.p2 = parseBoardPanels(params.get("p2")) ?? []
 
   const bus: BoardBusConfig = {}
-  const busStop = parseOptionalString(params.get("b.stop") ?? "") ?? undefined
+  const busStop = serializeBusStopIds(params.get("b.stop"))
   if (busStop) bus.stop = busStop
   const busRoutes = parseRouteIdList(params.get("b.routes"))
   if (busRoutes !== undefined) bus.routes = busRoutes
@@ -462,10 +464,11 @@ export const describeBoardHrefSegments = (
     })
   }
 
-  if (merged.bus.stop) {
+  const busStops = serializeBusStopIds(merged.bus.stop)
+  if (busStops) {
     segments.push({
       setting: "busStop",
-      text: encodeSegment(BOARD_SETTINGS.busStop.param, merged.bus.stop),
+      text: encodeSegment(BOARD_SETTINGS.busStop.param, busStops),
     })
   }
   const busRoutesSerialized = serializeRouteIdList(merged.bus.routes)

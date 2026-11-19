@@ -1,11 +1,15 @@
+import { serializeBusStopIds } from "@/lib/tfl/board-bus-stops"
 import type { BoardNearbyResult } from "@/lib/tfl/board-nearby-action"
 import type { BoardSetupDraft } from "@/lib/tfl/board-setup-state"
 
-/** True while the draft is missing a nearby bus stop, pier or docks it shows. */
+/**
+ * True while the draft is missing a nearby bus stop, pier or docks it shows.
+ * Bus stops the user chose are never refilled, even when they removed them all.
+ */
 export const draftNeedsNearbyIds = (draft: BoardSetupDraft): boolean => {
   if (draft.continueWithoutStop) return false
   return (
-    !draft.busStopId ||
+    (!draft.busStopId && !draft.busStopsCustom) ||
     (draft.nearbyModes.includes("river") && !draft.riverStopId) ||
     (draft.nearbyModes.includes("cycle") && draft.cycleDockIds.length === 0)
   )
@@ -45,6 +49,14 @@ export const createNearbyFillTracker = () => {
   }
 }
 
+/** The nearest bus stops a lookup found, as `b.stop`. */
+const nearestBusStops = (
+  result: Extract<BoardNearbyResult, { ok: true }>
+): string | null =>
+  serializeBusStopIds(
+    (result.buses ?? (result.bus ? [result.bus] : [])).map((stop) => stop.id)
+  ) ?? null
+
 /** Fill the missing ids, but only if the draft is still on the stop looked up. */
 export const applyNearbyIds = (
   current: BoardSetupDraft,
@@ -56,7 +68,9 @@ export const applyNearbyIds = (
     return current
   return {
     ...current,
-    busStopId: current.busStopId ?? result.bus?.id ?? null,
+    busStopId:
+      current.busStopId ??
+      (current.busStopsCustom ? null : nearestBusStops(result)),
     riverStopId:
       current.nearbyModes.includes("river") && !current.riverStopId
         ? (result.river?.id ?? current.riverStopId)

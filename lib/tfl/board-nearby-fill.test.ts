@@ -56,6 +56,21 @@ describe("nearby fill", () => {
     assert.equal(applyNearbyIds(draft, EXAMPLE, EXAMPLE, lookup), draft)
   })
 
+  it("fills the nearest few stops, but never refills stops the user removed", () => {
+    const draft = { ...createBoardSetupDraft("d"), stopId: EXAMPLE }
+    const several = {
+      ...lookup,
+      buses: [lookup.bus, { id: "490000173RD", name: "Oxford Circus" }],
+    }
+    assert.equal(
+      applyNearbyIds(draft, EXAMPLE, EXAMPLE, several).busStopId,
+      "490000173RC,490000173RD"
+    )
+    const emptied = { ...draft, busStopsCustom: true }
+    assert.equal(nearbyFillKey(emptied, EXAMPLE), null)
+    assert.equal(applyNearbyIds(emptied, EXAMPLE, EXAMPLE, several).busStopId, null)
+  })
+
   it("keeps a bus stop that is already set", () => {
     const draft = {
       ...createBoardSetupDraft("d"),

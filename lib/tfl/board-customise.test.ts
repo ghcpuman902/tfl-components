@@ -15,7 +15,9 @@ import {
   panelSummaryText,
   moveLineToTop,
   nearbyModesForLayout,
+  onBoardPanels,
   placeLine,
+  placeOnBoard,
   panelRowTiles,
   placePanel,
   setPanelColumn,
@@ -228,6 +230,20 @@ describe("customise layout", () => {
   })
 })
 
+describe("one 'On the board' list", () => {
+  it("a part dragged to the top of the list goes to the top of the board", () => {
+    const layout = placeOnBoard(layoutFromConfig(base), "status", 0)
+    assert.deepEqual(
+      onBoardPanels(layout).map((panel) => panel.kind),
+      ["status", "rail", "bus"]
+    )
+    assert.deepEqual(applyLayoutToConfig(base, layout).slots, {
+      p1: ["status", "rail", "bus"],
+      p2: [],
+    })
+  })
+})
+
 describe("customise status priority", () => {
   const atOxford = {
     ...createBoardSetupDraft("d"),
@@ -283,6 +299,20 @@ describe("customise status priority", () => {
     assert.equal(statusStationPending(followed), false)
     const undone = undoStationStatusLines(followed, undo)
     assert.deepEqual(statusLineOrderFromDraft(undone), ["elizabeth", "central"])
+  })
+
+  it("bus stops the user chose survive a station pick; the nearest set does not", () => {
+    const pick = {
+      stopId: "940GZZLUKSX",
+      stopName: null,
+      lineIds: ["northern"],
+      extraStatusLineIds: [],
+      keepStatusOrder: true,
+    }
+    const nearest = { ...atOxford, busStopId: "490G1,490G2" }
+    assert.equal(draftForStationPick(nearest, pick).busStopId, null)
+    const custom = { ...nearest, busStopsCustom: true }
+    assert.equal(draftForStationPick(custom, pick).busStopId, "490G1,490G2")
   })
 
   it("the default panel's pick still replaces the order", () => {

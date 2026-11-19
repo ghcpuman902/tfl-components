@@ -8,6 +8,7 @@ import {
   shouldPausePollingForVisibility,
   type DualPathSource,
 } from "@/lib/tfl/dual-path-arrivals"
+import { mergeArrivalsByTime } from "@/lib/tfl/board-bus-stops"
 import { createBrowserTflClient } from "@/lib/tfl/browser-tfl-client"
 import { getBoardStopArrivalsAction } from "@/lib/tfl/board-live-action"
 import { BOARD_RATE_LIMIT_INLINE } from "@/lib/tfl/board-rate-limit"
@@ -17,6 +18,17 @@ import {
   getStopArrivalsAction,
 } from "@/lib/tfl/live-arrivals-action"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
+
+/** Each stop from its own cache entry; one stop failing does not blank the rest. */
+const getBoardStopsArrivals = async (stopIds: readonly string[]) => {
+  const results = await Promise.all(
+    stopIds.map((id) => getBoardStopArrivalsAction(id))
+  )
+  const read = results.flatMap((result) => (result.ok ? [result.data] : []))
+  const failed = results.find((result) => !result.ok)
+  if (read.length === 0 && failed) return failed
+  return { ok: true as const, data: mergeArrivalsByTime(read) }
+}
 
 export const ARRIVALS_POLL_MS = 20_000
 const DEFAULT_POLL_MS = ARRIVALS_POLL_MS
@@ -54,6 +66,11 @@ type UseDualPathArrivalsOptions = {
    * project key and reports quota exhaustion separately.
    */
   siteScope?: "demo" | "board"
+  /**
+   * Site path reads every one of `stopPointIds` (several bus stops) and
+   * merges them by time, instead of `stopPointId` alone. Board scope only.
+   */
+  siteEachStop?: boolean
 }
 
 type UseDualPathArrivalsResult = {
@@ -84,6 +101,7 @@ export const useDualPathArrivals = ({
   sharedTrackFamilies,
   resetKey,
   siteScope = "demo",
+  siteEachStop = false,
 }: UseDualPathArrivalsOptions): UseDualPathArrivalsResult => {
   const {
     status,
@@ -237,9 +255,11 @@ export const useDualPathArrivals = ({
       if (cancelled || paused) return
       try {
         const result =
-          siteScope === "board"
-            ? await getBoardStopArrivalsAction(stopForThisPoll)
-            : await getStopArrivalsAction(stopForThisPoll)
+          siteScope === "board" && siteEachStop && idsForThisPoll.length > 1
+            ? await getBoardStopsArrivals(idsForThisPoll)
+            : siteScope === "board"
+              ? await getBoardStopArrivalsAction(stopForThisPoll)
+              : await getStopArrivalsAction(stopForThisPoll)
         if (cancelled || paused) return
         if (!result.ok) {
           if ("kind" in result && result.kind === "rate-limited") {
@@ -380,6 +400,7 @@ export const useDualPathArrivals = ({
     markInvalid,
     resetKey,
     siteScope,
+    siteEachStop,
   ])
 
   if (isInvalid) {

@@ -1,6 +1,7 @@
 "use server"
 
 import { getNearbyBusStops } from "@/lib/tfl/actions"
+import { NEAREST_BUS_STOPS } from "@/lib/tfl/board-bus-stops"
 import { nearestCatalogStation, pickClosestNamed } from "@/lib/tfl/board-nearby"
 import { getTflClient } from "@/lib/tfl/client"
 import { getExplorerRiverPiers } from "@/lib/tfl/explorer/points-river"
@@ -18,6 +19,8 @@ export type BoardNearbyResult =
       ok: true
       rail?: { id: string; name: string }
       bus?: { id: string; name: string }
+      /** The nearest few bus stops, nearest first (`bus` is the first). */
+      buses?: readonly { id: string; name: string }[]
       river?: { id: string; name: string }
       docks: readonly string[]
     }
@@ -57,10 +60,12 @@ export async function getBoardNearbyPlaces(
       truncatedLon,
       RAIL_RADIUS_METERS
     )
-    const bus =
-      busResult.ok && busResult.stops[0]
-        ? { id: busResult.stops[0].id, name: busResult.stops[0].name }
-        : undefined
+    const buses = busResult.ok
+      ? busResult.stops
+          .slice(0, NEAREST_BUS_STOPS)
+          .map((stop) => ({ id: stop.id, name: stop.name }))
+      : []
+    const bus = buses[0]
     const riverPlace = pickClosestNamed(
       truncatedLat,
       truncatedLon,
@@ -78,6 +83,7 @@ export async function getBoardNearbyPlaces(
       ok: true,
       rail: rail ? { id: rail.id, name: rail.name } : undefined,
       bus,
+      buses,
       river: riverPlace
         ? { id: riverPlace.id, name: riverPlace.name }
         : undefined,

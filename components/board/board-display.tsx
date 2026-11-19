@@ -95,6 +95,7 @@ import { boardGlanceGutterCss } from "@/lib/tfl/board-layout"
 import { OXFORD_CIRCUS_ARRIVALS } from "@/lib/tfl/fixtures/arrivals-boards"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
 import { BOARD_SETTINGS } from "@/lib/tfl/board-settings"
+import { parseBusStopIds } from "@/lib/tfl/board-bus-stops"
 import {
   readInstalledBoardRecord,
   writeInstalledBoardConfig,
@@ -524,12 +525,18 @@ export const BoardDisplay = ({
     siteScope: "board",
   })
 
-  const busStopId = config.bus.stop ?? ""
+  const busStopIds = useMemo(
+    () => parseBusStopIds(config.bus.stop),
+    [config.bus.stop]
+  )
+  const busStopId = busStopIds[0] ?? ""
   const riverStopId = config.river.stop ?? ""
   const cycleDockIds = config.cycle.docks ?? []
 
   const busArrivals = useDualPathArrivals({
     stopPointId: boardReady && showBus ? busStopId : "",
+    stopPointIds: boardReady && showBus ? busStopIds : [],
+    siteEachStop: true,
     appKeyOverride: boardReady ? appKey : null,
     siteScope: "board",
   })
@@ -931,7 +938,7 @@ export const BoardDisplay = ({
   const holdLayout = `${slots.p1.join(",")}|${slots.p2.join(",")}|${busLayout}|${config.arrivals.rows ?? ""}|${config.bus.rows ?? ""}|${config.river.rows ?? ""}|${config.cycle.tiles ?? ""}|${config.status.tiles ?? ""}`
   const panelSource: Record<BoardPanelKind, string> = {
     rail: stopId,
-    bus: busStopId,
+    bus: busStopIds.join(","),
     river: riverStopId,
     cycle: (config.cycle.docks ?? []).join(","),
     status: (config.status.lines ?? []).join(","),
