@@ -49,3 +49,15 @@ describe("countdown (vendored from tfl-ts)", () => {
     assert.equal(tracker.view(T0)[0]!.secondsLeft, 115)
   })
 })
+
+describe("countdown: a dropped vehicle", () => {
+  it("does not return while the feed lists it as due", () => {
+    const tracker = createCountdownTracker({ projectionOffsetMs: 0 })
+    tracker.ingest([pred(60, 0)], T0, T0)
+    assert.equal(tracker.view(T0 + 71_000).length, 0)
+    tracker.ingest([pred(80, 80)], T0 + 80_000, T0 + 80_000)
+    assert.equal(tracker.view(T0 + 81_000).length, 0)
+    tracker.ingest([pred(260, 100)], T0 + 100_000, T0 + 100_000)
+    assert.equal(tracker.view(T0 + 101_000).length, 1)
+  })
+})
