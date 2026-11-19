@@ -171,7 +171,7 @@ export function MovementMatrix({
                   const mark = wanted ? (
                     <span
                       aria-hidden="true"
-                      className="size-2 rounded-full bg-current"
+                      className="size-2 rounded-none bg-current"
                     />
                   ) : (
                     <X

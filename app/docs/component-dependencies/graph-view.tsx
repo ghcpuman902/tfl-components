@@ -242,7 +242,7 @@ export const ComponentGraphView = ({ snapshot }: GraphViewProps) => {
         </span>
         <span className="inline-flex items-center gap-2">
           <span
-            className="inline-block size-3 rounded-full border-2 border-primary"
+            className="inline-block size-3 rounded-none border-2 border-primary"
             aria-hidden
           />
           tfl-ts typed props

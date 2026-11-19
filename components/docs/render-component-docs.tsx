@@ -133,12 +133,12 @@ const LineStripDocsPreviewFallback = () => (
   >
     <p className="text-sm text-muted-foreground">Loading route sequence</p>
     <div className="relative h-28 overflow-hidden" aria-hidden>
-      <div className="absolute inset-x-6 top-14 h-1 rounded-full bg-muted" />
+      <div className="absolute inset-x-6 top-14 h-1 rounded-none bg-muted" />
       <div className="absolute inset-x-6 top-[3.125rem] flex justify-between">
         {Array.from({ length: 7 }, (_, index) => (
           <span
             key={index}
-            className="size-3 animate-pulse rounded-full border-2 border-muted-foreground bg-background"
+            className="size-3 animate-pulse rounded-none border-2 border-muted-foreground bg-background"
           />
         ))}
       </div>

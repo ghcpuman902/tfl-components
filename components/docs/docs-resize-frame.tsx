@@ -122,7 +122,7 @@ export const DocsResizeFrame = ({
             {Array.from({ length: 6 }, (_, index) => (
               <span
                 key={index}
-                className="size-1 rounded-full bg-current opacity-70"
+                className="size-1 rounded-none bg-current opacity-70"
               />
             ))}
           </span>

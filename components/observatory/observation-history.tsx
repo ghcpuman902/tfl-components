@@ -66,7 +66,7 @@ const StateIcon = ({ state }: { state: DisplayState }) => {
   return (
     <span
       className={cn(
-        "inline-flex size-5 items-center justify-center rounded-full",
+        "inline-flex size-5 items-center justify-center rounded-none",
         STATE_BADGE_CLASS[state]
       )}
     >

@@ -211,7 +211,7 @@ export const HomeHeroPhotos = () => {
       {reduceMotion ? null : (
         <button
           type="button"
-          className="absolute top-3 right-3 z-20 inline-flex size-8 items-center justify-center rounded-full bg-black/55 text-white hover:bg-black/70 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+          className="absolute top-3 right-3 z-20 inline-flex size-8 items-center justify-center rounded-none bg-black/55 text-white hover:bg-black/70 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
           onClick={handleTogglePaused}
           aria-pressed={paused}
           aria-label={

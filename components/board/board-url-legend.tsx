@@ -26,7 +26,7 @@ export const BoardSegmentBadge = ({
   return (
     <span
       className={cn(
-        "inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-foreground/35 text-[0.6rem] leading-none text-foreground tabular-nums select-none after:content-[attr(data-n)]",
+        "inline-flex size-4 shrink-0 items-center justify-center rounded-none border border-foreground/35 text-[0.6rem] leading-none text-foreground tabular-nums select-none after:content-[attr(data-n)]",
         className
       )}
       data-n={String(index)}

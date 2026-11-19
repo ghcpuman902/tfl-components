@@ -14,7 +14,7 @@ const WeekAheadPreview = () => (
       <div key={`${day}-${index}`} className="grid justify-items-center gap-2">
         <span className="text-xs text-muted-foreground">{day}</span>
         <span
-          className="h-16 w-2 rounded-full"
+          className="h-16 w-2 rounded-none"
           style={{
             background:
               index === 5
@@ -62,14 +62,14 @@ const BranchAtlasPreview = () => (
 const LineLanguagesPreview = () => (
   <div className="flex h-full flex-col justify-center gap-7 px-3" aria-hidden>
     <div className="space-y-2">
-      <div className="h-2 rounded-full bg-[var(--tfl-line-victoria)]" />
+      <div className="h-2 rounded-none bg-[var(--tfl-line-victoria)]" />
       <div className="flex justify-between text-xs text-muted-foreground">
         <span>Oxford Circus</span>
         <span>Victoria</span>
       </div>
     </div>
     <div className="space-y-2" lang="ja">
-      <div className="h-2 rounded-full bg-[var(--tfl-line-victoria)]" />
+      <div className="h-2 rounded-none bg-[var(--tfl-line-victoria)]" />
       <div className="flex justify-between text-xs text-muted-foreground">
         <span>オックスフォード・サーカス</span>
         <span>ヴィクトリア</span>

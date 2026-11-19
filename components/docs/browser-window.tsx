@@ -33,9 +33,9 @@ export const BrowserWindow = ({
   >
     <div className="flex items-center gap-3 border-b border-border px-3 py-2">
       <div className="flex gap-1.5" aria-hidden>
-        <span className="size-2.5 rounded-full bg-muted-foreground/30" />
-        <span className="size-2.5 rounded-full bg-muted-foreground/30" />
-        <span className="size-2.5 rounded-full bg-muted-foreground/30" />
+        <span className="size-2.5 rounded-none bg-muted-foreground/30" />
+        <span className="size-2.5 rounded-none bg-muted-foreground/30" />
+        <span className="size-2.5 rounded-none bg-muted-foreground/30" />
       </div>
       <p className="min-w-0 flex-1 truncate text-center text-xs text-muted-foreground">
         {url}

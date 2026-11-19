@@ -189,7 +189,7 @@ export const NetworkRings = ({
                   )}
                 >
                   <span
-                    className="size-3 shrink-0 rounded-full"
+                    className="size-3 shrink-0 rounded-none"
                     style={{ backgroundColor: line.colour }}
                     aria-hidden
                   />

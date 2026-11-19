@@ -153,7 +153,7 @@ function MatrixWorkbench({
                   key={item.id}
                   aria-pressed={selected}
                   className={cn(
-                    "min-h-8 shrink-0 rounded-full border border-border bg-background px-3 py-1 text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                    "min-h-8 shrink-0 rounded-none border border-border bg-background px-3 py-1 text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                     selected &&
                       "border-foreground bg-foreground text-background"
                   )}
@@ -168,7 +168,7 @@ function MatrixWorkbench({
               )
             })}
             {custom ? (
-              <span className="inline-flex min-h-8 shrink-0 items-center rounded-full border border-foreground bg-foreground px-3 py-1 text-xs text-background">
+              <span className="inline-flex min-h-8 shrink-0 items-center rounded-none border border-foreground bg-foreground px-3 py-1 text-xs text-background">
                 Custom
               </span>
             ) : null}

@@ -30,7 +30,7 @@ const Verdict = ({
   <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-4">
     <span
       className={cn(
-        "mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full",
+        "mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-none",
         good
           ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
           : "bg-red-500/15 text-red-600 dark:text-red-400"

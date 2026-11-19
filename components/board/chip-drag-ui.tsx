@@ -17,7 +17,7 @@ export const ChipRemoveBadge = () => (
     aria-hidden
     className={cn(
       CHIP_ACTION_BADGE_CLASS,
-      "flex size-4 items-center justify-center rounded-full bg-background ring-1 ring-border"
+      "flex size-4 items-center justify-center rounded-none bg-background ring-1 ring-border"
     )}
   >
     <XIcon className="size-2.5" />
@@ -27,7 +27,7 @@ export const ChipRemoveBadge = () => (
 export const InsertCaret = () => (
   <span
     aria-hidden
-    className="h-7 w-0.5 shrink-0 rounded-full bg-foreground/30"
+    className="h-7 w-0.5 shrink-0 rounded-none bg-foreground/30"
   />
 )
 

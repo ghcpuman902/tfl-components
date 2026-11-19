@@ -161,7 +161,7 @@ const ChoiceBubble = ({
       className={cn(
         CHOICE_PILL_CLASS,
         RADIUS_TRANSITION_CLASS,
-        isLatest ? "rounded-[26px_26px_3px_26px]" : "rounded-[26px]"
+        isLatest ? "rounded-none" : "rounded-none"
       )}
     >
       {children}
@@ -324,7 +324,7 @@ export const LandingRoomChat = ({
             className={cn(
               BUBBLE_CLASS,
               RADIUS_TRANSITION_CLASS,
-              firstHasTail ? "rounded-[26px_26px_26px_3px]" : "rounded-[26px]",
+              firstHasTail ? "rounded-none" : "rounded-none",
               skipIntro ? undefined : ENTER_CLASS
             )}
           >
@@ -348,7 +348,7 @@ export const LandingRoomChat = ({
                   BUBBLE_CLASS,
                   RADIUS_TRANSITION_CLASS,
                   skipIntro ? undefined : ENTER_CLASS,
-                  isLatest ? "rounded-[26px_26px_26px_3px]" : "rounded-[26px]"
+                  isLatest ? "rounded-none" : "rounded-none"
                 )}
               >
                 <div className={skipIntro ? undefined : ENTER_CLASS}>
@@ -363,7 +363,7 @@ export const LandingRoomChat = ({
               className={cn(
                 BUBBLE_CLASS,
                 RADIUS_TRANSITION_CLASS,
-                "rounded-[26px_26px_26px_3px]",
+                "rounded-none",
                 ENTER_CLASS
               )}
             >
