@@ -67,6 +67,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Android keeps the layout viewport when the keyboard opens, as iOS does, so the search view never moves.
+  interactiveWidget: "overlays-content",
   // OS media queries for first paint / system theme. An explicit light/dark
   // choice rewrites every theme-color tag in themeColorBootScript + ThemeColorSync.
   themeColor: [...SITE_VIEWPORT_THEME_COLOR],

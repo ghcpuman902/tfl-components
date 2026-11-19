@@ -8,10 +8,13 @@ import {
   useReducer,
   useRef,
   useState,
+  type MouseEvent,
   type RefObject,
 } from "react"
+import dynamic from "next/dynamic"
 import { LocateFixed, Search } from "lucide-react"
 import type { ExplorerTubeRailPoint } from "@/lib/tfl/explorer/common"
+import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
 import {
   enrichBusStopsAction,
   searchBusStopsAction,
@@ -30,8 +33,21 @@ import {
   placeHitOfRow,
   rankBusHits,
   stationHitOf,
+  stationPointOfRow,
   type PlaceHit,
 } from "@/lib/tfl/homepage-live/search"
+import {
+  COLLAPSED_ITEMS,
+  dayRoutes,
+  groupSearchRows,
+  type SearchCluster,
+} from "@/lib/tfl/homepage-live/search-groups"
+import {
+  estimateKeyboardHeight,
+  measureKeyboardHeight,
+  readKeyboardHeight,
+  writeKeyboardHeight,
+} from "@/lib/tfl/homepage-live/keyboard-zone"
 import { nearbyExplorerPoints } from "@/lib/tfl/explorer-point-search"
 import { normaliseRailPoint } from "@/lib/tfl/explorer-point-normalise"
 import {
@@ -41,29 +57,63 @@ import {
   type StopSearchKit,
 } from "@/lib/tfl/stop-index"
 import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
-import { listHeightToScreenBottom } from "@/lib/tfl/homepage-live/list-fit"
+import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
 import { cn } from "@/lib/utils"
 
-const INSTANT_LIMIT = 14
+/** Enough rows that a same-name cluster (Bank Station A–K) arrives whole. */
+const INSTANT_LIMIT = 40
+
+const SearchMap = dynamic(
+  () =>
+    import("@/components/explorer/explorer-point-map").then(
+      (mod) => mod.ExplorerPointMap
+    ),
+  { ssr: false, loading: () => <div className="size-full bg-muted" aria-hidden /> }
+)
 
 type Replay = { fixture: string; round: number } | undefined
 
+const MODE_LABELS: Readonly<Record<string, string>> = {
+  tube: "Tube",
+  "elizabeth-line": "Elizabeth line",
+  dlr: "DLR",
+  overground: "Overground",
+  tram: "Tram",
+  "national-rail": "National Rail",
+}
+
 /** Line colours as square marks; `data-line` supplies `--line-color`. */
 const LineMarks = ({ lines }: { lines: readonly string[] }) => (
-  <span className="flex flex-wrap items-center gap-1" aria-hidden>
+  <span className="flex flex-wrap items-center justify-end gap-1" aria-hidden>
     {lines.slice(0, 8).map((line) => (
       <span key={line} data-line={line} className="h-1.5 w-4 bg-(--line-color)" />
     ))}
   </span>
 )
 
-const dayRoutes = (lines: readonly string[]) =>
-  lines.filter((line) => !/^n\d/i.test(line))
+const RouteChips = ({ routes, max }: { routes: readonly string[]; max: number }) => (
+  <span className="flex max-w-[45%] shrink-0 flex-wrap justify-end gap-1 sm:max-w-60">
+    {routes.slice(0, max).map((route) => (
+      <BusNumberChip key={route} label={route} />
+    ))}
+  </span>
+)
 
 const rowLabel = (row: StopRow) =>
   row.kind === "station"
     ? `${row.name}, station`
     : `${row.name}${row.letter ? `, stop ${row.letter}` : ""}${row.towards ? `, towards ${row.towards}` : ""}, bus stop`
+
+const pointOfRow = (row: StopRow): ExplorerPoint => ({
+  id: row.id,
+  name: row.name,
+  kind: "stopPoint",
+  lat: row.lat,
+  lon: row.lon,
+  ...(row.kind === "bus"
+    ? { modes: ["bus"], stopLetter: row.letter, towards: row.towards }
+    : { modes: row.modes.filter((mode) => mode !== "bus"), lineIds: [...row.lines] }),
+})
 
 const MIN_FIT_PX = 18
 let measureContext: CanvasRenderingContext2D | null | undefined
@@ -106,12 +156,21 @@ const sleep = (ms: number, signal: AbortSignal) =>
     })
   })
 
+const localStore = () => {
+  try {
+    return window.localStorage
+  } catch {
+    return undefined
+  }
+}
+
+type Option = { id: string; label: string; act: () => void; expanded?: boolean }
+type Entry = { option: Option; row?: StopRow; cluster?: SearchCluster; nested?: boolean }
+
 export type PlaceSearchProps = {
   /** Resolves a chosen station to the StopPoints that carry its arrivals; also feeds "Near me". */
   stations: readonly ExplorerTubeRailPoint[]
   hubStationIds: Readonly<Record<string, string>>
-  /** What the box shows when nothing is being typed. */
-  valueLabel: string
   anchor?: { lat?: number; lon?: number }
   replay?: Replay
   /** Replay only: holds TfL's answer back so the index rows can be seen before the merge. */
@@ -119,27 +178,38 @@ export type PlaceSearchProps = {
   onSelect: (hit: PlaceHit) => void
 }
 
+/**
+ * At rest a quiet field above the Board. Focus turns the same field into the
+ * top of a full-screen search view: map, the best match held in place, then a
+ * keyboard-high zone holding the rest of the list, so nothing moves when the
+ * keyboard opens or closes.
+ */
 export const PlaceSearch = ({
   stations,
   hubStationIds,
-  valueLabel,
   anchor,
   replay,
   searchDelayMs,
   onSelect,
 }: PlaceSearchProps) => {
   const [state, dispatch] = useReducer(combinedReducer, initialCombinedState)
-  const [editing, setEditing] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [keyboardPx, setKeyboardPx] = useState(0)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState<{ query: string; clusters: string[]; all: boolean }>({
+    query: "",
+    clusters: [],
+    all: false,
+  })
   const [indexReady, setIndexReady] = useState(false)
   const [locateNote, setLocateNote] = useState<string | undefined>()
   const inputRef = useRef<HTMLInputElement>(null)
+  const keyboardRef = useRef(0)
   const listId = useId()
   const optionId = (id: string) => `${listId}-${id}`
 
   const kitRef = useRef<StopSearchKit | null>(null)
   const searchRef = useRef<LiveSearch | null>(null)
-  const blurTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const latest = useRef({ anchor, replay, searchDelayMs })
   useEffect(() => {
     latest.current = { anchor, replay, searchDelayMs }
@@ -208,65 +278,108 @@ export const PlaceSearch = ({
     const timer = setTimeout(start, 400)
     return () => clearTimeout(timer)
   }, [])
-  useEffect(() => () => clearTimeout(blurTimer.current), [])
 
-  useFitFontSize(inputRef, editing ? state.query : valueLabel)
+  useFitFontSize(inputRef, open ? state.query : "")
 
-  const rows = state.rows
-  const open = editing && state.query.trim().length > 0
-
-  // The open list overlays the Board, so its bottom edge sits on the bottom of the screen at every scroll
-  // position; a fixed max-height ended mid-screen once scrolled and left Board rows showing under it.
-  const listRef = useRef<HTMLUListElement>(null)
-  useLayoutEffect(() => {
+  // The page behind never scrolls, and K grows to the real keyboard the first time it is seen.
+  useEffect(() => {
     if (!open) return
-    const list = listRef.current
-    if (!list) return
-    let frame = 0
-    const fit = () => {
-      cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => {
-        const viewport = window.visualViewport?.height ?? window.innerHeight
-        list.style.height = `${listHeightToScreenBottom(viewport, list.getBoundingClientRect().top)}px`
-      })
+    const html = document.documentElement
+    const previous = [html.style.overflow, document.body.style.overflow]
+    html.style.overflow = "hidden"
+    document.body.style.overflow = "hidden"
+    const viewport = window.visualViewport
+    const measure = () => {
+      if (!viewport) return
+      const measured = measureKeyboardHeight(window.innerHeight, viewport.height)
+      if (measured == null || measured <= keyboardRef.current) return
+      keyboardRef.current = measured
+      setKeyboardPx(measured)
+      writeKeyboardHeight(localStore(), measured)
     }
-    fit()
-    window.addEventListener("scroll", fit, { passive: true })
-    window.addEventListener("resize", fit)
-    window.visualViewport?.addEventListener("resize", fit)
+    const frame = requestAnimationFrame(measure)
+    viewport?.addEventListener("resize", measure)
     return () => {
       cancelAnimationFrame(frame)
-      window.removeEventListener("scroll", fit)
-      window.removeEventListener("resize", fit)
-      window.visualViewport?.removeEventListener("resize", fit)
+      viewport?.removeEventListener("resize", measure)
+      html.style.overflow = previous[0] ?? ""
+      document.body.style.overflow = previous[1] ?? ""
     }
   }, [open])
-  const active = useMemo(
-    () => (activeId ? rows.findIndex((row) => row.id === activeId) : -1),
-    [rows, activeId]
-  )
 
-  const hitOf = (row: StopRow | undefined) =>
-    row ? placeHitOfRow(row, stations, hubStationIds) : null
-
-  const highlight = (index: number) => {
-    const row = index >= 0 ? rows[index] : undefined
-    setActiveId(row?.id ?? null)
+  const openView = () => {
+    if (open) return
+    const px = readKeyboardHeight(localStore()) ?? estimateKeyboardHeight(window.innerHeight)
+    keyboardRef.current = px
+    setKeyboardPx(px)
+    setOpen(true)
   }
 
-  const reset = () => {
-    setEditing(false)
+  const rows = state.rows
+  const groups = useMemo(() => groupSearchRows(rows), [rows])
+  const best = groups.best
+  const shown: { clusters: string[]; all: boolean } =
+    expanded.query === state.query ? expanded : { clusters: [], all: false }
+  const items = shown.all ? groups.items : groups.items.slice(0, COLLAPSED_ITEMS)
+  const hasMore = !shown.all && groups.items.length > COLLAPSED_ITEMS
+  const points = useMemo(
+    () => rows.filter((row) => row.lat != null && row.lon != null).map(pointOfRow),
+    [rows]
+  )
+
+  const close = () => {
+    setOpen(false)
     setActiveId(null)
+    setExpanded({ query: "", clusters: [], all: false })
     searchRef.current?.type("")
+    inputRef.current?.blur()
   }
 
   const choose = (row: StopRow) => {
-    clearTimeout(blurTimer.current)
-    const hit = hitOf(row)!
-    reset()
+    const hit = placeHitOfRow(row, stations, hubStationIds)
+    close()
     onSelect(hit)
-    inputRef.current?.blur()
   }
+
+  const toggleCluster = (cluster: SearchCluster) =>
+    setExpanded({
+      query: state.query,
+      all: shown.all,
+      clusters: shown.clusters.includes(cluster.id)
+        ? shown.clusters.filter((id) => id !== cluster.id)
+        : [...shown.clusters, cluster.id],
+    })
+
+  // Every pickable line in screen order: the sticky best match, then the zone's rows.
+  const entries: Entry[] = []
+  const pushRow = (row: StopRow, nested = false) =>
+    entries.push({
+      option: { id: nested ? `${row.id}:in-cluster` : row.id, label: rowLabel(row), act: () => choose(row) },
+      row,
+      nested,
+    })
+  if (best) pushRow(best)
+  for (const item of items) {
+    if (item.kind === "row") {
+      pushRow(item.row)
+      continue
+    }
+    const isOpen = shown.clusters.includes(item.id)
+    entries.push({
+      option: {
+        id: item.id,
+        label: `${item.name}, ${item.stops.length} bus stops`,
+        act: () => toggleCluster(item),
+        expanded: isOpen,
+      },
+      cluster: item,
+    })
+    if (isOpen) for (const stop of item.stops) pushRow(stop, true)
+  }
+  const options = entries.map((entry) => entry.option)
+  const active = activeId ? options.findIndex((option) => option.id === activeId) : -1
+  const rowById = new Map(rows.map((row) => [row.id, row]))
+  const mapSelectedId = entries[active]?.row?.id ?? best?.id
 
   const locate = () => {
     if (!("geolocation" in navigator)) {
@@ -287,17 +400,15 @@ export const PlaceSearch = ({
           setLocateNote("No station within 2 km of you.")
           return
         }
-        clearTimeout(blurTimer.current)
-        reset()
+        close()
         onSelect(stationHitOf(point))
-        inputRef.current?.blur()
       },
       () => setLocateNote("Location is off. Type a station instead."),
       { timeout: 8_000, maximumAge: 60_000 }
     )
   }
 
-  const empty = open && rows.length === 0 && indexReady && (state.status === "ok" || state.status === "idle")
+  const empty = state.query.trim() && rows.length === 0 && indexReady && (state.status === "ok" || state.status === "idle")
   const footer =
     state.status === "slow"
       ? "Searching bus stops…"
@@ -307,143 +418,221 @@ export const PlaceSearch = ({
           ? NO_PLACES
           : null
 
+  const optionProps = (option: Option, index: number) => ({
+    id: optionId(option.id),
+    role: "option" as const,
+    "aria-selected": index === active,
+    "aria-label": option.label,
+    "aria-expanded": option.expanded,
+    onMouseDown: (event: MouseEvent) => event.preventDefault(),
+    onClick: option.act,
+    onMouseEnter: () => setActiveId(option.id),
+  })
+
+  const rowBody = (row: StopRow) => {
+    const station = row.kind === "station" ? stationPointOfRow(row, stations, hubStationIds) : undefined
+    const modes: readonly string[] = station?.modes ?? row.modes
+    const detail =
+      row.kind === "station"
+        ? [
+            ...modes.flatMap((mode) => (MODE_LABELS[mode] ? [MODE_LABELS[mode]] : [])),
+            station?.zone ? `Zone ${station.zone}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")
+        : row.towards
+          ? `towards ${row.towards}`
+          : ""
+    return (
+      <>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-lg leading-snug">
+            {row.name}
+            {row.kind === "bus" && row.letter ? (
+              <StopLetterBadge letter={row.letter} size="sm" className="ml-2 -translate-y-px" />
+            ) : null}
+          </span>
+          {detail ? (
+            <span className="block truncate text-sm text-muted-foreground">{detail}</span>
+          ) : null}
+        </span>
+        {row.kind === "station" ? (
+          <span className="max-w-[45%] shrink-0 self-start pt-2">
+            <LineMarks lines={station?.lines ?? row.lines} />
+          </span>
+        ) : (
+          <RouteChips routes={dayRoutes(row.lines)} max={6} />
+        )}
+      </>
+    )
+  }
+
+  const listRow = "flex min-h-14 cursor-pointer items-start gap-3 border-b border-border py-2.5"
+
   return (
-    // Its own stacking context above the Board that follows it in the DOM, so the open list paints over it,
-    // and below the sticky site header (z-30), so scrolling never lifts the field or its list over the nav.
-    <div className="relative z-20">
-      <div className="flex items-center gap-3 border border-input bg-transparent px-4 py-3 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
-        <Search className="size-7 shrink-0" aria-hidden />
-        <input
-          ref={inputRef}
-          type="text"
-          role="combobox"
-          aria-label="Search a station or bus stop"
-          aria-expanded={open}
-          aria-controls={listId}
-          aria-autocomplete="list"
-          aria-activedescendant={active >= 0 ? optionId(rows[active]!.id) : undefined}
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck={false}
-          enterKeyHint="go"
-          placeholder="Station or bus stop"
-          value={editing ? state.query : valueLabel}
-          onFocus={(event) => {
-            clearTimeout(blurTimer.current)
-            ensureIndex()
-            setEditing(true)
-            event.currentTarget.select()
-          }}
-          onChange={(event) => {
-            setActiveId(null)
-            searchRef.current?.type(event.target.value)
-          }}
-          onBlur={() => {
-            // A tap on a row can blur first on touch browsers; give its click time to land.
-            blurTimer.current = setTimeout(reset, 200)
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              reset()
-              event.currentTarget.blur()
-              return
-            }
-            if (
-              event.key === "ArrowDown" ||
-              event.key === "ArrowUp" ||
-              event.key === "Home" ||
-              event.key === "End"
-            ) {
-              if (!open || rows.length === 0) return
-              event.preventDefault()
-              highlight(nextActiveIndex(active, event.key, rows.length))
-              return
-            }
-            if (event.key === "Enter") {
-              const row = rows[active] ?? rows[0]
-              if (row) {
-                event.preventDefault()
-                choose(row)
-              }
-            }
-          }}
-          className="h-12 min-w-0 flex-1 bg-transparent text-3xl leading-none text-foreground outline-none placeholder:text-muted-foreground sm:h-16 sm:text-5xl"
-        />
-        <button
-          type="button"
-          onClick={locate}
-          className="flex min-h-11 shrink-0 items-center gap-2 border-0 bg-transparent px-1 text-base text-muted-foreground hover:text-foreground"
-        >
-          <LocateFixed className="size-5" aria-hidden />
-          <span className="hidden sm:inline">Near me</span>
-          <span className="sr-only sm:hidden">Near me</span>
-        </button>
-      </div>
-      {locateNote ? (
-        <p role="status" className="pt-2 text-sm text-balance text-muted-foreground">
-          {locateNote}
-        </p>
-      ) : null}
-      {open ? (
-        <ul
-          ref={listRef}
-          id={listId}
-          role="listbox"
-          aria-label="Matching stations and bus stops"
-          className="absolute inset-x-0 top-full z-10 h-[calc(100svh-9.5rem)] overflow-y-auto overscroll-contain bg-background shadow-none"
-        >
-          {rows.map((row, index) => (
-            <li
-              key={row.id}
-              id={optionId(row.id)}
-              role="option"
-              aria-selected={index === active}
-              aria-label={rowLabel(row)}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => choose(row)}
-              onMouseEnter={() => highlight(index)}
-              className={cn(
-                "flex min-h-14 cursor-pointer items-center gap-3 px-3 py-2",
-                index === active && "bg-muted"
-              )}
-            >
-              {row.kind === "bus" ? (
-                <span className="flex w-7 shrink-0 justify-center">
-                  {row.letter ? <StopLetterBadge letter={row.letter} /> : null}
-                </span>
+    // At rest it stacks over the Board's z-10 layers and under the sticky site header (z-30); open, the view covers the header.
+    <div className={open ? "relative z-50" : "relative z-20"}>
+      <div className={open ? "fixed inset-x-0 top-0 h-dvh bg-background" : undefined}>
+        <div className={cn("flex w-full flex-col", open && "mx-auto h-full max-w-3xl")}>
+          <div className={cn(open && "shrink-0 px-4 pt-3 sm:px-8")}>
+            <div className="flex h-[4.5rem] items-center gap-3 border-b border-foreground sm:h-[5.5rem]">
+              <Search className="size-7 shrink-0" aria-hidden />
+              <input
+                ref={inputRef}
+                type="text"
+                role="combobox"
+                aria-label="Search a station or bus stop"
+                aria-expanded={open && options.length > 0}
+                aria-controls={listId}
+                aria-autocomplete="list"
+                aria-activedescendant={active >= 0 ? optionId(options[active]!.id) : undefined}
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="go"
+                placeholder="Station, stop or postcode"
+                value={open ? state.query : ""}
+                onFocus={() => {
+                  ensureIndex()
+                  openView()
+                }}
+                onChange={(event) => {
+                  setActiveId(null)
+                  searchRef.current?.type(event.target.value)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    close()
+                    return
+                  }
+                  if (
+                    event.key === "ArrowDown" ||
+                    event.key === "ArrowUp" ||
+                    event.key === "Home" ||
+                    event.key === "End"
+                  ) {
+                    if (options.length === 0) return
+                    event.preventDefault()
+                    setActiveId(options[nextActiveIndex(active, event.key, options.length)]?.id ?? null)
+                    return
+                  }
+                  if (event.key === "Enter") {
+                    const option = options[active] ?? options[0]
+                    if (option) {
+                      event.preventDefault()
+                      option.act()
+                    }
+                  }
+                }}
+                className="h-12 min-w-0 flex-1 bg-transparent text-3xl leading-none text-foreground outline-none placeholder:text-muted-foreground sm:h-16 sm:text-5xl"
+              />
+              <button
+                type="button"
+                onClick={locate}
+                className="flex min-h-11 shrink-0 items-center border-0 bg-transparent px-1 text-muted-foreground hover:text-foreground"
+              >
+                <LocateFixed className="size-5" aria-hidden />
+                <span className="sr-only">Near me</span>
+              </button>
+              {open ? (
+                <button
+                  type="button"
+                  onClick={close}
+                  className="min-h-11 shrink-0 border-0 bg-transparent px-1 text-base text-foreground"
+                >
+                  Cancel
+                </button>
               ) : null}
-              <span className="min-w-0 flex-1">
-                <span className="block text-lg leading-snug text-pretty">{row.name}</span>
-                {row.kind === "bus" && row.towards ? (
-                  <span className="block text-sm text-pretty text-muted-foreground">
-                    towards {row.towards}
-                  </span>
-                ) : null}
-              </span>
-              <span className="flex min-h-6 max-w-[30%] shrink-0 flex-wrap items-center justify-end gap-x-2 sm:max-w-60">
-                {row.kind === "station" ? (
-                  <LineMarks lines={row.lines} />
-                ) : (
-                  dayRoutes(row.lines)
-                    .slice(0, 6)
-                    .map((route) => (
-                      <span key={route} className="text-sm text-muted-foreground">
-                        {route}
+            </div>
+            {locateNote ? (
+              <p role="status" className="pt-2 text-sm text-balance text-muted-foreground">
+                {locateNote}
+              </p>
+            ) : null}
+          </div>
+          {open ? (
+            <>
+              <div className="relative min-h-0 flex-1">
+                <SearchMap
+                  points={points}
+                  selectedId={mapSelectedId}
+                  onSelect={(point) => {
+                    const row = rowById.get(point.id)
+                    if (row) choose(row)
+                  }}
+                  cooperativeGestures={false}
+                  className="min-h-0 rounded-none border-0"
+                />
+              </div>
+              <div id={listId} role="listbox" aria-label="Matching stations and bus stops" className="shrink-0">
+                <div
+                  className={cn(
+                    "flex h-16 items-center gap-3 overflow-hidden px-4 sm:px-8",
+                    best && "cursor-pointer bg-muted"
+                  )}
+                  {...(best ? optionProps(entries[0]!.option, 0) : { role: "presentation" })}
+                >
+                  {best ? rowBody(best) : null}
+                </div>
+                <ul
+                  role="group"
+                  aria-label="More results"
+                  className="overflow-y-auto overscroll-contain px-4 sm:px-8"
+                  style={{ height: keyboardPx }}
+                >
+                  {entries.map((entry, at) =>
+                    at === 0 && best ? null : (
+                      <li
+                        key={entry.option.id}
+                        className={cn(listRow, entry.nested && "pl-4", at === active && "bg-muted")}
+                        {...optionProps(entry.option, at)}
+                      >
+                        {entry.row ? (
+                          rowBody(entry.row)
+                        ) : entry.cluster ? (
+                          <>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-lg leading-snug">
+                                {entry.cluster.name}
+                                <span className="text-sm text-muted-foreground"> · bus</span>
+                              </span>
+                              <span className="block text-sm text-pretty text-muted-foreground">
+                                {entry.cluster.stops.length} stops
+                                {entry.cluster.letters ? ` · ${entry.cluster.letters}` : ""} ·{" "}
+                                {entry.option.expanded ? "tap to close" : "tap to choose one"}
+                              </span>
+                            </span>
+                            <RouteChips routes={entry.cluster.routes} max={9} />
+                          </>
+                        ) : null}
+                      </li>
+                    )
+                  )}
+                  {footer || hasMore ? (
+                    <li role="presentation" className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm text-muted-foreground">
+                      <span className="text-balance" aria-live="polite">
+                        {footer}
                       </span>
-                    ))
-                )}
-              </span>
-            </li>
-          ))}
-          <li
-            className="min-h-11 px-1 py-2 text-sm text-balance text-muted-foreground"
-            role="presentation"
-            aria-live="polite"
-          >
-            {footer}
-          </li>
-        </ul>
-      ) : null}
+                      {hasMore ? (
+                        <button
+                          type="button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => setExpanded({ query: state.query, clusters: shown.clusters, all: true })}
+                          className="shrink-0 border-0 bg-transparent p-0 text-foreground underline underline-offset-4"
+                        >
+                          All {groups.busCount} stops
+                        </button>
+                      ) : null}
+                    </li>
+                  ) : null}
+                </ul>
+              </div>
+            </>
+          ) : null}
+        </div>
+      </div>
+      {/* Holds the field's place in the page while the field sits in the open view. */}
+      {open ? <div aria-hidden className="h-[4.5rem] sm:h-[5.5rem]" /> : null}
     </div>
   )
 }

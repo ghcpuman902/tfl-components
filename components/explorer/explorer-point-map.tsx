@@ -64,6 +64,8 @@ type ExplorerPointMapProps = {
   /** Bump after a map-centre search so the camera fits the radius circle. */
   fitSearchKey?: number
   searchOrigin?: { lat: number; lon: number } | null
+  /** Off: one finger pans, as on a full-screen map. Read once at mount. */
+  cooperativeGestures?: boolean
 }
 
 type PointFeatureProperties = {
@@ -611,6 +613,7 @@ export const ExplorerPointMap = ({
   searchHereLoading = false,
   fitSearchKey = 0,
   searchOrigin = null,
+  cooperativeGestures = true,
 }: ExplorerPointMapProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -689,7 +692,7 @@ export const ExplorerPointMap = ({
       center: LONDON_CENTER,
       zoom: FALLBACK_ZOOM,
       attributionControl: { compact: true },
-      cooperativeGestures: true,
+      cooperativeGestures,
     })
     provideMissingStyleImages(map)
 

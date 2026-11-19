@@ -28,9 +28,7 @@ import {
 import {
   countDownRows,
   elapsedSec,
-  formatUpdatedAgo,
   isStale,
-  liveStatusLine,
 } from "@/lib/tfl/homepage-live/data-age"
 import {
   busArrivalsFromRows,
@@ -225,12 +223,10 @@ export const HomeProduct = ({
             : 0
         )
       : []
-  const busStaleAge =
+  const busStale =
     busRows.status === "ok" &&
     busRowsAge != null &&
     (busRows.value.stale || isStale(busRowsAge))
-      ? Math.round(busRowsAge)
-      : undefined
 
   const station = selection.kind === "station" ? selection : undefined
   const frame = live.frame
@@ -285,10 +281,6 @@ export const HomeProduct = ({
   const busOverlay = overlay.status === "ok" ? overlay.value : undefined
   const busHit =
     busOverlay?.stop ?? (selection.kind === "bus" ? selection : undefined)
-  const label =
-    selection.kind === "bus"
-      ? `${selection.name}${(busHit?.stopLetter ?? selection.stopLetter) ? ` · Stop ${busHit?.stopLetter ?? selection.stopLetter}` : ""}`
-      : selection.name
   const select = (hit: PlaceHit) => setSelection(hit)
   const busStopLetter = busHit?.stopLetter ?? (selection.kind === "bus" ? selection.stopLetter : undefined)
   // The live Board's bus panel, fed from the homepage's bus read (quota and stale handling stay as they are).
@@ -316,27 +308,25 @@ export const HomeProduct = ({
       <PlaceSearch
         stations={stations}
         hubStationIds={hubStationIds}
-        valueLabel={label}
         anchor={station ?? busHit}
         replay={replayArg}
         searchDelayMs={replay?.searchDelayMs}
         onSelect={select}
       />
       <p
-        className="pt-2 text-sm text-balance text-muted-foreground"
+        className="pt-2 text-sm text-balance text-muted-foreground empty:hidden"
         aria-live="polite"
       >
         {replay
           ? `Recorded frame: ${REPLAY_FIXTURES[replay.fixture]}, ${replay.round * 30} s in.`
-          : liveStatusLine({
-              error: live.status === "error" ? live.error : undefined,
-              ageSec: live.ageSec,
-            })}
+          : live.status === "error"
+            ? live.error
+            : null}
       </p>
       {/* Same shell as the Board: the container its arrivals panels query, and its row rhythm. */}
       <div className="@container/board min-w-0 pt-6" style={ARRIVALS_RHYTHM_VARS}>
         {selection.kind === "station" ? (
-          // An old poll keeps its times, dimmed; the line under the search says how old.
+          // An old poll keeps its times, dimmed.
           <div className={cn(isStale(live.ageSec) && "opacity-60")} data-stale={isStale(live.ageSec) || undefined}>
             <RailArrivalsBoard
               stopName={selection.name}
@@ -355,13 +345,7 @@ export const HomeProduct = ({
             />
           </div>
         ) : (
-          <>
-            {busStaleAge != null ? (
-              <p role="status" className="pb-2 text-sm text-muted-foreground">
-                {formatUpdatedAgo(busStaleAge)}
-                {busRowsShown.length === 0 ? " Refreshing." : ""}
-              </p>
-            ) : null}
+          <div className={cn(busStale && "opacity-60")} data-stale={busStale || undefined}>
             <BusArrivalsBoard
               stopName={selection.name}
               stopPointId={selection.id}
@@ -372,7 +356,7 @@ export const HomeProduct = ({
               loading={busRows.status === "loading"}
               error={busRows.status === "error" ? busRows.message : null}
             />
-          </>
+          </div>
         )}
       </div>
       <p className="pt-6 text-sm">

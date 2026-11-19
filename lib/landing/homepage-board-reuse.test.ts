@@ -11,7 +11,8 @@ import { describe, it } from "node:test"
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..")
 const read = (relative: string) => readFileSync(join(root, relative), "utf8")
 
-const ROUNDING = /\brounded(-[\w[\]./%-]+)?\b|border-radius/
+// `rounded-none` takes rounding away (the explorer map's own corners), so it is allowed.
+const ROUNDING = /\brounded(?!-none\b)(-[\w[\]./%-]+)?\b|border-radius/
 
 const zIndexOf = (source: string, marker: RegExp): number => {
   const match = source.match(marker)
@@ -50,11 +51,13 @@ describe("homepage search field", () => {
     assert.doesNotMatch(search, /rounded-\[14px\] bg-muted|"flex items-center gap-3[^"]*\bbg-muted\b/)
   })
 
-  it("sits below the sticky site header", () => {
+  it("sits below the sticky site header at rest and covers it when open", () => {
     const header = read("components/site-header.tsx")
     const headerZ = zIndexOf(header, /<header[\s\S]*?className="[^"]*\bsticky\b[^"]*\bz-(\d+)\b/)
-    const searchZ = zIndexOf(search, /<div className="relative z-(\d+)"/)
-    assert.ok(searchZ < headerZ, `search z-${searchZ} must be below header z-${headerZ}`)
-    assert.ok(searchZ > 10, "search must still stack over the Board's own z-10 layers")
+    const openZ = zIndexOf(search, /open \? "relative z-(\d+)" : "relative z-\d+"/)
+    const restZ = zIndexOf(search, /open \? "relative z-\d+" : "relative z-(\d+)"/)
+    assert.ok(restZ < headerZ, `search z-${restZ} must be below header z-${headerZ}`)
+    assert.ok(restZ > 10, "search must still stack over the Board's own z-10 layers")
+    assert.ok(openZ > headerZ, `open search view z-${openZ} must cover header z-${headerZ}`)
   })
 })

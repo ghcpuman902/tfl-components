@@ -39,10 +39,20 @@ export const stationHitOf = (point: ExplorerTubeRailPoint): StationHit => ({
   stopIds: point.arrivalsStopIds?.length ? point.arrivalsStopIds : [point.id],
 })
 
+/** The explorer station behind a station row (the index row for King's Cross is the hub `HUBKGX`). */
+export const stationPointOfRow = (
+  row: StopRow,
+  stations: readonly ExplorerTubeRailPoint[],
+  hubStationIds: Readonly<Record<string, string>> = {}
+): ExplorerTubeRailPoint | undefined =>
+  stations.find((p) => p.id === row.id) ??
+  stations.find((p) => p.id === hubStationIds[row.id]) ??
+  stations.find((p) => p.hubId === row.id)
+
 /**
  * A row of the shared stop index as something the page can select. Stations
  * resolve through the explorer points, which know which sibling StopPoints
- * carry the arrivals (the index row for King's Cross is the hub `HUBKGX`).
+ * carry the arrivals.
  */
 export const placeHitOfRow = (
   row: StopRow,
@@ -60,10 +70,7 @@ export const placeHitOfRow = (
       lat: row.lat,
       lon: row.lon,
     }
-  const point =
-    stations.find((p) => p.id === row.id) ??
-    stations.find((p) => p.id === hubStationIds[row.id]) ??
-    stations.find((p) => p.hubId === row.id)
+  const point = stationPointOfRow(row, stations, hubStationIds)
   if (point) return stationHitOf(point)
   return {
     kind: "station",
