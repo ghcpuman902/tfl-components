@@ -54,7 +54,7 @@ export const BrowserWindow = ({
           {fullExampleHref ? (
             <Link
               href={fullExampleHref}
-              className="pointer-events-auto mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-background/95 px-3.5 py-1.5 text-sm font-medium text-foreground shadow-xs hover:bg-muted"
+              className="pointer-events-auto mb-3 inline-flex items-center gap-1.5 rounded-none border border-border bg-background/95 px-3.5 py-1.5 text-sm font-medium text-foreground shadow-xs hover:bg-muted"
             >
               <PlusIcon className="size-3.5 shrink-0" aria-hidden />
               {DOCS_BROWSER_PREVIEW_ACTION_LABEL}

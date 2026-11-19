@@ -165,7 +165,7 @@ export const BranchAtlas = () => {
           {schematic.branches.map((branch) => (
             <li
               key={branch.id}
-              className="rounded-full border border-border px-2.5 py-1"
+              className="rounded-none border border-border px-2.5 py-1"
             >
               {branch.name}
             </li>

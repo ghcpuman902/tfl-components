@@ -47,8 +47,8 @@ const RecoveryBackdrop = () => (
           className="flex items-center justify-between"
           style={{ height: "var(--arrivals-row)" }}
         >
-          <div className="h-3 w-[42%] rounded bg-muted/80" />
-          <div className="h-3 w-10 rounded bg-muted/80" />
+          <div className="h-3 w-[42%] rounded-none bg-muted/80" />
+          <div className="h-3 w-10 rounded-none bg-muted/80" />
         </div>
       ))}
     </div>

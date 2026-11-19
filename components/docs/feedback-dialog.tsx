@@ -834,7 +834,7 @@ export const FeedbackDialog = () => {
                           type="button"
                           onClick={handleRemoveScreenshot}
                           aria-label="Remove screenshot"
-                          className="absolute -top-1.5 -right-1.5 inline-flex size-5 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-sm ring-1 ring-border hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                          className="absolute -top-1.5 -right-1.5 inline-flex size-5 items-center justify-center rounded-none bg-muted text-muted-foreground shadow-sm ring-1 ring-border hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                         >
                           <XIcon className="size-3" aria-hidden />
                         </button>

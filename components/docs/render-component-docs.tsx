@@ -146,7 +146,7 @@ const LineStripDocsPreviewFallback = () => (
         {Array.from({ length: 4 }, (_, index) => (
           <span
             key={index}
-            className="h-3 w-14 animate-pulse rounded bg-muted"
+            className="h-3 w-14 animate-pulse rounded-none bg-muted"
           />
         ))}
       </div>

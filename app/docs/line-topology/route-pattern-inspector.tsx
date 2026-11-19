@@ -179,7 +179,7 @@ const RelationMiniMap = ({
   <svg
     viewBox={`0 0 ${MINI_MAP_WIDTH} ${MINI_MAP_HEIGHT}`}
     data-line={lineId}
-    className="h-24 w-36 rounded border border-border bg-muted/20"
+    className="h-24 w-36 rounded-none border border-border bg-muted/20"
     role="img"
     aria-label={`${variant.from} to ${variant.to} route geometry`}
   >
@@ -639,7 +639,7 @@ export const RoutePatternInspector = ({
                       {match ? (
                         <div className="w-52">
                           <span
-                            className={`inline-flex rounded-full px-2 py-0.5 text-[11px] ${stateClass(
+                            className={`inline-flex rounded-none px-2 py-0.5 text-[11px] ${stateClass(
                               match.kind === "exact" ? "present" : "partial"
                             )}`}
                           >
@@ -695,7 +695,7 @@ export const RoutePatternInspector = ({
             <div className="flex items-start justify-between gap-3">
               <p className="text-sm font-medium">OSM relation membership</p>
               <span
-                className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${stateClass(
+                className={`shrink-0 rounded-none px-2 py-0.5 text-[11px] ${stateClass(
                   relationData.length === osmVariants.length &&
                     osmVariants.length > 0
                     ? "present"
@@ -721,7 +721,7 @@ export const RoutePatternInspector = ({
             <div className="flex items-start justify-between gap-3">
               <p className="text-sm font-medium">Cross-source stop matching</p>
               <span
-                className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${stateClass(
+                className={`shrink-0 rounded-none px-2 py-0.5 text-[11px] ${stateClass(
                   crossSourceMatches.length === osmVariants.length &&
                     osmVariants.length > 0
                     ? "present"
@@ -751,7 +751,7 @@ export const RoutePatternInspector = ({
               <div className="flex items-start justify-between gap-3">
                 <p className="text-sm font-medium">{field.field}</p>
                 <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${stateClass(field.state)}`}
+                  className={`shrink-0 rounded-none px-2 py-0.5 text-[11px] ${stateClass(field.state)}`}
                 >
                   {field.state}
                 </span>

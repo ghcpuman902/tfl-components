@@ -11,7 +11,7 @@ const PREVIEW_MODES = [
 
 const pillClass = (selected: boolean) =>
   cn(
-    "rounded-full px-3 py-1 text-xs font-medium ring-1 transition-colors",
+    "rounded-none px-3 py-1 text-xs font-medium ring-1 transition-colors",
     selected
       ? "bg-foreground text-background ring-foreground"
       : "text-muted-foreground ring-border hover:text-foreground hover:ring-foreground/40"

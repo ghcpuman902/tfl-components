@@ -62,7 +62,7 @@ const PreviewButton = ({
     disabled={disabled}
     aria-pressed={active}
     className={cn(
-      "shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors",
+      "shrink-0 rounded-none border border-border px-3 py-1.5 text-xs font-medium transition-colors",
       "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
       active
         ? "bg-foreground text-background"

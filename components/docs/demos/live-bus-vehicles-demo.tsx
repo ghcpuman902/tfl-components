@@ -66,7 +66,7 @@ export default function LiveBusVehiclesDemo() {
               aria-pressed={rate === option.id}
               onClick={() => setRate(option.id)}
               className={cn(
-                "rounded-full border border-border px-2.5 py-1 text-xs",
+                "rounded-none border border-border px-2.5 py-1 text-xs",
                 rate === option.id
                   ? "bg-foreground text-background"
                   : "bg-background text-foreground"
@@ -99,7 +99,7 @@ export default function LiveBusVehiclesDemo() {
               aria-pressed={busSource === id}
               onClick={() => setBusSource(id)}
               className={cn(
-                "rounded-full border border-border px-2.5 py-1 text-xs",
+                "rounded-none border border-border px-2.5 py-1 text-xs",
                 busSource === id
                   ? "bg-foreground text-background"
                   : "bg-background text-foreground"

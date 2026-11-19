@@ -1070,7 +1070,7 @@ export const TrackTopologyView = ({
                 disabled={disabled}
                 onClick={() => setTrackModel(option.id)}
                 className={cn(
-                  "rounded-full border border-border px-2.5 py-1 text-xs",
+                  "rounded-none border border-border px-2.5 py-1 text-xs",
                   trackModel === option.id
                     ? "bg-foreground text-background"
                     : "bg-background text-foreground",

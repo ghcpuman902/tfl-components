@@ -105,8 +105,8 @@ export default function LineStripDemo() {
         <h2 className="text-lg font-semibold">Mono</h2>
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           B&amp;W Tube-map stroke motifs on the graph. Pass{" "}
-          <code className="rounded bg-muted px-1 text-xs">mono</code>. Motifs
-          scale through <code className="rounded bg-muted px-1 text-xs">x</code>
+          <code className="rounded-none bg-muted px-1 text-xs">mono</code>. Motifs
+          scale through <code className="rounded-none bg-muted px-1 text-xs">x</code>
           , not the inherited diagram scale.
         </p>
         <LineStrip
@@ -124,9 +124,9 @@ export default function LineStripDemo() {
           between is muted. Boundary stops with an open side stay coloured;
           stops with every adjacent segment closed (interiors, and a far
           terminal if applicable) grey out. Pass{" "}
-          <code className="rounded bg-muted px-1 text-xs">segments</code> and
+          <code className="rounded-none bg-muted px-1 text-xs">segments</code> and
           optionally{" "}
-          <code className="rounded bg-muted px-1 text-xs">
+          <code className="rounded-none bg-muted px-1 text-xs">
             stationOutOfUseIds
           </code>
           .
@@ -144,7 +144,7 @@ export default function LineStripDemo() {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Names above the route (default), below, or alternating — TfL-style
           denser strips.{" "}
-          <code className="rounded bg-muted px-1 text-xs">labelPlacement</code>
+          <code className="rounded-none bg-muted px-1 text-xs">labelPlacement</code>
         </p>
         <LabelPlacementDemo
           stations={VICTORIA_STRIP}
@@ -158,7 +158,7 @@ export default function LineStripDemo() {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Curated Victoria southbound with Tube interchange flags. Scroll
           sideways on narrow viewports. Pass{" "}
-          <code className="rounded bg-muted px-1 text-xs">fit</code> to fill the
+          <code className="rounded-none bg-muted px-1 text-xs">fit</code> to fill the
           container without scrolling.
         </p>
         <LineStrip
@@ -167,7 +167,7 @@ export default function LineStripDemo() {
           lineColor={VICTORIA_LINE_COLOR}
           lineName="Victoria line"
         />
-        <pre className="mt-4 overflow-x-auto rounded bg-muted p-3 text-xs text-foreground">
+        <pre className="mt-4 overflow-x-auto rounded-none bg-muted p-3 text-xs text-foreground">
           {`import { DIAGRAM_SCALE_CLASS } from "@/lib/tfl/brand";
 import { LineStrip } from "@/components/tfl/diagram/line-strip";
 
@@ -198,7 +198,7 @@ import { LineStrip } from "@/components/tfl/diagram/line-strip";
             lineName="Victoria line"
           />
         </div>
-        <pre className="mt-4 overflow-x-auto rounded bg-muted p-3 text-xs text-foreground">
+        <pre className="mt-4 overflow-x-auto rounded-none bg-muted p-3 text-xs text-foreground">
           {`import { JourneyDiagram } from "@/components/tfl/diagram/journey-diagram";
 
 <JourneyDiagram
