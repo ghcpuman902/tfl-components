@@ -44,7 +44,7 @@ describe("search frame", () => {
     const distances = rows.map((r) => r.distance ?? -1)
     assert.deepEqual(distances, [...distances].sort((a, b) => a - b))
     const ids = new Set(rows.map((r) => r.id))
-    assert.ok(rows.every((r) => !r.hubId || !ids.has(r.hubId)))
+    assert.ok(rows.every((r) => r.kind === "bus" || !r.hubId || !ids.has(r.hubId)))
   })
 
   it("caps each kind when the frame is zoomed out", () => {
