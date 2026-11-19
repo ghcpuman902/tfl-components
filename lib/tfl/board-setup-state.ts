@@ -40,6 +40,8 @@ export type BoardSetupDraft = {
   busStopsCustom: boolean
   riverStopId: string | null
   cycleDockIds: readonly string[]
+  /** The user chose these docks (or the link set them): a station pick keeps them. */
+  cycleDocksCustom: boolean
   statusLineIds: readonly string[]
   /** When true, status shows only the priority set (`s.overview=selection`). */
   statusOnlyThese: boolean
@@ -109,6 +111,7 @@ export const createBoardSetupDraft = (id = "pending"): BoardSetupDraft => ({
   busStopsCustom: false,
   riverStopId: null,
   cycleDockIds: [],
+  cycleDocksCustom: false,
   statusLineIds: [],
   statusOnlyThese: false,
   keyMode: null,
@@ -237,6 +240,7 @@ export const parseBoardSetupDraft = (value: unknown): BoardSetupDraft | null => 
     cycleDockIds: Array.isArray(value.cycleDockIds)
       ? value.cycleDockIds.filter((item): item is string => typeof item === "string")
       : [],
+    cycleDocksCustom: value.cycleDocksCustom === true,
     statusLineIds: Array.isArray(value.statusLineIds)
       ? value.statusLineIds.filter(
           (item): item is string => typeof item === "string"
@@ -407,6 +411,7 @@ export const draftFromBoardConfig = (
     busStopsCustom: Boolean(serializeBusStopIds(config.bus.stop)),
     riverStopId: config.river.stop?.trim() || null,
     cycleDockIds: [...(config.cycle.docks ?? [])],
+    cycleDocksCustom: (config.cycle.docks ?? []).length > 0,
     statusLineIds: [...(config.status.lines ?? [])],
     statusOnlyThese: config.status.overview === "selection",
     keyMode: config.key?.trim() ? "shared" : "skipped",

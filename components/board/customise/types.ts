@@ -8,6 +8,7 @@ import type {
 import type { BoardStationLineGroup } from "@/lib/tfl/board-station-lines"
 import type { BoardStationSearchItem } from "@/lib/tfl/board-station-names"
 import type { CustomiseVariant } from "@/lib/tfl/board-customise-variant"
+import type { ExplorerTubeRailPoint } from "@/lib/tfl/explorer/common"
 
 /** Nearby stop for a panel: found, still looking, or none near this station. */
 export type PanelTarget = "ready" | "loading" | "none"
@@ -50,6 +51,17 @@ export type CustomiseController = {
   /** Routes shown (`b.routes`); undefined shows every route. */
   busRoutes: readonly string[] | undefined
   setBusRoutes: (routes: readonly string[] | undefined) => void
+  /** Dock ids on the board (`c.docks`), in order. */
+  cycleDocks: readonly string[]
+  /** True once the user chose the docks; false while they are the nearest. */
+  cycleDocksCustom: boolean
+  setCycleDocks: (ids: readonly string[]) => void
+  /** The editors' search (the homepage's): stations, their hubs, and where the board's station is. */
+  search: {
+    stations: readonly ExplorerTubeRailPoint[]
+    hubStationIds: Readonly<Record<string, string>>
+    near: { lat: number; lon: number } | undefined
+  }
   setPanelHeight: (kind: BoardPanelKind, height: number) => void
   setRailLines: (lineIds: readonly string[]) => void
   statusLines: readonly string[]

@@ -4,14 +4,16 @@ import type { BoardSetupDraft } from "@/lib/tfl/board-setup-state"
 
 /**
  * True while the draft is missing a nearby bus stop, pier or docks it shows.
- * Bus stops the user chose are never refilled, even when they removed them all.
+ * Bus stops and docks the user chose are never refilled, even when they removed them all.
  */
 export const draftNeedsNearbyIds = (draft: BoardSetupDraft): boolean => {
   if (draft.continueWithoutStop) return false
   return (
     (!draft.busStopId && !draft.busStopsCustom) ||
     (draft.nearbyModes.includes("river") && !draft.riverStopId) ||
-    (draft.nearbyModes.includes("cycle") && draft.cycleDockIds.length === 0)
+    (draft.nearbyModes.includes("cycle") &&
+      draft.cycleDockIds.length === 0 &&
+      !draft.cycleDocksCustom)
   )
 }
 
@@ -76,7 +78,9 @@ export const applyNearbyIds = (
         ? (result.river?.id ?? current.riverStopId)
         : current.riverStopId,
     cycleDockIds:
-      current.nearbyModes.includes("cycle") && current.cycleDockIds.length === 0
+      current.nearbyModes.includes("cycle") &&
+      current.cycleDockIds.length === 0 &&
+      !current.cycleDocksCustom
         ? result.docks
         : current.cycleDockIds,
   }

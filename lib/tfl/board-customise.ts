@@ -506,7 +506,7 @@ export const undoStationStatusLines = (
  * A station pick. The default panel replaces the status order (today's
  * behaviour); the variants keep the user's order (Q4) and offer "Use the lines
  * at X". Either way the nearby ids are cleared for a fresh lookup, except
- * bus stops the user chose, which stay.
+ * bus stops and docks the user chose, which stay.
  */
 export const draftForStationPick = (
   current: BoardSetupDraft,
@@ -526,7 +526,7 @@ export const draftForStationPick = (
   statusLineIds: [...pick.extraStatusLineIds],
   busStopId: current.busStopsCustom ? current.busStopId : null,
   riverStopId: null,
-  cycleDockIds: [],
+  cycleDockIds: current.cycleDocksCustom ? current.cycleDockIds : [],
   statusOrder: pick.keepStatusOrder ? current.statusOrder : null,
   statusOrderStopId: pick.keepStatusOrder ? current.statusOrderStopId : null,
 })

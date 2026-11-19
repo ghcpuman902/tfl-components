@@ -144,6 +144,7 @@ import {
   type BoardSlotsConfig,
 } from "@/lib/tfl/board-url-state"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
+import type { ExplorerTubeRailPoint } from "@/lib/tfl/explorer/common"
 import { LINE_ORDER } from "tfl-ts"
 import { getLineNameTiers } from "@/lib/tfl/line-names"
 import { cn } from "@/lib/utils"
@@ -307,13 +308,21 @@ type BoardStagedBuilderProps = {
   stationLines: BoardStationLinesIndex
   stationNames: BoardStationNamesIndex
   stations: readonly BoardStationSearchItem[]
+  /** The homepage search's stations, for the Customise editors. */
+  searchStations?: readonly ExplorerTubeRailPoint[]
+  hubStationIds?: Readonly<Record<string, string>>
   analyticsContext?: AnalyticsContext
 }
+
+const NO_SEARCH_STATIONS: readonly ExplorerTubeRailPoint[] = []
+const NO_HUBS: Readonly<Record<string, string>> = {}
 
 export const BoardStagedBuilder = ({
   stationLines,
   stationNames,
   stations,
+  searchStations = NO_SEARCH_STATIONS,
+  hubStationIds = NO_HUBS,
   analyticsContext = defaultAnalyticsContext("room"),
 }: BoardStagedBuilderProps) => {
   const track = useLandingTrack(analyticsContext)
@@ -601,7 +610,9 @@ export const BoardStagedBuilder = ({
                   result.bus?.id ??
                   null),
               riverStopId: result.river?.id ?? null,
-              cycleDockIds: result.docks,
+              cycleDockIds: current.cycleDocksCustom
+                ? current.cycleDockIds
+                : result.docks,
               nearbyModes: [
                 result.bus ? "bus" : null,
                 result.river ? "river" : null,
@@ -673,6 +684,8 @@ export const BoardStagedBuilder = ({
         next.cycle?.docks !== undefined
           ? next.cycle.docks
           : current.cycleDockIds,
+      cycleDocksCustom:
+        next.cycle?.docks !== undefined ? true : current.cycleDocksCustom,
     }))
   }
 
@@ -792,6 +805,16 @@ export const BoardStagedBuilder = ({
   }
 
   const statusLines = statusLineOrderFromDraft(draft)
+  const boardStation = searchStations.find(
+    (point) =>
+      point.id === config.stop ||
+      point.aliasIds.includes(config.stop ?? "") ||
+      point.arrivalsStopIds?.includes(config.stop ?? "")
+  )
+  const searchNear =
+    boardStation?.lat != null && boardStation.lon != null
+      ? { lat: boardStation.lat, lon: boardStation.lon }
+      : undefined
   const nearbyKey = nearbyFillKey(draft, EXAMPLE_STOP.id)
   const panelTarget = (kind: BoardPanelKind): PanelTarget => {
     if (panelHasTarget(config, kind)) return "ready"
@@ -865,6 +888,21 @@ export const BoardStagedBuilder = ({
               busStopId: null,
               busStopsCustom: false,
             }))
+          },
+          cycleDocks: draft.cycleDockIds,
+          cycleDocksCustom: draft.cycleDocksCustom,
+          setCycleDocks: (ids) =>
+            updateDraft((current) =>
+              startIfNeeded({
+                ...current,
+                cycleDockIds: [...new Set(ids)],
+                cycleDocksCustom: true,
+              })
+            ),
+          search: {
+            stations: searchStations,
+            hubStationIds,
+            near: searchNear,
           },
           busRoutes: config.bus.routes,
           setBusRoutes: (routes) =>
