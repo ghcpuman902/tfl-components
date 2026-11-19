@@ -833,7 +833,7 @@ html.board-glance .board-glance {
 .dark .maplibregl-ctrl-attrib.maplibregl-compact {
   background-color: var(--card);
   color: var(--card-foreground);
-  box-shadow: none;
+  box-shadow: none !important;
   border: 1px solid var(--border);
 }
 .dark .maplibregl-ctrl-group button + button {
