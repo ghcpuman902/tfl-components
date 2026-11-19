@@ -237,7 +237,7 @@ export const DocsSearch = ({
           role="listbox"
           aria-label="Search results"
           className={cn(
-            "z-50 mt-1 max-h-72 w-full overflow-y-auto border border-border bg-popover p-1 shadow-md",
+            "z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-md",
             variant === "mobile" ? "relative" : "absolute"
           )}
         >
@@ -258,7 +258,7 @@ export const DocsSearch = ({
                   <button
                     type="button"
                     className={cn(
-                      "flex w-full flex-col gap-0.5 px-2 py-1.5 text-left text-sm outline-none",
+                      "flex w-full flex-col gap-0.5 rounded-md px-2 py-1.5 text-left text-sm outline-none",
                       selected
                         ? "bg-muted text-foreground"
                         : "hover:bg-muted/60"
