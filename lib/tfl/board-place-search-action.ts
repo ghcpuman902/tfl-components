@@ -6,7 +6,11 @@ import {
   formatBikePointId,
   normalizeBusRouteIds,
 } from "@/lib/tfl/board-panels"
-import { isBoardableBusStopId, mapStopPoint } from "@/lib/tfl/bus-stop-shape"
+import {
+  findStopPointNode,
+  isBoardableBusStopId,
+  mapStopPoint,
+} from "@/lib/tfl/bus-stop-shape"
 import { getTflClient } from "@/lib/tfl/client"
 import { getExplorerRiverPiers } from "@/lib/tfl/explorer/points-river"
 import { normaliseBikePoint } from "@/lib/tfl/explorer-point-normalise"
@@ -52,7 +56,7 @@ export async function getBoardBusStopRoutes(
     const client = getTflClient()
     const details = await client.stopPoint.get([trimmed])
     const detail = Array.isArray(details) ? details[0] : details
-    const stop = detail ? mapStopPoint(detail) : null
+    const stop = detail ? mapStopPoint(findStopPointNode(detail, trimmed)) : null
     return { ok: true, routes: normalizeBusRouteIds(stop?.lines ?? []) }
   } catch (err) {
     const message =
@@ -107,7 +111,7 @@ export async function getBoardPlaceLabel(
     const client = getTflClient()
     const details = await client.stopPoint.get([trimmed])
     const detail = Array.isArray(details) ? details[0] : details
-    const stop = detail ? mapStopPoint(detail) : null
+    const stop = detail ? mapStopPoint(findStopPointNode(detail, trimmed)) : null
     if (!stop) return { ok: false, error: "Unknown bus stop." }
     return {
       ok: true,

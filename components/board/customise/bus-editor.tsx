@@ -21,7 +21,7 @@ import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
 import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
 import { useDualPathArrivals } from "@/hooks/use-dual-path-arrivals"
-import { filterBusRoutes } from "@/lib/tfl/board-bus-stops"
+import { busArrivalsRequest, filterBusRoutes } from "@/lib/tfl/board-bus-stops"
 import { cn } from "@/lib/utils"
 
 const sameRoute = (row: { lineId?: string; lineName?: string }, route: string) =>
@@ -78,11 +78,14 @@ export const BusEditor = ({ api }: { api: CustomiseController }) => {
   const ids = api.busStops
   const { stops, routes, ready } = useBusStops(ids)
   const arrivals = useDualPathArrivals({
-    stopPointId: ids[0] ?? "",
-    stopPointIds: ids,
-    siteEachStop: true,
+    ...busArrivalsRequest(ids.join(",")),
     siteScope: "board",
   })
+  // The live board above is tall; bring the search field up under the header.
+  const addRef = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    if (api.busAdding) addRef.current?.scrollIntoView({ block: "start" })
+  }, [api.busAdding])
   const shown = filterBusRoutes(arrivals.data, api.busRoutes)
 
   // A filter lists the routes to show; routes a new stop brings join it.
@@ -132,7 +135,7 @@ export const BusEditor = ({ api }: { api: CustomiseController }) => {
     return (
       <>
         {preview}
-        <section className="space-y-1">
+        <section ref={addRef} className="min-h-[80svh] scroll-mt-4 space-y-1">
           <SectionHeading>
             <label htmlFor="customise-bus-add">Add a bus stop</label>
           </SectionHeading>

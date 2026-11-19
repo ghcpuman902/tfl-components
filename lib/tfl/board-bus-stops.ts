@@ -22,6 +22,19 @@ export const serializeBusStopIds = (
   return list.length > 0 ? list.join(",") : undefined
 }
 
+/**
+ * What the Board's bus read asks for. One stop is exactly the old read
+ * (`stopPointId` alone, the single-stop path); only two or more stops read
+ * each stop and merge.
+ */
+export const busArrivalsRequest = (
+  raw: string | null | undefined
+): { stopPointId: string; stopPointIds?: string[]; siteEachStop: boolean } => {
+  const ids = parseBusStopIds(raw)
+  if (ids.length < 2) return { stopPointId: ids[0] ?? "", siteEachStop: false }
+  return { stopPointId: ids[0], stopPointIds: ids, siteEachStop: true }
+}
+
 /** `b.routes`: only these routes; none set shows every route. */
 export const filterBusRoutes = <
   T extends { lineId?: string; lineName?: string },

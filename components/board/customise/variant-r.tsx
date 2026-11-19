@@ -89,10 +89,18 @@ const BusesSummary = ({ api }: { api: CustomiseController }) => {
     <>
       <span className={cn(SUB, "flex-wrap gap-y-0")}>
         {stopsByName(stops).map((group) => (
-          <span key={group.name} className="inline-flex items-center gap-1.5">
-            <span className="truncate">{group.name}</span>
+          <span
+            key={group.name}
+            className="inline-flex min-w-0 max-w-full items-center gap-1.5"
+          >
+            <span className="min-w-0 truncate">{group.name}</span>
             {group.letters.map((letter) => (
-              <StopLetterBadge key={letter} letter={letter} size="sm" />
+              <StopLetterBadge
+                key={letter}
+                letter={letter}
+                size="sm"
+                className="shrink-0"
+              />
             ))}
           </span>
         ))}

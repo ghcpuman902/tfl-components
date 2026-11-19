@@ -95,7 +95,11 @@ import { boardGlanceGutterCss } from "@/lib/tfl/board-layout"
 import { OXFORD_CIRCUS_ARRIVALS } from "@/lib/tfl/fixtures/arrivals-boards"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
 import { BOARD_SETTINGS } from "@/lib/tfl/board-settings"
-import { filterBusRoutes, parseBusStopIds } from "@/lib/tfl/board-bus-stops"
+import {
+  busArrivalsRequest,
+  filterBusRoutes,
+  parseBusStopIds,
+} from "@/lib/tfl/board-bus-stops"
 import {
   readInstalledBoardRecord,
   writeInstalledBoardConfig,
@@ -533,10 +537,11 @@ export const BoardDisplay = ({
   const riverStopId = config.river.stop ?? ""
   const cycleDockIds = config.cycle.docks ?? []
 
+  const busRequest = busArrivalsRequest(
+    boardReady && showBus ? config.bus.stop : ""
+  )
   const busArrivals = useDualPathArrivals({
-    stopPointId: boardReady && showBus ? busStopId : "",
-    stopPointIds: boardReady && showBus ? busStopIds : [],
-    siteEachStop: true,
+    ...busRequest,
     appKeyOverride: boardReady ? appKey : null,
     siteScope: "board",
   })
