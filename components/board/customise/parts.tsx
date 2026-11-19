@@ -105,13 +105,18 @@ export const PanelEye = ({
   )
 }
 
-/** ⋯ on the right: "Only show this" and the column. Closes on outside tap. */
+/**
+ * ⋯ on the right: "Only show this" and the column, and (`takeOff`, where a
+ * list has no eye) taking the part off the board. Closes on outside tap.
+ */
 export const PanelMenu = ({
   api,
   kind,
+  takeOff = false,
 }: {
   api: CustomiseController
   kind: BoardPanelKind
+  takeOff?: boolean
 }) => {
   const [open, setOpen] = useState(false)
   const wrap = useRef<HTMLDivElement | null>(null)
@@ -165,6 +170,25 @@ export const PanelMenu = ({
           >
             {solo ? "Show everything again" : "Only show this"}
           </button>
+          {takeOff ? (
+            <button
+              type="button"
+              role="menuitem"
+              disabled={!canHidePanel(api.layout, kind)}
+              title={
+                canHidePanel(api.layout, kind)
+                  ? undefined
+                  : "A board needs at least one part"
+              }
+              className="flex min-h-11 w-full items-center px-2 text-left text-sm disabled:text-muted-foreground"
+              onClick={() => {
+                api.setPanelOn(kind, false)
+                setOpen(false)
+              }}
+            >
+              Take off the board
+            </button>
+          ) : null}
           <p
             id={`customise-column-${kind}`}
             className="px-2 pt-2 pb-1 text-sm text-muted-foreground"

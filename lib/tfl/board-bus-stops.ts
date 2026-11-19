@@ -22,6 +22,22 @@ export const serializeBusStopIds = (
   return list.length > 0 ? list.join(",") : undefined
 }
 
+/** `b.routes`: only these routes; none set shows every route. */
+export const filterBusRoutes = <
+  T extends { lineId?: string; lineName?: string },
+>(
+  rows: readonly T[],
+  routes: readonly string[] | undefined
+): readonly T[] => {
+  if (!routes?.length) return rows
+  const keep = new Set(routes.map((id) => id.toLowerCase()))
+  return rows.filter(
+    (row) =>
+      keep.has((row.lineId ?? "").toLowerCase()) ||
+      keep.has((row.lineName ?? "").toLowerCase())
+  )
+}
+
 /** Several stops' arrivals as one list, soonest first. */
 export const mergeArrivalsByTime = <T extends { timeToStation?: number }>(
   lists: readonly (readonly T[])[]

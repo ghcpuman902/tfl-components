@@ -32,6 +32,24 @@ export type CustomiseController = {
   toggleSolo: (kind: BoardPanelKind) => void
   setPanelColumn: (kind: BoardPanelKind, column: BoardPanelColumn) => void
   placePanel: (kind: BoardPanelKind, index: number) => void
+  /** R: move a part within the one "On the board" list (see placeOnBoard). */
+  placeOnBoard: (kind: BoardPanelKind, index: number) => void
+  /** R: the part whose editor page is open, or null for the list. */
+  editing: BoardPanelKind | null
+  openEditor: (kind: BoardPanelKind | null) => void
+  /** The bus editor's "Add a bus stop" search is open; back closes it first. */
+  busAdding: boolean
+  setBusAdding: (adding: boolean) => void
+  /** Bus stop ids on the board (`b.stop`), in order. */
+  busStops: readonly string[]
+  /** True once the user chose the stops; false while they are the nearest. */
+  busStopsCustom: boolean
+  setBusStops: (ids: readonly string[]) => void
+  /** Back to the nearest stops to the default place. */
+  resetBusStops: () => void
+  /** Routes shown (`b.routes`); undefined shows every route. */
+  busRoutes: readonly string[] | undefined
+  setBusRoutes: (routes: readonly string[] | undefined) => void
   setPanelHeight: (kind: BoardPanelKind, height: number) => void
   setRailLines: (lineIds: readonly string[]) => void
   statusLines: readonly string[]

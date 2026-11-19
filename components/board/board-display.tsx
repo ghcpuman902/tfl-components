@@ -95,7 +95,7 @@ import { boardGlanceGutterCss } from "@/lib/tfl/board-layout"
 import { OXFORD_CIRCUS_ARRIVALS } from "@/lib/tfl/fixtures/arrivals-boards"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
 import { BOARD_SETTINGS } from "@/lib/tfl/board-settings"
-import { parseBusStopIds } from "@/lib/tfl/board-bus-stops"
+import { filterBusRoutes, parseBusStopIds } from "@/lib/tfl/board-bus-stops"
 import {
   readInstalledBoardRecord,
   writeInstalledBoardConfig,
@@ -901,16 +901,10 @@ export const BoardDisplay = ({
     stopId,
   ])
 
-  const busData = useMemo(() => {
-    const routes = config.bus.routes
-    if (!routes?.length) return busArrivals.data
-    const keep = new Set(routes.map((id) => id.toLowerCase()))
-    return busArrivals.data.filter((row) => {
-      const id = (row.lineId ?? "").toLowerCase()
-      const name = (row.lineName ?? "").toLowerCase()
-      return keep.has(id) || keep.has(name)
-    })
-  }, [busArrivals.data, config.bus.routes])
+  const busData = useMemo(
+    () => filterBusRoutes(busArrivals.data, config.bus.routes),
+    [busArrivals.data, config.bus.routes]
+  )
 
   const statusData = useMemo(() => {
     const lines = config.status.lines

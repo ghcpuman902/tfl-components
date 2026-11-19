@@ -57,6 +57,7 @@ import {
   nearbyModesForLayout,
   panelHasTarget,
   placePanel as layoutPlacePanel,
+  placeOnBoard as layoutPlaceOnBoard,
   setPanelColumn as layoutSetPanelColumn,
   setPanelHeight as layoutSetPanelHeight,
   setPanelOn as layoutSetPanelOn,
@@ -70,6 +71,10 @@ import {
   type StatusOrderUndo,
 } from "@/lib/tfl/board-customise"
 import { readExposedHeroVariant } from "@/lib/landing/hero-client"
+import {
+  parseBusStopIds,
+  serializeBusStopIds,
+} from "@/lib/tfl/board-bus-stops"
 import type { AnalyticsContext } from "@/lib/analytics/context"
 import { defaultAnalyticsContext } from "@/lib/analytics/context"
 import { elapsedSinceExposureMs } from "@/lib/landing/timing"
@@ -329,6 +334,8 @@ export const BoardStagedBuilder = ({
   const [nearbyFill] = useState(createNearbyFillTracker)
   const [nearbyDoneKey, setNearbyDoneKey] = useState<string | null>(null)
   const [statusUndo, setStatusUndo] = useState<StatusOrderUndo | null>(null)
+  const [editing, setEditing] = useState<BoardPanelKind | null>(null)
+  const [busAdding, setBusAdding] = useState(false)
   const customise = useCustomiseVariant()
 
   const focusSearch = () => {
@@ -586,7 +593,13 @@ export const BoardStagedBuilder = ({
                 lineIds.length > 0
                   ? extraStatusLineIdsForServing(lineIds)
                   : current.statusLineIds,
-              busStopId: result.bus?.id ?? null,
+              busStopId: current.busStopsCustom
+                ? current.busStopId
+                : (serializeBusStopIds(
+                    (result.buses ?? []).map((stop) => stop.id)
+                  ) ??
+                  result.bus?.id ??
+                  null),
               riverStopId: result.river?.id ?? null,
               cycleDockIds: result.docks,
               nearbyModes: [
@@ -650,6 +663,8 @@ export const BoardStagedBuilder = ({
           : current.nearbyModes,
       busStopId:
         next.bus?.stop !== undefined ? next.bus.stop || null : current.busStopId,
+      busStopsCustom:
+        next.bus?.stop !== undefined ? true : current.busStopsCustom,
       riverStopId:
         next.river?.stop !== undefined
           ? next.river.stop || null
@@ -822,6 +837,41 @@ export const BoardStagedBuilder = ({
             editLayout((layout) => layoutPlacePanel(layout, kind, index))
             customiseLog("customise_reorder_saved")
           },
+          placeOnBoard: (kind, index) => {
+            editLayout((layout) => layoutPlaceOnBoard(layout, kind, index))
+            customiseLog("customise_reorder_saved")
+          },
+          editing,
+          openEditor: (kind) => {
+            setBusAdding(false)
+            setEditing(kind)
+          },
+          busAdding,
+          setBusAdding,
+          busStops: parseBusStopIds(draft.busStopId),
+          busStopsCustom: draft.busStopsCustom,
+          setBusStops: (ids) =>
+            updateDraft((current) =>
+              startIfNeeded({
+                ...current,
+                busStopId: serializeBusStopIds(ids) ?? null,
+                busStopsCustom: true,
+              })
+            ),
+          resetBusStops: () => {
+            nearbyFill.reset()
+            updateDraft((current) => ({
+              ...current,
+              busStopId: null,
+              busStopsCustom: false,
+            }))
+          },
+          busRoutes: config.bus.routes,
+          setBusRoutes: (routes) =>
+            setAdvancedConfig((current) => ({
+              ...current,
+              bus: { ...current.bus, routes },
+            })),
           setPanelHeight: (kind, height) =>
             editLayout((layout) => layoutSetPanelHeight(layout, kind, height)),
           setRailLines: (lineIds) => {
@@ -862,6 +912,8 @@ export const BoardStagedBuilder = ({
           setGlance: handleGlance,
           done: () => {
             customiseLog("customise_done")
+            setEditing(null)
+            setBusAdding(false)
             setAdvancedOpen(false)
           },
         }
@@ -975,6 +1027,8 @@ export const BoardStagedBuilder = ({
                     type="button"
                     className="inline-flex items-center gap-0.5 text-sm text-muted-foreground"
                     onClick={() => {
+                      setEditing(null)
+                      setBusAdding(false)
                       setAdvancedOpen((open) => !open)
                       if (!advancedOpen) {
                         focusSearch()
