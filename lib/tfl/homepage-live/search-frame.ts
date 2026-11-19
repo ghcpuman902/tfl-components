@@ -13,8 +13,10 @@ export type Frame = {
   bounds: { west: number; south: number; east: number; north: number }
 }
 
-/** Per kind, so a zoomed-out frame stays readable. */
+/** The list's cap per kind (stations first, then stops); the map is not capped. */
 export const BROWSE_CAP = 30
+/** From this zoom the map draws bus pins; below it, every bus stop in view is a dot. */
+export const PIN_MIN_ZOOM = 15
 const BROWSE_SCAN = 150
 const FIT_ROWS = 10
 /** How many index matches to scan for the frame: enough for a common word (Road) in a zoomed-out frame. */
@@ -58,6 +60,26 @@ export const browseRows = (
     ...stations.filter((row) => !row.hubId || !listed.has(row.hubId)).slice(0, BROWSE_CAP),
     ...pick("bus").slice(0, BROWSE_CAP),
   ].sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0))
+}
+
+/**
+ * Every bus stop inside the frame as [lon, lat], for the map's one dot layer
+ * when zoomed out. Reads the index's coordinate columns, so no rows are built.
+ */
+export const busStopDots = (
+  kit: Pick<StopSearchKit, "index">,
+  frame: Frame
+): [number, number][] => {
+  const { index } = kit
+  const { lat, lon } = index.columns
+  const { west, south, east, north } = frame.bounds
+  const dots: [number, number][] = []
+  for (let i = index.stationCount; i < index.size; i++) {
+    const la = lat[i]! / 1e5
+    const lo = lon[i]! / 1e5
+    if (la >= south && la <= north && lo >= west && lo <= east) dots.push([lo, la])
+  }
+  return dots
 }
 
 /** Moves the first row that `isLead` picks to the top; the rest keep their order. */

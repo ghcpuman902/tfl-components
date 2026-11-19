@@ -6,6 +6,7 @@ import { MAP_SEARCH_RADIUS_METERS, TRAFALGAR_SQUARE } from "@/lib/tfl/geo"
 import {
   BROWSE_CAP,
   browseRows,
+  busStopDots,
   fitFor,
   frameWins,
   matchStrength,
@@ -49,6 +50,17 @@ describe("search frame", () => {
     assert.deepEqual(distances, [...distances].sort((a, b) => a - b))
     const ids = new Set(rows.map((r) => r.id))
     assert.ok(rows.every((r) => r.kind === "bus" || !r.hubId || !ids.has(r.hubId)))
+  })
+
+  it("lists every bus stop in a zoomed-out frame as a dot, uncapped", () => {
+    const london: Frame = {
+      center: { lat: 51.507, lon: -0.128 },
+      bounds: { west: -0.35, south: 51.4, east: 0.1, north: 51.62 },
+    }
+    const dots = busStopDots(kit, london)
+    assert.ok(dots.length > BROWSE_CAP * 10)
+    assert.ok(dots.every(([lon, lat]) => inFrame({ lat, lon }, london)))
+    assert.equal(busStopDots(kit, provisionalFrame(KINGS_CROSS)).length > 0, true)
   })
 
   it("caps each kind when the frame is zoomed out", () => {

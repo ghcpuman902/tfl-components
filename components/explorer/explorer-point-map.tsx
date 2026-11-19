@@ -8,7 +8,8 @@ import { Loader2, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useDocumentDark } from "@/hooks/use-document-dark"
-import { openFreeMapStyleUrl } from "@/lib/tfl/geography-credits"
+import { openFreeMapStyleUrl, transitGeometryAssetUrl } from "@/lib/tfl/geography-credits"
+import { mapLineColorForBasemap } from "@/lib/tfl/dark-line-colours"
 import { provideMissingStyleImages } from "@/components/tfl/maps/provide-missing-style-images"
 import { TFL_MODAL_COLOURS } from "@/lib/tfl/brand-colours"
 import {
@@ -35,6 +36,10 @@ const SEARCH_SOURCE_ID = "explorer-search-circle"
 const SEARCH_FILL_ID = "explorer-search-circle-fill"
 const SEARCH_LINE_ID = "explorer-search-circle-line"
 const BUS_RED = TFL_MODAL_COLOURS.buses.hex
+const TUBE_SOURCE_ID = "explorer-tube-lines"
+const TUBE_LAYER_ID = "explorer-tube-lines-core"
+const BUS_DOTS_SOURCE_ID = "explorer-bus-dots"
+const BUS_DOTS_LAYER_ID = "explorer-bus-dots-circle"
 const CYCLE_MARKER_SIZE = 32
 const CYCLE_SELECTED_SIZE = 44
 const MARKER_Z_SELECTED = "4"
@@ -75,6 +80,15 @@ type ExplorerPointMapProps = {
   onViewChange?: (view: MapView) => void
   /** Off: the map never moves to the selected point on its own. */
   followSelected?: boolean
+  /**
+   * Bus stops as tiny red dots in one circle layer, shown below `pinMinZoom` while the
+   * bus pins are hidden: no labels, no taps. Positions are [lon, lat].
+   */
+  busDots?: readonly (readonly [number, number])[]
+  /** Draws the Tube lines (the vendored centreline GeoJSON, in line colours) under the pins. Read once at mount. */
+  tubeLines?: boolean
+  /** The zoom at which bus pins replace the dots. Read once at mount. */
+  pinMinZoom?: number
 }
 
 export type MapView = {
@@ -299,7 +313,7 @@ const searchCirclePaint = (dark: boolean) => {
 
 const STATION_ONLY: maplibregl.FilterSpecification = ["==", ["get", "marker"], "station"]
 
-const addExplorerLayers = (map: maplibregl.Map, dark: boolean, busLabels = true) => {
+const addExplorerLayers = (map: maplibregl.Map, dark: boolean, busLabels = true, pinMinZoom?: number) => {
   if (!map.getSource(SEARCH_SOURCE_ID)) {
     map.addSource(SEARCH_SOURCE_ID, {
       type: "geojson",
@@ -328,6 +342,24 @@ const addExplorerLayers = (map: maplibregl.Map, dark: boolean, busLabels = true)
       type: "line",
       source: SEARCH_SOURCE_ID,
       paint: searchPaint.line,
+    })
+  }
+
+  if (!map.getSource(BUS_DOTS_SOURCE_ID)) {
+    map.addSource(BUS_DOTS_SOURCE_ID, { type: "geojson", data: emptyCollection })
+  }
+  if (pinMinZoom !== undefined && !map.getLayer(BUS_DOTS_LAYER_ID)) {
+    map.addLayer({
+      id: BUS_DOTS_LAYER_ID,
+      type: "circle",
+      source: BUS_DOTS_SOURCE_ID,
+      maxzoom: pinMinZoom,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 1.5, pinMinZoom, 3],
+        "circle-color": BUS_RED,
+        "circle-stroke-width": 0.5,
+        "circle-stroke-color": dark ? "#111827" : "#ffffff",
+      },
     })
   }
 
@@ -492,12 +524,85 @@ const createBusStopMarkerElement = (
   return button
 }
 
+type TubeLines = { type: "FeatureCollection"; features: { properties?: { color?: string } | null }[] }
+
+let tubeLinesLoad: Promise<TubeLines | null> | undefined
+const loadTubeLines = () =>
+  (tubeLinesLoad ??= fetch(transitGeometryAssetUrl("tube"))
+    .then((res) => (res.ok ? res.json() : null))
+    .then((bundle: { lines?: TubeLines } | null) => bundle?.lines ?? null)
+    .catch(() => {
+      tubeLinesLoad = undefined
+      return null
+    }))
+
+/** Thin Tube lines in their line colours: the zoomed-out map's frame of reference. */
+const addTubeLines = (map: maplibregl.Map, lines: TubeLines | null, dark: boolean) => {
+  if (!lines || map.getLayer(TUBE_LAYER_ID)) return
+  const data = {
+    type: "FeatureCollection" as const,
+    features: lines.features.map((feature) => {
+      const colour = feature.properties?.color
+      return colour
+        ? { ...feature, properties: { ...feature.properties, color: mapLineColorForBasemap(colour, dark) } }
+        : feature
+    }),
+  }
+  if (!map.getSource(TUBE_SOURCE_ID)) {
+    map.addSource(TUBE_SOURCE_ID, { type: "geojson", data: data as unknown as GeoJSON.FeatureCollection })
+  }
+  map.addLayer(
+    {
+      id: TUBE_LAYER_ID,
+      type: "line",
+      source: TUBE_SOURCE_ID,
+      layout: { "line-join": "round", "line-cap": "round" },
+      paint: {
+        "line-color": ["coalesce", ["get", "color"], "#0019A8"],
+        "line-width": ["interpolate", ["linear"], ["zoom"], 9, 1, 14, 2.5],
+        "line-opacity": 0.85,
+      },
+    },
+    map.getLayer(SEARCH_FILL_ID) ? SEARCH_FILL_ID : undefined
+  )
+}
+
+const busDotsData = (dots: readonly (readonly [number, number])[]) => ({
+  type: "FeatureCollection" as const,
+  features:
+    dots.length === 0
+      ? []
+      : [
+          {
+            type: "Feature" as const,
+            properties: {},
+            geometry: { type: "MultiPoint" as const, coordinates: dots.map(([lon, lat]) => [lon, lat]) },
+          },
+        ],
+})
+
+const paintBusDots = (map: maplibregl.Map, dots: readonly (readonly [number, number])[]) => {
+  const source = map.getSource(BUS_DOTS_SOURCE_ID) as maplibregl.GeoJSONSource | undefined
+  source?.setData(busDotsData(dots) as unknown as GeoJSON.FeatureCollection)
+}
+
+/** Below the pin zoom the bus pins give way to the dots. */
+const showBusPins = (
+  map: maplibregl.Map,
+  markers: Map<string, maplibregl.Marker>,
+  pinMinZoom: number | undefined
+) => {
+  const hidden = pinMinZoom !== undefined && map.getZoom() < pinMinZoom
+  for (const marker of markers.values()) marker.getElement().style.display = hidden ? "none" : ""
+}
+
 const syncBusMarkers = (
   map: maplibregl.Map,
   points: readonly ExplorerPoint[],
   selectedId: string | null | undefined,
   onSelect: (point: ExplorerPoint) => void,
-  markers: Map<string, maplibregl.Marker>
+  markers: Map<string, maplibregl.Marker>,
+  pinMinZoom?: number
 ) => {
   const busPoints = points.filter(
     (point) =>
@@ -527,6 +632,7 @@ const syncBusMarkers = (
     setMarkerZIndex(marker.getElement(), point.id === selectedId)
     markers.set(point.id, marker)
   }
+  showBusPins(map, markers, pinMinZoom)
 }
 
 const toCycleDock = (point: ExplorerPoint): CycleHireDock => {
@@ -657,11 +763,17 @@ export const ExplorerPointMap = ({
   initialView,
   onViewChange,
   followSelected = true,
+  busDots,
+  tubeLines = false,
+  pinMinZoom,
 }: ExplorerPointMapProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const onSelectRef = useRef(onSelect)
   const busStopLabelsRef = useRef(busStopLabels)
+  const pinMinZoomRef = useRef(pinMinZoom)
+  const tubeLinesRef = useRef<TubeLines | null>(null)
+  const busDotsRef = useRef(busDots)
   const onSearchHereRef = useRef(onSearchHere)
   const onViewChangeRef = useRef(onViewChange)
   const pointsRef = useRef(points)
@@ -730,6 +842,13 @@ export const ExplorerPointMap = ({
   useEffect(() => {
     geojsonRef.current = geojson
   }, [geojson])
+
+  useEffect(() => {
+    busDotsRef.current = busDots
+    const map = mapRef.current
+    if (!map) return
+    if (map.getSource(BUS_DOTS_SOURCE_ID)) paintBusDots(map, busDots ?? [])
+  }, [busDots])
 
   useEffect(() => {
     const container = containerRef.current
@@ -811,16 +930,19 @@ export const ExplorerPointMap = ({
     const cycleMarkers = cycleMarkersRef.current
 
     map.on("load", () => {
-      addExplorerLayers(map, dark, busStopLabelsRef.current)
+      addExplorerLayers(map, dark, busStopLabelsRef.current, pinMinZoomRef.current)
+      addTubeLines(map, tubeLinesRef.current, dark)
       const source = map.getSource(SOURCE_ID) as
         maplibregl.GeoJSONSource | undefined
       if (geojsonRef.current) source?.setData(geojsonRef.current)
+      paintBusDots(map, busDotsRef.current ?? [])
       syncBusMarkers(
         map,
         pointsRef.current,
         selectedIdRef.current,
         onSelectRef.current,
-        busMarkers
+        busMarkers,
+        pinMinZoomRef.current
       )
       syncCycleMarkers(
         map,
@@ -848,10 +970,19 @@ export const ExplorerPointMap = ({
       map.on("movestart", handleMoveStart)
       map.on("move", handleMove)
       map.on("moveend", handleMoveEnd)
+      map.on("zoom", () => showBusPins(map, busMarkers, pinMinZoomRef.current))
       reportView(false)
     })
 
     mapRef.current = map
+
+    if (tubeLines) {
+      void loadTubeLines().then((lines) => {
+        tubeLinesRef.current = lines
+        if (mapRef.current !== map || !map.getSource(SEARCH_SOURCE_ID)) return
+        addTubeLines(map, lines, dark)
+      })
+    }
 
     return () => {
       for (const marker of busMarkers.values()) {
@@ -878,16 +1009,19 @@ export const ExplorerPointMap = ({
     }
 
     const applyStyle = () => {
-      addExplorerLayers(map, dark, busStopLabelsRef.current)
+      addExplorerLayers(map, dark, busStopLabelsRef.current, pinMinZoomRef.current)
+      addTubeLines(map, tubeLinesRef.current, dark)
       const source = map.getSource(SOURCE_ID) as
         maplibregl.GeoJSONSource | undefined
       if (geojsonRef.current) source?.setData(geojsonRef.current)
+      paintBusDots(map, busDotsRef.current ?? [])
       syncBusMarkers(
         map,
         pointsRef.current,
         selectedIdRef.current,
         onSelectRef.current,
-        busMarkersRef.current
+        busMarkersRef.current,
+        pinMinZoomRef.current
       )
       syncCycleMarkers(
         map,
@@ -925,7 +1059,8 @@ export const ExplorerPointMap = ({
         points,
         selectedId,
         onSelectRef.current,
-        busMarkersRef.current
+        busMarkersRef.current,
+        pinMinZoomRef.current
       )
       syncCycleMarkers(
         map,

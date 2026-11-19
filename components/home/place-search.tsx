@@ -50,6 +50,8 @@ import {
 } from "@/lib/tfl/homepage-live/keyboard-zone"
 import {
   browseRows,
+  busStopDots,
+  PIN_MIN_ZOOM,
   fitFor,
   frameMatches,
   frameWins,
@@ -248,6 +250,7 @@ export const PlaceSearch = ({
   const indexReady = index !== null
   // The map's view is the search range; until the map reports it, the box around the Board place.
   const [frame, setFrame] = useState<Frame>(() => provisionalFrame(anchor))
+  const [zoom, setZoom] = useState(MAP_SELECTED_ZOOM)
   // The fit to a typed search's results when none is in the frame, once per search (attempt).
   const [fit, setFit] = useState<MapFit>(NO_FIT)
   // While a query is typed, the range it searches: our own fit moves the map but not the range; the user's moves do.
@@ -366,6 +369,7 @@ export const PlaceSearch = ({
     keyboardRef.current = px
     setKeyboardPx(px)
     setFrame(provisionalFrame(anchor))
+    setZoom(MAP_SELECTED_ZOOM)
     setOpen(true)
   }
 
@@ -423,6 +427,14 @@ export const PlaceSearch = ({
     () => rows.filter((row) => row.lat != null && row.lon != null).map(pointOfRow),
     [rows]
   )
+
+  // Zoomed out, bus stops are dots (one cheap layer): every stop in view when the field is empty, the matches when typed.
+  const busDots = useMemo(() => {
+    const kit = index?.kit
+    if (!open || zoom >= PIN_MIN_ZOOM || !kit) return []
+    if (!typed) return busStopDots(kit, frame)
+    return rows.filter((row) => row.kind === "bus" && row.lat != null && row.lon != null).map((row): [number, number] => [row.lon!, row.lat!])
+  }, [open, zoom, index, typed, frame, rows])
 
   const close = () => {
     setOpen(false)
@@ -663,9 +675,14 @@ export const PlaceSearch = ({
                   }}
                   cooperativeGestures={false}
                   busStopLabels={false}
+                  busDots={busDots}
+                  tubeLines
+                  pinMinZoom={PIN_MIN_ZOOM}
                   initialView={{ lat: frame.center.lat, lon: frame.center.lon, zoom: MAP_SELECTED_ZOOM }}
-                  onViewChange={({ center, bounds, byUser }) => {
+                  onViewChange={(view) => {
+                    const { center, bounds, byUser } = view
                     setFrame({ center, bounds })
+                    setZoom(view.zoom)
                     if (byUser) setPinnedRange(null)
                   }}
                   followSelected={false}
