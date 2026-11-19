@@ -390,7 +390,18 @@ export const PlaceSearch = ({
     [index, state.query, state.rows, range]
   )
   // Typed: matches in the frame; with none there, the wider search, and the map fits to it once.
-  const rows = !typed ? browse : inFrameMatches.length > 0 ? inFrameMatches : state.rows
+  // After our fit the map shows the best match's area: list what is in view there, so pins and list stay one set.
+  const inViewMatches = useMemo(
+    () => (index && typed && inFrameMatches.length === 0 && fit.key > 0 ? searchInFrame(index.kit, state.query, frame, state.rows) : []),
+    [index, typed, inFrameMatches.length, fit.key, state.query, state.rows, frame]
+  )
+  const rows = !typed
+    ? browse
+    : inFrameMatches.length > 0
+      ? inFrameMatches
+      : inViewMatches.length > 0
+        ? inViewMatches
+        : state.rows
   const wideFit =
     open && typed && state.status !== "pending" && inFrameMatches.length === 0 && fit.attempt !== state.attempt
       ? fitFor(state.rows)
