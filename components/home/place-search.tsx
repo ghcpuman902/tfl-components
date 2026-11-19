@@ -287,6 +287,8 @@ export type PlaceSearchProps = {
   chosenIds?: readonly string[]
   /** Cycle mode: a dock was picked. */
   onSelectDock?: (dock: ExplorerPoint) => void
+  /** Shown in the field at rest, e.g. the station already chosen. */
+  restingValue?: string
 }
 
 /**
@@ -306,6 +308,7 @@ export const PlaceSearch = ({
   placeholder = "Station, stop or postcode",
   chosenIds,
   onSelectDock,
+  restingValue,
 }: PlaceSearchProps) => {
   const [state, dispatch] = useReducer(combinedReducer, initialCombinedState)
   const [open, setOpen] = useState(false)
@@ -318,6 +321,8 @@ export const PlaceSearch = ({
   })
   const [indexReady, setIndexReady] = useState(false)
   const [locateNote, setLocateNote] = useState<string | undefined>()
+  // "Near me" in a bus or dock editor: the places nearest you, not the Board's anchor.
+  const [located, setLocated] = useState<{ lat: number; lon: number } | undefined>()
   const inputRef = useRef<HTMLInputElement>(null)
   const keyboardRef = useRef(0)
   const listId = useId()
@@ -327,7 +332,7 @@ export const PlaceSearch = ({
   const searchRef = useRef<LiveSearch | null>(null)
   const latest = useRef({ anchor, replay, searchDelayMs, mode, stations })
   useEffect(() => {
-    latest.current = { anchor, replay, searchDelayMs, mode, stations }
+    latest.current = { anchor: located ?? anchor, replay, searchDelayMs, mode, stations }
   })
 
   useEffect(() => {
@@ -402,6 +407,14 @@ export const PlaceSearch = ({
     }
   }, [])
 
+  // After "Near me" in a bus or dock editor, open the list on what is nearest to you.
+  useEffect(() => {
+    if (!located) return
+    if (open) searchRef.current?.type("")
+    else inputRef.current?.focus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [located])
+
   // The index is a big static chunk: fetched when the browser is idle or the box is focused.
   const ensureIndex = () => {
     if (kitRef.current) return
@@ -465,7 +478,8 @@ export const PlaceSearch = ({
     if (mode) searchRef.current?.type("")
   }
 
-  const near = anchor?.lat != null && anchor.lon != null ? { lat: anchor.lat, lon: anchor.lon } : undefined
+  const near =
+    located ?? (anchor?.lat != null && anchor.lon != null ? { lat: anchor.lat, lon: anchor.lon } : undefined)
   const dockSearch = useDockSearch(open && mode === "cycle", state.query, near)
   const docks = dockSearch.docks
   const chosen = new Set(chosenIds ?? [])
@@ -560,6 +574,11 @@ export const PlaceSearch = ({
     setLocateNote(undefined)
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
+        if (mode === "bus" || mode === "cycle") {
+          // Bus stops and docks list nearest first: point the list at you and open it.
+          setLocated({ lat: coords.latitude, lon: coords.longitude })
+          return
+        }
         const [nearest] = nearbyExplorerPoints(
           stations.map(normaliseRailPoint),
           { lat: coords.latitude, lon: coords.longitude },
@@ -684,7 +703,7 @@ export const PlaceSearch = ({
                 spellCheck={false}
                 enterKeyHint="go"
                 placeholder={open && mode ? MODE_COPY[mode].field : placeholder}
-                value={open ? state.query : ""}
+                value={open ? state.query : (restingValue ?? "")}
                 onFocus={() => {
                   ensureIndex()
                   openView()
@@ -719,17 +738,15 @@ export const PlaceSearch = ({
                 }}
                 className="h-12 min-w-0 flex-1 bg-transparent text-3xl leading-none text-foreground outline-none placeholder:text-muted-foreground placeholder:[font-size:var(--placeholder-size,inherit)] sm:h-16 sm:text-5xl"
               />
-              {/* "Near me" finds a station; bus stops and docks already open on the nearest. */}
-              {mode === "bus" || mode === "cycle" ? null : (
-                <button
-                  type="button"
-                  onClick={locate}
-                  className="flex min-h-11 shrink-0 items-center border-0 bg-transparent px-1 text-muted-foreground hover:text-foreground"
-                >
-                  <LocateFixed className="size-5" aria-hidden />
-                  <span className="sr-only">Near me</span>
-                </button>
-              )}
+              {/* "Near me" picks the nearest station; in a bus or dock editor it lists the nearest. */}
+              <button
+                type="button"
+                onClick={locate}
+                className="flex min-h-11 shrink-0 items-center border-0 bg-transparent px-1 text-muted-foreground hover:text-foreground"
+              >
+                <LocateFixed className="size-5" aria-hidden />
+                <span className="sr-only">Near me</span>
+              </button>
               {open ? (
                 <button
                   type="button"

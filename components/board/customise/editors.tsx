@@ -40,6 +40,7 @@ export const EditorSearch = ({
   chosenIds,
   onSelect = () => undefined,
   onSelectDock,
+  restingValue,
 }: {
   api: CustomiseController
   mode: SearchMode
@@ -47,6 +48,7 @@ export const EditorSearch = ({
   chosenIds?: readonly string[]
   onSelect?: (hit: PlaceHit) => void
   onSelectDock?: (dock: ExplorerPoint) => void
+  restingValue?: string
 }) => (
   <PlaceSearch
     stations={api.search.stations}
@@ -57,6 +59,7 @@ export const EditorSearch = ({
     chosenIds={chosenIds}
     onSelect={onSelect}
     onSelectDock={onSelectDock}
+    restingValue={restingValue}
   />
 )
 
@@ -73,9 +76,12 @@ const pickStationHit = (api: CustomiseController, hit: PlaceHit) => {
 /** Station field and the Board's header for it. */
 const StationField = ({
   api,
+  showName,
   children,
 }: {
   api: CustomiseController
+  /** Put the chosen station's name in the field instead of the placeholder. */
+  showName?: boolean
   children?: ReactNode
 }) => (
   <div className="-mt-4 space-y-3">
@@ -83,6 +89,7 @@ const StationField = ({
       api={api}
       mode="rail"
       placeholder="Station"
+      restingValue={showName && api.stopId ? api.stationName : undefined}
       onSelect={(hit) => pickStationHit(api, hit)}
     />
     {api.stopId ? <BoardStationHeader name={api.stationName} /> : null}
@@ -207,7 +214,7 @@ export const StatusEditor = ({ api }: { api: CustomiseController }) => {
   }
   return (
     <>
-      <StationField api={api}>
+      <StationField api={api} showName>
         <p className="text-sm text-muted-foreground">
           {api.statusFollows
             ? `Lines at ${api.stationName} first, then your order.`
