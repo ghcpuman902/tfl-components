@@ -817,3 +817,12 @@ html.board-glance .board-glance {
     transform: none;
   }
 }
+
+/* Flat UI: MapLibre's zoom control and attribution ship rounded; square them. */
+.maplibregl-ctrl-group,
+.maplibregl-ctrl-group button,
+.maplibregl-ctrl-attrib,
+.maplibregl-ctrl-attrib.maplibregl-compact,
+.maplibregl-ctrl-attrib-button {
+  border-radius: 0 !important;
+}
