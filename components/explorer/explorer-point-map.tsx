@@ -13,6 +13,7 @@ import { provideMissingStyleImages } from "@/components/tfl/maps/provide-missing
 import { TFL_MODAL_COLOURS } from "@/lib/tfl/brand-colours"
 import {
   MAP_SEARCH_RADIUS_METERS,
+  MAP_SELECTED_ZOOM,
   circleBounds,
   circlePolygon,
   fractionOutsideCircle,
@@ -24,7 +25,7 @@ import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types"
 
 const LONDON_CENTER: [number, number] = [-0.128, 51.508]
 const FALLBACK_ZOOM = 12
-const SELECTED_ZOOM = 15
+const SELECTED_ZOOM = MAP_SELECTED_ZOOM
 const SEARCH_FIT_MAX_ZOOM = 17
 const SOURCE_ID = "explorer-points"
 const LAYER_ID = "explorer-points-circle"
@@ -68,6 +69,33 @@ type ExplorerPointMapProps = {
   cooperativeGestures?: boolean
   /** Off: bus stops show only their letter pin, no name label under it (stations keep theirs). Read once at mount. */
   busStopLabels?: boolean
+  /** Where the map opens, with no animation. Read once at mount. */
+  initialView?: { lat: number; lon: number; zoom?: number }
+  /** The view once the map has loaded, then after every move. */
+  onViewChange?: (view: MapView) => void
+  /** Off: the map never moves to the selected point on its own. */
+  followSelected?: boolean
+}
+
+export type MapView = {
+  center: { lat: number; lon: number }
+  bounds: { west: number; south: number; east: number; north: number }
+  zoom: number
+}
+
+const viewOf = (map: maplibregl.Map): MapView => {
+  const centre = map.getCenter()
+  const bounds = map.getBounds()
+  return {
+    center: { lat: centre.lat, lon: centre.lng },
+    bounds: {
+      west: bounds.getWest(),
+      south: bounds.getSouth(),
+      east: bounds.getEast(),
+      north: bounds.getNorth(),
+    },
+    zoom: map.getZoom(),
+  }
 }
 
 type PointFeatureProperties = {
@@ -623,12 +651,16 @@ export const ExplorerPointMap = ({
   searchOrigin = null,
   cooperativeGestures = true,
   busStopLabels = true,
+  initialView,
+  onViewChange,
+  followSelected = true,
 }: ExplorerPointMapProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const onSelectRef = useRef(onSelect)
   const busStopLabelsRef = useRef(busStopLabels)
   const onSearchHereRef = useRef(onSearchHere)
+  const onViewChangeRef = useRef(onViewChange)
   const pointsRef = useRef(points)
   const selectedIdRef = useRef(selectedId)
   const geojsonRef = useRef<ReturnType<typeof toExplorerGeojson> | null>(null)
@@ -662,6 +694,10 @@ export const ExplorerPointMap = ({
   useEffect(() => {
     onSearchHereRef.current = onSearchHere
   }, [onSearchHere])
+
+  useEffect(() => {
+    onViewChangeRef.current = onViewChange
+  }, [onViewChange])
 
   useEffect(() => {
     pointsRef.current = points
@@ -699,8 +735,8 @@ export const ExplorerPointMap = ({
     const map = new maplibregl.Map({
       container,
       style: openFreeMapStyleUrl(dark),
-      center: LONDON_CENTER,
-      zoom: FALLBACK_ZOOM,
+      center: initialView ? [initialView.lon, initialView.lat] : LONDON_CENTER,
+      zoom: initialView?.zoom ?? FALLBACK_ZOOM,
       attributionControl: { compact: true },
       cooperativeGestures,
     })
@@ -732,7 +768,14 @@ export const ExplorerPointMap = ({
       setSearchCircleData(map, centre.lng, centre.lat, searchRadiusRef.current)
     }
 
+    const reportView = () => {
+      const canvas = map.getCanvas()
+      if (canvas.clientWidth < 2 || canvas.clientHeight < 2) return
+      onViewChangeRef.current?.(viewOf(map))
+    }
+
     const handleMoveEnd = () => {
+      reportView()
       if (programmaticMoveRef.current) {
         programmaticMoveRef.current = false
         skipFollowSelectedRef.current = false
@@ -802,6 +845,7 @@ export const ExplorerPointMap = ({
       map.on("movestart", handleMoveStart)
       map.on("move", handleMove)
       map.on("moveend", handleMoveEnd)
+      reportView()
     })
 
     mapRef.current = map
@@ -930,7 +974,7 @@ export const ExplorerPointMap = ({
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !selectedId) return
+    if (!map || !selectedId || !followSelected) return
     if (skipFollowSelectedRef.current) return
     const selected = points.find((point) => point.id === selectedId)
     if (
@@ -948,7 +992,7 @@ export const ExplorerPointMap = ({
       zoom: Math.max(map.getZoom(), SELECTED_ZOOM),
       duration,
     })
-  }, [selectedId, points])
+  }, [selectedId, points, followSelected])
 
   const handleSearchHereClick = () => {
     const map = mapRef.current

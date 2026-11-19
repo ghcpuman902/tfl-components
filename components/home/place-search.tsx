@@ -48,6 +48,16 @@ import {
   readKeyboardHeight,
   writeKeyboardHeight,
 } from "@/lib/tfl/homepage-live/keyboard-zone"
+import {
+  browseRows,
+  fitFor,
+  frameMatches,
+  inFrame,
+  leadWith,
+  provisionalFrame,
+  type Frame,
+} from "@/lib/tfl/homepage-live/search-frame"
+import { MAP_SEARCH_RADIUS_METERS, MAP_SELECTED_ZOOM, distanceMeters } from "@/lib/tfl/geo"
 import { nearbyExplorerPoints } from "@/lib/tfl/explorer-point-search"
 import { normaliseRailPoint } from "@/lib/tfl/explorer-point-normalise"
 import {
@@ -182,6 +192,14 @@ const localStore = () => {
   }
 }
 
+type MapFit = {
+  attempt: number
+  origin: { lat: number; lon: number } | null
+  radiusMeters: number
+  key: number
+}
+const NO_FIT: MapFit = { attempt: -1, origin: null, radiusMeters: MAP_SEARCH_RADIUS_METERS, key: 0 }
+
 type Option = { id: string; label: string; expanded?: boolean }
 type Entry = { option: Option; row?: StopRow; cluster?: SearchCluster; nested?: boolean }
 
@@ -190,6 +208,8 @@ export type PlaceSearchProps = {
   stations: readonly ExplorerTubeRailPoint[]
   hubStationIds: Readonly<Record<string, string>>
   anchor?: { lat?: number; lon?: number }
+  /** The Board's place (station point id or bus stop id), held as the best row while it is in the map frame. */
+  currentId?: string
   replay?: Replay
   /** Replay only: holds TfL's answer back so the index rows can be seen before the merge. */
   searchDelayMs?: number
@@ -206,6 +226,7 @@ export const PlaceSearch = ({
   stations,
   hubStationIds,
   anchor,
+  currentId,
   replay,
   searchDelayMs,
   onSelect,
@@ -219,7 +240,13 @@ export const PlaceSearch = ({
     clusters: [],
     all: false,
   })
-  const [indexReady, setIndexReady] = useState(false)
+  // A new object when the index loads and when a fresher served copy replaces it in place.
+  const [index, setIndex] = useState<{ kit: StopSearchKit } | null>(null)
+  const indexReady = index !== null
+  // The map's view is the search range; until the map reports it, the box around the Board place.
+  const [frame, setFrame] = useState<Frame>(() => provisionalFrame(anchor))
+  // The fit to a typed search's results when none is in the frame, once per search (attempt).
+  const [fit, setFit] = useState<MapFit>(NO_FIT)
   const [locateNote, setLocateNote] = useState<string | undefined>()
   const inputRef = useRef<HTMLInputElement>(null)
   const keyboardRef = useRef(0)
@@ -228,9 +255,9 @@ export const PlaceSearch = ({
 
   const kitRef = useRef<StopSearchKit | null>(null)
   const searchRef = useRef<LiveSearch | null>(null)
-  const latest = useRef({ anchor, replay, searchDelayMs })
+  const latest = useRef({ frame, replay, searchDelayMs })
   useEffect(() => {
-    latest.current = { anchor, replay, searchDelayMs }
+    latest.current = { frame, replay, searchDelayMs }
   })
 
   useEffect(() => {
@@ -238,21 +265,20 @@ export const PlaceSearch = ({
       dispatch,
       instantFor: (query) => {
         const kit = kitRef.current
-        const near = latest.current.anchor
         return kit && query.trim()
           ? kit.searchStops(kit.index, query, {
               limit: INSTANT_LIMIT,
-              near: near?.lat != null && near.lon != null ? { lat: near.lat, lon: near.lon } : undefined,
+              near: latest.current.frame.center,
             })
           : []
       },
       merge: () => kitRef.current?.mergeLiveResults ?? appendLiveOnly,
       fetchLive: async (query, signal) => {
-        const { replay: request, searchDelayMs: delay, anchor: near } = latest.current
+        const { replay: request, searchDelayMs: delay, frame: near } = latest.current
         if (request && delay) await sleep(delay, signal)
         const result = await searchBusStopsAction(query, request)
         if (!result.ok) throw new Error(result.error)
-        return rankBusHits(result.hits, query, near).map(liveHitOfBus)
+        return rankBusHits(result.hits, query, near.center).map(liveHitOfBus)
       },
       enrich: async (ids) => {
         const result = await enrichBusStopsAction(ids, latest.current.replay)
@@ -278,11 +304,13 @@ export const PlaceSearch = ({
     loadStopSearch().then(
       (kit) => {
         kitRef.current = kit
-        setIndexReady(true)
+        setIndex({ kit })
         searchRef.current?.indexReady()
-        void adoptServedStopIndex(kit).then(
-          (changed) => changed && searchRef.current?.indexReady()
-        )
+        void adoptServedStopIndex(kit).then((changed) => {
+          if (!changed) return
+          setIndex({ kit })
+          searchRef.current?.indexReady()
+        })
       },
       () => undefined
     )
@@ -330,10 +358,34 @@ export const PlaceSearch = ({
     const px = readKeyboardHeight(localStore()) ?? estimateKeyboardHeight(window.innerHeight)
     keyboardRef.current = px
     setKeyboardPx(px)
+    setFrame(provisionalFrame(anchor))
     setOpen(true)
   }
 
-  const rows = state.rows
+  const typed = state.query.trim() !== ""
+  const anchorLat = anchor?.lat
+  const anchorLon = anchor?.lon
+  // Empty field: what is in the frame, led by the Board's place while it is in view.
+  const browse = useMemo(() => {
+    const kit = index?.kit
+    if (!open || typed || !kit) return []
+    const rows = browseRows(kit, frame)
+    const isBoard = (row: StopRow) =>
+      row.id === currentId ||
+      (row.kind === "station" && stationPointOfRow(row, stations, hubStationIds)?.id === currentId)
+    if (currentId && rows.some(isBoard)) return leadWith(rows, isBoard)
+    if (currentId || anchorLat == null || anchorLon == null || !inFrame({ lat: anchorLat, lon: anchorLon }, frame))
+      return rows
+    const away = (row: StopRow) => distanceMeters(anchorLat, anchorLon, row.lat!, row.lon!)
+    const nearest = rows.reduce<StopRow | undefined>((best, row) => (!best || away(row) < away(best) ? row : best), undefined)
+    return leadWith(rows, (row) => row === nearest)
+  }, [open, typed, index, frame, currentId, anchorLat, anchorLon, stations, hubStationIds])
+  const inFrameMatches = useMemo(() => frameMatches(state.rows, frame), [state.rows, frame])
+  // Typed: matches in the frame; with none there, the wider search, and the map fits to it once.
+  const rows = !typed ? browse : inFrameMatches.length > 0 ? inFrameMatches : state.rows
+  const wideFit =
+    open && typed && inFrameMatches.length === 0 && fit.attempt !== state.attempt ? fitFor(state.rows) : null
+  if (wideFit) setFit({ attempt: state.attempt, ...wideFit, key: fit.key + 1 })
   const groups = useMemo(() => groupSearchRows(rows), [rows])
   const best = groups.best
   const shown: { clusters: string[]; all: boolean } =
@@ -349,6 +401,8 @@ export const PlaceSearch = ({
     setOpen(false)
     setActiveId(null)
     setExpanded({ query: "", clusters: [], all: false })
+    // The map remounts on the next open; a stale fit key would move it.
+    setFit(NO_FIT)
     searchRef.current?.type("")
     inputRef.current?.blur()
   }
@@ -582,6 +636,12 @@ export const PlaceSearch = ({
                   }}
                   cooperativeGestures={false}
                   busStopLabels={false}
+                  initialView={{ lat: frame.center.lat, lon: frame.center.lon, zoom: MAP_SELECTED_ZOOM }}
+                  onViewChange={({ center, bounds }) => setFrame({ center, bounds })}
+                  followSelected={false}
+                  fitSearchKey={fit.key}
+                  searchOrigin={fit.origin}
+                  searchRadiusMeters={fit.radiusMeters}
                   className="min-h-0 rounded-none border-0"
                 />
               </div>

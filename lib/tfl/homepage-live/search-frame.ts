@@ -1,0 +1,81 @@
+import {
+  MAP_SEARCH_RADIUS_METERS,
+  TRAFALGAR_SQUARE,
+  circleBounds,
+  distanceMeters,
+  pointsCentroid,
+} from "@/lib/tfl/geo"
+import type { StopRow, StopSearchKit } from "@/lib/tfl/stop-index"
+
+export type LatLon = { lat: number; lon: number }
+export type Frame = {
+  center: LatLon
+  bounds: { west: number; south: number; east: number; north: number }
+}
+
+/** Per kind, so a zoomed-out frame stays readable. */
+export const BROWSE_CAP = 30
+const BROWSE_SCAN = 150
+const FIT_ROWS = 10
+
+/** The frame before the map reports its real view: the 400 m box around the Board place. */
+export const provisionalFrame = (anchor?: { lat?: number; lon?: number }): Frame => {
+  const center =
+    anchor?.lat != null && anchor.lon != null
+      ? { lat: anchor.lat, lon: anchor.lon }
+      : { lat: TRAFALGAR_SQUARE.lat, lon: TRAFALGAR_SQUARE.lon }
+  const [[west, south], [east, north]] = circleBounds(center.lon, center.lat, MAP_SEARCH_RADIUS_METERS)
+  return { center, bounds: { west, south, east, north } }
+}
+
+export const inFrame = (row: { lat?: number; lon?: number }, frame: Frame) =>
+  row.lat != null &&
+  row.lon != null &&
+  row.lat >= frame.bounds.south &&
+  row.lat <= frame.bounds.north &&
+  row.lon >= frame.bounds.west &&
+  row.lon <= frame.bounds.east
+
+/**
+ * What the empty field lists: stations and bus stops inside the frame, nearest
+ * its centre first, at most BROWSE_CAP of each. A station inside a listed hub
+ * (King's Cross St. Pancras) is left out.
+ */
+export const browseRows = (
+  kit: Pick<StopSearchKit, "index" | "searchStops">,
+  frame: Frame
+): StopRow[] => {
+  const pick = (kind: "station" | "bus") =>
+    kit
+      .searchStops(kit.index, "", { near: frame.center, kinds: [kind], limit: BROWSE_SCAN })
+      .filter((row) => inFrame(row, frame))
+  const stations = pick("station")
+  const listed = new Set(stations.map((row) => row.id))
+  return [
+    ...stations.filter((row) => !row.hubId || !listed.has(row.hubId)).slice(0, BROWSE_CAP),
+    ...pick("bus").slice(0, BROWSE_CAP),
+  ].sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0))
+}
+
+/** Moves the first row that `isLead` picks to the top; the rest keep their order. */
+export const leadWith = (rows: readonly StopRow[], isLead: (row: StopRow) => boolean): StopRow[] => {
+  const at = rows.findIndex(isLead)
+  return at <= 0 ? [...rows] : [rows[at]!, ...rows.slice(0, at), ...rows.slice(at + 1)]
+}
+
+/** Typed matches inside the frame, in their ranked order. */
+export const frameMatches = (rows: readonly StopRow[], frame: Frame): StopRow[] =>
+  rows.filter((row) => inFrame(row, frame))
+
+/** The circle the map fits to when no match is in the frame: around the top located rows. */
+export const fitFor = (
+  rows: readonly StopRow[]
+): { origin: LatLon; radiusMeters: number } | null => {
+  const located = rows.filter((row) => row.lat != null && row.lon != null).slice(0, FIT_ROWS)
+  const origin = pointsCentroid(located)
+  if (!origin) return null
+  const farthest = Math.max(
+    ...located.map((row) => distanceMeters(origin.lat, origin.lon, row.lat!, row.lon!))
+  )
+  return { origin, radiusMeters: Math.max(MAP_SEARCH_RADIUS_METERS, farthest) }
+}

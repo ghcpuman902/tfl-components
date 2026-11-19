@@ -309,6 +309,7 @@ export const HomeProduct = ({
         stations={stations}
         hubStationIds={hubStationIds}
         anchor={station ?? busHit}
+        currentId={selection.id}
         replay={replayArg}
         searchDelayMs={replay?.searchDelayMs}
         onSelect={select}
