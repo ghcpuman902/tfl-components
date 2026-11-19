@@ -14,6 +14,7 @@ import {
   type BoardConfig,
 } from "@/lib/tfl/board-url-state"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
+import { SITE_URL } from "@/lib/site"
 
 export type BoardReadiness = {
   usableConfig: boolean
@@ -140,7 +141,7 @@ export const parseBoardViewLink = (
 
   let url: URL
   try {
-    url = new URL(trimmed, origin || "https://tfl.manglekuo.com")
+    url = new URL(trimmed, origin || SITE_URL)
   } catch {
     return { ok: false, error: BOARD_LINK_INVALID }
   }

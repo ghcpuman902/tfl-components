@@ -5,6 +5,7 @@ import {
   UNDERGROUND_LINE_COLOURS,
   UNDERGROUND_RING_RED,
 } from "@/lib/tfl/brand-colours"
+import { SITE_HOST } from "@/lib/site"
 
 const INK = "#171717"
 const PAPER = "#FFFFFF"
@@ -162,7 +163,7 @@ const BrandLine = () => (
   >
     <BoldWord text="Board" />
     <div style={{ ...brandFace(CHIP), marginLeft: 12, marginRight: 12 }}>·</div>
-    <div style={brandFace(CHIP)}>tfl.manglekuo.com</div>
+    <div style={brandFace(CHIP)}>{SITE_HOST}</div>
   </div>
 )
 

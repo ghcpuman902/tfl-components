@@ -64,6 +64,10 @@ type ExplorerPointMapProps = {
   /** Bump after a map-centre search so the camera fits the radius circle. */
   fitSearchKey?: number
   searchOrigin?: { lat: number; lon: number } | null
+  /** Off: one finger pans, as on a full-screen map. Read once at mount. */
+  cooperativeGestures?: boolean
+  /** Off: bus stops show only their letter pin, no name label under it (stations keep theirs). Read once at mount. */
+  busStopLabels?: boolean
 }
 
 type PointFeatureProperties = {
@@ -262,7 +266,9 @@ const searchCirclePaint = (dark: boolean) => {
   }
 }
 
-const addExplorerLayers = (map: maplibregl.Map, dark: boolean) => {
+const STATION_ONLY: maplibregl.FilterSpecification = ["==", ["get", "marker"], "station"]
+
+const addExplorerLayers = (map: maplibregl.Map, dark: boolean, busLabels = true) => {
   if (!map.getSource(SEARCH_SOURCE_ID)) {
     map.addSource(SEARCH_SOURCE_ID, {
       type: "geojson",
@@ -317,7 +323,9 @@ const addExplorerLayers = (map: maplibregl.Map, dark: boolean) => {
       id: LABEL_LAYER_ID,
       type: "symbol",
       source: SOURCE_ID,
-      filter: ["!", ["boolean", ["get", "selected"], false]],
+      filter: busLabels
+        ? ["!", ["boolean", ["get", "selected"], false]]
+        : ["all", STATION_ONLY, ["!", ["boolean", ["get", "selected"], false]]],
       layout: labelLayout(false),
       paint: stationLabelPaint(dark),
     })
@@ -328,7 +336,9 @@ const addExplorerLayers = (map: maplibregl.Map, dark: boolean) => {
       id: SELECTED_LABEL_LAYER_ID,
       type: "symbol",
       source: SOURCE_ID,
-      filter: ["boolean", ["get", "selected"], false],
+      filter: busLabels
+        ? ["boolean", ["get", "selected"], false]
+        : ["all", STATION_ONLY, ["boolean", ["get", "selected"], false]],
       layout: labelLayout(true),
       paint: {
         ...stationLabelPaint(dark),
@@ -611,10 +621,13 @@ export const ExplorerPointMap = ({
   searchHereLoading = false,
   fitSearchKey = 0,
   searchOrigin = null,
+  cooperativeGestures = true,
+  busStopLabels = true,
 }: ExplorerPointMapProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const onSelectRef = useRef(onSelect)
+  const busStopLabelsRef = useRef(busStopLabels)
   const onSearchHereRef = useRef(onSearchHere)
   const pointsRef = useRef(points)
   const selectedIdRef = useRef(selectedId)
@@ -689,7 +702,7 @@ export const ExplorerPointMap = ({
       center: LONDON_CENTER,
       zoom: FALLBACK_ZOOM,
       attributionControl: { compact: true },
-      cooperativeGestures: true,
+      cooperativeGestures,
     })
     provideMissingStyleImages(map)
 
@@ -752,7 +765,7 @@ export const ExplorerPointMap = ({
     const cycleMarkers = cycleMarkersRef.current
 
     map.on("load", () => {
-      addExplorerLayers(map, dark)
+      addExplorerLayers(map, dark, busStopLabelsRef.current)
       const source = map.getSource(SOURCE_ID) as
         maplibregl.GeoJSONSource | undefined
       if (geojsonRef.current) source?.setData(geojsonRef.current)
@@ -818,7 +831,7 @@ export const ExplorerPointMap = ({
     }
 
     const applyStyle = () => {
-      addExplorerLayers(map, dark)
+      addExplorerLayers(map, dark, busStopLabelsRef.current)
       const source = map.getSource(SOURCE_ID) as
         maplibregl.GeoJSONSource | undefined
       if (geojsonRef.current) source?.setData(geojsonRef.current)

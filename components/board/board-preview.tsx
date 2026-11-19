@@ -24,6 +24,7 @@ import {
   previewHashMessage,
 } from "@/lib/tfl/board-preview-sync"
 import { cn } from "@/lib/utils"
+import { SITE_URL } from "@/lib/site"
 
 const SLOT_WIDE =
   "w-full max-w-[calc(min(42svh,22rem)*125.7409/88.4773)] md:w-[min(calc(min(50svh,26rem)*125.7409/88.4773),calc(100vw-26rem))] md:max-w-none"
@@ -40,7 +41,7 @@ const SLOT_UNRESOLVED = cn(
 const PREVIEW_HREF_DEBOUNCE_MS = 280
 
 const withEmbedQuery = (href: string) => {
-  const url = new URL(href, "https://tfl.manglekuo.com")
+  const url = new URL(href, SITE_URL)
   url.searchParams.set("embed", "1")
   return `${url.pathname}${url.search}${url.hash}`
 }

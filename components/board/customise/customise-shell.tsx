@@ -6,9 +6,10 @@ import { SQUARE_BUTTON } from "@/components/board/customise/parts"
 import type { CustomiseController } from "@/components/board/customise/types"
 import { CUSTOMISE_PANEL_LABEL } from "@/lib/tfl/board-customise"
 import { cn } from "@/lib/utils"
+import { SITE_URL } from "@/lib/site"
 
 const withEmbed = (href: string) => {
-  const url = new URL(href, "https://tfl.manglekuo.com")
+  const url = new URL(href, SITE_URL)
   url.searchParams.set("embed", "1")
   return `${url.pathname}${url.search}${url.hash}`
 }

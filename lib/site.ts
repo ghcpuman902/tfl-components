@@ -1,5 +1,15 @@
-/** Canonical production origin. */
-export const SITE_URL = "https://tfl.manglekuo.com"
+/** Canonical production origin. The one place the site's address lives. */
+export const SITE_URL = "https://tfl-ts.dev"
+
+/** Bare host of {@link SITE_URL}, for display (OG image chips) and analytics. */
+export const SITE_HOST = new URL(SITE_URL).host
+
+/**
+ * Previous address. When `DOMAIN_REDIRECT=1` at build time, every path on
+ * these hosts 301s to the same path and query on {@link SITE_URL}
+ * (see `domainRedirects` in next.config.ts).
+ */
+export const LEGACY_SITE_HOSTS = ["tfl.manglekuo.com"] as const
 
 /** Public shadcn registry base (`…/r/<name>.json`). */
 export const REGISTRY_BASE = `${SITE_URL}/r`
