@@ -51,6 +51,7 @@ import {
 import {
   browseRows,
   busStopDots,
+  dotKey,
   PIN_MIN_ZOOM,
   fitFor,
   frameMatches,
@@ -62,7 +63,11 @@ import {
   strongestRows,
   type Frame,
 } from "@/lib/tfl/homepage-live/search-frame"
-import { MAP_SEARCH_RADIUS_METERS, MAP_SELECTED_ZOOM, distanceMeters } from "@/lib/tfl/geo"
+import {
+  MAP_SEARCH_RADIUS_METERS,
+  MAP_SELECTED_ZOOM,
+  distanceMeters,
+} from "@/lib/tfl/geo"
 import { nearbyExplorerPoints } from "@/lib/tfl/explorer-point-search"
 import { normaliseRailPoint } from "@/lib/tfl/explorer-point-normalise"
 import {
@@ -83,7 +88,10 @@ const SearchMap = dynamic(
     import("@/components/explorer/explorer-point-map").then(
       (mod) => mod.ExplorerPointMap
     ),
-  { ssr: false, loading: () => <div className="size-full bg-muted" aria-hidden /> }
+  {
+    ssr: false,
+    loading: () => <div className="size-full bg-muted" aria-hidden />,
+  }
 )
 
 type Replay = { fixture: string; round: number } | undefined
@@ -101,12 +109,22 @@ const MODE_LABELS: Readonly<Record<string, string>> = {
 const LineMarks = ({ lines }: { lines: readonly string[] }) => (
   <span className="flex flex-wrap items-center justify-end gap-1" aria-hidden>
     {lines.slice(0, 8).map((line) => (
-      <span key={line} data-line={line} className="h-1.5 w-4 bg-(--line-color)" />
+      <span
+        key={line}
+        data-line={line}
+        className="h-1.5 w-4 bg-(--line-color)"
+      />
     ))}
   </span>
 )
 
-const RouteChips = ({ routes, max }: { routes: readonly string[]; max: number }) => (
+const RouteChips = ({
+  routes,
+  max,
+}: {
+  routes: readonly string[]
+  max: number
+}) => (
   <span className="flex max-w-[45%] shrink-0 flex-wrap justify-end gap-1 sm:max-w-60">
     {routes.slice(0, max).map((route) => (
       <BusNumberChip key={route} label={route} />
@@ -127,7 +145,10 @@ const pointOfRow = (row: StopRow): ExplorerPoint => ({
   lon: row.lon,
   ...(row.kind === "bus"
     ? { modes: ["bus"], stopLetter: row.letter, towards: row.towards }
-    : { modes: row.modes.filter((mode) => mode !== "bus"), lineIds: [...row.lines] }),
+    : {
+        modes: row.modes.filter((mode) => mode !== "bus"),
+        lineIds: [...row.lines],
+      }),
 })
 
 const MIN_FIT_PX = 18
@@ -139,7 +160,10 @@ let measureContext: CanvasRenderingContext2D | null | undefined
  * below 18 px (16 px or more keeps iOS from zooming). The input has a fixed
  * height, so changing the size moves nothing.
  */
-const useFitFontSize = (ref: RefObject<HTMLInputElement | null>, text: string) => {
+const useFitFontSize = (
+  ref: RefObject<HTMLInputElement | null>,
+  text: string
+) => {
   useLayoutEffect(() => {
     const el = ref.current
     if (!el) return
@@ -151,8 +175,10 @@ const useFitFontSize = (ref: RefObject<HTMLInputElement | null>, text: string) =
       measureContext.font = `${style.fontWeight} ${max}px ${style.fontFamily}`
       const width = measureContext.measureText(text || el.placeholder).width
       const room = el.clientWidth
-      const fitPx = room > 0 && width > room ? Math.floor((max * room) / width) : null
-      el.style.fontSize = fitPx === null ? "" : `${Math.max(MIN_FIT_PX, fitPx)}px`
+      const fitPx =
+        room > 0 && width > room ? Math.floor((max * room) / width) : null
+      el.style.fontSize =
+        fitPx === null ? "" : `${Math.max(MIN_FIT_PX, fitPx)}px`
       // Typed text stays at 18 px or more (iOS zoom); only the placeholder may go smaller to fit.
       if (!text && fitPx !== null && fitPx < MIN_FIT_PX) {
         // Glyph widths don't scale linearly at small sizes, so step down until it measures in.
@@ -203,10 +229,20 @@ type MapFit = {
   radiusMeters: number
   key: number
 }
-const NO_FIT: MapFit = { attempt: -1, origin: null, radiusMeters: MAP_SEARCH_RADIUS_METERS, key: 0 }
+const NO_FIT: MapFit = {
+  attempt: -1,
+  origin: null,
+  radiusMeters: MAP_SEARCH_RADIUS_METERS,
+  key: 0,
+}
 
 type Option = { id: string; label: string; expanded?: boolean }
-type Entry = { option: Option; row?: StopRow; cluster?: SearchCluster; nested?: boolean }
+type Entry = {
+  option: Option
+  row?: StopRow
+  cluster?: SearchCluster
+  nested?: boolean
+}
 
 export type PlaceSearchProps = {
   /** Resolves a chosen station to the StopPoints that carry its arrivals; also feeds "Near me". */
@@ -240,7 +276,11 @@ export const PlaceSearch = ({
   const [open, setOpen] = useState(false)
   const [keyboardPx, setKeyboardPx] = useState(0)
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [expanded, setExpanded] = useState<{ query: string; clusters: string[]; all: boolean }>({
+  const [expanded, setExpanded] = useState<{
+    query: string
+    clusters: string[]
+    all: boolean
+  }>({
     query: "",
     clusters: [],
     all: false,
@@ -284,7 +324,11 @@ export const PlaceSearch = ({
       },
       merge: () => kitRef.current?.mergeLiveResults ?? appendLiveOnly,
       fetchLive: async (query, signal) => {
-        const { replay: request, searchDelayMs: delay, range: near } = latest.current
+        const {
+          replay: request,
+          searchDelayMs: delay,
+          range: near,
+        } = latest.current
         if (request && delay) await sleep(delay, signal)
         const result = await searchBusStopsAction(query, request)
         if (!result.ok) throw new Error(result.error)
@@ -347,7 +391,10 @@ export const PlaceSearch = ({
     const viewport = window.visualViewport
     const measure = () => {
       if (!viewport) return
-      const measured = measureKeyboardHeight(window.innerHeight, viewport.height)
+      const measured = measureKeyboardHeight(
+        window.innerHeight,
+        viewport.height
+      )
       if (measured == null || measured <= keyboardRef.current) return
       keyboardRef.current = measured
       setKeyboardPx(measured)
@@ -365,7 +412,9 @@ export const PlaceSearch = ({
 
   const openView = () => {
     if (open) return
-    const px = readKeyboardHeight(localStore()) ?? estimateKeyboardHeight(window.innerHeight)
+    const px =
+      readKeyboardHeight(localStore()) ??
+      estimateKeyboardHeight(window.innerHeight)
     keyboardRef.current = px
     setKeyboardPx(px)
     setFrame(provisionalFrame(anchor))
@@ -383,24 +432,60 @@ export const PlaceSearch = ({
     const rows = browseRows(kit, frame)
     const isBoard = (row: StopRow) =>
       row.id === currentId ||
-      (row.kind === "station" && stationPointOfRow(row, stations, hubStationIds)?.id === currentId)
+      (row.kind === "station" &&
+        stationPointOfRow(row, stations, hubStationIds)?.id === currentId)
     if (currentId && rows.some(isBoard)) return leadWith(rows, isBoard)
-    if (currentId || anchorLat == null || anchorLon == null || !inFrame({ lat: anchorLat, lon: anchorLon }, frame))
+    if (
+      currentId ||
+      anchorLat == null ||
+      anchorLon == null ||
+      !inFrame({ lat: anchorLat, lon: anchorLon }, frame)
+    )
       return rows
-    const away = (row: StopRow) => distanceMeters(anchorLat, anchorLon, row.lat!, row.lon!)
-    const nearest = rows.reduce<StopRow | undefined>((best, row) => (!best || away(row) < away(best) ? row : best), undefined)
+    const away = (row: StopRow) =>
+      distanceMeters(anchorLat, anchorLon, row.lat!, row.lon!)
+    const nearest = rows.reduce<StopRow | undefined>(
+      (best, row) => (!best || away(row) < away(best) ? row : best),
+      undefined
+    )
     return leadWith(rows, (row) => row === nearest)
-  }, [open, typed, index, frame, currentId, anchorLat, anchorLon, stations, hubStationIds])
+  }, [
+    open,
+    typed,
+    index,
+    frame,
+    currentId,
+    anchorLat,
+    anchorLon,
+    stations,
+    hubStationIds,
+  ])
   // Match quality first, then in view: a strong match outside beats a weak one in view.
   const inFrameMatches = useMemo(() => {
-    const found = index ? searchInFrame(index.kit, state.query, range, state.rows) : frameMatches(state.rows, range)
-    return state.status !== "pending" && !frameWins(state.query, found, state.rows, range) ? [] : found
+    const found = index
+      ? searchInFrame(index.kit, state.query, range, state.rows)
+      : frameMatches(state.rows, range)
+    return state.status !== "pending" &&
+      !frameWins(state.query, found, state.rows, range)
+      ? []
+      : found
   }, [index, state.query, state.rows, state.status, range])
   // Typed: matches in the frame; with none there, the wider search, and the map fits to it once.
   // After our fit the map shows the best match's area: list what is in view there, so pins and list stay one set.
   const inViewMatches = useMemo(
-    () => (index && typed && inFrameMatches.length === 0 && fit.key > 0 ? searchInFrame(index.kit, state.query, frame, state.rows) : []),
-    [index, typed, inFrameMatches.length, fit.key, state.query, state.rows, frame]
+    () =>
+      index && typed && inFrameMatches.length === 0 && fit.key > 0
+        ? searchInFrame(index.kit, state.query, frame, state.rows)
+        : [],
+    [
+      index,
+      typed,
+      inFrameMatches.length,
+      fit.key,
+      state.query,
+      state.rows,
+      frame,
+    ]
   )
   const rows = !typed
     ? browse
@@ -410,7 +495,11 @@ export const PlaceSearch = ({
         ? inViewMatches
         : state.rows
   const wideFit =
-    open && typed && state.status !== "pending" && inFrameMatches.length === 0 && fit.attempt !== state.attempt
+    open &&
+    typed &&
+    state.status !== "pending" &&
+    inFrameMatches.length === 0 &&
+    fit.attempt !== state.attempt
       ? fitFor(strongestRows(state.rows, state.query))
       : null
   if (wideFit) {
@@ -421,19 +510,37 @@ export const PlaceSearch = ({
   const best = groups.best
   const shown: { clusters: string[]; all: boolean } =
     expanded.query === state.query ? expanded : { clusters: [], all: false }
-  const items = shown.all ? groups.items : groups.items.slice(0, COLLAPSED_ITEMS)
+  const items = shown.all
+    ? groups.items
+    : groups.items.slice(0, COLLAPSED_ITEMS)
   const hasMore = !shown.all && groups.items.length > COLLAPSED_ITEMS
   const points = useMemo(
-    () => rows.filter((row) => row.lat != null && row.lon != null).map(pointOfRow),
+    () =>
+      rows.filter((row) => row.lat != null && row.lon != null).map(pointOfRow),
     [rows]
   )
 
-  // Zoomed out, bus stops are dots (one cheap layer): every stop in view when the field is empty, the matches when typed.
+  // Typed: the result stops stay pins at any zoom; the other stops in view are the dots below the pin zoom.
+  const resultPinIds = useMemo(
+    () =>
+      typed
+        ? new Set(rows.filter((row) => row.kind === "bus").map((row) => row.id))
+        : undefined,
+    [typed, rows]
+  )
   const busDots = useMemo(() => {
     const kit = index?.kit
     if (!open || zoom >= PIN_MIN_ZOOM || !kit) return []
-    if (!typed) return busStopDots(kit, frame)
-    return rows.filter((row) => row.kind === "bus" && row.lat != null && row.lon != null).map((row): [number, number] => [row.lon!, row.lat!])
+    const skip = typed
+      ? new Set(
+          rows
+            .filter(
+              (row) => row.kind === "bus" && row.lat != null && row.lon != null
+            )
+            .map((row) => dotKey(row.lon!, row.lat!))
+        )
+      : undefined
+    return busStopDots(kit, frame, skip)
   }, [open, zoom, index, typed, frame, rows])
 
   const close = () => {
@@ -465,7 +572,10 @@ export const PlaceSearch = ({
   const entries: Entry[] = []
   const pushRow = (row: StopRow, nested = false) =>
     entries.push({
-      option: { id: nested ? `${row.id}:in-cluster` : row.id, label: rowLabel(row) },
+      option: {
+        id: nested ? `${row.id}:in-cluster` : row.id,
+        label: rowLabel(row),
+      },
       row,
       nested,
     })
@@ -487,7 +597,9 @@ export const PlaceSearch = ({
     if (isOpen) for (const stop of item.stops) pushRow(stop, true)
   }
   const options = entries.map((entry) => entry.option)
-  const active = activeId ? options.findIndex((option) => option.id === activeId) : -1
+  const active = activeId
+    ? options.findIndex((option) => option.id === activeId)
+    : -1
   const activate = (entry: Entry | undefined) => {
     if (entry?.row) choose(entry.row)
     else if (entry?.cluster) toggleCluster(entry.cluster)
@@ -522,7 +634,11 @@ export const PlaceSearch = ({
     )
   }
 
-  const empty = state.query.trim() && rows.length === 0 && indexReady && (state.status === "ok" || state.status === "idle")
+  const empty =
+    state.query.trim() &&
+    rows.length === 0 &&
+    indexReady &&
+    (state.status === "ok" || state.status === "idle")
   const footer =
     state.status === "slow"
       ? "Searching bus stops…"
@@ -543,12 +659,17 @@ export const PlaceSearch = ({
   })
 
   const rowBody = (row: StopRow) => {
-    const station = row.kind === "station" ? stationPointOfRow(row, stations, hubStationIds) : undefined
+    const station =
+      row.kind === "station"
+        ? stationPointOfRow(row, stations, hubStationIds)
+        : undefined
     const modes: readonly string[] = station?.modes ?? row.modes
     const detail =
       row.kind === "station"
         ? [
-            ...modes.flatMap((mode) => (MODE_LABELS[mode] ? [MODE_LABELS[mode]] : [])),
+            ...modes.flatMap((mode) =>
+              MODE_LABELS[mode] ? [MODE_LABELS[mode]] : []
+            ),
             station?.zone ? `Zone ${station.zone}` : null,
           ]
             .filter(Boolean)
@@ -562,11 +683,17 @@ export const PlaceSearch = ({
           <span className="flex min-w-0 items-center text-lg leading-snug">
             <span className="truncate">{row.name}</span>
             {row.kind === "bus" && row.letter ? (
-              <StopLetterBadge letter={row.letter} size="sm" className="ml-2 -translate-y-px" />
+              <StopLetterBadge
+                letter={row.letter}
+                size="sm"
+                className="ml-2 -translate-y-px"
+              />
             ) : null}
           </span>
           {detail ? (
-            <span className="block truncate text-sm text-muted-foreground">{detail}</span>
+            <span className="block truncate text-sm text-muted-foreground">
+              {detail}
+            </span>
           ) : null}
         </span>
         {row.kind === "station" ? (
@@ -580,13 +707,23 @@ export const PlaceSearch = ({
     )
   }
 
-  const listRow = "flex min-h-14 cursor-pointer items-start gap-3 border-b border-border py-2.5"
+  const listRow =
+    "flex min-h-14 cursor-pointer items-start gap-3 border-b border-border py-2.5"
 
   return (
     // At rest it stacks over the Board's z-10 layers and under the sticky site header (z-30); open, the view covers the header.
     <div className={open ? "relative z-50" : "relative z-20"}>
-      <div className={open ? "fixed inset-x-0 top-0 h-dvh bg-background" : undefined}>
-        <div className={cn("flex w-full flex-col", open && "mx-auto h-full max-w-3xl")}>
+      <div
+        className={
+          open ? "fixed inset-x-0 top-0 h-dvh bg-background" : undefined
+        }
+      >
+        <div
+          className={cn(
+            "flex w-full flex-col",
+            open && "mx-auto h-full max-w-3xl"
+          )}
+        >
           <div className={cn(open && "shrink-0 px-4 pt-3 sm:px-8")}>
             <div className="flex h-[4.5rem] items-center gap-3 border-b border-foreground sm:h-[5.5rem]">
               <Search className="size-7 shrink-0" aria-hidden />
@@ -598,7 +735,9 @@ export const PlaceSearch = ({
                 aria-expanded={open && options.length > 0}
                 aria-controls={listId}
                 aria-autocomplete="list"
-                aria-activedescendant={active >= 0 ? optionId(options[active]!.id) : undefined}
+                aria-activedescendant={
+                  active >= 0 ? optionId(options[active]!.id) : undefined
+                }
                 autoComplete="off"
                 autoCorrect="off"
                 spellCheck={false}
@@ -626,7 +765,11 @@ export const PlaceSearch = ({
                   ) {
                     if (options.length === 0) return
                     event.preventDefault()
-                    setActiveId(options[nextActiveIndex(active, event.key, options.length)]?.id ?? null)
+                    setActiveId(
+                      options[
+                        nextActiveIndex(active, event.key, options.length)
+                      ]?.id ?? null
+                    )
                     return
                   }
                   if (event.key === "Enter") {
@@ -637,7 +780,7 @@ export const PlaceSearch = ({
                     }
                   }
                 }}
-                className="h-12 min-w-0 flex-1 bg-transparent text-3xl leading-none text-foreground outline-none placeholder:text-muted-foreground placeholder:[font-size:var(--placeholder-size,inherit)] sm:h-16 sm:text-5xl"
+                className="h-12 min-w-0 flex-1 bg-transparent text-3xl leading-none text-foreground outline-none placeholder:[font-size:var(--placeholder-size,inherit)] placeholder:text-muted-foreground sm:h-16 sm:text-5xl"
               />
               <button
                 type="button"
@@ -658,7 +801,10 @@ export const PlaceSearch = ({
               ) : null}
             </div>
             {locateNote ? (
-              <p role="status" className="pt-2 text-sm text-balance text-muted-foreground">
+              <p
+                role="status"
+                className="pt-2 text-sm text-balance text-muted-foreground"
+              >
                 {locateNote}
               </p>
             ) : null}
@@ -678,7 +824,12 @@ export const PlaceSearch = ({
                   busDots={busDots}
                   tubeLines
                   pinMinZoom={PIN_MIN_ZOOM}
-                  initialView={{ lat: frame.center.lat, lon: frame.center.lon, zoom: MAP_SELECTED_ZOOM }}
+                  alwaysPinIds={resultPinIds}
+                  initialView={{
+                    lat: frame.center.lat,
+                    lon: frame.center.lon,
+                    zoom: MAP_SELECTED_ZOOM,
+                  }}
                   onViewChange={(view) => {
                     const { center, bounds, byUser } = view
                     setFrame({ center, bounds })
@@ -692,13 +843,20 @@ export const PlaceSearch = ({
                   className="min-h-0 rounded-none border-0"
                 />
               </div>
-              <div id={listId} role="listbox" aria-label="Matching stations and bus stops" className="shrink-0">
+              <div
+                id={listId}
+                role="listbox"
+                aria-label="Matching stations and bus stops"
+                className="shrink-0"
+              >
                 <div
                   className={cn(
                     "flex h-16 items-center gap-3 overflow-hidden px-4 sm:px-8",
                     best && "cursor-pointer bg-muted"
                   )}
-                  {...(best ? optionProps(entries[0]!.option, 0) : { role: "presentation" })}
+                  {...(best
+                    ? optionProps(entries[0]!.option, 0)
+                    : { role: "presentation" })}
                   onClick={() => activate(best ? entries[0] : undefined)}
                 >
                   {best ? rowBody(best) : null}
@@ -713,7 +871,11 @@ export const PlaceSearch = ({
                     at === 0 && best ? null : (
                       <li
                         key={entry.option.id}
-                        className={cn(listRow, entry.nested && "pl-4", at === active && "bg-muted")}
+                        className={cn(
+                          listRow,
+                          entry.nested && "pl-4",
+                          at === active && "bg-muted"
+                        )}
                         {...optionProps(entry.option, at)}
                         onClick={() => activate(entry)}
                       >
@@ -724,12 +886,20 @@ export const PlaceSearch = ({
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-lg leading-snug">
                                 {entry.cluster.name}
-                                <span className="text-sm text-muted-foreground"> · bus</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {" "}
+                                  · bus
+                                </span>
                               </span>
                               <span className="block text-sm text-pretty text-muted-foreground">
                                 {entry.cluster.stops.length} stops
-                                {entry.cluster.letters ? ` · ${entry.cluster.letters}` : ""} ·{" "}
-                                {entry.option.expanded ? "tap to close" : "tap to choose one"}
+                                {entry.cluster.letters
+                                  ? ` · ${entry.cluster.letters}`
+                                  : ""}{" "}
+                                ·{" "}
+                                {entry.option.expanded
+                                  ? "tap to close"
+                                  : "tap to choose one"}
                               </span>
                             </span>
                             <RouteChips routes={entry.cluster.routes} max={9} />
@@ -739,7 +909,10 @@ export const PlaceSearch = ({
                     )
                   )}
                   {footer || hasMore ? (
-                    <li role="presentation" className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm text-muted-foreground">
+                    <li
+                      role="presentation"
+                      className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm text-muted-foreground"
+                    >
                       <span className="text-balance" aria-live="polite">
                         {footer}
                       </span>
@@ -747,7 +920,13 @@ export const PlaceSearch = ({
                         <button
                           type="button"
                           onMouseDown={(event) => event.preventDefault()}
-                          onClick={() => setExpanded({ query: state.query, clusters: shown.clusters, all: true })}
+                          onClick={() =>
+                            setExpanded({
+                              query: state.query,
+                              clusters: shown.clusters,
+                              all: true,
+                            })
+                          }
                           className="shrink-0 border-0 bg-transparent p-0 text-foreground underline underline-offset-4"
                         >
                           All {groups.busCount} stops

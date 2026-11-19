@@ -24,12 +24,19 @@ const FRAME_SCAN = 500
 const FIT_NEAR_BEST_METERS = 1_000
 
 /** The frame before the map reports its real view: the 400 m box around the Board place. */
-export const provisionalFrame = (anchor?: { lat?: number; lon?: number }): Frame => {
+export const provisionalFrame = (anchor?: {
+  lat?: number
+  lon?: number
+}): Frame => {
   const center =
     anchor?.lat != null && anchor.lon != null
       ? { lat: anchor.lat, lon: anchor.lon }
       : { lat: TRAFALGAR_SQUARE.lat, lon: TRAFALGAR_SQUARE.lon }
-  const [[west, south], [east, north]] = circleBounds(center.lon, center.lat, MAP_SEARCH_RADIUS_METERS)
+  const [[west, south], [east, north]] = circleBounds(
+    center.lon,
+    center.lat,
+    MAP_SEARCH_RADIUS_METERS
+  )
   return { center, bounds: { west, south, east, north } }
 }
 
@@ -52,12 +59,18 @@ export const browseRows = (
 ): StopRow[] => {
   const pick = (kind: "station" | "bus") =>
     kit
-      .searchStops(kit.index, "", { near: frame.center, kinds: [kind], limit: BROWSE_SCAN })
+      .searchStops(kit.index, "", {
+        near: frame.center,
+        kinds: [kind],
+        limit: BROWSE_SCAN,
+      })
       .filter((row) => inFrame(row, frame))
   const stations = pick("station")
   const listed = new Set(stations.map((row) => row.id))
   return [
-    ...stations.filter((row) => !row.hubId || !listed.has(row.hubId)).slice(0, BROWSE_CAP),
+    ...stations
+      .filter((row) => !row.hubId || !listed.has(row.hubId))
+      .slice(0, BROWSE_CAP),
     ...pick("bus").slice(0, BROWSE_CAP),
   ].sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0))
 }
@@ -66,9 +79,14 @@ export const browseRows = (
  * Every bus stop inside the frame as [lon, lat], for the map's one dot layer
  * when zoomed out. Reads the index's coordinate columns, so no rows are built.
  */
+export const dotKey = (lon: number, lat: number) =>
+  `${lon.toFixed(5)},${lat.toFixed(5)}`
+
 export const busStopDots = (
   kit: Pick<StopSearchKit, "index">,
-  frame: Frame
+  frame: Frame,
+  /** Stops drawn as pins instead (a typed search's results), by `dotKey`. */
+  skip?: ReadonlySet<string>
 ): [number, number][] => {
   const { index } = kit
   const { lat, lon } = index.columns
@@ -77,15 +95,27 @@ export const busStopDots = (
   for (let i = index.stationCount; i < index.size; i++) {
     const la = lat[i]! / 1e5
     const lo = lon[i]! / 1e5
-    if (la >= south && la <= north && lo >= west && lo <= east) dots.push([lo, la])
+    if (
+      la >= south &&
+      la <= north &&
+      lo >= west &&
+      lo <= east &&
+      !skip?.has(dotKey(lo, la))
+    )
+      dots.push([lo, la])
   }
   return dots
 }
 
 /** Moves the first row that `isLead` picks to the top; the rest keep their order. */
-export const leadWith = (rows: readonly StopRow[], isLead: (row: StopRow) => boolean): StopRow[] => {
+export const leadWith = (
+  rows: readonly StopRow[],
+  isLead: (row: StopRow) => boolean
+): StopRow[] => {
   const at = rows.findIndex(isLead)
-  return at <= 0 ? [...rows] : [rows[at]!, ...rows.slice(0, at), ...rows.slice(at + 1)]
+  return at <= 0
+    ? [...rows]
+    : [rows[at]!, ...rows.slice(0, at), ...rows.slice(at + 1)]
 }
 
 /** 0 exact, 1 prefix, 2 anything else the search found (contains / word / fuzzy). */
@@ -94,7 +124,10 @@ export const matchStrength = (name: string, query: string): 0 | 1 | 2 => {
     text
       .toLowerCase()
       .replace(/\s*\((?:[^)]*)\)\s*$/, "")
-      .replace(/\s+(?:underground|dlr|rail|tram|overground|elizabeth line)?\s*station$/, "")
+      .replace(
+        /\s+(?:underground|dlr|rail|tram|overground|elizabeth line)?\s*station$/,
+        ""
+      )
       .replace(/[^\p{L}\p{N}]+/gu, " ")
       .trim()
   const n = norm(name)
@@ -104,7 +137,10 @@ export const matchStrength = (name: string, query: string): 0 | 1 | 2 => {
 }
 
 const bestStrength = (rows: readonly StopRow[], query: string) =>
-  rows.reduce<number>((best, row) => Math.min(best, matchStrength(row.name, query)), 3)
+  rows.reduce<number>(
+    (best, row) => Math.min(best, matchStrength(row.name, query)),
+    3
+  )
 
 /**
  * Match quality first, then in view: the frame's matches win unless a row
@@ -118,19 +154,26 @@ export const frameWins = (
   frame: Frame
 ): boolean => {
   if (inFrameRows.length === 0) return false
-  const outside = allRows.filter((row) => row.lat != null && row.lon != null && !inFrame(row, frame))
+  const outside = allRows.filter(
+    (row) => row.lat != null && row.lon != null && !inFrame(row, frame)
+  )
   return bestStrength(inFrameRows, query) <= bestStrength(outside, query)
 }
 
 /** The rows of the strongest match quality, ranked order kept: what the map fits to. */
-export const strongestRows = (rows: readonly StopRow[], query: string): StopRow[] => {
+export const strongestRows = (
+  rows: readonly StopRow[],
+  query: string
+): StopRow[] => {
   const best = bestStrength(rows, query)
   return rows.filter((row) => matchStrength(row.name, query) === best)
 }
 
 /** Typed matches inside the frame, in their ranked order. */
-export const frameMatches = (rows: readonly StopRow[], frame: Frame): StopRow[] =>
-  rows.filter((row) => inFrame(row, frame))
+export const frameMatches = (
+  rows: readonly StopRow[],
+  frame: Frame
+): StopRow[] => rows.filter((row) => inFrame(row, frame))
 
 /**
  * A typed query searched inside the frame: the stop index's matches there (not
@@ -145,7 +188,12 @@ export const searchInFrame = (
   rows: readonly StopRow[]
 ): StopRow[] => {
   const fromIndex = query.trim()
-    ? kit.searchStops(kit.index, query, { near: frame.center, limit: FRAME_SCAN }).filter((row) => inFrame(row, frame))
+    ? kit
+        .searchStops(kit.index, query, {
+          near: frame.center,
+          limit: FRAME_SCAN,
+        })
+        .filter((row) => inFrame(row, frame))
     : []
   const merged = new Map(rows.map((row) => [row.id, row]))
   const listed = new Set(fromIndex.map((row) => row.id))
@@ -167,12 +215,18 @@ export const fitFor = (
   const lead = located[0]
   if (!lead) return null
   const near = located
-    .filter((row) => distanceMeters(lead.lat!, lead.lon!, row.lat!, row.lon!) <= FIT_NEAR_BEST_METERS)
+    .filter(
+      (row) =>
+        distanceMeters(lead.lat!, lead.lon!, row.lat!, row.lon!) <=
+        FIT_NEAR_BEST_METERS
+    )
     .slice(0, FIT_ROWS)
   const origin = pointsCentroid(near)
   if (!origin) return null
   const farthest = Math.max(
-    ...near.map((row) => distanceMeters(origin.lat, origin.lon, row.lat!, row.lon!))
+    ...near.map((row) =>
+      distanceMeters(origin.lat, origin.lon, row.lat!, row.lon!)
+    )
   )
   return { origin, radiusMeters: Math.max(MAP_SEARCH_RADIUS_METERS, farthest) }
 }
