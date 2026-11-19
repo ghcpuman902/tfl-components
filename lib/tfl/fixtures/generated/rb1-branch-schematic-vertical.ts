@@ -10,23 +10,31 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
   branches: [
     {
       id: "segment-0",
-      name: "Barking Riverside Pier → Bankside Pier",
+      name: "Barking Riverside Pier → Greenwich Pier",
     },
     {
       id: "segment-1",
-      name: "Bankside Pier → Embankment Pier",
+      name: "Greenwich Pier → Greenland Surrey Quays Pier",
+    },
+    {
+      id: "segment-10",
+      name: "Vauxhall St George Wharf Pier → Battersea Power Station Pier",
     },
     {
       id: "segment-3",
+      name: "Bankside Pier → Embankment Pier",
+    },
+    {
+      id: "segment-5",
       name: "Westminster Pier → Vauxhall St George Wharf Pier",
     },
     {
-      id: "segment-6",
-      name: "Embankment Pier → Westminster Pier",
+      id: "segment-8",
+      name: "Greenland Surrey Quays Pier → Bankside Pier",
     },
     {
-      id: "segment-7",
-      name: "Vauxhall St George Wharf Pier → Battersea Power Station Pier",
+      id: "segment-9",
+      name: "Embankment Pier → Westminster Pier",
     },
   ],
   nodes: [
@@ -72,7 +80,7 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
       lane: 0,
       pos: 4,
       kind: "stop",
-      branchIds: ["segment-0"],
+      branchIds: ["segment-1"],
       stationKey: "greenwich-pier",
     },
     {
@@ -81,7 +89,7 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
       lane: 0,
       pos: 5,
       kind: "stop",
-      branchIds: ["segment-0"],
+      branchIds: ["segment-1"],
       stationKey: "masthouse-terrace-pier",
     },
     {
@@ -90,7 +98,7 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
       lane: 0,
       pos: 6,
       kind: "stop",
-      branchIds: ["segment-0"],
+      branchIds: ["segment-8"],
       stationKey: "greenland-surrey-quays-pier",
     },
     {
@@ -99,7 +107,7 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
       lane: 0,
       pos: 7,
       kind: "stop",
-      branchIds: ["segment-0"],
+      branchIds: ["segment-8"],
       stationKey: "canary-wharf-pier",
     },
     {
@@ -108,7 +116,7 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
       lane: 0,
       pos: 8,
       kind: "stop",
-      branchIds: ["segment-0"],
+      branchIds: ["segment-8"],
       stationKey: "tower-pier",
     },
     {
@@ -117,7 +125,7 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
       lane: 0,
       pos: 9,
       kind: "stop",
-      branchIds: ["segment-0"],
+      branchIds: ["segment-8"],
       stationKey: "london-bridge-city-pier",
     },
     {
@@ -126,7 +134,7 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
       lane: 0,
       pos: 10,
       kind: "stop",
-      branchIds: ["segment-1"],
+      branchIds: ["segment-3"],
       stationKey: "bankside-pier",
     },
     {
@@ -135,7 +143,7 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
       lane: 0,
       pos: 11,
       kind: "stop",
-      branchIds: ["segment-1"],
+      branchIds: ["segment-3"],
       stationKey: "blackfriars-pier",
     },
     {
@@ -144,7 +152,7 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
       lane: 0,
       pos: 12,
       kind: "stop",
-      branchIds: ["segment-6"],
+      branchIds: ["segment-9"],
       stationKey: "embankment-pier",
     },
     {
@@ -153,7 +161,7 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
       lane: 0,
       pos: 13,
       kind: "stop",
-      branchIds: ["segment-3"],
+      branchIds: ["segment-5"],
       stationKey: "westminster-pier",
     },
     {
@@ -162,7 +170,7 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
       lane: 0,
       pos: 14,
       kind: "stop",
-      branchIds: ["segment-3"],
+      branchIds: ["segment-5"],
       stationKey: "millbank-pier",
     },
     {
@@ -171,7 +179,7 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
       lane: 0,
       pos: 15,
       kind: "stop",
-      branchIds: ["segment-7"],
+      branchIds: ["segment-10"],
       stationKey: "vauxhall-st-george-wharf-pier",
     },
     {
@@ -180,7 +188,7 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
       lane: 0,
       pos: 16,
       kind: "terminus",
-      branchIds: ["segment-7"],
+      branchIds: ["segment-10"],
       stationKey: "battersea-power-station-pier",
     },
   ],
@@ -208,62 +216,62 @@ export const RB1_BRANCH_SCHEMATIC_VERTICAL: LineSchematic = {
     {
       from: "greenwich-pier",
       to: "masthouse-terrace-pier",
-      branchId: "segment-0",
+      branchId: "segment-1",
     },
     {
       from: "masthouse-terrace-pier",
       to: "greenland-surrey-quays-pier",
-      branchId: "segment-0",
+      branchId: "segment-1",
     },
     {
       from: "greenland-surrey-quays-pier",
       to: "canary-wharf-pier",
-      branchId: "segment-0",
+      branchId: "segment-8",
     },
     {
       from: "canary-wharf-pier",
       to: "tower-pier",
-      branchId: "segment-0",
+      branchId: "segment-8",
     },
     {
       from: "tower-pier",
       to: "london-bridge-city-pier",
-      branchId: "segment-0",
+      branchId: "segment-8",
     },
     {
       from: "london-bridge-city-pier",
       to: "bankside-pier",
-      branchId: "segment-0",
+      branchId: "segment-8",
     },
     {
       from: "bankside-pier",
       to: "blackfriars-pier",
-      branchId: "segment-1",
+      branchId: "segment-3",
     },
     {
       from: "blackfriars-pier",
       to: "embankment-pier",
-      branchId: "segment-1",
+      branchId: "segment-3",
     },
     {
       from: "embankment-pier",
       to: "westminster-pier",
-      branchId: "segment-6",
+      branchId: "segment-9",
     },
     {
       from: "westminster-pier",
       to: "millbank-pier",
-      branchId: "segment-3",
+      branchId: "segment-5",
     },
     {
       from: "millbank-pier",
       to: "vauxhall-st-george-wharf-pier",
-      branchId: "segment-3",
+      branchId: "segment-5",
     },
     {
       from: "vauxhall-st-george-wharf-pier",
       to: "battersea-power-station-pier",
-      branchId: "segment-7",
+      branchId: "segment-10",
     },
   ],
 }
