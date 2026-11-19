@@ -338,13 +338,16 @@ export const DragGrip = ({
   alone,
   onPointerDown,
   onKeyDown,
+  className,
 }: {
   name: string
   alone: boolean
   onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void
   onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void
+  /** Extra classes on the grip's column (e.g. no inset on touch). */
+  className?: string
 }) => (
-  <span className={GRIP_SLOT}>
+  <span className={cn(GRIP_SLOT, className)}>
     {alone ? null : (
       <button
         type="button"

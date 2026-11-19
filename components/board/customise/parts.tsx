@@ -9,8 +9,15 @@ import {
   MinusIcon,
   PlusIcon,
 } from "lucide-react"
+import { LINE_ORDER } from "tfl-ts"
 import { BoardModeRoundel } from "@/components/board/board-mode-roundel"
 import type { CustomiseController } from "@/components/board/customise/types"
+import {
+  ARRIVALS_RHYTHM_VARS,
+  ARRIVALS_TILE_CLASS,
+} from "@/components/tfl/arrivals/arrivals-board-view"
+import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
+import { StationNameTitle } from "@/components/tfl/station-name"
 import {
   CUSTOMISE_PANEL_LABEL,
   canHidePanel,
@@ -340,6 +347,67 @@ export const PanelTargetNote = ({
     </p>
   )
 }
+
+/** Lines the status part reports, in board order: yours, then the rest unless left out. */
+export const statusOnBoard = (api: CustomiseController): readonly string[] =>
+  api.statusOnlyThese
+    ? api.statusLines
+    : [
+        ...api.statusLines,
+        ...LINE_ORDER.filter((id) => !api.statusLines.includes(id)),
+      ]
+
+/** One tiny round dot per line in its colour, two rows (the only round shape). */
+export const StatusDots = ({ lines }: { lines: readonly string[] }) => (
+  <span
+    role="img"
+    aria-label={`${lines.length} lines`}
+    className="grid w-max gap-0.5"
+    style={{
+      gridTemplateColumns: `repeat(${Math.max(1, Math.ceil(lines.length / 2))}, 0.375rem)`,
+    }}
+  >
+    {lines.map((id) => (
+      <span
+        key={id}
+        data-line={id}
+        className="size-1.5 rounded-full bg-(--line-color)"
+      />
+    ))}
+  </span>
+)
+
+const BOARD_TITLE =
+  "tfl-title [font-synthesis:none] [font-weight:var(--tfl-title-weight,400)] [letter-spacing:var(--tfl-title-tracking,0)]"
+
+/** The Board's own station header: roundel and fitted name. */
+export const BoardStationHeader = ({ name }: { name: string }) => (
+  <div
+    style={ARRIVALS_RHYTHM_VARS}
+    className="@container/arrivals w-full min-w-0"
+  >
+    <div
+      className={cn(
+        "flex min-w-0 items-center gap-x-3 text-3xl",
+        ARRIVALS_TILE_CLASS
+      )}
+    >
+      <TfLRoundel
+        variant="underground"
+        className="size-[var(--arrivals-row)] shrink-0"
+        aria-hidden
+      />
+      <p
+        className={cn(
+          "flex h-full min-w-0 flex-1 items-center text-3xl",
+          BOARD_TITLE
+        )}
+      >
+        <StationNameTitle name={name} />
+      </p>
+    </div>
+  </div>
+)
 
 export const SectionHeading = ({
   id,

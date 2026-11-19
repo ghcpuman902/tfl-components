@@ -201,10 +201,10 @@ type Entry = {
   nested?: boolean
 }
 
-const dockCounts = (dock: ExplorerPoint) =>
+export const dockCounts = (dock: ExplorerPoint) =>
   `${Math.max(0, (dock.bikes ?? 0) - (dock.eBikes ?? 0))} bikes · ${dock.eBikes ?? 0} e-bikes · ${dock.spaces ?? 0} spaces`
 
-const DockMarker = ({ dock }: { dock: ExplorerPoint }) => {
+export const DockMarker = ({ dock }: { dock: ExplorerPoint }) => {
   const bikes = dock.bikes ?? 0
   const eBikes = dock.eBikes ?? 0
   const spaces = dock.spaces ?? 0
@@ -228,10 +228,10 @@ const DockMarker = ({ dock }: { dock: ExplorerPoint }) => {
   )
 }
 
-const MODE_COPY: Record<SearchMode, { label: string; list: string; all: string }> = {
-  rail: { label: "Search a station", list: "Matching stations", all: "stations" },
-  bus: { label: "Search a bus stop", list: "Matching bus stops", all: "stops" },
-  cycle: { label: "Search a dock", list: "Matching docks", all: "docks" },
+const MODE_COPY: Record<SearchMode, { label: string; list: string; all: string; field: string }> = {
+  rail: { label: "Search a station", list: "Matching stations", all: "stations", field: "Station" },
+  bus: { label: "Search a bus stop", list: "Matching bus stops", all: "stops", field: "Bus stop" },
+  cycle: { label: "Search a dock", list: "Matching docks", all: "docks", field: "Dock" },
 }
 
 /** Cycle mode: docks by name, or nearest the anchor while the field is empty. */
@@ -683,7 +683,7 @@ export const PlaceSearch = ({
                 autoCorrect="off"
                 spellCheck={false}
                 enterKeyHint="go"
-                placeholder={placeholder}
+                placeholder={open && mode ? MODE_COPY[mode].field : placeholder}
                 value={open ? state.query : ""}
                 onFocus={() => {
                   ensureIndex()
