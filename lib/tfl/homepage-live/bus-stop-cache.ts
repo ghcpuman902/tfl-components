@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto"
 import { cacheLife, cacheTag } from "next/cache"
 import { getRedis } from "@/lib/redis"
-import { getTflClient } from "@/lib/tfl/client"
+import { fetchFreshArrivals } from "@/lib/tfl/fresh-arrivals"
 import {
   createMemoryStore,
   createRedisStore,
@@ -9,6 +9,7 @@ import {
   type RedisLike,
 } from "@/lib/tfl/homepage-live/bus-quota"
 import {
+  busEtaSecAt,
   refreshBusStop,
   type BusBoardRow,
   type BusStopSnapshot,
@@ -42,18 +43,17 @@ export const resetMemoryStoreAnnouncement = () => {
 export const getQuotaStore = async (): Promise<QuotaStore> =>
   pickQuotaStore(await getRedis())
 
-const fetchStopRows = async (stopId: string): Promise<BusBoardRow[]> => {
-  const arrivals = await getTflClient().stopPoint.getArrivals({
-    stopPointIds: [stopId],
-    sortBy: "timeToStation",
-  })
-  return arrivals.map((row) => ({
-    route: row.lineName ?? "",
-    destination: row.destinationName ?? "",
-    towards: row.towards,
-    etaSec: row.timeToStation ?? 0,
-    vehicleId: row.vehicleId,
-  }))
+const fetchStopRows = async (stopId: string, readAt: number): Promise<BusBoardRow[]> => {
+  const arrivals = await fetchFreshArrivals(`/StopPoint/${encodeURIComponent(stopId)}/Arrivals`)
+  return arrivals
+    .map((row) => ({
+      route: row.lineName ?? "",
+      destination: row.destinationName ?? "",
+      towards: row.towards,
+      etaSec: busEtaSecAt(row, readAt),
+      vehicleId: row.vehicleId,
+    }))
+    .sort((a, b) => a.etaSec - b.etaSec)
 }
 
 /**

@@ -17,6 +17,25 @@ export type BusBoardRow = {
   vehicleId?: string
 }
 
+/**
+ * Seconds from `readAt` to the bus's arrival. TfL's `timeToStation` counts from
+ * its own `timestamp` (measured 40–115 s before we read it), so the arrival is
+ * `expectedArrival` (= timestamp + timeToStation), never `readAt + timeToStation`.
+ */
+export const busEtaSecAt = (
+  row: { expectedArrival?: string; timestamp?: string; timeToStation?: number },
+  readAt: number
+): number => {
+  const expected = Date.parse(row.expectedArrival ?? "")
+  const stamp = Date.parse(row.timestamp ?? "")
+  const arrival = Number.isFinite(expected)
+    ? expected
+    : Number.isFinite(stamp)
+      ? stamp + (row.timeToStation ?? 0) * 1000
+      : undefined
+  return arrival === undefined ? (row.timeToStation ?? 0) : Math.floor((arrival - readAt) / 1000)
+}
+
 export const BUS_BUSY = "Live bus times are busy right now. Try again in a minute."
 export const BUS_FAILED = "Bus arrivals are unavailable for this stop right now."
 
@@ -40,8 +59,8 @@ export class BusStopUnavailable extends Error {
 
 export type BusRefreshDeps = {
   store: QuotaStore
-  /** One TfL call for one stop. */
-  fetchRows: (stopId: string) => Promise<BusBoardRow[]>
+  /** One TfL call for one stop; `etaSec` counts from `readAt`. */
+  fetchRows: (stopId: string, readAt: number) => Promise<BusBoardRow[]>
   now: () => number
 }
 
@@ -79,8 +98,8 @@ export const refreshBusStop = async (
   if (await deps.store.get(backoffKey(stopId))) return serveHeld("busy")
   if (!(await admitSiteCall(deps.store, deps.now()))) return serveHeld("busy")
   try {
-    const rows = await deps.fetchRows(stopId)
     const fetchedAt = deps.now()
+    const rows = await deps.fetchRows(stopId, fetchedAt)
     await deps.store.set(rowsKey(stopId), JSON.stringify({ rows, fetchedAt }), BUS_ROWS_EXPIRE_SEC)
     return { state: "fresh", rows, fetchedAt }
   } catch (error) {

@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache"
 import { isTflRateLimitError } from "@/lib/tfl/board-rate-limit"
-import { getTflClient } from "@/lib/tfl/client"
+import { fetchFreshArrivals } from "@/lib/tfl/fresh-arrivals"
 import { compactRound, type CompactRound } from "@/lib/tfl/homepage-live/compact"
 import { HOMEPAGE_LINE_IDS } from "@/lib/tfl/homepage-live/line-ids"
 
@@ -24,9 +24,7 @@ export async function getCachedNetworkRound(): Promise<NetworkRoundState> {
   cacheTag("tfl-network-arrivals")
 
   try {
-    const arrivals = await getTflClient().line.getArrivals({
-      lineIds: [...HOMEPAGE_LINE_IDS],
-    })
+    const arrivals = await fetchFreshArrivals(`/Line/${HOMEPAGE_LINE_IDS.join(",")}/Arrivals`)
     return { ok: true, round: compactRound(arrivals, Date.now()) }
   } catch (error) {
     if (isTflRateLimitError(error)) return { ok: false, rateLimited: true }
