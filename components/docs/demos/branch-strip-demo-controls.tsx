@@ -86,7 +86,7 @@ export const BranchLineStripPicker = ({
           <select
             id={`branch-line-strip-picker-${orientation}`}
             name="branch-line"
-            className="min-h-10 rounded-md border border-border bg-background px-3 py-2 text-base"
+            className="min-h-10 border border-border bg-background px-3 py-2 text-base"
             value={lineId}
             onChange={handleLineChange}
             aria-label="Select branched line"
@@ -103,7 +103,7 @@ export const BranchLineStripPicker = ({
           aria-pressed={mono}
           onClick={() => setMono((current) => !current)}
           className={cn(
-            "min-h-10 rounded-md px-3 py-2 text-sm transition-colors",
+            "min-h-10 px-3 py-2 text-sm transition-colors",
             "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
             mono
               ? "bg-foreground text-background"
@@ -118,7 +118,7 @@ export const BranchLineStripPicker = ({
           aria-label="Fit into view"
           onClick={() => setFit((current) => !current)}
           className={cn(
-            "min-h-10 rounded-md px-3 py-2 text-sm transition-colors",
+            "min-h-10 px-3 py-2 text-sm transition-colors",
             "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
             fit
               ? "bg-foreground text-background"
