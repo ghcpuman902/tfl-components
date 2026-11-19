@@ -29,25 +29,25 @@ const letterRange = (stops: readonly StopRow[]) => {
   return first === last ? first : `${first}–${last}`
 }
 
+/** The place a stop belongs to: "Bank Station  / Poultry" → "Bank Station". */
+export const stopAreaName = (name: string) => name.split("/")[0]!.replace(/\s+/g, " ").trim()
+
 /**
  * The ranked rows as the search view lists them: the best match on its own,
- * then other stations, then bus stops sharing one name as a single cluster,
- * then the remaining stops in rank order.
+ * then the top place's stops ("Bank Station / …") as one cluster row, then each
+ * stop on its own in rank order (nearest first), then other stations and places.
  */
 export const groupSearchRows = (rows: readonly StopRow[]) => {
   const [best, ...rest] = rows
   const byName = new Map<string, StopRow[]>()
   for (const row of rest) {
     if (row.kind !== "bus") continue
-    byName.set(row.name, [...(byName.get(row.name) ?? []), row])
+    const area = stopAreaName(row.name)
+    byName.set(area, [...(byName.get(area) ?? []), row])
   }
-  const clusters: SearchItem[] = []
-  const singles: SearchItem[] = []
+  const clusters: SearchCluster[] = []
   for (const [name, stops] of byName) {
-    if (stops.length < 2) {
-      singles.push({ kind: "row", row: stops[0]! })
-      continue
-    }
+    if (stops.length < 2) continue
     clusters.push({
       kind: "cluster",
       id: `cluster:${name}`,
@@ -57,12 +57,17 @@ export const groupSearchRows = (rows: readonly StopRow[]) => {
       routes: [...new Set(stops.flatMap((stop) => dayRoutes(stop.lines)))].sort(byCode),
     })
   }
+  // The top place's stops as one row, then each stop nearest first, then other stations and places.
+  const [lead, ...otherClusters] = clusters
+  const singles: SearchItem[] = rest
+    .filter((row) => row.kind === "bus")
+    .map((row) => ({ kind: "row" as const, row }))
   const stations: SearchItem[] = rest
     .filter((row) => row.kind === "station")
     .map((row) => ({ kind: "row" as const, row }))
   return {
     best,
-    items: [...stations, ...clusters, ...singles],
+    items: [...(lead ? [lead] : []), ...singles, ...stations, ...otherClusters],
     busCount: rows.filter((row) => row.kind === "bus").length,
   }
 }
