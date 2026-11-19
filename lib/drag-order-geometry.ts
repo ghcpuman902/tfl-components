@@ -21,23 +21,29 @@ export const clampDrag = (
   return Math.min(Math.max(dy, min), max)
 }
 
-/** Where the lifted row lands: past the middle of a row takes its place. */
+/**
+ * Where the lifted row lands. Moving up, its top edge passing a row's middle
+ * takes that row's place; moving down, its bottom edge does. (Comparing the
+ * centre would stop a row taller than its neighbours from ever reaching an
+ * end, because the clamp keeps its top inside the list.)
+ */
 export const targetIndexFor = (
   offsets: readonly number[],
   heights: readonly number[],
   draggedIndex: number,
   dy: number
 ): number => {
-  const centre =
-    (offsets[draggedIndex] ?? 0) + (heights[draggedIndex] ?? 0) / 2 + dy
+  const top = (offsets[draggedIndex] ?? 0) + dy
+  const bottom = top + (heights[draggedIndex] ?? 0)
+  const movingUp = dy < 0
   let index = 0
-  offsets.forEach((top, at) => {
-    const middle = top + (heights[at] ?? 0) / 2
+  offsets.forEach((rowTop, at) => {
+    const middle = rowTop + (heights[at] ?? 0) / 2
     // Ties go to the side the row came from, so the ends are reachable.
     const passed =
       at < draggedIndex
-        ? middle < centre
-        : at > draggedIndex && middle <= centre
+        ? !movingUp || middle < top
+        : at > draggedIndex && !movingUp && middle <= bottom
     if (passed) index += 1
   })
   return index

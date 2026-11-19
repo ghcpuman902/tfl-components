@@ -26,11 +26,14 @@ const shownOrder = (dragged: number, dy: number) => {
 }
 
 describe("drag order geometry", () => {
-  it("stays put until the row's middle passes a neighbour's middle", () => {
+  it("stays put until the row's leading edge passes a neighbour's middle", () => {
     assert.equal(targetIndexFor(offsets, heights, 0, 0), 0)
-    assert.equal(targetIndexFor(offsets, heights, 0, 80), 0)
+    // Trains' bottom edge (56 + dy) vs Buses' middle (116).
+    assert.equal(targetIndexFor(offsets, heights, 0, 55), 0)
+    assert.equal(targetIndexFor(offsets, heights, 0, 61), 1)
     assert.equal(targetIndexFor(offsets, heights, 0, 100), 1)
-    assert.equal(targetIndexFor(offsets, heights, 0, 160), 1)
+    assert.equal(targetIndexFor(offsets, heights, 0, 140), 1)
+    assert.equal(targetIndexFor(offsets, heights, 0, 150), 2)
   })
 
   it("a row held against either end of the list lands at that end", () => {
@@ -75,6 +78,35 @@ describe("drag order geometry", () => {
     assert.equal(clampDrag(offsets, heights, 0, 500), 176)
     assert.equal(clampDrag(offsets, heights, 2, -500), -176)
     assert.equal(clampDrag(offsets, heights, 1, 30), 30)
+  })
+
+  it("a row taller than its neighbours can still reach either end (TFL-38)", () => {
+    // r2 at 390: Trains 94, Buses 148, Cycle 60, Status 60.
+    const h = [94, 148, 60, 60]
+    const o = [0, 94, 242, 302]
+    for (const raw of [-94, -200, -400]) {
+      const dy = clampDrag(o, h, 1, raw)
+      assert.equal(targetIndexFor(o, h, 1, dy), 0, `buses up, raw ${raw}`)
+    }
+    // Not yet past Trains' middle (47): stays second.
+    assert.equal(targetIndexFor(o, h, 1, -40), 1)
+    assert.equal(targetIndexFor(o, h, 1, -48), 0)
+    // Short row to the top, last row up, tall row back down to the bottom.
+    assert.equal(targetIndexFor(o, h, 2, clampDrag(o, h, 2, -999)), 0)
+    assert.equal(targetIndexFor(o, h, 3, clampDrag(o, h, 3, -999)), 0)
+    assert.equal(targetIndexFor(o, h, 1, clampDrag(o, h, 1, 999)), 3)
+    // Bottom edge passes Cycle's middle (272) at dy 124: 94+148+dy.
+    assert.equal(targetIndexFor(o, h, 1, 29), 1)
+    assert.equal(targetIndexFor(o, h, 1, 31), 2)
+  })
+
+  it("equal heights swap symmetrically up and down, at half a row", () => {
+    const h = [60, 60, 60]
+    const o = [0, 60, 120]
+    assert.equal(targetIndexFor(o, h, 1, -29), 1)
+    assert.equal(targetIndexFor(o, h, 1, -31), 0)
+    assert.equal(targetIndexFor(o, h, 1, 29), 1)
+    assert.equal(targetIndexFor(o, h, 1, 31), 2)
   })
 
   it("moves one item and leaves the input alone", () => {
