@@ -8,6 +8,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
+  type RefObject,
 } from "react"
 import { GripVerticalIcon } from "lucide-react"
 import { clampDrag, shiftFor, targetIndexFor } from "@/lib/drag-order-geometry"
@@ -28,8 +29,16 @@ type Drag = {
   touch: boolean
   timer?: number
   /** Resting layout, measured when the row lifts. */
-  lifted?: { offsets: number[]; heights: number[]; from: number }
+  lifted?: {
+    offsets: number[]
+    heights: number[]
+    from: number
+    /** Viewport top of the row, and of the drop zone it may land in. */
+    rowTop: number
+    drop?: { top: number; bottom: number }
+  }
   target?: number
+  over?: boolean
 }
 
 /** The lifted row, for rendering. */
@@ -39,12 +48,21 @@ type Lift = {
   target: number
   dy: number
   height: number
+  /** Over the drop zone: it leaves the list when let go. */
+  over: boolean
+}
+
+/** An area outside the list a row can be dropped on (e.g. "Off the board"). */
+export type DropZone = {
+  ref: RefObject<HTMLElement | null>
+  canDrop: (id: string) => boolean
+  onDrop: (id: string) => void
 }
 
 const PRESSING =
   "bg-muted scale-[0.98] transition-[scale,background-color] duration-350 ease-out motion-reduce:transition-none"
 const LIFTED =
-  "relative z-10 scale-[1.04] rounded-xl border-transparent bg-background shadow-lg transition-[scale,box-shadow,border-radius] duration-150 ease-out motion-reduce:transition-none"
+  "relative z-10 scale-[1.04] border-transparent bg-background shadow-lg transition-[scale,box-shadow] duration-150 ease-out motion-reduce:transition-none"
 const SLIDING =
   "transition-transform duration-150 ease-out motion-reduce:transition-none"
 
@@ -65,14 +83,17 @@ export const PRESS_SURFACE =
  * the part of the row a finger long-presses, and `listRef` on the list. The
  * row lifts and follows the pointer while the others slide aside. Mouse drags
  * the grip; touch holds a row (shaded while it builds), then drags, and a
- * quick swipe still scrolls; arrow keys on the grip move one place.
+ * quick swipe still scrolls; arrow keys on the grip move one place. With a
+ * `dropZone`, a row can also be carried below the list and let go there.
  */
 export const useDragOrder = <T extends HTMLElement>({
   ids,
   onPlace,
+  dropZone,
 }: {
   ids: readonly string[]
   onPlace: (id: string, index: number) => void
+  dropZone?: DropZone
 }) => {
   const listRef = useRef<T | null>(null)
   const rowRefs = useRef(new Map<string, HTMLElement>())
@@ -81,7 +102,7 @@ export const useDragOrder = <T extends HTMLElement>({
   const refocus = useRef<string | null>(null)
   const [lift, setLift] = useState<Lift | null>(null)
   const [pressing, setPressing] = useState<string | null>(null)
-  const orderable = ids.length > 1
+  const orderable = ids.length > 1 || dropZone !== undefined
 
   // Registered up front: Chrome only lets a touchmove listener cancel
   // scrolling if it was there when the touch started.
@@ -128,7 +149,21 @@ export const useDragOrder = <T extends HTMLElement>({
       // Layout boxes, not client rects: the press cue scales the row.
       const offsets = nodes.map((node) => node?.offsetTop ?? 0)
       const heights = nodes.map((node) => node?.offsetHeight ?? 0)
-      session.lifted = { offsets, heights, from }
+      const list = listRef.current
+      const zone =
+        dropZone?.canDrop(session.id) === true
+          ? dropZone.ref.current?.getBoundingClientRect()
+          : undefined
+      session.lifted = {
+        offsets,
+        heights,
+        from,
+        rowTop:
+          (list?.getBoundingClientRect().top ?? 0) +
+          (list?.clientTop ?? 0) +
+          (offsets[from] ?? 0),
+        drop: zone ? { top: zone.top, bottom: zone.bottom } : undefined,
+      }
       session.target = from
       setPressing(null)
       setLift({
@@ -137,16 +172,31 @@ export const useDragOrder = <T extends HTMLElement>({
         target: from,
         dy: 0,
         height: heights[from] ?? 0,
+        over: false,
       })
     }
     const follow = (y: number) => {
       const lifted = session.lifted
       if (!lifted) return
-      const { offsets, heights, from } = lifted
-      const dy = clampDrag(offsets, heights, from, y - session.startY)
-      const target = targetIndexFor(offsets, heights, from, dy)
+      const { offsets, heights, from, rowTop, drop } = lifted
+      const height = heights[from] ?? 0
+      const raw = y - session.startY
+      const inList = clampDrag(offsets, heights, from, raw)
+      // Past the list, the row's middle may travel down to the zone's bottom.
+      const dy = drop
+        ? Math.min(
+            Math.max(raw, inList),
+            Math.max(inList, drop.bottom - rowTop - height / 2)
+          )
+        : inList
+      const over = drop ? rowTop + height / 2 + dy >= drop.top : false
+      // Over the zone the list closes up behind the row.
+      const target = over
+        ? ids.length - 1
+        : targetIndexFor(offsets, heights, from, inList)
       session.target = target
-      setLift({ id: session.id, from, target, dy, height: heights[from] ?? 0 })
+      session.over = over
+      setLift({ id: session.id, from, target, dy, height, over })
     }
 
     const finish = (commit: boolean) => {
@@ -164,7 +214,13 @@ export const useDragOrder = <T extends HTMLElement>({
       setLift(null)
       setPressing(null)
       const { lifted, target } = session
-      if (commit && lifted && target !== undefined && target !== lifted.from)
+      if (commit && lifted && session.over) dropZone?.onDrop(session.id)
+      else if (
+        commit &&
+        lifted &&
+        target !== undefined &&
+        target !== lifted.from
+      )
         onPlace(session.id, target)
     }
     const move = (moveEvent: PointerEvent) => {
@@ -237,6 +293,8 @@ export const useDragOrder = <T extends HTMLElement>({
 
   return {
     listRef,
+    /** The row being held over the drop zone, if any. */
+    dropping: lift?.over ? lift.id : null,
     rowMotion,
     row: (id: string) => (node: HTMLElement | null) => {
       if (node) rowRefs.current.set(id, node)
