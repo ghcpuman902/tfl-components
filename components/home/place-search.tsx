@@ -55,6 +55,7 @@ import {
   inFrame,
   leadWith,
   provisionalFrame,
+  searchInFrame,
   type Frame,
 } from "@/lib/tfl/homepage-live/search-frame"
 import { MAP_SEARCH_RADIUS_METERS, MAP_SELECTED_ZOOM, distanceMeters } from "@/lib/tfl/geo"
@@ -247,6 +248,8 @@ export const PlaceSearch = ({
   const [frame, setFrame] = useState<Frame>(() => provisionalFrame(anchor))
   // The fit to a typed search's results when none is in the frame, once per search (attempt).
   const [fit, setFit] = useState<MapFit>(NO_FIT)
+  // While a query is typed, the range it searches: our own fit moves the map but not the range; the user's moves do.
+  const [pinnedRange, setPinnedRange] = useState<Frame | null>(null)
   const [locateNote, setLocateNote] = useState<string | undefined>()
   const inputRef = useRef<HTMLInputElement>(null)
   const keyboardRef = useRef(0)
@@ -255,9 +258,11 @@ export const PlaceSearch = ({
 
   const kitRef = useRef<StopSearchKit | null>(null)
   const searchRef = useRef<LiveSearch | null>(null)
-  const latest = useRef({ frame, replay, searchDelayMs })
+  const typed = state.query.trim() !== ""
+  const range = typed ? (pinnedRange ?? frame) : frame
+  const latest = useRef({ range, replay, searchDelayMs })
   useEffect(() => {
-    latest.current = { frame, replay, searchDelayMs }
+    latest.current = { range, replay, searchDelayMs }
   })
 
   useEffect(() => {
@@ -268,13 +273,13 @@ export const PlaceSearch = ({
         return kit && query.trim()
           ? kit.searchStops(kit.index, query, {
               limit: INSTANT_LIMIT,
-              near: latest.current.frame.center,
+              near: latest.current.range.center,
             })
           : []
       },
       merge: () => kitRef.current?.mergeLiveResults ?? appendLiveOnly,
       fetchLive: async (query, signal) => {
-        const { replay: request, searchDelayMs: delay, frame: near } = latest.current
+        const { replay: request, searchDelayMs: delay, range: near } = latest.current
         if (request && delay) await sleep(delay, signal)
         const result = await searchBusStopsAction(query, request)
         if (!result.ok) throw new Error(result.error)
@@ -362,7 +367,7 @@ export const PlaceSearch = ({
     setOpen(true)
   }
 
-  const typed = state.query.trim() !== ""
+  if (!typed && pinnedRange) setPinnedRange(null)
   const anchorLat = anchor?.lat
   const anchorLon = anchor?.lon
   // Empty field: what is in the frame, led by the Board's place while it is in view.
@@ -380,12 +385,20 @@ export const PlaceSearch = ({
     const nearest = rows.reduce<StopRow | undefined>((best, row) => (!best || away(row) < away(best) ? row : best), undefined)
     return leadWith(rows, (row) => row === nearest)
   }, [open, typed, index, frame, currentId, anchorLat, anchorLon, stations, hubStationIds])
-  const inFrameMatches = useMemo(() => frameMatches(state.rows, frame), [state.rows, frame])
+  const inFrameMatches = useMemo(
+    () => (index ? searchInFrame(index.kit, state.query, range, state.rows) : frameMatches(state.rows, range)),
+    [index, state.query, state.rows, range]
+  )
   // Typed: matches in the frame; with none there, the wider search, and the map fits to it once.
   const rows = !typed ? browse : inFrameMatches.length > 0 ? inFrameMatches : state.rows
   const wideFit =
-    open && typed && inFrameMatches.length === 0 && fit.attempt !== state.attempt ? fitFor(state.rows) : null
-  if (wideFit) setFit({ attempt: state.attempt, ...wideFit, key: fit.key + 1 })
+    open && typed && state.status !== "pending" && inFrameMatches.length === 0 && fit.attempt !== state.attempt
+      ? fitFor(state.rows)
+      : null
+  if (wideFit) {
+    setFit({ attempt: state.attempt, ...wideFit, key: fit.key + 1 })
+    setPinnedRange(range)
+  }
   const groups = useMemo(() => groupSearchRows(rows), [rows])
   const best = groups.best
   const shown: { clusters: string[]; all: boolean } =
@@ -637,7 +650,10 @@ export const PlaceSearch = ({
                   cooperativeGestures={false}
                   busStopLabels={false}
                   initialView={{ lat: frame.center.lat, lon: frame.center.lon, zoom: MAP_SELECTED_ZOOM }}
-                  onViewChange={({ center, bounds }) => setFrame({ center, bounds })}
+                  onViewChange={({ center, bounds, byUser }) => {
+                    setFrame({ center, bounds })
+                    if (byUser) setPinnedRange(null)
+                  }}
                   followSelected={false}
                   fitSearchKey={fit.key}
                   searchOrigin={fit.origin}

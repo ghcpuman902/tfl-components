@@ -8,6 +8,7 @@ import {
   browseRows,
   fitFor,
   frameMatches,
+  searchInFrame,
   inFrame,
   leadWith,
   provisionalFrame,
@@ -63,6 +64,17 @@ describe("search frame", () => {
     assert.deepEqual(frameMatches(rows, frame).map((r) => r.id), ["b", "a"])
   })
 
+  it("searches the whole index inside the frame, not just London's top matches", () => {
+    const frame = provisionalFrame(KINGS_CROSS)
+    const londonTop = searchStops(STOP_INDEX, "Road", { near: KINGS_CROSS, limit: 40 })
+    const live = row("live-only", 51.5307, -0.1237)
+    const found = searchInFrame(kit, "Road", frame, [...londonTop, live])
+    assert.ok(found.every((r) => inFrame(r, frame)))
+    assert.ok(found.length > frameMatches(londonTop, frame).length)
+    assert.equal(found.filter((r) => r.id === "live-only").length, 1)
+    assert.deepEqual(searchInFrame(kit, " ", frame, []), [])
+  })
+
   it("leads with the picked row and keeps the rest in order", () => {
     const rows = [row("a"), row("b"), row("c")]
     assert.deepEqual(leadWith(rows, (r) => r.id === "c").map((r) => r.id), ["c", "a", "b"])
@@ -73,8 +85,8 @@ describe("search frame", () => {
     assert.equal(fitFor([row("none")]), null)
     const close = fitFor([row("a", 51.5, -0.1), row("b", 51.5001, -0.1)])
     assert.equal(close?.radiusMeters, MAP_SEARCH_RADIUS_METERS)
-    const wide = fitFor([row("a", 51.4, -0.1), row("none"), row("b", 51.42, -0.1)])
-    assert.ok(Math.abs(wide!.origin.lat - 51.41) < 1e-9 && Math.abs(wide!.origin.lon + 0.1) < 1e-9)
-    assert.ok(wide!.radiusMeters > 1_000 && wide!.radiusMeters < 1_200)
+    const wide = fitFor([row("a", 51.4, -0.1), row("none"), row("b", 51.408, -0.1), row("far", 51.6, -0.1)])
+    assert.ok(Math.abs(wide!.origin.lat - 51.404) < 1e-9 && Math.abs(wide!.origin.lon + 0.1) < 1e-9)
+    assert.ok(wide!.radiusMeters > 400 && wide!.radiusMeters < 500, "a far namesake is left out of the fit")
   })
 })

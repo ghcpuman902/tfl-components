@@ -17,6 +17,9 @@ export type Frame = {
 export const BROWSE_CAP = 30
 const BROWSE_SCAN = 150
 const FIT_ROWS = 10
+/** How many index matches to scan for the frame: enough for a common word (Road) in a zoomed-out frame. */
+const FRAME_SCAN = 500
+const FIT_NEAR_BEST_METERS = 1_000
 
 /** The frame before the map reports its real view: the 400 m box around the Board place. */
 export const provisionalFrame = (anchor?: { lat?: number; lon?: number }): Frame => {
@@ -67,15 +70,47 @@ export const leadWith = (rows: readonly StopRow[], isLead: (row: StopRow) => boo
 export const frameMatches = (rows: readonly StopRow[], frame: Frame): StopRow[] =>
   rows.filter((row) => inFrame(row, frame))
 
-/** The circle the map fits to when no match is in the frame: around the top located rows. */
+/**
+ * A typed query searched inside the frame: the stop index's matches there (not
+ * only the few of London's top matches that happen to fall in it), ranked as the
+ * index ranks them, then any live-only rows in the frame. A row the live search
+ * already merged or enriched is used in place of the bare index row.
+ */
+export const searchInFrame = (
+  kit: Pick<StopSearchKit, "index" | "searchStops">,
+  query: string,
+  frame: Frame,
+  rows: readonly StopRow[]
+): StopRow[] => {
+  const fromIndex = query.trim()
+    ? kit.searchStops(kit.index, query, { near: frame.center, limit: FRAME_SCAN }).filter((row) => inFrame(row, frame))
+    : []
+  const merged = new Map(rows.map((row) => [row.id, row]))
+  const listed = new Set(fromIndex.map((row) => row.id))
+  return [
+    ...fromIndex.map((row) => merged.get(row.id) ?? row),
+    ...frameMatches(rows, frame).filter((row) => !listed.has(row.id)),
+  ]
+}
+
+/**
+ * The circle the map fits to when no match is in the frame: around the best
+ * match and the other top matches within FIT_NEAR_BEST_METERS of it, so a far
+ * namesake (a Bank Road in Barnet) does not zoom the map out to all London.
+ */
 export const fitFor = (
   rows: readonly StopRow[]
 ): { origin: LatLon; radiusMeters: number } | null => {
-  const located = rows.filter((row) => row.lat != null && row.lon != null).slice(0, FIT_ROWS)
-  const origin = pointsCentroid(located)
+  const located = rows.filter((row) => row.lat != null && row.lon != null)
+  const lead = located[0]
+  if (!lead) return null
+  const near = located
+    .filter((row) => distanceMeters(lead.lat!, lead.lon!, row.lat!, row.lon!) <= FIT_NEAR_BEST_METERS)
+    .slice(0, FIT_ROWS)
+  const origin = pointsCentroid(near)
   if (!origin) return null
   const farthest = Math.max(
-    ...located.map((row) => distanceMeters(origin.lat, origin.lon, row.lat!, row.lon!))
+    ...near.map((row) => distanceMeters(origin.lat, origin.lon, row.lat!, row.lon!))
   )
   return { origin, radiusMeters: Math.max(MAP_SEARCH_RADIUS_METERS, farthest) }
 }

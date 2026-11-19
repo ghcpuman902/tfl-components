@@ -81,9 +81,11 @@ export type MapView = {
   center: { lat: number; lon: number }
   bounds: { west: number; south: number; east: number; north: number }
   zoom: number
+  /** True when a pan, pinch or zoom control by the user ended this move. */
+  byUser: boolean
 }
 
-const viewOf = (map: maplibregl.Map): MapView => {
+const viewOf = (map: maplibregl.Map, byUser: boolean): MapView => {
   const centre = map.getCenter()
   const bounds = map.getBounds()
   return {
@@ -95,6 +97,7 @@ const viewOf = (map: maplibregl.Map): MapView => {
       north: bounds.getNorth(),
     },
     zoom: map.getZoom(),
+    byUser,
   }
 }
 
@@ -768,14 +771,14 @@ export const ExplorerPointMap = ({
       setSearchCircleData(map, centre.lng, centre.lat, searchRadiusRef.current)
     }
 
-    const reportView = () => {
+    const reportView = (byUser: boolean) => {
       const canvas = map.getCanvas()
       if (canvas.clientWidth < 2 || canvas.clientHeight < 2) return
-      onViewChangeRef.current?.(viewOf(map))
+      onViewChangeRef.current?.(viewOf(map, byUser))
     }
 
     const handleMoveEnd = () => {
-      reportView()
+      reportView(userGestureRef.current && !programmaticMoveRef.current)
       if (programmaticMoveRef.current) {
         programmaticMoveRef.current = false
         skipFollowSelectedRef.current = false
@@ -845,7 +848,7 @@ export const ExplorerPointMap = ({
       map.on("movestart", handleMoveStart)
       map.on("move", handleMove)
       map.on("moveend", handleMoveEnd)
-      reportView()
+      reportView(false)
     })
 
     mapRef.current = map
@@ -933,10 +936,15 @@ export const ExplorerPointMap = ({
       )
     }
 
-    if (map.isStyleLoaded()) {
+    // Our layers are there once the style has loaded; tiles still streaming in after a move must not hold the pins back.
+    if (map.getSource(SOURCE_ID)) {
       updateSource()
-    } else {
-      map.once("load", updateSource)
+      return
+    }
+    // Not "load": that fires only once, and the style also reads unloaded while new tiles stream in.
+    map.once("idle", updateSource)
+    return () => {
+      map.off("idle", updateSource)
     }
   }, [geojson, points, selectedId])
 
