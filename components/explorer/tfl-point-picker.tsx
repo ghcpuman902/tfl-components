@@ -380,7 +380,7 @@ export const TfLPointPicker = ({
                 aria-label="Use my location"
                 disabled={loading}
                 onClick={onLocate}
-                className="h-full w-8 rounded-[calc(var(--radius-lg)-2px)]"
+                className="h-full w-8 rounded-none"
               >
                 <LocateFixed className="size-4" aria-hidden />
               </InputGroupButton>
@@ -412,7 +412,7 @@ export const TfLPointPicker = ({
                   size="sm"
                   variant={view === "list" ? "secondary" : "ghost"}
                   aria-pressed={view === "list"}
-                  className="h-full rounded-[calc(var(--radius-lg)-2px)]"
+                  className="h-full rounded-none"
                   onClick={() => onViewChange("list")}
                 >
                   <List className="size-4" aria-hidden />
@@ -423,7 +423,7 @@ export const TfLPointPicker = ({
                   size="sm"
                   variant={view === "map" ? "secondary" : "ghost"}
                   aria-pressed={view === "map"}
-                  className="h-full rounded-[calc(var(--radius-lg)-2px)]"
+                  className="h-full rounded-none"
                   onClick={() => onViewChange("map")}
                 >
                   <MapIcon className="size-4" aria-hidden />

@@ -320,7 +320,7 @@ export const BoardPlaceSearch = ({
               aria-label="Use my location"
               disabled={busy}
               onClick={() => void handleLocate()}
-              className="h-full w-8 rounded-[calc(var(--radius-lg)-2px)]"
+              className="h-full w-8 rounded-none"
             >
               <LocateFixed className="size-4" aria-hidden />
             </InputGroupButton>

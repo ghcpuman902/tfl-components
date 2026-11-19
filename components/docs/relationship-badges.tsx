@@ -17,7 +17,7 @@ const BadgeLink = ({ slug }: { slug: string }) => {
   return (
     <Link
       href={entry.href}
-      className="rounded-md touch-manipulation focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="rounded-none touch-manipulation focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       <Badge
         variant="secondary"

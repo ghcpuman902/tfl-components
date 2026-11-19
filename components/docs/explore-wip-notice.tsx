@@ -8,7 +8,7 @@ type ExploreWipNoticeProps = {
 export const ExploreWipNotice = ({ className }: ExploreWipNoticeProps) => (
   <aside
     className={cn(
-      "rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground",
+      "rounded-none border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground",
       className
     )}
     role="note"
