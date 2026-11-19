@@ -116,6 +116,7 @@ const pointOfRow = (row: StopRow): ExplorerPoint => ({
 })
 
 const MIN_FIT_PX = 18
+const MIN_PLACEHOLDER_PX = 14
 let measureContext: CanvasRenderingContext2D | null | undefined
 
 /**
@@ -135,15 +136,32 @@ const useFitFontSize = (ref: RefObject<HTMLInputElement | null>, text: string) =
       measureContext.font = `${style.fontWeight} ${max}px ${style.fontFamily}`
       const width = measureContext.measureText(text || el.placeholder).width
       const room = el.clientWidth
-      el.style.fontSize =
-        room > 0 && width > room
-          ? `${Math.max(MIN_FIT_PX, Math.floor((max * room) / width))}px`
-          : ""
+      const fitPx = room > 0 && width > room ? Math.floor((max * room) / width) : null
+      el.style.fontSize = fitPx === null ? "" : `${Math.max(MIN_FIT_PX, fitPx)}px`
+      // Typed text stays at 18 px or more (iOS zoom); only the placeholder may go smaller to fit.
+      if (!text && fitPx !== null && fitPx < MIN_FIT_PX) {
+        // Glyph widths don't scale linearly at small sizes, so step down until it measures in.
+        let px = Math.max(MIN_PLACEHOLDER_PX, fitPx)
+        const widthAt = (size: number) => {
+          measureContext!.font = `${style.fontWeight} ${size}px ${style.fontFamily}`
+          return measureContext!.measureText(el.placeholder).width
+        }
+        while (px > MIN_PLACEHOLDER_PX && widthAt(px) > room) px -= 1
+        el.style.setProperty("--placeholder-size", `${px}px`)
+      } else {
+        el.style.removeProperty("--placeholder-size")
+      }
     }
     fit()
     const observer = new ResizeObserver(fit)
     observer.observe(el)
-    return () => observer.disconnect()
+    // The first fit can run on the fallback font; fit again once the web font is in.
+    document.fonts?.addEventListener("loadingdone", fit)
+    void document.fonts?.ready.then(fit)
+    return () => {
+      observer.disconnect()
+      document.fonts?.removeEventListener("loadingdone", fit)
+    }
   }, [ref, text])
 }
 
@@ -448,8 +466,8 @@ export const PlaceSearch = ({
     return (
       <>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-lg leading-snug">
-            {row.name}
+          <span className="flex min-w-0 items-center text-lg leading-snug">
+            <span className="truncate">{row.name}</span>
             {row.kind === "bus" && row.letter ? (
               <StopLetterBadge letter={row.letter} size="sm" className="ml-2 -translate-y-px" />
             ) : null}
@@ -526,7 +544,7 @@ export const PlaceSearch = ({
                     }
                   }
                 }}
-                className="h-12 min-w-0 flex-1 bg-transparent text-3xl leading-none text-foreground outline-none placeholder:text-muted-foreground sm:h-16 sm:text-5xl"
+                className="h-12 min-w-0 flex-1 bg-transparent text-3xl leading-none text-foreground outline-none placeholder:text-muted-foreground placeholder:[font-size:var(--placeholder-size,inherit)] sm:h-16 sm:text-5xl"
               />
               <button
                 type="button"
@@ -563,6 +581,7 @@ export const PlaceSearch = ({
                     if (row) choose(row)
                   }}
                   cooperativeGestures={false}
+                  busStopLabels={false}
                   className="min-h-0 rounded-none border-0"
                 />
               </div>
