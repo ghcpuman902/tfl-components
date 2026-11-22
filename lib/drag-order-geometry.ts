@@ -49,6 +49,23 @@ export const targetIndexFor = (
   return index
 }
 
+/**
+ * Where a row carried up into the list from below it lands, given its top
+ * edge in list coordinates: under every row whose middle it has passed. Null
+ * while its top is still below the list (letting go there adds nothing).
+ */
+export const insertIndexFor = (
+  offsets: readonly number[],
+  heights: readonly number[],
+  top: number
+): number | null => {
+  const last = offsets.length - 1
+  const bottom = last < 0 ? 0 : (offsets[last] ?? 0) + (heights[last] ?? 0)
+  if (top >= bottom) return null
+  return offsets.filter((rowTop, at) => rowTop + (heights[at] ?? 0) / 2 < top)
+    .length
+}
+
 /** How far a resting row slides to open the gap at `targetIndex`. */
 export const shiftFor = (
   index: number,

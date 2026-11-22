@@ -348,17 +348,20 @@ export const onBoardPanels = (layout: BoardCustomiseLayout) => {
 }
 
 /**
- * Move a shown panel to `index` in the one "On the board" list. It joins the
+ * Move a panel to `index` in the one "On the board" list. It joins the
  * column of the part it lands under (or over, at the top), so the list keeps
- * reading wide column first and the board stacks it where it was dropped.
+ * reading wide column first and the board stacks it where it was dropped. A
+ * panel off the board (dragged up from Off) goes on first, in the same step.
  */
 export const placeOnBoard = (
-  layout: BoardCustomiseLayout,
+  current: BoardCustomiseLayout,
   kind: BoardPanelKind,
   index: number
 ): BoardCustomiseLayout => {
+  const wasOn = current.panels.some((panel) => panel.kind === kind && panel.on)
+  const layout = wasOn ? current : setPanelOn(current, kind, true)
   const moving = layout.panels.find((panel) => panel.kind === kind)
-  if (!moving?.on) return layout
+  if (!moving?.on) return current
   const order = placeLine(
     onBoardPanels(layout).map((panel) => panel.kind),
     kind,

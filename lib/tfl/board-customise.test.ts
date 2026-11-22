@@ -242,6 +242,34 @@ describe("one 'On the board' list", () => {
       p2: [],
     })
   })
+
+  it("a part dragged up from Off goes on the board where it was dropped", () => {
+    const withBusOff = setPanelOn(layoutFromConfig(base), "bus", false)
+    const layout = placeOnBoard(withBusOff, "bus", 0)
+    assert.equal(layout.panels.find((panel) => panel.kind === "bus")?.on, true)
+    assert.deepEqual(
+      onBoardPanels(layout).map((panel) => panel.kind),
+      ["bus", "rail", "status"]
+    )
+    assert.deepEqual(applyLayoutToConfig(base, layout).slots, {
+      p1: ["bus", "rail"],
+      p2: ["status"],
+    })
+  })
+
+  it("a part from Off dropped under the narrow column joins it", () => {
+    const withBusOff = setPanelOn(layoutFromConfig(base), "bus", false)
+    const layout = placeOnBoard(withBusOff, "bus", 2)
+    assert.deepEqual(applyLayoutToConfig(base, layout).slots, {
+      p1: ["rail"],
+      p2: ["status", "bus"],
+    })
+  })
+
+  it("reordering within the list keeps Only show this", () => {
+    const solo = toggleSoloPanel(layoutFromConfig(base), "status")
+    assert.equal(placeOnBoard(solo, "bus", 0).solo, "status")
+  })
 })
 
 describe("customise status priority", () => {

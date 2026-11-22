@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
   clampDrag,
+  insertIndexFor,
   moveItem,
   shiftFor,
   targetIndexFor,
@@ -115,5 +116,24 @@ describe("drag order geometry", () => {
     assert.deepEqual(moveItem(before, 0, 2), ["b", "c", "a", "d"])
     assert.deepEqual(moveItem(before, 1, 99), ["a", "c", "d", "b"])
     assert.deepEqual(before, ["a", "b", "c", "d"])
+  })
+
+  it("a row carried up from below lands under each middle its top passes", () => {
+    // Below the list (bottom 232): not in it yet.
+    assert.equal(insertIndexFor(offsets, heights, 232), null)
+    assert.equal(insertIndexFor(offsets, heights, 300), null)
+    // Overlapping the last row: goes at the end, then above it once past its middle.
+    assert.equal(insertIndexFor(offsets, heights, 231), 3)
+    assert.equal(insertIndexFor(offsets, heights, 204), 2)
+    assert.equal(insertIndexFor(offsets, heights, 116), 1)
+    assert.equal(insertIndexFor(offsets, heights, 28), 0)
+    assert.equal(insertIndexFor(offsets, heights, -10), 0)
+    // A row coming in pushes the rows from its place down by its height.
+    assert.equal(shiftFor(0, 3, 0, 56), 56)
+    assert.equal(shiftFor(2, 3, 1, 56), 56)
+  })
+
+  it("an empty list takes nothing", () => {
+    assert.equal(insertIndexFor([], [], 0), null)
   })
 })

@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -11,7 +12,12 @@ import {
   type RefObject,
 } from "react"
 import { GripVerticalIcon } from "lucide-react"
-import { clampDrag, shiftFor, targetIndexFor } from "@/lib/drag-order-geometry"
+import {
+  clampDrag,
+  insertIndexFor,
+  shiftFor,
+  targetIndexFor,
+} from "@/lib/drag-order-geometry"
 import {
   LONG_PRESS_MS,
   nextPress,
@@ -36,9 +42,13 @@ type Drag = {
     /** Viewport top of the row, and of the drop zone it may land in. */
     rowTop: number
     drop?: { top: number; bottom: number }
+    /** Coming from the `adding` list: its resting top in list coordinates. */
+    incoming?: number
   }
   target?: number
   over?: boolean
+  /** An incoming row is over the list: it joins at `target` when let go. */
+  into?: boolean
 }
 
 /** The lifted row, for rendering. */
@@ -50,6 +60,14 @@ type Lift = {
   height: number
   /** Over the drop zone: it leaves the list when let go. */
   over: boolean
+  /** From the `adding` list and over this one: the list opens a gap for it. */
+  into: boolean
+}
+
+/** Rows outside the list that can be carried up into it (e.g. "Off the board"). */
+export type AddFrom = {
+  ids: readonly string[]
+  onAdd: (id: string, index: number) => void
 }
 
 /** An area outside the list a row can be dropped on (e.g. "Off the board"). */
@@ -65,6 +83,22 @@ const LIFTED =
   "relative z-10 scale-[1.04] border-transparent bg-background shadow-lg transition-[scale,box-shadow] duration-150 ease-out motion-reduce:transition-none"
 const SLIDING =
   "transition-transform duration-150 ease-out motion-reduce:transition-none"
+
+/**
+ * Registered up front: Chrome only lets a touchmove listener cancel scrolling
+ * if it was there when the touch started. Returns the cleanup.
+ */
+const holdPageDuringDrag = (
+  node: HTMLElement,
+  drag: RefObject<Drag | null>
+) => {
+  const holdPage = (event: TouchEvent) => {
+    if (drag.current && pressHoldsPage(drag.current.press))
+      event.preventDefault()
+  }
+  node.addEventListener("touchmove", holdPage, { passive: false })
+  return () => node.removeEventListener("touchmove", holdPage)
+}
 
 /**
  * The grip's column. Its dots sit as far from the left edge as the ⋯ / ✕
@@ -85,36 +119,47 @@ export const PRESS_SURFACE =
  * the grip; touch holds a row (shaded while it builds), then drags, and a
  * quick swipe still scrolls; arrow keys on the grip move one place. With a
  * `dropZone`, a row can also be carried below the list and let go there.
+ * With `adding`, rows of a second list (`addRef` on it; same `row`, `press`,
+ * `grip` and `rowMotion` per row) can be carried up into this one; give the
+ * list `style={{ paddingBottom: gap }}` so it grows to take them.
  */
 export const useDragOrder = <T extends HTMLElement>({
   ids,
   onPlace,
   dropZone,
+  adding,
 }: {
   ids: readonly string[]
   onPlace: (id: string, index: number) => void
   dropZone?: DropZone
+  adding?: AddFrom
 }) => {
   const listRef = useRef<T | null>(null)
   const rowRefs = useRef(new Map<string, HTMLElement>())
   const drag = useRef<Drag | null>(null)
   const swallowClick = useRef(false)
   const refocus = useRef<string | null>(null)
+  const addList = useRef<{ node: HTMLElement; off: () => void } | null>(null)
   const [lift, setLift] = useState<Lift | null>(null)
   const [pressing, setPressing] = useState<string | null>(null)
   const orderable = ids.length > 1 || dropZone !== undefined
+  const isIncoming = (id: string) =>
+    !ids.includes(id) && (adding?.ids.includes(id) ?? false)
+  const canLift = (id: string) => (isIncoming(id) ? true : orderable)
 
-  // Registered up front: Chrome only lets a touchmove listener cancel
-  // scrolling if it was there when the touch started.
   useEffect(() => {
     const list = listRef.current
     if (!list) return
-    const holdPage = (event: TouchEvent) => {
-      if (drag.current && pressHoldsPage(drag.current.press))
-        event.preventDefault()
-    }
-    list.addEventListener("touchmove", holdPage, { passive: false })
-    return () => list.removeEventListener("touchmove", holdPage)
+    return holdPageDuringDrag(list, drag)
+  }, [])
+  // The adding list comes and goes (it is empty when every part is on).
+  // Stable, so a re-render mid-touch keeps the listener it started with.
+  const addRef = useCallback((node: HTMLElement | null) => {
+    if (addList.current?.node === node) return
+    addList.current?.off()
+    addList.current = node
+      ? { node, off: holdPageDuringDrag(node, drag) }
+      : null
   }, [])
 
   useEffect(() => {
@@ -144,12 +189,44 @@ export const useDragOrder = <T extends HTMLElement>({
 
     const liftRow = () => {
       if (session.lifted) return
-      const from = ids.indexOf(session.id)
+      const incoming = isIncoming(session.id)
       const nodes = ids.map((item) => rowRefs.current.get(item))
       // Layout boxes, not client rects: the press cue scales the row.
       const offsets = nodes.map((node) => node?.offsetTop ?? 0)
       const heights = nodes.map((node) => node?.offsetHeight ?? 0)
       const list = listRef.current
+      const listTop =
+        (list?.getBoundingClientRect().top ?? 0) + (list?.clientTop ?? 0)
+      if (incoming) {
+        // It joins after the last row; `from` is that virtual place.
+        const node = rowRefs.current.get(session.id)
+        const rect = node?.getBoundingClientRect()
+        const height = node?.offsetHeight ?? 0
+        // The press cue scales about the middle, so the middle holds.
+        const top = rect ? rect.top + rect.height / 2 - height / 2 : 0
+        const from = ids.length
+        session.lifted = {
+          offsets: [...offsets, top - listTop],
+          heights: [...heights, height],
+          from,
+          rowTop: top,
+          incoming: top - listTop,
+        }
+        session.target = from
+        session.into = false
+        setPressing(null)
+        setLift({
+          id: session.id,
+          from,
+          target: from,
+          dy: 0,
+          height,
+          over: false,
+          into: false,
+        })
+        return
+      }
+      const from = ids.indexOf(session.id)
       const zone =
         dropZone?.canDrop(session.id) === true
           ? dropZone.ref.current?.getBoundingClientRect()
@@ -158,10 +235,7 @@ export const useDragOrder = <T extends HTMLElement>({
         offsets,
         heights,
         from,
-        rowTop:
-          (list?.getBoundingClientRect().top ?? 0) +
-          (list?.clientTop ?? 0) +
-          (offsets[from] ?? 0),
+        rowTop: listTop + (offsets[from] ?? 0),
         drop: zone ? { top: zone.top, bottom: zone.bottom } : undefined,
       }
       session.target = from
@@ -173,14 +247,30 @@ export const useDragOrder = <T extends HTMLElement>({
         dy: 0,
         height: heights[from] ?? 0,
         over: false,
+        into: false,
       })
     }
     const follow = (y: number) => {
       const lifted = session.lifted
       if (!lifted) return
-      const { offsets, heights, from, rowTop, drop } = lifted
+      const { offsets, heights, from, rowTop, drop, incoming } = lifted
       const height = heights[from] ?? 0
       const raw = y - session.startY
+      if (incoming !== undefined) {
+        // Up as far as the list's top; not down past where it rests.
+        const dy = Math.min(Math.max(raw, (offsets[0] ?? 0) - incoming), 0)
+        const at = insertIndexFor(
+          offsets.slice(0, from),
+          heights.slice(0, from),
+          incoming + dy
+        )
+        const into = at !== null
+        const target = at ?? from
+        session.target = target
+        session.into = into
+        setLift({ id: session.id, from, target, dy, height, over: false, into })
+        return
+      }
       const inList = clampDrag(offsets, heights, from, raw)
       // Past the list, the row's middle may travel down to the zone's bottom.
       const dy = drop
@@ -196,7 +286,7 @@ export const useDragOrder = <T extends HTMLElement>({
         : targetIndexFor(offsets, heights, from, inList)
       session.target = target
       session.over = over
-      setLift({ id: session.id, from, target, dy, height, over })
+      setLift({ id: session.id, from, target, dy, height, over, into: false })
     }
 
     const finish = (commit: boolean) => {
@@ -214,7 +304,10 @@ export const useDragOrder = <T extends HTMLElement>({
       setLift(null)
       setPressing(null)
       const { lifted, target } = session
-      if (commit && lifted && session.over) dropZone?.onDrop(session.id)
+      if (lifted?.incoming !== undefined) {
+        if (commit && session.into && target !== undefined)
+          adding?.onAdd(session.id, target)
+      } else if (commit && lifted && session.over) dropZone?.onDrop(session.id)
       else if (
         commit &&
         lifted &&
@@ -258,6 +351,14 @@ export const useDragOrder = <T extends HTMLElement>({
   }
 
   const handleKey = (event: KeyboardEvent<HTMLButtonElement>, id: string) => {
+    if (isIncoming(id)) {
+      // Up from the adding list: in at the end of this one.
+      if (event.key !== "ArrowUp") return
+      event.preventDefault()
+      refocus.current = id
+      adding?.onAdd(id, ids.length)
+      return
+    }
     const at = ids.indexOf(id)
     const to =
       event.key === "ArrowUp" ? at - 1 : event.key === "ArrowDown" ? at + 1 : -1
@@ -271,11 +372,14 @@ export const useDragOrder = <T extends HTMLElement>({
   const rowMotion = (
     id: string
   ): { className?: string; style?: CSSProperties } => {
-    if (lift?.id === id)
+    if (lift?.id === id) {
+      // The list grew by the row's height above it: stay under the pointer.
+      const dy = lift.into ? lift.dy - lift.height : lift.dy
       return {
         className: LIFTED,
-        style: { transform: `translateY(${lift.dy}px)` },
+        style: { transform: `translateY(${dy}px)` },
       }
+    }
     if (lift) {
       const shift = shiftFor(
         ids.indexOf(id),
@@ -293,8 +397,11 @@ export const useDragOrder = <T extends HTMLElement>({
 
   return {
     listRef,
+    addRef,
     /** The row being held over the drop zone, if any. */
     dropping: lift?.over ? lift.id : null,
+    /** Room at the list's foot for a row coming in from the adding list. */
+    gap: lift?.into ? lift.height : 0,
     rowMotion,
     row: (id: string) => (node: HTMLElement | null) => {
       if (node) rowRefs.current.set(id, node)
@@ -303,7 +410,8 @@ export const useDragOrder = <T extends HTMLElement>({
     press: (id: string) => ({
       onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
         swallowClick.current = false
-        if (!orderable || event.pointerType !== "touch" || drag.current) return
+        if (!canLift(id) || event.pointerType !== "touch" || drag.current)
+          return
         begin(id, event, "pending")
         setPressing(id)
       },
@@ -316,7 +424,7 @@ export const useDragOrder = <T extends HTMLElement>({
       },
     }),
     grip: (id: string) => ({
-      alone: !orderable,
+      alone: !canLift(id),
       onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => {
         if (event.button !== 0 || drag.current) return
         event.currentTarget.setPointerCapture(event.pointerId)

@@ -164,7 +164,7 @@ const RowSummary = ({
 /**
  * One part: roundel · name and what it shows · pencil · ⋯. Tap the row or
  * the pencil to open its editor; hold the row to drag it. A part off the
- * board has no stack place, so no grip, and only + to put it back.
+ * board is the same row, dragged up into the list or put back with +.
  */
 const PartRow = ({
   api,
@@ -237,43 +237,54 @@ const PartRow = ({
   )
 }
 
-/** On the board (drag to reorder), then Off the board (drag here, + to add back). */
+/** On the board (drag to reorder), then Off the board (drag here; drag up or + to add back). */
 const BoardParts = ({ api }: { api: CustomiseController }) => {
   const on = onBoardPanels(api.layout)
   const off = layoutSections(api.layout).off
   const dropRef = useRef<HTMLDivElement | null>(null)
-  const { listRef, row, press, grip, rowMotion, dropping } =
+  const place = (kind: string, index: number) =>
+    api.placeOnBoard(kind as BoardPanelKind, index)
+  const { listRef, addRef, row, press, grip, rowMotion, dropping, gap } =
     useDragOrder<HTMLUListElement>({
       ids: on.map((panel) => panel.kind),
-      onPlace: (kind, index) => api.placeOnBoard(kind as BoardPanelKind, index),
+      onPlace: place,
       dropZone: {
         ref: dropRef,
         canDrop: (kind) => canHidePanel(api.layout, kind as BoardPanelKind),
         onDrop: (kind) => api.setPanelOn(kind as BoardPanelKind, false),
       },
+      // Off rows drag straight up into the list; + still adds at the end.
+      adding: { ids: off.map((panel) => panel.kind), onAdd: place },
     })
+  // Same row, grip and press either side: Off differs only in its + and summary.
+  const partRow = (kind: BoardPanelKind, isOff: boolean) => (
+    <PartRow
+      key={kind}
+      api={api}
+      kind={kind}
+      rowRef={row(kind)}
+      press={press(kind)}
+      grip={
+        <DragGrip
+          name={CUSTOMISE_PANEL_LABEL[kind]}
+          {...grip(kind)}
+          className="pointer-coarse:w-0"
+        />
+      }
+      motion={rowMotion(kind)}
+      off={isOff}
+    />
+  )
   return (
     <>
       <section aria-labelledby="customise-r-on" className="space-y-1">
         <SectionHeading id="customise-r-on">On the board</SectionHeading>
-        <ul ref={listRef} className="relative border-y border-border">
-          {on.map(({ kind }) => (
-            <PartRow
-              key={kind}
-              api={api}
-              kind={kind}
-              rowRef={row(kind)}
-              press={press(kind)}
-              grip={
-                <DragGrip
-                  name={CUSTOMISE_PANEL_LABEL[kind]}
-                  {...grip(kind)}
-                  className="pointer-coarse:w-0"
-                />
-              }
-              motion={rowMotion(kind)}
-            />
-          ))}
+        <ul
+          ref={listRef}
+          className="relative border-y border-border"
+          style={gap ? { paddingBottom: gap } : undefined}
+        >
+          {on.map(({ kind }) => partRow(kind, false))}
         </ul>
       </section>
       <section aria-labelledby="customise-r-off" className="space-y-1 pt-3">
@@ -288,13 +299,13 @@ const BoardParts = ({ api }: { api: CustomiseController }) => {
           Drag a part here to take it off the board
         </div>
         {off.length > 0 ? (
-          <div className="pt-5">
-            <ul aria-label="Off the board" className="border-y border-border">
-              {off.map(({ kind }) => (
-                <PartRow key={kind} api={api} kind={kind} off />
-              ))}
-            </ul>
-          </div>
+          <ul
+            ref={addRef}
+            aria-label="Off the board"
+            className="border-y border-border"
+          >
+            {off.map(({ kind }) => partRow(kind, true))}
+          </ul>
         ) : null}
       </section>
     </>
