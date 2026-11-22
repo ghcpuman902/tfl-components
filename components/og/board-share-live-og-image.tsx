@@ -4,6 +4,7 @@ import {
   roundelSrc,
 } from "@/components/og/board-share-og-image"
 import { ogLineChipTextColor } from "@/lib/og/chip-text"
+import { ogLineLabel } from "@/lib/og/line-label-map"
 import type {
   BoardShareLiveOgModel,
   BoardShareOgBus,
@@ -117,8 +118,7 @@ const minutesText = (minutes: number): string =>
 
 /**
  * Square LineBadge chip: line colour fill, `--line-ink` text, no radius.
- * Fixed-width chips ellipsis long labels (Hammersmith & City) via CSS that
- * Takumi's Blink-ported text layout paints — not a guessed glyph width.
+ * Labels come from `ogLineLabel` (precomputed LineName tiers) — never ellipsis.
  */
 const Chip = ({
   lineId,
@@ -127,7 +127,7 @@ const Chip = ({
   size,
   height,
   width,
-  padX,
+  padX = 16,
   marginRight = CHIP_GAP,
 }: {
   lineId: string
@@ -148,7 +148,6 @@ const Chip = ({
       flexShrink: 0,
       height,
       width,
-      maxWidth: width,
       paddingLeft: padX,
       paddingRight: padX,
       marginRight,
@@ -157,15 +156,7 @@ const Chip = ({
       overflow: "hidden",
     }}
   >
-    <div
-      style={{
-        ...face(size, ogLineChipTextColor(lineId)),
-        ...oneLine,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        maxWidth: "100%",
-      }}
-    >
+    <div style={{ ...face(size, ogLineChipTextColor(lineId)), ...oneLine }}>
       {label}
     </div>
   </div>
@@ -221,7 +212,6 @@ const StationHeader = ({ name }: { name: string }) => (
         flex: 1,
         minWidth: 0,
         overflow: "hidden",
-        textOverflow: "ellipsis",
       }}
     >
       {name}
@@ -244,32 +234,48 @@ const Subtitle = ({
       paddingBottom: SUB_PAD,
       borderBottom: `${SUB_RULE}px solid ${INK}`,
       overflow: "hidden",
-      textOverflow: "ellipsis",
     }}
   >
     {children}
   </div>
 )
 
-/** A: primary line as a square colour badge under the station, then the heavy rule. */
-const LineBadgeSubtitle = ({ line }: { line: BoardShareOgLine }) => (
+/**
+ * A: mirrors docs `BoardLineHeader` / status `StatusLineHeader` —
+ * centred line name in brand colour + full-width coloured underline.
+ * Not a filled chip and not a black rule.
+ */
+const LINE_BAR_H = 8
+
+const OgLineTitle = ({ line }: { line: BoardShareOgLine }) => (
   <div
     style={{
       display: "flex",
-      alignItems: "center",
+      flexDirection: "column",
       marginTop: SUB_GAP,
-      paddingBottom: SUB_PAD,
-      borderBottom: `${SUB_RULE}px solid ${INK}`,
+      width: "100%",
     }}
   >
-    <Chip
-      lineId={line.id}
-      label={line.name}
-      color={line.color}
-      size={SUB_SIZE - 4}
-      height={ALSO_CHIP_H}
-      padX={ALSO_CHIP_PAD}
-      marginRight={0}
+    <div
+      style={{
+        ...face(SUB_SIZE, line.color),
+        ...oneLine,
+        justifyContent: "center",
+        textAlign: "center",
+        width: "100%",
+        paddingBottom: SUB_PAD,
+        overflow: "hidden",
+      }}
+    >
+      {line.name}
+    </div>
+    <div
+      style={{
+        width: "100%",
+        height: LINE_BAR_H,
+        backgroundColor: line.color,
+        flexShrink: 0,
+      }}
     />
   </div>
 )
@@ -310,7 +316,6 @@ const TimeRow = ({
         flex: 1,
         minWidth: 0,
         overflow: "hidden",
-        textOverflow: "ellipsis",
       }}
     >
       {destination}
@@ -329,8 +334,9 @@ const fitChips = (
   const out: BoardShareOgLine[] = []
   let used = 0
   for (const line of lines) {
+    const label = ogLineLabel(line.id, "also")
     const w =
-      line.name.length * ALSO_LABEL * GLYPH_EM + ALSO_CHIP_PAD * 2 + CHIP_GAP
+      label.length * ALSO_LABEL * GLYPH_EM + ALSO_CHIP_PAD * 2 + CHIP_GAP
     if (used + w > width) break
     out.push(line)
     used += w
@@ -350,7 +356,7 @@ const RailArrivals = ({
   return (
     <Stack>
       <StationHeader name={stationName} />
-      <LineBadgeSubtitle line={live.line} />
+      <OgLineTitle line={live.line} />
       {live.direction ? (
         <Rule height={DIR_H}>
           <div style={face(DIR_SIZE, MUTED)}>{live.direction}</div>
@@ -377,11 +383,12 @@ const RailArrivals = ({
             <Chip
               key={line.id}
               lineId={line.id}
-              label={line.name}
+              label={ogLineLabel(line.id, "also")}
               color={line.color}
               size={ALSO_LABEL}
               height={ALSO_CHIP_H}
               padX={ALSO_CHIP_PAD}
+              width={undefined}
             />
           ))}
         </div>
@@ -413,11 +420,12 @@ const RailStatus = ({
         >
           <Chip
             lineId={row.id}
-            label={row.name}
+            label={ogLineLabel(row.id, "status")}
             color={row.color}
             size={STATUS_CHIP_SIZE}
             height={STATUS_CHIP_H}
             width={STATUS_CHIP_W}
+            padX={16}
             marginRight={STATUS_CHIP_GAP}
           />
           <div
@@ -435,11 +443,12 @@ const RailStatus = ({
         <Rule height={NEXT_H} last>
           <Chip
             lineId={live.next.line.id}
-            label={live.next.line.name}
+            label={ogLineLabel(live.next.line.id, "status")}
             color={live.next.line.color}
             size={STATUS_CHIP_SIZE}
             height={STATUS_CHIP_H}
             width={STATUS_CHIP_W}
+            padX={16}
             marginRight={STATUS_CHIP_GAP}
           />
           <div style={{ ...face(NEXT_SIZE), ...oneLine, flex: 1 }}>
@@ -462,7 +471,6 @@ const Bus = ({ live }: { live: BoardShareOgBus }) => (
         ...oneLine,
         marginTop: KICKER_GAP,
         overflow: "hidden",
-        textOverflow: "ellipsis",
       }}
     >
       {live.title}
@@ -608,7 +616,7 @@ const Cycle = ({
             <Chip
               key={line.id}
               lineId={line.id}
-              label={line.name}
+              label={ogLineLabel(line.id, "also")}
               color={line.color}
               size={ALSO_LABEL}
               height={ALSO_CHIP_H}
