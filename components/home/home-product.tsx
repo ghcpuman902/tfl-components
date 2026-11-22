@@ -3,6 +3,12 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { ARRIVALS_RHYTHM_VARS } from "@/components/tfl/arrivals/arrivals-board-view"
+import type { RealtimePrediction } from "tfl-ts"
+import {
+  COUNTDOWN_PRESETS,
+  createCountdownTracker,
+  type CountdownRow,
+} from "@/lib/tfl/countdown/countdown"
 import { BusArrivalsBoard } from "@/components/tfl/arrivals/bus-arrivals-board"
 import { RailArrivalsBoard } from "@/components/tfl/arrivals/rail-arrivals-board"
 import { PlaceSearch } from "@/components/home/place-search"
@@ -25,11 +31,7 @@ import {
   REPLAY_FIXTURES,
   type ReplayRequest,
 } from "@/lib/tfl/homepage-live/replay-params"
-import {
-  countDownRows,
-  elapsedSec,
-  isStale,
-} from "@/lib/tfl/homepage-live/data-age"
+import { elapsedSec, isStale } from "@/lib/tfl/homepage-live/data-age"
 import {
   busArrivalsFromRows,
   homepageServingLines,
@@ -79,6 +81,19 @@ export type HomeProductProps = {
   defaultStationId: string
   replay?: ReplayRequest
 }
+
+/** A smoothed row as the Board's prediction: the seconds to go, floored and early, never below 0. */
+const shownPrediction = (
+  row: CountdownRow,
+  stopLetter?: string,
+  stopName?: string
+): RealtimePrediction => ({
+  ...row.prediction,
+  ...(stopName ? { stationName: stopName } : {}),
+  ...(stopLetter ? { platformName: stopLetter } : {}),
+  timeToStation: row.secondsLeft,
+  expectedArrival: new Date(row.arrivalMs).toISOString(),
+})
 
 export const HomeProduct = ({
   stations,
@@ -181,7 +196,10 @@ export const HomeProduct = ({
   useEffect(() => {
     if (!busId) return
     let alive = true
-    withTimeout(getBusStopOverlayAction(busId, replayArg), FIRST_READ_TIMEOUT_MS)
+    withTimeout(
+      getBusStopOverlayAction(busId, replayArg),
+      FIRST_READ_TIMEOUT_MS
+    )
       .then((result) => {
         if (!alive) return
         setOverlayFor({
@@ -214,15 +232,41 @@ export const HomeProduct = ({
       ? busRows.value.ageAtApplySec +
         elapsedSec(busRows.value.appliedAt, live.now)
       : undefined
-  const busRowsShown =
-    busRows.status === "ok"
-      ? countDownRows(
-          busRows.value.rows,
-          busRows.value.ageAtApplySec != null
-            ? elapsedSec(busRows.value.appliedAt, live.now)
-            : 0
-        )
-      : []
+  // A fresh tracker per stop, so one stop's buses never smooth another's.
+  const busTracker = useMemo(
+    () => createCountdownTracker(COUNTDOWN_PRESETS.bus),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [busId]
+  )
+  // Absolute arrivals on this clock (applied time + the server's seconds to go), smoothed per bus.
+  const busApplied = busRows.status === "ok" ? busRows.value : undefined
+  const busPredictions = useMemo(
+    () =>
+      busApplied && busId
+        ? busArrivalsFromRows({
+            rows: busApplied.rows,
+            stopId: busId,
+            at: busApplied.appliedAt,
+          }).map((prediction, index) => ({
+            ...prediction,
+            id:
+              prediction.vehicleId ||
+              `${prediction.lineId}|${prediction.destinationName}|${index}`,
+            timestamp: new Date(busApplied.appliedAt).toISOString(),
+          }))
+        : [],
+    [busApplied, busId]
+  )
+  const busClock = busApplied ? Math.max(busApplied.appliedAt, live.now) : 0
+  const busRowsShown = useMemo(() => {
+    if (!busApplied) return []
+    busTracker.ingest(
+      busPredictions,
+      busApplied.appliedAt,
+      busApplied.appliedAt
+    )
+    return busTracker.view(busClock)
+  }, [busTracker, busApplied, busPredictions, busClock])
   const busStale =
     busRows.status === "ok" &&
     busRowsAge != null &&
@@ -233,21 +277,31 @@ export const HomeProduct = ({
   const ageSec = live.ageSec ?? 0
   // The live Board's rail panel, fed from the shared network poll (see lib/tfl/homepage-live/board-arrivals.ts).
   const stationId = station?.id
-  const railData = useMemo(
-    () =>
-      frame && station
-        ? stationArrivalsFromSnapshot({
-            rows: frame.rows,
-            stopIds: station.stopIds,
-            receivedAt: frame.receivedAt,
-            ageSec,
-            stationName: station.name,
-          })
-        : [],
-    [frame, station, ageSec]
+  // A fresh tracker per station.
+  const railTracker = useMemo(
+    () => createCountdownTracker(COUNTDOWN_PRESETS.rail),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [stationId]
   )
+  const railNow = frame ? frame.receivedAt + ageSec * 1000 : undefined
+  // Smoothed per train: projected from TfL's own timestamp, early, and never ticking up.
+  const railData = useMemo(() => {
+    if (!frame || !station || railNow === undefined) return []
+    railTracker.ingest(
+      stationArrivalsFromSnapshot({
+        rows: frame.rows,
+        stopIds: station.stopIds,
+        receivedAt: frame.receivedAt,
+        stationName: station.name,
+      }),
+      frame.receivedAt,
+      frame.receivedAt
+    )
+    return railTracker.view(railNow).map((row) => shownPrediction(row))
+  }, [frame, station, railTracker, railNow])
   const servingLines = useMemo(
-    () => homepageServingLines(lookupBoardStationLines(stationLines, stationId)),
+    () =>
+      homepageServingLines(lookupBoardStationLines(stationLines, stationId)),
     [stationLines, stationId]
   )
   const lineGroups = useMemo(
@@ -263,8 +317,8 @@ export const HomeProduct = ({
     }
     return Object.keys(map).length > 0 ? map : undefined
   }, [lineGroups])
-  const railNow = frame ? frame.receivedAt + ageSec * 1000 : undefined
-  const railError = !frame && live.status === "error" ? (live.error ?? null) : null
+  const railError =
+    !frame && live.status === "error" ? (live.error ?? null) : null
   const railEmpty = useMemo(
     () =>
       railNow == null
@@ -282,17 +336,15 @@ export const HomeProduct = ({
   const busHit =
     busOverlay?.stop ?? (selection.kind === "bus" ? selection : undefined)
   const select = (hit: PlaceHit) => setSelection(hit)
-  const busStopLetter = busHit?.stopLetter ?? (selection.kind === "bus" ? selection.stopLetter : undefined)
+  const busStopLetter =
+    busHit?.stopLetter ??
+    (selection.kind === "bus" ? selection.stopLetter : undefined)
   // The live Board's bus panel, fed from the homepage's bus read (quota and stale handling stay as they are).
   const busData =
     selection.kind === "bus" && busRows.status === "ok"
-      ? busArrivalsFromRows({
-          rows: busRowsShown,
-          stopId: selection.id,
-          stopName: selection.name,
-          stopLetter: busStopLetter,
-          at: Math.max(busRows.value.appliedAt, live.now),
-        })
+      ? busRowsShown.map((row) =>
+          shownPrediction(row, busStopLetter, selection.name)
+        )
       : []
 
   const customiseHref = `${BOARD_PATH}${boardHashFromConfig(
@@ -309,6 +361,7 @@ export const HomeProduct = ({
         stations={stations}
         hubStationIds={hubStationIds}
         anchor={station ?? busHit}
+        currentId={selection.id}
         replay={replayArg}
         searchDelayMs={replay?.searchDelayMs}
         onSelect={select}
@@ -324,10 +377,16 @@ export const HomeProduct = ({
             : null}
       </p>
       {/* Same shell as the Board: the container its arrivals panels query, and its row rhythm. */}
-      <div className="@container/board min-w-0 pt-6" style={ARRIVALS_RHYTHM_VARS}>
+      <div
+        className="@container/board min-w-0 pt-6"
+        style={ARRIVALS_RHYTHM_VARS}
+      >
         {selection.kind === "station" ? (
           // An old poll keeps its times, dimmed.
-          <div className={cn(isStale(live.ageSec) && "opacity-60")} data-stale={isStale(live.ageSec) || undefined}>
+          <div
+            className={cn(isStale(live.ageSec) && "opacity-60")}
+            data-stale={isStale(live.ageSec) || undefined}
+          >
             <RailArrivalsBoard
               stopName={selection.name}
               stopPointId={selection.id}
@@ -345,7 +404,10 @@ export const HomeProduct = ({
             />
           </div>
         ) : (
-          <div className={cn(busStale && "opacity-60")} data-stale={busStale || undefined}>
+          <div
+            className={cn(busStale && "opacity-60")}
+            data-stale={busStale || undefined}
+          >
             <BusArrivalsBoard
               stopName={selection.name}
               stopPointId={selection.id}

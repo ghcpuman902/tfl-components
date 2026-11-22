@@ -44,6 +44,9 @@ export const isValidLatLon = (lat: number, lon: number): boolean =>
 /** Nearby search from a map centre — keeps bus/cycle results to one cluster. */
 export const MAP_SEARCH_RADIUS_METERS = 400
 
+/** Map zoom for one selected place (explorer follow-selected, homepage search opening view). */
+export const MAP_SELECTED_ZOOM = 15
+
 const METERS_PER_DEG_LAT = 111_320
 
 const metersPerDegLon = (lat: number): number =>

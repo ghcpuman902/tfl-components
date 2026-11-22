@@ -249,11 +249,11 @@ export const SiteHeader = ({ pathname, docsNav = false }: SiteHeaderProps) => {
           <Link
             href="/"
             className="flex min-w-0 shrink touch-manipulation items-center gap-2 md:shrink-0"
-            aria-label="tfl-components home"
+            aria-label="tfl-ts home"
           >
             <HeaderRoundel className="size-5 shrink-0" />
             <span className="truncate text-sm font-medium tracking-tight text-foreground">
-              tfl-components
+              tfl-ts
             </span>
           </Link>
 
