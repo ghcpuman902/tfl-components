@@ -292,7 +292,7 @@ const BoardParts = ({ api }: { api: CustomiseController }) => {
         <div
           ref={dropRef}
           className={cn(
-            "border-y border-dashed border-foreground/40 px-3 py-2 text-sm text-muted-foreground",
+            "mb-0! border border-dashed border-foreground/40 px-3 py-2 text-sm text-muted-foreground",
             dropping && "bg-muted text-foreground"
           )}
         >
@@ -302,7 +302,7 @@ const BoardParts = ({ api }: { api: CustomiseController }) => {
           <ul
             ref={addRef}
             aria-label="Off the board"
-            className="border-y border-border"
+            className="border-b border-border"
           >
             {off.map(({ kind }) => partRow(kind, true))}
           </ul>

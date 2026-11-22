@@ -101,11 +101,11 @@ const holdPageDuringDrag = (
 }
 
 /**
- * The grip's column. Its dots sit as far from the left edge as the ⋯ / ✕
- * glyphs sit from the right. Touch has no grip, just a matching inset.
+ * The grip's column. The dots start at the list's left edge (the icon's own
+ * padding is pulled out). Touch has no grip, just a matching inset.
  */
 export const GRIP_SLOT =
-  "relative flex w-9 shrink-0 self-stretch pointer-coarse:w-3"
+  "relative flex w-3 shrink-0 self-stretch pointer-coarse:w-3"
 
 /** Where a finger long-presses: no text selection or callout on the hold. */
 export const PRESS_SURFACE =
@@ -462,7 +462,7 @@ export const DragGrip = ({
         data-drag-grip
         aria-label={`Drag ${name} to reorder (or use arrow keys)`}
         className={cn(
-          "relative inline-flex w-full items-center justify-center text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+          "relative inline-flex w-full items-center justify-start text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
           "cursor-grab touch-none select-none active:cursor-grabbing",
           // 36 px wide, 44 px to tap: the target runs on under the next part.
           "after:absolute after:inset-y-0 after:right-[-0.5rem] after:left-0",
@@ -472,7 +472,7 @@ export const DragGrip = ({
         onKeyDown={onKeyDown}
       >
         <GripVerticalIcon
-          className="size-5 text-muted-foreground"
+          className="-ml-[7px] size-5 shrink-0 text-muted-foreground"
           aria-hidden
         />
       </button>
