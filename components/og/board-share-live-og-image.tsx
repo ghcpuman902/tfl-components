@@ -13,7 +13,6 @@ import type {
   BoardShareOgRailArrivals,
   BoardShareOgRailStatus,
 } from "@/lib/og/board-share-live-og"
-import { OG_STATUS_ROWS } from "@/lib/og/board-share-live-og-rows"
 import type { BoardShareOgLine } from "@/lib/og/board-share-og"
 import {
   TFL_BLUE,
@@ -49,8 +48,8 @@ const SUB_PAD = 12
 const ROW_RULE = 2
 
 // A: bound heading + arrival rows + "Also here".
-const DIR_SIZE = 30
-const DIR_H = 54
+const DIR_SIZE = 45 // = LINE_TITLE_SIZE (Board 1:1)
+const DIR_H = 63
 const ROW_H = 72
 const DEST_SIZE = 44
 const TIME_SIZE = 52
@@ -69,6 +68,14 @@ const STATUS_CHIP_GAP = 36
 const STATUS_SIZE = 38
 const NEXT_H = 60
 const NEXT_SIZE = 34
+// B compact chips — tube-status-strip.tsx L145–152 / L201–206 (LineBadge h-5 px-1.5);
+// good lines opacity-40 (L151); tube-status-display.tsx L221–226 flex-wrap gap-1.
+const COMPACT_CHIP_H = 40 // h-5 × 2
+const COMPACT_CHIP_SIZE = 22
+const COMPACT_CHIP_PAD = 12
+const COMPACT_CHIP_GAP = 10
+const COMPACT_WRAP_GAP = 18
+const GOOD_CHIP_OPACITY = 0.4
 
 // C: bus rows.
 const KICKER_SIZE = 30
@@ -112,6 +119,48 @@ const fitSize = (text: string, max: number, width: number): number =>
 /** PMS 485 — tfl-ts `getLineColor("buses")` is slate, not brand red. */
 const BUS_RED = TFL_MODAL_COLOURS.buses.hex
 
+/**
+ * Bus stop letter circle — mirrors StopLetterBadge
+ * (registry/tfl/arrivals/stop-letter-badge.tsx L18–60) as used in
+ * arrivals-board-view.tsx L266 and L712–713: rounded-full line-colour disc,
+ * bold ink glyph. Scaled beside the OG bus title.
+ */
+const STOP_LETTER_D = 56
+const STOP_LETTER_SIZE = 28
+
+const OgStopLetterBadge = ({ letter }: { letter: string }) => {
+  const isPair = letter.length > 1
+  const d = STOP_LETTER_D
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        width: isPair ? undefined : d,
+        minWidth: d,
+        height: d,
+        paddingLeft: isPair ? 14 : 0,
+        paddingRight: isPair ? 14 : 0,
+        marginLeft: 20,
+        borderRadius: 9999,
+        backgroundColor: BUS_RED,
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          ...face(isPair ? STOP_LETTER_SIZE - 4 : STOP_LETTER_SIZE, "#FFFFFF"),
+        }}
+      >
+        {letter}
+      </div>
+    </div>
+  )
+}
+
+
 const minutesText = (minutes: number): string =>
   minutes === 0 ? "Due" : `${minutes} min`
 
@@ -128,6 +177,7 @@ const Chip = ({
   width,
   padX = 16,
   marginRight = CHIP_GAP,
+  opacity = 1,
 }: {
   lineId: string
   label: string
@@ -137,6 +187,7 @@ const Chip = ({
   width?: number
   padX?: number
   marginRight?: number
+  opacity?: number
 }) => (
   <div
     style={{
@@ -153,6 +204,7 @@ const Chip = ({
       backgroundColor: color,
       borderRadius: 0,
       overflow: "hidden",
+      opacity,
     }}
   >
     <div style={{ ...face(size, ogLineChipTextColor(lineId)), ...oneLine }}>
@@ -271,21 +323,18 @@ const Subtitle = ({
 )
 
 /**
- * A: exact BoardLineHeader geometry — copied from source, not redrawn:
- *   - components/docs/demos/line-name-demo.tsx L8–42 (BoardLineHeader):
- *     left-aligned (default block) `pb-2 text-xl leading-7 font-semibold`
- *     + full-width `h-1` LineColorBar row. No text-center / justify-center.
- *   - registry/tfl/status/tube-status-board.tsx L188–218 (StatusLineHeader):
- *     `text-xl leading-7 font-semibold` flex-1 + absolute bottom `h-1` LineColorBar.
- *   - registry/tfl/arrivals/arrivals-bound-group.tsx L1266–1316:
- *     same type tokens; colour underline via border-b-4 / LineColorBar (not black).
- * Scaled ×3 for the 1200 OG canvas vs ~320–400 Board column (20→60, 28→84, 8→24, 4→12).
- * No centre alignment. No black/neutral rule under station or bus titles on A/B/C.
+ * A: Board arrivals rhythm — copied from source, not redrawn:
+ *   - line-name-demo.tsx L8–42 / StatusLineHeader (tube-status-board.tsx L188–218):
+ *     `pb-2 text-xl leading-7 font-semibold` + `h-1` LineColorBar.
+ *   - arrivals-bound-group.tsx L1176–1182: direction label is ALSO
+ *     `text-xl leading-7 font-semibold text-muted-foreground` (same size as line title).
+ * Scale ×2.25 for 1200 OG vs ~400 Board column (20→45, 28→63, 8→18, 4→9).
+ * Title:direction ratio = 1:1 on the Board — do not shrink the direction label.
  */
-const LINE_TITLE_SIZE = 60 // text-xl × 3
-const LINE_TITLE_LEADING = 84 // leading-7 × 3
-const LINE_TITLE_PB = 24 // pb-2 × 3
-const LINE_BAR_H = 12 // h-1 × 3
+const LINE_TITLE_SIZE = 45 // text-xl × 2.25
+const LINE_TITLE_LEADING = 63 // leading-7 × 2.25
+const LINE_TITLE_PB = 18 // pb-2 × 2.25
+const LINE_BAR_H = 9 // h-1 × 2.25
 
 const OgLineTitle = ({ line }: { line: BoardShareOgLine }) => (
   <div
@@ -440,10 +489,8 @@ const RailStatus = ({
   stationName: string
   live: BoardShareOgRailStatus
 }) => {
-  const rows = live.rows.slice(
-    0,
-    live.next ? OG_STATUS_ROWS - 1 : OG_STATUS_ROWS
-  )
+  const rows = live.rows
+  const chips = live.chips ?? []
   return (
     <Stack>
       <StationHeader name={stationName} />
@@ -456,70 +503,112 @@ const RailStatus = ({
           borderBottom: "none",
         }}
       >
-      {rows.map((row, i) => (
-        <StatusRule
-          key={row.id}
-          height={STATUS_H}
-          first={i === 0}
-        >
-          <Chip
-            lineId={row.id}
-            label={ogLineLabel(row.id, "status")}
-            color={row.color}
-            size={STATUS_CHIP_SIZE}
-            height={STATUS_CHIP_H}
-            width={STATUS_CHIP_W}
-            padX={16}
-            marginRight={STATUS_CHIP_GAP}
-          />
-          <div
-            style={{
-              ...face(STATUS_SIZE, row.tone === "ok" ? MUTED : INK),
-              ...oneLine,
-              flex: 1,
-            }}
-          >
-            {row.statusText}
-          </div>
-        </StatusRule>
-      ))}
-      {live.next ? (
-        <StatusRule height={NEXT_H} first={rows.length === 0}>
-          <Chip
-            lineId={live.next.line.id}
-            label={ogLineLabel(live.next.line.id, "status")}
-            color={live.next.line.color}
-            size={STATUS_CHIP_SIZE}
-            height={STATUS_CHIP_H}
-            width={STATUS_CHIP_W}
-            padX={16}
-            marginRight={STATUS_CHIP_GAP}
-          />
-          <div style={{ ...face(NEXT_SIZE), ...oneLine, flex: 1 }}>
-            {`Next: ${live.next.destination} ${
-              live.next.minutes === 0 ? "due" : `in ${live.next.minutes} min`
-            }`}
-          </div>
-        </StatusRule>
-      ) : null}
+        {rows.map((row, i) => (
+          <StatusRule key={row.id} height={STATUS_H} first={i === 0}>
+            <Chip
+              lineId={row.id}
+              label={ogLineLabel(row.id, "status")}
+              color={row.color}
+              size={STATUS_CHIP_SIZE}
+              height={STATUS_CHIP_H}
+              width={STATUS_CHIP_W}
+              padX={16}
+              marginRight={STATUS_CHIP_GAP}
+            />
+            <div
+              style={{
+                ...face(STATUS_SIZE, row.tone === "ok" ? MUTED : INK),
+                ...oneLine,
+                flex: 1,
+              }}
+            >
+              {row.statusText}
+            </div>
+          </StatusRule>
+        ))}
+        {live.next ? (
+          <StatusRule height={NEXT_H} first={rows.length === 0}>
+            <Chip
+              lineId={live.next.line.id}
+              label={ogLineLabel(live.next.line.id, "status")}
+              color={live.next.line.color}
+              size={STATUS_CHIP_SIZE}
+              height={STATUS_CHIP_H}
+              width={STATUS_CHIP_W}
+              padX={16}
+              marginRight={STATUS_CHIP_GAP}
+            />
+            <div style={{ ...face(NEXT_SIZE), ...oneLine, flex: 1 }}>
+              {`Next: ${live.next.destination} ${
+                live.next.minutes === 0 ? "due" : `in ${live.next.minutes} min`
+              }`}
+            </div>
+          </StatusRule>
+        ) : null}
       </div>
+      {chips.length > 0 ? (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            flexWrap: "wrap",
+            alignItems: "center",
+            marginTop: COMPACT_WRAP_GAP,
+            width: "100%",
+            gap: COMPACT_CHIP_GAP,
+          }}
+        >
+          {chips.map((row) => (
+            <Chip
+              key={row.id}
+              lineId={row.id}
+              label={ogLineLabel(row.id, "also")}
+              color={row.color}
+              size={COMPACT_CHIP_SIZE}
+              height={COMPACT_CHIP_H}
+              padX={COMPACT_CHIP_PAD}
+              marginRight={0}
+              opacity={row.tone === "ok" ? GOOD_CHIP_OPACITY : 1}
+            />
+          ))}
+        </div>
+      ) : null}
     </Stack>
   )
 }
 
-const Bus = ({ live }: { live: BoardShareOgBus }) => (
+const Bus = ({ live }: { live: BoardShareOgBus }) => {
+  const letterW = live.stopLetter ? STOP_LETTER_D + 20 : 0
+  const nameSize = fitSize(
+    live.stopName,
+    BUS_TITLE_SIZE,
+    CONTENT_W - letterW
+  )
+  return (
   <Stack>
     <div style={face(KICKER_SIZE, MUTED)}>Buses at</div>
     <div
       style={{
-        ...face(fitSize(live.title, BUS_TITLE_SIZE, CONTENT_W)),
-        ...oneLine,
+        display: "flex",
+        alignItems: "center",
         marginTop: KICKER_GAP,
         marginBottom: BUS_SUB_GAP,
-        overflow: "hidden",
+        width: "100%",
+        minWidth: 0,
       }}
     >
-      {live.title}
+      <div
+        style={{
+          ...face(nameSize),
+          ...oneLine,
+          flex: 1,
+          minWidth: 0,
+          overflow: "hidden",
+        }}
+      >
+        {live.stopName}
+      </div>
+      {live.stopLetter ? <OgStopLetterBadge letter={live.stopLetter} /> : null}
     </div>
     {live.rows.map((row, i) => (
       <TimeRow
@@ -548,7 +637,8 @@ const Bus = ({ live }: { live: BoardShareOgBus }) => (
       </div>
     </Rule>
   </Stack>
-)
+  )
+}
 
 const ringSrc = (row: BoardShareOgDockRow): string => {
   const r = 20
@@ -690,6 +780,7 @@ export const BoardShareLiveOgImage = ({
       style={{
         display: "flex",
         flexDirection: "column",
+        position: "relative",
         width: "100%",
         height: "100%",
         backgroundColor: PAPER,
@@ -701,7 +792,28 @@ export const BoardShareLiveOgImage = ({
         color: INK,
       }}
     >
-      <div style={{ display: "flex", flexDirection: "column" }}>
+      {/* Host + clock are overlays — no layout space (Mangle 10:43). */}
+      <div
+        style={{
+          ...face(FOOT_SIZE, MUTED),
+          position: "absolute",
+          top: 18,
+          right: PAD_X,
+        }}
+      >
+        {host}
+      </div>
+      <div
+        style={{
+          ...face(FOOT_SIZE, MUTED),
+          position: "absolute",
+          bottom: 18,
+          right: PAD_X,
+        }}
+      >
+        {model.at ? `live board · ${model.at}` : "live board"}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
         {live.kind === "rail-arrivals" ? (
           <RailArrivals stationName={model.stationName} live={live} />
         ) : live.kind === "rail-status" ? (
@@ -715,19 +827,6 @@ export const BoardShareLiveOgImage = ({
             thenLines={model.thenLines}
           />
         )}
-      </div>
-      <div style={{ display: "flex", flex: 1 }} />
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-        }}
-      >
-        <div style={face(FOOT_SIZE, MUTED)}>
-          {model.at ? `live board · ${model.at}` : "live board"}
-        </div>
-        <div style={face(FOOT_SIZE, MUTED)}>{host}</div>
       </div>
     </div>
   )

@@ -5,6 +5,7 @@ import {
   pickNextTrain,
   pickRailArrivals,
   toBusLive,
+  splitStatusForOg,
   toStatusRows,
 } from "@/lib/og/board-share-live-og-rows"
 import type { StatusLine } from "@/lib/tfl/status-types"
@@ -101,6 +102,32 @@ describe("toStatusRows (B)", () => {
   })
 })
 
+describe("splitStatusForOg (B)", () => {
+  it("details alerts and chips the rest; opacity tone stays on chips", () => {
+    const rows = toStatusRows(
+      [
+        status("victoria", 9, "Minor Delays"),
+        status("northern", 10, "Good Service"),
+        status("central", 10, "Good Service"),
+        status("bakerloo", 6, "Part Closure"),
+      ],
+      ["northern", "victoria", "central", "bakerloo"]
+    )
+    const { detail, chips } = splitStatusForOg(rows)
+    assert.deepEqual(
+      detail.map((r) => r.id),
+      ["victoria", "bakerloo"]
+    )
+    assert.deepEqual(
+      chips.map((r) => [r.id, r.tone]),
+      [
+        ["northern", "ok"],
+        ["central", "ok"],
+      ]
+    )
+  })
+})
+
 describe("pickNextTrain (B)", () => {
   it("prefers the Board's lines, then any line", () => {
     const arrivals = [
@@ -127,7 +154,8 @@ describe("toBusLive (C)", () => {
 
   it("titles with the painted stop letter and lists the next three", () => {
     const c = toBusLive(buses, { routes: [], fallbackName: "Fallback" })
-    assert.equal(c?.title, "Oxford Circus · Stop G")
+    assert.equal(c?.stopName, "Oxford Circus")
+    assert.equal(c?.stopLetter, "G")
     assert.deepEqual(
       c?.rows.map((r) => [r.route, r.destination, r.minutes]),
       [
@@ -143,7 +171,8 @@ describe("toBusLive (C)", () => {
       [arrival("10", 60, "Hammersmith", "->W", { stationName: "null" })],
       { routes: ["10"], fallbackName: "Oxford Circus" }
     )
-    assert.equal(c?.title, "Oxford Circus")
+    assert.equal(c?.stopName, "Oxford Circus")
+    assert.equal(c?.stopLetter, null)
     assert.equal(toBusLive(buses, { routes: ["25"], fallbackName: "x" }), null)
   })
 })

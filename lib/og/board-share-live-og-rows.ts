@@ -22,7 +22,9 @@ import type { StatusLine } from "@/lib/tfl/status-types"
 
 /** Arrival rows on A and C, like a Board bound's first rows. */
 export const OG_LIVE_ROWS = 3
-/** Status rows on B; one fewer when the "Next" row takes the last slot. */
+/** Max detailed status rows on B (alerts preferred); rest become compact chips. */
+export const OG_STATUS_DETAIL = 3
+/** @deprecated Prefer OG_STATUS_DETAIL; kept for callers that still slice. */
 export const OG_STATUS_ROWS = 5
 
 export type BoardShareOgTimeRow = { destination: string; minutes: number }
@@ -52,15 +54,19 @@ export type BoardShareOgRailArrivals = {
 /** B: line status for the stop's lines, plus one next train when known. */
 export type BoardShareOgRailStatus = {
   kind: "rail-status"
+  /** Detailed rows with status text (alerts first). */
   rows: BoardShareOgStatusRow[]
+  /** Remaining lines as compact chips — status via opacity, no right-hand text. */
+  chips: BoardShareOgStatusRow[]
   next: BoardShareOgNextTrain | null
 }
 
 /** C: next buses at one stop. */
 export type BoardShareOgBus = {
   kind: "bus"
-  /** `Oxford Circus · Stop G`, or the stop name when no painted letter. */
-  title: string
+  stopName: string
+  /** Painted stop letter for StopLetterBadge; null when TfL has none. */
+  stopLetter: string | null
   rows: BoardShareOgBusRow[]
 }
 
@@ -200,6 +206,33 @@ export const toStatusRows = (
   })
 }
 
+/**
+ * B layout: disruptions get detailed rows (status text); remaining lines
+ * become compact chips — mirrors tube-status-board (disruptions then good
+ * service) and tube-status-strip compact LineBadge chips.
+ */
+export const splitStatusForOg = (
+  rows: readonly BoardShareOgStatusRow[]
+): {
+  detail: BoardShareOgStatusRow[]
+  chips: BoardShareOgStatusRow[]
+} => {
+  const alerts = rows.filter((r) => r.tone === "alert")
+  const oks = rows.filter((r) => r.tone === "ok")
+  const detail: BoardShareOgStatusRow[] = []
+  for (const r of alerts) {
+    if (detail.length < OG_STATUS_DETAIL) detail.push(r)
+  }
+  // No disruptions: keep a couple of ok rows detailed so B isn't chips-only.
+  if (detail.length === 0) {
+    for (const r of oks) {
+      if (detail.length < 2) detail.push(r)
+    }
+  }
+  const inDetail = new Set(detail.map((r) => r.id))
+  return { detail, chips: rows.filter((r) => !inDetail.has(r.id)) }
+}
+
 /** B: the soonest train at the stop, preferring the Board's lines. */
 export const pickNextTrain = (
   arrivals: readonly RealtimePrediction[],
@@ -235,7 +268,8 @@ export const toBusLive = (
   )
   return {
     kind: "bus",
-    title: letter ? `${name} · Stop ${letter}` : name,
+    stopName: name,
+    stopLetter: letter,
     rows: usable.slice(0, OG_LIVE_ROWS).map((a) => ({
       route: usableTflText(a.lineName) ?? a.lineId ?? "",
       ...toTimeRow(a),

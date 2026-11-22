@@ -22,6 +22,7 @@ import {
   pickNextTrain,
   pickRailArrivals,
   toBusLive,
+  splitStatusForOg,
   toStatusRows,
   type BoardShareOgBus,
   type BoardShareOgRailArrivals,
@@ -118,11 +119,13 @@ const readRail = async (
   if (a) return a
   if (lineIds.length === 0) return null
   const status = await getCachedLineStatuses(lineIds)
-  const rows = toStatusRows(status.data, lineIds, status.fetchedAt)
-  if (rows.length === 0) return null
+  const all = toStatusRows(status.data, lineIds, status.fetchedAt)
+  if (all.length === 0) return null
+  const { detail, chips } = splitStatusForOg(all)
   return {
     kind: "rail-status",
-    rows,
+    rows: detail,
+    chips,
     next: pickNextTrain(arrivals, lineIds),
   }
 }
