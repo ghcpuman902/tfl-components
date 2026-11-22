@@ -818,16 +818,7 @@ html.board-glance .board-glance {
   }
 }
 
-/* Flat UI: MapLibre's zoom control and attribution ship rounded; square them. */
-.maplibregl-ctrl-group,
-.maplibregl-ctrl-group button,
-.maplibregl-ctrl-attrib,
-.maplibregl-ctrl-attrib.maplibregl-compact,
-.maplibregl-ctrl-attrib-button {
-  border-radius: 0 !important;
-}
-
-/* Follow the theme: dark background, light glyphs, flat (no shadow). */
+/* MapLibre controls follow the theme in dark mode; keep their native rounding. */
 .dark .maplibregl-ctrl-group,
 .dark .maplibregl-ctrl-attrib,
 .dark .maplibregl-ctrl-attrib.maplibregl-compact {

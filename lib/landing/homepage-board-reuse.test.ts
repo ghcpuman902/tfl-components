@@ -5,14 +5,11 @@ import { fileURLToPath } from "node:url"
 import { describe, it } from "node:test"
 
 // Regression for Mangle's 18 Nov 2026 complaint: the homepage invented its own
-// Board rows instead of the live Board, and the search was rounded, filled and
-// painted over the site nav.
+// Board rows instead of the live Board, and the search was filled and painted
+// over the site nav. DROP SQUARE (22 Nov): rounding is required again; no fill stays.
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..")
 const read = (relative: string) => readFileSync(join(root, relative), "utf8")
-
-// `rounded-none` takes rounding away (the explorer map's own corners), so it is allowed.
-const ROUNDING = /\brounded(?!-none\b)(-[\w[\]./%-]+)?\b|border-radius/
 
 const zIndexOf = (source: string, marker: RegExp): number => {
   const match = source.match(marker)
@@ -39,12 +36,9 @@ describe("homepage reuses the live Board", () => {
 
 describe("homepage search field", () => {
   const search = read("components/home/place-search.tsx")
-  const page = read("app/page.tsx")
 
-  it("adds no rounding on the search, its list or the page fallback", () => {
-    assert.doesNotMatch(search, ROUNDING)
-    assert.doesNotMatch(page, ROUNDING)
-    assert.doesNotMatch(read("components/home/home-product.tsx"), ROUNDING)
+  it("keeps rounded line marks (DROP SQUARE)", () => {
+    assert.match(search, /rounded-full bg-\(--line-color\)/)
   })
 
   it("has no fill in its default state", () => {

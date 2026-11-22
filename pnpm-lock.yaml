@@ -129,8 +129,8 @@ importers:
         specifier: ^3.6.0
         version: 3.6.0
       tfl-ts:
-        specifier: file:vendor/tfl-ts/tfl-ts-2.15.3-stops-e065ff3.tgz
-        version: file:vendor/tfl-ts/tfl-ts-2.15.3-stops-e065ff3.tgz(typescript@5.9.3)
+        specifier: ^2.16.0
+        version: 2.16.0(typescript@5.9.3)
       three:
         specifier: ^0.185.1
         version: 0.185.1
@@ -4397,9 +4397,8 @@ packages:
     resolution: {integrity: sha512-uxc/zpqFg6x7C8vOE7lh6Lbda8eEL9zmVm/PLeTPBRhh1xCgdWaQ+J1CUieGpIfm2HdtsUpRv+HshiasBMcc6A==}
     engines: {node: '>=6'}
 
-  tfl-ts@file:vendor/tfl-ts/tfl-ts-2.15.3-stops-e065ff3.tgz:
-    resolution: {integrity: sha512-H8OLxAIL+h+9Df68KjEd3SLytskJvWPdZn0ZUVEwff9DfpyW1PAv95VGQNVfNTbqxwnjDLSvpRFFxX4H1mNwUg==, tarball: file:vendor/tfl-ts/tfl-ts-2.15.3-stops-e065ff3.tgz}
-    version: 2.15.3
+  tfl-ts@2.16.0:
+    resolution: {integrity: sha512-hGnnR/ErbPiAvCC2XGwST4Z5ZhuqN2WHA2kznF7LbDmedxm5qYKlYvj4v0fCLhd9ENaALdh8/elSNufFfNiAjQ==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     peerDependencies:
@@ -9256,7 +9255,7 @@ snapshots:
 
   tapable@2.3.3: {}
 
-  tfl-ts@file:vendor/tfl-ts/tfl-ts-2.15.3-stops-e065ff3.tgz(typescript@5.9.3):
+  tfl-ts@2.16.0(typescript@5.9.3):
     dependencies:
       typescript: 5.9.3
 

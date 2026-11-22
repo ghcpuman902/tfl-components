@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
   branchStripMetrics,
+  verticalLabelWidthForNames,
   findOverlappingLabelPairs,
   placeBranchStripLabels,
 } from "./branch-strip-layout.ts"
@@ -449,4 +450,32 @@ describe("Northern BranchStrip labels", () => {
       assert.equal(labelled.length, 1)
     })
   }
+})
+
+describe("verticalLabelWidthForNames (TFL-39)", () => {
+  it("sizes a label to the widest line of a two-line split", () => {
+    // "Battersea Power / Station Pier" → 15 chars wide.
+    const w = verticalLabelWidthForNames(["Battersea Power Station Pier"], 16)
+    assert.ok(w >= Math.floor(15 * 0.5 * 16))
+    assert.ok(w <= Math.ceil(16 * 0.6 * 16))
+    assert.equal(verticalLabelWidthForNames([], 16), 0)
+  })
+
+  it("widens vertical labels only when the names need it, never narrows", () => {
+    const base = branchStripMetrics("vertical").verticalLabelWidth
+    const wide = branchStripMetrics("vertical", undefined, [
+      "Vauxhall St George Wharf Pier",
+    ]).verticalLabelWidth
+    const short = branchStripMetrics("vertical", undefined, [
+      "Bank",
+    ]).verticalLabelWidth
+    assert.ok(wide > base)
+    assert.equal(short, base)
+    assert.equal(
+      branchStripMetrics("horizontal", undefined, [
+        "Vauxhall St George Wharf Pier",
+      ]).verticalLabelWidth,
+      branchStripMetrics("horizontal").verticalLabelWidth
+    )
+  })
 })

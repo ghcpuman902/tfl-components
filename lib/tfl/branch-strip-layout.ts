@@ -83,9 +83,40 @@ export type BranchStripMetrics = {
  * BranchStrip layout lengths derived from diagram `x` → station font → em pitches.
  * Tests and the component must share this so geometry tracks base type size.
  */
+/** Average glyph advance of the station font, in em. */
+const STATION_GLYPH_EM = 0.56
+
+/**
+ * Widest line a vertical label needs once its name is split over two lines
+ * (the most StationName shows), in px at `nameFont`. Station names never wrap
+ * inside a line, so a label box narrower than this lets the text spill across
+ * the corridor line.
+ */
+export const verticalLabelWidthForNames = (
+  names: readonly string[],
+  nameFont: number
+): number => {
+  let widest = 0
+  for (const name of names) {
+    const words = name.trim().split(/\s+/).filter(Boolean)
+    let best = words.join(" ").length
+    for (let at = 1; at < words.length; at += 1) {
+      const longer = Math.max(
+        words.slice(0, at).join(" ").length,
+        words.slice(at).join(" ").length
+      )
+      best = Math.min(best, longer)
+    }
+    widest = Math.max(widest, best)
+  }
+  return Math.ceil(widest * STATION_GLYPH_EM * nameFont)
+}
+
 export const branchStripMetrics = (
   orientation: SchematicOrientation,
-  xProp?: number
+  xProp?: number,
+  /** Station names on the strip; vertical labels widen to keep clear of the line. */
+  stationNames?: readonly string[]
 ): BranchStripMetrics => {
   const isHorizontal = orientation === "horizontal"
   const x = xProp ?? DIAGRAM_BASELINE[orientation]
@@ -108,7 +139,7 @@ export const branchStripMetrics = (
   const bondGap = scale(x, LINE_DIAGRAM.interchange.bridgeWhite)
   const labelClearance = ringOuter + scale(x, 1.1)
 
-  const verticalLabelWidth = Math.round(
+  const baseLabelWidth = Math.round(
     Math.min(
       isHorizontal
         ? nameFont * (16 / HORIZONTAL_NAME_SIZE_UNITS)
@@ -116,6 +147,14 @@ export const branchStripMetrics = (
       lanePitch * 0.65
     )
   )
+  // Only ever wider than before, so strips whose names already fit don't move.
+  const verticalLabelWidth =
+    isHorizontal || !stationNames?.length
+      ? baseLabelWidth
+      : Math.max(
+          baseLabelWidth,
+          verticalLabelWidthForNames(stationNames, nameFont)
+        )
 
   const labelBand = Math.max(
     scale(x, LINE_DIAGRAM.layout.nameBelowLine) + lineBox,

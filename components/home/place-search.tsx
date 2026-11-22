@@ -105,14 +105,14 @@ const MODE_LABELS: Readonly<Record<string, string>> = {
   "national-rail": "National Rail",
 }
 
-/** Line colours as square marks; `data-line` supplies `--line-color`. */
+/** Line colours as rounded marks; `data-line` supplies `--line-color`. */
 const LineMarks = ({ lines }: { lines: readonly string[] }) => (
   <span className="flex flex-wrap items-center justify-end gap-1" aria-hidden>
     {lines.slice(0, 8).map((line) => (
       <span
         key={line}
         data-line={line}
-        className="h-1.5 w-4 bg-(--line-color)"
+        className="h-1.5 w-4 rounded-full bg-(--line-color)"
       />
     ))}
   </span>
@@ -840,7 +840,7 @@ export const PlaceSearch = ({
                   fitSearchKey={fit.key}
                   searchOrigin={fit.origin}
                   searchRadiusMeters={fit.radiusMeters}
-                  className="min-h-0 rounded-none border-0"
+                  className="min-h-0 rounded-lg border-0"
                 />
               </div>
               <div
