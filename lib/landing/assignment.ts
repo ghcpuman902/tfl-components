@@ -8,15 +8,9 @@ import {
   type LandingDeviceClass,
 } from "@/lib/landing/experiment"
 import type { AnalyticsContext } from "@/lib/analytics/context"
-import { SITE_URL } from "@/lib/site"
+import { SITE_HOST } from "@/lib/site"
 
-const siteHost = () => {
-  try {
-    return new URL(SITE_URL).host
-  } catch {
-    return "tfl.manglekuo.com"
-  }
-}
+const siteHost = () => SITE_HOST
 
 const referrerHostFromHeader = (referrer: string | null): string | null => {
   if (!referrer) return null

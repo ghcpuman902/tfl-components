@@ -1,7 +1,7 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "tfl-components",
-  "homepage": "https://tfl.manglekuo.com",
+  "homepage": "https://tfl-ts.dev",
   "items": [
     {
       "name": "tfl-roundel",
@@ -398,7 +398,7 @@
         "tfl-ts@^2.13.1"
       ],
       "registryDependencies": [
-        "https://tfl.manglekuo.com/r/tfl-colours.json",
+        "https://tfl-ts.dev/r/tfl-colours.json",
         "skeleton"
       ],
       "files": [
@@ -464,9 +464,9 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://tfl.manglekuo.com/r/tfl-colours.json",
-        "https://tfl.manglekuo.com/r/line-badge.json",
-        "https://tfl.manglekuo.com/r/tfl-roundel.json"
+        "https://tfl-ts.dev/r/tfl-colours.json",
+        "https://tfl-ts.dev/r/line-badge.json",
+        "https://tfl-ts.dev/r/tfl-roundel.json"
       ],
       "files": [
         {
@@ -555,8 +555,8 @@
         "tfl-ts@^2.13.1"
       ],
       "registryDependencies": [
-        "https://tfl.manglekuo.com/r/tfl-colours.json",
-        "https://tfl.manglekuo.com/r/line-badge.json"
+        "https://tfl-ts.dev/r/tfl-colours.json",
+        "https://tfl-ts.dev/r/line-badge.json"
       ],
       "files": [
         {
@@ -625,8 +625,8 @@
         "tfl-ts@^2.13.1"
       ],
       "registryDependencies": [
-        "https://tfl.manglekuo.com/r/tfl-colours.json",
-        "https://tfl.manglekuo.com/r/line-badge.json"
+        "https://tfl-ts.dev/r/tfl-colours.json",
+        "https://tfl-ts.dev/r/line-badge.json"
       ],
       "files": [
         {
@@ -682,7 +682,7 @@
         "maplibre-gl@5.24.0"
       ],
       "registryDependencies": [
-        "https://tfl.manglekuo.com/r/tfl-roundel.json",
+        "https://tfl-ts.dev/r/tfl-roundel.json",
         "skeleton"
       ],
       "files": [
@@ -897,13 +897,13 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://tfl.manglekuo.com/r/tfl-colours.json",
-        "https://tfl.manglekuo.com/r/line-badge.json",
-        "https://tfl.manglekuo.com/r/platform-chip.json",
-        "https://tfl.manglekuo.com/r/bus-number-chip.json",
-        "https://tfl.manglekuo.com/r/tfl-roundel.json",
+        "https://tfl-ts.dev/r/tfl-colours.json",
+        "https://tfl-ts.dev/r/line-badge.json",
+        "https://tfl-ts.dev/r/platform-chip.json",
+        "https://tfl-ts.dev/r/bus-number-chip.json",
+        "https://tfl-ts.dev/r/tfl-roundel.json",
         "skeleton",
-        "https://tfl.manglekuo.com/r/river-route-chip.json"
+        "https://tfl-ts.dev/r/river-route-chip.json"
       ],
       "files": [
         {
@@ -1088,12 +1088,12 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://tfl.manglekuo.com/r/tfl-colours.json",
-        "https://tfl.manglekuo.com/r/line-badge.json",
-        "https://tfl.manglekuo.com/r/platform-chip.json",
-        "https://tfl.manglekuo.com/r/bus-number-chip.json",
-        "https://tfl.manglekuo.com/r/river-route-chip.json",
-        "https://tfl.manglekuo.com/r/tfl-roundel.json",
+        "https://tfl-ts.dev/r/tfl-colours.json",
+        "https://tfl-ts.dev/r/line-badge.json",
+        "https://tfl-ts.dev/r/platform-chip.json",
+        "https://tfl-ts.dev/r/bus-number-chip.json",
+        "https://tfl-ts.dev/r/river-route-chip.json",
+        "https://tfl-ts.dev/r/tfl-roundel.json",
         "skeleton"
       ],
       "files": [
@@ -1274,12 +1274,12 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://tfl.manglekuo.com/r/tfl-colours.json",
-        "https://tfl.manglekuo.com/r/line-badge.json",
-        "https://tfl.manglekuo.com/r/platform-chip.json",
-        "https://tfl.manglekuo.com/r/bus-number-chip.json",
-        "https://tfl.manglekuo.com/r/river-route-chip.json",
-        "https://tfl.manglekuo.com/r/tfl-roundel.json",
+        "https://tfl-ts.dev/r/tfl-colours.json",
+        "https://tfl-ts.dev/r/line-badge.json",
+        "https://tfl-ts.dev/r/platform-chip.json",
+        "https://tfl-ts.dev/r/bus-number-chip.json",
+        "https://tfl-ts.dev/r/river-route-chip.json",
+        "https://tfl-ts.dev/r/tfl-roundel.json",
         "skeleton"
       ],
       "files": [
@@ -1470,9 +1470,9 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://tfl.manglekuo.com/r/tfl-colours.json",
-        "https://tfl.manglekuo.com/r/rail-arrivals-board.json",
-        "https://tfl.manglekuo.com/r/bus-arrivals-board.json"
+        "https://tfl-ts.dev/r/tfl-colours.json",
+        "https://tfl-ts.dev/r/rail-arrivals-board.json",
+        "https://tfl-ts.dev/r/bus-arrivals-board.json"
       ],
       "files": [
         {
@@ -1492,9 +1492,9 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://tfl.manglekuo.com/r/tfl-colours.json",
+        "https://tfl-ts.dev/r/tfl-colours.json",
         "skeleton",
-        "https://tfl.manglekuo.com/r/rail-arrivals-board.json"
+        "https://tfl-ts.dev/r/rail-arrivals-board.json"
       ],
       "files": [
         {
@@ -1564,7 +1564,7 @@
         "@types/geojson"
       ],
       "registryDependencies": [
-        "https://tfl.manglekuo.com/r/tfl-colours.json"
+        "https://tfl-ts.dev/r/tfl-colours.json"
       ],
       "files": [
         {
@@ -1664,7 +1664,7 @@
         "@types/geojson"
       ],
       "registryDependencies": [
-        "https://tfl.manglekuo.com/r/tfl-colours.json"
+        "https://tfl-ts.dev/r/tfl-colours.json"
       ],
       "files": [
         {
@@ -1768,8 +1768,8 @@
         "tfl-ts@^2.13.1"
       ],
       "registryDependencies": [
-        "https://tfl.manglekuo.com/r/tfl-colours.json",
-        "https://tfl.manglekuo.com/r/line-badge.json",
+        "https://tfl-ts.dev/r/tfl-colours.json",
+        "https://tfl-ts.dev/r/line-badge.json",
         "button"
       ],
       "files": [

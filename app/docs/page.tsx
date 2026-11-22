@@ -7,6 +7,7 @@ import {
   TflApiKeyHelpLink,
 } from "@/components/tfl-api-key-field"
 import { BrowserWindow } from "@/components/docs/browser-window"
+import { HomeContent } from "@/components/landing/home-content"
 import { DocsVisitBeacon } from "@/components/docs/docs-visit-beacon"
 import { DocsPageHeader } from "@/components/docs/docs-page-header"
 import { DocsReadableWidth } from "@/components/docs/docs-readable-width"
@@ -169,12 +170,12 @@ const StartAction = ({
   href: string
   children: React.ReactNode
 }) => (
-  <Link
-    href={href}
-    className={cn(TEXT_LINK_CLASS, "font-medium text-primary")}
-  >
+  <Link href={href} className={cn(TEXT_LINK_CLASS, "font-medium text-primary")}>
     {children}
-    <ArrowRightIcon className={cn(TEXT_LINK_ICON_CLASS, "ml-1.5")} aria-hidden />
+    <ArrowRightIcon
+      className={cn(TEXT_LINK_ICON_CLASS, "ml-1.5")}
+      aria-hidden
+    />
   </Link>
 )
 
@@ -227,188 +228,201 @@ export default function DocsGetStartedPage() {
   const arrivalsEntry = getDocsEntry("tube-rail-arrivals")!
 
   return (
-    <DocsReadableWidth>
-      <Suspense fallback={null}>
-        <DocsVisitFromLanding />
-      </Suspense>
-      <article className="space-y-12">
-        <DocsPageHeader entry={entry} />
+    <>
+      <DocsReadableWidth>
+        <Suspense fallback={null}>
+          <DocsVisitFromLanding />
+        </Suspense>
+        <article className="space-y-12">
+          <DocsPageHeader entry={entry} />
 
-        <p className="max-w-prose">
-          <StartAction href="/docs/components">View all components</StartAction>
-        </p>
-
-        <section className="space-y-4" aria-labelledby="try-it">
-          <h2 id="try-it" className="sr-only">
-            Try a display
-          </h2>
-          <Suspense fallback={<IntroArrivalsFallback />}>
-            <IntroArrivalsPreview />
-          </Suspense>
-        </section>
-
-        <section className="space-y-3">
-          <h2 id="get-a-key" className="text-lg font-semibold">
-            1. Get a free TfL key from the{" "}
-            <ExternalTextLink href={TFL_API_PORTAL_PRODUCT_URL}>
-              TfL API portal
-            </ExternalTextLink>
-          </h2>
-          <TflApiKeyHelpLink />
-          <SyntaxHighlightedCode
-            code={TFL_KEY_SNIPPET}
-            language="bash"
-            wrapperClassName="mt-0 mb-0"
-          />
-          <p className="max-w-prose text-muted-foreground">
-            Optional. Paste a key here if you want{" "}
-            <Link
-              href="/docs/explorer"
-              className={cn(TEXT_LINK_CLASS, "text-foreground")}
-            >
-              Explorer
-            </Link>{" "}
-            or live examples in these docs. Your browser calls TfL with it. It
-            stays in this browser and is never sent to our server.
+          <p className="max-w-prose">
+            <StartAction href="/docs/components">
+              View all components
+            </StartAction>
           </p>
-          <TflApiKeyField
-            id="docs-tfl-key"
-            className="max-w-md"
-            showHelp={false}
-          />
-        </section>
 
-        <section className="space-y-3">
-          <h2 id="optional-type" className="text-lg font-semibold">
-            2. Set up a typeface (optional)
-          </h2>
-          <p className="max-w-prose text-muted-foreground">
-            Components inherit your app&apos;s font. Johnston needs a{" "}
-            <ExternalTextLink href={TFL_BRAND_LINKS.fontRequests}>
-              licence from TfL
-            </ExternalTextLink>{" "}
-            (see{" "}
-            <Link
-              href="/docs/tfl-licensing"
-              className={cn(TEXT_LINK_CLASS, "text-foreground")}
-            >
-              Licensing and brand use
-            </Link>
-            ). This site uses P22 Underground. Hammersmith One is the free
-            alternative. See{" "}
-            <Link
-              href="/docs/typography"
-              className={cn(TEXT_LINK_CLASS, "text-foreground")}
-            >
-              Typography
-            </Link>
-            .
-          </p>
-        </section>
+          <section className="space-y-4" aria-labelledby="try-it">
+            <h2 id="try-it" className="sr-only">
+              Try a display
+            </h2>
+            <Suspense fallback={<IntroArrivalsFallback />}>
+              <IntroArrivalsPreview />
+            </Suspense>
+          </section>
 
-        <section className="space-y-3">
-          <h2 id="install-and-import" className="text-lg font-semibold">
-            3. Install and render
-          </h2>
-          <p className="max-w-prose text-muted-foreground">
-            Start from a React app with{" "}
-            <ExternalTextLink href="https://ui.shadcn.com/docs">
-              shadcn already initialised
-            </ExternalTextLink>
-            . The command copies the board source into your repo and installs{" "}
-            <ExternalTextLink href="https://www.npmjs.com/package/tfl-ts">
-              tfl-ts
-            </ExternalTextLink>
-            . Use the React tab in Vite. Use a Next.js tab if you want the key
-            to stay on the server.
-          </p>
-          <InstallCommand registryUrl={arrivalsEntry.registryUrl!} />
-          <Tabs defaultValue="react" className="gap-2">
-            <TabsList variant="line" className="h-8">
-              <TabsTrigger value="react">React</TabsTrigger>
-              <TabsTrigger value="action">Next.js (Server Action)</TabsTrigger>
-              <TabsTrigger value="route">Next.js (Route Handler)</TabsTrigger>
-            </TabsList>
-            <TabsContent value="react" className="space-y-3">
-              <p className="max-w-prose text-sm text-muted-foreground">
-                (Quick and easy) Calls TfL from the browser, AKA client side.
-                Anyone can right click dev tools and see your TfL key.
-              </p>
-              <SyntaxHighlightedCode
-                code={ARRIVALS_REACT_SNIPPET}
-                language="tsx"
-                wrapperClassName="mt-0 mb-0"
-              />
-            </TabsContent>
-            <TabsContent value="action" className="space-y-3">
-              <p className="max-w-prose text-sm text-muted-foreground">
-                (Recommended) Use Next.js&apos;s{" "}
-                <Link
-                  href="https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions"
-                  className={cn(TEXT_LINK_CLASS, "text-foreground")}
-                >
-                  Server Actions
-                </Link>{" "}
-                to call TfL from the server. This is more secure as the key
-                stays on the server. To fully prevent abuse, consider
-                implementing IP whitelisting or API key authentication.
-              </p>
-              <div className="space-y-1.5">
-                <p className="text-xs text-muted-foreground">app/actions.ts</p>
-                <SyntaxHighlightedCode
-                  code={ARRIVALS_ACTION_SNIPPET}
-                  language="ts"
-                  wrapperClassName="mt-0 mb-0"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <p className="text-xs text-muted-foreground">app/page.tsx</p>
-                <SyntaxHighlightedCode
-                  code={ARRIVALS_ACTION_PAGE_SNIPPET}
-                  language="tsx"
-                  wrapperClassName="mt-0 mb-0"
-                />
-              </div>
-            </TabsContent>
-            <TabsContent value="route" className="space-y-3">
-              <p className="max-w-prose text-sm text-muted-foreground">
-                This method exposes an API endpoint (
-                <code className="text-xs">/api/arrivals</code>) anyone can call.
-                The example adds CORS. To fully prevent abuse, consider IP
-                whitelisting or API key authentication.
-              </p>
-              <div className="space-y-1.5">
-                <p className="text-xs text-muted-foreground">
-                  app/api/arrivals/route.ts
+          <section className="space-y-3">
+            <h2 id="get-a-key" className="text-lg font-semibold">
+              1. Get a free TfL key from the{" "}
+              <ExternalTextLink href={TFL_API_PORTAL_PRODUCT_URL}>
+                TfL API portal
+              </ExternalTextLink>
+            </h2>
+            <TflApiKeyHelpLink />
+            <SyntaxHighlightedCode
+              code={TFL_KEY_SNIPPET}
+              language="bash"
+              wrapperClassName="mt-0 mb-0"
+            />
+            <p className="max-w-prose text-muted-foreground">
+              Optional. Paste a key here if you want{" "}
+              <Link
+                href="/docs/explorer"
+                className={cn(TEXT_LINK_CLASS, "text-foreground")}
+              >
+                Explorer
+              </Link>{" "}
+              or live examples in these docs. Your browser calls TfL with it. It
+              stays in this browser and is never sent to our server.
+            </p>
+            <TflApiKeyField
+              id="docs-tfl-key"
+              className="max-w-md"
+              showHelp={false}
+            />
+          </section>
+
+          <section className="space-y-3">
+            <h2 id="optional-type" className="text-lg font-semibold">
+              2. Set up a typeface (optional)
+            </h2>
+            <p className="max-w-prose text-muted-foreground">
+              Components inherit your app&apos;s font. Johnston needs a{" "}
+              <ExternalTextLink href={TFL_BRAND_LINKS.fontRequests}>
+                licence from TfL
+              </ExternalTextLink>{" "}
+              (see{" "}
+              <Link
+                href="/docs/tfl-licensing"
+                className={cn(TEXT_LINK_CLASS, "text-foreground")}
+              >
+                Licensing and brand use
+              </Link>
+              ). This site uses P22 Underground. Hammersmith One is the free
+              alternative. See{" "}
+              <Link
+                href="/docs/typography"
+                className={cn(TEXT_LINK_CLASS, "text-foreground")}
+              >
+                Typography
+              </Link>
+              .
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 id="install-and-import" className="text-lg font-semibold">
+              3. Install and render
+            </h2>
+            <p className="max-w-prose text-muted-foreground">
+              Start from a React app with{" "}
+              <ExternalTextLink href="https://ui.shadcn.com/docs">
+                shadcn already initialised
+              </ExternalTextLink>
+              . The command copies the board source into your repo and installs{" "}
+              <ExternalTextLink href="https://www.npmjs.com/package/tfl-ts">
+                tfl-ts
+              </ExternalTextLink>
+              . Use the React tab in Vite. Use a Next.js tab if you want the key
+              to stay on the server.
+            </p>
+            <InstallCommand registryUrl={arrivalsEntry.registryUrl!} />
+            <Tabs defaultValue="react" className="gap-2">
+              <TabsList variant="line" className="h-8">
+                <TabsTrigger value="react">React</TabsTrigger>
+                <TabsTrigger value="action">
+                  Next.js (Server Action)
+                </TabsTrigger>
+                <TabsTrigger value="route">Next.js (Route Handler)</TabsTrigger>
+              </TabsList>
+              <TabsContent value="react" className="space-y-3">
+                <p className="max-w-prose text-sm text-muted-foreground">
+                  (Quick and easy) Calls TfL from the browser, AKA client side.
+                  Anyone can right click dev tools and see your TfL key.
                 </p>
                 <SyntaxHighlightedCode
-                  code={ARRIVALS_ROUTE_SNIPPET}
-                  language="ts"
-                  wrapperClassName="mt-0 mb-0"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <p className="text-xs text-muted-foreground">app/page.tsx</p>
-                <SyntaxHighlightedCode
-                  code={ARRIVALS_ROUTE_PAGE_SNIPPET}
+                  code={ARRIVALS_REACT_SNIPPET}
                   language="tsx"
                   wrapperClassName="mt-0 mb-0"
                 />
-              </div>
-            </TabsContent>
-          </Tabs>
-          <p className="text-sm text-muted-foreground">
-            Still having trouble? See{" "}
-            <Link
-              href="/docs/troubleshoot"
-              className={cn(TEXT_LINK_CLASS, "text-foreground")}
-            >
-              Troubleshoot
-            </Link>
-            .
-          </p>
-        </section>
-      </article>
-    </DocsReadableWidth>
+              </TabsContent>
+              <TabsContent value="action" className="space-y-3">
+                <p className="max-w-prose text-sm text-muted-foreground">
+                  (Recommended) Use Next.js&apos;s{" "}
+                  <Link
+                    href="https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions"
+                    className={cn(TEXT_LINK_CLASS, "text-foreground")}
+                  >
+                    Server Actions
+                  </Link>{" "}
+                  to call TfL from the server. This is more secure as the key
+                  stays on the server. To fully prevent abuse, consider
+                  implementing IP whitelisting or API key authentication.
+                </p>
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground">
+                    app/actions.ts
+                  </p>
+                  <SyntaxHighlightedCode
+                    code={ARRIVALS_ACTION_SNIPPET}
+                    language="ts"
+                    wrapperClassName="mt-0 mb-0"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground">app/page.tsx</p>
+                  <SyntaxHighlightedCode
+                    code={ARRIVALS_ACTION_PAGE_SNIPPET}
+                    language="tsx"
+                    wrapperClassName="mt-0 mb-0"
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="route" className="space-y-3">
+                <p className="max-w-prose text-sm text-muted-foreground">
+                  This method exposes an API endpoint (
+                  <code className="text-xs">/api/arrivals</code>) anyone can
+                  call. The example adds CORS. To fully prevent abuse, consider
+                  IP whitelisting or API key authentication.
+                </p>
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground">
+                    app/api/arrivals/route.ts
+                  </p>
+                  <SyntaxHighlightedCode
+                    code={ARRIVALS_ROUTE_SNIPPET}
+                    language="ts"
+                    wrapperClassName="mt-0 mb-0"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground">app/page.tsx</p>
+                  <SyntaxHighlightedCode
+                    code={ARRIVALS_ROUTE_PAGE_SNIPPET}
+                    language="tsx"
+                    wrapperClassName="mt-0 mb-0"
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+            <p className="text-sm text-muted-foreground">
+              Still having trouble? See{" "}
+              <Link
+                href="/docs/troubleshoot"
+                className={cn(TEXT_LINK_CLASS, "text-foreground")}
+              >
+                Troubleshoot
+              </Link>
+              .
+            </p>
+          </section>
+        </article>
+      </DocsReadableWidth>
+      {/* The showcase that used to be the homepage; `/` is now search plus the live Board. Uncounted: the hero test has ended. */}
+      {/* `docs-showcase` fits the scene's full-bleed stage to this column (app/globals.css). */}
+      <section aria-label="Showcase" className="docs-showcase min-w-0 pt-16">
+        <HomeContent hero={{ variant: "a", counted: false }} />
+      </section>
+    </>
   )
 }

@@ -8,7 +8,7 @@
     "@types/geojson"
   ],
   "registryDependencies": [
-    "https://tfl.manglekuo.com/r/tfl-colours.json"
+    "https://tfl-ts.dev/r/tfl-colours.json"
   ],
   "files": [
     {

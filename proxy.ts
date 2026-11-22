@@ -12,12 +12,6 @@ import {
   MARKDOWN_RESPONSE_HEADERS,
   markdownNotFound,
 } from "@/lib/agent/machine-content"
-import { assignHero } from "@/lib/landing/hero-precompute"
-import {
-  HERO_AB_PATH,
-  HERO_COOKIE_MAX_AGE_SECONDS,
-  HERO_VISITOR_COOKIE,
-} from "@/lib/landing/hero-experiment"
 import {
   EXPLORER_PATH,
   legacyExplorerRedirectHref,
@@ -37,41 +31,6 @@ const continueAsHtml = (includeHomepageDiscovery = false) => {
         ? `${HOMEPAGE_DISCOVERY_LINK}, ${existing}`
         : HOMEPAGE_DISCOVERY_LINK
     )
-  }
-  return response
-}
-
-/**
- * Homepage hero test (flags SDK precompute pattern). Rewrites `/` to the
- * statically generated `/hero-ab/<code>` permutation, so the page stays
- * static: no flicker, no layout shift, no per-request render. Assignment is
- * sticky through the `tfl_hero_vid` cookie; `?hero=a|b|c` and crawlers get
- * an uncounted page and no cookie. Applies to RSC fetches too, so client
- * navigation back to `/` shows the same variant as a fresh load.
- */
-const rewriteHomepage = async (
-  request: NextRequest,
-  includeHomepageDiscovery: boolean
-) => {
-  const assignment = await assignHero(request)
-  const url = request.nextUrl.clone()
-  url.pathname = `${HERO_AB_PATH}/${assignment.code}`
-  const response = NextResponse.rewrite(url)
-  response.headers.set(
-    "Vary",
-    mergeVary(response.headers.get("Vary"), "Accept")
-  )
-  if (includeHomepageDiscovery) {
-    response.headers.set("Link", HOMEPAGE_DISCOVERY_LINK)
-  }
-  if (assignment.newVisitorId) {
-    response.cookies.set(HERO_VISITOR_COOKIE, assignment.newVisitorId, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: HERO_COOKIE_MAX_AGE_SECONDS,
-    })
   }
   return response
 }
@@ -118,7 +77,8 @@ export async function proxy(request: NextRequest) {
     if (request.method !== "GET" && request.method !== "HEAD") {
       return NextResponse.next()
     }
-    return rewriteHomepage(request, isRepresentation)
+    // `/` is the product (search plus live Board); the hero A/B rewrite has ended.
+    return continueAsHtml(isRepresentation)
   }
 
   if (hasUnknownTopLevelPath(pathname)) {
@@ -162,7 +122,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|google[^/]+\\.html).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|google[^/]+\\.html).*)"],
 }

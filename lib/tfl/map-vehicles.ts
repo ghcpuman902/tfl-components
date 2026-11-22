@@ -57,6 +57,8 @@ export type VehiclePosition = {
   remainingKm?: number
   /** Epoch ms when this hop's remaining km first hit 0. */
   arrivedAtMs?: number
+  /** Position is estimated (no location text for this line); the map tags it "Beta". */
+  beta?: boolean
 }
 
 export type VehiclePointProperties = {
@@ -72,6 +74,8 @@ export type VehicleSegmentProperties = {
   lineId: string
   destinationName: string
   widthScale: number
+  /** Present (true) only on estimated vehicles. */
+  beta?: true
 }
 
 export const vehiclesToGeoJSON = (
@@ -116,6 +120,7 @@ export const vehiclesToSegmentGeoJSON = (
         lineId: vehicle.lineId,
         destinationName: vehicle.destinationName,
         widthScale: vehicleStrokeScale(vehicle.lineId),
+        ...(vehicle.beta ? { beta: true as const } : {}),
       },
       geometry: orientLineToBearing(
         segmentAroundPoint({

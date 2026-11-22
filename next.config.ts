@@ -2,6 +2,7 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 import type { NextConfig } from "next"
 import createMDX from "@next/mdx"
+import { domainRedirects } from "./lib/domain-redirect"
 
 const dir = path.dirname(fileURLToPath(import.meta.url))
 const nodeModuleShim = path.join(dir, "lib/shims/node-module.ts")
@@ -10,6 +11,10 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   // Takumi's native binding must stay external so Next does not bundle it.
   serverExternalPackages: ["@takumi-rs/core"],
+  // `?replay=` reads the recorded fixture from disk at request time.
+  outputFileTracingIncludes: {
+    "/": ["./lib/tfl/fixtures/homepage-live/**"],
+  },
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   experimental: {
     mdxRs: {
@@ -49,6 +54,11 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Old address → tfl-ts.dev. Empty unless DOMAIN_REDIRECT=1 at build.
+      ...domainRedirects({
+        DOMAIN_REDIRECT: process.env.DOMAIN_REDIRECT,
+        DOMAIN_REDIRECT_HOSTS: process.env.DOMAIN_REDIRECT_HOSTS,
+      }),
       // —— J6 docs chrome ——
       {
         source: "/installation",
