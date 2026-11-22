@@ -49,7 +49,8 @@ const ROW_RULE = 2
 
 // A: bound heading + arrival rows + "Also here".
 const DIR_SIZE = 45 // = LINE_TITLE_SIZE (Board 1:1)
-const DIR_H = 63
+const DIR_PAD_TOP = 10 // Board ~10px ink under bar into dir TILE (dpr=1)
+const DIR_H = DIR_PAD_TOP + 50 // fontSize 45 + pad; face() uses lineHeight 1
 const ROW_H = 72
 const DEST_SIZE = 44
 const TIME_SIZE = 52
@@ -323,18 +324,17 @@ const Subtitle = ({
 )
 
 /**
- * A: Board arrivals rhythm — copied from source, not redrawn:
- *   - line-name-demo.tsx L8–42 / StatusLineHeader (tube-status-board.tsx L188–218):
- *     `pb-2 text-xl leading-7 font-semibold` + `h-1` LineColorBar.
- *   - arrivals-bound-group.tsx L1176–1182: direction label is ALSO
- *     `text-xl leading-7 font-semibold text-muted-foreground` (same size as line title).
- * Scale ×2.25 for 1200 OG vs ~400 Board column (20→45, 28→63, 8→18, 4→9).
- * Title:direction ratio = 1:1 on the Board — do not shrink the direction label.
+ * A line header — live Board arrivals TILE gaps (not docs pb-2 stack).
+ * Measured /docs/tube-rail-arrivals dpr=1 (arrivals-bound-group.tsx
+ * L1266–1316 + L1176–1182): titleBottom→barTop=8, barH=4, bar→dirRow=0,
+ * dir text top ≈10 into its 48px TILE. Scale ×2.25 → 18 / 9 / 0 / 22.
+ * Takumi top-aligns flex children, so paddings are explicit (not alignItems).
  */
 const LINE_TITLE_SIZE = 45 // text-xl × 2.25
-const LINE_TITLE_LEADING = 63 // leading-7 × 2.25
-const LINE_TITLE_PB = 18 // pb-2 × 2.25
-const LINE_BAR_H = 9 // h-1 × 2.25
+const LINE_TITLE_PAD_TOP = 18 // Board centred pad 8 × 2.25
+/** Ink→bar target 18 (Board 8×2.25); Hammersmith ink overshoots fontSize by ~10. */
+const LINE_TITLE_PAD_BOTTOM = 8
+const LINE_BAR_H = 9 // border-b-4 × 2.25
 
 const OgLineTitle = ({ line }: { line: BoardShareOgLine }) => (
   <div
@@ -345,6 +345,11 @@ const OgLineTitle = ({ line }: { line: BoardShareOgLine }) => (
       marginTop: SUB_GAP,
       width: "100%",
       minWidth: 0,
+      // Colour bar as border-bottom of the title box (Board header border-b-4).
+      paddingTop: LINE_TITLE_PAD_TOP,
+      paddingBottom: LINE_TITLE_PAD_BOTTOM,
+      borderBottom: `${LINE_BAR_H}px solid ${line.color}`,
+      boxSizing: "border-box",
     }}
   >
     <div
@@ -352,7 +357,7 @@ const OgLineTitle = ({ line }: { line: BoardShareOgLine }) => (
         display: "flex",
         fontFamily: FACE,
         fontSize: LINE_TITLE_SIZE,
-        lineHeight: `${LINE_TITLE_LEADING}px`,
+        lineHeight: 1, // pad alone sets title→bar; Board ink→bar=8 ×2.25
         fontWeight: 600,
         color: line.color,
         fontSynthesis: "none",
@@ -360,20 +365,11 @@ const OgLineTitle = ({ line }: { line: BoardShareOgLine }) => (
         justifyContent: "flex-start",
         textAlign: "left",
         width: "100%",
-        paddingBottom: LINE_TITLE_PB,
         overflow: "hidden",
       }}
     >
       {line.name}
     </div>
-    <div
-      style={{
-        width: "100%",
-        height: LINE_BAR_H,
-        backgroundColor: line.color,
-        flexShrink: 0,
-      }}
-    />
   </div>
 )
 
@@ -444,7 +440,19 @@ const RailArrivals = ({
       <OgLineTitle line={live.line} />
       {live.direction ? (
         <Rule height={DIR_H}>
-          <div style={face(DIR_SIZE, MUTED)}>{live.direction}</div>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              paddingTop: DIR_PAD_TOP,
+              ...oneLine,
+              flex: 1,
+              minWidth: 0,
+              overflow: "hidden",
+            }}
+          >
+            <div style={face(DIR_SIZE, MUTED)}>{live.direction}</div>
+          </div>
         </Rule>
       ) : null}
       {live.rows.map((row, i) => (
