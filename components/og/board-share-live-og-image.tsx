@@ -166,6 +166,29 @@ const Stack = ({ children }: { children: ReactNode }) => (
   <div style={{ display: "flex", flexDirection: "column" }}>{children}</div>
 )
 
+/** Status list separators: between rows only — never under the station header. */
+const StatusRule = ({
+  height,
+  children,
+  first = false,
+}: {
+  height: number
+  children: ReactNode
+  first?: boolean
+}) => (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      height,
+      // Between-row ink only — first row has no top rule under the station header.
+      borderTop: first ? "none" : `${ROW_RULE}px solid ${RULE}`,
+    }}
+  >
+    {children}
+  </div>
+)
+
 const Rule = ({
   height,
   children,
@@ -188,7 +211,15 @@ const Rule = ({
 )
 
 const StationHeader = ({ name }: { name: string }) => (
-  <div style={{ display: "flex", alignItems: "center" }}>
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      borderBottom: "none",
+      borderTop: "none",
+      boxShadow: "none",
+    }}
+  >
     {/* eslint-disable-next-line @next/next/no-img-element */}
     <img
       alt=""
@@ -416,12 +447,20 @@ const RailStatus = ({
   return (
     <Stack>
       <StationHeader name={stationName} />
-      <div style={{ height: SUB_GAP, flexShrink: 0 }} />
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          marginTop: SUB_GAP,
+          borderTop: "none",
+          borderBottom: "none",
+        }}
+      >
       {rows.map((row, i) => (
-        <Rule
+        <StatusRule
           key={row.id}
           height={STATUS_H}
-          last={!live.next && i === rows.length - 1}
+          first={i === 0}
         >
           <Chip
             lineId={row.id}
@@ -442,10 +481,10 @@ const RailStatus = ({
           >
             {row.statusText}
           </div>
-        </Rule>
+        </StatusRule>
       ))}
       {live.next ? (
-        <Rule height={NEXT_H} last>
+        <StatusRule height={NEXT_H} first={rows.length === 0}>
           <Chip
             lineId={live.next.line.id}
             label={ogLineLabel(live.next.line.id, "status")}
@@ -461,8 +500,9 @@ const RailStatus = ({
               live.next.minutes === 0 ? "due" : `in ${live.next.minutes} min`
             }`}
           </div>
-        </Rule>
+        </StatusRule>
       ) : null}
+      </div>
     </Stack>
   )
 }
