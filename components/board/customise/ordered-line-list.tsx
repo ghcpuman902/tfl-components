@@ -48,6 +48,7 @@ export const OrderedLineList = ({
   hidden,
   footer,
   flush = false,
+  align = "center",
 }: {
   label: string
   ids: readonly string[]
@@ -59,7 +60,10 @@ export const OrderedLineList = ({
   /** Between the list and the Hidden zone. */
   footer?: ReactNode
   flush?: boolean
+  /** `top`: rows whose body can wrap keep every part on the first line, with a tighter left side. */
+  align?: "center" | "top"
 }) => {
+  const top = align === "top"
   const zoneRef = useRef<HTMLDivElement | null>(null)
   const { listRef, row, press, grip, rowMotion, dropping } =
     useDragOrder<HTMLOListElement>({
@@ -87,7 +91,8 @@ export const OrderedLineList = ({
               ref={row(id)}
               {...press(id)}
               className={cn(
-                "flex min-h-11 items-center gap-1 border-b border-border last:border-b-0",
+                "flex min-h-11 gap-1 border-b border-border last:border-b-0",
+                top ? "items-start" : "items-center",
                 PRESS_SURFACE,
                 motion.className
               )}
@@ -96,12 +101,25 @@ export const OrderedLineList = ({
               <DragGrip
                 name={name}
                 {...grip(id)}
-                className={flush ? "pointer-coarse:w-0" : undefined}
+                className={cn(
+                  flush && "pointer-coarse:w-0",
+                  top && "items-start [&>button]:h-11"
+                )}
               />
-              <span className="w-6 shrink-0 text-right text-sm text-muted-foreground tabular-nums">
+              <span
+                className={cn(
+                  "shrink-0 text-right text-sm text-muted-foreground tabular-nums",
+                  top ? "w-4 pt-3 leading-5" : "w-6"
+                )}
+              >
                 {index + 1}
               </span>
-              <span className="flex min-w-0 flex-1 items-center gap-2 px-1">
+              <span
+                className={cn(
+                  "flex min-w-0 flex-1 gap-2",
+                  top ? "items-start py-2.5 pl-1" : "items-center px-1"
+                )}
+              >
                 {body}
               </span>
               {onTop ? (
@@ -150,9 +168,17 @@ export const OrderedLineList = ({
                   return (
                     <li
                       key={id}
-                      className="flex min-h-11 items-center gap-1 border-b border-border last:border-b-0"
+                      className={cn(
+                        "flex min-h-11 gap-1 border-b border-border last:border-b-0",
+                        top ? "items-start" : "items-center"
+                      )}
                     >
-                      <span className="flex min-w-0 flex-1 items-center gap-2 opacity-60">
+                      <span
+                        className={cn(
+                          "flex min-w-0 flex-1 gap-2 opacity-60",
+                          top ? "items-start py-2.5" : "items-center"
+                        )}
+                      >
                         {body}
                       </span>
                       <button

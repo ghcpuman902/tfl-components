@@ -44,7 +44,7 @@ const StopRow = ({
   onRemove: () => void
 }) => (
   <li className="flex min-h-14 items-start gap-1 border-b border-border py-2.5 last:border-b-0">
-    <span className="flex min-w-0 flex-1 items-start gap-3">
+    <span className="flex min-w-0 flex-1 items-start gap-2">
       <span className="min-w-0 flex-1">
         <span className="flex min-w-0 items-center text-lg leading-snug">
           <span className="truncate">{stop?.name ?? " "}</span>
@@ -60,7 +60,7 @@ const StopRow = ({
           {stop?.context ?? " "}
         </span>
       </span>
-      <span className="flex max-w-[45%] shrink-0 flex-wrap justify-end gap-1">
+      <span className="flex max-w-[45%] shrink-0 flex-wrap justify-end gap-1 pt-0.5">
         {dayRoutes(stop?.routes ?? []).slice(0, 6).map((route) => (
           <BusNumberChip key={route} label={route} />
         ))}
@@ -123,7 +123,8 @@ export const BusEditor = ({ api }: { api: CustomiseController }) => {
     body: (
       <>
         <BusNumberChip label={route} />
-        <span className="min-w-0 truncate text-sm text-muted-foreground">
+        {/* Wraps under itself, so the chip and the first line stay at the row's top. */}
+        <span className="min-w-0 flex-1 text-sm leading-5 text-pretty text-muted-foreground">
           {arrivals.data.find((row) => sameRoute(row, route))?.destinationName}
         </span>
       </>
@@ -186,6 +187,7 @@ export const BusEditor = ({ api }: { api: CustomiseController }) => {
             label="Routes, in board order"
             ids={on}
             flush
+            align="top"
             item={item}
             onPlace={(route, index) => save(placeLine(on, route, index))}
             onTop={(route) => save(moveLineToTop(on, route))}

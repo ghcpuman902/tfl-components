@@ -97,7 +97,7 @@ import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
 import { BOARD_SETTINGS } from "@/lib/tfl/board-settings"
 import {
   busArrivalsRequest,
-  filterBusRoutes,
+  orderBusPanelRows,
   parseBusStopIds,
 } from "@/lib/tfl/board-bus-stops"
 import {
@@ -906,10 +906,16 @@ export const BoardDisplay = ({
     stopId,
   ])
 
+  // Route sections in the editor's order: `b.routes` as dragged, else by `b.stop` order.
   const busData = useMemo(
-    () => filterBusRoutes(busArrivals.data, config.bus.routes),
-    [busArrivals.data, config.bus.routes]
+    () => orderBusPanelRows(busArrivals.data, busStopIds, config.bus.routes),
+    [busArrivals.data, busStopIds, config.bus.routes]
   )
+  // The header names the first stop in `b.stop` order, not whichever stop's bus is soonest.
+  const busStopName =
+    busArrivals.data.find((row) => row.naptanId === busStopId)?.stationName ??
+    busArrivals.data[0]?.stationName ??
+    "Bus"
 
   const statusData = useMemo(() => {
     const lines = config.status.lines
@@ -1063,12 +1069,13 @@ export const BoardDisplay = ({
     if (kind === "bus") {
       return (
         <BusArrivalsBoard
-          stopName={busArrivals.data[0]?.stationName ?? "Bus"}
+          stopName={busStopName}
           stopPointId={busStopId || undefined}
           headingLevel={2}
           data={busData}
           now={busArrivals.fetchedAt ?? undefined}
-          groupBy={config.bus.routes?.length ? "none" : "route"}
+          groupBy="route"
+          groupSortBy="source"
           pageSize={config.bus.rows ?? (isGlance ? 3 : undefined)}
           behaviour={panelBehaviour}
           pinFirst={arrivalsProps.pinFirst}

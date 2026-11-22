@@ -2,7 +2,9 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
   busArrivalsRequest,
+  busPanelRouteOrder,
   mergeArrivalsByTime,
+  orderBusPanelRows,
   parseBusStopIds,
   serializeBusStopIds,
 } from "./board-bus-stops"
@@ -45,6 +47,38 @@ describe("b.stop as a list", () => {
     assert.deepEqual(
       merged.map((row) => row.id),
       ["c", "a", "b"]
+    )
+  })
+})
+
+describe("Board bus panel follows the customise editor's order", () => {
+  // Soonest first, as the merged read gives them.
+  const rows = [
+    { id: "1", naptanId: "490G2", lineId: "73", lineName: "73" },
+    { id: "2", naptanId: "490G1", lineId: "390", lineName: "390" },
+    { id: "3", naptanId: "490G2", lineId: "8", lineName: "8" },
+    { id: "4", naptanId: "490G1", lineId: "25", lineName: "25" },
+    { id: "5", naptanId: "490G2", lineId: "73", lineName: "73" },
+  ]
+
+  it("with no b.routes, the first stop's routes lead, each stop's in number order", () => {
+    assert.deepEqual(busPanelRouteOrder(rows, ["490G1", "490G2"], undefined), ["25", "390", "8", "73"])
+    assert.deepEqual(busPanelRouteOrder(rows, ["490G2", "490G1"], undefined), ["8", "73", "25", "390"])
+  })
+
+  it("b.routes in its dragged order wins and drops the routes it leaves out", () => {
+    const ordered = orderBusPanelRows(rows, ["490G1", "490G2"], ["73", "25"])
+    assert.deepEqual(
+      ordered.map((row) => row.id),
+      ["1", "5", "4"]
+    )
+  })
+
+  it("keeps each route's own rows in their arrival order", () => {
+    const ordered = orderBusPanelRows(rows, ["490G2", "490G1"], undefined)
+    assert.deepEqual(
+      ordered.map((row) => row.id),
+      ["3", "1", "5", "4", "2"]
     )
   })
 })
