@@ -46,7 +46,6 @@ const TITLE_SIZE = 68
 const SUB_SIZE = 38
 const SUB_GAP = 16
 const SUB_PAD = 12
-const SUB_RULE = 6
 const ROW_RULE = 2
 
 // A: bound heading + arrival rows + "Also here".
@@ -219,6 +218,7 @@ const StationHeader = ({ name }: { name: string }) => (
   </div>
 )
 
+/** Section label with no rule — Mangle: no black bar on any OG card. */
 const Subtitle = ({
   children,
   marginTop = SUB_GAP,
@@ -232,7 +232,6 @@ const Subtitle = ({
       ...oneLine,
       marginTop,
       paddingBottom: SUB_PAD,
-      borderBottom: `${SUB_RULE}px solid ${INK}`,
       overflow: "hidden",
     }}
   >
@@ -241,29 +240,47 @@ const Subtitle = ({
 )
 
 /**
- * A: mirrors docs `BoardLineHeader` / status `StatusLineHeader` —
- * centred line name in brand colour + full-width coloured underline.
- * Not a filled chip and not a black rule.
+ * A: exact BoardLineHeader geometry — copied from source, not redrawn:
+ *   - components/docs/demos/line-name-demo.tsx L8–42 (BoardLineHeader):
+ *     left-aligned (default block) `pb-2 text-xl leading-7 font-semibold`
+ *     + full-width `h-1` LineColorBar row. No text-center / justify-center.
+ *   - registry/tfl/status/tube-status-board.tsx L188–218 (StatusLineHeader):
+ *     `text-xl leading-7 font-semibold` flex-1 + absolute bottom `h-1` LineColorBar.
+ *   - registry/tfl/arrivals/arrivals-bound-group.tsx L1266–1316:
+ *     same type tokens; colour underline via border-b-4 / LineColorBar (not black).
+ * Scaled ×3 for the 1200 OG canvas vs ~320–400 Board column (20→60, 28→84, 8→24, 4→12).
+ * No centre alignment. No black/neutral rule under station or bus titles on A/B/C.
  */
-const LINE_BAR_H = 8
+const LINE_TITLE_SIZE = 60 // text-xl × 3
+const LINE_TITLE_LEADING = 84 // leading-7 × 3
+const LINE_TITLE_PB = 24 // pb-2 × 3
+const LINE_BAR_H = 12 // h-1 × 3
 
 const OgLineTitle = ({ line }: { line: BoardShareOgLine }) => (
   <div
     style={{
       display: "flex",
       flexDirection: "column",
+      alignItems: "stretch",
       marginTop: SUB_GAP,
       width: "100%",
+      minWidth: 0,
     }}
   >
     <div
       style={{
-        ...face(SUB_SIZE, line.color),
+        display: "flex",
+        fontFamily: FACE,
+        fontSize: LINE_TITLE_SIZE,
+        lineHeight: `${LINE_TITLE_LEADING}px`,
+        fontWeight: 600,
+        color: line.color,
+        fontSynthesis: "none",
         ...oneLine,
-        justifyContent: "center",
-        textAlign: "center",
+        justifyContent: "flex-start",
+        textAlign: "left",
         width: "100%",
-        paddingBottom: SUB_PAD,
+        paddingBottom: LINE_TITLE_PB,
         overflow: "hidden",
       }}
     >
@@ -278,18 +295,6 @@ const OgLineTitle = ({ line }: { line: BoardShareOgLine }) => (
       }}
     />
   </div>
-)
-
-/** Heavy rule only — B/C drop their old text headings. */
-const HeaderRule = ({ marginTop = SUB_GAP }: { marginTop?: number }) => (
-  <div
-    style={{
-      marginTop,
-      borderBottom: `${SUB_RULE}px solid ${INK}`,
-      height: 0,
-      flexShrink: 0,
-    }}
-  />
 )
 
 const TimeRow = ({
@@ -411,7 +416,7 @@ const RailStatus = ({
   return (
     <Stack>
       <StationHeader name={stationName} />
-      <HeaderRule />
+      <div style={{ height: SUB_GAP, flexShrink: 0 }} />
       {rows.map((row, i) => (
         <Rule
           key={row.id}
@@ -470,12 +475,12 @@ const Bus = ({ live }: { live: BoardShareOgBus }) => (
         ...face(fitSize(live.title, BUS_TITLE_SIZE, CONTENT_W)),
         ...oneLine,
         marginTop: KICKER_GAP,
+        marginBottom: BUS_SUB_GAP,
         overflow: "hidden",
       }}
     >
       {live.title}
     </div>
-    <HeaderRule marginTop={BUS_SUB_GAP} />
     {live.rows.map((row, i) => (
       <TimeRow
         key={`${row.route}-${i}`}
