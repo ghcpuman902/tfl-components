@@ -7,7 +7,7 @@ import {
   type BranchStripLabelPlacement,
   type BranchStripMetrics,
 } from "@/lib/tfl/branch-strip-layout"
-import type { LineSchematic } from "@/lib/tfl/line-schematic"
+import { schematicBounds, type LineSchematic } from "@/lib/tfl/line-schematic"
 import {
   layoutLineSchematic,
   type SchematicLayout,
@@ -78,7 +78,18 @@ export const prepareBranchStripView = (
     segmentStates,
     mono = false,
   } = props
-  const metrics = branchStripMetrics(orientation, xProp)
+  // Single-corridor strips (river routes) have room to widen their labels;
+  // branched lines keep the established widths so their strips don't grow.
+  const bounds = schematicBounds(schematic)
+  const metrics = branchStripMetrics(
+    orientation,
+    xProp,
+    bounds.minLane === bounds.maxLane
+      ? schematic.nodes
+          .filter((node) => node.kind !== "virtual")
+          .map((node) => node.name)
+      : undefined
+  )
   const monoLayers = mono
     ? scaleMonoLayers(resolveMonoLineStyle(schematic.lineId), metrics.x)
     : null
