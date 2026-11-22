@@ -1,6 +1,13 @@
 /**
  * Live data for a short-link share card: the Board's first panel, read from
- * the same shared caches the Board polls. Any TfL failure falls back to the
+ * the same shared caches the Board polls.
+ *
+ * - rail with trains → A (`rail-arrivals`)
+ * - rail without trains → B (`rail-status`, line status + one next train)
+ * - bus → C (`bus`)
+ * - cycle → dock rows
+ *
+ * Anything else, or a TfL failure with nothing to show, falls back to the
  * static station card instead of failing the image.
  */
 
@@ -11,6 +18,16 @@ import {
   type BoardShareOgModel,
 } from "@/lib/og/board-share-og"
 import {
+  OG_LIVE_ROWS,
+  pickNextTrain,
+  pickRailArrivals,
+  toBusLive,
+  toStatusRows,
+  type BoardShareOgBus,
+  type BoardShareOgRailArrivals,
+  type BoardShareOgRailStatus,
+} from "@/lib/og/board-share-live-og-rows"
+import {
   BOARD_LIVE_DOCK_LIMIT,
   isBoardBikePointId,
   isBoardStopId,
@@ -20,8 +37,18 @@ import { getCachedStopArrivalsState } from "@/lib/tfl/cached-stop-arrivals"
 import { getCachedBikePointsState } from "@/lib/tfl/cycle-hire-data"
 import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types"
 import type { BoardConfig } from "@/lib/tfl/board-url-state"
+import { getCachedLineStatuses } from "@/lib/tfl/status-data"
 
-export const OG_LIVE_ROWS = 3
+export { OG_LIVE_ROWS }
+export type {
+  BoardShareOgBus,
+  BoardShareOgBusRow,
+  BoardShareOgNextTrain,
+  BoardShareOgRailArrivals,
+  BoardShareOgRailStatus,
+  BoardShareOgStatusRow,
+  BoardShareOgTimeRow,
+} from "@/lib/og/board-share-live-og-rows"
 
 export type BoardShareOgDockRow = {
   name: string
@@ -31,17 +58,14 @@ export type BoardShareOgDockRow = {
   total: number
 }
 
-export type BoardShareOgArrivalRow = {
-  lineId: string
-  lineName: string
-  destination: string
-  minutes: number
-}
+export type BoardShareOgCycle = { kind: "cycle"; rows: BoardShareOgDockRow[] }
 
 export type BoardShareLiveOgModel = BoardShareOgModel & {
   live:
-    | { kind: "cycle"; rows: BoardShareOgDockRow[] }
-    | { kind: "rail" | "bus"; rows: BoardShareOgArrivalRow[] }
+    | BoardShareOgRailArrivals
+    | BoardShareOgRailStatus
+    | BoardShareOgBus
+    | BoardShareOgCycle
     | null
   /** Rail lines listed under a cycle panel when the Board also shows rail. */
   thenLines: BoardShareOgModel["lines"]
@@ -64,24 +88,6 @@ export const toDockRow = (dock: CycleHireDock): BoardShareOgDockRow => {
   }
 }
 
-export const toArrivalRows = (
-  arrivals: readonly RealtimePrediction[],
-  keepLine: (lineId: string) => boolean = () => true
-): BoardShareOgArrivalRow[] =>
-  [...arrivals]
-    .filter((a) => a.lineId && keepLine(a.lineId))
-    .sort((a, b) => (a.timeToStation ?? 0) - (b.timeToStation ?? 0))
-    .slice(0, OG_LIVE_ROWS)
-    .map((a) => ({
-      lineId: a.lineId ?? "",
-      lineName: a.lineName ?? a.lineId ?? "",
-      destination: (a.destinationName ?? a.towards ?? "").replace(
-        / Underground Station$/,
-        ""
-      ),
-      minutes: Math.max(0, Math.floor((a.timeToStation ?? 0) / 60)),
-    }))
-
 const londonClock = (date: Date): string =>
   new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
@@ -89,9 +95,41 @@ const londonClock = (date: Date): string =>
     timeZone: "Europe/London",
   }).format(date)
 
+/** Arrivals for a stop, or none on rate limit / TfL error (B still renders). */
+const softArrivals = async (stop: string): Promise<RealtimePrediction[]> => {
+  try {
+    const state = await getCachedStopArrivalsState(stop)
+    return state.rateLimited ? [] : state.arrivals
+  } catch {
+    return []
+  }
+}
+
+const readRail = async (
+  config: BoardConfig,
+  stop: string,
+  lineIds: readonly string[]
+): Promise<BoardShareOgRailArrivals | BoardShareOgRailStatus | null> => {
+  const arrivals = await softArrivals(stop)
+  const a = pickRailArrivals(arrivals, {
+    lineIds,
+    priority: config.arrivals.priority,
+  })
+  if (a) return a
+  if (lineIds.length === 0) return null
+  const status = await getCachedLineStatuses(lineIds)
+  const rows = toStatusRows(status.data, lineIds, status.fetchedAt)
+  if (rows.length === 0) return null
+  return {
+    kind: "rail-status",
+    rows,
+    next: pickNextTrain(arrivals, lineIds),
+  }
+}
+
 const readLive = async (
   config: BoardConfig,
-  lineIds: readonly string[]
+  base: BoardShareOgModel
 ): Promise<BoardShareLiveOgModel["live"]> => {
   const first = resolveBoardSlots(config.slots.p1, config.slots.p2).p1[0]
   if (first === "cycle") {
@@ -107,24 +145,19 @@ const readLive = async (
     }
   }
   if (first === "rail" && config.stop && isBoardStopId(config.stop)) {
-    const state = await getCachedStopArrivalsState(config.stop)
-    const wanted = new Set(config.arrivals.lineOrder ?? lineIds)
-    const rows = toArrivalRows(
-      state.arrivals,
-      (id) => wanted.size === 0 || wanted.has(id)
+    return readRail(
+      config,
+      config.stop,
+      base.lines.map((line) => line.id)
     )
-    return state.rateLimited || rows.length === 0
-      ? null
-      : { kind: "rail", rows }
   }
   if (first === "bus" && config.bus.stop && isBoardStopId(config.bus.stop)) {
     const state = await getCachedStopArrivalsState(config.bus.stop)
-    const routes = new Set(config.bus.routes ?? [])
-    const rows = toArrivalRows(
-      state.arrivals,
-      (id) => routes.size === 0 || routes.has(id)
-    )
-    return state.rateLimited || rows.length === 0 ? null : { kind: "bus", rows }
+    if (state.rateLimited) return null
+    return toBusLive(state.arrivals, {
+      routes: config.bus.routes ?? [],
+      fallbackName: base.stationName,
+    })
   }
   return null
 }
@@ -142,10 +175,7 @@ export const resolveBoardShareLiveOg = async (
   const showsRail = [...slots.p1, ...slots.p2].includes("rail")
   const thenLines = showsRail ? base.lines : []
   try {
-    const live = await readLive(
-      config,
-      base.lines.map((line) => line.id)
-    )
+    const live = await readLive(config, base)
     return { ...base, live, thenLines, at: live ? londonClock(now) : null }
   } catch {
     return { ...base, live: null, thenLines, at: null }

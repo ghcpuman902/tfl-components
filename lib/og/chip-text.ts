@@ -1,29 +1,23 @@
-const channel = (value: number): number => {
-  const c = value / 255
-  return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
-}
-
-const luminance = (hex: string): number | null => {
-  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
-  if (!match) return null
-  const n = Number.parseInt(match[1], 16)
-  return (
-    0.2126 * channel((n >> 16) & 255) +
-    0.7152 * channel((n >> 8) & 255) +
-    0.0722 * channel(n & 255)
-  )
-}
+import { TFL_BLUE } from "@/lib/tfl/brand-colours"
 
 /**
- * Text colour for a line chip. White wherever it reaches the 3:1 large-text
- * contrast (share-card chips are 24px+), else ink. Unknown colours get ink.
+ * Lines whose chip text is TfL blue, not white. Mirrors the
+ * `[data-line=…] { --line-ink: … }` overrides in `app/tfl-colours.css` that
+ * `LineBadge` paints with. Takumi has no CSS variables, so OG chips read this.
  */
-export const ogChipTextColor = (
-  hex: string,
-  ink = "#171717",
-  paper = "#FFFFFF"
-): string => {
-  const l = luminance(hex)
-  if (l == null) return ink
-  return 1.05 / (l + 0.05) >= 3 ? paper : ink
-}
+export const OG_BLUE_INK_LINE_IDS: ReadonlySet<string> = new Set([
+  "circle",
+  "hammersmith-city",
+  "waterloo-city",
+  "coaches",
+])
+
+const PAPER = "#FFFFFF"
+
+/**
+ * Text colour for an OG line chip: the same `--line-ink` rule as `LineBadge`.
+ * Blue on Circle, Hammersmith & City, Waterloo & City and Coaches; white on
+ * every other line, buses included. Decided by line id, never by contrast.
+ */
+export const ogLineChipTextColor = (lineId: string): string =>
+  OG_BLUE_INK_LINE_IDS.has(lineId.trim().toLowerCase()) ? TFL_BLUE : PAPER

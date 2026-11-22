@@ -4,7 +4,7 @@ import { ImageResponse } from "@takumi-rs/image-response"
 import { BoardShareLiveOgImage } from "@/components/og/board-share-live-og-image"
 import { resolveBoardShareLiveOg } from "@/lib/og/board-share-live-og"
 import { OG_IMAGE } from "@/lib/og/image"
-import { SITE_URL } from "@/lib/site"
+import { SITE_HOST } from "@/lib/site"
 import { decodeBoardShortSlug } from "@/lib/tfl/board-short-link"
 import {
   getBoardStationNamesIndex,
@@ -31,9 +31,8 @@ export const GET = async (
   )
   if (!decoded) return new Response("Not found", { status: 404 })
   const model = await resolveBoardShareLiveOg(decoded.config)
-  const shortUrl = `${SITE_URL.replace(/^https?:\/\//, "")}/b/${slug}`
   return new ImageResponse(
-    <BoardShareLiveOgImage model={model} shortUrl={shortUrl} />,
+    <BoardShareLiveOgImage model={model} host={SITE_HOST} />,
     {
       width: OG_IMAGE.width,
       height: OG_IMAGE.height,
