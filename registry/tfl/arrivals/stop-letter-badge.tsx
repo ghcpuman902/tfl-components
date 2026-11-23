@@ -18,6 +18,13 @@ export type StopLetterBadgeSize = "sm" | "md"
  * The glyph sits at line-height 1 (`/none` on each size, so `cn` cannot
  * drop it) and CHIP_CAP_SHIM_CLASS centres its cap height in the disc,
  * with or without text-box-trim support.
+ *
+ * P22 overrides the shim for the single-letter glyphs (`md` 0.07em, `sm`
+ * 0.04em). These are empirically tuned, not derived from metrics: Chromium
+ * snaps the text baseline to whole CSS px, so the cap centre drifts with
+ * page position and the offset that minimises the worst case differs per
+ * size. Swept 0.02-0.09em at 8 sub-pixel page offsets in Chromium and
+ * WebKit; see PR #38.
  */
 export const StopLetterBadge = ({
   letter,
@@ -52,10 +59,10 @@ export const StopLetterBadge = ({
           isSm
             ? isPair
               ? "text-[9px]/none tracking-tighter"
-              : "text-[11px]/none"
+              : "text-[11px]/none [[data-font=p22]_&]:translate-y-[0.04em]"
             : isPair
               ? "text-[0.82ex]/none tracking-tighter"
-              : "text-[0.92ex]/none"
+              : "text-[0.92ex]/none [[data-font=p22]_&]:translate-y-[0.07em]"
         )}
       >
         {letter}
