@@ -818,16 +818,7 @@ html.board-glance .board-glance {
   }
 }
 
-/* Flat UI: MapLibre's zoom control and attribution ship rounded; square them. */
-.maplibregl-ctrl-group,
-.maplibregl-ctrl-group button,
-.maplibregl-ctrl-attrib,
-.maplibregl-ctrl-attrib.maplibregl-compact,
-.maplibregl-ctrl-attrib-button {
-  border-radius: 0 !important;
-}
-
-/* MapLibre controls follow the theme in dark mode; radius stays square (above). */
+/* MapLibre controls follow the theme in dark mode; keep MapLibre's own rounded corners (DROP SQUARE, TFL-49). */
 .dark .maplibregl-ctrl-group,
 .dark .maplibregl-ctrl-attrib,
 .dark .maplibregl-ctrl-attrib.maplibregl-compact {

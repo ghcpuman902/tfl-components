@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type MouseEvent,
+  type ReactNode,
   type RefObject,
 } from "react"
 import dynamic from "next/dynamic"
@@ -95,6 +96,8 @@ import { cn } from "@/lib/utils"
 
 /** Enough rows that a same-name cluster (Bank Station A–K) arrives whole. */
 const INSTANT_LIMIT = 40
+/** Open, the field's gap under the header is kept up to this (the page's own top padding). */
+const MAX_OPEN_TOP_PX = 64
 
 const SearchMap = dynamic(
   () =>
@@ -365,12 +368,16 @@ export type PlaceSearchProps = {
   onSelectDock?: (dock: ExplorerPoint) => void
   /** Shown in the field at rest, e.g. the station already chosen. */
   restingValue?: string
+  /** Desktop (lg+) only, while open: docked on the right, pushing the search column left. */
+  aside?: ReactNode
+  onOpenChange?: (open: boolean) => void
 }
 
 /**
- * At rest a quiet field above the Board. Focus turns the same field into the
- * top of a full-screen search view: map, the best match held in place, then a
- * keyboard-high zone holding the rest of the list, so nothing moves when the
+ * At rest a quiet field above the Board. Focus opens the search in place under
+ * the sticky site header: the field stays where it is, and the map, the best
+ * match held in place, then a keyboard-high zone holding the rest of the list
+ * cover the main area below it (never the nav), so nothing moves when the
  * keyboard opens or closes.
  */
 export const PlaceSearch = ({
@@ -386,9 +393,14 @@ export const PlaceSearch = ({
   chosenIds,
   onSelectDock,
   restingValue,
+  aside,
+  onOpenChange,
 }: PlaceSearchProps) => {
   const [state, dispatch] = useReducer(combinedReducer, initialCombinedState)
   const [open, setOpen] = useState(false)
+  // Open, the field keeps its place: its gap under the site header, measured on focus.
+  const [openTop, setOpenTop] = useState(0)
+  const fieldRef = useRef<HTMLDivElement>(null)
   const [keyboardPx, setKeyboardPx] = useState(0)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<{
@@ -582,9 +594,14 @@ export const PlaceSearch = ({
       estimateKeyboardHeight(window.innerHeight)
     keyboardRef.current = px
     setKeyboardPx(px)
+    const headerBottom =
+      document.querySelector("[data-site-header]")?.getBoundingClientRect().bottom ?? 0
+    const fieldTop = fieldRef.current?.getBoundingClientRect().top ?? headerBottom
+    setOpenTop(Math.min(MAX_OPEN_TOP_PX, Math.max(0, Math.round(fieldTop - headerBottom))))
     setFrame(provisionalFrame(anchor))
     setZoom(MAP_SELECTED_ZOOM)
     setOpen(true)
+    onOpenChange?.(true)
     // An editor opens on the nearest places, before anything is typed.
     if (mode) searchRef.current?.type("")
   }
@@ -699,6 +716,7 @@ export const PlaceSearch = ({
   )
 
   // Typed: the result stops stay pins at any zoom; the other stops in view are the dots below the pin zoom.
+  const drawsDots = mode === undefined || mode === "bus"
   const resultPinIds = useMemo(
     () =>
       typed
@@ -708,20 +726,19 @@ export const PlaceSearch = ({
   )
   const busDots = useMemo(() => {
     const kit = index?.kit
-    if (!open || zoom >= PIN_MIN_ZOOM || !kit) return []
+    if (!open || !drawsDots || zoom >= PIN_MIN_ZOOM || !kit) return []
     const skip = typed
       ? new Set(
           rows
-            .filter(
-              (row) => row.kind === "bus" && row.lat != null && row.lon != null
-            )
+            .filter((row) => row.kind === "bus" && row.lat != null && row.lon != null)
             .map((row) => dotKey(row.lon!, row.lat!))
         )
       : undefined
     return busStopDots(kit, frame, skip)
-  }, [open, zoom, index, typed, frame, rows])
+  }, [open, drawsDots, zoom, index, typed, frame, rows])
 
   const close = () => {
+    onOpenChange?.(false)
     setOpen(false)
     setActiveId(null)
     setExpanded({ query: "", clusters: [], all: false })
@@ -918,21 +935,26 @@ export const PlaceSearch = ({
   const listRow = "flex min-h-14 cursor-pointer items-start gap-3 border-b border-border py-2.5"
 
   return (
-    // At rest it stacks over the Board's z-10 layers and under the sticky site header (z-30); open, the view covers the header.
-    <div className={open ? "relative z-50" : "relative z-20"}>
+    // At rest and open it stacks over the Board's own layers and under the sticky site header.
+    <div className="relative z-20">
+      {/* Open: covers only the main area under the header; the nav stays visible and on top. */}
       <div
         className={
-          open ? "fixed inset-x-0 top-0 h-dvh bg-background" : undefined
+          open
+            ? "fixed inset-x-0 top-(--site-header-height) bottom-0 flex justify-center bg-background"
+            : undefined
         }
       >
         <div
-          className={cn(
-            "flex w-full flex-col",
-            open && "mx-auto h-full max-w-3xl"
-          )}
+          className={cn("flex w-full flex-col", open && "h-full max-w-3xl min-w-0")}
+          style={open ? { paddingTop: openTop } : undefined}
         >
-          <div className={cn(open && "shrink-0 px-4 pt-3 sm:px-8")}>
-            <div className="flex h-[4.5rem] items-center gap-3 border-b border-foreground sm:h-[5.5rem]">
+          <div className={cn(open && "shrink-0 px-4 sm:px-8")}>
+            {/* Rounded, no fill: the field's chrome is its outline only. */}
+            <div
+              ref={fieldRef}
+              className="flex h-[4.5rem] items-center gap-3 rounded-lg border border-input bg-transparent px-3 sm:h-[5.5rem] sm:px-4"
+            >
               <Search className="size-7 shrink-0" aria-hidden />
               <input
                 ref={inputRef}
@@ -1033,7 +1055,7 @@ export const PlaceSearch = ({
                   busStopLabels={false}
                   busDots={busDots}
                   railLines
-                  pinMinZoom={PIN_MIN_ZOOM}
+                  pinMinZoom={drawsDots ? PIN_MIN_ZOOM : undefined}
                   alwaysPinIds={resultPinIds}
                   initialView={{
                     lat: frame.center.lat,
@@ -1151,6 +1173,15 @@ export const PlaceSearch = ({
             </>
           ) : null}
         </div>
+        {open && aside ? (
+          <aside
+            aria-label="Live status"
+            className="hidden w-96 shrink-0 overflow-y-auto overscroll-contain border-l border-border px-6 pb-6 lg:block xl:w-[28rem]"
+            style={{ paddingTop: openTop }}
+          >
+            {aside}
+          </aside>
+        ) : null}
       </div>
       {/* Holds the field's place in the page while the field sits in the open view. */}
       {open ? <div aria-hidden className="h-[4.5rem] sm:h-[5.5rem]" /> : null}
