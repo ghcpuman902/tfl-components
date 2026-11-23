@@ -31,6 +31,9 @@ const BOARD_RHYTHM_VARS = {
 const TILE_CLASS =
   "box-border h-[var(--arrivals-row)] min-h-[var(--arrivals-row)] max-h-[var(--arrivals-row)] shrink-0 overflow-clip"
 
+/** Heading tile: one row, or more when its chips wrap below the heading. */
+const HEADING_TILE_CLASS = "box-border min-h-[var(--arrivals-row)] shrink-0"
+
 export type TubeStatusDisplayProps = {
   data?: readonly StatusLine[]
   tiles?: number
@@ -96,7 +99,13 @@ const HeadingChips = ({
   const visible = visibleHeadingChips(lineIds, activeLineId)
   if (visible.length === 0) return null
   return (
-    <div className="flex min-w-0 shrink-0 items-end gap-1" aria-hidden>
+    // Own flex item: wraps below the heading as a whole when it does not
+    // fit beside it, and wraps its chips when a row is too narrow. Each line
+    // keeps a full tile; gap-y-2 leaves room for the overlaid dwell bar.
+    <div
+      className="ml-auto flex min-h-[var(--arrivals-row)] max-w-full min-w-0 flex-wrap content-center items-center justify-end gap-x-1 gap-y-2"
+      aria-hidden
+    >
       {visible.map((id) => {
         const isActive = id === activeLineId
         return (
@@ -161,14 +170,14 @@ const StatusDisplayFrameView = ({
       <div
         data-line={namedHeading ? activeLineId : undefined}
         className={cn(
-          "relative flex items-center text-xl leading-7 font-semibold",
-          TILE_CLASS
+          "relative flex flex-wrap items-center gap-x-2 text-xl leading-7 font-semibold",
+          HEADING_TILE_CLASS
         )}
       >
+        {/* Never truncated: chips wrap to their own row instead. */}
         <p
           className={cn(
-            "m-0 min-w-0 flex-1 truncate",
-            showHeadingChips && "pr-2",
+            "m-0 flex min-h-[var(--arrivals-row)] min-w-0 grow items-center",
             namedHeading && "tfl-dark-line-text text-[var(--line-color)]"
           )}
         >
