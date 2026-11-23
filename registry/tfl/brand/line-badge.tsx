@@ -42,7 +42,40 @@ type LineBadgeProps = {
    * `shrink` — step full → middle → short via `LineName` (chips may wrap).
    */
   fit?: "clip" | "shrink"
+  /**
+   * Status mark inside the chip, before the name: `minor` = warning
+   * triangle, `severe` = solid alert disc, in the chip's own ink. Omit for
+   * good service so the chip stays plain.
+   */
+  alert?: LineBadgeAlert
 }
+
+export type LineBadgeAlert = "minor" | "severe"
+
+/**
+ * 1em status mark. Sits beside the cap-trimmed label in a centred row, so
+ * its middle lands on the cap-height middle, not the em box.
+ */
+export const LineBadgeAlertIcon = ({ alert }: { alert: LineBadgeAlert }) =>
+  alert === "severe" ? (
+    <svg viewBox="0 0 12 12" className="size-[1em] shrink-0" aria-hidden>
+      <circle cx="6" cy="6" r="5.2" fill="currentColor" />
+      <path d="M6 3v3.6" stroke="var(--line-color)" strokeWidth="1.5" />
+      <circle cx="6" cy="8.7" r=".9" fill="var(--line-color)" />
+    </svg>
+  ) : (
+    <svg viewBox="0 0 12 12" className="size-[1em] shrink-0" aria-hidden>
+      <path
+        d="M6 1.2 11.2 10.5H.8Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path d="M6 4.6v2.8" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="6" cy="9" r=".8" fill="currentColor" />
+    </svg>
+  )
 
 /**
  * `--line-raw` override for ids outside the token palette.
@@ -96,6 +129,7 @@ export const LineBadge = ({
   color,
   diagram,
   fit = "clip",
+  alert,
 }: LineBadgeProps) => {
   const label = name ?? getLineNameTiers(lineId).full
   const ariaLabel =
@@ -135,6 +169,7 @@ export const LineBadge = ({
       className={cn(
         "box-border inline-flex h-5 items-center justify-center overflow-hidden bg-[var(--line-color)] px-2 text-xs font-bold text-[var(--line-ink)] tabular-nums",
         fit === "shrink" && "w-full max-w-full min-w-0",
+        alert && "gap-1",
         className
       )}
       style={{
@@ -145,6 +180,7 @@ export const LineBadge = ({
       aria-label={ariaLabel}
       role="img"
     >
+      {alert ? <LineBadgeAlertIcon alert={alert} /> : null}
       {fit === "shrink" ? (
         <LineName
           lineId={lineId}

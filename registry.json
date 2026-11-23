@@ -590,6 +590,11 @@
           "target": "lib/tfl/status-board.ts"
         },
         {
+          "path": "lib/tfl/status-chip-alert.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-chip-alert.ts"
+        },
+        {
           "path": "lib/tfl/status-types.ts",
           "type": "registry:lib",
           "target": "lib/tfl/status-types.ts"
@@ -643,6 +648,11 @@
           "path": "lib/tfl/status-board.ts",
           "type": "registry:lib",
           "target": "lib/tfl/status-board.ts"
+        },
+        {
+          "path": "lib/tfl/status-chip-alert.ts",
+          "type": "registry:lib",
+          "target": "lib/tfl/status-chip-alert.ts"
         },
         {
           "path": "lib/tfl/status-types.ts",
