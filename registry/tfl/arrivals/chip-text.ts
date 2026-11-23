@@ -10,6 +10,18 @@ export const CHIP_CAP_TEXT_BOX_CLASS =
   "leading-none [text-box:trim-both_cap_alphabetic]"
 
 /**
+ * Cap-centre shim for a glyph at `line-height: 1` that must not depend on
+ * text-box-trim (it is unsupported in some browsers). Moves the glyph down by
+ * (cap height + descent − ascent) / 2 so the cap height, not the line box,
+ * sits on the box centre: Hammersmith One (0.649 / 0.350 / 0.900) → 0.0493em;
+ * P22 Underground (0.700 / 0.300 / 0.905) → 0.0475em, under 0.03px apart at
+ * badge sizes. A transform, not `top`: Chromium snaps a text box's layout
+ * offset to whole CSS px, which would throw the centre off by up to 0.5px.
+ * Use instead of CHIP_CAP_TEXT_BOX_CLASS, not with it.
+ */
+export const CHIP_CAP_SHIM_CLASS = "translate-y-[0.0493em]"
+
+/**
  * Shared identity-chip width for line codes and route numbers. Line codes are
  * 3 letters; bus routes are ≤4 characters. One extra `ch` keeps MET / H&C /
  * N253 from clipping. Compact platform chips are narrower — see
