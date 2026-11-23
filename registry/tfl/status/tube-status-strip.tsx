@@ -6,7 +6,6 @@ import { LineName } from "@/components/tfl/brand/line-name"
 import { useUnattendedSequence } from "@/hooks/use-unattended-sequence"
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
 import { partitionStatusBoardLines } from "@/lib/tfl/status-board"
-import { statusChipAlertsById } from "@/lib/tfl/status-chip-alert"
 import {
   allocateStatusStripRegions,
   buildStatusDisplayFrames,
@@ -89,10 +88,6 @@ export const TubeStatusStrip = ({
     ...prepareOptions,
     lineOrder,
   })
-  const alerts = statusChipAlertsById(
-    sections.disruptions,
-    now !== undefined ? { now } : undefined
-  )
   const frames = buildStatusDisplayFrames(sections, {
     tiles: Math.max(2, regions.reasonUnits + 1),
     detailScope,
@@ -151,8 +146,10 @@ export const TubeStatusStrip = ({
             <LineBadge
               key={id}
               lineId={id}
-              alert={alerts.get(id)}
-              className="h-5 justify-center px-1.5"
+              className={cn(
+                "h-5 justify-center px-1.5",
+                frame?.activeLineId && id !== frame.activeLineId && "opacity-40"
+              )}
             />
           ))}
         </div>

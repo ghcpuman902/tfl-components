@@ -10,10 +10,6 @@ import { useUnattendedSequence } from "@/hooks/use-unattended-sequence"
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
 import { partitionStatusBoardLines } from "@/lib/tfl/status-board"
 import {
-  statusChipAlertsById,
-  type StatusChipAlert,
-} from "@/lib/tfl/status-chip-alert"
-import {
   buildStatusDisplayFrames,
   visibleHeadingChips,
   type StatusDetailScope,
@@ -63,7 +59,12 @@ const ChipDwellBar = ({
   frameKey: string
   dwellMs: number
 }) => (
-  <div className="h-1 w-full overflow-hidden bg-foreground/15" aria-hidden>
+  // Overlaid under the chip (no layout height) so the chip centres on the
+  // heading exactly like a plain chip.
+  <div
+    className="absolute inset-x-0 top-full h-1 overflow-hidden bg-foreground/15"
+    aria-hidden
+  >
     {filling ? (
       <div
         key={`${frameKey}-go`}
@@ -77,7 +78,6 @@ const ChipDwellBar = ({
 
 const HeadingChips = ({
   lineIds,
-  alerts,
   activeLineId,
   dwellMs,
   frameKey,
@@ -86,7 +86,6 @@ const HeadingChips = ({
   canAdvance,
 }: {
   lineIds: readonly string[]
-  alerts: ReadonlyMap<string, StatusChipAlert>
   activeLineId?: string
   dwellMs: number
   frameKey: string
@@ -101,11 +100,13 @@ const HeadingChips = ({
       {visible.map((id) => {
         const isActive = id === activeLineId
         return (
-          <div key={id} className="flex min-w-0 flex-col leading-none">
+          <div key={id} className="relative flex min-w-0 leading-none">
             <LineBadge
               lineId={id}
-              alert={alerts.get(id)}
-              className="h-5 justify-center px-1.5"
+              className={cn(
+                "h-5 justify-center px-1.5",
+                activeLineId && !isActive && "opacity-40"
+              )}
             />
             <ChipDwellBar
               filling={isActive && canAdvance && started}
@@ -122,7 +123,6 @@ const HeadingChips = ({
 
 const StatusDisplayFrameView = ({
   frame,
-  alerts,
   tiles,
   dwellMs,
   started,
@@ -131,7 +131,6 @@ const StatusDisplayFrameView = ({
   frameKey,
 }: {
   frame: StatusDisplayFrame
-  alerts: ReadonlyMap<string, StatusChipAlert>
   tiles: number
   dwellMs: number
   started: boolean
@@ -178,7 +177,6 @@ const StatusDisplayFrameView = ({
         {showHeadingChips ? (
           <HeadingChips
             lineIds={frame.headingLineIds}
-            alerts={alerts}
             activeLineId={activeLineId}
             dwellMs={dwellMs}
             frameKey={frameKey}
@@ -301,10 +299,6 @@ export const TubeStatusDisplay = ({
     ...prepareOptions,
     lineOrder,
   })
-  const alerts = statusChipAlertsById(
-    sections.disruptions,
-    now !== undefined ? { now } : undefined
-  )
   const frames = buildStatusDisplayFrames(sections, {
     tiles,
     detailScope,
@@ -389,7 +383,6 @@ export const TubeStatusDisplay = ({
       >
         <StatusDisplayFrameView
           frame={frame}
-          alerts={alerts}
           tiles={tiles}
           dwellMs={dwellMs}
           started={sequence.started}

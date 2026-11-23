@@ -45,7 +45,9 @@ type LineBadgeProps = {
   /**
    * Status mark inside the chip, before the name: `minor` = warning
    * triangle, `severe` = solid alert disc, in the chip's own ink. Omit for
-   * good service so the chip stays plain.
+   * good service so the chip stays plain. For static surfaces (the share
+   * card); time-rotating status views leave it off so the focus dim is the
+   * only signal there.
    */
   alert?: LineBadgeAlert
 }
