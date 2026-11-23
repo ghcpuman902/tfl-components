@@ -1,4 +1,4 @@
-import { CHIP_CAP_TEXT_BOX_CLASS } from "@/components/tfl/arrivals/chip-text"
+import { CHIP_CAP_SHIM_CLASS } from "@/components/tfl/arrivals/chip-text"
 import { cn } from "@/lib/utils"
 
 export type StopLetterBadgeSize = "sm" | "md"
@@ -15,8 +15,9 @@ export type StopLetterBadgeSize = "sm" | "md"
  * surrounding text’s x-height). The glyph is a smaller inner span.
  * Do not set `font-size` in `ex` on the same node as `size-[…ex]`.
  *
- * Glyph sizes carry `/none`: `cn` (tailwind-merge) drops the
- * `leading-none` in CHIP_CAP_TEXT_BOX_CLASS when a font-size class follows it.
+ * The glyph sits at line-height 1 (`/none` on each size, so `cn` cannot
+ * drop it) and CHIP_CAP_SHIM_CLASS centres its cap height in the disc,
+ * with or without text-box-trim support.
  */
 export const StopLetterBadge = ({
   letter,
@@ -47,7 +48,7 @@ export const StopLetterBadge = ({
     >
       <span
         className={cn(
-          CHIP_CAP_TEXT_BOX_CLASS,
+          CHIP_CAP_SHIM_CLASS,
           isSm
             ? isPair
               ? "text-[9px]/none tracking-tighter"

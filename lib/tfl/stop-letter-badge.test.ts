@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
+import { CHIP_CAP_SHIM_CLASS } from "@/components/tfl/arrivals/chip-text"
 import {
   StopLetterBadge,
   type StopLetterBadgeSize,
@@ -17,18 +18,19 @@ const glyphClass = (letter: string, size: StopLetterBadgeSize): string => {
 }
 
 describe("StopLetterBadge glyph line-height", () => {
-  // cn() drops CHIP_CAP_TEXT_BOX_CLASS's `leading-none` once a font-size
-  // class follows it, so every size has to carry `/none` itself.
+  // cn() drops a `leading-none` that comes before a font-size class, so
+  // every size carries `/none` itself; the cap shim assumes line-height 1.
   for (const [letter, size] of [
     ["K", "md"],
     ["RG", "md"],
     ["K", "sm"],
     ["RG", "sm"],
   ] as const) {
-    it(`keeps line-height 1 for ${size} ${letter}`, () => {
+    it(`keeps line-height 1 and the cap shim for ${size} ${letter}`, () => {
       const cls = glyphClass(letter, size)
       assert.match(cls, /(?:^|\s)text-\[[^\]]+\]\/none(?:\s|$)/, cls)
-      assert.match(cls, /\[text-box:trim-both_cap_alphabetic\]/, cls)
+      for (const shim of CHIP_CAP_SHIM_CLASS.split(" "))
+        assert.ok(cls.split(" ").includes(shim), cls)
     })
   }
 })
