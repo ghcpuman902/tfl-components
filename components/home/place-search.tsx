@@ -92,6 +92,7 @@ import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
 import { StationName } from "@/components/tfl/station-name"
 import { LineColorBar } from "@/components/tfl/brand/line-badge"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
+import { getLineNameTiers } from "@/lib/tfl/line-names"
 import { cn } from "@/lib/utils"
 
 /** Enough rows that a same-name cluster (Bank Station A–K) arrives whole. */
@@ -121,10 +122,14 @@ const MODE_LABELS: Readonly<Record<string, string>> = {
   "national-rail": "National Rail",
 }
 
-/** The station's lines as the registry's square-ended LineColorBar dashes, never rounded pills. */
+/** The station's lines as the registry's square-ended line bars, named for screen readers. */
 const LineMarks = ({ lines }: { lines: readonly string[] }) => (
-  <span className="flex flex-wrap items-center justify-end gap-1" aria-hidden>
-    {lines.slice(0, 8).map((line) => (
+  <span
+    className="mt-1.5 flex flex-wrap items-center gap-1"
+    role="img"
+    aria-label={`Lines: ${lines.map((line) => getLineNameTiers(line).full).join(", ")}`}
+  >
+    {lines.map((line) => (
       <span key={line} className="w-4">
         <LineColorBar lineId={line} heightClass="h-1.5" />
       </span>
@@ -132,19 +137,54 @@ const LineMarks = ({ lines }: { lines: readonly string[] }) => (
   </span>
 )
 
+/** How many route chips fit one row of this width (chips are a fixed 5ch). */
+const useChipsPerRow = () => {
+  const ref = useRef<HTMLSpanElement>(null)
+  const [perRow, setPerRow] = useState(8)
+  useLayoutEffect(() => {
+    const row = ref.current
+    if (!row) return
+    const measure = () => {
+      const chip = row.querySelector<HTMLElement>("[aria-label^='Route ']")
+      const gap = parseFloat(getComputedStyle(row).columnGap) || 0
+      if (!chip || row.clientWidth === 0) return
+      setPerRow(Math.max(1, Math.floor((row.clientWidth + gap) / (chip.offsetWidth + gap))))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(row)
+    return () => observer.disconnect()
+  }, [])
+  return { ref, perRow }
+}
+
+/**
+ * Route chips in a full-width row under the name. When they need more than one
+ * row, the rows are balanced (9 at 8 a row → 5 + 4), so no chip sits alone.
+ */
 const RouteChips = ({
   routes,
   max,
 }: {
   routes: readonly string[]
   max: number
-}) => (
-  <span className="flex max-w-[45%] shrink-0 flex-wrap justify-end gap-1 sm:max-w-60">
-    {routes.slice(0, max).map((route) => (
-      <BusNumberChip key={route} label={route} />
-    ))}
-  </span>
-)
+}) => {
+  const shown = routes.slice(0, max)
+  const { ref, perRow } = useChipsPerRow()
+  const rows = Math.max(1, Math.ceil(shown.length / perRow))
+  const columns = Math.ceil(shown.length / rows)
+  return (
+    <span
+      ref={ref}
+      className="mt-1.5 grid w-full justify-start gap-1"
+      style={{ gridTemplateColumns: `repeat(${columns}, max-content)` }}
+    >
+      {shown.map((route) => (
+        <BusNumberChip key={route} label={route} />
+      ))}
+    </span>
+  )
+}
 
 /**
  * A stop or station name that is never clipped, fitted the way the Board's
@@ -891,28 +931,24 @@ export const PlaceSearch = ({
           ? `towards ${row.towards}`
           : ""
     return (
-      <>
-        <span className="min-w-0 flex-1">
-          <span className="flex min-w-0 items-center gap-2 text-lg leading-snug">
-            <ListName name={row.name} />
-            {row.kind === "bus" && row.letter ? (
-              <StopLetterBadge letter={row.letter} size="sm" />
-            ) : null}
-          </span>
-          {detail ? (
-            <span className="block text-sm text-pretty text-muted-foreground">
-              {detail}
-            </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex min-w-0 items-center gap-2 text-lg leading-snug">
+          <ListName name={row.name} />
+          {row.kind === "bus" && row.letter ? (
+            <StopLetterBadge letter={row.letter} size="sm" />
           ) : null}
         </span>
-        {row.kind === "station" ? (
-          <span className="max-w-[45%] shrink-0 self-start pt-2">
-            <LineMarks lines={station?.lines ?? row.lines} />
+        {detail ? (
+          <span className="block text-sm text-pretty text-muted-foreground">
+            {detail}
           </span>
+        ) : null}
+        {row.kind === "station" ? (
+          <LineMarks lines={station?.lines ?? row.lines} />
         ) : (
           <RouteChips routes={dayRoutes(row.lines)} max={6} />
         )}
-      </>
+      </span>
     )
   }
 
@@ -950,10 +986,10 @@ export const PlaceSearch = ({
           style={open ? { paddingTop: openTop } : undefined}
         >
           <div className={cn(open && "shrink-0 px-4 sm:px-8")}>
-            {/* Rounded, no fill: the field's chrome is its outline only. */}
+            {/* Square hairline underline, no fill: the approved A5 field (the DROP SQUARE exception). */}
             <div
               ref={fieldRef}
-              className="flex h-[4.5rem] items-center gap-3 rounded-lg border border-input bg-transparent px-3 sm:h-[5.5rem] sm:px-4"
+              className="flex h-[4.5rem] items-center gap-3 border-b border-foreground bg-transparent sm:h-[5.5rem]"
             >
               <Search className="size-7 shrink-0" aria-hidden />
               <input
@@ -1041,7 +1077,7 @@ export const PlaceSearch = ({
           </div>
           {open ? (
             <>
-              <div className="relative min-h-0 flex-1">
+              <div className="relative min-h-0 flex-1 px-4 sm:px-8">
                 <SearchMap
                   points={points}
                   selectedId={mapSelectedId}
@@ -1083,7 +1119,7 @@ export const PlaceSearch = ({
               >
                 <div
                   className={cn(
-                    "flex min-h-16 items-center gap-3 px-4 py-2 sm:px-8",
+                    "flex min-h-16 items-start gap-3 px-4 py-2.5 sm:px-8",
                     head && "cursor-pointer bg-muted"
                   )}
                   {...(head ? optionProps(head.option, 0) : { role: "presentation" })}
@@ -1133,8 +1169,8 @@ export const PlaceSearch = ({
                                   ? "tap to close"
                                   : "tap to choose one"}
                               </span>
+                              <RouteChips routes={entry.cluster.routes} max={9} />
                             </span>
-                            <RouteChips routes={entry.cluster.routes} max={9} />
                           </>
                         ) : null}
                       </li>
