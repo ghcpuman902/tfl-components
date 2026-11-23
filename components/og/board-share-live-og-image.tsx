@@ -69,14 +69,56 @@ const STATUS_CHIP_GAP = 36
 const STATUS_SIZE = 38
 const NEXT_H = 60
 const NEXT_SIZE = 34
-// B compact chips — tube-status-strip.tsx L145–152 / L201–206 (LineBadge h-5 px-1.5);
-// good lines opacity-40 (L151); tube-status-display.tsx L221–226 flex-wrap gap-1.
+// B compact chips — tube-status-strip.tsx / tube-status-display.tsx LineBadge
+// (h-5 px-1.5, flex-wrap gap-1). Full colour; disrupted lines carry the
+// LineBadge `alert` mark (registry/tfl/brand/line-badge.tsx LineBadgeAlertIcon).
 const COMPACT_CHIP_H = 40 // h-5 × 2
 const COMPACT_CHIP_SIZE = 22
 const COMPACT_CHIP_PAD = 12
 const COMPACT_CHIP_GAP = 10
 const COMPACT_WRAP_GAP = 18
-const GOOD_CHIP_OPACITY = 0.4
+
+// Hammersmith One metrics, read from assets/fonts/hammersmith-one/
+// HammersmithOne-Regular.ttf (fontTools): unitsPerEm 2048, hhea ascent 1844,
+// descent 716, OS/2 sCapHeight 1330. Takumi has no text-box-trim, so chips
+// place the 1em line box so cap top → chip top equals baseline → chip
+// bottom, as CHIP_CAP_TEXT_BOX_CLASS does in the browser.
+const FONT_UPM = 2048
+const FONT_ASCENT = 1844
+const FONT_DESCENT = 716
+const FONT_CAP = 1330
+/** Baseline below the top of a lineHeight-1 box (half-leading model). */
+const BASELINE_EM =
+  (FONT_ASCENT - (FONT_ASCENT + FONT_DESCENT - FONT_UPM) / 2) / FONT_UPM
+const CAP_EM = FONT_CAP / FONT_UPM
+
+/**
+ * Top offset of a lineHeight-1 label that centres its cap box in `chipH`.
+ * Takumi snaps the line box to whole px; flooring measured closest
+ * (compact 40/22: 13.0 / 13.0px; status 48/32: 13.25 / 14.0px).
+ */
+export const capCentredTop = (chipH: number, size: number): number =>
+  Math.floor((chipH - CAP_EM * size) / 2 - (BASELINE_EM - CAP_EM) * size)
+
+/** LineBadge `alert` icon gap: `gap-1` beside 12px text = 1/3 em. */
+const ALERT_GAP_EM = 1 / 3
+
+/**
+ * LineBadgeAlertIcon paths (registry/tfl/brand/line-badge.tsx), painted in
+ * the chip's ink; the severe disc knocks the mark out in the chip fill.
+ */
+const alertIconSrc = (
+  alert: "minor" | "severe",
+  ink: string,
+  fill: string
+): string => {
+  const body =
+    alert === "severe"
+      ? `<circle cx="6" cy="6" r="5.2" fill="${ink}"/><path d="M6 3v3.6" stroke="${fill}" stroke-width="1.5"/><circle cx="6" cy="8.7" r=".9" fill="${fill}"/>`
+      : `<path d="M6 1.2 11.2 10.5H.8Z" fill="none" stroke="${ink}" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 4.6v2.8" stroke="${ink}" stroke-width="1.4"/><circle cx="6" cy="9" r=".8" fill="${ink}"/>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">${body}</svg>`
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+}
 
 // C: bus rows.
 const KICKER_SIZE = 30
@@ -178,7 +220,8 @@ const Chip = ({
   width,
   padX = 16,
   marginRight = CHIP_GAP,
-  opacity = 1,
+  capCentre = false,
+  alert,
 }: {
   lineId: string
   label: string
@@ -188,31 +231,59 @@ const Chip = ({
   width?: number
   padX?: number
   marginRight?: number
-  opacity?: number
-}) => (
-  <div
-    style={{
-      display: "flex",
-      boxSizing: "border-box",
-      alignItems: "center",
-      justifyContent: "center",
-      flexShrink: 0,
-      height,
-      width,
-      paddingLeft: padX,
-      paddingRight: padX,
-      marginRight,
-      backgroundColor: color,
-      borderRadius: 0,
-      overflow: "hidden",
-      opacity,
-    }}
-  >
-    <div style={{ ...face(size, ogLineChipTextColor(lineId)), ...oneLine }}>
-      {label}
+  /** Place the label by cap height (B chips); A keeps its approved layout. */
+  capCentre?: boolean
+  alert?: "minor" | "severe"
+}) => {
+  const ink = ogLineChipTextColor(lineId)
+  return (
+    <div
+      style={{
+        display: "flex",
+        boxSizing: "border-box",
+        alignItems: capCentre ? "flex-start" : "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        height,
+        width,
+        paddingLeft: padX,
+        paddingRight: padX,
+        marginRight,
+        backgroundColor: color,
+        borderRadius: 0,
+        overflow: "hidden",
+      }}
+    >
+      {alert ? (
+        // eslint-disable-next-line @next/next/no-img-element -- Takumi image node
+        <img
+          alt=""
+          src={alertIconSrc(alert, ink, color)}
+          width={size}
+          height={size}
+          style={{
+            flexShrink: 0,
+            width: size,
+            height: size,
+            marginTop: capCentre ? (height - size) / 2 : 0,
+            marginRight: Math.round(size * ALERT_GAP_EM),
+          }}
+        />
+      ) : null}
+      <div
+        style={{
+          ...face(size, ink),
+          ...oneLine,
+          ...(capCentre
+            ? { height: size, marginTop: capCentredTop(height, size) }
+            : {}),
+        }}
+      >
+        {label}
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 /** Column wrapper (Takumi lays out real nodes; no fragments). */
 const Stack = ({ children }: { children: ReactNode }) => (
@@ -515,13 +586,15 @@ const RailStatus = ({
           <StatusRule key={row.id} height={STATUS_H} first={i === 0}>
             <Chip
               lineId={row.id}
-              label={ogLineLabel(row.id, "status")}
+              label={ogLineLabel(row.id, row.alert ? "statusAlert" : "status")}
               color={row.color}
               size={STATUS_CHIP_SIZE}
               height={STATUS_CHIP_H}
               width={STATUS_CHIP_W}
               padX={16}
               marginRight={STATUS_CHIP_GAP}
+              capCentre
+              alert={row.alert}
             />
             <div
               style={{
@@ -545,6 +618,7 @@ const RailStatus = ({
               width={STATUS_CHIP_W}
               padX={16}
               marginRight={STATUS_CHIP_GAP}
+              capCentre
             />
             <div style={{ ...face(NEXT_SIZE), ...oneLine, flex: 1 }}>
               {`Next: ${live.next.destination} ${
@@ -576,7 +650,8 @@ const RailStatus = ({
               height={COMPACT_CHIP_H}
               padX={COMPACT_CHIP_PAD}
               marginRight={0}
-              opacity={row.tone === "ok" ? GOOD_CHIP_OPACITY : 1}
+              capCentre
+              alert={row.alert}
             />
           ))}
         </div>

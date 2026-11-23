@@ -38,7 +38,9 @@ describe("og line label map", () => {
     })
 
     for (const id of Object.keys(LINE_NAME_TIERS)) {
-      for (const slot of ["status", "also"] as const) {
+      for (const slot of Object.keys(
+        OG_LINE_LABEL_SLOTS
+      ) as (keyof typeof OG_LINE_LABEL_SLOTS)[]) {
         const expected = await pickOgLineLabel(renderer, id, slot)
         assert.equal(
           OG_LINE_LABEL_MAP[slot][id],
@@ -61,6 +63,8 @@ describe("og line label map", () => {
   it("documents the slot budgets the OG image must keep in sync", () => {
     assert.equal(OG_LINE_LABEL_SLOTS.status.width, 300)
     assert.equal(OG_LINE_LABEL_SLOTS.status.size, 32)
+    assert.equal(OG_LINE_LABEL_SLOTS.statusAlert.width, 300)
+    assert.equal(OG_LINE_LABEL_SLOTS.statusAlert.inset, 32 + 11)
     assert.equal(OG_LINE_LABEL_SLOTS.also.width, 200)
     assert.equal(OG_LINE_LABEL_SLOTS.also.size, 28)
   })

@@ -18,6 +18,10 @@ import {
   resolveBusStopLetter,
   usableTflText,
 } from "@/lib/tfl/bus-stop-letter"
+import {
+  statusChipAlertFor,
+  type StatusChipAlert,
+} from "@/lib/tfl/status-chip-alert"
 import type { StatusLine } from "@/lib/tfl/status-types"
 
 /** Arrival rows on A and C, like a Board bound's first rows. */
@@ -34,6 +38,8 @@ export type BoardShareOgBusRow = BoardShareOgTimeRow & { route: string }
 export type BoardShareOgStatusRow = BoardShareOgLine & {
   statusText: string
   tone: "ok" | "alert"
+  /** In-chip mark (LineBadge `alert`); absent for good service. */
+  alert?: StatusChipAlert
 }
 
 export type BoardShareOgNextTrain = BoardShareOgTimeRow & {
@@ -56,7 +62,7 @@ export type BoardShareOgRailStatus = {
   kind: "rail-status"
   /** Detailed rows with status text (alerts first). */
   rows: BoardShareOgStatusRow[]
-  /** Remaining lines as compact chips — status via opacity, no right-hand text. */
+  /** Remaining lines as compact chips — in-chip status icon, no right-hand text. */
   chips: BoardShareOgStatusRow[]
   next: BoardShareOgNextTrain | null
 }
@@ -179,6 +185,13 @@ export const pickRailArrivals = (
 const sentenceCase = (text: string): string =>
   text.charAt(0).toUpperCase() + text.slice(1).toLowerCase()
 
+const alertFor = (
+  worst: Parameters<typeof statusChipAlertFor>[0]
+): { alert?: StatusChipAlert } => {
+  const alert = statusChipAlertFor(worst)
+  return alert ? { alert } : {}
+}
+
 /**
  * B: one status row per stop line, in Board order. Lines TfL did not return
  * are dropped rather than guessed as good service.
@@ -201,6 +214,7 @@ export const toStatusRows = (
         ...toOgLine(id),
         statusText: text ? sentenceCase(text) : "Good service",
         tone: good ? "ok" : "alert",
+        ...(good ? {} : alertFor(worst)),
       },
     ]
   })

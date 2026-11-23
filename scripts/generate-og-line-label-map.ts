@@ -24,9 +24,14 @@ const { container, text } = require(helpersRoot) as {
 /** Must match `components/og/board-share-live-og-image.tsx` chip slots. */
 export const OG_LINE_LABEL_SLOTS = {
   /** B status / next-train chips: STATUS_CHIP_W − horizontal pad. */
-  status: { width: 300, padX: 16, size: 32 },
+  status: { width: 300, padX: 16, size: 32, inset: 0 },
+  /**
+   * B status chips with the LineBadge alert icon: 1em icon + 1/3em gap
+   * (32 + 11) come out of the same 300px budget.
+   */
+  statusAlert: { width: 300, padX: 16, size: 32, inset: 43 },
   /** A "Also here" chips: typical max before fitChips drops the rest. */
-  also: { width: 200, padX: 20, size: 28 },
+  also: { width: 200, padX: 20, size: 28, inset: 0 },
 } as const
 
 export type OgLineLabelSlot = keyof typeof OG_LINE_LABEL_SLOTS
@@ -62,8 +67,8 @@ export const pickOgLineLabel = async (
 ): Promise<string> => {
   const tiers = LINE_NAME_TIERS[lineId]
   if (!tiers) return lineId
-  const { width, padX, size } = OG_LINE_LABEL_SLOTS[slot]
-  const budget = width - padX * 2
+  const { width, padX, size, inset } = OG_LINE_LABEL_SLOTS[slot]
+  const budget = width - padX * 2 - inset
   for (const label of [tiers.full, tiers.middle, tiers.short]) {
     if ((await measureWidth(renderer, label, size)) <= budget) return label
   }
@@ -79,11 +84,14 @@ const main = async () => {
     style: "normal",
   })
 
-  const status: Record<string, string> = {}
-  const also: Record<string, string> = {}
+  const slots = Object.keys(OG_LINE_LABEL_SLOTS) as OgLineLabelSlot[]
+  const maps = Object.fromEntries(
+    slots.map((slot) => [slot, {} as Record<string, string>])
+  ) as Record<OgLineLabelSlot, Record<string, string>>
   for (const id of Object.keys(LINE_NAME_TIERS).sort()) {
-    status[id] = await pickOgLineLabel(renderer, id, "status")
-    also[id] = await pickOgLineLabel(renderer, id, "also")
+    for (const slot of slots) {
+      maps[slot][id] = await pickOgLineLabel(renderer, id, slot)
+    }
   }
 
   const outPath = join(process.cwd(), "lib/og/line-label-map.ts")
@@ -93,14 +101,18 @@ const main = async () => {
  * \`lib/og/line-label-map.test.ts\` fails if this drifts from the generator.
  */
 
-export type OgLineLabelSlot = "status" | "also"
+export type OgLineLabelSlot = ${slots.map((s) => JSON.stringify(s)).join(" | ")}
 
 export const OG_LINE_LABEL_MAP: Record<
   OgLineLabelSlot,
   Readonly<Record<string, string>>
 > = {
-  status: ${JSON.stringify(status, null, 2).replace(/\n/g, "\n  ")},
-  also: ${JSON.stringify(also, null, 2).replace(/\n/g, "\n  ")},
+${slots
+  .map(
+    (slot) =>
+      `  ${slot}: ${JSON.stringify(maps[slot], null, 2).replace(/\n/g, "\n  ")},`
+  )
+  .join("\n")}
 } as const
 
 /** Lookup for Takumi chips — falls back to the id when unknown. */
@@ -110,7 +122,7 @@ export const ogLineLabel = (
 ): string => OG_LINE_LABEL_MAP[slot][lineId] ?? lineId
 `
   writeFileSync(outPath, body)
-  console.log("wrote", outPath, Object.keys(status).length, "lines")
+  console.log("wrote", outPath, Object.keys(maps.status).length, "lines")
 }
 
 const isDirect =

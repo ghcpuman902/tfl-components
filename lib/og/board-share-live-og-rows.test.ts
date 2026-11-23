@@ -93,17 +93,17 @@ describe("toStatusRows (B)", () => {
       ["northern", "victoria", "piccadilly"]
     )
     assert.deepEqual(
-      rows.map((r) => [r.id, r.statusText, r.tone]),
+      rows.map((r) => [r.id, r.statusText, r.tone, r.alert]),
       [
-        ["northern", "Good service", "ok"],
-        ["victoria", "Minor delays", "alert"],
+        ["northern", "Good service", "ok", undefined],
+        ["victoria", "Minor delays", "alert", "minor"],
       ]
     )
   })
 })
 
 describe("splitStatusForOg (B)", () => {
-  it("details alerts and chips the rest; opacity tone stays on chips", () => {
+  it("details alerts and chips the rest; good chips carry no alert mark", () => {
     const rows = toStatusRows(
       [
         status("victoria", 9, "Minor Delays"),
@@ -119,10 +119,10 @@ describe("splitStatusForOg (B)", () => {
       ["victoria", "bakerloo"]
     )
     assert.deepEqual(
-      chips.map((r) => [r.id, r.tone]),
+      chips.map((r) => [r.id, r.tone, r.alert]),
       [
-        ["northern", "ok"],
-        ["central", "ok"],
+        ["northern", "ok", undefined],
+        ["central", "ok", undefined],
       ]
     )
   })

@@ -4,7 +4,7 @@
  * `lib/og/line-label-map.test.ts` fails if this drifts from the generator.
  */
 
-export type OgLineLabelSlot = "status" | "also"
+export type OgLineLabelSlot = "status" | "statusAlert" | "also"
 
 export const OG_LINE_LABEL_MAP: Record<
   OgLineLabelSlot,
@@ -32,6 +32,32 @@ export const OG_LINE_LABEL_MAP: Record<
     "tram": "Tram",
     "victoria": "Victoria",
     "waterloo-city": "Waterloo & City",
+    "weaver": "Weaver",
+    "windrush": "Windrush",
+    "woolwich-ferry": "Woolwich Ferry"
+  },
+  statusAlert: {
+    "bakerloo": "Bakerloo",
+    "central": "Central",
+    "circle": "Circle",
+    "district": "District",
+    "dlr": "DLR",
+    "elizabeth": "Elizabeth line",
+    "hammersmith-city": "H & City",
+    "jubilee": "Jubilee",
+    "liberty": "Liberty",
+    "lioness": "Lioness",
+    "metropolitan": "Metropolitan",
+    "mildmay": "Mildmay",
+    "northern": "Northern",
+    "piccadilly": "Piccadilly",
+    "rb1": "RB1",
+    "rb4": "RB4",
+    "rb6": "RB6",
+    "suffragette": "Suffragette",
+    "tram": "Tram",
+    "victoria": "Victoria",
+    "waterloo-city": "W & City",
     "weaver": "Weaver",
     "windrush": "Windrush",
     "woolwich-ferry": "Woolwich Ferry"
