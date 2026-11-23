@@ -100,10 +100,12 @@ const HeadingChips = ({
   if (visible.length === 0) return null
   return (
     // Own flex item: wraps below the heading as a whole when it does not
-    // fit beside it, and wraps its chips when a row is too narrow. Each line
-    // keeps a full tile; gap-y-2 leaves room for the overlaid dwell bar.
+    // fit beside it, and wraps its chips when a row is too narrow. Inline,
+    // the growing heading pushes it to the right; wrapped, it starts at the
+    // heading's left edge. Each line keeps a full tile; gap-y-2 leaves room
+    // for the overlaid dwell bar.
     <div
-      className="ml-auto flex min-h-[var(--arrivals-row)] max-w-full min-w-0 flex-wrap content-center items-center justify-end gap-x-1 gap-y-2"
+      className="flex min-h-[var(--arrivals-row)] max-w-full min-w-0 flex-wrap content-center items-center justify-start gap-x-1 gap-y-2"
       aria-hidden
     >
       {visible.map((id) => {
