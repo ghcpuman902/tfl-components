@@ -11,6 +11,9 @@ import { PORT_LABELS } from "./types"
 import { WORKBENCH_PRESETS } from "./workbench-presets"
 
 describe("workbench case discovery", () => {
+  // Discovery enumerates every matrix shape (~1s); run it once and share it.
+  const cases = discoverWorkbenchCases()
+
   it("drops the unrenderable directed one-way and complete-six presets", () => {
     assert.equal(
       WORKBENCH_PRESETS.some((preset) => preset.id === "directed"),
@@ -23,7 +26,6 @@ describe("workbench case discovery", () => {
   })
 
   it("keeps pedagogical presets that already draw and never lists Earl's Court", () => {
-    const cases = discoverWorkbenchCases()
     const ids = cases.map((preset) => preset.id)
     assert.ok(ids.includes("shared-five"))
     assert.ok(ids.includes("missing-one"))
@@ -43,7 +45,6 @@ describe("workbench case discovery", () => {
   })
 
   it("never includes a directional matrix or a complete six-arm graph", () => {
-    const cases = discoverWorkbenchCases()
     for (const preset of cases) {
       assert.equal(isDirectional(preset.matrix), false, preset.id)
       const completeSix =
@@ -54,7 +55,6 @@ describe("workbench case discovery", () => {
   })
 
   it("only lists a matrix that a known-block drawer or composeYs can draw", () => {
-    const cases = discoverWorkbenchCases()
     assert.ok(cases.length >= WORKBENCH_PRESETS.length)
     for (const preset of cases) {
       const kind = classifyPattern(preset.matrix)
@@ -65,7 +65,6 @@ describe("workbench case discovery", () => {
   })
 
   it("dedupes isomorphic shapes so pedagogical titles win", () => {
-    const cases = discoverWorkbenchCases()
     const sigs = cases.map((preset) => caseSignature(preset.matrix))
     assert.equal(new Set(sigs).size, sigs.length)
     const shared = cases.find((preset) => preset.id === "shared-five")

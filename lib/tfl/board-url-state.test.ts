@@ -38,26 +38,11 @@ describe("parseBoardConfig", () => {
     assert.equal(config.stop, "940GZZLUOXC")
   })
 
-  it("falls back on invalid behaviour", () => {
-    const config = parseBoardConfig("behaviour=voice")
-    assert.equal(config.behaviour, "interactive")
-  })
-
-  it("parses view=glance", () => {
-    const config = parseBoardConfig("view=glance")
-    assert.equal(config.view, "glance")
-  })
-
   it("maps legacy layout=square to view=glance", () => {
     const config = parseBoardConfig("layout=square&density=far")
     assert.equal(config.view, "glance")
     assert.equal("layout" in config, false)
     assert.equal("density" in config, false)
-  })
-
-  it("ignores invalid view and legacy layout", () => {
-    const config = parseBoardConfig("view=wide&layout=near")
-    assert.equal(config.view, undefined)
   })
 
   it("ignores retired a.pinAdvance", () => {
@@ -66,11 +51,6 @@ describe("parseBoardConfig", () => {
     )
     assert.equal(config.arrivals.pinFirst, false)
     assert.equal("pinAdvance" in config.arrivals, false)
-  })
-
-  it("maps legacy mode values to interactive", () => {
-    const config = parseBoardConfig("mode=touch&fit=fill")
-    assert.equal(config.behaviour, "interactive")
   })
 
   it("treats empty stop, stopName, and key as undefined", () => {
@@ -101,30 +81,29 @@ describe("parseBoardConfig", () => {
     assert.equal(hashHasBoardConfig("#key=abc123"), true)
   })
 
-  it("parses scalar a.rows", () => {
-    const config = parseBoardConfig("a.rows=6")
-    assert.equal(config.arrivals.rows, 6)
-  })
-
-  it("parses a.rows=0 as show-all", () => {
-    const config = parseBoardConfig("a.rows=0")
-    assert.equal(config.arrivals.rows, 0)
-  })
-
-  it("clamps a.rows above 16", () => {
-    const config = parseBoardConfig("a.rows=99")
-    assert.equal(config.arrivals.rows, 16)
-  })
-
-  it("falls back invalid scalar a.rows", () => {
-    assert.equal(parseBoardConfig("a.rows=-1").arrivals.rows, undefined)
-    assert.equal(parseBoardConfig("a.rows=2.5").arrivals.rows, undefined)
-    assert.equal(parseBoardConfig("a.rows=abc").arrivals.rows, undefined)
-  })
-
-  it("parses positional a.rows with empty slots", () => {
-    const config = parseBoardConfig("a.rows=6,,2")
-    assert.deepEqual(config.arrivals.rows, [6, undefined, 2])
+  it("reads each scalar field, falling back or clamping bad values", () => {
+    const cases: Array<
+      [
+        query: string,
+        read: (c: ReturnType<typeof parseBoardConfig>) => unknown,
+        expected: unknown,
+      ]
+    > = [
+      ["behaviour=voice", (c) => c.behaviour, "interactive"],
+      ["mode=touch&fit=fill", (c) => c.behaviour, "interactive"],
+      ["view=glance", (c) => c.view, "glance"],
+      ["view=wide&layout=near", (c) => c.view, undefined],
+      ["a.rows=6", (c) => c.arrivals.rows, 6],
+      ["a.rows=0", (c) => c.arrivals.rows, 0], // 0 = show all
+      ["a.rows=99", (c) => c.arrivals.rows, 16],
+      ["a.rows=-1", (c) => c.arrivals.rows, undefined],
+      ["a.rows=2.5", (c) => c.arrivals.rows, undefined],
+      ["a.rows=abc", (c) => c.arrivals.rows, undefined],
+      ["a.rows=6,,2", (c) => c.arrivals.rows, [6, undefined, 2]],
+    ]
+    for (const [query, read, expected] of cases) {
+      assert.deepEqual(read(parseBoardConfig(query)), expected, query)
+    }
   })
 
   it("parses a.lines with normalize, dedupe, drop unknown", () => {
@@ -301,7 +280,10 @@ describe("buildBoardHref", () => {
       stop: "940GZZLUOXC",
       arrivals: { rows: 3 },
     })
-    assert.equal(href, `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&a.rows=3`)
+    assert.equal(
+      href,
+      `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&a.rows=3`
+    )
   })
 
   it("keeps a trailing comma so a.rows=3, is first-slot only", () => {
@@ -309,7 +291,10 @@ describe("buildBoardHref", () => {
       stop: "940GZZLUOXC",
       arrivals: { rows: [3, undefined] },
     })
-    assert.equal(href, `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&a.rows=3,`)
+    assert.equal(
+      href,
+      `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&a.rows=3,`
+    )
   })
 
   it("serializes non-default scalar a.rows", () => {
@@ -317,7 +302,10 @@ describe("buildBoardHref", () => {
       stop: "940GZZLUOXC",
       arrivals: { rows: 6 },
     })
-    assert.equal(href, `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&a.rows=6`)
+    assert.equal(
+      href,
+      `${BOARD_VIEW_PATH}?stop=940GZZLUOXC#stop=940GZZLUOXC&a.rows=6`
+    )
   })
 
   it("serializes positional a.rows with literal commas", () => {
@@ -364,7 +352,10 @@ describe("buildBoardHref", () => {
     const hash = href.slice(href.indexOf("#"))
     const parsed = parseBoardConfig(hash)
     assert.deepEqual(parsed, original)
-    assert.match(href, /^\/board\/view\?stop=940GZZLUOXC&stopName=Oxford\+Circus#/)
+    assert.match(
+      href,
+      /^\/board\/view\?stop=940GZZLUOXC&stopName=Oxford\+Circus#/
+    )
   })
 
   it("round-trips arrivals settings", () => {
@@ -554,7 +545,10 @@ describe("s.lines order", () => {
   it("survives a URL round trip in the chosen order", () => {
     const lines = ["bakerloo", "central", "victoria", "northern", "circle"]
     const href = buildBoardHref({ status: { lines } })
-    assert.match(href, /s\.lines=bakerloo,central,victoria,northern,circle(&|$)/)
+    assert.match(
+      href,
+      /s\.lines=bakerloo,central,victoria,northern,circle(&|$)/
+    )
     const parsed = parseBoardConfig(href.slice(href.indexOf("#") + 1))
     assert.deepEqual(parsed.status.lines, lines)
     assert.equal(buildBoardHref({ status: parsed.status }), href)
