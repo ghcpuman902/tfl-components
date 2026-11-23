@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react"
 import { CheckIcon, CopyIcon, ExternalLinkIcon, QrCodeIcon } from "lucide-react"
 import { encode } from "uqr"
+import { BoardQrSvg } from "@/components/board/board-qr-svg"
+import { BoardShareButton } from "@/components/board/board-share-button"
 import { FeedbackTextLink } from "@/components/docs/feedback-text-link"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,44 +14,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
 
 const COPIED_MS = 2000
 
-type BoardQrSvgProps = {
-  url: string
-  size: number
-  cells: boolean[][]
-  className?: string
-}
-
-const BoardQrSvg = ({ url, size, cells, className }: BoardQrSvgProps) => (
-  <svg
-    role="img"
-    aria-label={`QR code for ${url}`}
-    viewBox={`0 0 ${size} ${size}`}
-    className={cn("text-black", className)}
-    shapeRendering="crispEdges"
-  >
-    <rect width={size} height={size} fill="white" />
-    {cells.map((row, y) =>
-      row.map((on, x) =>
-        on ? (
-          <rect
-            key={`${x}-${y}`}
-            x={x}
-            y={y}
-            width={1}
-            height={1}
-            fill="currentColor"
-          />
-        ) : null
-      )
-    )}
-  </svg>
-)
-
 type BoardShareCardProps = {
+  /** `/b/<slug>` for this Board; the Share button needs it. */
+  shortPath?: string
+  shareTitle?: string
   url: string
   href: string
   onOpen?: () => void
@@ -58,6 +29,8 @@ type BoardShareCardProps = {
 }
 
 export const BoardShareCard = ({
+  shortPath,
+  shareTitle = "Live board · Board",
   url,
   href,
   onOpen,
@@ -92,6 +65,13 @@ export const BoardShareCard = ({
 
   return (
     <section className="space-y-2" aria-label="Share">
+      {shortPath ? (
+        <BoardShareButton
+          url={shortPath}
+          title={shareTitle}
+          className="w-full"
+        />
+      ) : null}
       <Button
         nativeButton={false}
         size="lg"

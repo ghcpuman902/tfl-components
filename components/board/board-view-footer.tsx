@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { BoardShareButton } from "@/components/board/board-share-button"
 import { SITE_AUTHOR } from "@/lib/site"
 import { useFontsReady } from "@/lib/use-fonts-ready"
 import { cn } from "@/lib/utils"
@@ -37,6 +38,9 @@ type BoardViewFooterProps = {
   /** Square / room-distance chrome — larger tap targets, quieter credit. */
   compact?: boolean
   editHref?: string
+  /** Short link for Share; omitted where sharing makes no sense (glance, embeds). */
+  sharePath?: string
+  shareTitle?: string
   fullscreenLabel?: "Full screen" | "Exit full screen"
   onFullscreen?: () => void
   fullscreenError?: string | null
@@ -163,6 +167,8 @@ export const BoardViewFooter = ({
   stale = false,
   compact = false,
   editHref,
+  sharePath,
+  shareTitle = "Live board · Board",
   fullscreenLabel,
   onFullscreen,
   fullscreenError,
@@ -251,6 +257,14 @@ export const BoardViewFooter = ({
           <Link href={editHref} className={actionClass}>
             Edit board
           </Link>
+        ) : null}
+        {sharePath ? (
+          <BoardShareButton
+            url={sharePath}
+            title={shareTitle}
+            variant="link"
+            className={actionClass}
+          />
         ) : null}
         {onFullscreen && fullscreenLabel ? (
           <button type="button" onClick={onFullscreen} className={actionClass}>

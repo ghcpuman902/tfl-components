@@ -12,6 +12,7 @@ import {
   MARKDOWN_RESPONSE_HEADERS,
   markdownNotFound,
 } from "@/lib/agent/machine-content"
+import { decodeBoardShortSlug } from "@/lib/tfl/board-short-link"
 import {
   EXPLORER_PATH,
   legacyExplorerRedirectHref,
@@ -108,6 +109,14 @@ export async function proxy(request: NextRequest) {
     if (href) {
       return NextResponse.redirect(new URL(href, request.url), 308)
     }
+  }
+
+  const short = pathname.match(/^\/b\/([^/]+)(?:\/og)?$/)
+  if (short && !decodeBoardShortSlug(short[1])) {
+    // No page lives at `/b`, so this renders the 404 with a 404 status.
+    const url = request.nextUrl.clone()
+    url.pathname = "/b"
+    return NextResponse.rewrite(url)
   }
 
   const match = pathname.match(/^\/r\/([a-z0-9]+(?:-[a-z0-9]+)*)\.json$/i)

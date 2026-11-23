@@ -16,6 +16,7 @@ import { normalizeLineId } from "tfl-ts"
 import { ARRIVALS_RHYTHM_VARS } from "@/components/tfl/arrivals/arrivals-board-view"
 import { BoardRateLimitScreen } from "@/components/board/board-rate-limit"
 import { BoardGlanceArrivals } from "@/components/board/board-glance-arrivals"
+import { BoardSharedStrip } from "@/components/board/board-shared-strip"
 import { BoardViewFooter } from "@/components/board/board-view-footer"
 import { BoardViewHomeScreenOffer } from "@/components/board/board-view-home-screen-offer"
 import { BoardViewRecovery } from "@/components/board/board-view-recovery"
@@ -86,6 +87,16 @@ import {
   resolveBoardStopNameOverride,
   type BoardStationNamesIndex,
 } from "@/lib/tfl/board-station-names"
+import {
+  boardShortPath,
+  encodeBoardShortSlug,
+} from "@/lib/tfl/board-short-link"
+import {
+  boardTopCardParts,
+  isSharedArrival,
+  readSharedStripDismissed,
+  writeSharedStripDismissed,
+} from "@/lib/tfl/board-shared-arrival"
 import { useUserTflCredentials } from "@/components/user-tfl-credentials-provider"
 import { useBoardFullscreen } from "@/hooks/use-board-fullscreen"
 import { useBoardHomeScreen } from "@/hooks/use-board-home-screen"
@@ -802,15 +813,13 @@ export const BoardDisplay = ({
       jsFullscreenActive,
     })
 
-  if (
-    !homeScreenOfferOpen &&
+  const [homeScreenTipClosed, setHomeScreenTipClosed] = useState(false)
+  const homeScreenTip =
     boardReady &&
     offerInstall &&
     platform === "ios" &&
+    !homeScreenTipClosed &&
     !readHomeScreenOfferDismissed()
-  ) {
-    setHomeScreenOfferOpen(true)
-  }
 
   const handleDismissHomeScreenOffer = useCallback(() => {
     writeHomeScreenOfferDismissed()
@@ -833,6 +842,42 @@ export const BoardDisplay = ({
     ...config,
     key: undefined,
   })}`
+
+  const shortSlug = useMemo(
+    () =>
+      demo
+        ? null
+        : encodeBoardShortSlug(config, (id) =>
+            lookupBoardStationName(stationNames, id)
+          ),
+    [config, demo, stationNames]
+  )
+  const sharePath = shortSlug ? boardShortPath(shortSlug) : null
+  const shareTitle = `${config.stopName ?? lookupBoardStationName(stationNames, config.stop) ?? "Live board"} · Board`
+
+  const [sharedArrival, setSharedArrival] = useState(false)
+  useEffect(() => {
+    if (isPreview) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads the URL once after hydration
+    setSharedArrival(
+      isSharedArrival(window.location.search) && !readSharedStripDismissed()
+    )
+  }, [isPreview])
+  const topCardParts = boardTopCardParts({
+    glance: isGlance,
+    sharedArrival,
+    homeScreenTip,
+  })
+  const handleDismissTopCard = () => {
+    if (topCardParts?.shared) {
+      writeSharedStripDismissed()
+      setSharedArrival(false)
+    }
+    if (topCardParts?.homeScreen) {
+      writeHomeScreenOfferDismissed()
+      setHomeScreenTipClosed(true)
+    }
+  }
 
   const railData = useMemo(() => {
     if (!config.arrivals.lineOrder?.length) return railRows
@@ -972,15 +1017,13 @@ export const BoardDisplay = ({
     },
   }
   const holdKeyFor = (kind: BoardPanelKind) =>
-    boardPanelHoldKey(
-      kind,
-      `${panelSource[kind]}|${holdLayout}`,
-      viewportWidth
-    )
+    boardPanelHoldKey(kind, `${panelSource[kind]}|${holdLayout}`, viewportWidth)
   // First fetch only: a refresh with data (or after an empty answer) never waits.
   const panelPending = (kind: BoardPanelKind) => {
     const live = panelLive[kind]
-    return live.loading && live.fetchedAt == null && live.count === 0 && !live.error
+    return (
+      live.loading && live.fetchedAt == null && live.count === 0 && !live.error
+    )
   }
   const holdPlan = new Map(
     planBoardPanelHold(
@@ -1224,9 +1267,7 @@ export const BoardDisplay = ({
                 key={kind}
                 holdKey={holdKeyFor(kind)}
                 minHeight={plan?.minHeight}
-                settled={
-                  !panelLive[kind].loading && panelLive[kind].count > 0
-                }
+                settled={!panelLive[kind].loading && panelLive[kind].count > 0}
                 onSettledHeight={rememberPanelHeight}
               >
                 {renderPanel(kind)}
@@ -1316,6 +1357,13 @@ export const BoardDisplay = ({
   return (
     <div ref={boardRootRef} className={shellClass} style={boardShellStyle}>
       {isPreview ? null : <h1 className="sr-only">Live board</h1>}
+      {topCardParts ? (
+        <BoardSharedStrip
+          parts={topCardParts}
+          editHref={editHref}
+          onDismiss={handleDismissTopCard}
+        />
+      ) : null}
       <div
         className={
           isGlance
@@ -1351,6 +1399,10 @@ export const BoardDisplay = ({
           stale={awaitingFresh}
           compact={isGlance}
           editHref={isGlance ? undefined : editHref}
+          sharePath={
+            isGlance || embedded ? undefined : (sharePath ?? undefined)
+          }
+          shareTitle={shareTitle}
           fullscreenLabel={
             !isGlance && fullscreen.available && !fromHomeScreen && !embedded
               ? fullscreen.active

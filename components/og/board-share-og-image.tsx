@@ -1,7 +1,8 @@
 import type { CSSProperties } from "react"
+import { ogLineChipTextColor } from "@/lib/og/chip-text"
+import { SITE_HOST } from "@/lib/site"
 import { TFL_BLUE, UNDERGROUND_RING_RED } from "@/lib/tfl/brand-colours"
 import type { BoardShareOgLine, BoardShareOgModel } from "@/lib/og/board-share-og"
-import { SITE_HOST } from "@/lib/site"
 
 const INK = "#171717"
 const PAPER = "#FFFFFF"
@@ -20,7 +21,7 @@ const face = (size: number, color: string = INK): CSSProperties => ({
   fontSynthesis: "none",
 })
 
-const roundelSrc = (disc: string, bar: string): string => {
+export const roundelSrc = (disc: string, bar: string): string => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 615.3 500"><circle cx="308.123" cy="249.985" r="250" fill="${disc}"/><rect x="0" y="199.5" width="615.3" height="101.1" rx="50.55" ry="50.55" fill="${bar}"/></svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
@@ -41,11 +42,10 @@ const BoldWord = ({ text }: { text: string }) => (
 )
 
 const LinePill = ({ line }: { line: BoardShareOgLine }) => {
-  const onDark = line.id === "northern" || line.id === "piccadilly" || line.id === "bakerloo"
   return (
     <div
       style={{
-        ...face(28, onDark ? PAPER : INK),
+        ...face(28, ogLineChipTextColor(line.id)),
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

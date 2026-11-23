@@ -39,7 +39,7 @@ const lineColor = (lineId: string): string => {
   }
 }
 
-const toOgLine = (lineId: string): BoardShareOgLine => ({
+export const toOgLine = (lineId: string): BoardShareOgLine => ({
   id: lineId,
   name: getLineNameTiers(lineId).full,
   color: lineColor(lineId),

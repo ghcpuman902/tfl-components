@@ -283,3 +283,54 @@ export const boardViewPageMetadata = (
     },
   }
 }
+
+const SHORT_LINK_HEADINGS = { cycle: "Bikes near", rail: "Trains at", bus: "Buses at" } as const
+
+/**
+ * `/b/<slug>`: og:url is the short link itself, the image is that link's
+ * live card. Not indexed; the Board it opens is the shared person's own.
+ */
+export const boardShortLinkMetadata = ({
+  slug,
+  stopName,
+  firstPanel,
+}: {
+  slug: string
+  stopName?: string
+  firstPanel?: string
+}): Metadata => {
+  const path = `/b/${slug}`
+  const name = stopName?.trim() || "a TfL stop"
+  const heading =
+    SHORT_LINK_HEADINGS[firstPanel as keyof typeof SHORT_LINK_HEADINGS] ?? "Live board for"
+  const title = `${heading} ${name} · Board`
+  const description = `Live TfL board for ${name}. Free, no app, no sign-in.`
+  const url = absoluteUrl(path)
+  const image = {
+    url: absoluteUrl(`${path}/og`),
+    width: OG_IMAGE.width,
+    height: OG_IMAGE.height,
+    alt: `Live board for ${name}.`,
+  }
+  return {
+    title: { absolute: title },
+    description,
+    alternates: { canonical: url },
+    robots: { index: false, follow: false },
+    openGraph: {
+      type: "website",
+      locale: "en_GB",
+      siteName: SITE_NAME,
+      title,
+      description,
+      url,
+      images: [image],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [{ url: image.url, alt: image.alt }],
+    },
+  }
+}
