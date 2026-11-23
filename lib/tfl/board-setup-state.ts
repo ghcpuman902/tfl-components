@@ -9,6 +9,7 @@ import {
   resolveBoardSlots,
   type BoardPanelKind,
 } from "@/lib/tfl/board-panels"
+import { serializeBusStopIds } from "@/lib/tfl/board-bus-stops"
 import type { BoardConfig } from "@/lib/tfl/board-url-state"
 
 export const BOARD_SETUP_STAGES = [1, 2, 3, 4, 5] as const
@@ -30,9 +31,17 @@ export type BoardSetupDraft = {
   locationUsed: boolean
   lineIds: readonly string[]
   nearbyModes: readonly BoardNearbyMode[]
+  /** `b.stop`: one id or several, comma-separated. */
   busStopId: string | null
+  /**
+   * The user chose these bus stops (or the link set them): a station pick
+   * keeps them. False: the nearest stops, which follow the station.
+   */
+  busStopsCustom: boolean
   riverStopId: string | null
   cycleDockIds: readonly string[]
+  /** The user chose these docks (or the link set them): a station pick keeps them. */
+  cycleDocksCustom: boolean
   statusLineIds: readonly string[]
   /** When true, status shows only the priority set (`s.overview=selection`). */
   statusOnlyThese: boolean
@@ -99,8 +108,10 @@ export const createBoardSetupDraft = (id = "pending"): BoardSetupDraft => ({
   lineIds: [],
   nearbyModes: [],
   busStopId: null,
+  busStopsCustom: false,
   riverStopId: null,
   cycleDockIds: [],
+  cycleDocksCustom: false,
   statusLineIds: [],
   statusOnlyThese: false,
   keyMode: null,
@@ -220,11 +231,16 @@ export const parseBoardSetupDraft = (value: unknown): BoardSetupDraft | null => 
     nearbyModes: Array.isArray(value.nearbyModes)
       ? value.nearbyModes.filter(isNearbyMode)
       : [],
-    busStopId: typeof value.busStopId === "string" ? value.busStopId : null,
+    busStopId:
+      typeof value.busStopId === "string"
+        ? (serializeBusStopIds(value.busStopId) ?? null)
+        : null,
+    busStopsCustom: value.busStopsCustom === true,
     riverStopId: typeof value.riverStopId === "string" ? value.riverStopId : null,
     cycleDockIds: Array.isArray(value.cycleDockIds)
       ? value.cycleDockIds.filter((item): item is string => typeof item === "string")
       : [],
+    cycleDocksCustom: value.cycleDocksCustom === true,
     statusLineIds: Array.isArray(value.statusLineIds)
       ? value.statusLineIds.filter(
           (item): item is string => typeof item === "string"
@@ -391,9 +407,11 @@ export const draftFromBoardConfig = (
     locationUsed: false,
     lineIds: [...(config.arrivals.lineOrder ?? [])],
     nearbyModes,
-    busStopId: config.bus.stop?.trim() || null,
+    busStopId: serializeBusStopIds(config.bus.stop) ?? null,
+    busStopsCustom: Boolean(serializeBusStopIds(config.bus.stop)),
     riverStopId: config.river.stop?.trim() || null,
     cycleDockIds: [...(config.cycle.docks ?? [])],
+    cycleDocksCustom: (config.cycle.docks ?? []).length > 0,
     statusLineIds: [...(config.status.lines ?? [])],
     statusOnlyThese: config.status.overview === "selection",
     keyMode: config.key?.trim() ? "shared" : "skipped",

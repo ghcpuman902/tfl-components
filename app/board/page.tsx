@@ -9,6 +9,8 @@ import { pageMetadata, ROUTE_PAGE_META } from "@/lib/site-metadata"
 import { BoardStagedBuilder } from "@/components/board/board-staged-builder"
 import { readAttributionContext } from "@/lib/landing/assignment"
 import { getBoardStationLinesIndex } from "@/lib/tfl/board-station-lines"
+import { getExplorerTubeRailPoints } from "@/lib/tfl/explorer/points-tube-rail"
+import { buildHubStationIds } from "@/lib/tfl/homepage-live/hub-stations"
 import {
   getBoardStationNamesIndex,
   getBoardStationSearchIndex,
@@ -24,6 +26,7 @@ const BoardFromParams = async () => {
       Promise.resolve(getBoardStationSearchIndex()),
       readAttributionContext(),
     ])
+  const searchStations = getExplorerTubeRailPoints()
 
   return (
     <div className="mx-auto w-full max-w-7xl">
@@ -40,6 +43,8 @@ const BoardFromParams = async () => {
           stationLines={stationLines}
           stationNames={stationNames}
           stations={stations}
+          searchStations={searchStations}
+          hubStationIds={buildHubStationIds(searchStations)}
           analyticsContext={analyticsContext}
         />
       </article>

@@ -341,6 +341,52 @@ export const placePanel = (
   }
 }
 
+/** Parts on the board in reading order: the wide column, then the narrow one. */
+export const onBoardPanels = (layout: BoardCustomiseLayout) => {
+  const { wide, narrow } = layoutSections(layout)
+  return [...wide, ...narrow]
+}
+
+/**
+ * Move a panel to `index` in the one "On the board" list. It joins the
+ * column of the part it lands under (or over, at the top), so the list keeps
+ * reading wide column first and the board stacks it where it was dropped. A
+ * panel off the board (dragged up from Off) goes on first, in the same step.
+ */
+export const placeOnBoard = (
+  current: BoardCustomiseLayout,
+  kind: BoardPanelKind,
+  index: number
+): BoardCustomiseLayout => {
+  const wasOn = current.panels.some((panel) => panel.kind === kind && panel.on)
+  const layout = wasOn ? current : setPanelOn(current, kind, true)
+  const moving = layout.panels.find((panel) => panel.kind === kind)
+  if (!moving?.on) return current
+  const order = placeLine(
+    onBoardPanels(layout).map((panel) => panel.kind),
+    kind,
+    index
+  ) as BoardPanelKind[]
+  const at = order.indexOf(kind)
+  const neighbour = order[at - 1] ?? order[at + 1]
+  const column =
+    layout.panels.find((panel) => panel.kind === neighbour)?.column ??
+    moving.column
+  const byKind = new Map(
+    layout.panels.map((panel) => [
+      panel.kind,
+      panel.kind === kind ? { ...panel, column } : panel,
+    ])
+  )
+  let next = 0
+  return {
+    ...layout,
+    panels: layout.panels.map((panel) =>
+      panel.on ? (byKind.get(order[next++] as BoardPanelKind) ?? panel) : panel
+    ),
+  }
+}
+
 export const setPanelHeight = (
   layout: BoardCustomiseLayout,
   kind: BoardPanelKind,
@@ -354,6 +400,42 @@ export const panelHeight = (
   layout: BoardCustomiseLayout,
   kind: BoardPanelKind
 ): number => layout.heights[kind] ?? CUSTOMISE_HEIGHT_DEFAULT[kind]
+
+/** What a panel's target stop or line set is, as the customise row reads it. */
+export type PanelSummaryTarget = "ready" | "loading" | "none"
+
+/**
+ * One line, no wrapping: what this panel shows. A hidden row in the full-page
+ * list (`hiddenRow`) reads the subtitle it would have on the board, or nothing
+ * when it has no target; other lists keep "Not on the board".
+ */
+export const panelSummaryText = (input: {
+  kind: BoardPanelKind
+  shown: boolean
+  target: PanelSummaryTarget
+  height: number
+  stationName: string
+  railLineNames: readonly string[]
+  firstStatusLineName: string | null
+  hiddenRow?: boolean
+}): string | null => {
+  const { kind, target, stationName } = input
+  if (!input.shown) {
+    if (!input.hiddenRow) return "Not on the board"
+    if (target === "none") return null
+  }
+  if (target === "loading") return "Finding the nearest stop…"
+  if (target === "none") {
+    return kind === "rail" ? "Pick a station" : `None near ${stationName}`
+  }
+  const height = heightLabel(kind, input.height)
+  if (kind === "rail") return `${input.railLineNames.join(", ")} · ${height}`
+  if (kind === "status") {
+    const first = input.firstStatusLineName
+    return `${first ? `${first} first` : "Whole network"} · ${height}`
+  }
+  return `Nearest to ${stationName} · ${height}`
+}
 
 /** Wide column, Narrow column, Not on the board: each in stack order. */
 export const layoutSections = (layout: BoardCustomiseLayout) => ({
@@ -426,7 +508,8 @@ export const undoStationStatusLines = (
 /**
  * A station pick. The default panel replaces the status order (today's
  * behaviour); the variants keep the user's order (Q4) and offer "Use the lines
- * at X". Either way the nearby ids are cleared for a fresh lookup.
+ * at X". Either way the nearby ids are cleared for a fresh lookup, except
+ * bus stops and docks the user chose, which stay.
  */
 export const draftForStationPick = (
   current: BoardSetupDraft,
@@ -444,9 +527,9 @@ export const draftForStationPick = (
   stopName: pick.stopName,
   lineIds: [...pick.lineIds],
   statusLineIds: [...pick.extraStatusLineIds],
-  busStopId: null,
+  busStopId: current.busStopsCustom ? current.busStopId : null,
   riverStopId: null,
-  cycleDockIds: [],
+  cycleDockIds: current.cycleDocksCustom ? current.cycleDockIds : [],
   statusOrder: pick.keepStatusOrder ? current.statusOrder : null,
   statusOrderStopId: pick.keepStatusOrder ? current.statusOrderStopId : null,
 })

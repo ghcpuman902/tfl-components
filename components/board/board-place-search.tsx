@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useId, useMemo, useState } from "react"
-import { LocateFixed } from "lucide-react"
+import { LocateFixed, PlusIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Combobox,
@@ -35,7 +35,14 @@ type BoardPlaceSearchProps = {
   inputId: string
   placeholder: string
   emptyMessage: string
+  /**
+   * Add mode (bus): a list being built, not one pick. Searches as you type,
+   * each result reads "Added" or has +, and nothing is shown as selected.
+   */
+  addedIds?: readonly string[]
 }
+
+const SEARCH_DELAY_MS = 300
 
 const PlaceIdentity = ({ place }: { place: BoardPlaceHit }) => (
   <span className="flex min-w-0 items-center gap-2">
@@ -113,7 +120,9 @@ export const BoardPlaceSearch = ({
   inputId,
   placeholder,
   emptyMessage,
+  addedIds,
 }: BoardPlaceSearchProps) => {
+  const adding = addedIds !== undefined
   const listId = useId()
   const [query, setQuery] = useState("")
   const [places, setPlaces] = useState<BoardPlaceHit[]>([])
@@ -165,6 +174,32 @@ export const BoardPlaceSearch = ({
         (pier.context?.toLowerCase().includes(trimmed) ?? false)
     )
   }, [piers, query])
+
+  useEffect(() => {
+    if (!adding) return
+    const trimmed = query.trim()
+    if (trimmed.length < 2) return
+    let cancelled = false
+    const timer = window.setTimeout(() => {
+      setBusy(true)
+      void searchBoardPlaces(kind, trimmed).then((result) => {
+        if (cancelled) return
+        setBusy(false)
+        setPlaces(result.ok ? result.places : [])
+        setError(
+          !result.ok
+            ? result.error
+            : result.places.length === 0
+              ? emptyMessage
+              : null
+        )
+      })
+    }, SEARCH_DELAY_MS)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [adding, emptyMessage, kind, query])
 
   const handleSelect = (
     place: BoardPlaceHit,
@@ -232,6 +267,74 @@ export const BoardPlaceSearch = ({
         err instanceof Error ? err.message : "Could not read location."
       )
     }
+  }
+
+  if (adding) {
+    const typed = query.trim().length >= 2
+    return (
+      <div className="space-y-2">
+        <input
+          id={inputId}
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          autoComplete="off"
+          spellCheck={false}
+          autoFocus
+          placeholder={placeholder}
+          aria-controls={listId}
+          className="flex min-h-11 w-full border border-input bg-transparent px-3 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
+        />
+        {typed && (busy || error) ? (
+          <p role="status" className="text-sm text-muted-foreground">
+            {busy ? "Searching…" : error}
+          </p>
+        ) : null}
+        {typed && places.length > 0 ? (
+          <ul
+            id={listId}
+            aria-label="Search results"
+            className="border-y border-border"
+          >
+            {places.map((place) => {
+              const added = addedIds.includes(place.id)
+              return (
+                <li
+                  key={place.id}
+                  className="flex min-h-12 items-center justify-between gap-3 border-b border-border py-1 last:border-b-0"
+                >
+                  <span className="min-w-0">
+                    <span className="flex items-center gap-1.5 text-sm font-medium">
+                      <span className="truncate">{place.name}</span>
+                      {place.stopLetter ? (
+                        <StopLetterBadge letter={place.stopLetter} size="sm" />
+                      ) : null}
+                    </span>
+                    {place.context ? (
+                      <span className="block truncate text-sm text-muted-foreground">
+                        {place.context}
+                      </span>
+                    ) : null}
+                  </span>
+                  {added ? (
+                    <span className="shrink-0 text-sm">Added</span>
+                  ) : (
+                    <button
+                      type="button"
+                      aria-label={`Add ${place.name}${place.stopLetter ? ` stop ${place.stopLetter}` : ""}`}
+                      className="inline-flex size-11 shrink-0 items-center justify-center outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                      onClick={() => onSelect(place)}
+                    >
+                      <PlusIcon className="size-5" aria-hidden />
+                    </button>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        ) : null}
+      </div>
+    )
   }
 
   if (kind === "river") {

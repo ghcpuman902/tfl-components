@@ -96,6 +96,11 @@ import { OXFORD_CIRCUS_ARRIVALS } from "@/lib/tfl/fixtures/arrivals-boards"
 import { HOME_RAIL_STOP } from "@/lib/tfl/home-arrivals-stops"
 import { BOARD_SETTINGS } from "@/lib/tfl/board-settings"
 import {
+  busArrivalsRequest,
+  orderBusPanelRows,
+  parseBusStopIds,
+} from "@/lib/tfl/board-bus-stops"
+import {
   readInstalledBoardRecord,
   writeInstalledBoardConfig,
 } from "@/lib/tfl/board-installed-storage"
@@ -524,12 +529,19 @@ export const BoardDisplay = ({
     siteScope: "board",
   })
 
-  const busStopId = config.bus.stop ?? ""
+  const busStopIds = useMemo(
+    () => parseBusStopIds(config.bus.stop),
+    [config.bus.stop]
+  )
+  const busStopId = busStopIds[0] ?? ""
   const riverStopId = config.river.stop ?? ""
   const cycleDockIds = config.cycle.docks ?? []
 
+  const busRequest = busArrivalsRequest(
+    boardReady && showBus ? config.bus.stop : ""
+  )
   const busArrivals = useDualPathArrivals({
-    stopPointId: boardReady && showBus ? busStopId : "",
+    ...busRequest,
     appKeyOverride: boardReady ? appKey : null,
     siteScope: "board",
   })
@@ -894,16 +906,16 @@ export const BoardDisplay = ({
     stopId,
   ])
 
-  const busData = useMemo(() => {
-    const routes = config.bus.routes
-    if (!routes?.length) return busArrivals.data
-    const keep = new Set(routes.map((id) => id.toLowerCase()))
-    return busArrivals.data.filter((row) => {
-      const id = (row.lineId ?? "").toLowerCase()
-      const name = (row.lineName ?? "").toLowerCase()
-      return keep.has(id) || keep.has(name)
-    })
-  }, [busArrivals.data, config.bus.routes])
+  // Route sections in the editor's order: `b.routes` as dragged, else by `b.stop` order.
+  const busData = useMemo(
+    () => orderBusPanelRows(busArrivals.data, busStopIds, config.bus.routes),
+    [busArrivals.data, busStopIds, config.bus.routes]
+  )
+  // The header names the first stop in `b.stop` order, not whichever stop's bus is soonest.
+  const busStopName =
+    busArrivals.data.find((row) => row.naptanId === busStopId)?.stationName ??
+    busArrivals.data[0]?.stationName ??
+    "Bus"
 
   const statusData = useMemo(() => {
     const lines = config.status.lines
@@ -931,7 +943,7 @@ export const BoardDisplay = ({
   const holdLayout = `${slots.p1.join(",")}|${slots.p2.join(",")}|${busLayout}|${config.arrivals.rows ?? ""}|${config.bus.rows ?? ""}|${config.river.rows ?? ""}|${config.cycle.tiles ?? ""}|${config.status.tiles ?? ""}`
   const panelSource: Record<BoardPanelKind, string> = {
     rail: stopId,
-    bus: busStopId,
+    bus: busStopIds.join(","),
     river: riverStopId,
     cycle: (config.cycle.docks ?? []).join(","),
     status: (config.status.lines ?? []).join(","),
@@ -1057,12 +1069,13 @@ export const BoardDisplay = ({
     if (kind === "bus") {
       return (
         <BusArrivalsBoard
-          stopName={busArrivals.data[0]?.stationName ?? "Bus"}
+          stopName={busStopName}
           stopPointId={busStopId || undefined}
           headingLevel={2}
           data={busData}
           now={busArrivals.fetchedAt ?? undefined}
-          groupBy={config.bus.routes?.length ? "none" : "route"}
+          groupBy="route"
+          groupSortBy="source"
           pageSize={config.bus.rows ?? (isGlance ? 3 : undefined)}
           behaviour={panelBehaviour}
           pinFirst={arrivalsProps.pinFirst}

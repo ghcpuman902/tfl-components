@@ -12,9 +12,12 @@ import {
   layoutFromConfig,
   layoutSections,
   layoutSettingsAsOverrides,
+  panelSummaryText,
   moveLineToTop,
   nearbyModesForLayout,
+  onBoardPanels,
   placeLine,
+  placeOnBoard,
   panelRowTiles,
   placePanel,
   setPanelColumn,
@@ -227,6 +230,48 @@ describe("customise layout", () => {
   })
 })
 
+describe("one 'On the board' list", () => {
+  it("a part dragged to the top of the list goes to the top of the board", () => {
+    const layout = placeOnBoard(layoutFromConfig(base), "status", 0)
+    assert.deepEqual(
+      onBoardPanels(layout).map((panel) => panel.kind),
+      ["status", "rail", "bus"]
+    )
+    assert.deepEqual(applyLayoutToConfig(base, layout).slots, {
+      p1: ["status", "rail", "bus"],
+      p2: [],
+    })
+  })
+
+  it("a part dragged up from Off goes on the board where it was dropped", () => {
+    const withBusOff = setPanelOn(layoutFromConfig(base), "bus", false)
+    const layout = placeOnBoard(withBusOff, "bus", 0)
+    assert.equal(layout.panels.find((panel) => panel.kind === "bus")?.on, true)
+    assert.deepEqual(
+      onBoardPanels(layout).map((panel) => panel.kind),
+      ["bus", "rail", "status"]
+    )
+    assert.deepEqual(applyLayoutToConfig(base, layout).slots, {
+      p1: ["bus", "rail"],
+      p2: ["status"],
+    })
+  })
+
+  it("a part from Off dropped under the narrow column joins it", () => {
+    const withBusOff = setPanelOn(layoutFromConfig(base), "bus", false)
+    const layout = placeOnBoard(withBusOff, "bus", 2)
+    assert.deepEqual(applyLayoutToConfig(base, layout).slots, {
+      p1: ["rail"],
+      p2: ["status", "bus"],
+    })
+  })
+
+  it("reordering within the list keeps Only show this", () => {
+    const solo = toggleSoloPanel(layoutFromConfig(base), "status")
+    assert.equal(placeOnBoard(solo, "bus", 0).solo, "status")
+  })
+})
+
 describe("customise status priority", () => {
   const atOxford = {
     ...createBoardSetupDraft("d"),
@@ -282,6 +327,20 @@ describe("customise status priority", () => {
     assert.equal(statusStationPending(followed), false)
     const undone = undoStationStatusLines(followed, undo)
     assert.deepEqual(statusLineOrderFromDraft(undone), ["elizabeth", "central"])
+  })
+
+  it("bus stops the user chose survive a station pick; the nearest set does not", () => {
+    const pick = {
+      stopId: "940GZZLUKSX",
+      stopName: null,
+      lineIds: ["northern"],
+      extraStatusLineIds: [],
+      keepStatusOrder: true,
+    }
+    const nearest = { ...atOxford, busStopId: "490G1,490G2" }
+    assert.equal(draftForStationPick(nearest, pick).busStopId, null)
+    const custom = { ...nearest, busStopsCustom: true }
+    assert.equal(draftForStationPick(custom, pick).busStopId, "490G1,490G2")
   })
 
   it("the default panel's pick still replaces the order", () => {
@@ -341,5 +400,61 @@ describe("customise shared state", () => {
       "bakerloo",
     ])
     assert.equal(hashOf(applyLayoutToConfig(parsed, read)), hashOf(parsed))
+  })
+})
+
+describe("panelSummaryText", () => {
+  const base = {
+    shown: true,
+    target: "ready" as const,
+    stationName: "King's Cross St. Pancras",
+    railLineNames: ["Northern", "Victoria"],
+    firstStatusLineName: null,
+  }
+
+  it("reads what a visible panel shows", () => {
+    assert.equal(
+      panelSummaryText({ ...base, kind: "bus", height: 3 }),
+      "Nearest to King's Cross St. Pancras · " + heightLabel("bus", 3)
+    )
+    assert.equal(
+      panelSummaryText({ ...base, kind: "rail", height: 3 }),
+      "Northern, Victoria · " + heightLabel("rail", 3)
+    )
+  })
+
+  it("a hidden row in the full-page list reads its visible subtitle, never 'Not on the board'", () => {
+    for (const kind of ["rail", "bus", "status", "river", "cycle"] as const) {
+      const hidden = panelSummaryText({
+        ...base,
+        kind,
+        height: 3,
+        shown: false,
+        hiddenRow: true,
+      })
+      assert.equal(hidden, panelSummaryText({ ...base, kind, height: 3 }))
+      assert.notEqual(hidden, "Not on the board")
+    }
+  })
+
+  it("a hidden row with no target shows just the name", () => {
+    assert.equal(
+      panelSummaryText({
+        ...base,
+        kind: "river",
+        height: 3,
+        shown: false,
+        target: "none",
+        hiddenRow: true,
+      }),
+      null
+    )
+  })
+
+  it("other lists still say 'Not on the board' for a hidden panel", () => {
+    assert.equal(
+      panelSummaryText({ ...base, kind: "bus", height: 3, shown: false }),
+      "Not on the board"
+    )
   })
 })

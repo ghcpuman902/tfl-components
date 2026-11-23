@@ -6,10 +6,18 @@ import {
   formatBikePointId,
   normalizeBusRouteIds,
 } from "@/lib/tfl/board-panels"
-import { isBoardableBusStopId, mapStopPoint } from "@/lib/tfl/bus-stop-shape"
+import {
+  findStopPointNode,
+  isBoardableBusStopId,
+  mapStopPoint,
+} from "@/lib/tfl/bus-stop-shape"
 import { getTflClient } from "@/lib/tfl/client"
 import { getExplorerRiverPiers } from "@/lib/tfl/explorer/points-river"
-import { normaliseBikePoint } from "@/lib/tfl/explorer-point-normalise"
+import {
+  normaliseBikePoint,
+  type ExplorerPoint,
+} from "@/lib/tfl/explorer-point-normalise"
+import { distanceMeters } from "@/lib/tfl/geo"
 
 export type BoardPlaceKind = "bus" | "river" | "cycle"
 
@@ -52,7 +60,7 @@ export async function getBoardBusStopRoutes(
     const client = getTflClient()
     const details = await client.stopPoint.get([trimmed])
     const detail = Array.isArray(details) ? details[0] : details
-    const stop = detail ? mapStopPoint(detail) : null
+    const stop = detail ? mapStopPoint(findStopPointNode(detail, trimmed)) : null
     return { ok: true, routes: normalizeBusRouteIds(stop?.lines ?? []) }
   } catch (err) {
     const message =
@@ -107,7 +115,7 @@ export async function getBoardPlaceLabel(
     const client = getTflClient()
     const details = await client.stopPoint.get([trimmed])
     const detail = Array.isArray(details) ? details[0] : details
-    const stop = detail ? mapStopPoint(detail) : null
+    const stop = detail ? mapStopPoint(findStopPointNode(detail, trimmed)) : null
     if (!stop) return { ok: false, error: "Unknown bus stop." }
     return {
       ok: true,
@@ -157,6 +165,82 @@ export async function getBoardCycleDockLabels(
     const message =
       err instanceof Error ? err.message : "Could not load dock names."
     return { ok: false, error: message }
+  }
+}
+
+export type BoardCycleDocksResult =
+  | { ok: true; docks: ExplorerPoint[] }
+  | { ok: false; error: string }
+
+const DOCK_NEAR_RADIUS_METERS = 500
+const DOCK_RESULT_LIMIT = 12
+
+const dockPoints = (docks: readonly Parameters<typeof normaliseBikePoint>[0][]) => {
+  const seen = new Set<string>()
+  return docks.flatMap((dock) => {
+    const point = normaliseBikePoint(dock)
+    if (!point || seen.has(point.id)) return []
+    seen.add(point.id)
+    return [{ ...point, id: formatBikePointId(point.id) }]
+  })
+}
+
+/**
+ * Docks for the Cycle hire editor's search, with their counts: by name when
+ * there is a query, else the docks nearest `near`. Nearest first either way.
+ */
+export async function searchBoardCycleDocks(
+  query: string,
+  near?: { lat: number; lon: number }
+): Promise<BoardCycleDocksResult> {
+  const trimmed = query.trim()
+  try {
+    const client = getTflClient()
+    const points =
+      trimmed.length >= 2
+        ? dockPoints(await client.bikePoint.search({ query: trimmed }))
+        : near
+          ? dockPoints(
+              (
+                await client.bikePoint.getByRadius({
+                  lat: near.lat,
+                  lon: near.lon,
+                  radius: DOCK_NEAR_RADIUS_METERS,
+                })
+              ).places
+            )
+          : []
+    const distance = (point: ExplorerPoint) =>
+      near && point.lat != null && point.lon != null
+        ? distanceMeters(near.lat, near.lon, point.lat, point.lon)
+        : Infinity
+    return {
+      ok: true,
+      docks: [...points]
+        .sort((a, b) => distance(a) - distance(b))
+        .slice(0, DOCK_RESULT_LIMIT),
+    }
+  } catch {
+    return { ok: false, error: "Dock search is unavailable right now." }
+  }
+}
+
+/** Docks already on the board, with their counts. Capped like the labels. */
+export async function getBoardCycleDocks(
+  ids: readonly string[]
+): Promise<BoardCycleDocksResult> {
+  const unique = [
+    ...new Set(ids.map((id) => formatBikePointId(id)).filter(Boolean)),
+  ].slice(0, MAX_CYCLE_DOCK_LABELS)
+  if (unique.length === 0) return { ok: true, docks: [] }
+  try {
+    const client = getTflClient()
+    const docks = await Promise.all(
+      unique.map((id) => client.bikePoint.getById(id).catch(() => null))
+    )
+    return { ok: true, docks: dockPoints(docks.flatMap((dock) => (dock ? [dock] : []))) }
+  } catch {
+    return { ok: false, error: "Could not load these docks." }
   }
 }
 

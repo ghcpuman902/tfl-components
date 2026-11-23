@@ -9,8 +9,15 @@ import {
   MinusIcon,
   PlusIcon,
 } from "lucide-react"
+import { LINE_ORDER } from "tfl-ts"
 import { BoardModeRoundel } from "@/components/board/board-mode-roundel"
 import type { CustomiseController } from "@/components/board/customise/types"
+import {
+  ARRIVALS_RHYTHM_VARS,
+  ARRIVALS_TILE_CLASS,
+} from "@/components/tfl/arrivals/arrivals-board-view"
+import { TfLRoundel } from "@/components/tfl/brand/tfl-roundel"
+import { StationNameTitle } from "@/components/tfl/station-name"
 import {
   CUSTOMISE_PANEL_LABEL,
   canHidePanel,
@@ -18,6 +25,7 @@ import {
   heightLabel,
   panelHeight,
   panelShown,
+  panelSummaryText,
   stepHeight,
 } from "@/lib/tfl/board-customise"
 import type { BoardPanelKind } from "@/lib/tfl/board-panels"
@@ -52,32 +60,27 @@ export const PanelRoundel = ({ kind }: { kind: BoardPanelKind }) => (
 
 export const lineName = (lineId: string) => getLineNameTiers(lineId).full
 
-/** One line, no wrapping: what this panel shows. */
+/** One line, no wrapping: what this panel shows (see panelSummaryText). */
 export const panelSummary = (
   api: CustomiseController,
-  kind: BoardPanelKind
-): string => {
-  if (!panelShown(api.layout, kind)) return "Not on the board"
-  const target = api.panelTarget(kind)
-  if (target === "loading") return "Finding the nearest stop…"
-  if (target === "none") {
-    return kind === "rail" ? "Pick a station" : `None near ${api.stationName}`
-  }
-  const height = heightLabel(kind, panelHeight(api.layout, kind))
-  if (kind === "rail") {
-    const names = (
-      api.railLines.length > 0
-        ? api.railLines
-        : api.servingLines.map((line) => line.lineId)
-    ).map(lineName)
-    return `${names.join(", ")} · ${height}`
-  }
-  if (kind === "status") {
-    const first = api.statusLines[0]
-    return `${first ? `${lineName(first)} first` : "Whole network"} · ${height}`
-  }
-  return `Nearest to ${api.stationName} · ${height}`
-}
+  kind: BoardPanelKind,
+  options: { hiddenRow?: boolean } = {}
+): string | null =>
+  panelSummaryText({
+    kind,
+    shown: panelShown(api.layout, kind),
+    target: api.panelTarget(kind),
+    height: panelHeight(api.layout, kind),
+    stationName: api.stationName,
+    railLineNames: (api.railLines.length > 0
+      ? api.railLines
+      : api.servingLines.map((line) => line.lineId)
+    ).map(lineName),
+    firstStatusLineName: api.statusLines[0]
+      ? lineName(api.statusLines[0])
+      : null,
+    hiddenRow: options.hiddenRow,
+  })
 
 /** Eye = on the board or not. While "Only show this" is on, others read as off. */
 export const PanelEye = ({
@@ -109,13 +112,18 @@ export const PanelEye = ({
   )
 }
 
-/** ⋯ on the right: "Only show this" and the column. Closes on outside tap. */
+/**
+ * ⋯ on the right: "Only show this" and the column, and (`takeOff`, where a
+ * list has no eye) taking the part off the board. Closes on outside tap.
+ */
 export const PanelMenu = ({
   api,
   kind,
+  takeOff = false,
 }: {
   api: CustomiseController
   kind: BoardPanelKind
+  takeOff?: boolean
 }) => {
   const [open, setOpen] = useState(false)
   const wrap = useRef<HTMLDivElement | null>(null)
@@ -169,6 +177,25 @@ export const PanelMenu = ({
           >
             {solo ? "Show everything again" : "Only show this"}
           </button>
+          {takeOff ? (
+            <button
+              type="button"
+              role="menuitem"
+              disabled={!canHidePanel(api.layout, kind)}
+              title={
+                canHidePanel(api.layout, kind)
+                  ? undefined
+                  : "A board needs at least one part"
+              }
+              className="flex min-h-11 w-full items-center px-2 text-left text-sm disabled:text-muted-foreground"
+              onClick={() => {
+                api.setPanelOn(kind, false)
+                setOpen(false)
+              }}
+            >
+              Take off the board
+            </button>
+          ) : null}
           <p
             id={`customise-column-${kind}`}
             className="px-2 pt-2 pb-1 text-sm text-muted-foreground"
@@ -320,6 +347,67 @@ export const PanelTargetNote = ({
     </p>
   )
 }
+
+/** Lines the status part reports, in board order: yours, then the rest unless left out. */
+export const statusOnBoard = (api: CustomiseController): readonly string[] =>
+  api.statusOnlyThese
+    ? api.statusLines
+    : [
+        ...api.statusLines,
+        ...LINE_ORDER.filter((id) => !api.statusLines.includes(id)),
+      ]
+
+/** One tiny round dot per line in its colour, two rows (the only round shape). */
+export const StatusDots = ({ lines }: { lines: readonly string[] }) => (
+  <span
+    role="img"
+    aria-label={`${lines.length} lines`}
+    className="grid w-max gap-0.5"
+    style={{
+      gridTemplateColumns: `repeat(${Math.max(1, Math.ceil(lines.length / 2))}, 0.375rem)`,
+    }}
+  >
+    {lines.map((id) => (
+      <span
+        key={id}
+        data-line={id}
+        className="size-1.5 rounded-full bg-(--line-color)"
+      />
+    ))}
+  </span>
+)
+
+const BOARD_TITLE =
+  "tfl-title [font-synthesis:none] [font-weight:var(--tfl-title-weight,400)] [letter-spacing:var(--tfl-title-tracking,0)]"
+
+/** The Board's own station header: roundel and fitted name. */
+export const BoardStationHeader = ({ name }: { name: string }) => (
+  <div
+    style={ARRIVALS_RHYTHM_VARS}
+    className="@container/arrivals w-full min-w-0"
+  >
+    <div
+      className={cn(
+        "flex min-w-0 items-center gap-x-3 text-3xl",
+        ARRIVALS_TILE_CLASS
+      )}
+    >
+      <TfLRoundel
+        variant="underground"
+        className="size-[var(--arrivals-row)] shrink-0"
+        aria-hidden
+      />
+      <p
+        className={cn(
+          "flex h-full min-w-0 flex-1 items-center text-3xl",
+          BOARD_TITLE
+        )}
+      >
+        <StationNameTitle name={name} />
+      </p>
+    </div>
+  </div>
+)
 
 export const SectionHeading = ({
   id,

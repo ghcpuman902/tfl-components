@@ -382,3 +382,22 @@ describe("mapStopsFromGeoResponse", () => {
     assert.equal(result[0]?.id, "490000001")
   })
 })
+
+describe("findStopPointNode", () => {
+  it("picks the stop out of the hub TfL answers with", async () => {
+    const { findStopPointNode } = await import("./bus-stop-shape")
+    const hub = {
+      id: "HUBKGX",
+      commonName: "King's Cross & St Pancras International",
+      children: [
+        { id: "490G000479", commonName: "King's Cross Station / York Way", children: [
+          { id: "490001171G", commonName: "King's Cross Station / York Way", stopLetter: "G" },
+        ] },
+      ],
+    }
+    assert.equal(findStopPointNode(hub, "490001171G").stopLetter, "G")
+    assert.equal(findStopPointNode(hub, "490NOPE").id, "HUBKGX")
+    const single = { id: "490001171G", stopLetter: "G" }
+    assert.equal(findStopPointNode(single, "490001171G"), single)
+  })
+})

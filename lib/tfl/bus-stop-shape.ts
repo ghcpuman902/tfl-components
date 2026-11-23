@@ -144,3 +144,22 @@ export const mapStopsFromGeoResponse = (
     .slice(0, limit)
     .map(mapStopPoint)
     .filter((stop): stop is NearbyBusStop => stop !== null)
+
+type StopPointNode = { id?: string; naptanId?: string; children?: readonly StopPointNode[] }
+
+/**
+ * TfL's StopPoint/{id} for one bus stop answers with its whole hub
+ * (e.g. HUBKGX) and the stop nested in `children`. The node for `id`, else
+ * the top node.
+ */
+export const findStopPointNode = <T extends StopPointNode>(top: T, id: string): T => {
+  const walk = (node: T): T | undefined => {
+    if (node.id === id || node.naptanId === id) return node
+    for (const child of node.children ?? []) {
+      const hit = walk(child as T)
+      if (hit) return hit
+    }
+    return undefined
+  }
+  return walk(top) ?? top
+}
