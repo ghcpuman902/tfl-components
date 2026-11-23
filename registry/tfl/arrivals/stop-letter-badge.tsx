@@ -14,6 +14,9 @@ export type StopLetterBadgeSize = "sm" | "md"
  * Disc size lives on the outer mark (inherited font, so `ex` is the
  * surrounding text’s x-height). The glyph is a smaller inner span.
  * Do not set `font-size` in `ex` on the same node as `size-[…ex]`.
+ *
+ * Glyph sizes carry `/none`: `cn` (tailwind-merge) drops the
+ * `leading-none` in CHIP_CAP_TEXT_BOX_CLASS when a font-size class follows it.
  */
 export const StopLetterBadge = ({
   letter,
@@ -47,11 +50,11 @@ export const StopLetterBadge = ({
           CHIP_CAP_TEXT_BOX_CLASS,
           isSm
             ? isPair
-              ? "text-[9px] tracking-tighter"
-              : "text-[11px]"
+              ? "text-[9px]/none tracking-tighter"
+              : "text-[11px]/none"
             : isPair
-              ? "text-[0.82ex] tracking-tighter"
-              : "text-[0.92ex]"
+              ? "text-[0.82ex]/none tracking-tighter"
+              : "text-[0.92ex]/none"
         )}
       >
         {letter}
