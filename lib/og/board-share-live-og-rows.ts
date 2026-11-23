@@ -19,6 +19,11 @@ import {
   usableTflText,
 } from "@/lib/tfl/bus-stop-letter"
 import {
+  OVERGROUND_LINE_COLOURS,
+  TFL_MODAL_COLOURS,
+  UNDERGROUND_LINE_COLOURS,
+} from "@/lib/tfl/brand-colours"
+import {
   statusChipAlertFor,
   type StatusChipAlert,
 } from "@/lib/tfl/status-chip-alert"
@@ -185,6 +190,31 @@ export const pickRailArrivals = (
 const sentenceCase = (text: string): string =>
   text.charAt(0).toUpperCase() + text.slice(1).toLowerCase()
 
+const camel = (id: string): string =>
+  id.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())
+
+const LINE_SPECS = { ...UNDERGROUND_LINE_COLOURS, ...OVERGROUND_LINE_COLOURS }
+
+const BOARD_HEX: Readonly<Record<string, string>> = {
+  ...Object.fromEntries(
+    Object.entries(LINE_SPECS).map(([key, spec]) => [key, spec.hex])
+  ),
+  dlr: TFL_MODAL_COLOURS.dlr.hex,
+  elizabeth: TFL_MODAL_COLOURS.elizabeth.hex,
+  tram: TFL_MODAL_COLOURS.trams.hex,
+}
+
+/**
+ * B chips paint the Board's own line colour (lib/tfl/brand-colours.ts, the
+ * hex behind app/tfl-colours.css `--tfl-line-*`), not tfl-ts getLineColor —
+ * e.g. Piccadilly #0019A8, not #003688.
+ */
+export const boardOgLine = (lineId: string): BoardShareOgLine => {
+  const line = toOgLine(lineId)
+  const hex = BOARD_HEX[camel(lineId.trim().toLowerCase())]
+  return hex ? { ...line, color: hex } : line
+}
+
 const alertFor = (
   worst: Parameters<typeof statusChipAlertFor>[0]
 ): { alert?: StatusChipAlert } => {
@@ -211,7 +241,7 @@ export const toStatusRows = (
     const text = usableTflText(worst?.statusSeverityDescription)
     return [
       {
-        ...toOgLine(id),
+        ...boardOgLine(id),
         statusText: text ? sentenceCase(text) : "Good service",
         tone: good ? "ok" : "alert",
         ...(good ? {} : alertFor(worst)),
@@ -257,7 +287,7 @@ export const pickNextTrain = (
   const next =
     sorted.find((a) => wanted.has(a.lineId ?? "")) ?? sorted[0] ?? null
   if (!next?.lineId) return null
-  return { line: toOgLine(next.lineId), ...toTimeRow(next) }
+  return { line: boardOgLine(next.lineId), ...toTimeRow(next) }
 }
 
 /** C: next buses on the Board's routes, titled with the painted stop letter. */

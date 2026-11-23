@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import type { RealtimePrediction } from "tfl-ts"
 import {
+  boardOgLine,
   pickNextTrain,
   pickRailArrivals,
   toBusLive,
@@ -174,5 +175,13 @@ describe("toBusLive (C)", () => {
     assert.equal(c?.stopName, "Oxford Circus")
     assert.equal(c?.stopLetter, null)
     assert.equal(toBusLive(buses, { routes: ["25"], fallbackName: "x" }), null)
+  })
+})
+
+describe("boardOgLine (B colours)", () => {
+  it("paints the Board palette, not tfl-ts getLineColor", () => {
+    assert.equal(boardOgLine("piccadilly").color, "#0019A8")
+    assert.equal(boardOgLine("hammersmith-city").color, "#F589A6")
+    assert.equal(boardOgLine("dlr").color, "#00AFAD")
   })
 })
