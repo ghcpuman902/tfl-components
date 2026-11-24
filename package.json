@@ -25,6 +25,7 @@
     "network-model:snapshot": "tsx scripts/snapshot-network-model.ts",
     "schematics:build": "tsx scripts/build-branch-schematics.ts",
     "registry:build": "tsx scripts/build-colour-tokens.ts && shadcn build",
+    "registry:check": "sh scripts/check-registry-built.sh",
     "component-graph:build": "tsx scripts/component-dependencies/build.ts",
     "component-graph:watch": "tsx scripts/component-dependencies/watch.ts",
     "explore": "tsx watch scripts/explore/playground.ts"
