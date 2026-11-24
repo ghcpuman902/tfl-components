@@ -14,7 +14,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint --cache",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test 'lib/tfl/**/*.test.ts' 'lib/feedback/**/*.test.ts' 'lib/analytics/**/*.test.ts' 'lib/landing/**/*.test.ts' 'lib/temp/**/*.test.ts' 'lib/brand/**/*.test.ts' 'lib/agent/**/*.test.ts' 'lib/dev/tfl-component-graph-analyser.test.ts' 'lib/dev/tfl-component-graph-override.test.ts' 'lib/dev/tfl-component-graph-wiring.test.ts' 'lib/site-font.test.ts' 'lib/touch-tap.test.ts' 'lib/drag-press.test.ts' 'lib/site-nav.test.ts' 'lib/site-metadata.test.ts' 'lib/domain-redirect.test.ts' 'lib/theme-color.test.ts' 'lib/docs-mobile-sidebar-header.test.ts' && tsx scripts/check-no-server-appkey.ts && tsx scripts/check-registry-urls.ts && tsx scripts/check-registry-imports.ts && tsx scripts/verify-track-graph.ts",
