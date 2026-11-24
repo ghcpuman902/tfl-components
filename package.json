@@ -14,10 +14,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint --cache",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test 'lib/tfl/**/*.test.ts' 'lib/feedback/**/*.test.ts' 'lib/analytics/**/*.test.ts' 'lib/landing/**/*.test.ts' 'lib/temp/**/*.test.ts' 'lib/brand/**/*.test.ts' 'lib/agent/**/*.test.ts' 'lib/dev/tfl-component-graph-analyser.test.ts' 'lib/dev/tfl-component-graph-override.test.ts' 'lib/dev/tfl-component-graph-wiring.test.ts' 'lib/site-font.test.ts' 'lib/touch-tap.test.ts' 'lib/drag-press.test.ts' 'lib/site-nav.test.ts' 'lib/site-metadata.test.ts' 'lib/domain-redirect.test.ts' 'lib/theme-color.test.ts' 'lib/docs-mobile-sidebar-header.test.ts' && tsx scripts/check-no-server-appkey.ts && tsx scripts/check-registry-urls.ts && tsx scripts/check-registry-imports.ts && tsx scripts/verify-track-graph.ts",
+    "test": "node scripts/run-unit-tests.mjs && tsx scripts/check-no-server-appkey.ts && tsx scripts/check-registry-urls.ts && tsx scripts/check-registry-imports.ts && tsx scripts/verify-track-graph.ts",
     "roundel-spin:sprite": "tsx scripts/compose-placeholder-roundel-sprite.ts",
     "roundel-spin:build": "tsx scripts/build-placeholder-roundel-sprite.ts",
     "geography:unique-track": "tsx scripts/snapshot-unique-track-geometry.ts",
@@ -25,6 +25,7 @@
     "network-model:snapshot": "tsx scripts/snapshot-network-model.ts",
     "schematics:build": "tsx scripts/build-branch-schematics.ts",
     "registry:build": "tsx scripts/build-colour-tokens.ts && shadcn build",
+    "registry:check": "sh scripts/check-registry-built.sh",
     "component-graph:build": "tsx scripts/component-dependencies/build.ts",
     "component-graph:watch": "tsx scripts/component-dependencies/watch.ts",
     "explore": "tsx watch scripts/explore/playground.ts"
@@ -99,5 +100,8 @@
     "tsx": "^4.23.12",
     "typescript": "^5.9.3"
   },
-  "description": "React TfL UI components and shadcn registry built on tfl-ts"
+  "description": "React TfL UI components and shadcn registry built on tfl-ts",
+  "engines": {
+    "node": ">=23.6"
+  }
 }

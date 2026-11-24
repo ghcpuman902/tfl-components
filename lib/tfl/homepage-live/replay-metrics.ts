@@ -89,7 +89,9 @@ const platformReports = (
   for (const row of rows) {
     if (isAnonymousVehicle(row.vehicleId)) continue
     const key = trainKeyOf(row.lineId!, row.vehicleId!)
-    byTrain.set(key, [...(byTrain.get(key) ?? []), row])
+    const list = byTrain.get(key)
+    if (list) list.push(row)
+    else byTrain.set(key, [row])
   }
   const reports: Report[] = []
   for (const [key, list] of byTrain) {
@@ -128,6 +130,10 @@ export const measureReplay = (
   const stats = new Map<string, LineMetrics>()
   const placements = new Map<string, Placement[]>()
   const reports = new Map<string, Report[]>()
+  /** Placements per line, so the branch pass only walks that line's trains. */
+  const placementsByLine = new Map<string, Placement[][]>()
+  /** Canonical station set per route object; routes are shared between polls. */
+  const routeStations = new WeakMap<object, Set<string>>()
   for (const line of lines)
     stats.set(line, {
       lineId: line,
@@ -174,15 +180,26 @@ export const measureReplay = (
       prev.set(train.key, { lat: position.lat, lon: position.lon, hop })
       const route = position.trainMotion?.route
       if (route) {
-        const canon = hopGraphForRailLine(train.lineId).canonical
-        const list = placements.get(train.key) ?? []
+        let stations = routeStations.get(route)
+        if (!stations) {
+          const canon = hopGraphForRailLine(train.lineId).canonical
+          stations = new Set(route.stations.map(canon))
+          routeStations.set(route, stations)
+        }
+        let list = placements.get(train.key)
+        if (!list) {
+          list = []
+          placements.set(train.key, list)
+          const forLine = placementsByLine.get(train.lineId) ?? []
+          forLine.push(list)
+          placementsByLine.set(train.lineId, forLine)
+        }
         list.push({
           key: train.key,
           t: round.receivedAt,
           direction: route.direction,
-          stations: new Set(route.stations.map(canon)),
+          stations,
         })
-        placements.set(train.key, list)
       }
     }
   }
@@ -195,8 +212,8 @@ export const measureReplay = (
         ...(byDirection.get(route.direction) ?? []),
         new Set(route.stations.map(canon)),
       ])
-    for (const [key, list] of placements) {
-      if (!key.startsWith(`${line}|`)) continue
+    for (const list of placementsByLine.get(line) ?? []) {
+      const key = list[0]!.key
       for (const placement of list)
         for (const report of reports.get(key) ?? []) {
           if (report.at <= placement.t || report.at > placement.t + 600_000)
