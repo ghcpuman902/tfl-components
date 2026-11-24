@@ -15,13 +15,25 @@ const memoryStorage = () => {
   }
 }
 
+// Other test files in the same process may define `window` as a read-only
+// property, so set it with defineProperty and put back whatever was there.
+const setWindow = (value: unknown) =>
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    writable: true,
+    value,
+  })
+
 describe("glance pin storage", () => {
   const scope = globalThis as { window?: unknown }
+  let original: PropertyDescriptor | undefined
   beforeEach(() => {
-    scope.window = { localStorage: memoryStorage() }
+    original = Object.getOwnPropertyDescriptor(globalThis, "window")
+    setWindow({ localStorage: memoryStorage() })
   })
   afterEach(() => {
-    delete scope.window
+    if (original) Object.defineProperty(globalThis, "window", original)
+    else delete scope.window
   })
 
   it("keeps one pin per stop and clears it", () => {

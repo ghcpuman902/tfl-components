@@ -117,12 +117,11 @@ describe("recorded 13 Nov 2026 06:44-06:54, all 20 lines", () => {
   })
 
   it("is deterministic", () => {
-    const run = () => {
-      const engine = new HomepageLiveEngine()
-      return rounds
-        .slice(0, 5)
-        .map((r) => engine.ingest(r.rows, r.receivedAt).trains.map((t) => [t.key, t.status, t.position?.lat, t.position?.lon]))
-    }
-    assert.deepEqual(run(), run())
+    // A second fresh engine must match the one the replay above already ran.
+    const pick = (trains: typeof replay.trains) =>
+      trains.map((round) => round.map((t) => [t.key, t.status, t.position?.lat, t.position?.lon]))
+    const engine = new HomepageLiveEngine()
+    const fresh = rounds.slice(0, 5).map((r) => engine.ingest(r.rows, r.receivedAt).trains)
+    assert.deepEqual(pick(fresh), pick(replay.trains.slice(0, 5)))
   })
 })
