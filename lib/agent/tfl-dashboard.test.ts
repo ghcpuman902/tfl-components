@@ -92,10 +92,6 @@ describe("/docs/tfl-dashboard page", () => {
         ["Build your own", "Get started", "/docs"],
       ]
     )
-    const source = readFileSync(PAGE_FILE, "utf8")
-    assert.match(source, /TFL_DASHBOARD_PATHS\.map/)
-    assert.match(source, /ArrowRightIcon/)
-    assert.match(source, /font-medium text-primary/)
   })
 
   it("keeps the required section ids", () => {

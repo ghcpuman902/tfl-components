@@ -22,6 +22,10 @@ import {
 export type UseUnattendedSequenceOptions = {
   itemIds: readonly string[]
   dwellMs?: number
+  /** Per-item dwell needs (e.g. a scroll that must reach its last line). */
+  dwellMsById?: Readonly<Record<string, number>>
+  /** Off-screen counts as hidden: frozen, then a full dwell on return. */
+  offscreen?: boolean
   /** Stagger this panel against others on the same board. */
   startDelayMs?: number
   enabled?: boolean
@@ -32,6 +36,8 @@ export type UseUnattendedSequenceResult = {
   itemId: string | null
   progress: number
   started: boolean
+  /** Bumps when the current dwell restarts in place (tab or panel back). */
+  restarts: number
   pauseReasons: readonly UnattendedPauseReason[]
   handleFocus: FocusEventHandler<HTMLElement>
   handleBlur: FocusEventHandler<HTMLElement>
@@ -43,6 +49,8 @@ const idsKey = (ids: readonly string[]) => ids.join("\0")
 export const useUnattendedSequence = ({
   itemIds,
   dwellMs = UNATTENDED_DEFAULT_DWELL_MS,
+  dwellMsById,
+  offscreen = false,
   startDelayMs = 0,
   enabled = true,
 }: UseUnattendedSequenceOptions): UseUnattendedSequenceResult => {
@@ -52,6 +60,7 @@ export const useUnattendedSequence = ({
   const [itemId, setItemId] = useState<string | null>(itemIds[0] ?? null)
   const [progress, setProgress] = useState(0)
   const [started, setStarted] = useState(startDelayMs <= 0)
+  const [restarts, setRestarts] = useState(0)
   const [focused, setFocused] = useState(false)
   const [hidden, setHidden] = useState(false)
 
@@ -63,6 +72,11 @@ export const useUnattendedSequence = ({
     })
   )
   const itemIdsRef = useRef(itemIds)
+  const dwellMsByIdRef = useRef(dwellMsById)
+
+  useEffect(() => {
+    dwellMsByIdRef.current = dwellMsById
+  }, [dwellMsById])
 
   useEffect(() => {
     itemIdsRef.current = itemIds
@@ -114,6 +128,7 @@ export const useUnattendedSequence = ({
           setIndex(next.index)
           setItemId(next.itemId)
           setStarted(next.remainingStartDelayMs <= 0)
+          setRestarts(next.restarts)
           setProgress(
             unattendedDwellProgress(next, {
               dwellMs,
@@ -136,11 +151,12 @@ export const useUnattendedSequence = ({
     const tick = () => {
       const pauseReasons: UnattendedPauseReason[] = []
       if (focused) pauseReasons.push("focus")
-      if (hidden) pauseReasons.push("hidden")
+      if (hidden || offscreen) pauseReasons.push("hidden")
       const next = tickUnattendedSequence(stateRef.current, {
         itemIds: itemIdsRef.current,
         nowMs: Date.now(),
         dwellMs,
+        dwellMsById: dwellMsByIdRef.current,
         pauseReasons,
       })
       stateRef.current = next
@@ -150,6 +166,7 @@ export const useUnattendedSequence = ({
       setProgress(
         unattendedDwellProgress(next, {
           dwellMs,
+          dwellMsById: dwellMsByIdRef.current,
           itemCount: itemIdsRef.current.length,
         })
       )
@@ -157,7 +174,19 @@ export const useUnattendedSequence = ({
 
     const interval = window.setInterval(tick, 250)
     return () => window.clearInterval(interval)
-  }, [dwellMs, enabled, focused, hidden, itemIds.length])
+  }, [dwellMs, enabled, focused, hidden, offscreen, itemIds.length])
+
+  // Back on screen: restart the current item so it gets its full dwell, in
+  // step with content (e.g. a scroll) that restarts when it comes into view.
+  const wasOffscreenRef = useRef(offscreen)
+  useEffect(() => {
+    const was = wasOffscreenRef.current
+    wasOffscreenRef.current = offscreen
+    if (!enabled || !was || offscreen) return
+    stateRef.current = resumeUnattendedSequence(stateRef.current, Date.now())
+    setRestarts(stateRef.current.restarts)
+    setProgress(0)
+  }, [enabled, offscreen])
 
   const handleFocus = useCallback<FocusEventHandler<HTMLElement>>(() => {
     setFocused(true)
@@ -171,15 +200,16 @@ export const useUnattendedSequence = ({
   const pauseReasons = useMemo(() => {
     const reasons: UnattendedPauseReason[] = []
     if (focused) reasons.push("focus")
-    if (hidden) reasons.push("hidden")
+    if (hidden || offscreen) reasons.push("hidden")
     return reasons
-  }, [focused, hidden])
+  }, [focused, hidden, offscreen])
 
   return {
     index,
     itemId,
     progress,
     started,
+    restarts,
     pauseReasons,
     handleFocus,
     handleBlur,

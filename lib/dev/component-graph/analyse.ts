@@ -732,6 +732,26 @@ export const buildComponentGraph = ({
   return { skeleton, snapshot, staleOverrideKeys }
 }
 
+/**
+ * Fixture programs share one host so declaration files (the default lib and
+ * node_modules types) parse once per process, not once per fixture.
+ */
+const fixtureSourceCache = new Map<string, ts.SourceFile | undefined>()
+const cachedFixtureHost = (options: ts.CompilerOptions): ts.CompilerHost => {
+  const host = ts.createCompilerHost(options)
+  const getSourceFile = host.getSourceFile.bind(host)
+  host.getSourceFile = (fileName, languageVersion, onError, shouldCreate) => {
+    if (!fileName.endsWith(".d.ts")) {
+      return getSourceFile(fileName, languageVersion, onError, shouldCreate)
+    }
+    if (fixtureSourceCache.has(fileName)) return fixtureSourceCache.get(fileName)
+    const file = getSourceFile(fileName, languageVersion, onError, shouldCreate)
+    fixtureSourceCache.set(fileName, file)
+    return file
+  }
+  return host
+}
+
 /** Test helper — analyse fixtures relative to a temp root. */
 export const analyseModuleText = (
   moduleId: string,
@@ -747,7 +767,7 @@ export const analyseModuleText = (
     true,
     ts.ScriptKind.TSX
   )
-  const program = ts.createProgram([fileName], {
+  const options: ts.CompilerOptions = {
     target: ts.ScriptTarget.Latest,
     jsx: ts.JsxEmit.ReactJSX,
     module: ts.ModuleKind.ESNext,
@@ -757,6 +777,11 @@ export const analyseModuleText = (
       "@/components/tfl/*": ["./registry/tfl/*", "./components/tfl/*"],
     },
     baseUrl: rootDir,
+  }
+  const program = ts.createProgram({
+    rootNames: [fileName],
+    options,
+    host: cachedFixtureHost(options),
   })
   const checker = program.getTypeChecker()
   const exports = getExportNames(sourceFile)

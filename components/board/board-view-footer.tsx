@@ -208,74 +208,91 @@ export const BoardViewFooter = ({
 
   return (
     <footer className="mt-[calc(var(--arrivals-row)/2)] max-w-3xl text-sm text-muted-foreground">
-      <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        {stale ? (
-          <span
-            className="font-medium text-amber-600 dark:text-amber-400"
-            role="status"
-          >
-            Updating…
-          </span>
-        ) : null}
-        {/* Held from first paint so the first fetch does not rewrap the line. */}
-        <span
-          className={fetchedAt != null ? undefined : "invisible"}
-          aria-hidden={fetchedAt == null || undefined}
-        >
-          {stale ? "Last updated" : "Updated"}{" "}
-          {fetchedAt != null ? formatUpdatedClock(fetchedAt) : "00:00"}
-        </span>
-        {!stale ? (
-          <span
-            className={remainingSec != null ? undefined : "invisible"}
-            aria-hidden={remainingSec == null || undefined}
-          >
-            Next in{" "}
-            <span className="inline-block min-w-[3ch]">
-              {remainingSec ?? 0}s
+      {/* Wraps whole groups, never single items: freshness, then actions,
+          then install prompts. One row when it fits, otherwise even rows
+          (2 + 3) with no orphan like a lone "Full screen". */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="flex items-center gap-x-3 whitespace-nowrap">
+          {stale ? (
+            <span
+              className="font-medium text-amber-600 dark:text-amber-400"
+              role="status"
+            >
+              Updating…
             </span>
+          ) : null}
+          {/* Held from first paint so the first fetch does not rewrap the line. */}
+          <span
+            className={fetchedAt != null ? undefined : "invisible"}
+            aria-hidden={fetchedAt == null || undefined}
+          >
+            {stale ? "Last updated" : "Updated"}{" "}
+            {fetchedAt != null ? formatUpdatedClock(fetchedAt) : "00:00"}
+          </span>
+          {!stale ? (
+            <span
+              className={remainingSec != null ? undefined : "invisible"}
+              aria-hidden={remainingSec == null || undefined}
+            >
+              Next in{" "}
+              <span className="inline-block min-w-[3ch]">
+                {remainingSec ?? 0}s
+              </span>
+            </span>
+          ) : null}
+        </span>
+        {onRefresh || editHref || (onFullscreen && fullscreenLabel) ? (
+          <span className="flex items-center gap-x-3 whitespace-nowrap">
+            {onRefresh ? (
+              <button
+                type="button"
+                onClick={onRefresh}
+                disabled={refreshing}
+                aria-busy={refreshing || undefined}
+                className={actionClass}
+              >
+                Refresh
+              </button>
+            ) : null}
+            {editHref ? (
+              <Link href={editHref} className={actionClass}>
+                Edit board
+              </Link>
+            ) : null}
+            {onFullscreen && fullscreenLabel ? (
+              <button
+                type="button"
+                onClick={onFullscreen}
+                className={actionClass}
+              >
+                {fullscreenLabel}
+              </button>
+            ) : null}
           </span>
         ) : null}
-        {onRefresh ? (
-          <button
-            type="button"
-            onClick={onRefresh}
-            disabled={refreshing}
-            aria-busy={refreshing || undefined}
-            className={actionClass}
-          >
-            Refresh
-          </button>
+        {onAddToHomeScreen || onChromiumInstall ? (
+          <span className="flex items-center gap-x-3 whitespace-nowrap">
+            {onAddToHomeScreen ? (
+              <button
+                type="button"
+                onClick={onAddToHomeScreen}
+                className={actionClass}
+              >
+                Add to Home Screen
+              </button>
+            ) : null}
+            {onChromiumInstall ? (
+              <button
+                type="button"
+                onClick={onChromiumInstall}
+                className={actionClass}
+              >
+                Install
+              </button>
+            ) : null}
+          </span>
         ) : null}
-        {editHref ? (
-          <Link href={editHref} className={actionClass}>
-            Edit board
-          </Link>
-        ) : null}
-        {onFullscreen && fullscreenLabel ? (
-          <button type="button" onClick={onFullscreen} className={actionClass}>
-            {fullscreenLabel}
-          </button>
-        ) : null}
-        {onAddToHomeScreen ? (
-          <button
-            type="button"
-            onClick={onAddToHomeScreen}
-            className={actionClass}
-          >
-            Add to Home Screen
-          </button>
-        ) : null}
-        {onChromiumInstall ? (
-          <button
-            type="button"
-            onClick={onChromiumInstall}
-            className={actionClass}
-          >
-            Install
-          </button>
-        ) : null}
-      </p>
+      </div>
       {fullscreenError ? (
         <p className="mt-1" role="alert">
           {fullscreenError}

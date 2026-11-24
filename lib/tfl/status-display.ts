@@ -42,6 +42,11 @@ export type StatusDisplayOptions = {
   detailScope?: StatusDetailScope
   detailLineIds?: readonly string[]
   charsPerTile?: number
+  /**
+   * `pages` (default) splits long copy into dwell pages. `scroll` keeps each
+   * line's copy on one frame so the view can scroll it a line at a time.
+   */
+  announcementPaging?: "pages" | "scroll"
 }
 
 export type StatusStripAllocation = {
@@ -187,6 +192,7 @@ const framesForLine = (
     headingLineIds: readonly string[]
     bodyTiles: number
     charsPerTile: number
+    announcementPaging?: "pages" | "scroll"
     otherGoodServiceCopy?: string
   }
 ): StatusDisplayFrame[] => {
@@ -216,13 +222,18 @@ const framesForLine = (
     ]
   }
 
-  const pages = packAnnouncementPages(items, {
-    linesPerPage: bodyTiles * LINES_PER_TILE,
-    charsPerLine: Math.max(
-      1,
-      Math.round(options.charsPerTile / LINES_PER_TILE)
-    ),
-  })
+  const pages =
+    options.announcementPaging === "scroll"
+      ? items.length > 0
+        ? [[...items]]
+        : []
+      : packAnnouncementPages(items, {
+          linesPerPage: bodyTiles * LINES_PER_TILE,
+          charsPerLine: Math.max(
+            1,
+            Math.round(options.charsPerTile / LINES_PER_TILE)
+          ),
+        })
   const source = pages.length > 0 ? pages : [[]]
 
   return source.map((pageItems, index) => ({
@@ -314,6 +325,7 @@ export const buildStatusDisplayFrames = (
       headingLineIds: disruptionHeadingIds,
       bodyTiles,
       charsPerTile,
+      announcementPaging: options.announcementPaging,
     })
   )
 

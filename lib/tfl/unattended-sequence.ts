@@ -5,6 +5,36 @@
 
 export const UNATTENDED_DEFAULT_DWELL_MS = 10_000
 
+/** Lyrics-style scroll: rest on each line, then ease one line up. */
+export const UNATTENDED_SCROLL_HOLD_MS = 2200
+export const UNATTENDED_SCROLL_MOVE_MS = 450
+
+/**
+ * Time a scrolled item needs to show every line: hold the first window, then
+ * one move plus one hold per extra line. 0 when nothing scrolls.
+ */
+export const unattendedScrollDwellMs = (steps: number): number =>
+  steps > 0
+    ? UNATTENDED_SCROLL_HOLD_MS +
+      steps * (UNATTENDED_SCROLL_MOVE_MS + UNATTENDED_SCROLL_HOLD_MS)
+    : 0
+
+/**
+ * Dwell for one item: the base dwell, stretched to fit any longer per-item
+ * need (a scroll that must reach its last line). Never shorter than the base.
+ */
+export const resolveUnattendedDwellMs = (
+  itemId: string | null | undefined,
+  options: {
+    dwellMs?: number
+    dwellMsById?: Readonly<Record<string, number>>
+  }
+): number => {
+  const base = Math.max(1, options.dwellMs ?? UNATTENDED_DEFAULT_DWELL_MS)
+  const own = itemId ? (options.dwellMsById?.[itemId] ?? 0) : 0
+  return Math.max(base, own)
+}
+
 export type DisplayBehaviour = "interactive" | "unattended"
 
 export type UnattendedPauseReason = "focus" | "hidden"
@@ -19,12 +49,20 @@ export type UnattendedSequenceState = {
   elapsedMs: number
   lastTickMs: number
   remainingStartDelayMs: number
+  /**
+   * Times the current item's dwell restarted in place (hidden tab or
+   * off-screen, then back). Anything timed to the dwell, like the progress
+   * bar, keys on it to restart in step.
+   */
+  restarts: number
 }
 
 export type TickUnattendedSequenceOptions = {
   itemIds: readonly string[]
   nowMs: number
   dwellMs?: number
+  /** Per-item dwell needs (e.g. scroll time); stretches, never shortens. */
+  dwellMsById?: Readonly<Record<string, number>>
   pauseReasons?: readonly UnattendedPauseReason[]
 }
 
@@ -40,6 +78,7 @@ export const createUnattendedSequence = (options: {
     elapsedMs: 0,
     lastTickMs: options.nowMs,
     remainingStartDelayMs: Math.max(0, options.startDelayMs ?? 0),
+    restarts: 0,
   }
 }
 
@@ -82,11 +121,15 @@ const isPaused = (
 /** 0–1 through the current dwell. Stays 0 for one frame or during start delay. */
 export const unattendedDwellProgress = (
   state: UnattendedSequenceState,
-  options: { dwellMs?: number; itemCount: number }
+  options: {
+    dwellMs?: number
+    dwellMsById?: Readonly<Record<string, number>>
+    itemCount: number
+  }
 ): number => {
   if (options.itemCount <= 1) return 0
   if (state.remainingStartDelayMs > 0) return 0
-  const dwellMs = Math.max(1, options.dwellMs ?? UNATTENDED_DEFAULT_DWELL_MS)
+  const dwellMs = resolveUnattendedDwellMs(state.itemId, options)
   return Math.min(1, state.elapsedMs / dwellMs)
 }
 
@@ -132,11 +175,14 @@ export const tickUnattendedSequence = (
     elapsedMs += deltaMs
   }
 
-  const dwellMs = Math.max(1, options.dwellMs ?? UNATTENDED_DEFAULT_DWELL_MS)
   const itemCount = options.itemIds.length
+  const dwellAt = (at: number) =>
+    resolveUnattendedDwellMs(options.itemIds[at], options)
+  let dwellMs = dwellAt(index)
   while (elapsedMs >= dwellMs && itemCount > 0) {
     elapsedMs -= dwellMs
     index = (index + 1) % itemCount
+    dwellMs = dwellAt(index)
   }
 
   return {
@@ -145,12 +191,13 @@ export const tickUnattendedSequence = (
     elapsedMs,
     lastTickMs: options.nowMs,
     remainingStartDelayMs,
+    restarts: reconciled.restarts,
   }
 }
 
 /**
- * After a hidden document becomes visible again, restart the current frame
- * so the reader gets a full dwell.
+ * After a hidden document or an off-screen panel is back, restart the current
+ * frame so the reader gets a full dwell (and bump `restarts`).
  */
 export const resumeUnattendedSequence = (
   state: UnattendedSequenceState,
@@ -159,6 +206,7 @@ export const resumeUnattendedSequence = (
   ...state,
   elapsedMs: 0,
   lastTickMs: nowMs,
+  restarts: state.restarts + 1,
 })
 
 const SENTENCE_SPLIT = /(?<=[.!?])\s+/

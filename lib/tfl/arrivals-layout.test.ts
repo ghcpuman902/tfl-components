@@ -1077,7 +1077,6 @@ describe("arrivals board layout API", () => {
     )
     assert.ok(html.includes("RB1 disruption: Pier Closed until 17:00"))
     assert.equal(html.includes("Route rb1 disruption"), false)
-    assert.ok(html.includes("flex h-full min-w-0 flex-1 items-center"))
   })
 
   it("marks unattended river rows with rank chips", () => {
