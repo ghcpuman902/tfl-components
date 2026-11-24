@@ -5,6 +5,7 @@ import {
   nearestBusRows,
   rowsForMode,
   searchesBusStops,
+  servedRows,
 } from "@/lib/tfl/homepage-live/search-mode"
 
 const station: StopRow = { id: "940GZZLUOXC", name: "Oxford Circus", kind: "station", lines: ["central"], modes: ["tube"] }
@@ -69,5 +70,33 @@ describe("nearest bus stops with an empty query", () => {
       near.map((row) => row.id),
       ["490NEAR", "490MID"]
     )
+  })
+})
+
+describe("served stops only", () => {
+  // 490000024Z: a NaPTAN bus stop at Blackhorse Road with no letter and no routes.
+  const unserved: StopRow = {
+    id: "490000024Z",
+    name: "Blackhorse Road Station",
+    kind: "bus",
+    lat: 51.58713,
+    lon: -0.04179,
+    lines: [],
+    modes: ["bus"],
+  }
+  const served = stop("490000024A", "BA", 51.58659, -0.04046)
+
+  it("drops a bus stop no route serves", () => {
+    assert.deepEqual(servedRows([station, served, unserved]), [station, served])
+  })
+
+  it("keeps a live TfL hit whose routes have not arrived yet", () => {
+    const live = { ...unserved, liveOnly: true as const }
+    assert.deepEqual(servedRows([live]), [live])
+  })
+
+  it("returns the same list when every stop is served", () => {
+    const rows = [station, served]
+    assert.equal(servedRows(rows), rows)
   })
 })

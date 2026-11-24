@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 import { useDocumentDark } from "@/hooks/use-document-dark"
 import {
   openFreeMapStyleUrl,
-  transitGeometryAssetUrl,
+  TRANSIT_GEOMETRY_PUBLIC_ASSETS,
 } from "@/lib/tfl/geography-credits"
 import { mapLineColorForBasemap } from "@/lib/tfl/dark-line-colours"
 import { provideMissingStyleImages } from "@/components/tfl/maps/provide-missing-style-images"
@@ -25,6 +25,15 @@ import {
 } from "@/lib/tfl/geo"
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
 import { CycleHireDockMarker } from "@/components/tfl/cycle-hire/cycle-hire-dock-marker"
+import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
+import {
+  STATION_LABEL_PX,
+  STATION_LABEL_SELECTED_PX,
+  spreadDiscs,
+  stationMarkerGeometry,
+  type Disc,
+  type Obstacle,
+} from "@/lib/tfl/map-marker-geometry"
 import type { CycleHireDock } from "@/lib/tfl/cycle-hire-types"
 
 const LONDON_CENTER: [number, number] = [-0.128, 51.508]
@@ -40,8 +49,10 @@ const SEARCH_FILL_ID = "explorer-search-circle-fill"
 const SEARCH_LINE_ID = "explorer-search-circle-line"
 const BUS_RED = TFL_MODAL_COLOURS.buses.hex
 const BUS_RED_DARK = "#ff4d3d"
-const TUBE_SOURCE_ID = "explorer-tube-lines"
-const TUBE_LAYER_ID = "explorer-tube-lines-core"
+const RAIL_SOURCE_ID = "explorer-rail-lines"
+const RAIL_LAYER_ID = "explorer-rail-lines-core"
+/** The map's bus pin: the registry StopLetterBadge at `sm` (16 px), a little smaller than a station circle. */
+const BUS_PIN_RADIUS = 8
 const BUS_DOTS_SOURCE_ID = "explorer-bus-dots"
 const BUS_DOTS_LAYER_ID = "explorer-bus-dots-circle"
 const CYCLE_MARKER_SIZE = 32
@@ -89,8 +100,11 @@ type ExplorerPointMapProps = {
    * bus pins are hidden: no labels, no taps. Positions are [lon, lat].
    */
   busDots?: readonly (readonly [number, number])[]
-  /** Draws the Tube lines (the vendored centreline GeoJSON, in line colours) under the pins. Read once at mount. */
-  tubeLines?: boolean
+  /**
+   * Draws every rail line (Tube, Overground, Elizabeth line, DLR and Tram centreline
+   * GeoJSON, in line colours) under the pins. Read once at mount.
+   */
+  railLines?: boolean
   /** The zoom at which bus pins replace the dots. Read once at mount. */
   pinMinZoom?: number
   /** Bus pins that stay pins below `pinMinZoom` (the typed search's results). */
@@ -251,17 +265,29 @@ const viewIsOutsideResultCircle = (
   )
 }
 
-const stationCirclePaint = (dark: boolean) =>
+const STATION_MARK = stationMarkerGeometry(STATION_LABEL_PX)
+const STATION_MARK_SELECTED = stationMarkerGeometry(STATION_LABEL_SELECTED_PX)
+
+/**
+ * Tube interchange circle: white with a black ring in both themes, ring and
+ * diameter derived from the label's x-height (lib/tfl/map-marker-geometry.ts).
+ */
+const stationCirclePaint = () =>
   ({
-    "circle-radius": ["case", ["boolean", ["get", "selected"], false], 7, 4],
-    "circle-color": dark ? "#111827" : "#ffffff",
+    "circle-radius": [
+      "case",
+      ["boolean", ["get", "selected"], false],
+      STATION_MARK_SELECTED.circleRadius,
+      STATION_MARK.circleRadius,
+    ],
+    "circle-color": "#ffffff",
     "circle-stroke-width": [
       "case",
       ["boolean", ["get", "selected"], false],
-      2,
-      1.25,
+      STATION_MARK_SELECTED.ring,
+      STATION_MARK.ring,
     ],
-    "circle-stroke-color": dark ? "#ffffff" : "#111827",
+    "circle-stroke-color": "#000000",
   }) as maplibregl.CircleLayerSpecification["paint"]
 
 const stationLabelPaint = (dark: boolean) =>
@@ -276,7 +302,7 @@ const labelLayout = (
 ): maplibregl.SymbolLayerSpecification["layout"] => ({
   "text-field": ["coalesce", ["get", "name"], ""],
   "text-font": ["Noto Sans Regular"],
-  "text-size": selected ? 12 : 11,
+  "text-size": selected ? STATION_LABEL_SELECTED_PX : STATION_LABEL_PX,
   // Prefer below the pin; flip above when the bottom strip / other labels collide.
   "text-variable-anchor": ["top", "bottom"],
   "text-radial-offset": [
@@ -390,7 +416,7 @@ const addExplorerLayers = (
       type: "circle",
       source: SOURCE_ID,
       filter: ["==", ["get", "marker"], "station"],
-      paint: stationCirclePaint(dark),
+      paint: stationCirclePaint(),
       layout: {
         "circle-sort-key": [
           "case",
@@ -477,6 +503,67 @@ const toExplorerGeojson = (
     }),
 })
 
+/** React roots of the bus pins' StopLetterBadges, unmounted when the marker goes. */
+const busPinRoots = new WeakMap<HTMLElement, Root>()
+
+const removeBusMarker = (marker: maplibregl.Marker) => {
+  const el = marker.getElement()
+  marker.remove()
+  const root = busPinRoots.get(el)
+  if (root) queueMicrotask(() => root.unmount())
+}
+
+/** Approximate box of a station label placed below its circle (`text-variable-anchor` top). */
+const stationLabelBox = (
+  x: number,
+  y: number,
+  name: string,
+  px: number
+): Obstacle => {
+  const ems = name.length * 0.56
+  const width = Math.min(ems, 8) * px
+  const lines = Math.max(1, Math.ceil(ems / 8))
+  const top = y + 1.15 * px - 0.2 * px
+  return {
+    kind: "rect",
+    left: x - width / 2,
+    right: x + width / 2,
+    top,
+    bottom: top + lines * 1.2 * px,
+  }
+}
+
+/**
+ * Keeps every visible bus pin readable: pins that would overlap each other, a
+ * station circle or a station name are nudged apart on screen (spreadDiscs).
+ */
+const spreadBusPins = (
+  map: maplibregl.Map,
+  markers: Map<string, maplibregl.Marker>,
+  points: readonly ExplorerPoint[]
+) => {
+  const discs: Disc[] = []
+  for (const [id, marker] of markers) {
+    if (marker.getElement().style.display === "none") {
+      marker.setOffset([0, 0])
+      continue
+    }
+    const at = map.project(marker.getLngLat())
+    discs.push({ id, x: at.x, y: at.y, r: BUS_PIN_RADIUS })
+  }
+  if (discs.length === 0) return
+  const obstacles: Obstacle[] = []
+  for (const point of points) {
+    if (isBusPoint(point) || isCyclePoint(point)) continue
+    if (typeof point.lat !== "number" || typeof point.lon !== "number") continue
+    const at = map.project([point.lon, point.lat])
+    obstacles.push({ kind: "circle", x: at.x, y: at.y, r: STATION_MARK.outerRadius })
+    if (point.name) obstacles.push(stationLabelBox(at.x, at.y, point.name, STATION_LABEL_PX))
+  }
+  const offsets = spreadDiscs(discs, obstacles)
+  for (const [id, { dx, dy }] of offsets) markers.get(id)?.setOffset([dx, dy])
+}
+
 const createBusStopMarkerElement = (
   point: ExplorerPoint,
   selected: boolean,
@@ -516,27 +603,19 @@ const createBusStopMarkerElement = (
     button.append(svg)
   }
 
-  const disc = document.createElement("span")
-  const pair = letter.length > 1
-  disc.className = cn(
-    "relative z-1 inline-flex items-center justify-center rounded-full font-bold text-white",
-    selected && "ring-2 ring-background ring-offset-1 ring-offset-transparent",
-    pair
-      ? selected
-        ? "h-7 min-w-7 px-1"
-        : "h-6 min-w-6 px-1"
-      : selected
-        ? "size-7"
-        : "size-6"
+  // The registry StopLetterBadge (always a true circle), not a DOM copy of it.
+  const pin = document.createElement("span")
+  pin.className = "relative z-1 inline-flex"
+  button.append(pin)
+  const root = createRoot(pin)
+  root.render(
+    <StopLetterBadge
+      letter={letter}
+      size="sm"
+      className={cn("shadow-[0_0_0_1.5px_white]", selected && "ring-2 ring-foreground")}
+    />
   )
-  disc.style.backgroundColor = BUS_RED
-  const glyph = document.createElement("span")
-  glyph.className = pair
-    ? "text-[9px] tracking-tighter"
-    : "text-[11px] leading-none"
-  glyph.textContent = letter
-  disc.append(glyph)
-  button.append(disc)
+  busPinRoots.set(button, root)
 
   button.addEventListener("click", (event) => {
     event.stopPropagation()
@@ -545,28 +624,43 @@ const createBusStopMarkerElement = (
   return button
 }
 
-type TubeLines = {
+type RailLines = {
   type: "FeatureCollection"
   features: { properties?: { color?: string } | null }[]
 }
 
-let tubeLinesLoad: Promise<TubeLines | null> | undefined
-const loadTubeLines = () =>
-  (tubeLinesLoad ??= fetch(transitGeometryAssetUrl("tube"))
+let railLinesLoad: Promise<RailLines | null> | undefined
+const fetchLines = (url: string): Promise<RailLines["features"]> =>
+  fetch(url)
     .then((res) => (res.ok ? res.json() : null))
-    .then((bundle: { lines?: TubeLines } | null) => bundle?.lines ?? null)
-    .catch(() => {
-      tubeLinesLoad = undefined
-      return null
-    }))
+    .then((bundle: { lines?: RailLines } | null) => bundle?.lines?.features ?? [])
 
-/** Thin Tube lines in their line colours: the zoomed-out map's frame of reference. */
-const addTubeLines = (
+/**
+ * Every rail mode's centreline, bottom to top in TRANSIT_GEOMETRY_PUBLIC_ASSETS order.
+ * Not only the Tube: a station like Blackhorse Road is Overground and Tube, and both
+ * lines must show. A mode that fails to load is left out; all failing retries next time.
+ */
+const loadRailLines = () =>
+  (railLinesLoad ??= Promise.all(
+    TRANSIT_GEOMETRY_PUBLIC_ASSETS.map((asset) =>
+      fetchLines(asset.url).catch(() => [] as RailLines["features"])
+    )
+  ).then((modes) => {
+    const features = modes.flat()
+    if (features.length === 0) {
+      railLinesLoad = undefined
+      return null
+    }
+    return { type: "FeatureCollection" as const, features }
+  }))
+
+/** Thin rail lines in their line colours: the zoomed-out map's frame of reference. */
+const addRailLines = (
   map: maplibregl.Map,
-  lines: TubeLines | null,
+  lines: RailLines | null,
   dark: boolean
 ) => {
-  if (!lines || map.getLayer(TUBE_LAYER_ID)) return
+  if (!lines || map.getLayer(RAIL_LAYER_ID)) return
   const data = {
     type: "FeatureCollection" as const,
     features: lines.features.map((feature) => {
@@ -582,17 +676,17 @@ const addTubeLines = (
         : feature
     }),
   }
-  if (!map.getSource(TUBE_SOURCE_ID)) {
-    map.addSource(TUBE_SOURCE_ID, {
+  if (!map.getSource(RAIL_SOURCE_ID)) {
+    map.addSource(RAIL_SOURCE_ID, {
       type: "geojson",
       data: data as unknown as GeoJSON.FeatureCollection,
     })
   }
   map.addLayer(
     {
-      id: TUBE_LAYER_ID,
+      id: RAIL_LAYER_ID,
       type: "line",
-      source: TUBE_SOURCE_ID,
+      source: RAIL_SOURCE_ID,
       layout: { "line-join": "round", "line-cap": "round" },
       paint: {
         "line-color": ["coalesce", ["get", "color"], "#0019A8"],
@@ -662,12 +756,12 @@ const syncBusMarkers = (
   const nextIds = new Set(busPoints.map((point) => point.id))
   for (const [id, marker] of markers) {
     if (nextIds.has(id)) continue
-    marker.remove()
+    removeBusMarker(marker)
     markers.delete(id)
   }
   for (const point of busPoints) {
     const existing = markers.get(point.id)
-    existing?.remove()
+    if (existing) removeBusMarker(existing)
     const marker = new maplibregl.Marker({
       element: createBusStopMarkerElement(
         point,
@@ -682,6 +776,7 @@ const syncBusMarkers = (
     markers.set(point.id, marker)
   }
   showBusPins(map, markers, pinMinZoom, alwaysPinIds)
+  spreadBusPins(map, markers, points)
 }
 
 const toCycleDock = (point: ExplorerPoint): CycleHireDock => {
@@ -813,7 +908,7 @@ export const ExplorerPointMap = ({
   onViewChange,
   followSelected = true,
   busDots,
-  tubeLines = false,
+  railLines = false,
   pinMinZoom,
   alwaysPinIds,
 }: ExplorerPointMapProps) => {
@@ -823,7 +918,7 @@ export const ExplorerPointMap = ({
   const busStopLabelsRef = useRef(busStopLabels)
   const pinMinZoomRef = useRef(pinMinZoom)
   const alwaysPinRef = useRef(alwaysPinIds)
-  const tubeLinesRef = useRef<TubeLines | null>(null)
+  const railLinesRef = useRef<RailLines | null>(null)
   const busDotsRef = useRef(busDots)
   const onSearchHereRef = useRef(onSearchHere)
   const onViewChangeRef = useRef(onViewChange)
@@ -897,13 +992,15 @@ export const ExplorerPointMap = ({
   useEffect(() => {
     alwaysPinRef.current = alwaysPinIds
     const map = mapRef.current
-    if (map)
+    if (map) {
       showBusPins(
         map,
         busMarkersRef.current,
         pinMinZoomRef.current,
         alwaysPinIds
       )
+      spreadBusPins(map, busMarkersRef.current, pointsRef.current)
+    }
   }, [alwaysPinIds])
 
   useEffect(() => {
@@ -999,7 +1096,7 @@ export const ExplorerPointMap = ({
         busStopLabelsRef.current,
         pinMinZoomRef.current
       )
-      addTubeLines(map, tubeLinesRef.current, dark)
+      addRailLines(map, railLinesRef.current, dark)
       const source = map.getSource(SOURCE_ID) as
         maplibregl.GeoJSONSource | undefined
       if (geojsonRef.current) source?.setData(geojsonRef.current)
@@ -1039,30 +1136,31 @@ export const ExplorerPointMap = ({
       map.on("movestart", handleMoveStart)
       map.on("move", handleMove)
       map.on("moveend", handleMoveEnd)
-      map.on("zoom", () =>
+      map.on("zoom", () => {
         showBusPins(
           map,
           busMarkers,
           pinMinZoomRef.current,
           alwaysPinRef.current
         )
-      )
+        spreadBusPins(map, busMarkers, pointsRef.current)
+      })
       reportView(false)
     })
 
     mapRef.current = map
 
-    if (tubeLines) {
-      void loadTubeLines().then((lines) => {
-        tubeLinesRef.current = lines
+    if (railLines) {
+      void loadRailLines().then((lines) => {
+        railLinesRef.current = lines
         if (mapRef.current !== map || !map.getSource(SEARCH_SOURCE_ID)) return
-        addTubeLines(map, lines, dark)
+        addRailLines(map, lines, dark)
       })
     }
 
     return () => {
       for (const marker of busMarkers.values()) {
-        marker.remove()
+        removeBusMarker(marker)
       }
       busMarkers.clear()
       for (const entry of cycleMarkers.values()) {
@@ -1091,7 +1189,7 @@ export const ExplorerPointMap = ({
         busStopLabelsRef.current,
         pinMinZoomRef.current
       )
-      addTubeLines(map, tubeLinesRef.current, dark)
+      addRailLines(map, railLinesRef.current, dark)
       const source = map.getSource(SOURCE_ID) as
         maplibregl.GeoJSONSource | undefined
       if (geojsonRef.current) source?.setData(geojsonRef.current)

@@ -76,6 +76,7 @@ import {
   noMatchFor,
   rowsForMode,
   searchesBusStops,
+  servedRows,
   type SearchMode,
 } from "@/lib/tfl/homepage-live/search-mode"
 import { searchBoardCycleDocks } from "@/lib/tfl/board-place-search-action"
@@ -87,6 +88,8 @@ import {
   type StopSearchKit,
 } from "@/lib/tfl/stop-index"
 import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
+import { StationName } from "@/components/tfl/station-name"
+import { LineColorBar } from "@/components/tfl/brand/line-badge"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
 import { cn } from "@/lib/utils"
 
@@ -115,15 +118,13 @@ const MODE_LABELS: Readonly<Record<string, string>> = {
   "national-rail": "National Rail",
 }
 
-/** Line colours as rounded marks; `data-line` supplies `--line-color`. */
+/** The station's lines as the registry's square-ended LineColorBar dashes, never rounded pills. */
 const LineMarks = ({ lines }: { lines: readonly string[] }) => (
   <span className="flex flex-wrap items-center justify-end gap-1" aria-hidden>
     {lines.slice(0, 8).map((line) => (
-      <span
-        key={line}
-        data-line={line}
-        className="h-1.5 w-4 rounded-full bg-(--line-color)"
-      />
+      <span key={line} className="w-4">
+        <LineColorBar lineId={line} heightClass="h-1.5" />
+      </span>
     ))}
   </span>
 )
@@ -139,6 +140,25 @@ const RouteChips = ({
     {routes.slice(0, max).map((route) => (
       <BusNumberChip key={route} label={route} />
     ))}
+  </span>
+)
+
+/**
+ * A stop or station name that is never clipped, fitted the way the Board's
+ * stop title is (StationNameTitle): abbreviate first on one line, and only when
+ * no abbreviation fits let it wrap (`nowrap={false}`). No scale-down, so every
+ * row keeps one text size. Its slot is `flex-1` so the fit measures the room
+ * left beside a stop letter. Visual only; the option's aria-label has the full name.
+ */
+const ListName = ({ name }: { name: string }) => (
+  <span className="min-w-0 flex-1" aria-hidden>
+    <StationName
+      name={name.replace(/\s+/g, " ")}
+      layout="auto"
+      maxLines={1}
+      allowAbbreviation
+      nowrap={false}
+    />
   </span>
 )
 
@@ -640,7 +660,7 @@ export const PlaceSearch = ({
       frame,
     ]
   )
-  const rows = mode
+  const listed = mode
     ? state.rows
     : !typed
     ? browse
@@ -649,6 +669,8 @@ export const PlaceSearch = ({
       : inViewMatches.length > 0
         ? inViewMatches
         : state.rows
+  // Bus stops no route serves have no arrivals: neither a pin nor a row.
+  const rows = useMemo(() => servedRows(listed), [listed])
   const wideFit =
     open &&
     !mode &&
@@ -854,18 +876,14 @@ export const PlaceSearch = ({
     return (
       <>
         <span className="min-w-0 flex-1">
-          <span className="flex min-w-0 items-center text-lg leading-snug">
-            <span className="truncate">{row.name}</span>
+          <span className="flex min-w-0 items-center gap-2 text-lg leading-snug">
+            <ListName name={row.name} />
             {row.kind === "bus" && row.letter ? (
-              <StopLetterBadge
-                letter={row.letter}
-                size="sm"
-                className="ml-2 -translate-y-px"
-              />
+              <StopLetterBadge letter={row.letter} size="sm" />
             ) : null}
           </span>
           {detail ? (
-            <span className="block truncate text-sm text-muted-foreground">
+            <span className="block text-sm text-pretty text-muted-foreground">
               {detail}
             </span>
           ) : null}
@@ -884,8 +902,10 @@ export const PlaceSearch = ({
   const dockBody = (dock: ExplorerPoint) => (
     <>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-lg leading-snug">{dock.name}</span>
-        <span className="block truncate text-sm text-muted-foreground">
+        <span className="flex min-w-0 text-lg leading-snug">
+          <ListName name={dock.name} />
+        </span>
+        <span className="block text-sm text-pretty text-muted-foreground">
           {chosen.has(dock.id) ? "On the board" : dockCounts(dock)}
         </span>
       </span>
@@ -1012,7 +1032,7 @@ export const PlaceSearch = ({
                   cooperativeGestures={false}
                   busStopLabels={false}
                   busDots={busDots}
-                  tubeLines
+                  railLines
                   pinMinZoom={PIN_MIN_ZOOM}
                   alwaysPinIds={resultPinIds}
                   initialView={{
@@ -1030,7 +1050,7 @@ export const PlaceSearch = ({
                   fitSearchKey={fit.key}
                   searchOrigin={fit.origin}
                   searchRadiusMeters={fit.radiusMeters}
-                  className="min-h-0 rounded-lg border-0"
+                  className="min-h-0 rounded-none border-0"
                 />
               </div>
               <div
@@ -1041,7 +1061,7 @@ export const PlaceSearch = ({
               >
                 <div
                   className={cn(
-                    "flex h-16 items-center gap-3 overflow-hidden px-4 sm:px-8",
+                    "flex min-h-16 items-center gap-3 px-4 py-2 sm:px-8",
                     head && "cursor-pointer bg-muted"
                   )}
                   {...(head ? optionProps(head.option, 0) : { role: "presentation" })}
@@ -1073,8 +1093,9 @@ export const PlaceSearch = ({
                         ) : entry.cluster ? (
                           <>
                             <span className="min-w-0 flex-1">
-                              <span className="block truncate text-lg leading-snug">
-                                {entry.cluster.name}
+                              {/* No stop letter beside it, so the name simply wraps in full. */}
+                              <span className="block text-lg leading-snug text-pretty">
+                                {entry.cluster.name.replace(/\s+/g, " ")}
                                 <span className="text-sm text-muted-foreground">
                                   {" "}
                                   · bus

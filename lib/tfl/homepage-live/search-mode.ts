@@ -19,6 +19,20 @@ export const rowsForMode = (
   return kept.length === rows.length ? rows : kept
 }
 
+/**
+ * Drops bus stops that no route serves. NaPTAN keeps some of them in the index
+ * (e.g. 490000024Z "Blackhorse Road Station", indicator "->E", no letter, no
+ * lines): they have no arrivals, so they would only add a letterless pin on top
+ * of the real stops. TfL's own live hits stay, because their routes arrive later.
+ * Returns the same array when nothing is dropped.
+ */
+export const servedRows = (rows: StopRow[]): StopRow[] => {
+  const kept = rows.filter(
+    (row) => row.kind !== "bus" || row.liveOnly === true || row.lines.length > 0
+  )
+  return kept.length === rows.length ? rows : kept
+}
+
 /** TfL's bus stop search runs on the homepage and for bus stops, not for stations or docks. */
 export const searchesBusStops = (mode: SearchMode | undefined) =>
   mode === undefined || mode === "bus"

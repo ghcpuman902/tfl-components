@@ -37,10 +37,6 @@ describe("homepage reuses the live Board", () => {
 describe("homepage search field", () => {
   const search = read("components/home/place-search.tsx")
 
-  it("keeps rounded line marks (DROP SQUARE)", () => {
-    assert.match(search, /rounded-full bg-\(--line-color\)/)
-  })
-
   it("has no fill in its default state", () => {
     assert.doesNotMatch(search, /rounded-\[14px\] bg-muted|"flex items-center gap-3[^"]*\bbg-muted\b/)
   })

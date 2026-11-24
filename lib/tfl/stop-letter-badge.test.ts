@@ -34,3 +34,22 @@ describe("StopLetterBadge glyph line-height", () => {
     })
   }
 })
+
+const discClass = (letter: string, size: StopLetterBadgeSize): string => {
+  const html = renderToStaticMarkup(
+    createElement(StopLetterBadge, { letter, size })
+  )
+  const outer = /^<span[^>]*class="([^"]*)"/.exec(html)
+  assert.ok(outer, html)
+  return outer[1]!
+}
+
+describe("StopLetterBadge disc", () => {
+  // A two-letter code (BC, RG) must stay a circle, never stretch into a pill:
+  // it gets exactly the disc a single letter gets.
+  for (const size of ["sm", "md"] as const) {
+    it(`gives two letters the same ${size} disc as one letter`, () => {
+      assert.equal(discClass("BC", size), discClass("K", size))
+    })
+  }
+})

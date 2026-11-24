@@ -5,7 +5,8 @@ export type StopLetterBadgeSize = "sm" | "md"
 
 /**
  * Painted bus stop letter — same red circle as the arrivals header.
- * One letter stays a circle; two-letter codes (`RG`, `CV`) grow into a pill.
+ * Always a true circle: two-letter codes (`RG`, `CV`) keep the one-letter
+ * disc and set a smaller, tighter glyph instead of growing into a pill.
  *
  * `md` (default) — title-scale disc; glyph leaves a clear ring.
  * `sm` — list-row mark; glyph fills more of the disc so it stays
@@ -35,13 +36,7 @@ export const StopLetterBadge = ({
       data-line="buses"
       className={cn(
         "inline-flex shrink-0 items-center justify-center rounded-full bg-[var(--line-color)] align-middle font-bold text-[var(--line-ink)]",
-        isSm
-          ? isPair
-            ? "h-4 min-w-4 px-1"
-            : "size-4"
-          : isPair
-            ? "h-[1.85ex] min-w-[1.85ex] px-[0.46ex]"
-            : "size-[1.85ex]",
+        isSm ? "size-4" : "size-[1.85ex]",
         className
       )}
       aria-label={`Stop ${letter}`}
@@ -51,10 +46,10 @@ export const StopLetterBadge = ({
           CHIP_CAP_SHIM_CLASS,
           isSm
             ? isPair
-              ? "text-[9px]/none tracking-tighter"
+              ? "text-[8px]/none tracking-tighter"
               : "text-[11px]/none"
             : isPair
-              ? "text-[0.82ex]/none tracking-tighter"
+              ? "text-[0.74ex]/none tracking-tighter"
               : "text-[0.92ex]/none"
         )}
       >
