@@ -13,7 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "reference/**",
-    "_agent/**",
+    // Local, untracked folders at the root (underscore prefix), e.g. nested worktrees.
+    "_*/**",
     // Gitignored throwaway probes (.gitignore: scratch/), not app code.
     "scripts/scratch/**",
   ]),

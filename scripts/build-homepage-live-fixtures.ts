@@ -1,5 +1,6 @@
 /**
- * Trims the recorded TfL replays (`_agent/replays`, git-ignored) into one small
+ * Trims the recorded TfL replays (`replays/` in the local scratch folder,
+ * `LOCAL_SCRATCH_DIR`, default `scratch/`, git-ignored) into one small
  * committed fixture for deterministic homepage tests and `?replay=` screenshots.
  *
  *   node --import tsx scripts/build-homepage-live-fixtures.ts
@@ -11,7 +12,11 @@ import { parseTflLineStrings } from "../lib/tfl/bus-route-geometry.ts"
 import { mapStopPoint } from "../lib/tfl/bus-stop-shape.ts"
 
 const ROOT = path.resolve(import.meta.dirname, "..")
-const REPLAYS = path.join(ROOT, "_agent/replays")
+const REPLAYS = path.resolve(
+  ROOT,
+  process.env.LOCAL_SCRATCH_DIR ?? "scratch",
+  "replays"
+)
 const OUT = path.join(ROOT, "lib/tfl/fixtures/homepage-live")
 
 const ROW_KEYS = [

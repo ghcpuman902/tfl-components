@@ -7,7 +7,7 @@
  * Marked-up copy: spaces separate chunks, `{...}` glues words into one
  * non-breaking phrase unit, e.g. `Know {when to leave}. Without {picking up}
  * {your phone}.` Breaks only ever fall between chunks. Rules and sources are
- * in `_agent/tagline-gate-report.md`.
+ * in the report written by `scripts/tagline-gate-report.ts`.
  */
 
 export type Measure = (text: string) => number

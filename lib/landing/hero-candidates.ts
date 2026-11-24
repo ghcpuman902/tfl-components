@@ -4,7 +4,7 @@
  * unit (see `tagline-shape.ts`). Only candidates that pass the gate may enter
  * the A/B test (`hero-variants.ts`); `hero-variants.test.ts` enforces that.
  *
- * Copy comes from `_agent/marketing-copy.md`; a, b and c are the brief's
+ * Copy comes from the marketing copy brief; a, b and c are the brief's
  * variants. The hero scene opens on Clapham Common (Northern line, bus 77 to
  * Waterloo), so c names the 77, not the 38.
  */

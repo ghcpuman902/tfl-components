@@ -1,8 +1,10 @@
 /**
- * Runs the tagline shape gate and writes `_agent/tagline-gate-report.md`.
+ * Runs the tagline shape gate and writes `tagline-gate-report.md` to the
+ * local scratch folder (`LOCAL_SCRATCH_DIR`, default `scratch/`, git-ignored).
  * Run: node --import tsx scripts/tagline-gate-report.ts
  */
-import { writeFileSync } from "node:fs"
+import { mkdirSync, writeFileSync } from "node:fs"
+import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { loadFontMetrics } from "@/lib/landing/font-metrics"
 import {
@@ -200,10 +202,11 @@ for (const result of results) {
   }
 }
 
-writeFileSync(
-  fileURLToPath(new URL("../_agent/tagline-gate-report.md", import.meta.url)),
-  `${lines.join("\n")}\n`
-)
+const ROOT = fileURLToPath(new URL("..", import.meta.url))
+const SCRATCH = process.env.LOCAL_SCRATCH_DIR ?? "scratch"
+const REPORT = path.resolve(ROOT, SCRATCH, "tagline-gate-report.md")
+mkdirSync(path.dirname(REPORT), { recursive: true })
+writeFileSync(REPORT, `${lines.join("\n")}\n`)
 console.log(
-  `wrote _agent/tagline-gate-report.md (${results.length} candidates, ${chosen.length} in test)`
+  `wrote ${path.relative(ROOT, REPORT)} (${results.length} candidates, ${chosen.length} in test)`
 )
