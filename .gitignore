@@ -54,6 +54,3 @@ tmp/x-thread/
 
 # large source feeds kept until a derived snapshot exists
 .cache/
-
-# agent recordings, captures and scratch work
-/_agent/

@@ -13,7 +13,7 @@ const uniqueSortedIds = (lineIds: readonly string[]): string[] =>
  * Requests already on their way to TfL, keyed by line set. Concurrent site-key
  * polls for the same lines share one response. Nothing is kept after it
  * settles, so this adds no staleness. The TfL feed is already ~45 s old when it
- * arrives (`_agent/feed-cadence.json`).
+ * arrives (measured from recorded polls).
  */
 const inFlight = new Map<string, Promise<LineVehicleArrivals>>()
 
