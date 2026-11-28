@@ -133,9 +133,12 @@ describe("homepage search field", () => {
     // The name slot is as wide as the name (flex-initial), never flex-1, and the
     // name fits against the room beside the letter, not its own shrink-wrapped box.
     const listName = search.slice(search.indexOf("const ListName"), search.indexOf("const rowLabel"))
-    assert.match(listName, /<span\s+ref=\{ref\}\s+className="min-w-0 flex-initial text-balance"/)
+    assert.match(listName, /<span\s+ref=\{ref\}\s+className="min-w-0 flex-initial"/)
     assert.doesNotMatch(listName, /\bflex-1\b/)
     assert.match(listName, /maxWidth=\{room\}/)
+    // Names abbreviate, then wrap; they never shrink (StationName defaults to scale-down).
+    assert.match(listName, /allowScaleDown=\{false\}/)
+    assert.doesNotMatch(listName, /text-balance/)
     // The badge is the name's next sibling in the same row.
     assert.match(
       search,

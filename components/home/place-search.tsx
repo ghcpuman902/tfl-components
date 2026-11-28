@@ -228,13 +228,14 @@ const ListName = ({ name }: { name: string }) => {
     return () => cancelAnimationFrame(frame)
   }, [name, room, ref])
   return (
-    <span ref={ref} className="min-w-0 flex-initial text-balance" aria-hidden>
+    <span ref={ref} className="min-w-0 flex-initial" aria-hidden>
       <StationName
         name={name.replace(/\s+/g, " ")}
         layout="auto"
         maxWidth={room}
         maxLines={1}
         allowAbbreviation
+        allowScaleDown={false}
         nowrap={false}
       />
     </span>
