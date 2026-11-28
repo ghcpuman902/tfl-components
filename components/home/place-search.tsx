@@ -9,10 +9,11 @@ import {
   useRef,
   useState,
   type MouseEvent,
+  type ReactNode,
   type RefObject,
 } from "react"
 import dynamic from "next/dynamic"
-import { LocateFixed, Search } from "lucide-react"
+import { ArrowLeft, LocateFixed, Search } from "lucide-react"
 import type { ExplorerTubeRailPoint } from "@/lib/tfl/explorer/common"
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
 import {
@@ -40,7 +41,6 @@ import {
   COLLAPSED_ITEMS,
   dayRoutes,
   groupSearchRows,
-  type SearchCluster,
 } from "@/lib/tfl/homepage-live/search-groups"
 import {
   estimateKeyboardHeight,
@@ -90,11 +90,29 @@ import {
 import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
 import { StationName } from "@/components/tfl/station-name"
 import { LineColorBar } from "@/components/tfl/brand/line-badge"
-import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
+import { RouteChipColumn } from "@/components/home/route-chip-column"
 import { cn } from "@/lib/utils"
 
-/** Enough rows that a same-name cluster (Bank Station A–K) arrives whole. */
+/** Enough rows that every stop of a same-name place (Bank Station A–K) arrives. */
 const INSTANT_LIMIT = 40
+/** The most of the screen the open view will leave above the field to keep it in place. */
+const MAX_OPEN_TOP_SHARE = 0.25
+
+/**
+ * The gap the open view puts above the field so the field stays exactly where it was
+ * tapped: its distance from the top of the open view, which starts at the site header's
+ * height (not its painted bottom, a border lower). Unrounded, so it lands to the pixel.
+ */
+const openViewInset = (field: HTMLElement | null) => {
+  if (!field) return 0
+  const probe = document.createElement("div")
+  probe.style.cssText = "position:fixed;visibility:hidden;top:var(--site-header-height)"
+  document.body.appendChild(probe)
+  const viewTop = probe.getBoundingClientRect().top
+  probe.remove()
+  const gap = field.getBoundingClientRect().top - viewTop
+  return Math.min(window.innerHeight * MAX_OPEN_TOP_SHARE, Math.max(0, gap))
+}
 
 const SearchMap = dynamic(
   () =>
@@ -108,15 +126,6 @@ const SearchMap = dynamic(
 )
 
 type Replay = { fixture: string; round: number } | undefined
-
-const MODE_LABELS: Readonly<Record<string, string>> = {
-  tube: "Tube",
-  "elizabeth-line": "Elizabeth line",
-  dlr: "DLR",
-  overground: "Overground",
-  tram: "Tram",
-  "national-rail": "National Rail",
-}
 
 /** The station's lines as the registry's square-ended LineColorBar dashes, never rounded pills. */
 const LineMarks = ({ lines }: { lines: readonly string[] }) => (
@@ -136,31 +145,102 @@ const RouteChips = ({
   routes: readonly string[]
   max: number
 }) => (
-  <span className="flex max-w-[45%] shrink-0 flex-wrap justify-end gap-1 sm:max-w-60">
-    {routes.slice(0, max).map((route) => (
-      <BusNumberChip key={route} label={route} />
-    ))}
-  </span>
+  <RouteChipColumn
+    routes={routes.slice(0, max)}
+    className="max-w-[45%] sm:max-w-60"
+    widen
+  />
 )
+
+/**
+ * The room a name has in its row: the row's width less its siblings (a stop
+ * letter) and the gaps. The name fits against this, not its own box, so its slot
+ * can be as wide as the name and the letter sits right after it (A5).
+ */
+const useNameRoom = () => {
+  const ref = useRef<HTMLSpanElement>(null)
+  const [room, setRoom] = useState<number>()
+  useLayoutEffect(() => {
+    const row = ref.current?.parentElement
+    if (!row) return
+    const measure = () => {
+      const gap = parseFloat(getComputedStyle(row).columnGap) || 0
+      const siblings = [...row.children].filter((child) => child !== ref.current)
+      const taken = siblings.reduce(
+        (sum, child) => sum + child.getBoundingClientRect().width + gap,
+        0
+      )
+      setRoom(Math.max(0, Math.floor(row.clientWidth - taken)))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(row)
+    return () => observer.disconnect()
+  }, [])
+  return { ref, room }
+}
+
+/** Painted text only: skips the zero-size and absolutely placed find helpers. */
+const paintsText = (el: HTMLElement | null, root: HTMLElement) => {
+  for (let node = el; node && node !== root; node = node.parentElement) {
+    const style = getComputedStyle(node)
+    if (style.position === "absolute" || parseFloat(style.fontSize) < 2) return false
+  }
+  return true
+}
+
+/** Widest painted line of the text inside `el`, px (a wrapped box is wider than its lines). */
+const widestLine = (el: HTMLElement) => {
+  const left = el.getBoundingClientRect().left
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+  let widest = 0
+  for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+    if (!text.textContent?.trim() || !paintsText(text.parentElement, el)) continue
+    const range = document.createRange()
+    range.selectNodeContents(text)
+    for (const rect of range.getClientRects())
+      if (rect.width > 0.5) widest = Math.max(widest, rect.right - left)
+  }
+  return widest
+}
 
 /**
  * A stop or station name that is never clipped, fitted the way the Board's
  * stop title is (StationNameTitle): abbreviate first on one line, and only when
  * no abbreviation fits let it wrap (`nowrap={false}`). No scale-down, so every
- * row keeps one text size. Its slot is `flex-1` so the fit measures the room
- * left beside a stop letter. Visual only; the option's aria-label has the full name.
+ * row keeps one text size. It fits against the room beside the stop letter
+ * (useNameRoom), and its slot is only as wide as the name's widest line, so the
+ * letter follows the name even when it wraps. Visual only; the option's
+ * aria-label has the full name.
  */
-const ListName = ({ name }: { name: string }) => (
-  <span className="min-w-0 flex-1" aria-hidden>
-    <StationName
-      name={name.replace(/\s+/g, " ")}
-      layout="auto"
-      maxLines={1}
-      allowAbbreviation
-      nowrap={false}
-    />
-  </span>
-)
+const ListName = ({ name }: { name: string }) => {
+  const { ref, room } = useNameRoom()
+  // Width set on the DOM node, not in state: cleared, then the painted lines measured.
+  useLayoutEffect(() => {
+    const slot = ref.current
+    if (!slot) return
+    slot.style.width = ""
+    const frame = requestAnimationFrame(() => {
+      if (room === undefined) return
+      const widest = Math.ceil(widestLine(slot))
+      if (widest > 0 && widest < room) slot.style.width = `${widest + 1}px`
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [name, room, ref])
+  return (
+    <span ref={ref} className="min-w-0 flex-initial" aria-hidden>
+      <StationName
+        name={name.replace(/\s+/g, " ")}
+        layout="auto"
+        maxWidth={room}
+        maxLines={1}
+        allowAbbreviation
+        allowScaleDown={false}
+        nowrap={false}
+      />
+    </span>
+  )
+}
 
 const rowLabel = (row: StopRow) =>
   row.kind === "station"
@@ -266,13 +346,11 @@ const NO_FIT: MapFit = {
   key: 0,
 }
 
-type Option = { id: string; label: string; expanded?: boolean }
+type Option = { id: string; label: string }
 type Entry = {
   option: Option
   row?: StopRow
-  cluster?: SearchCluster
   dock?: ExplorerPoint
-  nested?: boolean
 }
 
 export const dockCounts = (dock: ExplorerPoint) =>
@@ -365,12 +443,16 @@ export type PlaceSearchProps = {
   onSelectDock?: (dock: ExplorerPoint) => void
   /** Shown in the field at rest, e.g. the station already chosen. */
   restingValue?: string
+  /** Desktop (lg+) only, while open: docked on the right, pushing the search column left. */
+  aside?: ReactNode
+  onOpenChange?: (open: boolean) => void
 }
 
 /**
- * At rest a quiet field above the Board. Focus turns the same field into the
- * top of a full-screen search view: map, the best match held in place, then a
- * keyboard-high zone holding the rest of the list, so nothing moves when the
+ * At rest a quiet field above the Board. Focus opens the search in place under
+ * the sticky site header: the field stays where it is, and the map, the best
+ * match held in place, then a keyboard-high zone holding the rest of the list
+ * cover the main area below it (never the nav), so nothing moves when the
  * keyboard opens or closes.
  */
 export const PlaceSearch = ({
@@ -386,18 +468,18 @@ export const PlaceSearch = ({
   chosenIds,
   onSelectDock,
   restingValue,
+  aside,
+  onOpenChange,
 }: PlaceSearchProps) => {
   const [state, dispatch] = useReducer(combinedReducer, initialCombinedState)
   const [open, setOpen] = useState(false)
+  // Open, the field keeps its place: its gap under the site header, measured on focus.
+  const [openTop, setOpenTop] = useState(0)
+  const fieldRef = useRef<HTMLDivElement>(null)
   const [keyboardPx, setKeyboardPx] = useState(0)
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [expanded, setExpanded] = useState<{
-    query: string
-    clusters: string[]
-    all: boolean
-  }>({
+  const [expanded, setExpanded] = useState<{ query: string; all: boolean }>({
     query: "",
-    clusters: [],
     all: false,
   })
   // A new object when the index loads and when a fresher served copy replaces it in place.
@@ -582,9 +664,11 @@ export const PlaceSearch = ({
       estimateKeyboardHeight(window.innerHeight)
     keyboardRef.current = px
     setKeyboardPx(px)
+    setOpenTop(openViewInset(fieldRef.current))
     setFrame(provisionalFrame(anchor))
     setZoom(MAP_SELECTED_ZOOM)
     setOpen(true)
+    onOpenChange?.(true)
     // An editor opens on the nearest places, before anything is typed.
     if (mode) searchRef.current?.type("")
   }
@@ -686,8 +770,8 @@ export const PlaceSearch = ({
   }
   const groups = useMemo(() => groupSearchRows(rows), [rows])
   const best = mode === "cycle" ? undefined : groups.best
-  const shown: { clusters: string[]; all: boolean } =
-    expanded.query === state.query ? expanded : { clusters: [], all: false }
+  const shown: { all: boolean } =
+    expanded.query === state.query ? expanded : { all: false }
   const items = mode === "cycle" ? [] : shown.all ? groups.items : groups.items.slice(0, COLLAPSED_ITEMS)
   const hasMore = mode !== "cycle" && !shown.all && groups.items.length > COLLAPSED_ITEMS
   const points = useMemo(
@@ -699,6 +783,7 @@ export const PlaceSearch = ({
   )
 
   // Typed: the result stops stay pins at any zoom; the other stops in view are the dots below the pin zoom.
+  const drawsDots = mode === undefined || mode === "bus"
   const resultPinIds = useMemo(
     () =>
       typed
@@ -708,23 +793,22 @@ export const PlaceSearch = ({
   )
   const busDots = useMemo(() => {
     const kit = index?.kit
-    if (!open || zoom >= PIN_MIN_ZOOM || !kit) return []
+    if (!open || !drawsDots || zoom >= PIN_MIN_ZOOM || !kit) return []
     const skip = typed
       ? new Set(
           rows
-            .filter(
-              (row) => row.kind === "bus" && row.lat != null && row.lon != null
-            )
+            .filter((row) => row.kind === "bus" && row.lat != null && row.lon != null)
             .map((row) => dotKey(row.lon!, row.lat!))
         )
       : undefined
     return busStopDots(kit, frame, skip)
-  }, [open, zoom, index, typed, frame, rows])
+  }, [open, drawsDots, zoom, index, typed, frame, rows])
 
   const close = () => {
+    onOpenChange?.(false)
     setOpen(false)
     setActiveId(null)
-    setExpanded({ query: "", clusters: [], all: false })
+    setExpanded({ query: "", all: false })
     // The map remounts on the next open; a stale fit key would move it.
     setFit(NO_FIT)
     searchRef.current?.type("")
@@ -737,45 +821,14 @@ export const PlaceSearch = ({
     onSelect(hit)
   }
 
-  const toggleCluster = (cluster: SearchCluster) =>
-    setExpanded({
-      query: state.query,
-      all: shown.all,
-      clusters: shown.clusters.includes(cluster.id)
-        ? shown.clusters.filter((id) => id !== cluster.id)
-        : [...shown.clusters, cluster.id],
-    })
-
   // Every pickable line in screen order: the sticky best match, then the zone's rows.
   const entries: Entry[] = []
-  const pushRow = (row: StopRow, nested = false) =>
-    entries.push({
-      option: {
-        id: nested ? `${row.id}:in-cluster` : row.id,
-        label: rowLabel(row),
-      },
-      row,
-      nested,
-    })
+  const pushRow = (row: StopRow) =>
+    entries.push({ option: { id: row.id, label: rowLabel(row) }, row })
   if (best) pushRow(best)
   for (const dock of mode === "cycle" ? docks : [])
     entries.push({ option: { id: dock.id, label: `${dock.name}, dock` }, dock })
-  for (const item of items) {
-    if (item.kind === "row") {
-      pushRow(item.row)
-      continue
-    }
-    const isOpen = shown.clusters.includes(item.id)
-    entries.push({
-      option: {
-        id: item.id,
-        label: `${item.name}, ${item.stops.length} bus stops`,
-        expanded: isOpen,
-      },
-      cluster: item,
-    })
-    if (isOpen) for (const stop of item.stops) pushRow(stop, true)
-  }
+  for (const item of items) pushRow(item.row)
   const options = entries.map((entry) => entry.option)
   const active = activeId ? options.findIndex((option) => option.id === activeId) : -1
   const chooseDock = (dock: ExplorerPoint) => {
@@ -785,7 +838,6 @@ export const PlaceSearch = ({
   const activate = (entry: Entry | undefined) => {
     if (entry?.row) choose(entry.row)
     else if (entry?.dock) chooseDock(entry.dock)
-    else if (entry?.cluster) toggleCluster(entry.cluster)
   }
   const rowById = new Map(rows.map((row) => [row.id, row]))
   const dockById = new Map(docks.map((dock) => [dock.id, dock]))
@@ -848,7 +900,6 @@ export const PlaceSearch = ({
     role: "option" as const,
     "aria-selected": index === active,
     "aria-label": option.label,
-    "aria-expanded": option.expanded,
     onMouseDown: (event: MouseEvent) => event.preventDefault(),
     onMouseEnter: () => setActiveId(option.id),
   })
@@ -858,18 +909,12 @@ export const PlaceSearch = ({
       row.kind === "station"
         ? stationPointOfRow(row, stations, hubStationIds)
         : undefined
-    const modes: readonly string[] = station?.modes ?? row.modes
     const detail = chosen.has(row.id)
       ? "On the board"
       : row.kind === "station"
-        ? [
-            ...modes.flatMap((mode) =>
-              MODE_LABELS[mode] ? [MODE_LABELS[mode]] : []
-            ),
-            station?.zone ? `Zone ${station.zone}` : null,
-          ]
-            .filter(Boolean)
-            .join(" · ")
+        ? station?.zone
+          ? `Zone ${station.zone}`
+          : ""
         : row.towards
           ? `towards ${row.towards}`
           : ""
@@ -883,7 +928,7 @@ export const PlaceSearch = ({
             ) : null}
           </span>
           {detail ? (
-            <span className="block text-sm text-pretty text-muted-foreground">
+            <span className="block text-sm text-balance text-muted-foreground">
               {detail}
             </span>
           ) : null}
@@ -918,22 +963,40 @@ export const PlaceSearch = ({
   const listRow = "flex min-h-14 cursor-pointer items-start gap-3 border-b border-border py-2.5"
 
   return (
-    // At rest it stacks over the Board's z-10 layers and under the sticky site header (z-30); open, the view covers the header.
-    <div className={open ? "relative z-50" : "relative z-20"}>
+    // At rest and open it stacks over the Board's own layers and under the sticky site header.
+    <div className="relative z-20">
+      {/* Open: covers only the main area under the header; the nav stays visible and on top. */}
       <div
         className={
-          open ? "fixed inset-x-0 top-0 h-dvh bg-background" : undefined
+          open
+            ? "fixed inset-x-0 top-(--site-header-height) bottom-0 flex justify-center bg-background"
+            : undefined
         }
       >
         <div
-          className={cn(
-            "flex w-full flex-col",
-            open && "mx-auto h-full max-w-3xl"
-          )}
+          className={cn("flex w-full flex-col", open && "h-full max-w-3xl min-w-0")}
+          style={open ? { paddingTop: openTop } : undefined}
         >
-          <div className={cn(open && "shrink-0 px-4 pt-3 sm:px-8")}>
-            <div className="flex h-[4.5rem] items-center gap-3 border-b border-foreground sm:h-[5.5rem]">
-              <Search className="size-7 shrink-0" aria-hidden />
+          <div className={cn(open && "shrink-0 px-4 sm:px-8")}>
+            {/* Square hairline underline, no fill: the approved A5 field (the DROP SQUARE exception). */}
+            <div
+              ref={fieldRef}
+              className="flex h-[4.5rem] items-center gap-3 border-b border-foreground bg-transparent sm:h-[5.5rem]"
+            >
+              {open ? (
+                // Takes the magnifier's place, so opening never narrows or moves the input;
+                // the padding grows the tap target without growing the layout.
+                <button
+                  type="button"
+                  onClick={close}
+                  className="-m-2 flex shrink-0 items-center border-0 bg-transparent p-2 text-foreground"
+                >
+                  <ArrowLeft className="size-7" aria-hidden />
+                  <span className="sr-only">Cancel</span>
+                </button>
+              ) : (
+                <Search className="size-7 shrink-0" aria-hidden />
+              )}
               <input
                 ref={inputRef}
                 type="text"
@@ -998,15 +1061,6 @@ export const PlaceSearch = ({
                 <LocateFixed className="size-5" aria-hidden />
                 <span className="sr-only">Near me</span>
               </button>
-              {open ? (
-                <button
-                  type="button"
-                  onClick={close}
-                  className="min-h-11 shrink-0 border-0 bg-transparent px-1 text-base text-foreground"
-                >
-                  Cancel
-                </button>
-              ) : null}
             </div>
             {locateNote ? (
               <p
@@ -1019,7 +1073,7 @@ export const PlaceSearch = ({
           </div>
           {open ? (
             <>
-              <div className="relative min-h-0 flex-1">
+              <div data-search-map className="relative min-h-0 flex-1">
                 <SearchMap
                   points={points}
                   selectedId={mapSelectedId}
@@ -1033,7 +1087,7 @@ export const PlaceSearch = ({
                   busStopLabels={false}
                   busDots={busDots}
                   railLines
-                  pinMinZoom={PIN_MIN_ZOOM}
+                  pinMinZoom={drawsDots ? PIN_MIN_ZOOM : undefined}
                   alwaysPinIds={resultPinIds}
                   initialView={{
                     lat: frame.center.lat,
@@ -1082,39 +1136,12 @@ export const PlaceSearch = ({
                         className={cn(
                           listRow,
                           entry.dock && "items-center",
-                          entry.nested && "pl-4",
                           at === active && "bg-muted"
                         )}
                         {...optionProps(entry.option, at)}
                         onClick={() => activate(entry)}
                       >
-                        {entry.row || entry.dock ? (
-                          entryBody(entry)
-                        ) : entry.cluster ? (
-                          <>
-                            <span className="min-w-0 flex-1">
-                              {/* No stop letter beside it, so the name simply wraps in full. */}
-                              <span className="block text-lg leading-snug text-pretty">
-                                {entry.cluster.name.replace(/\s+/g, " ")}
-                                <span className="text-sm text-muted-foreground">
-                                  {" "}
-                                  · bus
-                                </span>
-                              </span>
-                              <span className="block text-sm text-pretty text-muted-foreground">
-                                {entry.cluster.stops.length} stops
-                                {entry.cluster.letters
-                                  ? ` · ${entry.cluster.letters}`
-                                  : ""}{" "}
-                                ·{" "}
-                                {entry.option.expanded
-                                  ? "tap to close"
-                                  : "tap to choose one"}
-                              </span>
-                            </span>
-                            <RouteChips routes={entry.cluster.routes} max={9} />
-                          </>
-                        ) : null}
+                        {entryBody(entry)}
                       </li>
                     )
                   )}
@@ -1133,7 +1160,6 @@ export const PlaceSearch = ({
                           onClick={() =>
                             setExpanded({
                               query: state.query,
-                              clusters: shown.clusters,
                               all: true,
                             })
                           }
@@ -1151,6 +1177,15 @@ export const PlaceSearch = ({
             </>
           ) : null}
         </div>
+        {open && aside ? (
+          <aside
+            aria-label="Live status"
+            className="hidden w-96 shrink-0 overflow-y-auto overscroll-contain border-l border-border px-6 pb-6 lg:block xl:w-[28rem]"
+            style={{ paddingTop: openTop }}
+          >
+            {aside}
+          </aside>
+        ) : null}
       </div>
       {/* Holds the field's place in the page while the field sits in the open view. */}
       {open ? <div aria-hidden className="h-[4.5rem] sm:h-[5.5rem]" /> : null}

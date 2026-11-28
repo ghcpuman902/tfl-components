@@ -41,7 +41,7 @@ const HomeFallback = () => (
     className="mx-auto w-full max-w-3xl px-4 pt-6 pb-10 sm:px-8 lg:pt-10"
     aria-hidden
   >
-    <div className="h-16 border border-input" />
+    <div className="h-[4.5rem] border-b border-foreground sm:h-[5.5rem]" />
     <div className="space-y-3 pt-12">
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="h-11 animate-pulse bg-muted/40" />

@@ -6,10 +6,20 @@ import { describe, it } from "node:test"
 
 // Regression for Mangle's 18 Nov 2026 complaint: the homepage invented its own
 // Board rows instead of the live Board, and the search was filled and painted
-// over the site nav. DROP SQUARE (22 Nov): rounding is required again; no fill stays.
+// over the site nav. 22 Nov 2026 (TFL-49, DROP SQUARE): rounded corners
+// everywhere else, and the open search stays under the nav too. 23 Nov 2026
+// (Mangle): the search field is the exception and stays square (the approved
+// A5 hairline underline), and the station marks are registry LineColorBars.
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..")
 const read = (relative: string) => readFileSync(join(root, relative), "utf8")
+
+/** The resting field's chrome: the div holding the search icon and the input. */
+const fieldChromeOf = (source: string): string => {
+  const match = source.match(/ref=\{fieldRef\}\s*className="([^"]+)"/)
+  assert.ok(match, "no field chrome (ref={fieldRef}) in place-search")
+  return match[1]!
+}
 
 const zIndexOf = (source: string, marker: RegExp): number => {
   const match = source.match(marker)
@@ -36,18 +46,132 @@ describe("homepage reuses the live Board", () => {
 
 describe("homepage search field", () => {
   const search = read("components/home/place-search.tsx")
+  const page = read("app/page.tsx")
+
+  it("draws station lines with the registry LineColorBar, not hand-rolled pills", () => {
+    assert.match(search, /<LineColorBar lineId=\{line\}/)
+    assert.doesNotMatch(search, /rounded-full bg-\(--line-color\)/)
+  })
+
+  it("has a square hairline-underline field (no rounding), and so does the page fallback", () => {
+    assert.match(fieldChromeOf(search), /\bborder-b border-foreground\b/)
+    assert.doesNotMatch(fieldChromeOf(search), /\brounded/)
+    assert.match(page, /"h-\[4\.5rem\] border-b border-foreground\b/)
+    assert.doesNotMatch(page, /h-\[4\.5rem\][^"]*\brounded/)
+  })
+
+  it("squares MapLibre's zoom and credits controls in the search view only", () => {
+    const css = read("app/globals.css")
+    assert.match(search, /<div data-search-map className=/)
+    const squareRules = [...css.matchAll(/([^{}]*maplibregl-ctrl[^{]*)\{[^}]*border-radius:\s*0/g)]
+    const selectors = squareRules.flatMap((rule) =>
+      rule[1]!.replace(/\/\*[\s\S]*?\*\//g, "").split(",").map((part) => part.trim()).filter(Boolean)
+    )
+    for (const control of [
+      ".maplibregl-ctrl-group",
+      ".maplibregl-ctrl-group button",
+      ".maplibregl-ctrl-attrib",
+      ".maplibregl-ctrl-attrib-button",
+    ])
+      assert.ok(selectors.includes(`[data-search-map] ${control}`), `search view squares ${control}`)
+    // Everywhere else MapLibre keeps its rounding (DROP SQUARE).
+    for (const selector of selectors)
+      assert.match(selector, /^\[data-search-map\] /, `unscoped square override: ${selector}`)
+  })
+
+  it("opens the view with the field exactly where it was tapped", () => {
+    // The gap above the field is its measured, unrounded distance from the open view's top.
+    assert.match(search, /const openViewInset = /)
+    assert.match(search, /setOpenTop\(openViewInset\(fieldRef\.current\)\)/)
+    // Nothing joins the field row on open (a Cancel button used to narrow the input): the
+    // back arrow takes the magnifier's place without growing the layout.
+    assert.match(search, /<ArrowLeft className="size-7"/)
+    assert.match(search, /className="-m-2 flex shrink-0 items-center/)
+    assert.doesNotMatch(search, /min-h-11 shrink-0 border-0 bg-transparent px-1 text-base/)
+    // The real-layout check (input rect before and after open) is e2e/search-field-stays.spec.ts.
+  })
+
+  it("lists individual stops only: no hub row and no mode text", () => {
+    // 28 Nov 2026 (Mangle): stops in a hub can lie too far apart to walk between, and the
+    // route chips and marks already say the mode.
+    assert.doesNotMatch(search, /tap to (choose|close)|cluster|MODE_LABELS|· bus/)
+    assert.doesNotMatch(search, /\.\.\.modes\.flatMap/)
+  })
+
+  it("runs the search map edge to edge, like the Board's column (no side inset)", () => {
+    assert.match(search, /<div data-search-map className="relative min-h-0 flex-1">/)
+    assert.doesNotMatch(search, /data-search-map className="[^"]*\bpx-/)
+  })
+
+  it("keeps the chips and line dashes in a right-hand column, not under the name", () => {
+    // Bus chips: the shared right-aligned, capped, wrapping, balanced column of registry BusNumberChips.
+    assert.match(
+      search,
+      /const RouteChips[^]*?<RouteChipColumn\s+routes=\{routes\.slice\(0, max\)\}\s+className="max-w-\[45%\] sm:max-w-60"\s+widen\s*\/>/
+    )
+    const column = read("components/home/route-chip-column.tsx")
+    assert.match(column, /flex shrink-0 flex-wrap justify-end gap-1/)
+    assert.match(column, /<BusNumberChip key=\{route\} label=\{route\} \/>/)
+    // The Board's stop editor draws the same column.
+    assert.match(read("components/board/customise/bus-editor.tsx"), /<RouteChipColumn\s+routes=/)
+    // Station dashes: the same right column, top-aligned with the name.
+    assert.match(
+      search,
+      /<span className="max-w-\[45%\] shrink-0 self-start pt-2">\s*<LineMarks lines=\{station\?\.lines \?\? row\.lines\} \/>/
+    )
+    // The column is a sibling after the name block (name, then badge inside it, then chips).
+    assert.match(search, /<\/span>\s*\{row\.kind === "station" \? \(\s*<span className="max-w-\[45%\]/)
+    // Not the under-the-name grid.
+    assert.doesNotMatch(search, /grid w-full justify-start|useChipsPerRow|mt-1\.5 flex flex-wrap/)
+  })
+
+  it("never ellipsises a name or detail in the search list: it wraps", () => {
+    assert.doesNotMatch(search, /\btruncate\b|\btext-ellipsis\b|\bline-clamp-\d\b|\bwhitespace-nowrap\b/)
+  })
+
+  it("puts a stop letter right after the name (A5), not at the row's far edge", () => {
+    // The name slot is as wide as the name (flex-initial), never flex-1, and the
+    // name fits against the room beside the letter, not its own shrink-wrapped box.
+    const listName = search.slice(search.indexOf("const ListName"), search.indexOf("const rowLabel"))
+    assert.match(listName, /<span\s+ref=\{ref\}\s+className="min-w-0 flex-initial"/)
+    assert.doesNotMatch(listName, /\bflex-1\b/)
+    assert.match(listName, /maxWidth=\{room\}/)
+    // Names abbreviate, then wrap; they never shrink (StationName defaults to scale-down).
+    assert.match(listName, /allowScaleDown=\{false\}/)
+    assert.doesNotMatch(listName, /text-balance/)
+    // The badge is the name's next sibling in the same row.
+    assert.match(
+      search,
+      /<ListName name=\{row\.name\} \/>\s*\{row\.kind === "bus" && row\.letter \? \(\s*<StopLetterBadge letter=\{row\.letter\} size="sm" \/>/
+    )
+  })
 
   it("has no fill in its default state", () => {
+    assert.doesNotMatch(fieldChromeOf(search), /\bbg-(muted|card|secondary|accent)\b/)
     assert.doesNotMatch(search, /rounded-\[14px\] bg-muted|"flex items-center gap-3[^"]*\bbg-muted\b/)
   })
 
-  it("sits below the sticky site header at rest and covers it when open", () => {
+  it("stays below the sticky site header at rest and when open", () => {
     const header = read("components/site-header.tsx")
     const headerZ = zIndexOf(header, /<header[\s\S]*?className="[^"]*\bsticky\b[^"]*\bz-(\d+)\b/)
-    const openZ = zIndexOf(search, /open \? "relative z-(\d+)" : "relative z-\d+"/)
-    const restZ = zIndexOf(search, /open \? "relative z-\d+" : "relative z-(\d+)"/)
-    assert.ok(restZ < headerZ, `search z-${restZ} must be below header z-${headerZ}`)
-    assert.ok(restZ > 10, "search must still stack over the Board's own z-10 layers")
-    assert.ok(openZ > headerZ, `open search view z-${openZ} must cover header z-${headerZ}`)
+    const searchZ = zIndexOf(search, /<div className="relative z-(\d+)">/)
+    assert.ok(searchZ < headerZ, `search z-${searchZ} must be below header z-${headerZ}`)
+    assert.ok(searchZ > 10, "search must still stack over the Board's own z-10 layers")
+    // No layer of the search may climb above the header or reach the top of the screen.
+    for (const [, z] of search.matchAll(/\bz-(\d+)\b/g))
+      assert.ok(Number(z) < headerZ, `search layer z-${z} must be below header z-${headerZ}`)
+    assert.doesNotMatch(search, /\bfixed inset-x-0 top-0\b|\bh-dvh\b/)
+  })
+
+  it("opens in place, covering only the main area under the header", () => {
+    assert.match(search, /"fixed inset-x-0 top-\(--site-header-height\) bottom-0\b/)
+    // Still the real input, not a button that opens another view.
+    assert.match(search, /<input[\s\S]*?role="combobox"/)
+  })
+
+  it("docks the live Board on the right on desktop while open; the phone stays one column", () => {
+    assert.match(search, /<aside[\s\S]*?className="hidden [^"]*\blg:block\b/)
+    const product = read("components/home/home-product.tsx")
+    assert.match(product, /aside=\{[\s\S]*?\{board\}/)
   })
 })

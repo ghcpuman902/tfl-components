@@ -55,6 +55,16 @@ const RAIL_LAYER_ID = "explorer-rail-lines-core"
 const BUS_PIN_RADIUS = 8
 const BUS_DOTS_SOURCE_ID = "explorer-bus-dots"
 const BUS_DOTS_LAYER_ID = "explorer-bus-dots-circle"
+/**
+ * Bus dot radii, px. Fixed sizes: the station circle is now derived from the
+ * label's x-height (STATION_MARK), so the dots no longer scale off it.
+ * Light: 3 px across at z11 to 4 px at z14.
+ */
+export const BUS_DOT_R_MIN = 1.5
+export const BUS_DOT_R_MAX = 2
+/** Dark bus dot: one step larger (4 to 5 px across) so it reads on the dark base. */
+export const BUS_DOT_R_DARK_MIN = 2
+export const BUS_DOT_R_DARK_MAX = 2.5
 const CYCLE_MARKER_SIZE = 32
 const CYCLE_SELECTED_SIZE = 44
 const MARKER_Z_SELECTED = "4"
@@ -399,10 +409,10 @@ const addExplorerLayers = (
       source: BUS_DOTS_SOURCE_ID,
       maxzoom: pinMinZoom,
       paint: {
-        // Diameter 3 px at z11 to 4 px at z14 on light; 4 to 5 px on dark, brighter, with a thin light halo.
+        // Fixed px, z11 to z14 (BUS_DOT_R_*); dark is larger and brighter with a thin light halo.
         "circle-radius": dark
-          ? ["interpolate", ["linear"], ["zoom"], 11, 2, 14, 2.5]
-          : ["interpolate", ["linear"], ["zoom"], 11, 1.5, 14, 2],
+          ? ["interpolate", ["linear"], ["zoom"], 11, BUS_DOT_R_DARK_MIN, 14, BUS_DOT_R_DARK_MAX]
+          : ["interpolate", ["linear"], ["zoom"], 11, BUS_DOT_R_MIN, 14, BUS_DOT_R_MAX],
         "circle-color": dark ? BUS_RED_DARK : BUS_RED,
         "circle-stroke-width": dark ? 0.75 : 0.5,
         "circle-stroke-color": dark ? "rgba(255,255,255,0.6)" : "#ffffff",

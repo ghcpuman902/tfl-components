@@ -818,16 +818,20 @@ html.board-glance .board-glance {
   }
 }
 
-/* Flat UI: MapLibre's zoom control and attribution ship rounded; square them. */
-.maplibregl-ctrl-group,
-.maplibregl-ctrl-group button,
-.maplibregl-ctrl-attrib,
-.maplibregl-ctrl-attrib.maplibregl-compact,
-.maplibregl-ctrl-attrib-button {
+/*
+ * Search view only: MapLibre's zoom control and attribution ship rounded; square
+ * them there, like the search map's own corners. Every other map keeps
+ * MapLibre's rounding (DROP SQUARE).
+ */
+[data-search-map] .maplibregl-ctrl-group,
+[data-search-map] .maplibregl-ctrl-group button,
+[data-search-map] .maplibregl-ctrl-attrib,
+[data-search-map] .maplibregl-ctrl-attrib.maplibregl-compact,
+[data-search-map] .maplibregl-ctrl-attrib-button {
   border-radius: 0 !important;
 }
 
-/* MapLibre controls follow the theme in dark mode; radius stays square (above). */
+/* MapLibre controls follow the theme in dark mode. */
 .dark .maplibregl-ctrl-group,
 .dark .maplibregl-ctrl-attrib,
 .dark .maplibregl-ctrl-attrib.maplibregl-compact {

@@ -107,6 +107,7 @@ export const HomeProduct = ({
   const [selection, setSelection] = useState<PlaceHit>(() =>
     stationHitOf(fallback)
   )
+  const [searchOpen, setSearchOpen] = useState(false)
   const live = useHomeLive(replay)
   const replayArg = replay && { fixture: replay.fixture, round: replay.round }
 
@@ -353,7 +354,49 @@ export const HomeProduct = ({
       : { bus: { stop: selection.id }, slots: { p1: ["bus"], p2: [] } }
   )}`
 
+  const board =
+    selection.kind === "station" ? (
+      // An old poll keeps its times, dimmed.
+      <div
+        className={cn(isStale(live.ageSec) && "opacity-60")}
+        data-stale={isStale(live.ageSec) || undefined}
+      >
+        <RailArrivalsBoard
+          stopName={selection.name}
+          stopPointId={selection.id}
+          headingLevel={2}
+          data={railData}
+          now={railNow}
+          lines={servingLines}
+          lineGroups={lineGroups}
+          pageSizeByLine={pageSizeByLine}
+          loading={live.status === "loading"}
+          error={railError}
+          emptyKind={railEmpty.kind}
+          emptyMessage={arrivalsLineEmptyCopy(railEmpty)}
+          classNames={BOUND_COLUMNS_CLASS_NAMES}
+        />
+      </div>
+    ) : (
+      <div
+        className={cn(busStale && "opacity-60")}
+        data-stale={busStale || undefined}
+      >
+        <BusArrivalsBoard
+          stopName={selection.name}
+          stopPointId={selection.id}
+          stopLetter={busStopLetter}
+          headingLevel={2}
+          data={busData}
+          groupBy="route"
+          loading={busRows.status === "loading"}
+          error={busRows.status === "error" ? busRows.message : null}
+        />
+      </div>
+    )
+
   // Phone and desktop share one column: search on top, the Board below it. Flat: no borders or shadows.
+  // Desktop, while the search is open: the same live Board docks on the right as its status panel.
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pt-6 pb-10 sm:px-8 lg:pt-10">
       <h1 className="sr-only">Live Tube, rail and bus arrivals for London</h1>
@@ -365,6 +408,12 @@ export const HomeProduct = ({
         replay={replayArg}
         searchDelayMs={replay?.searchDelayMs}
         onSelect={select}
+        onOpenChange={setSearchOpen}
+        aside={
+          <div className="@container/board min-w-0" style={ARRIVALS_RHYTHM_VARS}>
+            {board}
+          </div>
+        }
       />
       <p
         className="pt-2 text-sm text-balance text-muted-foreground empty:hidden"
@@ -376,50 +425,14 @@ export const HomeProduct = ({
             ? live.error
             : null}
       </p>
-      {/* Same shell as the Board: the container its arrivals panels query, and its row rhythm. */}
+      {/* Same shell as the Board: the container its arrivals panels query, and its row rhythm.
+          Inert while the open search covers it (desktop shows it in the search's right panel). */}
       <div
         className="@container/board min-w-0 pt-6"
         style={ARRIVALS_RHYTHM_VARS}
+        inert={searchOpen}
       >
-        {selection.kind === "station" ? (
-          // An old poll keeps its times, dimmed.
-          <div
-            className={cn(isStale(live.ageSec) && "opacity-60")}
-            data-stale={isStale(live.ageSec) || undefined}
-          >
-            <RailArrivalsBoard
-              stopName={selection.name}
-              stopPointId={selection.id}
-              headingLevel={2}
-              data={railData}
-              now={railNow}
-              lines={servingLines}
-              lineGroups={lineGroups}
-              pageSizeByLine={pageSizeByLine}
-              loading={live.status === "loading"}
-              error={railError}
-              emptyKind={railEmpty.kind}
-              emptyMessage={arrivalsLineEmptyCopy(railEmpty)}
-              classNames={BOUND_COLUMNS_CLASS_NAMES}
-            />
-          </div>
-        ) : (
-          <div
-            className={cn(busStale && "opacity-60")}
-            data-stale={busStale || undefined}
-          >
-            <BusArrivalsBoard
-              stopName={selection.name}
-              stopPointId={selection.id}
-              stopLetter={busStopLetter}
-              headingLevel={2}
-              data={busData}
-              groupBy="route"
-              loading={busRows.status === "loading"}
-              error={busRows.status === "error" ? busRows.message : null}
-            />
-          </div>
-        )}
+        {board}
       </div>
       <p className="pt-6 text-sm">
         <Link

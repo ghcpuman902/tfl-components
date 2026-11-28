@@ -138,7 +138,7 @@ export const BranchLineStripPicker = ({
         mode={orientation === "vertical" ? "box" : "width"}
         className={
           orientation === "vertical"
-            ? "max-h-[70vh] overflow-auto border border-border"
+            ? "max-h-[70vh] overflow-auto rounded-lg border border-border"
             : "overflow-x-auto"
         }
       >
