@@ -41,7 +41,6 @@ import {
   COLLAPSED_ITEMS,
   dayRoutes,
   groupSearchRows,
-  type SearchCluster,
 } from "@/lib/tfl/homepage-live/search-groups"
 import {
   estimateKeyboardHeight,
@@ -91,10 +90,10 @@ import {
 import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
 import { StationName } from "@/components/tfl/station-name"
 import { LineColorBar } from "@/components/tfl/brand/line-badge"
-import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
+import { RouteChipColumn } from "@/components/home/route-chip-column"
 import { cn } from "@/lib/utils"
 
-/** Enough rows that a same-name cluster (Bank Station A–K) arrives whole. */
+/** Enough rows that every stop of a same-name place (Bank Station A–K) arrives. */
 const INSTANT_LIMIT = 40
 /** The most of the screen the open view will leave above the field to keep it in place. */
 const MAX_OPEN_TOP_SHARE = 0.25
@@ -128,15 +127,6 @@ const SearchMap = dynamic(
 
 type Replay = { fixture: string; round: number } | undefined
 
-const MODE_LABELS: Readonly<Record<string, string>> = {
-  tube: "Tube",
-  "elizabeth-line": "Elizabeth line",
-  dlr: "DLR",
-  overground: "Overground",
-  tram: "Tram",
-  "national-rail": "National Rail",
-}
-
 /** The station's lines as the registry's square-ended LineColorBar dashes, never rounded pills. */
 const LineMarks = ({ lines }: { lines: readonly string[] }) => (
   <span className="flex flex-wrap items-center justify-end gap-1" aria-hidden>
@@ -155,11 +145,11 @@ const RouteChips = ({
   routes: readonly string[]
   max: number
 }) => (
-  <span className="flex max-w-[45%] shrink-0 flex-wrap justify-end gap-1 sm:max-w-60">
-    {routes.slice(0, max).map((route) => (
-      <BusNumberChip key={route} label={route} />
-    ))}
-  </span>
+  <RouteChipColumn
+    routes={routes.slice(0, max)}
+    className="max-w-[45%] sm:max-w-60"
+    widen
+  />
 )
 
 /**
@@ -238,7 +228,7 @@ const ListName = ({ name }: { name: string }) => {
     return () => cancelAnimationFrame(frame)
   }, [name, room, ref])
   return (
-    <span ref={ref} className="min-w-0 flex-initial" aria-hidden>
+    <span ref={ref} className="min-w-0 flex-initial text-balance" aria-hidden>
       <StationName
         name={name.replace(/\s+/g, " ")}
         layout="auto"
@@ -355,13 +345,11 @@ const NO_FIT: MapFit = {
   key: 0,
 }
 
-type Option = { id: string; label: string; expanded?: boolean }
+type Option = { id: string; label: string }
 type Entry = {
   option: Option
   row?: StopRow
-  cluster?: SearchCluster
   dock?: ExplorerPoint
-  nested?: boolean
 }
 
 export const dockCounts = (dock: ExplorerPoint) =>
@@ -489,13 +477,8 @@ export const PlaceSearch = ({
   const fieldRef = useRef<HTMLDivElement>(null)
   const [keyboardPx, setKeyboardPx] = useState(0)
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [expanded, setExpanded] = useState<{
-    query: string
-    clusters: string[]
-    all: boolean
-  }>({
+  const [expanded, setExpanded] = useState<{ query: string; all: boolean }>({
     query: "",
-    clusters: [],
     all: false,
   })
   // A new object when the index loads and when a fresher served copy replaces it in place.
@@ -786,8 +769,8 @@ export const PlaceSearch = ({
   }
   const groups = useMemo(() => groupSearchRows(rows), [rows])
   const best = mode === "cycle" ? undefined : groups.best
-  const shown: { clusters: string[]; all: boolean } =
-    expanded.query === state.query ? expanded : { clusters: [], all: false }
+  const shown: { all: boolean } =
+    expanded.query === state.query ? expanded : { all: false }
   const items = mode === "cycle" ? [] : shown.all ? groups.items : groups.items.slice(0, COLLAPSED_ITEMS)
   const hasMore = mode !== "cycle" && !shown.all && groups.items.length > COLLAPSED_ITEMS
   const points = useMemo(
@@ -824,7 +807,7 @@ export const PlaceSearch = ({
     onOpenChange?.(false)
     setOpen(false)
     setActiveId(null)
-    setExpanded({ query: "", clusters: [], all: false })
+    setExpanded({ query: "", all: false })
     // The map remounts on the next open; a stale fit key would move it.
     setFit(NO_FIT)
     searchRef.current?.type("")
@@ -837,45 +820,14 @@ export const PlaceSearch = ({
     onSelect(hit)
   }
 
-  const toggleCluster = (cluster: SearchCluster) =>
-    setExpanded({
-      query: state.query,
-      all: shown.all,
-      clusters: shown.clusters.includes(cluster.id)
-        ? shown.clusters.filter((id) => id !== cluster.id)
-        : [...shown.clusters, cluster.id],
-    })
-
   // Every pickable line in screen order: the sticky best match, then the zone's rows.
   const entries: Entry[] = []
-  const pushRow = (row: StopRow, nested = false) =>
-    entries.push({
-      option: {
-        id: nested ? `${row.id}:in-cluster` : row.id,
-        label: rowLabel(row),
-      },
-      row,
-      nested,
-    })
+  const pushRow = (row: StopRow) =>
+    entries.push({ option: { id: row.id, label: rowLabel(row) }, row })
   if (best) pushRow(best)
   for (const dock of mode === "cycle" ? docks : [])
     entries.push({ option: { id: dock.id, label: `${dock.name}, dock` }, dock })
-  for (const item of items) {
-    if (item.kind === "row") {
-      pushRow(item.row)
-      continue
-    }
-    const isOpen = shown.clusters.includes(item.id)
-    entries.push({
-      option: {
-        id: item.id,
-        label: `${item.name}, ${item.stops.length} bus stops`,
-        expanded: isOpen,
-      },
-      cluster: item,
-    })
-    if (isOpen) for (const stop of item.stops) pushRow(stop, true)
-  }
+  for (const item of items) pushRow(item.row)
   const options = entries.map((entry) => entry.option)
   const active = activeId ? options.findIndex((option) => option.id === activeId) : -1
   const chooseDock = (dock: ExplorerPoint) => {
@@ -885,7 +837,6 @@ export const PlaceSearch = ({
   const activate = (entry: Entry | undefined) => {
     if (entry?.row) choose(entry.row)
     else if (entry?.dock) chooseDock(entry.dock)
-    else if (entry?.cluster) toggleCluster(entry.cluster)
   }
   const rowById = new Map(rows.map((row) => [row.id, row]))
   const dockById = new Map(docks.map((dock) => [dock.id, dock]))
@@ -948,7 +899,6 @@ export const PlaceSearch = ({
     role: "option" as const,
     "aria-selected": index === active,
     "aria-label": option.label,
-    "aria-expanded": option.expanded,
     onMouseDown: (event: MouseEvent) => event.preventDefault(),
     onMouseEnter: () => setActiveId(option.id),
   })
@@ -958,18 +908,12 @@ export const PlaceSearch = ({
       row.kind === "station"
         ? stationPointOfRow(row, stations, hubStationIds)
         : undefined
-    const modes: readonly string[] = station?.modes ?? row.modes
     const detail = chosen.has(row.id)
       ? "On the board"
       : row.kind === "station"
-        ? [
-            ...modes.flatMap((mode) =>
-              MODE_LABELS[mode] ? [MODE_LABELS[mode]] : []
-            ),
-            station?.zone ? `Zone ${station.zone}` : null,
-          ]
-            .filter(Boolean)
-            .join(" · ")
+        ? station?.zone
+          ? `Zone ${station.zone}`
+          : ""
         : row.towards
           ? `towards ${row.towards}`
           : ""
@@ -983,7 +927,7 @@ export const PlaceSearch = ({
             ) : null}
           </span>
           {detail ? (
-            <span className="block text-sm text-pretty text-muted-foreground">
+            <span className="block text-sm text-balance text-muted-foreground">
               {detail}
             </span>
           ) : null}
@@ -1191,39 +1135,12 @@ export const PlaceSearch = ({
                         className={cn(
                           listRow,
                           entry.dock && "items-center",
-                          entry.nested && "pl-4",
                           at === active && "bg-muted"
                         )}
                         {...optionProps(entry.option, at)}
                         onClick={() => activate(entry)}
                       >
-                        {entry.row || entry.dock ? (
-                          entryBody(entry)
-                        ) : entry.cluster ? (
-                          <>
-                            <span className="min-w-0 flex-1">
-                              {/* No stop letter beside it, so the name simply wraps in full. */}
-                              <span className="block text-lg leading-snug text-pretty">
-                                {entry.cluster.name.replace(/\s+/g, " ")}
-                                <span className="text-sm text-muted-foreground">
-                                  {" "}
-                                  · bus
-                                </span>
-                              </span>
-                              <span className="block text-sm text-pretty text-muted-foreground">
-                                {entry.cluster.stops.length} stops
-                                {entry.cluster.letters
-                                  ? ` · ${entry.cluster.letters}`
-                                  : ""}{" "}
-                                ·{" "}
-                                {entry.option.expanded
-                                  ? "tap to close"
-                                  : "tap to choose one"}
-                              </span>
-                            </span>
-                            <RouteChips routes={entry.cluster.routes} max={9} />
-                          </>
-                        ) : null}
+                        {entryBody(entry)}
                       </li>
                     )
                   )}
@@ -1242,7 +1159,6 @@ export const PlaceSearch = ({
                           onClick={() =>
                             setExpanded({
                               query: state.query,
-                              clusters: shown.clusters,
                               all: true,
                             })
                           }

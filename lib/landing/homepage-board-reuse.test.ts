@@ -91,17 +91,29 @@ describe("homepage search field", () => {
     // The real-layout check (input rect before and after open) is e2e/search-field-stays.spec.ts.
   })
 
+  it("lists individual stops only: no hub row and no mode text", () => {
+    // 28 Nov 2026 (Mangle): stops in a hub can lie too far apart to walk between, and the
+    // route chips and marks already say the mode.
+    assert.doesNotMatch(search, /tap to (choose|close)|cluster|MODE_LABELS|· bus/)
+    assert.doesNotMatch(search, /\.\.\.modes\.flatMap/)
+  })
+
   it("runs the search map edge to edge, like the Board's column (no side inset)", () => {
     assert.match(search, /<div data-search-map className="relative min-h-0 flex-1">/)
     assert.doesNotMatch(search, /data-search-map className="[^"]*\bpx-/)
   })
 
   it("keeps the chips and line dashes in a right-hand column, not under the name", () => {
-    // Bus chips: the registry BusNumberChip in a right-aligned, capped, wrapping column.
+    // Bus chips: the shared right-aligned, capped, wrapping, balanced column of registry BusNumberChips.
     assert.match(
       search,
-      /const RouteChips[^]*?<span className="flex max-w-\[45%\] shrink-0 flex-wrap justify-end gap-1 sm:max-w-60">[^]*?<BusNumberChip key=\{route\} label=\{route\} \/>/
+      /const RouteChips[^]*?<RouteChipColumn\s+routes=\{routes\.slice\(0, max\)\}\s+className="max-w-\[45%\] sm:max-w-60"\s+widen\s*\/>/
     )
+    const column = read("components/home/route-chip-column.tsx")
+    assert.match(column, /flex shrink-0 flex-wrap justify-end gap-1/)
+    assert.match(column, /<BusNumberChip key=\{route\} label=\{route\} \/>/)
+    // The Board's stop editor draws the same column.
+    assert.match(read("components/board/customise/bus-editor.tsx"), /<RouteChipColumn\s+routes=/)
     // Station dashes: the same right column, top-aligned with the name.
     assert.match(
       search,
@@ -121,7 +133,7 @@ describe("homepage search field", () => {
     // The name slot is as wide as the name (flex-initial), never flex-1, and the
     // name fits against the room beside the letter, not its own shrink-wrapped box.
     const listName = search.slice(search.indexOf("const ListName"), search.indexOf("const rowLabel"))
-    assert.match(listName, /<span\s+ref=\{ref\}\s+className="min-w-0 flex-initial"/)
+    assert.match(listName, /<span\s+ref=\{ref\}\s+className="min-w-0 flex-initial text-balance"/)
     assert.doesNotMatch(listName, /\bflex-1\b/)
     assert.match(listName, /maxWidth=\{room\}/)
     // The badge is the name's next sibling in the same row.

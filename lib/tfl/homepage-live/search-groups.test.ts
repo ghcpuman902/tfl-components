@@ -13,7 +13,7 @@ const bus = (id: string, name: string, letter: string, lines: string[]): StopRow
 })
 
 describe("search view rows", () => {
-  it("keeps the best match apart, clusters one place's stops, then lists each stop", () => {
+  it("keeps the best match apart, then lists each stop on its own with no hub row", () => {
     const station: StopRow = { id: "HUBBAN", name: "Bank", kind: "station", lines: ["central", "dlr"], modes: ["dlr", "tube"] }
     const { best, items, busCount } = groupSearchRows([
       station,
@@ -25,9 +25,7 @@ describe("search view rows", () => {
     ])
     assert.equal(best, station)
     assert.equal(busCount, 4)
-    assert.deepEqual(
-      items.map((item) => (item.kind === "cluster" ? `${item.name}: ${item.letters} ${item.routes.join(",")}` : item.row.id)),
-      ["Bank Station: A–K 8,21,25,43", "1", "2", "3", "4", "HUBEMB"]
-    )
+    assert.ok(items.every((item) => item.kind === "row"))
+    assert.deepEqual(items.map((item) => item.row.id), ["1", "2", "3", "4", "HUBEMB"])
   })
 })

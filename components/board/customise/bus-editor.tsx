@@ -17,6 +17,7 @@ import {
   type BusStopInfo,
 } from "@/components/board/customise/use-bus-stops"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
+import { RouteChipColumn } from "@/components/home/route-chip-column"
 import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
 import { useDualPathArrivals } from "@/hooks/use-dual-path-arrivals"
 import { busArrivalsRequest } from "@/lib/tfl/board-bus-stops"
@@ -60,11 +61,10 @@ const StopRow = ({
           {stop?.context ?? " "}
         </span>
       </span>
-      <span className="flex max-w-[45%] shrink-0 flex-wrap justify-end gap-1 pt-0.5">
-        {dayRoutes(stop?.routes ?? []).slice(0, 6).map((route) => (
-          <BusNumberChip key={route} label={route} />
-        ))}
-      </span>
+      <RouteChipColumn
+        routes={dayRoutes(stop?.routes ?? []).slice(0, 6)}
+        className="max-w-[45%] pt-0.5"
+      />
     </span>
     <button
       type="button"
