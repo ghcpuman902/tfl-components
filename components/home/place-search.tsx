@@ -13,7 +13,7 @@ import {
   type RefObject,
 } from "react"
 import dynamic from "next/dynamic"
-import { LocateFixed, Search } from "lucide-react"
+import { ArrowLeft, LocateFixed, Search } from "lucide-react"
 import type { ExplorerTubeRailPoint } from "@/lib/tfl/explorer/common"
 import type { ExplorerPoint } from "@/lib/tfl/explorer-point-normalise"
 import {
@@ -92,13 +92,28 @@ import { StopLetterBadge } from "@/components/tfl/arrivals/stop-letter-badge"
 import { StationName } from "@/components/tfl/station-name"
 import { LineColorBar } from "@/components/tfl/brand/line-badge"
 import { BusNumberChip } from "@/components/tfl/arrivals/bus-number-chip"
-import { getLineNameTiers } from "@/lib/tfl/line-names"
 import { cn } from "@/lib/utils"
 
 /** Enough rows that a same-name cluster (Bank Station A–K) arrives whole. */
 const INSTANT_LIMIT = 40
-/** Open, the field's gap under the header is kept up to this (the page's own top padding). */
-const MAX_OPEN_TOP_PX = 64
+/** The most of the screen the open view will leave above the field to keep it in place. */
+const MAX_OPEN_TOP_SHARE = 0.25
+
+/**
+ * The gap the open view puts above the field so the field stays exactly where it was
+ * tapped: its distance from the top of the open view, which starts at the site header's
+ * height (not its painted bottom, a border lower). Unrounded, so it lands to the pixel.
+ */
+const openViewInset = (field: HTMLElement | null) => {
+  if (!field) return 0
+  const probe = document.createElement("div")
+  probe.style.cssText = "position:fixed;visibility:hidden;top:var(--site-header-height)"
+  document.body.appendChild(probe)
+  const viewTop = probe.getBoundingClientRect().top
+  probe.remove()
+  const gap = field.getBoundingClientRect().top - viewTop
+  return Math.min(window.innerHeight * MAX_OPEN_TOP_SHARE, Math.max(0, gap))
+}
 
 const SearchMap = dynamic(
   () =>
@@ -122,14 +137,10 @@ const MODE_LABELS: Readonly<Record<string, string>> = {
   "national-rail": "National Rail",
 }
 
-/** The station's lines as the registry's square-ended line bars, named for screen readers. */
+/** The station's lines as the registry's square-ended LineColorBar dashes, never rounded pills. */
 const LineMarks = ({ lines }: { lines: readonly string[] }) => (
-  <span
-    className="mt-1.5 flex flex-wrap items-center gap-1"
-    role="img"
-    aria-label={`Lines: ${lines.map((line) => getLineNameTiers(line).full).join(", ")}`}
-  >
-    {lines.map((line) => (
+  <span className="flex flex-wrap items-center justify-end gap-1" aria-hidden>
+    {lines.slice(0, 8).map((line) => (
       <span key={line} className="w-4">
         <LineColorBar lineId={line} heightClass="h-1.5" />
       </span>
@@ -137,54 +148,19 @@ const LineMarks = ({ lines }: { lines: readonly string[] }) => (
   </span>
 )
 
-/** How many route chips fit one row of this width (chips are a fixed 5ch). */
-const useChipsPerRow = () => {
-  const ref = useRef<HTMLSpanElement>(null)
-  const [perRow, setPerRow] = useState(8)
-  useLayoutEffect(() => {
-    const row = ref.current
-    if (!row) return
-    const measure = () => {
-      const chip = row.querySelector<HTMLElement>("[aria-label^='Route ']")
-      const gap = parseFloat(getComputedStyle(row).columnGap) || 0
-      if (!chip || row.clientWidth === 0) return
-      setPerRow(Math.max(1, Math.floor((row.clientWidth + gap) / (chip.offsetWidth + gap))))
-    }
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(row)
-    return () => observer.disconnect()
-  }, [])
-  return { ref, perRow }
-}
-
-/**
- * Route chips in a full-width row under the name. When they need more than one
- * row, the rows are balanced (9 at 8 a row → 5 + 4), so no chip sits alone.
- */
 const RouteChips = ({
   routes,
   max,
 }: {
   routes: readonly string[]
   max: number
-}) => {
-  const shown = routes.slice(0, max)
-  const { ref, perRow } = useChipsPerRow()
-  const rows = Math.max(1, Math.ceil(shown.length / perRow))
-  const columns = Math.ceil(shown.length / rows)
-  return (
-    <span
-      ref={ref}
-      className="mt-1.5 grid w-full justify-start gap-1"
-      style={{ gridTemplateColumns: `repeat(${columns}, max-content)` }}
-    >
-      {shown.map((route) => (
-        <BusNumberChip key={route} label={route} />
-      ))}
-    </span>
-  )
-}
+}) => (
+  <span className="flex max-w-[45%] shrink-0 flex-wrap justify-end gap-1 sm:max-w-60">
+    {routes.slice(0, max).map((route) => (
+      <BusNumberChip key={route} label={route} />
+    ))}
+  </span>
+)
 
 /**
  * The room a name has in its row: the row's width less its siblings (a stop
@@ -704,10 +680,7 @@ export const PlaceSearch = ({
       estimateKeyboardHeight(window.innerHeight)
     keyboardRef.current = px
     setKeyboardPx(px)
-    const headerBottom =
-      document.querySelector("[data-site-header]")?.getBoundingClientRect().bottom ?? 0
-    const fieldTop = fieldRef.current?.getBoundingClientRect().top ?? headerBottom
-    setOpenTop(Math.min(MAX_OPEN_TOP_PX, Math.max(0, Math.round(fieldTop - headerBottom))))
+    setOpenTop(openViewInset(fieldRef.current))
     setFrame(provisionalFrame(anchor))
     setZoom(MAP_SELECTED_ZOOM)
     setOpen(true)
@@ -1001,24 +974,28 @@ export const PlaceSearch = ({
           ? `towards ${row.towards}`
           : ""
     return (
-      <span className="min-w-0 flex-1">
-        <span className="flex min-w-0 items-center gap-2 text-lg leading-snug">
-          <ListName name={row.name} />
-          {row.kind === "bus" && row.letter ? (
-            <StopLetterBadge letter={row.letter} size="sm" />
+      <>
+        <span className="min-w-0 flex-1">
+          <span className="flex min-w-0 items-center gap-2 text-lg leading-snug">
+            <ListName name={row.name} />
+            {row.kind === "bus" && row.letter ? (
+              <StopLetterBadge letter={row.letter} size="sm" />
+            ) : null}
+          </span>
+          {detail ? (
+            <span className="block text-sm text-pretty text-muted-foreground">
+              {detail}
+            </span>
           ) : null}
         </span>
-        {detail ? (
-          <span className="block text-sm text-pretty text-muted-foreground">
-            {detail}
-          </span>
-        ) : null}
         {row.kind === "station" ? (
-          <LineMarks lines={station?.lines ?? row.lines} />
+          <span className="max-w-[45%] shrink-0 self-start pt-2">
+            <LineMarks lines={station?.lines ?? row.lines} />
+          </span>
         ) : (
           <RouteChips routes={dayRoutes(row.lines)} max={6} />
         )}
-      </span>
+      </>
     )
   }
 
@@ -1061,7 +1038,20 @@ export const PlaceSearch = ({
               ref={fieldRef}
               className="flex h-[4.5rem] items-center gap-3 border-b border-foreground bg-transparent sm:h-[5.5rem]"
             >
-              <Search className="size-7 shrink-0" aria-hidden />
+              {open ? (
+                // Takes the magnifier's place, so opening never narrows or moves the input;
+                // the padding grows the tap target without growing the layout.
+                <button
+                  type="button"
+                  onClick={close}
+                  className="-m-2 flex shrink-0 items-center border-0 bg-transparent p-2 text-foreground"
+                >
+                  <ArrowLeft className="size-7" aria-hidden />
+                  <span className="sr-only">Cancel</span>
+                </button>
+              ) : (
+                <Search className="size-7 shrink-0" aria-hidden />
+              )}
               <input
                 ref={inputRef}
                 type="text"
@@ -1126,15 +1116,6 @@ export const PlaceSearch = ({
                 <LocateFixed className="size-5" aria-hidden />
                 <span className="sr-only">Near me</span>
               </button>
-              {open ? (
-                <button
-                  type="button"
-                  onClick={close}
-                  className="min-h-11 shrink-0 border-0 bg-transparent px-1 text-base text-foreground"
-                >
-                  Cancel
-                </button>
-              ) : null}
             </div>
             {locateNote ? (
               <p
@@ -1147,7 +1128,7 @@ export const PlaceSearch = ({
           </div>
           {open ? (
             <>
-              <div data-search-map className="relative min-h-0 flex-1 px-4 sm:px-8">
+              <div data-search-map className="relative min-h-0 flex-1">
                 <SearchMap
                   points={points}
                   selectedId={mapSelectedId}
@@ -1189,7 +1170,7 @@ export const PlaceSearch = ({
               >
                 <div
                   className={cn(
-                    "flex min-h-16 items-start gap-3 px-4 py-2.5 sm:px-8",
+                    "flex min-h-16 items-center gap-3 px-4 py-2 sm:px-8",
                     head && "cursor-pointer bg-muted"
                   )}
                   {...(head ? optionProps(head.option, 0) : { role: "presentation" })}
@@ -1239,8 +1220,8 @@ export const PlaceSearch = ({
                                   ? "tap to close"
                                   : "tap to choose one"}
                               </span>
-                              <RouteChips routes={entry.cluster.routes} max={9} />
                             </span>
+                            <RouteChips routes={entry.cluster.routes} max={9} />
                           </>
                         ) : null}
                       </li>

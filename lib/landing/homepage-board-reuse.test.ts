@@ -79,6 +79,44 @@ describe("homepage search field", () => {
       assert.match(selector, /^\[data-search-map\] /, `unscoped square override: ${selector}`)
   })
 
+  it("opens the view with the field exactly where it was tapped", () => {
+    // The gap above the field is its measured, unrounded distance from the open view's top.
+    assert.match(search, /const openViewInset = /)
+    assert.match(search, /setOpenTop\(openViewInset\(fieldRef\.current\)\)/)
+    // Nothing joins the field row on open (a Cancel button used to narrow the input): the
+    // back arrow takes the magnifier's place without growing the layout.
+    assert.match(search, /<ArrowLeft className="size-7"/)
+    assert.match(search, /className="-m-2 flex shrink-0 items-center/)
+    assert.doesNotMatch(search, /min-h-11 shrink-0 border-0 bg-transparent px-1 text-base/)
+    // The real-layout check (input rect before and after open) is e2e/search-field-stays.spec.ts.
+  })
+
+  it("runs the search map edge to edge, like the Board's column (no side inset)", () => {
+    assert.match(search, /<div data-search-map className="relative min-h-0 flex-1">/)
+    assert.doesNotMatch(search, /data-search-map className="[^"]*\bpx-/)
+  })
+
+  it("keeps the chips and line dashes in a right-hand column, not under the name", () => {
+    // Bus chips: the registry BusNumberChip in a right-aligned, capped, wrapping column.
+    assert.match(
+      search,
+      /const RouteChips[^]*?<span className="flex max-w-\[45%\] shrink-0 flex-wrap justify-end gap-1 sm:max-w-60">[^]*?<BusNumberChip key=\{route\} label=\{route\} \/>/
+    )
+    // Station dashes: the same right column, top-aligned with the name.
+    assert.match(
+      search,
+      /<span className="max-w-\[45%\] shrink-0 self-start pt-2">\s*<LineMarks lines=\{station\?\.lines \?\? row\.lines\} \/>/
+    )
+    // The column is a sibling after the name block (name, then badge inside it, then chips).
+    assert.match(search, /<\/span>\s*\{row\.kind === "station" \? \(\s*<span className="max-w-\[45%\]/)
+    // Not the under-the-name grid.
+    assert.doesNotMatch(search, /grid w-full justify-start|useChipsPerRow|mt-1\.5 flex flex-wrap/)
+  })
+
+  it("never ellipsises a name or detail in the search list: it wraps", () => {
+    assert.doesNotMatch(search, /\btruncate\b|\btext-ellipsis\b|\bline-clamp-\d\b|\bwhitespace-nowrap\b/)
+  })
+
   it("puts a stop letter right after the name (A5), not at the row's far edge", () => {
     // The name slot is as wide as the name (flex-initial), never flex-1, and the
     // name fits against the room beside the letter, not its own shrink-wrapped box.
