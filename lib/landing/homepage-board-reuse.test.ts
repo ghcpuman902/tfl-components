@@ -60,8 +60,37 @@ describe("homepage search field", () => {
     assert.doesNotMatch(page, /h-\[4\.5rem\][^"]*\brounded/)
   })
 
-  it("leaves MapLibre's controls their own rounding (no square override)", () => {
-    assert.doesNotMatch(read("app/globals.css"), /maplibregl-ctrl[^{]*\{[^}]*border-radius:\s*0/)
+  it("squares MapLibre's zoom and credits controls in the search view only", () => {
+    const css = read("app/globals.css")
+    assert.match(search, /<div data-search-map className=/)
+    const squareRules = [...css.matchAll(/([^{}]*maplibregl-ctrl[^{]*)\{[^}]*border-radius:\s*0/g)]
+    const selectors = squareRules.flatMap((rule) =>
+      rule[1]!.replace(/\/\*[\s\S]*?\*\//g, "").split(",").map((part) => part.trim()).filter(Boolean)
+    )
+    for (const control of [
+      ".maplibregl-ctrl-group",
+      ".maplibregl-ctrl-group button",
+      ".maplibregl-ctrl-attrib",
+      ".maplibregl-ctrl-attrib-button",
+    ])
+      assert.ok(selectors.includes(`[data-search-map] ${control}`), `search view squares ${control}`)
+    // Everywhere else MapLibre keeps its rounding (DROP SQUARE).
+    for (const selector of selectors)
+      assert.match(selector, /^\[data-search-map\] /, `unscoped square override: ${selector}`)
+  })
+
+  it("puts a stop letter right after the name (A5), not at the row's far edge", () => {
+    // The name slot is as wide as the name (flex-initial), never flex-1, and the
+    // name fits against the room beside the letter, not its own shrink-wrapped box.
+    const listName = search.slice(search.indexOf("const ListName"), search.indexOf("const rowLabel"))
+    assert.match(listName, /<span\s+ref=\{ref\}\s+className="min-w-0 flex-initial"/)
+    assert.doesNotMatch(listName, /\bflex-1\b/)
+    assert.match(listName, /maxWidth=\{room\}/)
+    // The badge is the name's next sibling in the same row.
+    assert.match(
+      search,
+      /<ListName name=\{row\.name\} \/>\s*\{row\.kind === "bus" && row\.letter \? \(\s*<StopLetterBadge letter=\{row\.letter\} size="sm" \/>/
+    )
   })
 
   it("has no fill in its default state", () => {

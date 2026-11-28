@@ -187,23 +187,93 @@ const RouteChips = ({
 }
 
 /**
+ * The room a name has in its row: the row's width less its siblings (a stop
+ * letter) and the gaps. The name fits against this, not its own box, so its slot
+ * can be as wide as the name and the letter sits right after it (A5).
+ */
+const useNameRoom = () => {
+  const ref = useRef<HTMLSpanElement>(null)
+  const [room, setRoom] = useState<number>()
+  useLayoutEffect(() => {
+    const row = ref.current?.parentElement
+    if (!row) return
+    const measure = () => {
+      const gap = parseFloat(getComputedStyle(row).columnGap) || 0
+      const siblings = [...row.children].filter((child) => child !== ref.current)
+      const taken = siblings.reduce(
+        (sum, child) => sum + child.getBoundingClientRect().width + gap,
+        0
+      )
+      setRoom(Math.max(0, Math.floor(row.clientWidth - taken)))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(row)
+    return () => observer.disconnect()
+  }, [])
+  return { ref, room }
+}
+
+/** Painted text only: skips the zero-size and absolutely placed find helpers. */
+const paintsText = (el: HTMLElement | null, root: HTMLElement) => {
+  for (let node = el; node && node !== root; node = node.parentElement) {
+    const style = getComputedStyle(node)
+    if (style.position === "absolute" || parseFloat(style.fontSize) < 2) return false
+  }
+  return true
+}
+
+/** Widest painted line of the text inside `el`, px (a wrapped box is wider than its lines). */
+const widestLine = (el: HTMLElement) => {
+  const left = el.getBoundingClientRect().left
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+  let widest = 0
+  for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+    if (!text.textContent?.trim() || !paintsText(text.parentElement, el)) continue
+    const range = document.createRange()
+    range.selectNodeContents(text)
+    for (const rect of range.getClientRects())
+      if (rect.width > 0.5) widest = Math.max(widest, rect.right - left)
+  }
+  return widest
+}
+
+/**
  * A stop or station name that is never clipped, fitted the way the Board's
  * stop title is (StationNameTitle): abbreviate first on one line, and only when
  * no abbreviation fits let it wrap (`nowrap={false}`). No scale-down, so every
- * row keeps one text size. Its slot is `flex-1` so the fit measures the room
- * left beside a stop letter. Visual only; the option's aria-label has the full name.
+ * row keeps one text size. It fits against the room beside the stop letter
+ * (useNameRoom), and its slot is only as wide as the name's widest line, so the
+ * letter follows the name even when it wraps. Visual only; the option's
+ * aria-label has the full name.
  */
-const ListName = ({ name }: { name: string }) => (
-  <span className="min-w-0 flex-1" aria-hidden>
-    <StationName
-      name={name.replace(/\s+/g, " ")}
-      layout="auto"
-      maxLines={1}
-      allowAbbreviation
-      nowrap={false}
-    />
-  </span>
-)
+const ListName = ({ name }: { name: string }) => {
+  const { ref, room } = useNameRoom()
+  // Width set on the DOM node, not in state: cleared, then the painted lines measured.
+  useLayoutEffect(() => {
+    const slot = ref.current
+    if (!slot) return
+    slot.style.width = ""
+    const frame = requestAnimationFrame(() => {
+      if (room === undefined) return
+      const widest = Math.ceil(widestLine(slot))
+      if (widest > 0 && widest < room) slot.style.width = `${widest + 1}px`
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [name, room, ref])
+  return (
+    <span ref={ref} className="min-w-0 flex-initial" aria-hidden>
+      <StationName
+        name={name.replace(/\s+/g, " ")}
+        layout="auto"
+        maxWidth={room}
+        maxLines={1}
+        allowAbbreviation
+        nowrap={false}
+      />
+    </span>
+  )
+}
 
 const rowLabel = (row: StopRow) =>
   row.kind === "station"
@@ -1077,7 +1147,7 @@ export const PlaceSearch = ({
           </div>
           {open ? (
             <>
-              <div className="relative min-h-0 flex-1 px-4 sm:px-8">
+              <div data-search-map className="relative min-h-0 flex-1 px-4 sm:px-8">
                 <SearchMap
                   points={points}
                   selectedId={mapSelectedId}
