@@ -90,7 +90,7 @@
     "@types/three": "^0.185.4",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.4.6",
-    "fast-uri": "^4.1.2",
+    "fast-uri": "^4.2.3",
     "leaflet": "^1.9.4",
     "mapbox-gl": "^3.28.1",
     "prettier": "^3.9.6",
